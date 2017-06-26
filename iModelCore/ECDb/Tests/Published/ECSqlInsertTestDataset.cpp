@@ -46,7 +46,7 @@ ECSqlTestDataset ECSqlInsertTestDataset::CommonGeometryTests()
     ecsql = "INSERT INTO ecsql.PASpatial (I, Geometry_Array) VALUES (123, NULL)";
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql);
 
-    ecsql = "INSERT INTO ecsql.PASpatial VALUES (False, 3.14, 123, 'hello', NULL, NULL)";
+    ecsql = "INSERT INTO ecsql.PASpatial VALUES (False, 3.14, 123, 'hello', NULL, NULL, NULL)";
     ECSqlTestFrameworkHelper::AddNonSelect(dataset, ecsql);
 
     ecsql = "INSERT INTO ecsql.PASpatial (I, Geometry) VALUES (123, ?)";

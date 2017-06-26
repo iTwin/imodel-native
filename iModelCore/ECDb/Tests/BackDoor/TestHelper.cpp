@@ -57,7 +57,7 @@ BentleyStatus TestHelper::ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> cons
     if (SUCCESS == ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
         {
         sp.Commit();
-        return !HasDataCorruptingMappingIssues(ecdb) ? SUCCESS : ERROR;
+        return SUCCESS;
         }
 
     sp.Cancel();
@@ -79,40 +79,11 @@ BentleyStatus TestHelper::ImportSchema(ECDbR ecdb, SchemaItem const& testItem)
     if (SUCCESS == ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()))
         {
         sp.Commit();
-        return !HasDataCorruptingMappingIssues(ecdb) ? SUCCESS : ERROR;
+        return SUCCESS;
         }
 
     sp.Cancel();
     return ERROR;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan Khan                       02/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-bool TestHelper::HasDataCorruptingMappingIssues(ECDbCR ecdb)
-    {
-    EXPECT_TRUE(ecdb.IsDbOpen());
-
-    if (!ecdb.IsDbOpen())
-        return true;
-
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, SchemaManager::GetValidateDbMappingSql()))
-        {
-        EXPECT_TRUE(false) << ecdb.GetLastError().c_str();
-        return true;
-        }
-
-    bool hasError = false;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        hasError = true;
-        LOG.errorv("ECClass '%s:%s' with invalid mapping: %s. Table name: %s - %s", stmt.GetValueText(0),
-                   stmt.GetValueText(2), stmt.GetValueText(5), stmt.GetValueText(3), stmt.GetValueText(6));
-        }
-
-    return hasError;
     }
 
 //---------------------------------------------------------------------------------

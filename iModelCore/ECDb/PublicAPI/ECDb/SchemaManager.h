@@ -231,12 +231,6 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus RepopulateCacheTables() const;
 
-        //! Only use this until we solved handling legacy v8 class inheritance issues when BISifying v8 ECSchemas.
-        //! Gets the SQLite SELECT SQL statement to detect those issues. The SELECT clause of the SQL has these columns:
-        //! ECSchema Name, ECSchema Alias, ECClass Name, Table Name, Issue Type (INT), Issue Type Description, Issue (JSON)
-        //! @return SQLite Validate SELECT SQL
-        ECDB_EXPORT static Utf8CP GetValidateDbMappingSql();
-
         void ClearCache() const;
         SchemaReader const& GetReader() const;
         DbMap const& GetDbMap() const;

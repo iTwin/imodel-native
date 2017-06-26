@@ -34,10 +34,7 @@ private:
 
 protected:
     void AssertSchemaDefs();
-    void AssertClassHasBaseClasses (ECClassContainer& ecClasses);
-    void GetAllBaseClassNames (ECClassP ecClass, std::vector<Utf8String>& classNames, int* classCount);
-    bool ContainsClassName (Utf8String searchedClassName, std::vector<Utf8String>& classNames);
-    void VerifyECDbPropertyInheritance(ECClassCP ecClass);
+    void VerifyECDbPropertyInheritance(ECClassCP);
     };
 
 //---------------------------------------------------------------------------------
@@ -837,6 +834,36 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             continue;
             }
 
+        if (colName.EqualsI("KindOfQuantity"))
+            {
+            KindOfQuantityCP expectedKoq = expectedProp.GetKindOfQuantity();
+
+            if (expectedKoq != nullptr)
+                {
+                ECClassId actualRelClassId;
+                ASSERT_EQ(expectedKoq->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("Category"))
+            {
+            if (expectedProp.GetCategory() != nullptr)
+                {
+                ECClassId actualRelClassId;
+                ASSERT_EQ(expectedProp.GetCategory()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
         if (colName.EqualsI("PrimitiveType"))
             {
             if (primProp != nullptr && primProp->GetEnumeration() == nullptr)
@@ -848,6 +875,97 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
 
             continue;
             }
+
+        if (colName.EqualsI("PrimitiveTypeMinLength"))
+            {
+            if (expectedProp.IsMinimumLengthDefined())
+                ASSERT_EQ((int) expectedProp.GetMinimumLength(), val.GetInt()) << "ECPropertyDef.PrimitiveTypeMinLength for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.PrimitiveTypeMinLength for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("PrimitiveTypeMaxLength"))
+            {
+            if (expectedProp.IsMaximumLengthDefined())
+                ASSERT_EQ((int) expectedProp.GetMaximumLength(), val.GetInt()) << "ECPropertyDef.PrimitiveTypeMaxLength for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.PrimitiveTypeMaxLength for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("PrimitiveTypeMinValue"))
+            {
+            if (expectedProp.IsMinimumValueDefined())
+                {
+                ECValue expectedMinValue;
+                ASSERT_EQ(ECObjectsStatus::Success, expectedProp.GetMinimumValue(expectedMinValue)) << "ECPropertyDef.PrimitiveTypeMinValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(expectedMinValue.IsPrimitive());
+                double expectedMin = 0.0;
+                switch (expectedMinValue.GetPrimitiveType())
+                    {
+                        case PRIMITIVETYPE_Double:
+                            expectedMin = expectedMinValue.GetDouble();
+                            break;
+
+                        case PRIMITIVETYPE_Integer:
+                            expectedMin = (double) expectedMinValue.GetInteger();
+                            break;
+
+                        case PRIMITIVETYPE_Long:
+                            expectedMin = (double) expectedMinValue.GetLong();
+                            break;
+
+                        default:
+                            FAIL() << "Unexpected min value for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                            return;
+                    }
+
+                ASSERT_DOUBLE_EQ(expectedMin, val.GetDouble()) << "ECPropertyDef.PrimitiveTypeMinValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.PrimitiveTypeMinValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("PrimitiveTypeMaxValue"))
+            {
+            if (expectedProp.IsMaximumValueDefined())
+                {
+                ECValue expectedMaxValue;
+                ASSERT_EQ(ECObjectsStatus::Success, expectedProp.GetMaximumValue(expectedMaxValue)) << "ECPropertyDef.PrimitiveTypeMaxValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(expectedMaxValue.IsPrimitive());
+                double expectedMax = 0.0;
+                switch (expectedMaxValue.GetPrimitiveType())
+                    {
+                        case PRIMITIVETYPE_Double:
+                            expectedMax = expectedMaxValue.GetDouble();
+                            break;
+
+                        case PRIMITIVETYPE_Integer:
+                            expectedMax = (double) expectedMaxValue.GetInteger();
+                            break;
+
+                        case PRIMITIVETYPE_Long:
+                            expectedMax = (double) expectedMaxValue.GetLong();
+                            break;
+
+                        default:
+                            FAIL() << "Unexpected max value for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                            return;
+                    }
+
+                ASSERT_DOUBLE_EQ(expectedMax, val.GetDouble()) << "ECPropertyDef.PrimitiveTypeMaxValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.PrimitiveTypeMaxValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
 
         if (colName.EqualsI("Enumeration"))
             {
@@ -909,38 +1027,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             continue;
             }
 
-        if (colName.EqualsI("KindOfQuantity"))
-            {
-            KindOfQuantityCP expectedKoq = expectedProp.GetKindOfQuantity();
-
-            if (expectedKoq != nullptr)
-                {
-                ECClassId actualRelClassId;
-                ASSERT_EQ(expectedKoq->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                }
-            else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-
-            continue;
-            }
-
-        if (colName.EqualsI("Category"))
-            {
-            PropertyCategoryCP expectedCat = expectedProp.GetCategory();
-
-            if (expectedCat != nullptr)
-                {
-                ECClassId actualRelClassId;
-                ASSERT_EQ(expectedCat->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.Category for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.Category for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                }
-            else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Category for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-
-            continue;
-            }
-
+        
         if (colName.EqualsI("ArrayMinOccurs"))
             {
             ArrayECPropertyCP arrayProp = nullptr;
@@ -998,16 +1085,6 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
                 ASSERT_EQ((int) navProp->GetDirection(), val.GetInt()) << "ECPropertyDef.NavigationDirection for nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
             else
                 ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.NavigationDirection for non-nav prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-
-            continue;
-            }
-
-        if (colName.EqualsI("Category"))
-            {
-            if (expectedProp.GetCategory() != nullptr)
-                ASSERT_EQ(expectedProp.GetCategory()->GetId(), val.GetId<PropertyCategoryId>()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-            else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
 
             continue;
             }

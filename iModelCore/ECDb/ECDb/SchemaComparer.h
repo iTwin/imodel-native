@@ -89,8 +89,10 @@ enum class SystemId
     KoqRelativeError,
     KoqPersistenceUnit,
     KoqPresentationUnitList,
+    MaximumLength,
     MaximumValue,
     MaxOccurs,
+    MinimumLength,
     MinimumValue,
     MinOccurs,
     Multiplicity,
@@ -842,6 +844,20 @@ struct ClassTypeChange final :ECPrimitiveChange<ECN::ECClassType>
     };
 
 //=======================================================================================
+// @bsiclass                                               Krischan.Eberle         06/2017
+//+===============+===============+===============+===============+===============+======
+struct MinMaxValueChange final :ECPrimitiveChange<ECN::ECValue>
+    {
+    private:
+        Utf8String _ToString(ValueId id) const override;
+    public:
+        MinMaxValueChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECPrimitiveChange<ECN::ECValue>(state, systemId, parent, customId)
+            {}
+        ~MinMaxValueChange() {}
+    };
+
+//=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
 struct SchemaChange final : ECObjectChange
@@ -1180,8 +1196,10 @@ struct ECPropertyChange final :ECObjectChange
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
         StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
         StringChange& GetTypeName() { return Get<StringChange>(SystemId::TypeName); }
-        //StringChange& GetMaximumValue() { return Get<StringChange>(SystemId::MAXIMUMVALUE); }
-        //StringChange& GetMinimumValue() { return Get<StringChange>(SystemId::MINIMUMVALUE); }
+        MinMaxValueChange& GetMinimumValue() { return Get<MinMaxValueChange>(SystemId::MinimumValue); }
+        MinMaxValueChange& GetMaximumValue() { return Get<MinMaxValueChange>(SystemId::MaximumValue); }
+        UInt32Change& GetMinimumLength() { return Get<UInt32Change>(SystemId::MinimumLength); }
+        UInt32Change& GetMaximumLength() { return Get<UInt32Change>(SystemId::MaximumLength); }
         BooleanChange& IsStruct() { return Get<BooleanChange>(SystemId::IsStrict); }
         BooleanChange& IsStructArray() { return Get<BooleanChange>(SystemId::IsStructArray); }
         BooleanChange& IsPrimitive() { return Get<BooleanChange>(SystemId::IsPrimitive); }

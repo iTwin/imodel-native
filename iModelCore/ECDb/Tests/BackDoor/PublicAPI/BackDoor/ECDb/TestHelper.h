@@ -33,8 +33,6 @@ struct TestHelper
         static BentleyStatus ImportSchemas(ECDbR, std::vector<SchemaItem> const&);
 
         //!logs the issues if there are any
-        static bool HasDataCorruptingMappingIssues(ECDbCR);
-
         static Utf8String RetrieveDdl(ECDbCR, Utf8CP entityName, Utf8CP entityType = "table");
         static Utf8String RetrieveIndexDdl(ECDbCR ecdb, Utf8StringCR indexName) { return RetrieveDdl(ecdb, indexName.c_str(), "index"); }
         static bool IndexExists(ECDbCR ecdb, IndexInfo const&);

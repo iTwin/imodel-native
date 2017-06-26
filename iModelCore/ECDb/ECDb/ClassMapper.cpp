@@ -1262,7 +1262,6 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(N
             PRECONDITION(id != nullptr && classId != nullptr, ClassMappingStatus::Error);
             if (!columnFactory.IsColumnInUse(*id) && !columnFactory.IsColumnInUse(*classId))
                 {
-                
                 if (navPropMap.SetMembers(*id, *classId, m_relationshipMap.GetClass().GetId()) != SUCCESS)
                     return ClassMappingStatus::Error;
                 

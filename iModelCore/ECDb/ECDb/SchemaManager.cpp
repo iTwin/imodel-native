@@ -525,12 +525,6 @@ BentleyStatus SchemaManager::RepopulateCacheTables() const
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle   02/2017
-//---------------------------------------------------------------------------------------
-//static
-Utf8CP SchemaManager::GetValidateDbMappingSql() { return SQL_ValidateDbMapping; }
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
 
 

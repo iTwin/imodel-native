@@ -954,6 +954,11 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(ECClassId id, std::ostream* os) { PrintTo((BeInt64Id) id, os); }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECValue const& val, std::ostream* os) {  *os << val.ToString().c_str(); }
+
 END_BENTLEY_ECOBJECT_NAMESPACE
 
 BEGIN_BENTLEY_SQLITE_NAMESPACE
