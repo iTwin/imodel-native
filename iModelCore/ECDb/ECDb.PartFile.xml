@@ -61,7 +61,7 @@
         <SubPart PartName="PublishedApi" />
     </Part>
   
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson">
         <!-- While the published api does not depend on the library, this subpart is a quick and maintainable way to ensure that all needed public apis are in the buildcontext. -->
         <SubPart PartName="ECDbLibrary" />
         <Bindings>
@@ -146,10 +146,10 @@
         </Bindings>
     </Part>
 
-	<!-- Memory leak testing of ECDb tests. Only called on demand -->
-	<Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest -dGTEST_NAME=ECDbTest" OnlyPlatforms="x64">
-		<SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
-		<SubProduct ProductName="ECDb-Gtest" />
+    <!-- Memory leak testing of ECDb tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=ECDb-Gtest -dGTEST_NAME=ECDbTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="ECDb-Gtest" />
     </Part>
 
     <!-- ********************** -->
