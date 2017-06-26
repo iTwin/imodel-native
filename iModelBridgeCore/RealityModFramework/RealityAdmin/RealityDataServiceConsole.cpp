@@ -1238,23 +1238,14 @@ void RealityDataConsole::ChangeProps()
                 propertyString.append(",");
 
             value = Utf8String(str.c_str()).Trim();
-            if (input.Equals("Listable"))
+            if (input.Equals("Listable") || input.Equals("Streamed"))
                 {
                 if (value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
-                    propertyString.append("\"Listable\" : false");
+                    propertyString.append(Utf8PrintfString("\"%s\" : false", input));
                 else if (value.EqualsI("true"))
-                    propertyString.append("\"Listable\" : true");
+                    propertyString.append(Utf8PrintfString("\"%s\" : true", input));
                 else
-                    DisplayInfo("Listable is boolean. Value must be true or false\n", DisplayOption::Error);
-                }
-            else if (input.Equals("Streamed"))
-                {
-                if (value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
-                    propertyString.append("\"Streamed\" : false");
-                else if (value.EqualsI("true"))
-                    propertyString.append("\"Streamed\" : true");
-                else
-                    DisplayInfo("Streamed is boolean. Value must be true or false\n", DisplayOption::Error);
+                    DisplayInfo(Utf8PrintfString("%s is boolean. Value must be true or false\n", input), DisplayOption::Error);
                 }
             else
                 propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", input, value));
