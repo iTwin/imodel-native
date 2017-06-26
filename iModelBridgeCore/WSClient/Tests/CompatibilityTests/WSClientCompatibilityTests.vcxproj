@@ -55,7 +55,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeOutput>$(OutRoot)Winx64\build\WSClientCompatibilityTests\WSClientCompatibilityTests.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)Winx64\Product\WSClientCompatibilityTestTool\WSClientCompatibilityTests.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32;DEBUG</NMakePreprocessorDefinitions>
     <NMakeBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTests re  WSClientCompatibilityTests WebServices*</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r WSClient -f WSClient -p WSClientCompatibilityTests b</NMakeReBuildCommandLine>
