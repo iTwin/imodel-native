@@ -323,6 +323,9 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
                 {
                 return;
                 }
+            
+            // TODO: cache all information about schemas in same transaction as importing schemas to avoid missing data.
+            // TODO: Cache schema response and files AFTER schemas were upgraded in ECDb.
 
             // Ensure ECSchemaDef class is available
             auto txn = StartCacheTransaction();

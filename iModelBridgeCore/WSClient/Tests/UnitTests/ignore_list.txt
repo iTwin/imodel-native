@@ -1,3 +1,12 @@
+#--------------------------------------------------------------------------------
+# PLEASE keep this file structurized and add new issues to specific sections:
+# KNOWN, BREAKAGES, RANDOM, NEW
+#--------------------------------------------------------------------------------
+
+#--------------------------------------------------------------------------------
+# KNOWN issues
+#--------------------------------------------------------------------------------
+
 # Graphite05x EDDb upgrade is not yet supported or will not be. Waiting for requirements for any upgrades needed to be implemented.
 DataSourceCacheUpgradeTests.CachingDataSource_OpenOrCreate_V5*
 DataSourceCacheUpgradeTests.Open_V5*
@@ -5,12 +14,40 @@ DataSourceCacheUpgradeTests.Open_V7*
 DataSourceCacheUpgradeTests.Open_V8*
 DataSourceCacheUpgradeTests.Open_V9*
 DataSourceCacheUpgradeTests.Open_V1*
+# DgnDb0601-Q4 -> BIM0200 ECDb upgrade not supported.
+DataSourceCacheUpgradeTests.Open_V20*
 
-# ECSchema update in ECDb does not support deletions yet
-DataSourceCacheTests.UpdateSchemas_SchemasWithDeletedPropertyPassedToDataSourceCacheWithCachedStatements_SuccessAndSchemasAccessable_KnownIssue
+# Tests that fail for know reasons and require larger fixes
+*_KnownIssue*
 
-# Pending fix on UniqueTaskHolder
-ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent_KnownIssue
+# Following tests were disabled and are added to ignore list instead
+ChangeManagerTests.GetObjectChangeStatus_ObjectDeleted_Deleted
+ChangeManagerTests.GetObjectChangeStatus_CreatedObjectDeleted_Deleted
+CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported
+CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds
+CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds
+WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString
+
+#--------------------------------------------------------------------------------
+# BREAKAGES caused by recent changes in dependencies
+#--------------------------------------------------------------------------------
+
+# Need to be adjusted as ECDb no longer contains MetaSchema by default. WSCacheMetaSchema can be removed now and generic MetaSchema be used instead
+# However, this will make MetaSchema.02.00 fail upon import as it has some invalid classes. Using MetaSchema from WSG 2.x servers will not work.
+# Importing MetaSchema.03.00 will make old servers not compatible immediately. Review after WSG 2.6 or WSG 3.0 with EC3.0 compatibility is released.
+CachingDataSourceTests.OpenOrCreate_SchemaPathNotPassedAndServerDoesNotReturnMetaSchema_GetsSchemasAndImportsThemWithMetaSchema
+
+#--------------------------------------------------------------------------------
+# RANDOM reproduceable crashes/hangs that break DEV builds
+#--------------------------------------------------------------------------------
+
+BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
+    # bim0200, NDEBUG, x64, random
+    # Hang on line 192 of the test body: while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
+
+#--------------------------------------------------------------------------------
+# RANDOM crashes/hangs on PRG (usually can be ran on DEV x64 builds)
+#--------------------------------------------------------------------------------
 
 ChangeManagerTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
@@ -31,18 +68,11 @@ DgnDbServerEventParserTests.CodeEventTests
 DgnDbServerEventParserTests.LocksDeletedEventTests
 DgnDbServerEventParserTests.CodesDeletedEventTests
 
-# DgnDb0601-Q4 -> BIM0200 ECDb upgrade not supported.
-DataSourceCacheUpgradeTests.Open_V20*
-
 CachingDataSourceTests.GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes
 CachingDataSourceTests.GetFile_CalledMultipleTimes*
     # bim0200, NDEBUG, x64 and x86
     # The first hung on line 751 of the test body: while (!downloadStarted);
     # The rest seemed to randomly hang as well.
-
-BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnectionIsBlockedUntilFirstFinishesTransaction
-    # bim0200, NDEBUG, x64, random
-    # Hang on line 192 of the test body: while (handler2.m_lastBusyCount == 0); // Wait until handler2 gets busy error and retries
 
 CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError
     # bim0200, NDEBUG, x86, random
@@ -84,15 +114,6 @@ UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsMoreThanTimeElapsed_ReturnsCachedUr
     #            Actual: never called - unsatisfied and active
     # *********************************************************************************
 
-#Following tests were disabled and are added to ignore list instead
-ChangeManagerTests.GetObjectChangeStatus_ObjectDeleted_Deleted
-ChangeManagerTests.GetObjectChangeStatus_CreatedObjectDeleted_Deleted
-DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors_KnownIssue
-CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToSameDb_SecondCallReturnsErrorFunctionalityNotSupported
-CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToDifferentFiles_BothSucceeds
-CachingDataSourceTests.SyncLocalChanges_LaunchedFromTwoConnectionsToMemmoryDb_BothSucceeds
-WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString
-
 ECInstanceKeyFilterTests.FilterByClass_OneClassEmptyInput_EmptyResults
     # bim0200dev, x86, DEBUG
     # End of tests reports:
@@ -125,14 +146,14 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
     # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(87): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
     #          Expected: to be called once
     #            Actual: never called - unsatisfied and active
-    # 
+    #
     # GMOCK WARNING:
     # Uninteresting mock function call - taking default action specified at:
     # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(130):
     #     Function call: _GetValue(00007FFCFB8A20D8 pointing to "UrlCache", 00007FFCFB8A20C8 pointing to "Environment")
     #           Returns: "null"
     # NOTE: You can safely ignore the above warning unless this call should not happen.  Do not suppress it by blindly adding an EXPECT_CALL() if you don't mean to enforce the call.  See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#knowing-when-to-expect for details.
-    # 
+    #
     # GMOCK WARNING:
     # Uninteresting mock function call - taking default action specified at:
     # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(131):
@@ -145,10 +166,10 @@ UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOld
     #           Returns: 0000022B5DFF1260
     #          Expected: to be called once
     #            Actual: called twice - over-saturated and active
-    # UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi (35 ms)
+    # [  FAILED  ] UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi (35 ms)
 
-	#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
-	*ConnectWebServicesClientCTests*
+#Connect Web Services Client Wrapper tests - the wrapper is not built as a part of the DgnClientSdk currently, so we will ignore them for now.
+*ConnectWebServicesClientCTests*
 
 # bim0200dev, x86, DEBUG, hang
 ConnectSignInManagerTests.GetTokenProvider_DelegationAndIdentityTokenRequestFailsDueToAuthentication_CallsExpirationHandlerAndReturnsNull
@@ -232,22 +253,8 @@ DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty
     # [2] BaseThreadInitThunk (0x76807be0)
     # [1] RtlInitializeExceptionChain (0x77a4ab00)
     # [0] RtlInitializeExceptionChain (0x77a4ab00)
-    # 
-    # DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty (1916 ms)
-
-#Affan: Following test are failing because endtable relationship used in these test does not have ECDbMap::ForeignKeyConstraint customAttribute on them
-#----->
-ChangeManagerTests.CommitInstanceRevision_ModifiedObjectDeletedAfterRevisionWasReadAndCommittedSecondTime_LeavesAsNoChange
-
-ChangeManagerTests.ModifyObject_InstanceIsRemoved_BackupInstanceIsRemoved
-
-DataSourceCacheTests.CacheResponse_ResultContainsOneToOneRelationshipsViolatingCardinality_Error
-
-DataSourceCacheTests.CacheResponse_ResultNoLongerContainsInstanceThatWasLocallyModified_RemovesModifiedInstance
-#<-----
-
-#Need to be adjusted as ECDb no longer contains MetaSchema by default. WSCacheMetaSchema can be removed now and generic MetaSchema be used instead
-CachingDataSourceTests.OpenOrCreate_SchemaPathNotPassedAndServerDoesNotReturnMetaSchema_GetsSchemasAndImportsThemWithMetaSchema
+    #
+    # [  FAILED  ] DataSourceCacheTests.ReadInstanceLabel_EmptyObjectId_ReturnsEmpty (1916 ms)
 
 DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching
     # bim0200, x64 & x86, NDEBUG
@@ -258,7 +265,7 @@ DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelatio
     # DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching (68 ms)
 
 ConnectSignInManagerTests.GetTokenProvider_NotSignedIn_TokenProviderDoesNotReturnAnyTokens
-    # bim0200dev, x64 & x86, DEBUG, 
+    # bim0200dev, x64 & x86, DEBUG,
     # hangs
 
 DataSourceCacheTests.Create_ValidParameters_Success
@@ -330,6 +337,9 @@ DataSourceCacheTests.*
     # bim0200dev, x64, DEBUG
     # These will fail one-by-one as you start ignoring them.
 
+#--------------------------------------------------------------------------------
+# NEW not reviewed issues
+#--------------------------------------------------------------------------------
 #Need to be adjusted to schema changes where nav props were added for ECRelationships
 ECDbAdapterTests.FindRelationshipClassWithTarget_SchemaHasOneMatchingBackwardRelationsipClassAndOneWithBaseClasses_ReturnsMatching
 ECDbAdapterTests.FindClosestRelationshipClassWithSource_SchemaHasTwoMatchingRelClassesOneBackwardRelationshipClosest_ReturnsClosestMatching
