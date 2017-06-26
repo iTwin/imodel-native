@@ -17,8 +17,6 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
-class DTMDrainageTables ;
-
 int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr ibcDtm) ;
 int bcdtmDrainage_callBackFunction(DTMFeatureType dtmFeatureType,DTMUserTag userTag,DTMFeatureId featureId,DPoint3d *featurePtsP,size_t numFeaturePts,void *userP) ;
 

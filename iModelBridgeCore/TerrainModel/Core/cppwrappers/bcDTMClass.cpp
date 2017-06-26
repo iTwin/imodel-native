@@ -1422,7 +1422,19 @@ bool  BcDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR 
 
 bool  BcDTM::_IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
     {
-    return false; // SNU TODO
+    // in DTM we return only one intersection for now
+    assert("DTM multiple Ray Intersect will return only one intersection" && false);
+    DPoint3d interP;
+    bool bRet = _IntersectRay(interP, direction, testPoint);
+    if (bRet)
+        {
+        DTMRayIntersection RayInter;
+        RayInter.point = interP;
+        RayInter.hasNormal = false;
+        RayInter.rayFraction = (interP - testPoint).Magnitude();
+        pointOnDTM.push_back(RayInter);
+        }
+    return bRet;
     }
 
 bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
