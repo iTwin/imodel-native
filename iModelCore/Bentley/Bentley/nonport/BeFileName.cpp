@@ -2360,12 +2360,25 @@ BeFileName BeFileName::Combine(std::initializer_list<WCharCP> paths) const
     return fullPath;
     }
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(BENTLEY_WINRT)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName Desktop::FileSystem::GetExecutableDir()
+BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP moduleName)
     {
+    HMODULE hModule = moduleName ? ::GetModuleHandleW(moduleName->c_str()) : NULL;
+    wchar_t moduleFileName[MAX_PATH];
+    ::GetModuleFileNameW(hModule, moduleFileName, _countof(moduleFileName));
+    BeFileName path(moduleFileName);
+    return path.GetDirectoryName();
+    }
+#elif defined(_WIN32) && defined(BENTLEY_WINRT)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
+    {
+    // GetModuleHandle not available under UWP.
     wchar_t moduleFileName[MAX_PATH];
     ::GetModuleFileNameW(NULL, moduleFileName, _countof(moduleFileName));
     BeFileName path(moduleFileName);
@@ -2375,7 +2388,7 @@ BeFileName Desktop::FileSystem::GetExecutableDir()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName Desktop::FileSystem::GetExecutableDir()
+BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
     {
     Utf8PrintfString exelink("/proc/%ld/exe", getpid());
 
@@ -2422,7 +2435,7 @@ static std::string macBundlePath()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName Desktop::FileSystem::GetExecutableDir()
+BeFileName Desktop::FileSystem::GetExecutableDir(BeFileNameCP)
     {
     // *** TBD: Fix up argv0 using cwd, etc.
     BeFileName exepath(macBundlePath().c_str(), BentleyCharEncoding::Utf8);

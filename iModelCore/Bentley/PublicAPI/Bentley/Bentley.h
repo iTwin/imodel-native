@@ -69,6 +69,11 @@
         #error Windows compile options not specified correctly. Use windowsToolContext.mke.
     #endif
 
+#if defined(_ITERATOR_DEBUG_LEVEL)
+    // Enabling checked iterators changes the size of std containers and iterators
+    static_assert(0 == _ITERATOR_DEBUG_LEVEL, "Checked iterators are not supported.");
+#endif
+
     #if (_MSC_VER <= 1600) // INTPTR_MIN et al are defined in stdint.h. Microsoft started delivering stdint.h as of VS2010
         #define BENTLEY_CPLUSPLUS 199711L
     #else

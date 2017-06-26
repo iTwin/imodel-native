@@ -73,22 +73,19 @@ enum class HexFormatOptions
 //!     * malloc                    - Should rarely be used. Instead, use bvector, ScopedArray, and C++ new
 //! @ingroup GROUP_String
 //=======================================================================================
-struct BeStringUtilities : public NonCopyableClass
+struct BeStringUtilities : NonCopyableClass
 {
 private:
     // Static class; don't allow new instances.
-    BeStringUtilities () { }
+    BeStringUtilities() {}
 
-//__PUBLISH_SECTION_END__
-    static void FormatUInt64 (WCharP string, uint64_t number, uint64_t base);
-    static void FormatUInt64 (Utf8P string, uint64_t number, uint64_t base);
+    BENTLEYDLL_EXPORT static void FormatUInt64(WCharP string, uint64_t number, uint64_t base);
+    BENTLEYDLL_EXPORT static void FormatUInt64(Utf8P string, uint64_t number, uint64_t base);
 
 #if defined (BENTLEY_WIN32)
 public:
     BENTLEYDLL_EXPORT static WString ParseFileURI (WCharCP uri, WCharCP basePath);
 #endif
-
-//__PUBLISH_SECTION_START__
 
 public:
     static const size_t NPOS = (size_t)-1;                  //!< A maximum value used to indicate that the buffer is NULL-terminated.
@@ -108,7 +105,7 @@ public:
     //! @remarks This is only intended for persistence operations, where specific UTF encoding is vital.
     //! @remarks For portable code, remember that wchar_t (also WString) does <b>not</b> always mean UTF-16.
     //! @remarks While no error should occur during this operation for valid Unicode strings, corrupt data can still be encountered.
-    BENTLEYDLL_EXPORT static BentleyStatus Utf16ToWChar (WStringR, Utf16CP, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus Utf16ToWChar(WStringR, Utf16CP, size_t count = AsManyAsPossible);
 
     //! Converts a UTF-16 buffer to a WChar string.
     //! @note Up to \a count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
@@ -119,7 +116,7 @@ public:
     //!             wbuf[wbufSizeInChars-1] = 0;
     //! @param[in]  inStr   The input string to be converted.
     //! @param[in]  count   The number of characters to copy from input string. Note that \a count is the number of characters to convert, not the number of bytes.
-    BENTLEYDLL_EXPORT static BentleyStatus Utf16ToWChar (WCharP wbuf, size_t wbufSizeInChars, Utf16CP inStr, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus Utf16ToWChar(WCharP wbuf, size_t wbufSizeInChars, Utf16CP inStr, size_t count = AsManyAsPossible);
 
     //! Converts a UTF-16 buffer to a WChar array.
     //! @note Up to \a count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
@@ -130,7 +127,7 @@ public:
     //! @param[in]  inStr   The input string to be converted.
     //! @param[in]  count   The number of characters to copy from input string. Note that \a count is the number of characters to convert, not the number of bytes.
     template <size_t wbufSizeInChars>
-    static BentleyStatus Utf16ToWChar (WChar (&wbuf)[wbufSizeInChars], Utf16CP inStr, size_t count = AsManyAsPossible) {return Utf16ToWChar (wbuf, wbufSizeInChars, inStr, count);}
+    static BentleyStatus Utf16ToWChar(WChar(&wbuf)[wbufSizeInChars], Utf16CP inStr, size_t count = AsManyAsPossible) {return Utf16ToWChar(wbuf, wbufSizeInChars, inStr, count);}
 
     //! Converts a WChar buffer to a UTF-16 string.
     //! @note Up to \a count characters will be converted; less may be converted if a NULL is encountered earlier. If \a count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
@@ -140,7 +137,7 @@ public:
     //! @remarks For portable code, remember that wchar_t (also WString) does <b>not</b> always mean UTF-16.
     //! @remarks While no error should occur during this operation for valid Unicode strings, corrupt data can still be encountered.
     //! @param[in]  count   the number of characters to copy from input string. Note that count is the number of characters to convert, not the number of bytes.
-    BENTLEYDLL_EXPORT static BentleyStatus WCharToUtf16 (Utf16BufferR, WCharCP, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus WCharToUtf16(Utf16BufferR, WCharCP, size_t count = AsManyAsPossible);
 
     //! Converts a WChar buffer to a UTF-16 array.
     //! @note Up to \a count characters will be converted; less may be converted if a NULL is encountered earlier. If \a count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
@@ -151,7 +148,7 @@ public:
     //!             ubuf[ubufSizeInChars-1] = 0;
     //! @param[in]  inStr   The input string to be converted.
     //! @param[in]  count   The number of characters to copy from input string. Note that \a count is the number of characters to convert, not the number of bytes.
-    BENTLEYDLL_EXPORT static BentleyStatus WCharToUtf16 (Utf16P ubuf, size_t ubufSizeInChars, WCharCP inStr, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus WCharToUtf16(Utf16P ubuf, size_t ubufSizeInChars, WCharCP inStr, size_t count = AsManyAsPossible);
 
     //! Converts a WChar buffer to a UTF-16 string.
     //! @note Up to \a count characters will be converted; less may be converted if a NULL is encountered earlier. If \a count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
@@ -160,37 +157,37 @@ public:
     //! @param[in]  inStr   The input string to be converted.
     //! @param[in]  count   The number of characters to copy from input string. Note that \a count is the number of characters to convert, not the number of bytes.
     template <size_t ubufSizeInChars>
-    static BentleyStatus WCharToUtf16 (Utf16Char (&ubuf)[ubufSizeInChars], WCharCP inStr, size_t count) {return WCharToUtf16 (ubuf, ubufSizeInChars, inStr, count);}
+    static BentleyStatus WCharToUtf16(Utf16Char(&ubuf)[ubufSizeInChars], WCharCP inStr, size_t count) {return WCharToUtf16(ubuf, ubufSizeInChars, inStr, count);}
 
     //! Compare two 0-terminated Unicode strings that are encoded as UTF-16
-    BENTLEYDLL_EXPORT static int CompareUtf16 (Utf16CP s1, Utf16CP s2);
+    BENTLEYDLL_EXPORT static int CompareUtf16(Utf16CP s1, Utf16CP s2);
 
     //! Compare a 0-terminated Unicode string encoded as UTF-16 with a wchar_t Unicode string
-    BENTLEYDLL_EXPORT static int CompareUtf16WChar (Utf16CP s1, WCharCP s2);
+    BENTLEYDLL_EXPORT static int CompareUtf16WChar(Utf16CP s1, WCharCP s2);
 
     //! Get length of a 0-terminated Unicode string encoded as UTF-16
-    BENTLEYDLL_EXPORT static size_t Utf16Len (Utf16CP);
+    BENTLEYDLL_EXPORT static size_t Utf16Len(Utf16CP);
 
     //! Copy a 0-terminated Unicode string encoded as UTF-16 into a Utf16 buffer
-    BENTLEYDLL_EXPORT static void CopyUtf16 (Utf16P outStr, size_t outStrCapacity, Utf16CP inStr);
+    BENTLEYDLL_EXPORT static void CopyUtf16(Utf16P outStr, size_t outStrCapacity, Utf16CP inStr);
 
     //! Copy a 0-terminated Unicode string encoded as UTF-16 into a Utf16 buffer
     template <size_t outStrCapacity>
-    static void CopyUtf16 (Utf16Char (&outStr)[outStrCapacity], Utf16CP inStr) {return CopyUtf16 (outStr, outStrCapacity, inStr);}
+    static void CopyUtf16(Utf16Char(&outStr)[outStrCapacity], Utf16CP inStr) {return CopyUtf16(outStr, outStrCapacity, inStr);}
 
     //! Converts a WChar string to a UTF-8 string.
     //! @note Up to count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
     //! @note The result is always cleared first, even if the input is NULL or empty.
     //! @note The result will always be NULL-terminated, even if the input (limited by count) is not.
     //! @remarks While no error should occur during this operation for valid Unicode strings, corrupt data can still be encountered.
-    BENTLEYDLL_EXPORT static BentleyStatus WCharToUtf8 (Utf8StringR, WCharCP, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus WCharToUtf8(Utf8StringR, WCharCP, size_t count = AsManyAsPossible);
 
     //! Converts a UTF-8 string to a WChar string.
     //! @note Up to count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
     //! @note The result is always cleared first, even if the input is NULL or empty.
     //! @note The result will always be NULL-terminated, even if the input (limited by count) is not.
     //! @remarks While no error should occur during this operation for valid Unicode strings, corrupt data can still be encountered.
-    BENTLEYDLL_EXPORT static BentleyStatus Utf8ToWChar (WStringR, Utf8CP, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus Utf8ToWChar(WStringR, Utf8CP, size_t count = AsManyAsPossible);
 
     //! Converts a UTF-8 string to a WChar buffer.
     //! @param[out]  outWChar       Output buffer; this will always be NULL-terminated, even if the buffer is too small
@@ -199,31 +196,31 @@ public:
     //! @remarks While outMaxChars is declared as a size_t, the current implementation will cast it to a signed Int32.
     //! @return Returns the value of the outWChar parameter so this method can be used in expressions.
     //! @remarks While no error should occur during this operation for valid Unicode strings, corrupt data can still be encountered.
-    BENTLEYDLL_EXPORT static WCharP Utf8ToWChar (WCharP outWChar, Utf8CP inChar, size_t outMaxChars);
+    BENTLEYDLL_EXPORT static WCharP Utf8ToWChar(WCharP outWChar, Utf8CP inChar, size_t outMaxChars);
 
     //! Converts a UTF-8 string to a UTF-16 string.
     //! @note Up to count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
     //! @note The result is always cleared first, even if the input is NULL or empty.
     //! @note The result will always be NULL-terminated, even if the input (limited by count) is not.
     //! @remarks While no error should occur during this operation for valid Unicode strings, corrupt data can still be encountered.
-    BENTLEYDLL_EXPORT static BentleyStatus Utf8ToUtf16 (Utf16BufferR, Utf8CP, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus Utf8ToUtf16(Utf16BufferR, Utf8CP, size_t count = AsManyAsPossible);
 
     //! Converts a UTF-8 string to a pointer. The Microsoft scanf method does not support the "%p" format specifier, so this method is needed to return the correct size pointer in 32- and 64- bit environments.
     //! @param[in]  inChar     Input string; this must be NULL-terminated. It must be of the form produced by using "0x%p" as the format specifier in an sprintf or similar statement (something like 0x1dab0310 in 32-bit or 0x000000014dab4008 in a 64-bit environment)
-    BENTLEYDLL_EXPORT static void* Utf8ToPointer (Utf8CP inChar);
+    BENTLEYDLL_EXPORT static void* Utf8ToPointer(Utf8CP inChar);
 
     //! Converts a UTF-16 string to a UTF-8 string.
     //! @note Up to count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
     //! @note The result is always cleared first, even if the input is NULL or empty.
     //! @note The result will always be NULL-terminated, even if the input (limited by count) is not.
     //! @remarks While no error should occur during this operation for valid Unicode strings, corrupt data can still be encountered.
-    BENTLEYDLL_EXPORT static BentleyStatus Utf16ToUtf8 (Utf8StringR, Utf16CP, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus Utf16ToUtf8(Utf8StringR, Utf16CP, size_t count = AsManyAsPossible);
 
     //! Converts a WChar string to a locale-encoded string.
     //! @note Up to count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
     //! @note The result is always cleared first, even if the input is NULL or empty. Further, if an error is encountered, the result will not contain partial results.
     //! @note The result will always be NULL-terminated, even if the input (limited by count) is not.
-    BENTLEYDLL_EXPORT static BentleyStatus WCharToLocaleChar (AStringR, LangCodePage codePage, WCharCP, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus WCharToLocaleChar(AStringR, LangCodePage codePage, WCharCP, size_t count = AsManyAsPossible);
 
     //! Converts a WChar string to a multibyte string using the current system locale.
     //! @param[out] outChar     Output buffer; this will always be NULL-terminated, even if the buffer is too small
@@ -231,22 +228,22 @@ public:
     //! @param[in]  outMaxBytes The number of bytes in outChar. This is expected to be greater than 0, and includes the NULL terminator.
     //! @remarks While outMaxBytes is declared as a size_t, the current implementation will cast it to a signed Int32.
     //! @return Returns the value of outChar so that this method can be used in expressions.
-    BENTLEYDLL_EXPORT static CharP WCharToCurrentLocaleChar (CharP outChar, WCharCP inWChar, size_t outMaxBytes);
+    BENTLEYDLL_EXPORT static CharP WCharToCurrentLocaleChar(CharP outChar, WCharCP inWChar, size_t outMaxBytes);
 
     //! Converts a WChar string to a multibyte string using the current system locale.
     //! @param[out] localeStr   Output buffer
     //! @param[in]  inWChar     Input string; this must be NULL-terminated
-    BENTLEYDLL_EXPORT static BentleyStatus WCharToCurrentLocaleChar (AStringR localeStr, WCharCP inWChar);
+    BENTLEYDLL_EXPORT static BentleyStatus WCharToCurrentLocaleChar(AStringR localeStr, WCharCP inWChar);
 
     //! Converts a WChar string to a pointer. The Microsoft swcanf method does not support the "%p" format specifier, so this method is needed to return the correct size pointer in 32- and 64- bit environments.
     //! @param[in]  inWChar     Input string; this must be NULL-terminated. It must be of the form produced by using "0x%p" as the format specifier in an swprintf or similar statement (something like 0x1dab0310 in 32-bit or 0x000000014dab4008 in a 64-bit environment)
-    BENTLEYDLL_EXPORT static void* WCharToPointer (WCharCP inWChar);
+    BENTLEYDLL_EXPORT static void* WCharToPointer(WCharCP inWChar);
 
     //! Converts a locale-encoded string to a WChar string.
     //! @note Up to count characters will be converted; less may be converted if a NULL is encountered earlier. If count is BeStringUtilities::AsManyAsPossible, the input is assumed to be NULL-terminated.
     //! @note The result is always cleared first, even if the input is NULL or empty. Further, if an error is encountered, the result will not contain partial results.
     //! @note The result will always be NULL-terminated, even if the input (limited by count) is not.
-    BENTLEYDLL_EXPORT static BentleyStatus LocaleCharToWChar (WStringR, CharCP, LangCodePage codePage, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static BentleyStatus LocaleCharToWChar(WStringR, CharCP, LangCodePage codePage, size_t count = AsManyAsPossible);
 
     //! Converts a locale-encoded string to a WChar buffer.
     //! @param[out]  outWChar       Output buffer; this will always be NULL-terminated, even if the buffer is too small
@@ -254,7 +251,7 @@ public:
     //! @param[in]   codePage       Code page of the input locale-encoded string
     //! @param[in]   outMaxChars    The number of characters (number of WChar) in outMSWChar; this is expected to be greater than 0, and includes the NULL terminator.
     //! @return Returns the value of outWChar parameter so that this method can be used in expressions.
-    BENTLEYDLL_EXPORT static WCharP LocaleCharToWChar (WCharP outWChar, CharCP inChar, LangCodePage codePage, size_t outMaxChars);
+    BENTLEYDLL_EXPORT static WCharP LocaleCharToWChar(WCharP outWChar, CharCP inChar, LangCodePage codePage, size_t outMaxChars);
 
     //! Converts a multibyte string to a WChar string using the current system locale.
     //! @param[out]  outWChar       Output buffer; this will always be NULL-terminated, even if the buffer is too small
@@ -262,24 +259,24 @@ public:
     //! @param[in]   outMaxChars    The number of characters (number of WChar) in outWChar; this is expected to be greater than 0, and includes the NULL terminator.
     //! @remarks While outMaxChars is declared as a size_t, it must not exceed UINT32_MAX
     //! @return Returns the value of the outWChar output buffer so this method can be used in expressions.
-    BENTLEYDLL_EXPORT static WCharP CurrentLocaleCharToWChar (WCharP outWChar, CharCP inChar, size_t outMaxChars);
+    BENTLEYDLL_EXPORT static WCharP CurrentLocaleCharToWChar(WCharP outWChar, CharCP inChar, size_t outMaxChars);
 
     //! Converts a multibyte string to a WChar string using the current system locale.
     //! @param[out]  outStr     Output string
     //! @param[in]   inChar     Input string; this must be NULL-terminated
-    BENTLEYDLL_EXPORT static BentleyStatus CurrentLocaleCharToWChar (WStringR outStr, CharCP inChar);
+    BENTLEYDLL_EXPORT static BentleyStatus CurrentLocaleCharToWChar(WStringR outStr, CharCP inChar);
 
     //! Gets the current code page
     //! @param[out] codePage    Set to the current code page
     //! @return non-zero error status if the current code page cannot be determined.
     //! @private
-    BENTLEYDLL_EXPORT static BentleyStatus GetCurrentCodePage (LangCodePage& codePage);
+    BENTLEYDLL_EXPORT static BentleyStatus GetCurrentCodePage(LangCodePage& codePage);
 
     //! Tests if the specified code page is valid
     //! @param[in] codePage    Set to the current code page
     //! @return true if \a codePage is a valid code page identifier
     //! @private
-    BENTLEYDLL_EXPORT static bool IsValidCodePage (LangCodePage codePage);
+    BENTLEYDLL_EXPORT static bool IsValidCodePage(LangCodePage codePage);
 
 //__PUBLISH_SECTION_END__
     //! This is meant to allow advanced usage of ICU to transcode odd encodings that are not worth writing high-level wrappers for (e.g. reasing strings from TrueType font metadata).
@@ -295,23 +292,23 @@ public:
 
     //! Get the decimal separator for the current locale
     //! @param[out] sep The decimal separator string
-    BENTLEYDLL_EXPORT static BentleyStatus GetDecimalSeparator (WStringR sep);
+    BENTLEYDLL_EXPORT static BentleyStatus GetDecimalSeparator(WStringR sep);
 
     //! Encode a character string using URL encoding.
     //! @param[in] charsToEncode    Input string.
     //! @return encoded string.
-    BENTLEYDLL_EXPORT static Utf8String UriEncode (Utf8CP charsToEncode);
+    BENTLEYDLL_EXPORT static Utf8String UriEncode(Utf8CP charsToEncode);
 
     //! Decode a string that was encoded by UriEncode.
     //! @param[in] encodedString    The encoded input string.
     //! @return decoded string.
-    BENTLEYDLL_EXPORT static Utf8String UriDecode (Utf8CP encodedString);
+    BENTLEYDLL_EXPORT static Utf8String UriDecode(Utf8CP encodedString);
 
     //! Decode a string that was encoded by UriEncode.
     //! @param[in] start    The start of the string to be decoded.
     //! @param[in] end      One past the end of the string to be decoded.
     //! @return decoded string.
-    BENTLEYDLL_EXPORT static Utf8String UriDecode (Utf8CP start, Utf8CP end);
+    BENTLEYDLL_EXPORT static Utf8String UriDecode(Utf8CP start, Utf8CP end);
 
     //! Format a string following the rules of sprintf.
     //! @param buffer           Where to write the formatted string
@@ -319,7 +316,7 @@ public:
     //! @param format           The formatting to apply
     //! @return the number of characters, excluding the final 0-terminator, that were written to \a buffer if less than numCharsInBuffers; or, -1 if the output was truncated.
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., buffer[numCharsInBuffer-1] = 0;)
-    BENTLEYDLL_EXPORT static int Snprintf (CharP buffer, size_t numCharsInBuffer, CharCP format, ...);
+    BENTLEYDLL_EXPORT static int Snprintf(CharP buffer, size_t numCharsInBuffer, CharCP format, ...);
 
     //! Format a string following the rules of sprintf.
     //! @param destArray        Where to write the formatted string
@@ -328,11 +325,11 @@ public:
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., destArray[destArraySize-1] = 0;)
     // Vsnprintf ensures the output buffer is terminated; mark it as such to prevent repeated static analysis warnings.
     template <size_t destArraySize>
-    static int Snprintf (_Out_writes_z_(destArraySize) char (&destArray)[destArraySize], CharCP format, ...)
+    static int Snprintf(_Out_writes_z_(destArraySize) char (&destArray)[destArraySize], CharCP format, ...)
         {
         va_list args;
-        va_start (args, format);
-        return Vsnprintf (destArray, destArraySize, format, args);
+        va_start(args, format);
+        return Vsnprintf(destArray, destArraySize, format, args);
         }
 
     //! Format a string following the rules of sprintf.
@@ -342,7 +339,7 @@ public:
     //! @param args             The values to substitute into the formatted string
     //! @return the number of characters, excluding the final 0-terminator, that were written to \a buffer if less than numCharsInBuffers; or, -1 if the output was truncated.
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., buffer[numCharsInBuffer-1] = 0;)
-    BENTLEYDLL_EXPORT static int Vsnprintf (CharP buffer, size_t numCharsInBuffer, CharCP format, va_list args);
+    BENTLEYDLL_EXPORT static int Vsnprintf(CharP buffer, size_t numCharsInBuffer, CharCP format, va_list args);
 
     //! Format a string following the rules of sprintf.
     //! @param buffer           Where to write the formatted string
@@ -350,7 +347,7 @@ public:
     //! @param format           The formatting to apply
     //! @return the number of characters, excluding the final 0-terminator, that were written to \a buffer if less than numCharsInBuffers; or, -1 if the output was truncated.
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., buffer[numCharsInBuffer-1] = 0;)
-    BENTLEYDLL_EXPORT static int Snwprintf (WCharP buffer, size_t numCharsInBuffer, WCharCP format, ...);
+    BENTLEYDLL_EXPORT static int Snwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP format, ...);
 
     //! Format a string following the rules of sprintf.
     //! @param destArray        Where to write the formatted string
@@ -358,11 +355,11 @@ public:
     //! @return the number of characters, excluding the final 0-terminator, that were written to \a buffer if less than destArraySize; or, -1 if the output was truncated.
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., buffer[numCharsInBuffer-1] = 0;)
     template <size_t destArraySize>
-    static int Snwprintf (_Out_writes_z_(destArraySize) wchar_t (&destArray)[destArraySize], WCharCP format, ...)
+    static int Snwprintf(_Out_writes_z_(destArraySize) wchar_t (&destArray)[destArraySize], WCharCP format, ...)
         {
         va_list args;
-        va_start (args, format);
-        return Vsnwprintf (destArray, destArraySize, format, args);
+        va_start(args, format);
+        return Vsnwprintf(destArray, destArraySize, format, args);
         }
 
     //! Format a string following the rules of sprintf.
@@ -372,7 +369,7 @@ public:
     //! @param args             The values to substitute into the formatted string
     //! @return the number of characters, excluding the final 0-terminator, that were written to \a buffer if less than numCharsInBuffers; or, -1 if the output was truncated.
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., buffer[numCharsInBuffer-1] = 0;)
-    BENTLEYDLL_EXPORT static int Vsnwprintf (WCharP buffer, size_t numCharsInBuffer, WCharCP format, va_list args);
+    BENTLEYDLL_EXPORT static int Vsnwprintf(WCharP buffer, size_t numCharsInBuffer, WCharCP format, va_list args);
 
 #if !defined (BENTLEY_CPP_MISSING_WCHAR_SUPPORT)
     #define BE_STRING_UTILITIES_SWSCANF(SRC,FMT,...)     swscanf(SRC,FMT,__VA_ARGS__)
@@ -381,126 +378,115 @@ public:
     //! Extract values from a formatted string
     //! @param stringSource the formatted string to read
     //! @param fmt the format of the string
-    BENTLEYDLL_EXPORT static int Sscanf (CharCP stringSource, CharCP fmt, ...);
+    BENTLEYDLL_EXPORT static int Sscanf(CharCP stringSource, CharCP fmt, ...);
     #define BE_STRING_UTILITIES_UTF8_SSCANF(SRC,FMT,...) BeStringUtilities::Sscanf(SRC,FMT,__VA_ARGS__)
 
     //! Extract values from a formatted string
     //! @param stringSource the formatted string to read
     //! @param fmt the format of the string
-    BENTLEYDLL_EXPORT static int Swscanf (WCharCP stringSource, WCharCP fmt, ...);
+    BENTLEYDLL_EXPORT static int Swscanf(WCharCP stringSource, WCharCP fmt, ...);
     #define BE_STRING_UTILITIES_SWSCANF(SRC,FMT,...)     BeStringUtilities::Swscanf(SRC,FMT,__VA_ARGS__)
 #endif
 
     //! Convert all characters to lowercase.
-    BENTLEYDLL_EXPORT static char* Strlwr (char* s);
+    BENTLEYDLL_EXPORT static char* Strlwr(char* s);
 
     //! Convert all characters to lowercase.
-    BENTLEYDLL_EXPORT static wchar_t* Wcslwr (wchar_t* s);
+    BENTLEYDLL_EXPORT static wchar_t* Wcslwr(wchar_t* s);
 
     //! Convert all characters to uppercase.
-    BENTLEYDLL_EXPORT static char* Strupr (char* s);
+    BENTLEYDLL_EXPORT static char* Strupr(char* s);
 
     //! Convert all characters to uppercase.
-    BENTLEYDLL_EXPORT static wchar_t* Wcsupr (wchar_t* s);
+    BENTLEYDLL_EXPORT static wchar_t* Wcsupr(wchar_t* s);
 
     //! Compare two strings in a case-insensitive way. Equivalent to MSVC _stricmp and a character-by-character comparision in GCC. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
-    BENTLEYDLL_EXPORT static int Stricmp (const char* s1, const char* s2);
+    BENTLEYDLL_EXPORT static int Stricmp(const char* s1, const char* s2);
 
     //! Compare two strings in a case-insensitive way. Equivalent to MSVC _stricmp and a character-by-character comparision in GCC. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
     //! @note Use only if you know that both strings contain only ASCII characters. 
-    BENTLEYDLL_EXPORT static int StricmpAscii (const char* s1, const char* s2);
+    BENTLEYDLL_EXPORT static int StricmpAscii(const char* s1, const char* s2);
 
     //! Compare two strings in a case-insensitive way. Equivalent to MSVC _wcsicmp and a character-by-character comparision in GCC. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
-    BENTLEYDLL_EXPORT static int Wcsicmp (WCharCP lhs, WCharCP rhs);
+    BENTLEYDLL_EXPORT static int Wcsicmp(WCharCP lhs, WCharCP rhs);
 
     //! Compare up to n characters of two strings in a case-insensitive way. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
-    BENTLEYDLL_EXPORT static int Strnicmp (const char* s1, const char* s2, size_t n);
+    BENTLEYDLL_EXPORT static int Strnicmp(const char* s1, const char* s2, size_t n);
 
     //! Compare up to n characters of two strings in a case-insensitive way. @return 0 if the strings are equal (ignoring case), otherwise a negative or positive number representing order.
-    BENTLEYDLL_EXPORT static int Wcsnicmp (const wchar_t* s1, const wchar_t* s2, size_t n);
+    BENTLEYDLL_EXPORT static int Wcsnicmp(const wchar_t* s1, const wchar_t* s2, size_t n);
 
     //! Make a copy of a string into a new buffer.  Note that you must call free on the returned pointer or it will leak.
-    BENTLEYDLL_EXPORT static char* Strdup (char const* s);
+    BENTLEYDLL_EXPORT static char* Strdup(char const* s);
 
     //! Make a copy of a string into a new buffer.  Note that you must call free on the returned pointer or it will leak.
-    BENTLEYDLL_EXPORT static wchar_t* Wcsdup (wchar_t const* s);
+    BENTLEYDLL_EXPORT static wchar_t* Wcsdup(wchar_t const* s);
 
     //! This is the equivelent of strtok_s in MSVC and strtok_r in GCC.  
-    BENTLEYDLL_EXPORT static char *Strtok (char *strToken, const char *strDelimit, char **context);
+    BENTLEYDLL_EXPORT static char *Strtok(char *strToken, const char *strDelimit, char **context);
 
     //! This is the equivelent of wcstok_s in MSVC and wcstok in GCC.  
-    BENTLEYDLL_EXPORT static wchar_t *Wcstok (wchar_t *wcsToken, const wchar_t *wcsDelimit, wchar_t **context);
+    BENTLEYDLL_EXPORT static wchar_t *Wcstok(wchar_t *wcsToken, const wchar_t *wcsDelimit, wchar_t **context);
 
     //! reverse the letters in str
-    BENTLEYDLL_EXPORT static char *Strrev (char* wstr);
+    BENTLEYDLL_EXPORT static char *Strrev(char* wstr);
 
     //! reverse the letters in wstr
-    BENTLEYDLL_EXPORT static wchar_t *Wcsrev (wchar_t *wstr);
+    BENTLEYDLL_EXPORT static wchar_t *Wcsrev(wchar_t *wstr);
 
     //! Equivalent to wcsncpy_s in MSVC
-    BENTLEYDLL_EXPORT static wchar_t* Wcsncpy (wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static wchar_t* Wcsncpy(wchar_t *strDest, size_t destLen, const wchar_t *strSource, size_t count = AsManyAsPossible);
 
     //! Equivalent to wcsncpy_s in MSVC, for arrays
     template <size_t destArraySize>
-    static wchar_t* Wcsncpy (_Out_writes_z_(destArraySize) wchar_t (&destArray)[destArraySize], const wchar_t *strSource, size_t count = AsManyAsPossible) {return Wcsncpy (destArray, destArraySize, strSource, count);}
+    static wchar_t* Wcsncpy(_Out_writes_z_(destArraySize) wchar_t (&destArray)[destArraySize], const wchar_t *strSource, size_t count = AsManyAsPossible) {return Wcsncpy(destArray, destArraySize, strSource, count);}
 
     //! Equivalent to strncpy_s in MSVC
-    BENTLEYDLL_EXPORT static char* Strncpy (char *strDest, size_t destLen, const char *strSource, size_t count = AsManyAsPossible);
+    BENTLEYDLL_EXPORT static char* Strncpy(char *strDest, size_t destLen, const char *strSource, size_t count = AsManyAsPossible);
 
     //! Equivalent to strncpy_s in MSVC, for arrays
     template <size_t destArraySize>
-    static char* Strncpy (_Out_writes_z_(destArraySize) char (&destArray)[destArraySize], const char *strSource, size_t count = AsManyAsPossible) {return Strncpy (destArray, destArraySize, strSource, count);}
+    static char* Strncpy(_Out_writes_z_(destArraySize) char (&destArray)[destArraySize], const char *strSource, size_t count = AsManyAsPossible) {return Strncpy(destArray, destArraySize, strSource, count);}
 
-    //! Parses a string containing an integer number in decimal format
-    //! @param[out] value The resulting integer number
-    //! @param[in] string A string representation of a decimal value.
-    //! @remarks @p string must not contain any extra characters or whitespace. This function does not skip leading whitespace or stop at trailing
-    //!      characters, as a function like strtoul would do. That kind of parsing is for the higher level caller to do.
-    BENTLEYDLL_EXPORT static BentleyStatus ParseUInt64 (uint64_t& value, WCharCP string);
+    //! Parses a UTF-8 encoded string containing an integer number in decimal (or hexidecimal with leading "0x" or "0X") format
+    //! @param[in] string A string representation of a decimal or hexidecimal value.
+    //! @param[out] status optional status
+    BENTLEYDLL_EXPORT static uint64_t ParseUInt64(Utf8CP string, BentleyStatus* status=nullptr);
 
-    //! Parses a UTF-8 encoded string containing an integer number in decimal format
-    //! @param[out] value The resulting integer number
-    //! @param[in] string A string representation of a decimal value.
-    //! @remarks @p string must not contain any extra characters or whitespace. This function does not skip leading whitespace or stop at trailing
-    //!      characters, as a function like strtoul would do. That kind of parsing is for the higher level caller to do.
-    BENTLEYDLL_EXPORT static BentleyStatus ParseUInt64 (uint64_t& value, Utf8CP string);
+    static BentleyStatus ParseUInt64(uint64_t& value, Utf8CP string) {BentleyStatus stat; value=ParseUInt64(string, &stat); return stat;} //!< @private
+
+    //! Parses a hexadecimal number from a string that may optionally start with "0x" or "0X"
+    //! @param[in] string A string representation of a hex value. May begin with 0x or 0X.
+    //! @param[out] status optional status
+    BENTLEYDLL_EXPORT static uint64_t ParseHex(Utf8CP string, BentleyStatus* status=nullptr);
 
     //! Converts an integer number to a string using the decimal format, e.g. 1234ULL becomes "1234" 
     //! @param[out] buf  The output buffer for the formatted string.
     //! @param[in] value the integer value to be formatted.
-    BENTLEYDLL_EXPORT static void FormatUInt64 (WCharP buf, uint64_t value);
-    BENTLEYDLL_EXPORT static void FormatUInt64 (Utf8P buf, uint64_t value);
-
-    //! Parses a hexadecimal number
-    //! @param[out]     value   Assigned the parsed value
-    //! @param[in]      string  A string representation of a hex value. May begin with 0x or 0X.
-    //! @remarks @p string must not contain any extra characters or whitespace. This function does not skip leading whitespace or stop at trailing
-    //!      characters, as a function like strtoul would do. That kind of parsing is for the higher level caller to do.
-    BENTLEYDLL_EXPORT static BentleyStatus ParseHexUInt64 (uint64_t& value, WCharCP string);
+    static void FormatUInt64(Utf8P buf, uint64_t value) {FormatUInt64(buf, value, 10ULL);}
 
     //! Format an integer as hexadecimal
     //! @param[out] buf  The output buffer for the formatted string. Must be at least 17 characters in size.
     //! @param[in] value the integer value to be formatted.
-    BENTLEYDLL_EXPORT static void          FormatHexUInt64 (WCharP buf, uint64_t value);
-
+    static void FormatHexUInt64(Utf8P buf, uint64_t value) {FormatUInt64(buf, value, 16ULL);}
 
     //! Equivalent to _wtoi
-    BENTLEYDLL_EXPORT static int Wtoi (wchar_t const* s);
+    BENTLEYDLL_EXPORT static int Wtoi(wchar_t const* s);
 
     //! Equivalent to wcstoul
-    BENTLEYDLL_EXPORT static unsigned long Wcstoul (wchar_t const* nptr, wchar_t** endptr, int base);
+    BENTLEYDLL_EXPORT static unsigned long Wcstoul(wchar_t const* nptr, wchar_t** endptr, int base);
 
     //! Equivalent to wcstol
-    BENTLEYDLL_EXPORT static long          Wcstol (wchar_t const* nptr, wchar_t** endptr, int base);
+    BENTLEYDLL_EXPORT static long Wcstol(wchar_t const* nptr, wchar_t** endptr, int base);
 
     //! Equivalent to wcstod
-    BENTLEYDLL_EXPORT static double        Wcstod (wchar_t const* s, wchar_t** end);
+    BENTLEYDLL_EXPORT static double Wcstod(wchar_t const* s, wchar_t** end);
 
-    BENTLEYDLL_EXPORT static double Wtof (wchar_t const* s);
+    BENTLEYDLL_EXPORT static double Wtof(wchar_t const* s);
 
     //! Equivalent to _itow_s
     //! @remarks Note that output argument is first!
-    BENTLEYDLL_EXPORT static BentleyStatus Itow (wchar_t* buffer, int value, size_t sizeInCharacters, int radix);
+    BENTLEYDLL_EXPORT static BentleyStatus Itow(wchar_t* buffer, int value, size_t sizeInCharacters, int radix);
 
     //! Move a block of memory measured in wchar_t's. The dest and src buffers can overlap.
     //! @param[in] dest     The output buffer
@@ -508,7 +494,7 @@ public:
     //! @param[in] src      The input buffer
     //! @param[in] count    The number of bytes to copy 
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
-    BENTLEYDLL_EXPORT static BentleyStatus Memmove (void *dest, size_t numberOfElements, const void *src, size_t count);
+    BENTLEYDLL_EXPORT static BentleyStatus Memmove(void *dest, size_t numberOfElements, const void *src, size_t count);
 
     //! Move a block of memory measured in wchar_t's. The dest and src buffers can overlap.
     //! @param[in] dest     The output buffer
@@ -516,7 +502,7 @@ public:
     //! @param[in] src      The input buffer
     //! @param[in] count    The number of chars to copy 
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
-    BENTLEYDLL_EXPORT static BentleyStatus Wmemmove (wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count);
+    BENTLEYDLL_EXPORT static BentleyStatus Wmemmove(wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count);
 
     //! Copy a block of memory. The dest and src buffers must not overlap.
     //! @param[in] dest     The output buffer
@@ -524,7 +510,7 @@ public:
     //! @param[in] src      The input buffer
     //! @param[in] count    The number of chars to copy 
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
-    BENTLEYDLL_EXPORT static BentleyStatus Memcpy (void *dest, size_t numberOfElements, const void *src, size_t count);
+    BENTLEYDLL_EXPORT static BentleyStatus Memcpy(void *dest, size_t numberOfElements, const void *src, size_t count);
 
     //! Copy a block of memory measured in wchar_t's. The dest and src buffers must not overlap.
     //! @param[in] dest     The output buffer
@@ -532,13 +518,13 @@ public:
     //! @param[in] src      The input buffer
     //! @param[in] count    The number of wchar_t's to copy 
     //! @return non-zero error status if (NULL == dest || NULL == src || numberOfElements < count)
-    BENTLEYDLL_EXPORT static BentleyStatus Wmemcpy (wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count);
+    BENTLEYDLL_EXPORT static BentleyStatus Wmemcpy(wchar_t *dest, size_t numberOfElements, const wchar_t *src, size_t count);
 
     //! Tokenizes a string based on the provided delimiters, and adds a WString for each token into the provided collection. This essentially wraps wcstok for more convenient access.
     //! @param[in]      str         The string to tokenize; cannot be NULL or empty
     //! @param[in]      delimiters  One or more delimiters; cannot be NULL or empty
     //! @param[in,out]  tokens      One or more tokens
-    static void Split(WCharCP str, WCharCP delimiters, bvector<WString>& tokens) { return Split(str, delimiters, NULL, tokens); }
+    static void Split(WCharCP str, WCharCP delimiters, bvector<WString>& tokens) {return Split(str, delimiters, NULL, tokens);}
 
     //! Tokenizes a string based on the provided delimiters, and adds a WString for each token into the provided collection. This essentially wraps wcstok for more convenient access.
     //! @param[in]      str         The string to tokenize; cannot be NULL or empty
@@ -551,7 +537,7 @@ public:
     //! @param[in]      str         The string to tokenize; cannot be NULL or empty
     //! @param[in]      delimiters  One or more delimiters; cannot be NULL or empty
     //! @param[in,out]  tokens      One or more tokens
-    static void Split(Utf8CP str, Utf8CP delimiters, bvector<Utf8String>& tokens) { return Split(str, delimiters, NULL, tokens); }
+    static void Split(Utf8CP str, Utf8CP delimiters, bvector<Utf8String>& tokens) {return Split(str, delimiters, NULL, tokens);}
 
     //! Tokenizes a string based on the provided delimiters, and adds a Utf8String for each token into the provided collection. This essentially wraps wcstok for more convenient access.
     //! @param[in]      str         The string to tokenize; cannot be NULL or empty
@@ -564,25 +550,25 @@ public:
     //! @param[in]      strings     The list of strings to join
     //! @param[in]      delimiter   The delimiter to be inserted between each string
     //! @return Returns a string comprised of all strings in the list in input order, separated by the supplied delimiter.
-    BENTLEYDLL_EXPORT static Utf8String    Join (bvector<Utf8String> const& strings, Utf8CP delimiter = NULL);
+    BENTLEYDLL_EXPORT static Utf8String    Join(bvector<Utf8String> const& strings, Utf8CP delimiter = NULL);
 
     //! Joins a list of strings into a single string, optionally separated by a delimiter.
     //! @param[in]      strings     The list of strings to join
     //! @param[in]      delimiter   The delimiter to be inserted between each string
     //! @return Returns a string comprised of all strings in the list in input order, separated by the supplied delimiter.
-    BENTLEYDLL_EXPORT static Utf8String    Join (bvector<Utf8CP> const& strings, Utf8CP delimiter = NULL);
+    BENTLEYDLL_EXPORT static Utf8String    Join(bvector<Utf8CP> const& strings, Utf8CP delimiter = NULL);
 
     //! Default logic for parsing a user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
     //! @param[out]     subStrings   The resulting sub strings will be added to this collection
     //! @param[in]      inString     The string to tokenize; cannot be NULL or empty
     //! @param[in]      auxDelimiters (optional) Each character in the string Will be used as a delimiter in addition to whitespace.
-    BENTLEYDLL_EXPORT static void ParseArguments (bvector<WString>& subStrings, WCharCP inString, WCharCP auxDelimiters = NULL);
+    BENTLEYDLL_EXPORT static void ParseArguments(bvector<WString>& subStrings, WCharCP inString, WCharCP auxDelimiters = NULL);
 
     //! Default logic for parsing a user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
     //! @param[out]     subStrings   The resulting sub strings will be added to this collection
     //! @param[in]      inString     The string to tokenize; cannot be NULL or empty
     //! @param[in]      auxDelimiters (optional) Each character in the string Will be used as a delimiter in addition to whitespace.
-    BENTLEYDLL_EXPORT static void ParseArguments (bvector<Utf8String>& subStrings, Utf8CP inString, Utf8CP auxDelimiters = NULL);
+    BENTLEYDLL_EXPORT static void ParseArguments(bvector<Utf8String>& subStrings, Utf8CP inString, Utf8CP auxDelimiters = NULL);
 
     //! Default logic for parsing a user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
     //! @param[in]      inString        The string to tokenize; cannot be NULL or empty
@@ -590,13 +576,13 @@ public:
     //! @param[out]     ...             A variable list of WString* used to hold the resulting sub strings
     //! @remarks This overload is convenient when the caller wants to discover a fixed maximum number of arguments.
     //! @return Returns the number of output arguments filled.
-    BENTLEYDLL_EXPORT static uint32_t ParseArguments (WCharCP inString, uint32_t numSubStrings, ...);
+    BENTLEYDLL_EXPORT static uint32_t ParseArguments(WCharCP inString, uint32_t numSubStrings, ...);
 
     //! Default logic for parsing a string into substrings, where strings containing the delimiters treating quotes as user supplied argument list.  Tokenizes based on whitespace and does not tokenize within double-quoted substrings.
     //! @param[out]     subStrings   The resulting sub strings will be added to this collection
     //! @param[in]      inString     The string to tokenize; cannot be NULL or empty
     //! @param[in]      delimiters (optional) Each character in the string is used as a delimiters. If omitted, the space and tab characters are used..
-    BENTLEYDLL_EXPORT static void ParseDelimitedString (bvector<WString>& subStrings, WCharCP inString, WCharCP delimiters);
+    BENTLEYDLL_EXPORT static void ParseDelimitedString(bvector<WString>& subStrings, WCharCP inString, WCharCP delimiters);
 
     //! Formats an unsigned 64-bit integer using the same options supported by printf's "%x" and "%X" specifiers.
     //! @param[out]     dest                The buffer which will hold the string representation of the integer. Must not be NULL.
@@ -609,8 +595,8 @@ public:
     //! @remarks If the length of the formatted string exceeds \a numCharsInBuffer, the string is truncated (i.e., dest[numCharsInBuffer-1] = 0;)
     //! @remarks This method is provided to produce the same hexadecimal formatting as Snwprintf(), but much more efficiently.
     //! @remarks Typical usage: FormatUInt64(dest, count, val, HexFormatOptions::None) to produce the minimal representation or FormatUInt64(dest, count, val, HexFormatOptions::LeadingZeros, n) to produce fixed width (e.g. n=8 or 16) with leading zeros.
-    BENTLEYDLL_EXPORT static int FormatUInt64 (wchar_t *dest, size_t numCharsInBuffer, uint64_t val, HexFormatOptions opts, uint8_t width = 0, uint8_t precision = 1);
-    BENTLEYDLL_EXPORT static int FormatUInt64 (Utf8Char *dest, size_t numCharsInBuffer, uint64_t val, HexFormatOptions opts, uint8_t width = 0, uint8_t precision = 1);
+    BENTLEYDLL_EXPORT static int FormatUInt64(wchar_t *dest, size_t numCharsInBuffer, uint64_t val, HexFormatOptions opts, uint8_t width = 0, uint8_t precision = 1);
+    BENTLEYDLL_EXPORT static int FormatUInt64(Utf8Char *dest, size_t numCharsInBuffer, uint64_t val, HexFormatOptions opts, uint8_t width = 0, uint8_t precision = 1);
 
     //! Do a lexicographic comparison of specified strings.  This is an alphabetical sort that also takes numbers into account,
     //!   such that "file9" will come before "file11" in the sort order (even though alphabetically 1 is before 9).  This method
@@ -618,7 +604,7 @@ public:
     //! param[in]    value0                first string
     //! param[in]    value1                second string
     //! return   0 if strings are equal, < 0 if value0 is less than value1, else > 0
-    BENTLEYDLL_EXPORT static int LexicographicCompare (WCharCP value0, WCharCP value1);
+    BENTLEYDLL_EXPORT static int LexicographicCompare(WCharCP value0, WCharCP value1);
 
     //! Attempts to detect if a string contains any invalid UTF-8 sequences.
     //! This does NOT ensure the string accurately represents what the user intends, however it can be used to discard obviously corrupt data.

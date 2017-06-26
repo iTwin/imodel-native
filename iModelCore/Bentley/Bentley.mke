@@ -76,8 +76,6 @@ $(o)RefCounted$(oext)           : $(bentleyDir)RefCounted.cpp $(BentleyAPISrc)Re
 $(o)strfunc$(oext)          : $(nonportDir)strfunc.cpp ${MultiCompileDepends}
 %endif
 
-$(o)BeId$(oext)                 : $(bentleyDir)BeId.cpp $(BentleyAPISrc)BeId.h ${MultiCompileDepends}
-
 $(o)BeStringUtilities$(oext)    : $(nonportDir)BeStringUtilities.cpp $(BentleyAPISrc)BeFileListIterator.h ${MultiCompileDepends}
 
 $(o)BeSystemInfo$(oext)         : $(nonportDir)BeSystemInfo.cpp $(BentleyAPISrc)BeSystemInfo.h ${MultiCompileDepends}
@@ -109,9 +107,18 @@ $(o)sha1$(oext)                 : $(bentleyDir)sha1.cpp ${MultiCompileDepends}
 %endif
 
 %include Tasks/Tasks.mki
-
 %include MultiCppCompileGo.mki
 objs =% $(MultiCompileObjectList)
+
+#--------------------------------------------------------------------------------------
+#   iOS-Specific
+#--------------------------------------------------------------------------------------
+%if $(TARGET_PLATFORM)=="iOS"
+
+$(o)BeSystemInfoIos$(oext)         : $(nonportDir)BeSystemInfoIos.mm $(BentleyAPISrc)BeSystemInfo.h ${MultiCompileDepends}
+
+objs + $(o)BeSystemInfoIos$(oext)
+%endif
 
 %undef MultiCompileDepends
 

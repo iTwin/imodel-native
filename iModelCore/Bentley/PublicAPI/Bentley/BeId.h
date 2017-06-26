@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Bentley/BeId.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -22,14 +22,13 @@ BEGIN_BENTLEY_NAMESPACE
 //=======================================================================================
 struct BeInt64Id
     {
-public:
-    //! @see BeInt64Id::ToString(Utf8Char*)
-    static const size_t ID_STRINGBUFFER_LENGTH = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
-
 protected:
     uint64_t m_id;
 
 public:
+    //! @see BeInt64Id::ToString(Utf8Char*)
+    static const size_t ID_STRINGBUFFER_LENGTH = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
+
     //! Construct an invalid BeInt64Id
     BeInt64Id() {Invalidate();}
 
@@ -39,11 +38,12 @@ public:
     //! Move constructor.
     BeInt64Id(BeInt64Id&& rhs) {m_id = rhs.m_id;}
 
-    //! Construct a copy.
+    //! Copy constructor.
     BeInt64Id(BeInt64Id const& rhs) {m_id = rhs.m_id;}
 
     BeInt64Id& operator=(BeInt64Id const& rhs) {m_id = rhs.m_id; return *this;}
 
+    //! determine whether this BeInt64Id is valid (non-zero)
     bool IsValid() const {return Validate();}
 
     //! Compare two BeInt64Id for equality
@@ -70,37 +70,50 @@ public:
     //! Set this BeInt64Id to an invalid value (0).
     void Invalidate() {m_id = 0;}
 
+    enum UseHex {No=0, Yes=1};
     //! Converts this BeInt64Id to its string representation.
     //! 
     //! Typical example:
     //!
     //!     Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-    //!     myId.ToString(idStrBuffer);
+    //!     myId.ToString(idStrBuffer, BeInt64Id::UseHex::Yes);
     //!
     //! @remarks The method does not have any checks that the buffer is large enough. Callers
     //! must ensure this to avoid unexpected behavior. 
     //!
     //! @param[in,out] stringBuffer The output buffer for the id string. Must be large enough
+    //! @param[in] useHex if UseHex::Yes, output will be in hex with leading "0X"
     //! to hold the maximal number of decimal digits of UInt64 plus the trailing 0 character.
     //! You can use BeInt64Id::ID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
-    void ToString(Utf8P stringBuffer) const {BeStringUtilities::FormatUInt64(stringBuffer, m_id);} //BeStringUtilities::FormatUInt64 is faster than sprintf.
+    void ToString(Utf8P stringBuffer, UseHex useHex=UseHex::No) const 
+        {
+        if (useHex == UseHex::Yes)
+            BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase));
+        else
+            BeStringUtilities::FormatUInt64(stringBuffer, m_id);
+        }
 
-    //! Converts this BeInt64Id to its string representation.
-    //! @remarks Consider the overload BeInt64Id::ToString(Utf8Char*) if you want
-    //! to avoid allocating Utf8Strings.
-    Utf8String ToString() const
+    //! Converts this BeInt64Id to a string representation.
+    //! @param[in] useHex set to Yes to create a hexidecimal string with leading "0X"
+    //! @remarks Consider the overload BeInt64Id::ToString(Utf8Char*) if you want to avoid allocating Utf8Strings.
+    Utf8String ToString(UseHex useHex=UseHex::No) const
         {
         Utf8Char idStrBuffer[ID_STRINGBUFFER_LENGTH];
-        ToString(idStrBuffer);
+        ToString(idStrBuffer, useHex);
         return Utf8String(idStrBuffer); 
         }
         
-    //! Tries to parse @p idString into an BeInt64Id
-    //! @remarks In order to parse correctly, the id string must contain an unsigned number in decimal format.
-    //! @param[out] id The resulting BeInt64Id.
+    //! Parse a string into a BeInt64Id
+    //! @remarks To parse correctly, the id string must contain an unsigned number in decimal or hexidecimal format.
     //! @param[in] idString String to parse
-    //! @return SUCCESS if the string was parsed successfully. ERROR otherwise
-    BENTLEYDLL_EXPORT static BentleyStatus FromString(BeInt64Id& id, Utf8CP idString);
+    //! @param[in] status optional status to distinguish between illegal input and invalid value
+    static BeInt64Id FromString(Utf8CP idString, BentleyStatus* status=nullptr) {return BeInt64Id(BeStringUtilities::ParseUInt64(idString, status));}
+
+    static BentleyStatus FromString(BeInt64Id& id, Utf8CP idString) //!< @private for backwards compatibility only
+        {
+        id = FromString(idString);
+        return id.IsValid() ? SUCCESS : ERROR;
+        }
     };
 
 #define BEINT64_ID_DECLARE_MEMBERS(classname,superclass) \
