@@ -1715,6 +1715,9 @@ public:
     DVec3d Decode() const { return Decode(Value()); }
 };
 
+typedef bvector<OctEncodedNormal> OctEncodedNormalList;
+DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(OctEncodedNormalList)
+
 //! Common operations for QPoint2d and QPoint3d
 namespace Quantization
 {
