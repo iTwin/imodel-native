@@ -836,7 +836,7 @@ void RealityDataProjectRelationshipByRealityDataIdPagedRequest::_PrepareHttpRequ
 //=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-AllRealityDataByRootId::AllRealityDataByRootId(Utf8StringCR rootId) : m_marker("")
+AllRealityDataByRootId::AllRealityDataByRootId(Utf8StringCR rootId) : RealityDataDocumentContentByIdRequest(rootId), m_marker("")
     {
     m_validRequestString = false; 
     m_handshakeRequest = nullptr;
@@ -875,8 +875,9 @@ void AllRealityDataByRootId::_PrepareHttpRequestStringAndPayload() const
         }
     if(m_filter.length() > 0)
         {
+        Utf8String encodedFilter = BeStringUtilities::UriEncode(m_filter.c_str());
         m_httpRequestString.append("&prefix=");
-        m_httpRequestString.append(m_filter);
+        m_httpRequestString.append(encodedFilter);
         }
 
     m_validRequestString = true;
