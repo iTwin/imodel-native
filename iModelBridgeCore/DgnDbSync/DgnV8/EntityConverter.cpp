@@ -1306,6 +1306,7 @@ BECN::IECInstancePtr ElementConverter::Transform(ECObjectsV8::IECInstance const&
         return nullptr;
 
     BECN::ECInstanceReadContextPtr context = LocateInstanceReadContext(dgnDbClass.GetSchema());
+    context->SetUnitResolver(&m_unitResolver);
     context->SetSchemaRemapper(&m_schemaRemapper);
     m_schemaRemapper.SetRemapAsAspect(transformAsAspect);
 
@@ -1430,6 +1431,39 @@ bool ElementConverter::SchemaRemapper::_ResolvePropertyName(Utf8StringR serializ
         }
 
     return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+Utf8CP ElementConverter::UnitResolver::_ResolveUnitName(ECPropertyCR ecProperty) const
+    {
+    if (!m_convSchema.IsValid())
+        {
+        ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+        SchemaKey key("ECv3ConversionAttributes", 1, 0);
+        m_convSchema = ECSchema::LocateSchema(key, *context);
+        if (!m_convSchema.IsValid())
+            {
+            BeAssert(false);
+            return "";
+            }
+        }
+
+    if (ECSchema::IsSchemaReferenced(ecProperty.GetClass().GetSchema(), *m_convSchema))
+        {
+        IECInstancePtr instance = ecProperty.GetCustomAttribute("ECv3ConversionAttributes", "OldPersistenceUnit");
+        if (instance.IsValid())
+            {
+            ECValue unitName;
+            instance->GetValue(unitName, "Name");
+
+            if (!unitName.IsNull() && unitName.IsUtf8())
+                return unitName.GetUtf8CP();
+            }
+        }
+    
+    return "";
     }
 
 //****************************************************************************************

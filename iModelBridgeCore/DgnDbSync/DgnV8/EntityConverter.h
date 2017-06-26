@@ -168,8 +168,17 @@ struct ElementConverter
                 void SetRemapAsAspect(bool remapAsAspect) { m_remapAsAspect = remapAsAspect; }
             };
 
+        struct UnitResolver : ECN::ECInstanceReadContext::IUnitResolver
+            {
+            private:
+                mutable ECN::ECSchemaPtr m_convSchema;
+
+                virtual Utf8CP _ResolveUnitName(ECN::ECPropertyCR ecProperty) const override;
+            };
+
         Converter& m_converter;
         mutable SchemaRemapper m_schemaRemapper;
+        mutable UnitResolver m_unitResolver;
 
         ECN::ECClassCP GetDgnDbClass(ECObjectsV8::IECInstance const& v8Instance, BentleyApi::Utf8CP aspectClassSuffix) const;
         static Utf8String ToInstanceLabel(ECObjectsV8::IECInstance const& v8Instance);
