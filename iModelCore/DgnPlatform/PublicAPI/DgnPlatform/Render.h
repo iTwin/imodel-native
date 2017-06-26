@@ -1645,7 +1645,7 @@ struct FeatureIndex
 //! a lossy compression.
 //! Oct encoding is a compact representation of unit length vectors.
 //! The 'oct' encoding is described in "A Survey of Efficient Representations of Independent Unit Vectors",
-//! Cigolle et al 2014: {@link http://jcgt.org/published/0003/02/01/}
+//! Cigolle et al 2014: http://jcgt.org/published/0003/02/01/
 //! @bsistruct                                                   Paul.Connelly   06/17
 //=======================================================================================
 struct OctEncodedNormal
