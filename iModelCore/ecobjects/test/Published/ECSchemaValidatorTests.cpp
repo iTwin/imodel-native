@@ -654,6 +654,43 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     ASSERT_TRUE(schema.IsValid());
     ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property name ends in 'Id' and the type is 'long'";
 
+    Utf8CP badSchemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="Markup" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="SourceClass"/>
+    <ECEntityClass typeName="TargetClass"/>
+    <ECRelationshipClass typeName="TestRelationshipGood" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="SourceClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="TargetClass"/>
+        </Target>
+        <ECProperty propertyName="LinkedId" typeName="long"/>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaXml3, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property name ends in 'Id' in the 'Markup' schema but is not 'LinkedElementId'";
+
+    Utf8CP badSchemaXml4 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="DefinitelyNotMarkup" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="SourceClass"/>
+    <ECEntityClass typeName="TargetClass"/>
+    <ECRelationshipClass typeName="TestRelationshipGood" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="SourceClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="TargetClass"/>
+        </Target>
+        <ECProperty propertyName="LinkedElementId" typeName="long"/>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, badSchemaXml4, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema)) << "Should fail validation as the property name 'LinkedElementId' but is not in the 'Markup' schema, so validation should fail";
 
     Utf8CP goodSchemaXml1 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -716,6 +753,25 @@ TEST_F(SchemaValidatorTests, FindPropertiesWhichShouldBeNavigationProperties)
     ECSchema::ReadFromXmlString(schema, goodSchemaXml4, *context);
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name ends in 'iD' not 'Id'";
+
+    Utf8CP goodSchemaXml5 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="Markup" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="SourceClass"/>
+    <ECEntityClass typeName="TargetClass"/>
+    <ECRelationshipClass typeName="TestRelationshipGood" strength="embedding" modifier="None">
+        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
+            <Class class="SourceClass"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
+            <Class class="TargetClass"/>
+        </Target>
+        <ECProperty propertyName="LinkedElementId" typeName="long"/>
+    </ECRelationshipClass>
+    </ECSchema>)xml";
+
+    ECSchema::ReadFromXmlString(schema, goodSchemaXml5, *context);
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(ECSchemaValidator::Validate(*schema)) << "Should succeed validation as the property name 'LinkedElementId' in the 'Markup' schema is exempt from this rule";
     }
 
 TEST_F(SchemaValidatorTests, RelationshipClassConstraintMayNotBeAbstractIfOnlyOneConcreteConstraint)
