@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handlerNET/DTMElement.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -12,7 +12,7 @@
 #define CREATE_IF_NOT_FOUND  (true)
 
 
-// the purpose of this class is to use as an automatic to ensure that the element's finalization requirements are considered. 
+// the purpose of this class is to use as an automatic to ensure that the element's finalization requirements are considered.
 struct FinalizeAdjuster
     {
     msclr::gcroot<DGNET::Elements::Element^>    m_elementToAdjust;
@@ -623,7 +623,7 @@ cli::array<DTMSubElement^>^ DTMElement::GetSubElements()
             {
             BeAssert(dynamic_cast<DTMElementRasterDrapingHandler*>(hand) == 0);
             list->Add(gcnew DTMTrianglesElement(iter.GetCurrentId(), this));
-            }       
+            }
         else if (dynamic_cast<DTMElementFlowArrowsHandler*>(hand))
             {
             list->Add(gcnew DTMFlowArrowElement(iter.GetCurrentId(), this));
@@ -1008,6 +1008,24 @@ void DTMSubElementTextStyle::TextStyle::set (DGNET::DgnTextStyle^ value)
     }
 
 //=======================================================================================
+// @bsimethod                                                   Daryl.Holmwood 02/17
+//=======================================================================================
+DGNET::ElementId DTMSubElementTextStyle::TextStyleId::get()
+    {
+    GETDISPLAYPARAM(DTMElementSubHandler::SymbologyParamsAndTextStyle);
+    return (DGNET::ElementId)(Int64)params.GetTextStyleID ();
+    }
+
+//=======================================================================================
+// @bsimethod                                                    Daryl.Holmwood  02/17
+//=======================================================================================
+void DTMSubElementTextStyle::TextStyleId::set (DGNET::ElementId value)
+    {
+    GETDISPLAYPARAM(DTMElementSubHandler::SymbologyParamsAndTextStyle);
+    params.SetTextStyleID ((int)(Int64)value);
+    }
+
+//=======================================================================================
 // @bsimethod                                                   Steve.Jones  11/10
 //=======================================================================================
 System::UInt32 DTMContourElement::DepressionColor::get()
@@ -1378,10 +1396,10 @@ void DTMMaterialElement::SetMaterialInfo (System::String^ palette, System::Strin
                     if (wPalette == nullptr || wPalette[0] == 0 || mat->GetPalette().GetName ().CompareToI (wPalette) == 0)
                         {
                         Bentley::DgnPlatform::MaterialId materialId;
-                        MaterialPtr newMaterial = Material::Create (*mat, *SymbologyDgnModelRef); 
+                        MaterialPtr newMaterial = Material::Create (*mat, *SymbologyDgnModelRef);
                         PaletteInfoPtr paletteInfo = PaletteInfo::Create (mat->GetPalette ().GetName ().c_str (), SymbologyDgnFile->GetDocument ().GetMoniker (), mat->GetPalette ().GetSource (), PaletteInfo::PALETTETYPE_Dgn);
 
-                        newMaterial->GetPaletteR ().Copy (*paletteInfo); 
+                        newMaterial->GetPaletteR ().Copy (*paletteInfo);
 
                         if (SUCCESS == MaterialManager::GetManagerR ().SaveMaterial (&materialId, *newMaterial, SymbologyDgnFile))
                             materialElementId = materialId.GetElementId();
@@ -1402,7 +1420,7 @@ void DTMMaterialElement::SetMaterialInfo (System::String^ palette, System::Strin
     GETDISPLAYPARAM(DTMElementSubHandler::SymbologyParams);
     return params.GetSymbology().color;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Daryl.Holmwood  07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1479,7 +1497,7 @@ DGNET::LevelId DTMSubElement::LevelId::get()
 * @bsimethod                                                    Daryl.Holmwood  07/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DTMSubElement::LevelId::set (DGNET::LevelId value)
-    {   
+    {
     GETDISPLAYPARAM(DTMElementSubHandler::SymbologyParams);
     params.SetLevelId ((unsigned int)value);
     }
@@ -1504,7 +1522,7 @@ void DTMSubElement::Transparency::set (System::Double value)
 
 DTMElement::DTMElement (Bentley::DgnPlatformNET::DgnModel^ model, Element^ templateElement, TerrainModelNET::DTM^ dtm)
     {
-    BcDTMP iBcDTM = (BcDTMP)dtm->ExternalHandle.ToPointer ();   
+    BcDTMP iBcDTM = (BcDTMP)dtm->ExternalHandle.ToPointer ();
     DgnModelP modelNative = DgnPlatformNET::DgnModel::GetNativeDgnModelP (model, false);
 
     PIN_ELEMENTHANDLE_OF (templateElement)
@@ -1572,6 +1590,39 @@ void DTMElement::RegisterManagedElementHandler()
     DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension(DTMElementHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory(gcnew DGNET::Elements::ElementFactoryDelegate(&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
     DGNET::Elements::ManagedElementFactoryExtension::RegisterExtension(TMSymbologyOverrideHandler::GetInstance(), *new DGNET::Elements::ManagedElementFactory(gcnew DGNET::Elements::ElementFactoryDelegate(&Bentley::TerrainModelNET::Element::DTMElement::GetDTMElement)));
     }
+
+
+// ---------------------------------------------------------------------------------------
+// @bsiclass                                    Daryl Holmwood                  02/2017
+// ---------------------------------------------------------------------------------------
+public ref class ElementTemplateAdmin
+    {
+    // ---------------------------------------------------------------------------------------
+    // @bsimethod                                   Daryl Holmwood                  02/2017
+    // ---------------------------------------------------------------------------------------
+    public: static DGNET::ElementId GetTextStyleIdFromName(System::String^ name, DGNET::DgnModelRef^ modelRef)
+        {
+        pin_ptr<const wchar_t> pName = PtrToStringChars (name);
+        UInt32 outStyleId = 0;
+        WString styleName(pName);
+        T_HOST.GetElementTemplateAdmin()._GetTextStyleIdFromName(outStyleId, styleName, (DgnModelRefP)modelRef->GetNative().ToPointer(), nullptr);
+        return (DGNET::ElementId)(UInt64)outStyleId;
+        }
+
+    // ---------------------------------------------------------------------------------------
+    // @bsimethod                                   Daryl Holmwood                  02/2017
+    // ---------------------------------------------------------------------------------------
+    static DGNET::LevelId GetLevelIdFromName(System::String^ name, DGNET::DgnModelRef^ modelRef)
+        {
+        pin_ptr<const wchar_t> pName = PtrToStringChars (name);
+        LevelId outLevelId = 0;
+        WString styleName(pName);
+        T_HOST.GetElementTemplateAdmin()._GetLevelIdFromName(outLevelId, styleName, (DgnModelRefP)modelRef->GetNative().ToPointer(), nullptr);
+        return (DGNET::LevelId)outLevelId;
+        }
+
+    };
+
 END_BENTLEY_TERRAINMODELNET_ELEMENT_NAMESPACE
 
 EXPORT_ATTRIBUTE void registerManagedElementHandler()

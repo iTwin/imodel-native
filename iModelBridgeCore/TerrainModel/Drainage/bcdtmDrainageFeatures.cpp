@@ -2,11 +2,13 @@
 |
 |     $Source: Drainage/bcdtmDrainageFeatures.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 #ifdef WIP
 // ToDo : Check for low low point is false low point
@@ -232,7 +234,7 @@ int&               numLowPts              // <== Number Of Low Points Found
     long          pnt, pnt1, pnt2, pnt3, clPtr, fndPnt, startPnt, lastPnt, cacheSize = 1000;
     const DTMFeatureType dtmFeatureType = DTMFeatureType::LowPoint;
     bool          lowPointFound = true;
-    BC_DTM_OBJ    *clipDtmP = NULL;
+    BC_DTM_OBJ    *clipDtmP = nullptr;
     DTM_TIN_NODE  *nodeP;
     DTMPointCache pointCache;
     std::vector<long> zeroPts;
@@ -257,7 +259,7 @@ int&               numLowPts              // <== Number Of Low Points Found
 
     numLowPts = 0;
     if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside;
-    if (useFence && (fencePtsP == NULL || numFencePts <= 2)) useFence = false;
+    if (useFence && (fencePtsP == nullptr || numFencePts <= 2)) useFence = false;
     if (useFence && (fencePtsP->x != (fencePtsP + numFencePts - 1)->x || fencePtsP->y != (fencePtsP + numFencePts - 1)->y)) useFence = false;
 
     // Test For Valid DTM Object
@@ -273,7 +275,7 @@ int&               numLowPts              // <== Number Of Low Points Found
 
     // Check Load Function Set
 
-    if (loadFunctionP == NULL)
+    if (loadFunctionP == nullptr)
         {
         bcdtmWrite_message (2, 0, 0, "Call Back Function Not Set");
         goto errexit;
@@ -443,7 +445,7 @@ int&               numLowPts              // <== Number Of Low Points Found
     // Clean Up
 
 cleanup:
-    if (clipDtmP != NULL) bcdtmObject_destroyDtmObject (&clipDtmP);
+    if (clipDtmP != nullptr) bcdtmObject_destroyDtmObject (&clipDtmP);
 
     // Return
 
@@ -480,7 +482,7 @@ int&               numHighPts             // <== Number Of High Points Found
     long          pnt, pnt1, pnt2, pnt3, clPtr, fndPnt, startPnt, lastPnt, cacheSize = 1000;
     const DTMFeatureType dtmFeatureType = DTMFeatureType::HighPoint;
     bool          highPointFound = true;
-    BC_DTM_OBJ    *clipDtmP = NULL;
+    BC_DTM_OBJ    *clipDtmP = nullptr;
     DTM_TIN_NODE  *nodeP;
     DTMPointCache pointCache;
     std::stack<long> zeroPts;
@@ -505,7 +507,7 @@ int&               numHighPts             // <== Number Of High Points Found
 
     numHighPts = 0;
     if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside;
-    if (useFence && (fencePtsP == NULL || numFencePts <= 2)) useFence = false;
+    if (useFence && (fencePtsP == nullptr || numFencePts <= 2)) useFence = false;
     if (useFence && (fencePtsP->x != (fencePtsP + numFencePts - 1)->x || fencePtsP->y != (fencePtsP + numFencePts - 1)->y)) useFence = false;
 
     // Test For Valid DTM Object
@@ -522,7 +524,7 @@ int&               numHighPts             // <== Number Of High Points Found
 
     // Check Load Function Set
 
-    if (loadFunctionP == NULL)
+    if (loadFunctionP == nullptr)
         {
         bcdtmWrite_message (2, 0, 0, "Call Back Function Not Set");
         goto errexit;
@@ -669,7 +671,7 @@ int&               numHighPts             // <== Number Of High Points Found
     // Clean Up
 
 cleanup:
-    if (clipDtmP != NULL) bcdtmObject_destroyDtmObject (&clipDtmP);
+    if (clipDtmP != nullptr) bcdtmObject_destroyDtmObject (&clipDtmP);
 
     // Return
 
@@ -712,7 +714,7 @@ int bcdtmDrainage_returnSumpLinesDtmObject
  double            xSumpMin,xSumpMax,ySumpMin,ySumpMax ;
  bool              voidsInDtm=false ;
  DPoint3d          sumpPts[2] ;
- BC_DTM_OBJ        *clipDtmP=NULL ;
+ BC_DTM_OBJ        *clipDtmP=nullptr ;
  DTM_TIN_NODE      *nodeP ;
  DTMLineCache      lineCache ; 
  DTMDrainageTables *drainageTablesP=nullptr ;
@@ -735,7 +737,7 @@ int bcdtmDrainage_returnSumpLinesDtmObject
 
  numSumpLines = 0 ;
  if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside;
- if (useFence && (fencePtsP == NULL || numFencePts <= 2)) useFence = false;
+ if (useFence && (fencePtsP == nullptr || numFencePts <= 2)) useFence = false;
  if( useFence && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = false ;
 
 // Test For Valid DTM Object
@@ -752,7 +754,7 @@ int bcdtmDrainage_returnSumpLinesDtmObject
 
 // Check Load Function Set
 
- if( loadFunctionP == NULL )
+ if( loadFunctionP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Call Back Function Not Set") ;
     goto errexit ;
@@ -902,7 +904,7 @@ int bcdtmDrainage_returnSumpLinesDtmObject
 // Clean Up
 
  cleanup :
- if( clipDtmP  != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
+ if( clipDtmP  != nullptr ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
 
 // Return
 
@@ -943,7 +945,7 @@ int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
  bool              voidsInDtm=false ;
  double            xSumpMin,xSumpMax,ySumpMin,ySumpMax,pntZ ;
  DPoint3d          sumpPts[2] ;
- BC_DTM_OBJ        *clipDtmP=NULL ;
+ BC_DTM_OBJ        *clipDtmP=nullptr ;
  DTM_TIN_NODE      *nodeP ;
  DTMLineCache      lineCache ; 
  DTMDrainageTables *drainageTablesP=nullptr ;
@@ -966,7 +968,7 @@ int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
 
  numSumpLines = 0 ;
  if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside;
- if (useFence && (fencePtsP == NULL || numFencePts <= 2)) useFence = false;
+ if (useFence && (fencePtsP == nullptr || numFencePts <= 2)) useFence = false;
  if( useFence && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = false ;
 
 // Test For Valid DTM Object
@@ -983,7 +985,7 @@ int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
 
 // Check Load Function Set
 
- if( loadFunctionP == NULL )
+ if( loadFunctionP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Call Back Function Not Set") ;
     goto errexit ;
@@ -1045,7 +1047,7 @@ int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
 
 //              Check For Void Line
 
-                voidLine = FALSE ; 
+                voidLine = false; 
                 if( voidsInDtm )
                   {
                    if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,smpPnt,voidLine)) goto errexit ;
@@ -1140,7 +1142,7 @@ int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
 // Clean Up
 
  cleanup :
- if( clipDtmP  != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
+ if( clipDtmP  != nullptr ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
 
 // Return
 
@@ -1182,7 +1184,7 @@ int bcdtmDrainage_returnRidgeLinesDtmObject
  double            xRidgeMin,xRidgeMax,yRidgeMin,yRidgeMax ;
  bool              voidsInDtm ;
  DPoint3d          ridgePts[2] ;
- BC_DTM_OBJ        *clipDtmP=NULL ;
+ BC_DTM_OBJ        *clipDtmP=nullptr ;
  DTM_TIN_NODE      *nodeP ;
  DTMLineCache      lineCache ; 
  DTMDrainageTables *drainageTablesP=nullptr ;
@@ -1205,7 +1207,7 @@ int bcdtmDrainage_returnRidgeLinesDtmObject
 
  numRidgeLines = 0 ;
   if( fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside ;
- if( useFence && ( fencePtsP == NULL || numFencePts <= 2 ) ) useFence = false ;
+ if( useFence && ( fencePtsP == nullptr || numFencePts <= 2 ) ) useFence = false ;
  if( useFence && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = false ;
 
 // Test For Valid DTM Object
@@ -1222,7 +1224,7 @@ int bcdtmDrainage_returnRidgeLinesDtmObject
 
 // Check Load Function Set
 
- if( loadFunctionP == NULL )
+ if( loadFunctionP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Call Back Function Not Set") ;
     goto errexit ;
@@ -1373,7 +1375,7 @@ int bcdtmDrainage_returnRidgeLinesDtmObject
 // Clean Up
 
  cleanup :
- if( clipDtmP  != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
+ if( clipDtmP  != nullptr ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
 
 // Return
 
@@ -1408,10 +1410,9 @@ int bcdtmDrainage_returnZeroSlopePolygonsDtmObject
  int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long              startTime=bcdtmClock(),polygonTime=bcdtmClock() ;
  bool              voidsInDtm ;
- BC_DTM_OBJ        *clipDtmP=NULL ;
+ BC_DTM_OBJ        *clipDtmP=nullptr ;
  DTMPointCache     pointCache ; 
  DTMZeroSlopePolygonVector zeroSlopePolygons ;
- DTMZeroSlopePolygonVector::iterator zsp ;
 
 // Log Entry Arguments
 
@@ -1431,7 +1432,7 @@ int bcdtmDrainage_returnZeroSlopePolygonsDtmObject
 
  numZeroSlopePolygons = 0 ;
   if( fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside ;
- if( useFence && ( fencePtsP == NULL || numFencePts <= 2 ) ) useFence = false ;
+ if( useFence && ( fencePtsP == nullptr || numFencePts <= 2 ) ) useFence = false ;
  if( useFence && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = false ;
 
 // Test For Valid DTM Object
@@ -1448,7 +1449,7 @@ int bcdtmDrainage_returnZeroSlopePolygonsDtmObject
 
 // Check Load Function Set
 
- if( loadFunctionP == NULL )
+ if( loadFunctionP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Call Back Function Not Set") ;
     goto errexit ;
@@ -1463,21 +1464,21 @@ int bcdtmDrainage_returnZeroSlopePolygonsDtmObject
  polygonTime = bcdtmClock() ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Polygonising Zero Slope Triangles") ; 
  if( bcdtmDrainage_polygoniseZeroSlopeTrianglesDtmObject(dtmP,zeroSlopePolygons)) goto errexit ;
- numZeroSlopePolygons = (int)(zeroSlopePolygons.end()-zeroSlopePolygons.begin()) ;
+ numZeroSlopePolygons = (int)zeroSlopePolygons.size() ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Zero Slope Polygons = %8ld",numZeroSlopePolygons) ;
  if( tdbg ) bcdtmWrite_message(0,0,0,"Time To Polygonise Zero Slope Triangles = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),polygonTime)) ;
 
 //  Scan Zero Slope Polygons And Pass Back
 
  numZeroSlopePolygons = 0 ;
- for( zsp = zeroSlopePolygons.begin() ; zsp < zeroSlopePolygons.end() ; ++zsp )
+ for(auto&& zsp : zeroSlopePolygons)
    {
-    for( int* pnt = zsp->pointList.pointsP ; pnt < zsp->pointList.pointsP + zsp->pointList.numPoints ; ++pnt )
+    for(const auto pnt : zsp.pointList)
       {
-       if( pointCache.StorePointInCache(pointAddrP(dtmP,*pnt)->x,pointAddrP(dtmP,*pnt)->y,pointAddrP(dtmP,*pnt)->z) ) goto errexit ;
+       if( pointCache.StorePointInCache(*pointAddrP(dtmP,pnt)) ) goto errexit ;
       } 
     ++numZeroSlopePolygons ; 
-    if( pointCache.CallUserDelegateWithCachePoints(loadFunctionP,DTMFeatureType::ZeroSlopePolygon,(DTMUserTag)zsp->direction,dtmP->nullFeatureId,userP)) goto errexit ;
+    if( pointCache.CallUserDelegateWithCachePoints(loadFunctionP,DTMFeatureType::ZeroSlopePolygon,(DTMUserTag)zsp.direction,dtmP->nullFeatureId,userP)) goto errexit ;
    }
 
 //  Log Number Of Zero Slope Polygons Returned
@@ -1488,7 +1489,7 @@ int bcdtmDrainage_returnZeroSlopePolygonsDtmObject
 // Clean Up
 
  cleanup :
- if( clipDtmP  != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
+ if( clipDtmP  != nullptr ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
 
 // Return
 
@@ -1502,3 +1503,5 @@ int bcdtmDrainage_returnZeroSlopePolygonsDtmObject
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
 }
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

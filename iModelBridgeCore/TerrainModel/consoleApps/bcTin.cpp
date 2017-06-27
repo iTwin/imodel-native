@@ -2,10 +2,11 @@
 |
 |     $Source: consoleApps/bcTin.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/terrainimporter.h"
+#include "TerrainModel/Core/bcdtminlines.h"
 #include "bcDTMBaseDef.h"
 #include "dtmdefs.h"
 #include "dtm2dfns.h"
@@ -147,12 +148,33 @@ void test_ ()
 void test()
     {
     BC_DTM_OBJ *dtmP = NULL;
-    const wchar_t* fileName = L"D:\\data\\elenie\\beforeNode.bcdtm";
+    const wchar_t* fileName = L"D:\\Data\\Elenie\\newDataset\\bcdtm_5130708.bcdtm";
 
     //fileName = L"D:\\data\\elenie\\clipIssue.bcdtm";
     if (bcdtmRead_fromFileDtmObject(&dtmP, fileName))
         return;
 
+    {
+    BcDTMPtr d = BcDTM::Create();
+    long dtmFeature;
+    DPoint3dP trgPtsP = nullptr;
+    BC_DTM_FEATURE *dtmFeatureP;
+    long numTrgPts;
+    for (dtmFeature = 0; dtmFeature < dtmP->numFeatures; ++dtmFeature)
+        {
+        dtmFeatureP = ftableAddrP(dtmP, dtmFeature);
+        if (bcdtmList_copyDtmFeaturePointsToPointArrayDtmObject(dtmP, dtmFeature, &trgPtsP, &numTrgPts))
+            {
+            }
+        else
+            {
+            DTMFeatureId fId;
+            d->AddLinearFeature(dtmFeatureP->dtmFeatureType, trgPtsP, numTrgPts, &fId);
+            }
+        }
+
+    d->Save(L"D:\\l.bcdtm");
+    }
     //FILE* fp = fopen("d:\\temp\\outputTM.dat", "rb");
 
     //while (!feof(fp))

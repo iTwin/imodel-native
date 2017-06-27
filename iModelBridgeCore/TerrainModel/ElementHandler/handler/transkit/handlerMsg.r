@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/transkit/handlerMsg.r $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RmgrTools\Tools\rtypes.r.h>
@@ -28,6 +28,7 @@ MessageList TerrainModelMessageList_Default =
         { MSG_TERRAINMODEL_None, "None" },
         { MSG_TERRAINMODEL_Sliver, "Sliver" },
         { MSG_TERRAINMODEL_MaxEdgeLength, "Max Edge Length" },
+        { MSG_TERRAINMODEL_Unnamed, "Unnamed" },
 
         /// STM
         { MSG_TERRAINMODEL_STMNotAllowedForOperation, "STM are not allowed for this operation."},

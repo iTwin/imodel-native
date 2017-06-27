@@ -8,7 +8,7 @@
 
     <Part Name="HeaderFiles" BMakeFile="TerrainModel.prewire.mke" >
         <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
-        <SubPart PartName="PublicAPI"  PartFile="geomlibs"                            Repository="GeomLibs" />
+        <SubPart PartName="HeaderFiles"  PartFile="geomlibs"                            Repository="GeomLibs" />
         <Bindings>
             <PublicAPI Domain="TerrainModel" />
         </Bindings>
@@ -18,7 +18,7 @@
         <SubPart PartName="HeaderFiles"/>
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
         <Bindings>
-            <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/$(shlibprefix)TerrainModelCore$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/$(shlibprefix)TerrainModelCore$(shlibext)</Files>
             <Libs ProductDirectoryName="TerrainModelNativeCoreLibs" Required="false"> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
         </Bindings>
     </Part>
@@ -36,9 +36,10 @@
         <SubPart PartName="Core" />
         <SubPart PartName="BeXml"         PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
         <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
-        <SubPart PartName="ImagePPDll"  PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="IppUtlDll"  PartFile="ImagePP" Repository="ImagePP" />
+        <SubPart PartName="IppGraDll"  PartFile="ImagePP" Repository="ImagePP" />
         <Bindings>
-            <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies" >Delivery\$(shlibprefix)TerrainModelFormats$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="TerrainModelNativeAssemblies" >Delivery\$(shlibprefix)TerrainModelFormats$(shlibext)</Files>
             <Libs>Delivery\$(libprefix)TerrainModelFormats$(libext)</Libs>
         </Bindings>
     </Part>
@@ -47,10 +48,10 @@
       <SubPart PartName="Core" />
       <SubPart PartName="Formats" />      
       <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />
-      <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
       <!--<SubPart PartName="Boost_1_5_7_0_Lib_Static" PartFile="Boost_1_5_7_0_Lib" Repository="boost_1.57.0_lib" />-->
       <Bindings>
-        <Assemblies ProductDirectoryName="AutomaticGroundDetection" >Delivery\$(shlibprefix)AutomaticGroundDetection$(shlibext)</Assemblies>
+        <Assemblies ProductDirectoryName="AutomaticGroundDetection" Required="false">Delivery\$(shlibprefix)AutomaticGroundDetection$(shlibext)</Assemblies>
+        <Assemblies ProductDirectoryName="PPNativeAssemblies" >Delivery\$(shlibprefix)AutomaticGroundDetection$(shlibext)</Assemblies>        
         <Libs>Delivery\$(libprefix)AutomaticGroundDetection$(libext)</Libs>
       </Bindings>
     </Part>
@@ -176,6 +177,8 @@
         <SubPart PartName="Formats" />
         <SubPart PartName="FormatsNET" />
         <SubPart PartName="ScalableTerrainModel" />
+        <SubPart PartName="AutomaticGroundDetection" />
+
     </Part>
 
     <Part Name="FullProduct"  PrgOutputDir="TerrainModel">

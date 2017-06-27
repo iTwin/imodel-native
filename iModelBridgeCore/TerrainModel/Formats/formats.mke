@@ -3,70 +3,44 @@
 #     $Source: Formats/formats.mke $
 #    $RCSfile: cppwrappers.mke,v $
 #   $Revision: 1.123.2.1 $
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #     $Author: Daryl.Holmwood $
 #
-#   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 #NEEDSWORK_VS2015: WIP, remove these warning suppress
 CCompOpts + -wd4456 -wd4458 -wd4838 -wd4459
 
-#---------------------------------------------------------
-# Bmake must be called before mdl.mki is included
-#---------------------------------------------------------
 always:
   bmake -dCreate_Static_Libraries=1 $(_MakeFilePath)inroadstm/inroadstm.mke 
 
+
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+SolutionPolicyMki=$(baseDir)formats.mki
+
 %include  mdl.mki
-%include $(SrcRoot)TerrainModel/privmki/TerrainModelCommon.mki
-
-formatsDir              = $(_MakeFilePath)
-terrainModelFormatsObj  = $(terrainModelBuildDir_)TerrainModelFormats/
-
-MultiCompileIntermediatePdbFile=$(terrainModelFormatsObj)$(CCompPDBName).pdb
-IntermediatePdbFile = $(MultiCompileIntermediatePdbFile)
-
-dirToSearch     = $(BuildContext)PublicAPI/
-%include cincapnd.mki
-
-dirToSearch     = $(baseDir)PublicAPI
-%include cincapnd.mki
-
-dirToSearch     = $(BuildContext)VendorAPI
-%include cincapnd.mki
-
-dirToSearch     = $(srcTerrainModel)Formats\inroadstm
-%include cincapnd.mki
-
-nameToDefine = __BENTLEYTMFORMATS_BUILD__
-%include cdefapnd.mki
-
-nameToDefine = UNICODE
-%include cdefapnd.mki
-
-appName             = TerrainModelFormats
-DLM_NAME            = $(appName)
-CCompPDBName        = $(appName)
 
 DLM_OBJECT_DEST       = $(terrainModelFormatsObj)
+DLM_NAME              = TerrainModelFormats
 ASSEMBLY_STRONGNAME   = 1
 
 DependsOnHeadersCPP = \
-$(formatsDir)PublicAPI\Formats.h \
-$(formatsDir)PublicAPI\Esri.h \
-$(formatsDir)PublicAPI\Inroads.h \
-$(formatsDir)PublicAPI\InroadsImporter.h \
-$(formatsDir)PublicAPI\InroadsExporter.h \
-$(formatsDir)PublicAPI\LandXMLImporter.h \
-$(formatsDir)PublicAPI\LandXMLExporter.h \
-$(formatsDir)PublicAPI\Lidar.h \
-$(formatsDir)PublicAPI\LidarImporter.h \
-$(formatsDir)PublicAPI\MX.h \
-$(formatsDir)PublicAPI\TerrainImporter.h \
-$(formatsDir)PublicAPI\TerrainExporter.h \
-$(formatsDir)MXModelFile.h \
-$(formatsDir)TriangulationPreserver.h \
+$(basedir)PublicAPI\Formats.h \
+$(basedir)PublicAPI\Esri.h \
+$(basedir)PublicAPI\Inroads.h \
+$(basedir)PublicAPI\InroadsImporter.h \
+$(basedir)PublicAPI\InroadsExporter.h \
+$(basedir)PublicAPI\LandXMLImporter.h \
+$(basedir)PublicAPI\LandXMLExporter.h \
+$(basedir)PublicAPI\Lidar.h \
+$(basedir)PublicAPI\LidarImporter.h \
+$(basedir)PublicAPI\MX.h \
+$(basedir)PublicAPI\TerrainImporter.h \
+$(basedir)PublicAPI\TerrainExporter.h \
+$(basedir)MXModelFile.h \
+$(basedir)TriangulationPreserver.h \
 
 DependsOnHeaders = \
 
@@ -82,7 +56,6 @@ RIGHTSCOMPLIANT = true
     %include signrscsdefs.mki
 %endif
 %endif
-
 #----------------------------------------------------------------------
 #       Location for objects
 #----------------------------------------------------------------------
@@ -98,53 +71,38 @@ always:
         |  Compiler options: $(cDefs)$(cDefsPost) $(copt)
         |  -------- --------
 
-#NEEDS_WORK_DH
-CCompOpts + -wd4838
-
 MultiCompileDepends=$(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
-$(o)LandXMLImporter$(oext) : $(formatsDir)LandXMLImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)LandXMLImporter$(oext) : $(baseDir)LandXMLImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)LandXMLExporter$(oext) : $(formatsDir)LandXMLExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)LandXMLExporter$(oext) : $(baseDir)LandXMLExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmMX$(oext) : $(formatsDir)bcdtmMX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmMX$(oext) : $(baseDir)bcdtmMX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtminroads$(oext) : $(formatsDir)bcdtminroads.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtminroads$(oext) : $(baseDir)bcdtminroads.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmEsri$(oext) : $(formatsDir)bcdtmEsri.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmEsri$(oext) : $(baseDir)bcdtmEsri.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)bcdtmLidar$(oext) : $(formatsDir)bcdtmLidar.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)bcdtmLidar$(oext) : $(baseDir)bcdtmLidar.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)MXModelFile$(oext) : $(formatsDir)MXModelFile.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)MXModelFile$(oext) : $(baseDir)MXModelFile.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)MX$(oext) : $(formatsDir)MX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)MX$(oext) : $(baseDir)MX.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)TerrainImporter$(oext) : $(formatsDir)TerrainImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)TerrainImporter$(oext) : $(baseDir)TerrainImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)TerrainExporter$(oext) : $(formatsDir)TerrainExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)TerrainExporter$(oext) : $(baseDir)TerrainExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)InroadsImporter$(oext) : $(formatsDir)InroadsImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)InroadsImporter$(oext) : $(baseDir)InroadsImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)InroadsExporter$(oext) : $(formatsDir)InroadsExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)InroadsExporter$(oext) : $(baseDir)InroadsExporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)LidarImporter$(oext) : $(formatsDir)LidarImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)LidarImporter$(oext) : $(baseDir)LidarImporter.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)ImagePP$(oext) : $(formatsDir)ImagePP.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
+$(o)ImagePP$(oext) : $(baseDir)ImagePP.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
-$(o)TriangulationPreserver$(oext) : $(formatsDir)TriangulationPreserver.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
-
-
-#----------------------------------------------------------------------
-#MaXML
-#----------------------------------------------------------------------
-#$(o)MaXml$(oext) : $(formatsDir)MaXML\MaXml.cpp $(DependsOnHeaders) $(formatsDir)MaXML\MaXml.h ${MultiCompileDepends}
-
-#$(o)MaXmlAlignment$(oext) : $(formatsDir)MaXML\MaXmlAlignment.cpp $(DependsOnHeaders) $(formatsDir)MaXML\MaXmlAlignment.h ${MultiCompileDepends}
-
-#$(o)MaXmlDocument$(oext) : $(formatsDir)MaXML\MaXmlDocument.cpp $(DependsOnHeaders) $(formatsDir)MaXML\MaXmlDocument.h ${MultiCompileDepends}
-
-#$(o)MaXmlElement$(oext) : $(formatsDir)MaXML\MaXmlElement.cpp $(DependsOnHeaders) $(formatsDir)MaXML\MaXmlElement.h ${MultiCompileDepends}
+$(o)TriangulationPreserver$(oext) : $(baseDir)TriangulationPreserver.cpp $(DependsOnHeaders) $(DependsOnHeadersCPP) ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -161,8 +119,7 @@ DLM_NO_DEF              = 1
 DLM_NO_DLS              = 1
 DLM_NOENTRY             = 1
 
-#InroadsLib = $(o)/inroadstm/$(libprefix)inroadstm$(libext)
-InroadsLib = $(BuildContext)Delivery/$(libprefix)inroadstm$(libext)
+InroadsLib = $(o)/inroadstm/$(libprefix)inroadstm$(libext)
 #InroadsLib = $(BuildContext)SubParts/StaticLibs/$(libprefix)inroadstm$(libext)
 #InroadsLib = $(ContextSubpartsLibs)$(libprefix)InroadsTM$(libext)
 
@@ -172,11 +129,11 @@ LINKER_LIBRARIES  = \
     $(ContextSubpartsLibs)$(libprefix)BeXml$(libext) \
     $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext) \
     $(ContextSubpartsLibs)$(libprefix)BentleyGeom$(libext) \
-    $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
     $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(libext)
 
 LINKER_LIBRARIES_DELAYLOADED  = \
-                                $(ContextSubpartsLibs)$(libprefix)Imagepp$(libext)
+                                $(ContextSubpartsLibs)$(libprefix)IppGraLibs$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)IppUtlLibs$(libext) \
 
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
 DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/

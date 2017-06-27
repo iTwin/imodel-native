@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* hshftr.c                                            twl    11-Dec-1998     */
@@ -38,10 +38,10 @@ int aecDTM_hashFeatureCreate
 
   aecDTM_hashFeatureDestroy ( srfP );
 
-  srfP->ftrGUIDMapP = new CMapStringToPtr;  
+  srfP->ftrGUIDMapP = new CMapStringToPtr;
   srfP->ftrGUIDMapP->InitHashTable ( DTM_C_FTRHSHSIZ );
 
-  srfP->ftrNameMapP = new CMapStringToPtr;  
+  srfP->ftrNameMapP = new CMapStringToPtr;
   srfP->ftrNameMapP->InitHashTable ( DTM_C_FTRHSHSIZ );
 
   return ( sts );
@@ -51,7 +51,7 @@ int aecDTM_hashFeatureCreate
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashAllFeatures
- DESC: Creates empty BeSQLite::BeGuid and name hash tables for surface features and inserts
+ DESC: Creates empty InroadsGuid and name hash tables for surface features and inserts
        surface features into the tables.
  HIST: Original - twl 11-Dec-1998
  MISC:
@@ -68,7 +68,7 @@ int aecDTM_hashAllFeatures
   aecDTM_hashFeatureCreate ( srfP );
   aecDTM_sendAllFeatures ( (void *)NULL, srfP, 0, 0, aecDTM_hashAllFeaturesProc, (void *)srfP );
 
-  return ( sts ); 
+  return ( sts );
 }
 
 
@@ -98,7 +98,7 @@ static int aecDTM_hashAllFeaturesProc
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashInsertFeature
- DESC: Hashes a single feature and inserts it in the BeSQLite::BeGuid and name tables.
+ DESC: Hashes a single feature and inserts it in the InroadsGuid and name tables.
  HIST: Original - twl 11-Dec-1998
  MISC:
  KEYW: DTM INSERT FEATURE HASH TABLE
@@ -124,7 +124,7 @@ int aecDTM_hashInsertFeature
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashDeleteFeature
- DESC: Hashes a single feature and deletes it from the BeSQLite::BeGuid and name tables.
+ DESC: Hashes a single feature and deletes it from the InroadsGuid and name tables.
  HIST: Original - twl 8-Jan-1999
  MISC:
  KEYW: DTM DELETE FEATURE HASH TABLE
@@ -150,17 +150,17 @@ int aecDTM_hashDeleteFeature
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashFindFeatureByGUID
- DESC: Finds a feature via the BeSQLite::BeGuid hash table.
+ DESC: Finds a feature via the InroadsGuid hash table.
  HIST: Original - twl 11-Dec-1998
  MISC:
- KEYW: DTM FIND FEATURE BeSQLite::BeGuid HASH TABLE
+ KEYW: DTM FIND FEATURE InroadsGuid HASH TABLE
 -----------------------------------------------------------------------------%*/
 
 int aecDTM_hashFindFeatureByGUID
 (
   CIVdtmftr **ftrPP,
   struct CIVdtmsrf *srfP,
-  BeSQLite::BeGuid *guidP
+  InroadsGuid *guidP
 )
 {
   int sts = SUCCESS;
@@ -210,7 +210,7 @@ int aecDTM_hashFindFeatureByName
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashFeatureDestroy
- DESC: Removes all entries and destroys memory allocated in a surfaces BeSQLite::BeGuid
+ DESC: Removes all entries and destroys memory allocated in a surfaces InroadsGuid
        and name feature hash tables.
  HIST: Original - twl 11-Dec-1998
  MISC:
@@ -239,7 +239,7 @@ void aecDTM_hashFeatureDestroy
 #ifdef NOTUSED
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_hashFeatureGUID
- DESC: Hashes a BeSQLite::BeGuid.
+ DESC: Hashes a InroadsGuid.
  HIST: Original - twl 11-Dec-1998
  MISC: static
  KEYW: DTM FEATURE HASH TABLE

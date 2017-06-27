@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* cmpmemuti.cpp                                twl    24-Apr-2002            */
@@ -112,12 +112,12 @@ int aecDTM_getComponentMembersPtrs
 
     if ( srfP->cmpMemParentMapP )
     {
-        aecGuid_toString ( guidString, &cmpP->guid ); 
+        aecGuid_toString ( guidString, &cmpP->guid );
 
         if ( srfP->cmpMemParentMapP->Lookup ( guidString, (void*&)ptrArrayP ) && ptrArrayP && ptrArrayP->GetCount() > 0 )
         {
             *cmpMemPtrs = (struct CIVdtmcmpmem **) calloc ( ptrArrayP->GetCount(), sizeof ( struct CIVdtmcmpmem *) );
-        
+
             for ( int i = 0; i < ptrArrayP->GetCount(); i++ )
             {
                 if ( !aecDTM_isComponentMemberDeletedFlagSet ( (struct CIVdtmcmpmem *)ptrArrayP->GetAt ( i ) ) )
@@ -147,7 +147,7 @@ int aecDTM_getComponentMemberParentsPtrs
     struct CIVdtmcmp ***cmpPtrs,            /* <= FREE! - components          */
     int *numCmpPtrs,                        /* <= number of components        */
     struct CIVdtmsrf *srfP,                 /*  => DTM surface (or NULL)      */
-    BeSQLite::BeGuid *cmpMemGuidP                       /*  => guid of component member   */
+    InroadsGuid *cmpMemGuidP                       /*  => guid of component member   */
 )
 {
     CPtrArray *ptrArrayP = NULL;
@@ -159,12 +159,12 @@ int aecDTM_getComponentMemberParentsPtrs
 
     if ( srfP->cmpMemGuidMapP )
     {
-        aecGuid_toString ( guidString, cmpMemGuidP ); 
+        aecGuid_toString ( guidString, cmpMemGuidP );
 
         if ( srfP->cmpMemGuidMapP->Lookup ( guidString, (void*&)ptrArrayP ) && ptrArrayP && ptrArrayP->GetCount() > 0 )
         {
             *cmpPtrs = (struct CIVdtmcmp **) calloc ( ptrArrayP->GetCount(), sizeof ( struct CIVdtmcmp *) );
-        
+
             for ( int i = 0; i < ptrArrayP->GetCount(); i++ )
             {
                 struct CIVdtmcmpmem *pCmpMem = (struct CIVdtmcmpmem *)ptrArrayP->GetAt ( i );
@@ -263,7 +263,7 @@ int aecDTM_sendAllComponentMembers     /* <= TRUE if error                    */
  DESC: Indexes component members by guid
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INDEX COMPONENT MEMBERS BY BeSQLite::BeGuid
+ KEYW: DTM INDEX COMPONENT MEMBERS BY InroadsGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_indexComponentMembersByGuid
@@ -319,7 +319,7 @@ int aecDTM_indexComponentMembersByParent
  DESC: Destorys the guid index;
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM DESTROY INDEX COMPONENT MEMBERS BeSQLite::BeGuid
+ KEYW: DTM DESTROY INDEX COMPONENT MEMBERS InroadsGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_destroyComponentMembersGuidIndex
@@ -389,7 +389,7 @@ int aecDTM_destroyComponentMembersParentIndex
  DESC: Inserts a shape into the shape guid index.
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INSERT INDEX COMPONENT MEMBER BY BeSQLite::BeGuid
+ KEYW: DTM INSERT INDEX COMPONENT MEMBER BY InroadsGuid
 -----------------------------------------------------------------------%*/
 
 static int aecDTM_insertComponentMemberIntoGuidIndex
@@ -440,7 +440,7 @@ static int aecDTM_insertComponentMemberIntoParentIndex
  DESC: Removes a component member from the guid index.
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM REMOVE INDEX COMPONENT MEMBER BY BeSQLite::BeGuid
+ KEYW: DTM REMOVE INDEX COMPONENT MEMBER BY InroadsGuid
 -----------------------------------------------------------------------%*/
 
 static int aecDTM_removeComponentMemberFromGuidIndex
@@ -457,7 +457,7 @@ static int aecDTM_removeComponentMemberFromGuidIndex
         CPtrArray *ptrArrayP = NULL;
         BOOL found = FALSE;
 
-        aecGuid_toString ( guidString, &cmpMemP->cmpMemGuid ); 
+        aecGuid_toString ( guidString, &cmpMemP->cmpMemGuid );
         srfP->cmpMemGuidMapP->Lookup ( guidString, (void*&)ptrArrayP );
 
         for ( int i = 0; i < ptrArrayP->GetCount( ) && !found; i++ )
@@ -504,7 +504,7 @@ static int aecDTM_removeComponentMemberFromParentIndex
         CPtrArray *ptrArrayP = NULL;
         BOOL found = FALSE;
 
-        aecGuid_toString ( guidString, &cmpMemP->cmpGuid ); 
+        aecGuid_toString ( guidString, &cmpMemP->cmpGuid );
         srfP->cmpMemParentMapP->Lookup ( guidString, (void*&)ptrArrayP );
 
         for ( int i = 0; i < ptrArrayP->GetCount( ) && !found; i++ )
@@ -538,7 +538,7 @@ static int aecDTM_addToGuidIndexCallback
     CPtrArray *ptrArrayP = NULL;
     wchar_t guidString[GUID_STRING_MAX_SIZE];
 
-    aecGuid_toString ( guidString, &cmpMemP->cmpMemGuid ); 
+    aecGuid_toString ( guidString, &cmpMemP->cmpMemGuid );
 
     if ( !srfP->cmpMemGuidMapP->Lookup ( guidString, (void*&)ptrArrayP ) || !ptrArrayP )
     {
@@ -561,7 +561,7 @@ static int aecDTM_addToParentIndexCallback
     CPtrArray *ptrArrayP = NULL;
     wchar_t guidString[GUID_STRING_MAX_SIZE];
 
-    aecGuid_toString ( guidString, &cmpMemP->cmpGuid ); 
+    aecGuid_toString ( guidString, &cmpMemP->cmpGuid );
 
     if ( !srfP->cmpMemParentMapP->Lookup ( guidString, (void*&)ptrArrayP ) || !ptrArrayP )
     {

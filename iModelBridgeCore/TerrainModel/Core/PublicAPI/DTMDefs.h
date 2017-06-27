@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/DTMDefs.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //__BENTLEY_INTERNAL_ONLY__
@@ -303,6 +303,7 @@ struct DTM_POLYGON_OBJ
 ** Typedef Structure For Tag Header List
 */
 struct TAGLIST {long FTAG,LTAG,UTAG[4];} ;
+typedef int64_t TagValue;
 /*
 **  Typedef Structure For Tag Objects
 */
@@ -311,7 +312,7 @@ struct TAGOBJ
  long     NTAG,MTAG,SMTAG,IMTAG  ;
  long     NVAL,MVAL,SMVAL,IMVAL  ;
  TAGLIST  *PTAG ;
- long     *PVAL ;
+ TagValue  *PVAL ;
 };
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -757,7 +758,7 @@ enum DTMVersionControl : long
 */
 enum DTMPartionInformation
     {
-    DTM_PARTITION_SHIFT_FEATURE = 13,     // Shift for An Internal Feature Partition
+    DTM_PARTITION_SHIFT_FEATURE = 11,     // Shift for An Internal Feature Partition
     DTM_PARTITION_SHIFT_POINT = 15,     // Shift for An Internal Point Partition
     DTM_PARTITION_SHIFT_NODE = 15,     // Shift for An Internal Node  Partition
     DTM_PARTITION_SHIFT_CLIST = 15,     // Shift for An Internal Clist Partition

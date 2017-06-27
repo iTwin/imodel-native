@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmstr.h                                        aec        10-Apr-1990     */
@@ -46,7 +46,7 @@ typedef struct CIVdtmtin               /* dtm triangle struct.                */
 
 typedef struct CIVdtmftrV7            /* dtm feature struct. Version 7*/
     {
-    BeSQLite::BeGuid guid;
+    InroadsGuid guid;
     char nam[CIV_C_NAMSIZ];             /* feature name                        */
     char des[CIV_C_DESSIZ];             /* feature description                 */
     char par[CIV_C_NAMSIZ];             /* parent feature name                 */
@@ -61,7 +61,7 @@ typedef struct CIVdtmftrV7            /* dtm feature struct. Version 7*/
 
 typedef struct CIVdtmftrV8              /* dtm feature struct. */
     {
-    BeSQLite::BeGuid guid;
+    InroadsGuid guid;
     char nam[CIV_C_NAMSIZ];             /* feature name                        */
     char des[CIV_C_DESSIZ];             /* feature description                 */
     char par[CIV_C_NAMSIZ];             /* parent feature name                 */
@@ -78,7 +78,7 @@ typedef struct CIVdtmftrV8              /* dtm feature struct. */
 
 typedef struct CIVdtmftr               /* dtm feature struct. */
     {
-    BeSQLite::BeGuid guid;
+    InroadsGuid guid;
     wchar_t nam[DTM_C_NAMSIZ];          /* feature name                        */
     wchar_t des[DTM_C_NAMSIZ];          /* feature description                 */
     wchar_t par[DTM_C_NAMSIZ];          /* parent feature name                 */
@@ -119,19 +119,19 @@ typedef struct CIVdtmpay	             /* dtm feature pay item sturcture      */
 
 typedef struct CIVdtmcor               /* dtm corridor structure              */
     {
-    BeSQLite::BeGuid guid;                         /* corridor guid                       */
+    InroadsGuid guid;                         /* corridor guid                       */
     wchar_t nam[DTM_C_NAMSIZ];         /* corridor name                       */
-    BeSQLite::BeGuid ctrlGuid1;                    /* surface or horz. alignment guid     */
-    BeSQLite::BeGuid ctrlGuid2;                    /* feature or vert. alignment guid     */
+    InroadsGuid ctrlGuid1;                    /* surface or horz. alignment guid     */
+    InroadsGuid ctrlGuid2;                    /* feature or vert. alignment guid     */
     long ctrlGuidType;                 /* DTM_C_CORCTRLFTR or DTM_C_CORCTRLALG*/
     unsigned char flg;                          /* bit field flags                     */
     } CIVdtmcor;
 
 typedef struct CIVdtmcmpV87prel        /* Pre-release structure               */
     {
-    BeSQLite::BeGuid guid;                         /* component guid                      */
+    InroadsGuid guid;                         /* component guid                      */
     wchar_t nam[DTM_C_NAMSIZ];         /* component name                      */
-    BeSQLite::BeGuid corGuid;                      /* guid of parent corridor             */
+    InroadsGuid corGuid;                      /* guid of parent corridor             */
     wchar_t stynam[CIV_C_NAMSIZ];      /* material style name                 */
     DPoint2d startXY;                  /* start XY of component               */
     DPoint2d stopXY;                   /* stop XY of component                */
@@ -142,8 +142,8 @@ typedef struct CIVdtmcmpV87prel        /* Pre-release structure               */
 
 typedef struct CIVdtmcmpV10            /* dtm shape structure                 */
     {
-    BeSQLite::BeGuid guid;                         /* component guid                      */
-    BeSQLite::BeGuid corGuid;                      /* guid of parent corridor             */
+    InroadsGuid guid;                         /* component guid                      */
+    InroadsGuid corGuid;                      /* guid of parent corridor             */
     wchar_t nam[DTM_C_NAMSIZ];         /* component name                      */
     wchar_t des[DTM_C_NAMSIZ];         /* component description               */
     wchar_t stynam[CIV_C_NAMSIZ];      /* material style name                 */
@@ -156,8 +156,8 @@ typedef struct CIVdtmcmpV10            /* dtm shape structure                 */
 
 typedef struct CIVdtmcmp               /* dtm shape structure                 */
     {
-    BeSQLite::BeGuid guid;                         /* component guid                      */
-    BeSQLite::BeGuid corGuid;                      /* guid of parent corridor             */
+    InroadsGuid guid;                         /* component guid                      */
+    InroadsGuid corGuid;                      /* guid of parent corridor             */
     wchar_t nam[DTM_C_NAMSIZ];         /* component name                      */
     wchar_t des[DTM_C_NAMSIZ];         /* component description               */
     wchar_t stynam[CIV_C_NAMSIZ];      /* material style name                 */
@@ -172,8 +172,8 @@ typedef struct CIVdtmcmp               /* dtm shape structure                 */
 
 typedef struct CIVdtmcmpmemV10
     {
-    BeSQLite::BeGuid cmpGuid;                      /* guid of parent component            */
-    BeSQLite::BeGuid cmpMemGuid;                   /* component member guid               */
+    InroadsGuid cmpGuid;                      /* guid of parent component            */
+    InroadsGuid cmpMemGuid;                   /* component member guid               */
     long type;                         /* indicates type of component member  */
     long index;                        /* index of member in component        */
     unsigned char flg;                          /* bit field flags                     */
@@ -181,8 +181,8 @@ typedef struct CIVdtmcmpmemV10
 
 typedef struct CIVdtmcmpmem
     {
-    BeSQLite::BeGuid cmpGuid;                      /* guid of parent component            */
-    BeSQLite::BeGuid cmpMemGuid;                   /* component member guid               */
+    InroadsGuid cmpGuid;                      /* guid of parent component            */
+    InroadsGuid cmpMemGuid;                   /* component member guid               */
     long type;                         /* indicates type of component member  */
     long index;                        /* index of member in component        */
     double componentThickness;         /* only used for overlay members       */
@@ -283,7 +283,7 @@ typedef struct CIVdtmsrf
         CIVdtmsrf();
 
     public:
-        BeSQLite::BeGuid guid;                         /* surface BeSQLite::BeGuid                        */
+        InroadsGuid guid;                         /* surface InroadsGuid                        */
         wchar_t pth[CIV_MAX_PATH];         /* file path                           */
         wchar_t fil[CIV_MAX_FNAME];        /* file name                           */
         wchar_t nam[DTM_C_NAMSIZ];         /* surface name                        */
@@ -326,7 +326,7 @@ typedef struct CIVdtmsrf
         struct CIVdtmtin* *tinstk;                      /* tin stack                           */
         void *ptrIndexTableP;              /* used to keep ptr/index table alive  */
         void *indexPtrTableP;              /* used to keep index/ptr table alive  */
-        CMapStringToPtr *ftrGUIDMapP;      /* hash table of feature BeSQLite::BeGuid's        */
+        CMapStringToPtr *ftrGUIDMapP;      /* hash table of feature InroadsGuid's        */
         CMapStringToPtr *ftrNameMapP;      /* hash table of feature Names         */
         CMapStringToPtr *corGuidMapP;      /* corridors mapped by guid            */
         CMapStringToPtr *corNameMapP;      /* corridors mapped by name            */

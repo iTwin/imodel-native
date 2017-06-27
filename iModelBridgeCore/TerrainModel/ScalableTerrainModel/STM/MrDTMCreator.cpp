@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:29 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -659,7 +659,7 @@ StatusInt IMrDTMCreator::Impl::AddPointOverviewOfLinears (PointIndex&  pointInde
         linearIter    = linearList.begin();
         linearIterEnd = linearList.end();
 
-        uint32_t              tileNumber = 0;
+        UInt32              tileNumber = 0;
         HAutoPtr<PointType> linePts;
         size_t               linePtsMaxSize = 0;
 

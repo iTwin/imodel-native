@@ -6,7 +6,7 @@
 |       $Date: 2012/01/17 16:06:28 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,7 +27,7 @@ namespace Plugin {
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct FileStatistics
     {
-    uint64_t                      size;
+    UInt64                      size;
 
     explicit                    FileStatistics                         () : size(0) {}    
     };

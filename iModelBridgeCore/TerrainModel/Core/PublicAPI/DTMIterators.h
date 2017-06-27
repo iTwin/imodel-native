@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/DTMIterators.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -230,7 +230,7 @@ struct DTMMeshEnumerator : RefCountedBase
 
     private: BcDTMPtr m_dtm;
     private: BC_DTM_OBJ* m_dtmP;
-
+    private: bool m_usePolyfaceHeader = false;
     private: long maxTriangles;        /* ==> Maximum Number Of Triangles To Load Per Call       */
     private: long vectorOption;        /* ==> Vector Option <1=Surface Derivatives,2=Averaged Triangle Surface Normals> */
     private: double zAxisFactor;       /* ==> Factor To Exaggerate The z Axis default value 1.0  */
@@ -239,9 +239,7 @@ struct DTMMeshEnumerator : RefCountedBase
     private: mutable long m_pointMark;
     private: mutable bool voidsInDtm;
     private: mutable long startPnt, lastPnt, leftMostPnt;
-    private: mutable BlockedVector<int> meshFaces;
-    private: mutable BlockedVector<DPoint3d> meshPoints;
-    private: mutable BlockedVector<DVec3d> meshNormals;
+    private: mutable PolyfaceHeaderPtr m_polyfaceHeader;
     private: mutable BcDTMPtr clipDtm;
     private: mutable BC_DTM_OBJ* clipDtmP;
     private: mutable bool m_initialized;
@@ -272,6 +270,16 @@ struct DTMMeshEnumerator : RefCountedBase
     public: BENTLEYDTM_EXPORT iterator end () const;
     public: BENTLEYDTM_EXPORT DRange3d DTMMeshEnumerator::GetRange () const;
 
+
+    public: void SetUsePolyfaceHeader(bool value)
+        {
+        m_usePolyfaceHeader = value;
+        }
+
+    public: bool GetUsePolyfaceHeader() const
+        {
+        return m_usePolyfaceHeader;
+        }
 
     public: void SetUseRealPointIndexes(bool value)
         {

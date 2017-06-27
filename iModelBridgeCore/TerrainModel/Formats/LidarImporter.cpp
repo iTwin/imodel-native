@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/LidarImporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -38,7 +38,12 @@ bool LidarImporter::IsFileSupported (WCharCP filename)
         {
         BeFile file;
 
+#ifdef BUILDTMFORDGNDB
         if (file.Open (filename, BeFileAccess::Read) == BeFileStatus::Success)
+#else
+        if (file.Open (filename, BeFileAccess::Read, BeFileSharing::None) == BeFileStatus::Success)
+
+#endif
             {
             char header[4];
             uint32_t bytesRead = 0;

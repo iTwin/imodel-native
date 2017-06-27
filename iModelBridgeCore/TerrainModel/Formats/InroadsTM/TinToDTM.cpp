@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 /*----------------------------------------------------------------------------*/
@@ -67,7 +67,7 @@ static BOOL bFeaturesCallbackOn = FALSE;
 int addDtmFeature ( struct CIVdtmpnt **dtmPntsPP, wchar_t *ftrName, wchar_t *ftrDesc, int ftrType, wchar_t *styleNamesP, int numStyles, DPoint3d *pntsP, long numPoints )
 {
     struct CIVdtmftr *ftrP = NULL;
-    BeGuid guid;
+    InroadsGuid guid;
     BOOL bPntsAreValid = FALSE;
     int sts = SUCCESS;
 

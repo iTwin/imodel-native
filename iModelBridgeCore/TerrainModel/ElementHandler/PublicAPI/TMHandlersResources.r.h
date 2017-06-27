@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/PublicAPI/TMHandlersResources.r.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 /*__BENTLEY_INTERNAL_ONLY__*/
@@ -28,6 +28,7 @@ enum TerrainModelHandlersMessages
     MSG_TERRAINMODEL_None,
     MSG_TERRAINMODEL_Sliver,
     MSG_TERRAINMODEL_MaxEdgeLength,
+    MSG_TERRAINMODEL_Unnamed,
     // STM
     MSG_TERRAINMODEL_STMNotAllowedForOperation    = 200,
     MSG_TERRAINMODEL_STMFileNotExist,               

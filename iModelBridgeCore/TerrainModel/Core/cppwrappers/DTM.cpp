@@ -2,7 +2,7 @@
 |
 |     $Source: Core/cppwrappers/DTM.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Core/IDTM.h"
@@ -115,6 +115,11 @@ bool IDTMDraping::ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3
 bool IDTMDraping::IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
     {
     return _IntersectRay(pointOnDTM, direction, testPoint);
+    }
+
+bool IDTMDraping::IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+    {
+    return _IntersectRay(pointsOnDTM, direction, testPoint);
     }
 
 bool IDTMDraping::DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)

@@ -6,7 +6,7 @@
 |       $Date: 2012/01/06 16:30:15 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
   
@@ -856,7 +856,7 @@ template <class POINT> void MrDTM<POINT>::CreateSpatialIndexFromExtents(list<HVE
 
         DPoint3d     TileHullPts[2];        
 
-        uint32_t TileNumber = 0;
+        UInt32 TileNumber = 0;
           
         while (BreaklineIter != BreaklineIterEnd) 
             {                            
@@ -890,7 +890,7 @@ template <class POINT> void MrDTM<POINT>::AddBreaklineSet(list<HFCPtr<HVEDTMLine
         list<HFCPtr<HVEDTMLinearFeature> >::iterator BreaklineIter    = breaklineList.begin();
         list<HFCPtr<HVEDTMLinearFeature> >::iterator BreaklineIterEnd = breaklineList.end();
 
-        uint32_t TileNumber = 0;
+        UInt32 TileNumber = 0;
 
         while (BreaklineIter != BreaklineIterEnd) 
             {
@@ -903,7 +903,7 @@ template <class POINT> void MrDTM<POINT>::AddBreaklineSet(list<HFCPtr<HVEDTMLine
                 linePts[indexPoints].z = (*BreaklineIter)->GetPoint(indexPoints).GetZ();
                 }
 
-            status = bcdtmObject_storeDtmFeatureInDtmObject(po_pBcDtmObj, (DTMFeatureType)(*BreaklineIter)->GetFeatureType() /*DTMFeatureType::Breakline*/, TileNumber, 1, &po_pBcDtmObj->nullFeatureId, linePts, (uint32_t)(*BreaklineIter)->GetSize());
+            status = bcdtmObject_storeDtmFeatureInDtmObject(po_pBcDtmObj, (DTMFeatureType)(*BreaklineIter)->GetFeatureType() /*DTMFeatureType::Breakline*/, TileNumber, 1, &po_pBcDtmObj->nullFeatureId, linePts, (UInt32)(*BreaklineIter)->GetSize());
             BreaklineIter++;
             TileNumber++;
             }         
@@ -933,18 +933,7 @@ template <class POINT> IDTMContouringP  MrDTM<POINT>::_GetDTMContouring()
     return 0;
     }
 
-template <class POINT> IDTMVolumeP MrDTM<POINT>::_GetDTMVolume()
-    {
-    assert(0);
-    return 0; //Not supported yet
-    }
-
 template <class POINT> DTMStatusInt MrDTM<POINT>::_CalculateSlopeArea (double&, double&, const DPoint3d*, int)
-    {
-    return DTM_ERROR;
-    }
-
-template <class POINT> DTMStatusInt MrDTM<POINT>::_CalculateSlopeArea(double&, double&, const DPoint3d*, int, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
     {
     return DTM_ERROR;
     }
@@ -1380,18 +1369,7 @@ template <class POINT> IDTMContouringP  MrDTMSingleResolutionPointIndexView<POIN
     return 0;
     }
 
-template <class POINT> IDTMVolumeP MrDTMSingleResolutionPointIndexView<POINT>::_GetDTMVolume()
-    {
-    assert(0);
-    return 0;
-    }
-
 template <class POINT> DTMStatusInt MrDTMSingleResolutionPointIndexView<POINT>::_CalculateSlopeArea (double&, double&, const DPoint3d*, int)
-    {
-    return DTM_ERROR;
-    }
-
-template <class POINT> DTMStatusInt MrDTMSingleResolutionPointIndexView<POINT>::_CalculateSlopeArea(double&, double&, const DPoint3d*, int, DTMAreaValuesCallback progressiveCallback, DTMCancelProcessCallback isCancelledCallback)
     {
     return DTM_ERROR;
     }

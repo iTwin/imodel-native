@@ -2,12 +2,12 @@
 |
 |     $Source: Core/2d/bcdtmPolygon.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
 #include "dtmevars.h"
-#include "bcdtminlines.h" 
+#include "bcdtminlines.h"
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -38,11 +38,11 @@ BENTLEYDTM_Public int bcdtmPolygon_storeTptrPolygonInPolygonObjectDtmObject(BC_D
 /*
 ** Store Points
 */
- sp = startPnt ; 
+ sp = startPnt ;
  do
    {
-    if( polyP->numPolyPts == polyP->memPolyPts ) 
-      { 
+    if( polyP->numPolyPts == polyP->memPolyPts )
+      {
        if( bcdtmPolygon_allocateMemoryPolygonObject(polyP)) goto errexit ;
       }
     (polyP->polyPtsP+polyP->numPolyPts)->x = pointAddrP(dtmP,sp)->x ;
@@ -52,8 +52,8 @@ BENTLEYDTM_Public int bcdtmPolygon_storeTptrPolygonInPolygonObjectDtmObject(BC_D
     ++addPolyPts ;
     sp = nodeAddrP(dtmP,+sp)->tPtr ;
    } while ( sp != startPnt ) ;
- if( polyP->numPolyPts == polyP->memPolyPts ) 
-   { 
+ if( polyP->numPolyPts == polyP->memPolyPts )
+   {
     if( bcdtmPolygon_allocateMemoryPolygonObject(polyP)) goto errexit ;
    }
  (polyP->polyPtsP + polyP->numPolyPts)->x = pointAddrP(dtmP,sp)->x ;
@@ -64,8 +64,8 @@ BENTLEYDTM_Public int bcdtmPolygon_storeTptrPolygonInPolygonObjectDtmObject(BC_D
 /*
 ** Set Polygon Header Values
 */
- if( polyP->numPolygons == polyP->memPolygons ) 
-  { 
+ if( polyP->numPolygons == polyP->memPolygons )
+  {
    if( bcdtmPolygon_allocateMemoryPolygonObject(polyP)) goto errexit ;
    }
  (polyP->polyListP + polyP->numPolygons)->area     = area ;
@@ -110,7 +110,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
 **
 ** Return Values for intersectFlagP ==  0  No Intersection
 **                                  ==  1  Tin Hull Totally Within Or Coincident With Clip Polygon
-**                                  ==  2  Intersection Polygon(s) Found 
+**                                  ==  2  Intersection Polygon(s) Found
 **
 */
 {
@@ -123,15 +123,15 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Polygon With Tin Hull") ;
 /*
-** Initialise 
+** Initialise
 */
  *intersectFlagP = 0 ;
  ppTol = plTol = dtmP->mppTol * 1000.0 ;
 /*
 ** Create Polygon Object If Necessary
 */
- if( *polyPP == NULL ) 
-   { 
+ if( *polyPP == NULL )
+   {
     if( bcdtmPolygon_createPolygonObject(polyPP)) goto errexit ;
    }
 /*
@@ -144,8 +144,8 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
 **  Make A Local Copy Of The Polygon
 */
     polyPtsP = ( DPoint3d * ) malloc( numPolyPts * sizeof(DPoint3d)) ;
-    if( polyPtsP == NULL ) 
-      { 
+    if( polyPtsP == NULL )
+      {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
@@ -153,7 +153,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
 /*
 **  Validate Pad Polygon
 */
-    if( bcdtmMath_validatePointArrayPolygon(&polyPtsP,&numPolyPts,ppTol) ) goto errexit ; 
+    if( bcdtmMath_validatePointArrayPolygon(&polyPtsP,&numPolyPts,ppTol) ) goto errexit ;
    }
 /*
 **  Get Point Array Extents
@@ -172,19 +172,19 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
       {
 /*
 **     Intersect Polygon And Tin Hull
-*/ 
+*/
        *intersectFlagP = 0;
        if( bcdtmPolygon_intersectPolygons(hullPtsP,numHullPts,polyPtsP,numPolyPts,intersectFlagP,polyPP,ppTol,plTol)) goto errexit ;
-       if( *intersectFlagP == 0 ) 
-         { 
+       if( *intersectFlagP == 0 )
+         {
           bcdtmWrite_message(1,0,0,"Polygon Does Not Intersect Tin Hull") ;
-          goto errexit ; 
+          goto errexit ;
          }
        else if( *intersectFlagP == 2 || *intersectFlagP == 4 ) *intersectFlagP = 1 ;
-       else                                                    *intersectFlagP = 2 ; 
-      } 
+       else                                                    *intersectFlagP = 2 ;
+      }
    }
- else 
+ else
    {
     if( bcdtmList_extractHullDtmObject(dtmP,&hullPtsP,&numHullPts)) goto errexit ;
     if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,hullPtsP,numHullPts,1)) goto errexit ;
@@ -194,8 +194,8 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullDtmObject
 ** Clean Up
 */
  cleanup :
- if( hullPtsP != NULL ) free(hullPtsP) ; 
- if( polyPtsP != NULL ) free(polyPtsP) ; 
+ if( hullPtsP != NULL ) free(hullPtsP) ;
+ if( polyPtsP != NULL ) free(polyPtsP) ;
 /*
 ** Job completed
 */
@@ -219,7 +219,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
  DPoint3d             *userPolyPtsP,
  long            numUserPolyPts,
  DTM_POLYGON_OBJ **polyPP,
- long            *intersectFlagP 
+ long            *intersectFlagP
 )
 /*
 **
@@ -229,7 +229,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
 **
 ** Return Values for intersectFlagP ==  0  No Intersection
 **                                  ==  1  Tin Hull Totally Within Or Coincident With Clip Polygon
-**                                  ==  2  Intersection Polygon(s) Found 
+**                                  ==  2  Intersection Polygon(s) Found
 **
 */
 {
@@ -241,7 +241,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Intersecting Polygon With Tin Hulls") ;
     bcdtmWrite_message(0,0,0,"dtm1P          = %p",dtm1P) ;
@@ -250,7 +250,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
     bcdtmWrite_message(0,0,0,"numUserPolyPts = %8ld",numUserPolyPts) ;
    }
 /*
-** Initialise 
+** Initialise
 */
  *intersectFlagP = 0 ;
  if( dtm1P->mppTol <= dtm2P->mppTol ) ppTol = dtm1P->mppTol ;
@@ -259,7 +259,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
 /*
 ** Create Polygon Object If Necessary
 */
- if( *polyPP == NULL ) 
+ if( *polyPP == NULL )
    {
     if( bcdtmPolygon_createPolygonObject(polyPP)) goto errexit ;
    }
@@ -269,13 +269,13 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
  numPolyPts = numUserPolyPts ;
  if( numPolyPts > 0 )
    {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Copying Polygon") ; 
+    if( dbg ) bcdtmWrite_message(0,0,0,"Copying Polygon") ;
 /*
 **  Make  A Local Copy Of The Volume Area Polygon
 */
     polyPtsP = ( DPoint3d * ) malloc( numPolyPts * sizeof(DPoint3d)) ;
-    if( polyPtsP == NULL ) 
-      { 
+    if( polyPtsP == NULL )
+      {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
@@ -283,44 +283,44 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
 /*
 ** Validate Volume Polygon
 */
-    if( dbg ) bcdtmWrite_message(0,0,0,"Validating Polygon") ; 
+    if( dbg ) bcdtmWrite_message(0,0,0,"Validating Polygon") ;
     if( bcdtmMath_validatePointArrayPolygon(&polyPtsP,&numPolyPts,ppTol) ) goto errexit ;
    }
 /*
 **  Extract Tin Hulls
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Extracting Tin Hulls") ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Extracting Tin Hulls") ;
  if( bcdtmList_extractHullDtmObject(dtm1P,&hullPts1P,&numHullPts1)) goto errexit ;
  if( bcdtmList_extractHullDtmObject(dtm2P,&hullPts2P,&numHullPts2)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"numHullPts1 = %8ld ** numHullPts2 =%8ld",numHullPts1,numHullPts2) ;
 /*
 ** Intersect Tin Hulls
 */
- if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Tin Hulls") ; 
+ if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Tin Hulls") ;
  if( bcdtmPolygon_intersectPolygons(hullPts1P,numHullPts1,hullPts2P,numHullPts2,intersectFlagP,polyPP,ppTol,plTol)) goto errexit ;
 // if( bcdtmPolygon_intersectPointArrayPolygons(hullPts1P,numHullPts1,hullPts2P,numHullPts2,intersectFlagP,polyPP,ppTol,plTol)) goto errexit ;
  if( *intersectFlagP == 0 )
    {
     bcdtmWrite_message(1,0,0,"Tin Hulls Do Not Intersect") ;
     goto errexit ;
-   }   
+   }
  else if( *intersectFlagP == 2 || *intersectFlagP == 4 ) *intersectFlagP = 1 ;
- else                                                    *intersectFlagP = 2 ;  
+ else                                                    *intersectFlagP = 2 ;
 /*
 ** Intersect Volume Area Polygon And Intersected Tin Hull Polygons
 */
  if( numPolyPts > 0 )
    {
-    if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Volume Polygon With Intersection Of Tin Hulls") ; 
+    if( dbg ) bcdtmWrite_message(0,0,0,"Intersecting Volume Polygon With Intersection Of Tin Hulls") ;
     bcdtmPolygon_intersectPolygonWithPolgyonObject(polyPtsP,numPolyPts,*polyPP,ppTol,plTol,&intFlag,&tempPolyP) ;
-    if( intFlag == 0 ) 
-      { 
+    if( intFlag == 0 )
+      {
        bcdtmWrite_message(1,0,0,"Polygon And Tin Hulls Do Not Intersect") ;
        goto errexit ;
       }
     else if( intFlag == 2 || intFlag == 4 ) *intersectFlagP = 1 ;
-    else                                    *intersectFlagP = 2 ; 
-    bcdtmPolygon_deletePolygonObject(polyPP) ; 
+    else                                    *intersectFlagP = 2 ;
+    bcdtmPolygon_deletePolygonObject(polyPP) ;
     *polyPP   = tempPolyP ;
     tempPolyP = NULL ;
    }
@@ -328,10 +328,10 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonAndTinHullsDtmObjects
 ** Clean Up
 */
  cleanup :
- if( hullPts1P != NULL ) free(hullPts1P) ; 
- if( hullPts2P != NULL ) free(hullPts2P) ; 
- if( polyPtsP  != NULL ) free(polyPtsP) ; 
- if( tempPolyP != NULL ) bcdtmPolygon_deletePolygonObject(&tempPolyP) ; 
+ if( hullPts1P != NULL ) free(hullPts1P) ;
+ if( hullPts2P != NULL ) free(hullPts2P) ;
+ if( polyPtsP  != NULL ) free(polyPtsP) ;
+ if( tempPolyP != NULL ) bcdtmPolygon_deletePolygonObject(&tempPolyP) ;
 /*
 ** Job completed
 */
@@ -381,7 +381,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
  long    hullPnt1,hullPnt2,numPolyPts,polyOffset,dtmFeature ;
  DTMDirection direction;
  double  area ;
- DPoint3d     *p3dP,*polyPtsP=NULL ; 
+ DPoint3d     *p3dP,*polyPtsP=NULL ;
  DTM_DAT_OBJ *dataP=NULL ;
  BC_DTM_OBJ  *dtmP=NULL   ;
  DTM_POLYGON_LIST  *polyListP ;
@@ -391,7 +391,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
 /*
 ** Write Entry Message
 */
- if( dbg ) 
+ if( dbg )
    {
     bcdtmWrite_message(0,0,0,"Intersecting Polygons") ;
     bcdtmWrite_message(0,0,0,"poly1PtsP    = %p",poly1PtsP) ;
@@ -455,7 +455,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
  if( dbg ) bcdtmWrite_message(0,0,0,"Triangulating Dtm Object") ;
  startTime = bcdtmClock() ;
  dtmP->ppTol = ppTol / 100.0 ;
- dtmP->plTol = plTol / 100.0 ;  
+ dtmP->plTol = plTol / 100.0 ;
  if( bcdtmObject_createTinDtmObject(dtmP,1,0.0, false)) goto errexit ;
  if( tdbg ) bcdtmWrite_message(0,0,0,"**** Time Time = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
@@ -469,7 +469,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
 ** Remove None Feature Lines
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Removing None Feature Hull Lines") ;
- if( bcdtmList_removeNoneFeatureHullLinesDtmObject(dtmP)) goto errexit ; 
+ if( bcdtmList_removeNoneFeatureHullLinesDtmObject(dtmP)) goto errexit ;
 /*
 ** Write Dtm Features
 */
@@ -505,14 +505,14 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
     do
       {
        ++numHullPts ;
-       hullPnt1 = hullPnt2 = FALSE ; 
+       hullPnt1 = hullPnt2 = FALSE ;
        listPtr = nodeAddrP(dtmP,pnt)->fPtr ;
        while( listPtr != dtmP->nullPtr )
          {
           if(ftableAddrP(dtmP,flistAddrP(dtmP,listPtr)->dtmFeature)->dtmUserTag == 1 ) hullPnt1 = TRUE ;
           if(ftableAddrP(dtmP,flistAddrP(dtmP,listPtr)->dtmFeature)->dtmUserTag == 2 ) hullPnt2 = TRUE ;
           listPtr = flistAddrP(dtmP,listPtr)->nextPtr ;
-         } 
+         }
        if( hullPnt1 == TRUE ) ++numPoly1HullPts ;
        if( hullPnt2 == TRUE ) ++numPoly2HullPts ;
        pnt = nodeAddrP(dtmP,pnt)->hPtr ;
@@ -522,25 +522,25 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
 */
     if( numPoly2HullPts == numHullPts && numPoly1HullPts != numHullPts )
       {
-       *intersectResult = 2 ; 
+       *intersectResult = 2 ;
        if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,poly1PtsP,numPoly1Pts,1)) goto errexit ;
-      } 
+      }
 /*
 ** Check For Polygon Two Totally Within Polygon One
 */
     if( numPoly1HullPts == numHullPts && numPoly2HullPts != numHullPts )
       {
-       *intersectResult = 3 ; 
+       *intersectResult = 3 ;
        if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,poly2PtsP,numPoly2Pts,2) ) goto errexit ;
-      } 
+      }
 /*
 ** Check For Coincident Polygons
 */
     if( numPoly1HullPts == numHullPts && numPoly2HullPts == numHullPts )
       {
-       *intersectResult = 4 ; 
+       *intersectResult = 4 ;
        if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,poly2PtsP,numPoly2Pts,2) ) goto errexit ;
-      } 
+      }
    }
  if( tdbg ) bcdtmWrite_message(0,0,0,"**** Polygon Time = %8.3lf Seconds",bcdtmClock_elapsedTime(bcdtmClock(),startTime)) ;
 /*
@@ -555,7 +555,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
        bcdtmWrite_message(0,0,0,"Number Of Intersect Polygons = %6ld",(*polyPP)->numPolygons ) ;
        if( bcdtmObject_createDataObject(&dataP)) goto errexit ;
        for( polyListP = (*polyPP)->polyListP ; polyListP < (*polyPP)->polyListP + (*polyPP)->numPolygons ; ++polyListP )
-         { 
+         {
           bcdtmWrite_message(0,0,0,"Polygon[%4ld] ** Area = %12.3lf",(long)(polyListP-(*polyPP)->polyListP),polyListP->area) ;
           polyOffset = (long)(polyListP-(*polyPP)->polyListP) ;
           swprintf(dataFile,128,L"intersectPolygon%d%d.dat",dbgSequence,polyOffset) ;
@@ -573,7 +573,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
 ** Clean Up
 */
  cleanup :
- if( dtmP     != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ; 
+ if( dtmP     != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
  if( polyPtsP != NULL ) { free(polyPtsP) ; polyPtsP = NULL ; }
 /*
 ** Job Completed
@@ -593,7 +593,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygons
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmPolygon_getIntersectPolygonsDtmObject(BC_DTM_OBJ *dtmP,DTM_POLYGON_OBJ *polyP) 
+BENTLEYDTM_Public int bcdtmPolygon_getIntersectPolygonsDtmObject(BC_DTM_OBJ *dtmP,DTM_POLYGON_OBJ *polyP)
 /*
 ** This Function Gets The Internal Intersect Polygons And Copies Them To
 ** The Polygon Object
@@ -618,27 +618,27 @@ BENTLEYDTM_Public int bcdtmPolygon_getIntersectPolygonsDtmObject(BC_DTM_OBJ *dtm
    {
     swprintf(dtmFileName,256,L"poly%d.tin",dbgSequence) ;
     if( bcdtmWrite_toFileDtmObject(dtmP,dtmFileName) ) goto errexit ;
-    ++dbgSequence ;  
+    ++dbgSequence ;
    }
 /*
 ** Initialise
 */
- userTag  = dtmP->nullUserTag ; 
- userTag1 = dtmP->nullUserTag ; 
- userTag2 = dtmP->nullUserTag ; 
+ userTag  = dtmP->nullUserTag ;
+ userTag1 = dtmP->nullUserTag ;
+ userTag2 = dtmP->nullUserTag ;
 /*
 ** Scan Points For More Than One Feature
 */
  for( scanPnt = 0 ; scanPnt < dtmP->numPoints ; ++scanPnt )
    {
-    if( nodeAddrP(dtmP,scanPnt)->cPtr != dtmP->nullPtr && ! nodeAddrP(dtmP,scanPnt)->PRGN ) 
+    if( nodeAddrP(dtmP,scanPnt)->cPtr != dtmP->nullPtr && ! nodeAddrP(dtmP,scanPnt)->PRGN )
       {
 /*
 **     Determine Number Of Features On Point
 */
        bcdtmData_countNumberOfContinuingDtmFeaturesForPointDtmObject(dtmP,scanPnt,&numDtmFeatures) ;
        if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Continuing Dtm Features For Point %6ld ** %12.4lf %12.4lf %10.4lf = %6ld",scanPnt,pointAddrP(dtmP,scanPnt)->x,pointAddrP(dtmP,scanPnt)->y,pointAddrP(dtmP,scanPnt)->z,numDtmFeatures) ;
-       if( numDtmFeatures > 1 ) 
+       if( numDtmFeatures > 1 )
          {
           if( dbg )
             {
@@ -657,7 +657,7 @@ BENTLEYDTM_Public int bcdtmPolygon_getIntersectPolygonsDtmObject(BC_DTM_OBJ *dtm
              if( nextPnt != dtmP->nullPnt )
                {
                 dtmFeature = flistAddrP(dtmP,listPtr)->dtmFeature ;
-                userTag    =  ftableAddrP(dtmP,dtmFeature)->dtmUserTag ; 
+                userTag    =  ftableAddrP(dtmP,dtmFeature)->dtmUserTag ;
                 if( nextPnt1 == dtmP->nullPnt ) { nextPnt1 = nextPnt ; userTag1 = userTag ; }
                 else                            { nextPnt2 = nextPnt ; userTag2 = userTag ; }
                }
@@ -681,10 +681,10 @@ BENTLEYDTM_Public int bcdtmPolygon_getIntersectPolygonsDtmObject(BC_DTM_OBJ *dtm
 */
           if( nodeAddrP(dtmP,scanPnt)->hPtr != dtmP->nullPnt )
             {
-             if( nextPnt1 != nextPnt2 ) 
-               {  
+             if( nextPnt1 != nextPnt2 )
+               {
                 if( nodeAddrP(dtmP,scanPnt)->hPtr == nextPnt2 ) { nextPnt = nextPnt1 ; userTag = userTag2 ; }
-                else                                            { nextPnt = nextPnt2 ; userTag = userTag1 ; } 
+                else                                            { nextPnt = nextPnt2 ; userTag = userTag1 ; }
                 bcdtmPolygon_getNextPointForUserTagDtmObject(dtmP,userTag,nextPnt,&nextPnt1) ;
                 if( nextPnt1 == scanPnt )  nextPnt = dtmP->nullPnt ;
                 else
@@ -696,9 +696,9 @@ BENTLEYDTM_Public int bcdtmPolygon_getIntersectPolygonsDtmObject(BC_DTM_OBJ *dtm
                       bcdtmPolygon_getNextPointForUserTagDtmObject(dtmP,userTag,priorPnt,&listPnt) ;
                      } while ( listPnt != scanPnt ) ;
                    if( bcdtmMath_pointSideOfDtmObject(dtmP,scanPnt,priorPnt,nextPnt) > 0 ) nextPnt = dtmP->nullPnt ;
-                  }  
+                  }
                }
-            } 
+            }
 /*
 **        Internal Point
 */
@@ -715,13 +715,13 @@ BENTLEYDTM_Public int bcdtmPolygon_getIntersectPolygonsDtmObject(BC_DTM_OBJ *dtm
                    bcdtmPolygon_getNextPointForUserTagDtmObject(dtmP,userTag2,nextPnt,&listPnt) ;
                   } while ( listPnt != scanPnt ) ;
                 if( bcdtmMath_pointSideOfDtmObject(dtmP,scanPnt,nextPnt1,nextPnt) < 0 ) nextPnt = dtmP->nullPnt ;
-                if( nextPnt != dtmP->nullPnt ) nextPnt = nextPnt1 ; 
+                if( nextPnt != dtmP->nullPnt ) nextPnt = nextPnt1 ;
                }
              else
                {
                 bcdtmPolygon_getNextPointForUserTagDtmObject(dtmP,userTag1,nextPnt2,&listPnt) ;
                 if( dbg ) bcdtmWrite_message(0,0,0,"01 ** listPnt = %8ld",listPnt) ;
-                if( listPnt != scanPnt ) 
+                if( listPnt != scanPnt )
                   {
                    nextPnt = nextPnt2 ;
                    do
@@ -730,23 +730,23 @@ BENTLEYDTM_Public int bcdtmPolygon_getIntersectPolygonsDtmObject(BC_DTM_OBJ *dtm
                       bcdtmPolygon_getNextPointForUserTagDtmObject(dtmP,userTag1,nextPnt,&listPnt) ;
                      } while ( listPnt != scanPnt ) ;
                    if( bcdtmMath_pointSideOfDtmObject(dtmP,scanPnt,nextPnt2,nextPnt) < 0 ) nextPnt = dtmP->nullPnt ;
-                   if( nextPnt != dtmP->nullPnt ) nextPnt = nextPnt2 ; 
+                   if( nextPnt != dtmP->nullPnt ) nextPnt = nextPnt2 ;
                   }
-               } 
+               }
             }
 /*
 **        Scan Back To Start Point
 */
           if( nextPnt != dtmP->nullPnt )
-            { 
+            {
              if( dbg )
                {
                 bcdtmWrite_message(0,0,0,"Next Point = %6ld ** %10.4lf %10.4lf %8.4lf",nextPnt,pointAddrP(dtmP,nextPnt)->x,pointAddrP(dtmP,nextPnt)->y,pointAddrP(dtmP,nextPnt)->z) ;
                 bcdtmWrite_message(0,0,0,"UserTag    = %2I64d ",userTag) ;
-               } 
+               }
              listPnt = scanPnt ;
              do
-               { 
+               {
                 nodeAddrP(dtmP,listPnt)->tPtr = nextPnt ;
                 if( dbg ) bcdtmWrite_message(0,0,0,"listPnt = %6ld ** %10.4lf %10.4lf %10.4lf",listPnt,pointAddrP(dtmP,listPnt)->x,pointAddrP(dtmP,listPnt)->y,pointAddrP(dtmP,listPnt)->z) ;
                 priorPnt = listPnt ; listPnt = nextPnt ; nextPnt = priorPnt ;
@@ -775,13 +775,13 @@ BENTLEYDTM_Public int bcdtmPolygon_getIntersectPolygonsDtmObject(BC_DTM_OBJ *dtm
                   } while ( listPnt != scanPnt ) ;
 /*
 **              Null Out Tptr Polygon
-*/         
+*/
                 bcdtmList_nullTptrListDtmObject(dtmP,scanPnt) ;
                }
             }
          }
       }
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -818,12 +818,12 @@ BENTLEYDTM_Private int bcdtmPolygon_getNextPointForUserTagDtmObject(BC_DTM_OBJ *
 /*
 ** Scan Features For Point
 */
- listPtr = nodeAddrP(dtmP,point)->fPtr ; 
+ listPtr = nodeAddrP(dtmP,point)->fPtr ;
  while ( listPtr != dtmP->nullPtr && *nextPointP == dtmP->nullPnt )
    {
-    if( ftableAddrP(dtmP,flistAddrP(dtmP,listPtr)->dtmFeature)->dtmUserTag == userTag ) 
-      { 
-       *nextPointP = flistAddrP(dtmP,listPtr)->nextPnt ; 
+    if( ftableAddrP(dtmP,flistAddrP(dtmP,listPtr)->dtmFeature)->dtmUserTag == userTag )
+      {
+       *nextPointP = flistAddrP(dtmP,listPtr)->nextPnt ;
       }
     listPtr = flistAddrP(dtmP,listPtr)->nextPtr ;
    }
@@ -850,7 +850,7 @@ BENTLEYDTM_Private int bcdtmPolygon_intersectPolygonWithPolgyonObject
 /*
 **
 ** This Function Gets The Intesection Polygons Of A 3D Polygon "polyPtsP"
-** With All The Polygons In A Polygon Object "poly1P". 
+** With All The Polygons In A Polygon Object "poly1P".
 **
 ** The Intersected polyPtsPgons Are Written to Polygon Object "poly2PP"
 **
@@ -882,8 +882,8 @@ BENTLEYDTM_Private int bcdtmPolygon_intersectPolygonWithPolgyonObject
 */
     numTempPts = plistP->lastPnt - plistP->firstPnt + 1 ;
     tempPtsP = ( DPoint3d * ) malloc ( numTempPts * sizeof(DPoint3d)) ;
-    if( tempPtsP == NULL ) 
-      { 
+    if( tempPtsP == NULL )
+      {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
@@ -894,7 +894,7 @@ BENTLEYDTM_Private int bcdtmPolygon_intersectPolygonWithPolgyonObject
 /*
 **  Intersect polyPtsPgons
 */
-    if( bcdtmPolygon_intersectPolygons(tempPtsP,numTempPts,polyPtsP,numPolyPts,intersectResultP,poly2PP,ppTol,plistPTol))  goto errexit ; 
+    if( bcdtmPolygon_intersectPolygons(tempPtsP,numTempPts,polyPtsP,numPolyPts,intersectResultP,poly2PP,ppTol,plistPTol))  goto errexit ;
 /*
 **  Free memory
 */
@@ -957,7 +957,7 @@ BENTLEYDTM_Public int bcdtmPolygon_storeDtmObjectTptrPolygonInPolygonObject
 /*
 ** Store Points
 */
- sp = startPnt ; 
+ sp = startPnt ;
  do
    {
     if( polyP->numPolyPts == polyP->memPolyPts ) { if( bcdtmPolygon_allocateMemoryPolygonObject(polyP)) goto errexit ; }
@@ -1030,16 +1030,16 @@ BENTLEYDTM_Public int bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon
  if( *numPolygonPtsP > 0 )
    {
     *polygonPtsP    = ( DPoint3d * ) malloc (*numPolygonPtsP * sizeof(DPoint3d)) ;
-    if( *polygonPtsP == NULL ) 
-      { 
+    if( *polygonPtsP == NULL )
+      {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-       goto errexit ; 
+       goto errexit ;
       }
 /*
 **  Copy Points
 */
     for( p3d1P = *polygonPtsP, p3d2P = polygonP->polyPtsP + (polygonP->polyListP+offset)->firstPnt ;  p3d2P <= polygonP->polyPtsP + (polygonP->polyListP+offset)->lastPnt ; ++p3d1P , ++p3d2P ) *p3d1P = *p3d2P ;
-   } 
+   }
 /*
 ** Clean Up
 */
@@ -1052,9 +1052,9 @@ BENTLEYDTM_Public int bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon
 ** Error Exit
 */
  errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;  
+ if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
  goto cleanup ;
-} 
+}
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -1109,7 +1109,7 @@ BENTLEYDTM_Public int bcdtmPolygon_createPolygonObject(DTM_POLYGON_OBJ **polyPP 
         {
          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
          return(DTM_ERROR) ;
-        } 
+        }
 
     // Initialise Polygon Object
 
@@ -1118,8 +1118,8 @@ BENTLEYDTM_Public int bcdtmPolygon_createPolygonObject(DTM_POLYGON_OBJ **polyPP 
     bcdtmPolygon_initialisePolygonObject(*polyPP) ;
     return(DTM_SUCCESS) ;
 
-     
-   
+
+
 /*
 ** Initialise Variables
 */
@@ -1141,7 +1141,7 @@ BENTLEYDTM_Public int bcdtmPolygon_createPolygonObject(DTM_POLYGON_OBJ **polyPP 
        return(0) ;
       }
    }
-*/   
+*/
 /*
 ** No Entries
 */
@@ -1162,7 +1162,7 @@ BENTLEYDTM_Public int bcdtmPolygon_deletePolygonObject(DTM_POLYGON_OBJ **polyPP)
 ** Check For Null Data Object
 */
  if( *polyPP == NULL ) return(0) ;
- if(bcdtmPolygon_freeMemoryPolygonObject(*polyPP)) 
+ if(bcdtmPolygon_freeMemoryPolygonObject(*polyPP))
      return(1) ;
  else
     {
@@ -1183,7 +1183,7 @@ BENTLEYDTM_Public int bcdtmPolygon_deletePolygonObject(DTM_POLYGON_OBJ **polyPP)
        return(0) ;
       }
    }
-*/   
+*/
 /*
 ** No Entries
 */
@@ -1212,7 +1212,7 @@ BENTLEYDTM_Public int bcdtmPolygon_deleteAllPolygonObjects(void)
        free(polyObjPtrs[i]) ; polyObjPtrs[i] = NULL ;
       }
    }
-*/   
+*/
 /*
 ** Job Completed
 */
@@ -1317,7 +1317,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygons(DPoint3d *poly1Pt
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    pnt,listPtr,numHullPts,numPoly1HullPts,numPoly2HullPts ;
  long    hullPnt1,hullPnt2 ;
- DPoint3d     *p3d1P,*p3d2P,*polyPtsP=NULL,breakPts[2] ; 
+ DPoint3d     *p3d1P,*p3d2P,*polyPtsP=NULL,breakPts[2] ;
  BC_DTM_OBJ  *dtmP=NULL   ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
@@ -1362,12 +1362,12 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygons(DPoint3d *poly1Pt
    }
 /*
 ** Triangulate DTM Object
-*/ 
+*/
  if( bcdtmObject_triangulateDtmObject(dtmP)) goto errexit ;
 /*
 ** Remove None Feature Hull Lines
 */
- if( bcdtmList_removeNoneFeatureHullLinesDtmObject(dtmP)) goto errexit ; 
+ if( bcdtmList_removeNoneFeatureHullLinesDtmObject(dtmP)) goto errexit ;
 /*
 ** Get Intersect Polygons
 */
@@ -1389,14 +1389,14 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygons(DPoint3d *poly1Pt
     do
       {
        ++numHullPts ;
-       hullPnt1 = hullPnt2 = FALSE ; 
+       hullPnt1 = hullPnt2 = FALSE ;
        listPtr = nodeAddrP(dtmP,pnt)->fPtr ;
        while( listPtr != dtmP->nullPtr )
          {
           if( ftableAddrP(dtmP,flistAddrP(dtmP,listPtr)->dtmFeature)->dtmUserTag == 1 ) hullPnt1 = TRUE ;
           if( ftableAddrP(dtmP,flistAddrP(dtmP,listPtr)->dtmFeature)->dtmUserTag == 2 ) hullPnt2 = TRUE ;
           listPtr = flistAddrP(dtmP,listPtr)->nextPtr ;
-         } 
+         }
        if( hullPnt1 == TRUE ) ++numPoly1HullPts ;
        if( hullPnt2 == TRUE ) ++numPoly2HullPts ;
        pnt = nodeAddrP(dtmP,pnt)->hPtr ;
@@ -1406,31 +1406,31 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygons(DPoint3d *poly1Pt
 */
     if( numPoly2HullPts == numHullPts && numPoly1HullPts != numHullPts )
       {
-       *intersectResult = 2 ; 
+       *intersectResult = 2 ;
        if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,poly1PtsP,numPoly1Pts,1)) goto errexit ;
-      } 
+      }
 /*
 ** Check For Polygon Two Totally Within Polygon One
 */
     if( numPoly1HullPts == numHullPts && numPoly2HullPts != numHullPts )
       {
-       *intersectResult = 3 ; 
+       *intersectResult = 3 ;
        if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,poly2PtsP,numPoly2Pts,2) ) goto errexit ;
-      } 
+      }
 /*
 ** Check For Coincident Polygons
 */
     if( numPoly1HullPts == numHullPts && numPoly2HullPts == numHullPts )
       {
-       *intersectResult = 4 ; 
+       *intersectResult = 4 ;
        if( bcdtmPolygon_storePointArrayPolygonInPolygonObject(*polyPP,poly2PtsP,numPoly2Pts,2) ) goto errexit ;
-      } 
+      }
    }
 /*
 ** Clean Up
 */
  cleanup :
- if( dtmP     != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ; 
+ if( dtmP     != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ;
  if( polyPtsP != NULL ) { free(polyPtsP) ; polyPtsP = NULL ; }
 /*
 ** Job Completed
@@ -1461,7 +1461,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygonWithPolgyonObject
 /*
 **
 ** This Function Gets The Intesection polygonPtsPgons of a 3D polygonPtsPgon "polygonPtsP"
-** With A polygonPtsPgon Object "*polygon1P". 
+** With A polygonPtsPgon Object "*polygon1P".
 ** The Intersected polygonPtsPgons Are Written to polygonPtsPgon Object "polygon2PP"
 **
 ** Return Values for intersectFlagP ==  Number Of Intersected polygonPtsPgons
@@ -1481,9 +1481,9 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygonWithPolgyonObject
 /*
 ** Create Polygon Object If Necessary
 */
- if( *polygon2PP == NULL ) 
-   { 
-    if( bcdtmPolygon_createPolygonObject(polygon2PP)) goto errexit ; 
+ if( *polygon2PP == NULL )
+   {
+    if( bcdtmPolygon_createPolygonObject(polygon2PP)) goto errexit ;
    }
 /*
 ** Intersect Polygons
@@ -1495,30 +1495,30 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygonWithPolgyonObject
 */
     numNewPolyPts = pl->lastPnt - pl->firstPnt + 1 ;
     newPolyPtsP = ( DPoint3d * ) malloc ( numNewPolyPts * sizeof(DPoint3d)) ;
-    if( newPolyPtsP == NULL ) 
-      { 
+    if( newPolyPtsP == NULL )
+      {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
 /*
 **  Copy Points
 */
-    for( np3dP = newPolyPtsP , p3dP = polygon1P->polyPtsP + pl->firstPnt ;  p3dP <= polygon1P->polyPtsP + pl->lastPnt ; ++p3dP , ++np3dP ) 
+    for( np3dP = newPolyPtsP , p3dP = polygon1P->polyPtsP + pl->firstPnt ;  p3dP <= polygon1P->polyPtsP + pl->lastPnt ; ++p3dP , ++np3dP )
       {
        *np3dP = *p3dP ;
-      } 
+      }
 /*
 **  Intersect polygonPtsPgons
 */
-    if( bcdtmPolygon_intersectPointArrayPolygons(polygonPtsP,numPolygonPts,newPolyPtsP,numNewPolyPts,intersectFlagP,polygon2PP,ppTol,plTol)) 
-      { 
-       free( newPolyPtsP) ; 
-       goto errexit ; 
+    if( bcdtmPolygon_intersectPointArrayPolygons(polygonPtsP,numPolygonPts,newPolyPtsP,numNewPolyPts,intersectFlagP,polygon2PP,ppTol,plTol))
+      {
+       free( newPolyPtsP) ;
+       goto errexit ;
       }
 /*
 **   Free memory
 */
-    free(newPolyPtsP) ; 
+    free(newPolyPtsP) ;
     newPolyPtsP = NULL ;
    }
 /*
@@ -1528,30 +1528,30 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPointArrayPolygonWithPolgyonObject
 /*
 ** Clean Up
 */
- cleanup : 
- if( newPolyPtsP != NULL ) free(newPolyPtsP) ; 
+ cleanup :
+ if( newPolyPtsP != NULL ) free(newPolyPtsP) ;
 /*
 ** Return
 */
  return(ret) ;
 /*
-** Error Exit 
+** Error Exit
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ; 
+ goto cleanup ;
 }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmPolygon_getTagListFromTagObject(TAGOBJ *Tag,long TagOfs,long **TagList,long *NumTagValues,long *Utag1,long *Utag2,long *Utag3,long *Utag4)
+BENTLEYDTM_Public int bcdtmPolygon_getTagListFromTagObject(TAGOBJ *Tag,long TagOfs,TagValue **TagList,long *NumTagValues,long *Utag1,long *Utag2,long *Utag3,long *Utag4)
 /*
 ** This Function Geta a TagList From A Tag Object
 */
 {
- long  *pt1,*pt2,*ptl,*ptv ;
+ TagValue  *pt1,*pt2,*ptl,*ptv ;
 /*
 ** Initialise
 */
@@ -1570,7 +1570,7 @@ BENTLEYDTM_Public int bcdtmPolygon_getTagListFromTagObject(TAGOBJ *Tag,long TagO
 */
  if( *TagList != NULL ) free(*TagList) ;
  *NumTagValues = (Tag->PTAG+TagOfs)->LTAG - (Tag->PTAG+TagOfs)->FTAG + 1 ;
- *TagList = ( long * ) malloc( *NumTagValues * sizeof(long)) ;
+ *TagList = ( TagValue * ) malloc( *NumTagValues * sizeof(TagValue)) ;
  if( *TagList == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; return(1) ; }
 /*
 ** Copy Tag Values
@@ -1622,13 +1622,13 @@ BENTLEYDTM_Public int bcdtmPolygon_copyPolygonObjectToPolygonObject(DTM_POLYGON_
 ** Copy Polygon Headers
 */
  Poly2->polyListP = ( DTM_POLYGON_LIST * ) malloc(Poly2->memPolygons * sizeof(DTM_POLYGON_LIST)) ;
- if( Poly2->polyListP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; return(1) ; } 
+ if( Poly2->polyListP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; return(1) ; }
  for( pl2 = Poly2->polyListP , pl1 = Poly1->polyListP ; pl1 < Poly1->polyListP + Poly1->memPolygons ; ++pl2 , ++pl1 ) *pl2 = *pl1 ;
 /*
 ** Copy Polygon Points
 */
  Poly2->polyPtsP = ( DPoint3d * ) malloc(Poly2->memPolyPts * sizeof(DPoint3d)) ;
- if( Poly2->polyListP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; free(Poly2->polyListP) ; return(1) ; } 
+ if( Poly2->polyListP == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; free(Poly2->polyListP) ; return(1) ; }
  for( pd2 = Poly2->polyPtsP , pd1 = Poly1->polyPtsP ; pd1 < Poly1->polyPtsP + Poly1->memPolyPts ; ++pd2 , ++pd1 ) *pd2 = *pd1 ;
 /*
 ** Job Completed
@@ -1661,7 +1661,7 @@ BENTLEYDTM_Public int bcdtmPolygon_allocateMemoryPolygonObject(DTM_POLYGON_OBJ *
       {
        if( Poly->polyListP != NULL ) { free(Poly->polyListP) ; Poly->polyListP = NULL ; }
        if( Poly->polyPtsP != NULL ) { free(Poly->polyPtsP) ; Poly->polyPtsP = NULL ; }
-       Poly->memPolygons = Poly->memPolyPts = 0 ; 
+       Poly->memPolygons = Poly->memPolyPts = 0 ;
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        return(1) ;
       }
@@ -1700,7 +1700,7 @@ BENTLEYDTM_Public int bcdtmPolygon_incrementMemoryPolygonObject(DTM_POLYGON_OBJ 
        if( Poly->polyPtsP != NULL ) { free(Poly->polyPtsP) ; Poly->polyPtsP = NULL ; }
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        return(1) ;
-      } 
+      }
     for( pl = Poly->polyListP + Poly->numPolygons ; pl < Poly->polyListP + Poly->memPolygons ; ++pl ) { pl->area = pl->perimeter = pl->d1 = 0.0 ; pl->firstPnt = pl->lastPnt = pl->userTag = pl->s1 = DTM_NULL_PNT ; }
    }
 /*
@@ -1715,7 +1715,7 @@ BENTLEYDTM_Public int bcdtmPolygon_incrementMemoryPolygonObject(DTM_POLYGON_OBJ 
        if( Poly->polyListP != NULL ) { free(Poly->polyListP) ; Poly->polyListP = NULL ; }
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        return(1) ;
-      } 
+      }
     for( pd = Poly->polyPtsP + Poly->numPolyPts ; pd < Poly->polyPtsP + Poly->memPolyPts  ; ++pd ) { pd->x = pd->y = pd->z = 0.0 ; }
    }
 /*
@@ -1736,8 +1736,8 @@ BENTLEYDTM_Public int bcdtmPolygon_freeMemoryPolygonObject(DTM_POLYGON_OBJ *Poly
 /*
 ** Free memory
 */
- if( Poly->polyListP != NULL ) { free(Poly->polyListP) ; Poly->polyListP = NULL ; } 
- if( Poly->polyPtsP != NULL ) { free(Poly->polyPtsP) ; Poly->polyPtsP = NULL ; } 
+ if( Poly->polyListP != NULL ) { free(Poly->polyListP) ; Poly->polyListP = NULL ; }
+ if( Poly->polyPtsP != NULL ) { free(Poly->polyPtsP) ; Poly->polyPtsP = NULL ; }
 /*
 ** Reset Polygon Object Variables
 */
@@ -1782,7 +1782,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonObjectPolygons
  DTM_POLYGON_OBJ *polygonP,
  DTM_POLYGON_OBJ **intPolygonPP,
  TAGOBJ          **intTagObjPP
- ) 
+ )
 /*
 ** This Function Intersects The Polygons In Polygon Object Poly And Stores Them
 ** In Polygon Object IntPoly
@@ -1796,7 +1796,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonObjectPolygons
 /*
 ** Check For Polygons In Polygon Object
 */
- if( polygonP->numPolygons > 0 ) 
+ if( polygonP->numPolygons > 0 )
    {
 /*
 **  Create DTM Object
@@ -1808,17 +1808,17 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonObjectPolygons
     for( polygon = 0 ; polygon < polygonP->numPolygons ; ++polygon )
       {
        if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polygonP,polygon,&polyPtsP,&numPolyPts)) goto errexit ;
-       if( bcdtmObject_storeDtmFeatureInDtmObject(dtmP,DTMFeatureType::Breakline,DTM_NULL_USER_TAG,1,&nullFeatureId,polyPtsP,numPolyPts)) goto errexit ;
+       if( bcdtmObject_storeDtmFeatureInDtmObject(dtmP,DTMFeatureType::Breakline,polygonP->polyListP[polygon].userTag,1,&nullFeatureId,polyPtsP,numPolyPts)) goto errexit ;
       }
 /*
 **  Triangulate DTM Object
-*/ 
+*/
     if( bcdtmObject_triangulateDtmObject(dtmP)) goto errexit ;
 /*
 **  Extract Polygons From DTM Object
 */
    if( bcdtmPolygon_extractPolygonsDtmObject(dtmP,intPolygonPP,intTagObjPP)) goto errexit ;
-  } 
+  }
 /*
 ** Clean Up
 */
@@ -1830,7 +1830,7 @@ BENTLEYDTM_Public int bcdtmPolygon_intersectPolygonObjectPolygons
 */
  return(ret) ;
 /*
-** Error Exit 
+** Error Exit
 */
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -1846,17 +1846,19 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
  BC_DTM_OBJ      *dtmP,
  DTM_POLYGON_OBJ **polygonPP,
  TAGOBJ          **tagPP
-)  
+)
 /*
-** This Function Extracts Polygons From A  
+** This Function Extracts Polygons From A
 ** DTM Object And Stores Them In A Polygon Object
 **
 */
 {
  int    ret=DTM_SUCCESS ;
- long   pp,np,cp,spnt,clc,cln,clt,ofs,tag,numFeatures,polyNumber=0,numMarked ;
+ long   pp,np,cp,spnt,clc,cln,clt,ofs,numFeatures,polyNumber=0,numMarked ;
  DTMDirection direction;
- long   node,dtmFeature,*tagListP=NULL,tagNum=0,tagMem=0,tagMemInc=100 ;
+ long   node,dtmFeature,tagNum=0,tagMem=0,tagMemInc=100 ;
+ TagValue* tagListP = nullptr;
+ TagValue tag;
  double area ;
  unsigned char   *lineMarkP=NULL,*pc ;
  DTM_TIN_NODE    *nodeP ;
@@ -1866,10 +1868,10 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 // Allocate Memory
 
  lineMarkP = ( unsigned char * ) malloc ((dtmP->cListPtr/8+1)* sizeof(char)) ;
- if( lineMarkP == NULL ) 
-   { 
-    bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; 
-    goto errexit ; 
+ if( lineMarkP == NULL )
+   {
+    bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+    goto errexit ;
    }
  for( pc = lineMarkP ; pc < lineMarkP + dtmP->cListPtr/8+1 ; ++pc ) *pc = 0 ;
 
@@ -1877,13 +1879,13 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 
  for( spnt = 0 ; spnt < dtmP->numPoints ; ++spnt )
    {
-    if( nodeAddrP(dtmP,spnt)->cPtr != dtmP->nullPtr ) 
+    if( nodeAddrP(dtmP,spnt)->cPtr != dtmP->nullPtr )
       {
 
        // Determine Number Of Features On Point
 
        bcdtmPolygon_countNumberOfNonDtmPolygonFeaturesForPointDtmObject(dtmP,spnt,&numFeatures) ;
-       if( numFeatures > 1 ) 
+       if( numFeatures > 1 )
          {
 
           // Scan Point And Get Prior Points
@@ -1892,7 +1894,7 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
           while ( clc != dtmP->nullPtr )
             {
              pp  = clistAddrP(dtmP,clc)->pntNum ;
-             clc = clistAddrP(dtmP,clc)->nextPtr ;   
+             clc = clistAddrP(dtmP,clc)->nextPtr ;
 
              // Check If Prior Point Points To Current Point If So Extract Polygon
 
@@ -1910,7 +1912,7 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
                    if( bcdtmTheme_getLineOffsetDtmObject(dtmP,&ofs,pp,spnt) ) goto errexit ;
                    if(! bcdtmFlag_testFlag(lineMarkP,ofs) )
                      {
-                      np = pp ; 
+                      np = pp ;
                       cp = spnt ;
                       do
                         {
@@ -1925,20 +1927,20 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 
                          // Get Tag Value For lineMarkP Cp-Np
 
-                         clt = nodeAddrP(dtmP,cp)->fPtr ;  
+                         clt = nodeAddrP(dtmP,cp)->fPtr ;
                          while( clt != dtmP->nullPtr )
                            {
                             if( flistAddrP(dtmP,clt)->nextPnt == np )
                               {
-                               tag = (long)(ftableAddrP(dtmP,flistAddrP(dtmP,clt)->dtmFeature)->dtmUserTag) ;
+                               tag = ftableAddrP(dtmP,flistAddrP(dtmP,clt)->dtmFeature)->dtmUserTag;
                                if( bcdtmPolygon_storePolygonTag(&tagListP,1,tag,&tagNum,&tagMem,tagMemInc) )
-                                 { 
+                                 {
                                   if( tagListP != NULL ) free(tagListP) ;
-                                  goto errexit ; 
-                                 } 
+                                  goto errexit ;
+                                 }
                               }
                             clt = flistAddrP(dtmP,clt)->nextPtr ;
-                           }                        
+                           }
 
                          //  Set Tptr List
 
@@ -1957,10 +1959,10 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 
                          //  If Necessary Create Polygon Object
 
-                         if( *polygonPP == NULL ) 
+                         if( *polygonPP == NULL )
                            {
                             if( bcdtmPolygon_createPolygonObject(polygonPP)) goto errexit ;
-                           } 
+                           }
 
                          //  Copy Internal Tptr Polygon To Polygon Object
 
@@ -1968,16 +1970,16 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 
                          //  Store Tptr Polygon In Tin Object As DTMFeatureType::Polygon
 
-                         if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Polygon,polyNumber,dtmP->nullFeatureId,spnt,0)) goto errexit ; 
+                         if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Polygon,polyNumber,dtmP->nullFeatureId,spnt,0)) goto errexit ;
 
                          //  If Necessary Create Tag Object
 
-                         if( *tagPP == NULL ) 
+                         if( *tagPP == NULL )
                            {
                             if( bcdtmPolygon_createTagObject(tagPP)) goto errexit ;
-                           } 
+                           }
 
-                         //  Store Tag List In Tag Object 
+                         //  Store Tag List In Tag Object
 
                          if( bcdtmPolygon_storeTagListInTagObject(*tagPP,tagListP,tagNum,polyNumber,DTM_NULL_PNT,DTM_NULL_PNT,DTM_NULL_PNT)) goto errexit ;
 
@@ -1991,7 +1993,7 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 
                          ++polyNumber ;
 
-                         //  Mark Tptr Polygon 
+                         //  Mark Tptr Polygon
 
                          cp = spnt ;
                          do
@@ -2004,7 +2006,7 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
                         }
 
                       //  Null Out Tptr Polygon
-         
+
                       bcdtmList_nullTptrListDtmObject(dtmP,spnt) ;
                      }
                   }
@@ -2012,19 +2014,23 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
             }
          }
       }
-   } 
+   }
 /*
 ** Free memory
 */
  free(lineMarkP) ;
  lineMarkP = NULL ;
- if( tagListP != NULL ) free(tagListP) ;
+ if (tagListP != NULL)
+     {
+     free(tagListP);
+     tagListP = nullptr;
+     }
 
 // Scan Points For Non Intersecting Polygons
 
  for( spnt = 0 ; spnt < dtmP->numPoints ; ++spnt )
    {
-    if( nodeAddrP(dtmP,spnt)->cPtr != dtmP->nullPtr && ! nodeAddrP(dtmP,spnt)->PRGN ) 
+    if( nodeAddrP(dtmP,spnt)->cPtr != dtmP->nullPtr && ! nodeAddrP(dtmP,spnt)->PRGN )
       {
 
        // Get Prior Point
@@ -2033,7 +2039,7 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
        while ( clc != dtmP->nullPtr )
          {
           pp  = clistAddrP(dtmP,clc)->pntNum ;
-          clc = clistAddrP(dtmP,clc)->nextPtr ;   
+          clc = clistAddrP(dtmP,clc)->nextPtr ;
 
           // Check If Prior Point Points To Current Point If So Extract Polygon
 
@@ -2050,7 +2056,7 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 
                 // Initialise For Scan
 
-                np = pp ; 
+                np = pp ;
                 cp = spnt ;
                 do
                   {
@@ -2084,20 +2090,20 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 
                    //  Get Tag Value
 
-                   tag = (long)(ftableAddrP(dtmP,flistAddrP(dtmP,nodeAddrP(dtmP,spnt)->fPtr)->dtmFeature)->dtmUserTag) ;
+                   tag = ftableAddrP(dtmP,flistAddrP(dtmP,nodeAddrP(dtmP,spnt)->fPtr)->dtmFeature)->dtmUserTag;
 
                    //  Copy Internal Tptr Polygon To Polygon Object
 
                    if( bcdtmPolygon_storeTptrPolygonInPolygonObjectDtmObject(dtmP,*polygonPP,spnt,polyNumber)) goto errexit ;
                    //  Store Tptr Polygon In Tin Object As DTMFeatureType::Polygon
 
-                   if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Polygon,polyNumber,dtmP->nullFeatureId,spnt,0)) goto errexit ; 
+                   if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Polygon,polyNumber,dtmP->nullFeatureId,spnt,0)) goto errexit ;
 
                    //  If Necessary Create Tag Object
 
                    if( *tagPP == NULL ) if( bcdtmPolygon_createTagObject(tagPP)) goto errexit ;
 
-                   //  Store Tag List In Tag Object 
+                   //  Store Tag List In Tag Object
 
                    if( bcdtmPolygon_storeTagListInTagObject(*tagPP,&tag,1,polyNumber,DTM_NULL_PNT,DTM_NULL_PNT,DTM_NULL_PNT)) goto errexit ;
 
@@ -2105,7 +2111,7 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 
                    ++polyNumber ;
 
-                   //  Mark Tptr Polygon 
+                   //  Mark Tptr Polygon
 
                    cp = spnt ;
                    do
@@ -2116,13 +2122,13 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
                   }
 
                 //  Null Out Tptr Polygon
-         
+
                 bcdtmList_nullTptrListDtmObject(dtmP,spnt) ;
                }
-            } 
+            }
          }
       }
-   } 
+   }
 
 // Remove All Break Line Features
 
@@ -2142,20 +2148,20 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
     if( nodeP->cPtr != dtmP->nullPtr && nodeP->PRGN == 0 )
       {
        if( bcdtmList_countNumberOfDtmFeaturesForPointDtmObject(dtmP,node,&numFeatures)) goto errexit ;
-       if( numFeatures > 0 ) 
+       if( numFeatures > 0 )
          {
           cln = nodeP->fPtr ;
           while ( cln != dtmP->nullPtr )
             {
              dtmFeature  = flistAddrP(dtmP,cln)->dtmFeature ;
              dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
-             if( bcdtmMark_internalPolygonPointsDtmObject(dtmP,dtmFeature,(long)dtmFeatureP->dtmUserTag,&numMarked )) goto errexit ; 
-             if( bcdtmMark_prgnControlWordForFeatureDtmObject(dtmP,dtmFeature,1,&numMarked )) goto errexit ; 
+             if( bcdtmMark_internalPolygonPointsDtmObject(dtmP,dtmFeature,(long)dtmFeatureP->dtmUserTag,&numMarked )) goto errexit ;
+             if( bcdtmMark_prgnControlWordForFeatureDtmObject(dtmP,dtmFeature,1,&numMarked )) goto errexit ;
              cln = flistAddrP(dtmP,cln)->nextPtr ;
-            } 
+            }
          }
       }
-   } 
+   }
 
 // Determine Polygons Internal To Other Polygons
 
@@ -2164,13 +2170,13 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
    {
     dtmFeatureP = ftableAddrP(dtmP,dtmFeature) ;
     if( dtmFeatureP->dtmFeatureState == DTMFeatureState::Tin && dtmFeatureP->dtmFeaturePts.firstPoint != dtmP->nullPnt )
-      { 
+      {
        if( nodeAddrP(dtmP,dtmFeatureP->dtmFeaturePts.firstPoint)->tPtr != dtmP->nullPnt )
          {
           ((*polygonPP)->polyListP+dtmFeatureP->dtmUserTag)->s1 = nodeAddrP(dtmP,dtmFeatureP->dtmFeaturePts.firstPoint)->tPtr ;
          }
-      } 
-   } 
+      }
+   }
 
 // Clean Up
 
@@ -2182,7 +2188,7 @@ BENTLEYDTM_Public int bcdtmPolygon_extractPolygonsDtmObject
 
  return(ret) ;
 
-// Error Exit 
+// Error Exit
 
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -2242,12 +2248,21 @@ BENTLEYDTM_Public int bcdtmPolygon_createTagObject(TAGOBJ **tagPP)
 // Create Tag Object
 
  *tagPP = ( TAGOBJ * ) malloc ( sizeof(TAGOBJ)) ;
- if( *tagPP == NULL ) 
-   { 
+ if( *tagPP == NULL )
+   {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
    }
-   
+
+ /*
+ ** Initialise Taggon Object
+ */
+ (*tagPP)->NTAG  = (*tagPP)->MTAG = 0 ;
+ (*tagPP)->NVAL  = (*tagPP)->MVAL  = 0 ;
+ (*tagPP)->SMTAG = (*tagPP)->IMTAG = 100  ;
+ (*tagPP)->SMVAL = (*tagPP)->IMVAL = 1000 ;
+ (*tagPP)->PTAG   = NULL  ;
+ (*tagPP)->PVAL   = NULL  ;
 // Clean Up
 
  cleanup :
@@ -2255,7 +2270,7 @@ BENTLEYDTM_Public int bcdtmPolygon_createTagObject(TAGOBJ **tagPP)
 // Return
  return(ret) ;
 
-// Error Exit 
+// Error Exit
 
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -2275,13 +2290,13 @@ BENTLEYDTM_Public int bcdtmPolygon_deleteTagObject(TAGOBJ **tagPP)
 
 // Check For None Null Tag Object
 
- if( *tagPP != NULL ) 
+ if( *tagPP != NULL )
    {
     if( bcdtmPolygon_freeMemoryTagObject(*tagPP)) goto errexit  ;
     free(*tagPP) ;
     *tagPP = NULL ;
-   } 
-   
+   }
+
 // Clean Up
 
  cleanup :
@@ -2289,7 +2304,7 @@ BENTLEYDTM_Public int bcdtmPolygon_deleteTagObject(TAGOBJ **tagPP)
 // Return
  return(ret) ;
 
-// Error Exit 
+// Error Exit
 
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -2309,8 +2324,8 @@ BENTLEYDTM_Public int bcdtmPolygon_freeMemoryTagObject(TAGOBJ *tagP)
 /*
 ** Free memory
 */
- if( tagP->PTAG != NULL ) { free(tagP->PTAG) ; tagP->PTAG = NULL ; } 
- if( tagP->PVAL != NULL ) { free(tagP->PVAL) ; tagP->PVAL = NULL ; } 
+ if( tagP->PTAG != NULL ) { free(tagP->PTAG) ; tagP->PTAG = NULL ; }
+ if( tagP->PVAL != NULL ) { free(tagP->PVAL) ; tagP->PVAL = NULL ; }
 /*
 ** Reset Taggon Object Variables
 */
@@ -2328,60 +2343,60 @@ BENTLEYDTM_Public int bcdtmPolygon_freeMemoryTagObject(TAGOBJ *tagP)
 +-------------------------------------------------------------------*/
 BENTLEYDTM_Public int bcdtmPolygon_storeTagListInTagObject
 (
- TAGOBJ *tagP,
- long   *tagListP,
- long   numTagValues,
- long   utag1,
- long   utag2,
- long   utag3,
- long   utag4
+    TAGOBJ *tagP,
+    TagValue*tagListP,
+    long   numTagValues,
+    long   utag1,
+    long   utag2,
+    long   utag3,
+    long   utag4
 )
 /*
 ** This Function Stores a TagList In A Tag Object
 */
-{
- int   ret=DTM_SUCCESS ;
- long  *pt ;
-/*
-** Store Header
-*/
- if( tagP->NTAG == tagP->MTAG ) 
-   { 
-    if( bcdtmPolygon_allocateMemoryTagObject(tagP)) goto errexit ; 
-   }
- (tagP->PTAG + tagP->NTAG)->FTAG = tagP->NVAL ;
- (tagP->PTAG + tagP->NTAG)->LTAG = tagP->NVAL + numTagValues - 1 ;
- (tagP->PTAG + tagP->NTAG)->UTAG[0] = utag1  ;
- (tagP->PTAG + tagP->NTAG)->UTAG[1] = utag2  ;
- (tagP->PTAG + tagP->NTAG)->UTAG[2] = utag3  ;
- (tagP->PTAG + tagP->NTAG)->UTAG[3] = utag4  ;
- ++(tagP->NTAG) ;
-/*
-** Store Tag Values
-*/
- for( pt = tagListP ; pt < tagListP + numTagValues ; ++pt )
-   {
-    if( tagP->NVAL == tagP->MVAL ) 
-      { 
-       if( bcdtmPolygon_allocateMemoryTagObject(tagP)) goto errexit ; 
-      }
-    *(tagP->PVAL + tagP->NVAL) = *pt ;
-    ++(tagP->NVAL) ;
-   }
-   
-// Clean Up
+    {
+    int   ret=DTM_SUCCESS ;
+    TagValue  *pt ;
+    /*
+    ** Store Header
+    */
+    if( tagP->NTAG == tagP->MTAG )
+        {
+        if( bcdtmPolygon_allocateMemoryTagObject(tagP)) goto errexit ;
+        }
+    (tagP->PTAG + tagP->NTAG)->FTAG = tagP->NVAL ;
+    (tagP->PTAG + tagP->NTAG)->LTAG = tagP->NVAL + numTagValues - 1 ;
+    (tagP->PTAG + tagP->NTAG)->UTAG[0] = utag1  ;
+    (tagP->PTAG + tagP->NTAG)->UTAG[1] = utag2  ;
+    (tagP->PTAG + tagP->NTAG)->UTAG[2] = utag3  ;
+    (tagP->PTAG + tagP->NTAG)->UTAG[3] = utag4  ;
+    ++(tagP->NTAG) ;
+    /*
+    ** Store Tag Values
+    */
+    for( pt = tagListP ; pt < tagListP + numTagValues ; ++pt )
+        {
+        if( tagP->NVAL == tagP->MVAL )
+            {
+            if( bcdtmPolygon_allocateMemoryTagObject(tagP)) goto errexit ;
+            }
+        *(tagP->PVAL + tagP->NVAL) = *pt ;
+        ++(tagP->NVAL) ;
+        }
 
- cleanup :
+    // Clean Up
 
-// Return
- return(ret) ;
+cleanup :
 
-// Error Exit 
+    // Return
+    return(ret) ;
 
- errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ;
-}
+    // Error Exit
+
+errexit :
+    if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
+    goto cleanup ;
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -2394,7 +2409,7 @@ BENTLEYDTM_Public int bcdtmPolygon_allocateMemoryTagObject(TAGOBJ *Tag)
 {
  int ret=DTM_SUCCESS ;
  TAGLIST  *pl ;
- long     *pd ;
+ TagValue  *pd ;
 /*
 ** Allocate Memory
 */
@@ -2404,26 +2419,26 @@ BENTLEYDTM_Public int bcdtmPolygon_allocateMemoryTagObject(TAGOBJ *Tag)
     Tag->MTAG = Tag->SMTAG ;
     Tag->MVAL = Tag->SMVAL ;
     Tag->PTAG  = ( TAGLIST * ) malloc ( Tag->MTAG * sizeof(TAGLIST)) ;
-    Tag->PVAL  = ( long    * ) malloc ( Tag->MVAL * sizeof(long)) ;
+    Tag->PVAL  = ( TagValue*  ) malloc ( Tag->MVAL * sizeof(TagValue)) ;
     if( Tag->PTAG == NULL || Tag->PVAL == NULL )
       {
        if( Tag->PTAG != NULL ) { free(Tag->PTAG) ; Tag->PTAG = NULL ; }
        if( Tag->PVAL != NULL ) { free(Tag->PVAL) ; Tag->PVAL = NULL ; }
-       Tag->MTAG = Tag->MVAL = 0 ; 
+       Tag->MTAG = Tag->MVAL = 0 ;
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
       }
 /*
 ** Initialise Data Values
 */
-    for( pl = Tag->PTAG ; pl < Tag->PTAG + Tag->MTAG ; ++pl ) 
-      { 
+    for( pl = Tag->PTAG ; pl < Tag->PTAG + Tag->MTAG ; ++pl )
+      {
        pl->FTAG = pl->LTAG = DTM_NULL_PNT ;
-       pl->UTAG[0] = pl->UTAG[1] = pl->UTAG[2] = pl->UTAG[3] = DTM_NULL_PNT ; 
+       pl->UTAG[0] = pl->UTAG[1] = pl->UTAG[2] = pl->UTAG[3] = DTM_NULL_PNT ;
       }
     for( pd = Tag->PVAL ; pd < Tag->PVAL + Tag->MVAL ; ++pd ) *pd = 0 ;
    }
-   
+
 // Clean Up
 
  cleanup :
@@ -2431,7 +2446,7 @@ BENTLEYDTM_Public int bcdtmPolygon_allocateMemoryTagObject(TAGOBJ *Tag)
 // Return
  return(ret) ;
 
-// Error Exit 
+// Error Exit
 
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -2449,7 +2464,7 @@ BENTLEYDTM_Public int bcdtmPolygon_incrementMemoryTagObject(TAGOBJ *Tag)
 {
  int ret=DTM_SUCCESS ;
  TAGLIST  *pl ;
- long     *pd ;
+ TagValue  *pd ;
 /*
 ** Allocate Memory For Tag Header List
 */
@@ -2462,11 +2477,11 @@ BENTLEYDTM_Public int bcdtmPolygon_incrementMemoryTagObject(TAGOBJ *Tag)
        if( Tag->PVAL != NULL ) { free(Tag->PVAL) ; Tag->PVAL = NULL ; }
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
-      } 
-    for( pl = Tag->PTAG + Tag->NTAG ; pl < Tag->PTAG + Tag->MTAG ; ++pl ) 
-      { 
+      }
+    for( pl = Tag->PTAG + Tag->NTAG ; pl < Tag->PTAG + Tag->MTAG ; ++pl )
+      {
        pl->FTAG = pl->LTAG = DTM_NULL_PNT ;
-       pl->UTAG[0] = pl->UTAG[1] = pl->UTAG[2] = pl->UTAG[3] = DTM_NULL_PNT ; 
+       pl->UTAG[0] = pl->UTAG[1] = pl->UTAG[2] = pl->UTAG[3] = DTM_NULL_PNT ;
       }
    }
 /*
@@ -2475,13 +2490,13 @@ BENTLEYDTM_Public int bcdtmPolygon_incrementMemoryTagObject(TAGOBJ *Tag)
  if( Tag->NVAL == Tag->MVAL )
    {
     Tag->MVAL = Tag->MVAL + Tag->IMVAL ;
-    Tag->PVAL = (long * ) realloc( Tag->PVAL,Tag->MVAL * sizeof(long)) ;
+    Tag->PVAL = (TagValue* ) realloc( Tag->PVAL,Tag->MVAL * sizeof(TagValue)) ;
     if( Tag->PVAL == NULL )
       {
        if( Tag->PTAG != NULL ) { free(Tag->PTAG) ; Tag->PTAG = NULL ; }
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
-      } 
+      }
     for( pd = Tag->PVAL + Tag->NVAL ; pd < Tag->PVAL + Tag->MVAL  ; ++pd ) *pd = 0 ;
    }
 
@@ -2492,7 +2507,7 @@ BENTLEYDTM_Public int bcdtmPolygon_incrementMemoryTagObject(TAGOBJ *Tag)
 // Return
  return(ret) ;
 
-// Error Exit 
+// Error Exit
 
  errexit :
  if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
@@ -2503,12 +2518,12 @@ BENTLEYDTM_Public int bcdtmPolygon_incrementMemoryTagObject(TAGOBJ *Tag)
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int bcdtmPolygon_storePolygonTag(long **TagList,long TagFlag,long TagValue,long *Tagne,long *Tagme,long Tagminc) 
+BENTLEYDTM_Public int bcdtmPolygon_storePolygonTag(TagValue **TagList,long TagFlag,TagValue value,long *Tagne,long *Tagme,long Tagminc)
 /*
 ** This Function Stores A Polygon Tag In A Tag List
 */
 {
- long *pl ;
+    TagValue *pl ;
 /*
 ** Test For Memory Allocation
 */
@@ -2516,8 +2531,8 @@ BENTLEYDTM_Public int bcdtmPolygon_storePolygonTag(long **TagList,long TagFlag,l
    {
     if( *TagList == NULL ) *Tagne = *Tagme = 0 ;
     *Tagme = *Tagme + Tagminc ;
-    if( *TagList == NULL ) *TagList = (long *) malloc(*Tagme * sizeof(long)) ;
-    else                   *TagList = (long *) realloc(*TagList,*Tagme * sizeof(long)) ;
+    if( *TagList == NULL ) *TagList = (TagValue *) malloc(*Tagme * sizeof(TagValue)) ;
+    else                   *TagList = (TagValue *) realloc(*TagList,*Tagme * sizeof(TagValue)) ;
     if( *TagList == NULL ) { bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ; return(1) ; }
    }
 /*
@@ -2525,12 +2540,12 @@ BENTLEYDTM_Public int bcdtmPolygon_storePolygonTag(long **TagList,long TagFlag,l
 */
  if( TagFlag == 1 )
    {
-    for( pl = *TagList ; pl < *TagList + *Tagne ; ++pl ) if( *pl == TagValue ) return(0) ; 
+    for( pl = *TagList ; pl < *TagList + *Tagne ; ++pl ) if( *pl == value ) return(0) ;
    }
 /*
 ** Store Tag value
 */
- *(*TagList + *Tagne) = TagValue ;
+ *(*TagList + *Tagne) = value ;
  ++(*Tagne) ;
 /*
 ** Job Completed

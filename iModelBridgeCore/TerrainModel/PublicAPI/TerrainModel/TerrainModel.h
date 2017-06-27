@@ -2,7 +2,7 @@
 |
 |   $Source: PublicAPI/TerrainModel/TerrainModel.h $
 |
-| $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -33,8 +33,24 @@
 #define USING_NAMESPACE_BENTLEY_MRDTM_IMPORT using namespace BENTLEY_NAMESPACE_NAME::MrDTM::Import;
 #endif //!BEGIN_BENTLEY_MRDTM_IMPORT_NAMESPACE
 
+#ifndef BUILDTMFORDGNDB
+  #ifndef ADD_BENTLEY_TYPEDEFS
+  #define BUILDTMFORDGNDB
+  #endif
+#endif
+
+#ifdef BUILDTMFORDGNDB
 #define TERRAINMODEL_TYPEDEFS(_name_) \
     BEGIN_BENTLEY_NAMESPACE namespace TerrainModel { DEFINE_POINTER_SUFFIX_TYPEDEFS(_name_) } END_BENTLEY_NAMESPACE
+
+#define BENTLEYTERRAINMODEL_NAMESPACE_NAME BENTLEY_NAMESPACE_NAME::TerrainModel
+#else
+#define TERRAINMODEL_TYPEDEFS(_name_) \
+    BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE struct _name_; END_BENTLEY_TERRAINMODEL_NAMESPACE \
+    ADD_BENTLEY_TYPEDEFS (Bentley::TerrainModel, _name_)
+#define BENTLEYTERRAINMODEL_NAMESPACE_NAME
+#endif
+
 
 #define TERRAINMODEL_ENUM(t,tEnum) \
     BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE enum t; END_BENTLEY_TERRAINMODEL_NAMESPACE \
@@ -59,23 +75,23 @@
 #endif
 
 //__PUBLISH_SECTION_START__
-TERRAINMODEL_TYPEDEFS (BcDTM)
-TERRAINMODEL_TYPEDEFS (DTMFenceParams)
-TERRAINMODEL_TYPEDEFS (DTMContourParams)
-TERRAINMODEL_TYPEDEFS (BcDTMDrapedLine)
-TERRAINMODEL_TYPEDEFS (BcDTMDrapedLinePoint)
+TERRAINMODEL_TYPEDEFS(BcDTM)
+TERRAINMODEL_TYPEDEFS(DTMFenceParams)
+TERRAINMODEL_TYPEDEFS(DTMContourParams)
+TERRAINMODEL_TYPEDEFS(BcDTMDrapedLine)
+TERRAINMODEL_TYPEDEFS(BcDTMDrapedLinePoint)
 //__PUBLISH_SECTION_END__
-TERRAINMODEL_TYPEDEFS (BcDTMMeshFace)
-TERRAINMODEL_TYPEDEFS (BcDTMMesh)
-TERRAINMODEL_TYPEDEFS (IBcDtmStream)
-TERRAINMODEL_TYPEDEFS (BcDTMFeatureEnumerator)
-TERRAINMODEL_TYPEDEFS (DTMFeatureEnumerator)
-TERRAINMODEL_TYPEDEFS (DTMMeshEnumerator)
+TERRAINMODEL_TYPEDEFS(BcDTMMeshFace)
+TERRAINMODEL_TYPEDEFS(BcDTMMesh)
+TERRAINMODEL_TYPEDEFS(IBcDtmStream)
+TERRAINMODEL_TYPEDEFS(BcDTMFeatureEnumerator)
+TERRAINMODEL_TYPEDEFS(DTMFeatureEnumerator)
+TERRAINMODEL_TYPEDEFS(DTMMeshEnumerator)
 
-TERRAINMODEL_TYPEDEFS (BcDTMFeature)
-TERRAINMODEL_TYPEDEFS (BcDTMLinearFeature)
-TERRAINMODEL_TYPEDEFS (BcDTMComplexLinearFeature)
-TERRAINMODEL_TYPEDEFS (BcDTMSpot)
+TERRAINMODEL_TYPEDEFS(BcDTMFeature)
+TERRAINMODEL_TYPEDEFS(BcDTMLinearFeature)
+TERRAINMODEL_TYPEDEFS(BcDTMComplexLinearFeature)
+TERRAINMODEL_TYPEDEFS(BcDTMSpot)
 
 //ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, BcDTM, BcDTM, struct)
 //ADD_BENTLEY_TYPEDEFS1 (BENTLEY_NAMESPACE_NAME::TerrainModel, IBcDTMFeatureEnumerator, BcDTMFeatureEnumerator, struct)
@@ -315,6 +331,31 @@ enum class DTMDrapePointCode
     Tin = 1,
     Void = 2,
     PointOrLine = 3,
+    };
+
+///<summary> Enum for pond target - voume or elevation</summary>
+enum class DTMPondTarget
+    {
+    Volume = 1,
+    Elevation = 2
+    };
+
+///<summary> Enum for pond reference points - perimeter or invert</summary>
+enum class DTMPondDesignMethod
+    {
+    BottomUp = 1,
+    TopDown = 2,
+    };
+
+///<summary> Enum for the pond result</summary>
+enum class DTMPondResult
+    {
+    TargetObtained = 0,
+    TargetVolumeLessThanPondBoundary = 1,
+    TargetVolumeExceedsPondMaxVolume = 2,
+    NoDesignCriteria = 3,
+    NoReferencePoints = 4,
+    UnknownError = 5
     };
 
 /*

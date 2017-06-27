@@ -2,11 +2,13 @@
 |
 |     $Source: Drainage/bcdtmDrainageCatchment.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 extern int DrainageDebug ;
 
@@ -68,7 +70,7 @@ int bcdtmDrainage_traceCatchmentForPointDtmObject
     long       flatTriangle,traceStartType=0,numFeatures=0,useTables=0 ;
     double     z,sumpX=0.0,sumpY=0.0,sumpZ=0.0 ;
     DPoint3d   *p3dP ;
-    BC_DTM_OBJ *dataP=NULL ;
+    BC_DTM_OBJ *dataP=nullptr ;
 
     // Log Arguments
 
@@ -88,10 +90,10 @@ int bcdtmDrainage_traceCatchmentForPointDtmObject
     *catchmentDeterminedP = false ;
     *catchmentClosureP    = 0 ;
     *numCatchmentPtsP     = 0 ;
-    if( *catchmentPtsPP != NULL )
+    if( *catchmentPtsPP != nullptr )
         {
         free(*catchmentPtsPP) ;
-        *catchmentPtsPP = NULL ;
+        *catchmentPtsPP = nullptr ;
         }
     sumpPointP->x = 0.0 ;
     sumpPointP->y = 0.0 ;
@@ -224,7 +226,7 @@ int bcdtmDrainage_traceCatchmentForPointDtmObject
 
     if( dbg == 2 )
         {
-        if( bcdtmDrainage_traceToLowPointDtmObject(dtmP,nullptr,nullptr,0.0,1,nullptr,p1,p2,p3,x,y,z,nullptr,&sumpPnt1,&sumpPnt2)) goto errexit ;
+        if( bcdtmDrainage_traceToLowPointDtmObject(dtmP,nullptr,nullptr,0.0, ZeroSlopeTraceOption::TraceLastAngle,nullptr,p1,p2,p3,x,y,z,nullptr,&sumpPnt1,&sumpPnt2)) goto errexit ;
         bcdtmWrite_message(0,0,0,"Sump Line = %9ld %9ld",sumpPnt1,sumpPnt2) ;
         if( sumpPnt1 != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"sumpPnt1 = %6ld sumpPnt1->hPtr = %9ld ** %10.4lf %10.4lf %10.4lf",sumpPnt1,nodeAddrP(dtmP,sumpPnt1)->hPtr,pointAddrP(dtmP,sumpPnt1)->x,pointAddrP(dtmP,sumpPnt1)->y,pointAddrP(dtmP,sumpPnt1)->z ) ;
         if( sumpPnt2 != dtmP->nullPnt ) bcdtmWrite_message(0,0,0,"sumpPnt2 = %6ld sumpPnt2->hPtr = %9ld ** %10.4lf %10.4lf %10.4lf",sumpPnt2,nodeAddrP(dtmP,sumpPnt2)->hPtr,pointAddrP(dtmP,sumpPnt2)->x,pointAddrP(dtmP,sumpPnt2)->y,pointAddrP(dtmP,sumpPnt2)->z ) ;
@@ -279,7 +281,7 @@ int bcdtmDrainage_traceCatchmentForPointDtmObject
 // Clean Up
 
 cleanup :
-    if( dataP != NULL ) bcdtmObject_destroyDtmObject(&dataP) ;
+    if( dataP != nullptr ) bcdtmObject_destroyDtmObject(&dataP) ;
     if( bcdtmList_nullTptrValuesDtmObject(dtmP)) goto errexit ;
 // bcdtmDrainage_destroyDrainageTablesDtmObject(dtmP) ;
 
@@ -294,7 +296,7 @@ cleanup :
 // Error Exit
 
 errexit :
-    if( *catchmentPtsPP != NULL ) free(*catchmentPtsPP) ;
+    if( *catchmentPtsPP != nullptr ) free(*catchmentPtsPP) ;
     if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
     goto cleanup ;
     }
@@ -607,13 +609,14 @@ int bcdtmDrainage_traceCatchmentFromPointOnInternalSumpLineDtmObject
         {
         Point = 1, Line = 2
         } sumpType;
-    long   *pntListP = NULL, saveSumpPoint1, saveSumpPoint2;
+    long   *pntListP = nullptr, saveSumpPoint1, saveSumpPoint2;
     long   chkPoint,startPointOnPolygon,numTptrPoints ;
     double area,lastArea=0.0 ;
     DTMDirection direction ;
     DTMDrainageTables *drainageTablesP=nullptr ;
-    bool  traceOverZeroSlope=false,traceToSump ;
-    BC_DTM_OBJ *tempDtmP=NULL ;
+    ZeroSlopeTraceOption traceOverZeroSlope = ZeroSlopeTraceOption::None;
+    bool traceToSump;
+    BC_DTM_OBJ *tempDtmP=nullptr ;
 
     // Log Arguments
 
@@ -642,7 +645,7 @@ int bcdtmDrainage_traceCatchmentFromPointOnInternalSumpLineDtmObject
     saveSumpPoint2 = sumpPoint2 ;
     if (sumpType == SumpType::Line && pointAddrP (dtmP, sumpPoint1)->z != pointAddrP (dtmP, sumpPoint2)->z)
         {
-        if( bcdtmDrainage_traceToLowPointDtmObject(dtmP,nullptr,nullptr,0.0,0,false,sumpPoint1,sumpPoint2,dtmP->nullPnt,sumpX,sumpY,sumpZ,nullptr,&sumpPoint1,&sumpPoint2)) goto errexit ;
+        if( bcdtmDrainage_traceToLowPointDtmObject(dtmP,nullptr,nullptr,0.0,ZeroSlopeTraceOption::None,false,sumpPoint1,sumpPoint2,dtmP->nullPnt,sumpX,sumpY,sumpZ,nullptr,&sumpPoint1,&sumpPoint2)) goto errexit ;
         if( dbg == 1 ) bcdtmWrite_message(0,0,0,"Low Point From Sump = %10ld ** %10ld",sumpPoint1,sumpPoint2) ;
         sumpType = SumpType::Point;
         if (sumpPoint2 != dtmP->nullPnt) sumpType = SumpType::Line;
@@ -764,7 +767,7 @@ int bcdtmDrainage_traceCatchmentFromPointOnInternalSumpLineDtmObject
 
                     if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Re Creating Tptr Polygon") ;
                     bcdtmList_copyPointListToTptrListDtmObject(dtmP,pntListP,numPntList,&scanPoint) ;
-                    if( pntListP != NULL ) { free(pntListP) ; pntListP = NULL ; }
+                    if( pntListP != nullptr ) { free(pntListP) ; pntListP = nullptr ; }
 
                     //  Add Triangle To Tptr Polygon Representing Catchment
 
@@ -1027,9 +1030,9 @@ int bcdtmDrainage_refineTptrCatchmentPolygonDtmObjectOld
  long   onTptrPolygon,scan,traceToSump,p1,p2,p3,findType,process,canBeDeleted ;
  long   ascentTraced=0,highPoint1 = 0,highPoint2 = 0,numTracePts=0,numCatchPts,priorPoint ;
  long   clPtr,trgp1,trgp2,trgp3,fptr,danglingPoint,dtmFeature ;
- DPoint3d    *p3dP=NULL,*p3d1P,*catchPtsP=NULL,*tracePtsP=NULL,trgPts[4];
+ DPoint3d    *p3dP=nullptr,*p3d1P,*catchPtsP=nullptr,*tracePtsP=nullptr,trgPts[4];
  double x,y,z,xn,yn,angP2,angP3,ascentAngle,descentAngle,ascentSlope ;
- BC_DTM_OBJ    *catchmentDtmP=NULL,*catchDtmP=NULL ;
+ BC_DTM_OBJ    *catchmentDtmP=nullptr,*catchDtmP=nullptr ;
  DTMUserTag  catchmentTag=0 ;
  DPoint3d *pntP,*pnt1P,*pnt2P ;
 
@@ -1085,7 +1088,7 @@ int bcdtmDrainage_refineTptrCatchmentPolygonDtmObjectOld
     if( bcdtmObject_storeDtmFeatureInDtmObject(catchmentDtmP,DTMFeatureType::Breakline,catchmentTag,1,&catchmentDtmP->nullFeatureId,p3dP,2)) goto errexit ;
    }
  ++catchmentTag ;
- if( catchPtsP != NULL ) { free(catchPtsP) ; catchPtsP = NULL ; }
+ if( catchPtsP != nullptr ) { free(catchPtsP) ; catchPtsP = nullptr ; }
 /*
 ** Triangulate
 */
@@ -1404,9 +1407,9 @@ int bcdtmDrainage_refineTptrCatchmentPolygonDtmObjectOld
 ** Clean Up
 */
  cleanup :
- if( catchPtsP     != NULL ) { free(catchPtsP) ; catchPtsP = NULL ; }
- if( catchDtmP     != NULL ) bcdtmObject_destroyDtmObject(&catchDtmP) ;
- if( catchmentDtmP != NULL ) bcdtmObject_destroyDtmObject(&catchmentDtmP) ;
+ if( catchPtsP     != nullptr ) { free(catchPtsP) ; catchPtsP = nullptr ; }
+ if( catchDtmP     != nullptr ) bcdtmObject_destroyDtmObject(&catchDtmP) ;
+ if( catchmentDtmP != nullptr ) bcdtmObject_destroyDtmObject(&catchmentDtmP) ;
 /*
 ** Job Completed
 */
@@ -1450,7 +1453,7 @@ int bcdtmDrainage_traceMaximumAscentFromPointOnTriangleEdgeDtmObject
  double dx,dy,ascentAngle=0.0,descentAngle,ascentSlope=0.0,radius  ;
  double sx,sy,sz,rx,ry,nx,ny,nz,fx,fy,fz,lastAngle ;
  DPoint3d *pnt1P,*pnt2P,*pnt3P ;
- DTMDrainageTables *drainageTablesP=NULL ;
+ DTMDrainageTables *drainageTablesP=nullptr ;
 /*
 ** Write Entry Message
 */
@@ -1468,11 +1471,11 @@ int bcdtmDrainage_traceMaximumAscentFromPointOnTriangleEdgeDtmObject
 /*
 ** Initialise
 */
- *ascentTracedP = FALSE ;
+ *ascentTracedP = false ;
  *highPoint1P   = dtmP->nullPnt ;
  *highPoint2P   = dtmP->nullPnt ;
- if( *tracePtsPP != NULL ) free(*tracePtsPP) ;
- *tracePtsPP    = NULL ;
+ if( *tracePtsPP != nullptr ) free(*tracePtsPP) ;
+ *tracePtsPP    = nullptr ;
  *numTracePtsP  = 0 ;
  lastPoint      = dtmP->nullPnt ;
 /*
@@ -1506,7 +1509,7 @@ int bcdtmDrainage_traceMaximumAscentFromPointOnTriangleEdgeDtmObject
 */
  if( ascentSlope >= 0.0 )
    {
-    *ascentTracedP = TRUE ;
+    *ascentTracedP = true ;
     sx = pointX ;
     sy = pointY ;
     sz = pointZ ;
@@ -1515,7 +1518,7 @@ int bcdtmDrainage_traceMaximumAscentFromPointOnTriangleEdgeDtmObject
 */
     memPoints = memPointsInc ;
     *tracePtsPP = ( DPoint3d * ) malloc(memPoints*sizeof(DPoint3d)) ;
-    if( *tracePtsPP == NULL )
+    if( *tracePtsPP == nullptr )
       {
        bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
        goto errexit ;
@@ -1689,7 +1692,7 @@ int bcdtmDrainage_traceMaximumAscentFromPointOnTriangleEdgeDtmObject
             {
              memPoints = memPoints + memPointsInc ;
              *tracePtsPP = ( DPoint3d *) realloc( *tracePtsPP , memPoints * sizeof(DPoint3d)) ;
-             if( *tracePtsPP == NULL )
+             if( *tracePtsPP == nullptr )
                {
                 bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
                 goto errexit ;
@@ -1908,10 +1911,10 @@ int bcdtmDrainage_traceCatchmentFromInternalSumpPointDtmObject
  long   startPnt,priorPnt,exitPnt,nextPnt,ascentType=0,ascentPnt1=0,ascentPnt2=0,ascentPnt3=0;
  long   numPointArrays=0,numTracePoints=0,dtmFeature ;
  double xMin,yMin,xMax,yMax,ascentSlope=0.0,ascentAngle=0.0 ;
- DPoint3d    *p3dP,*pondPtsP=NULL,randomSpot[4] ;
- BC_DTM_OBJ *tempDtmP=NULL ;
+ DPoint3d    *p3dP,*pondPtsP=nullptr,randomSpot[4] ;
+ BC_DTM_OBJ *tempDtmP=nullptr ;
  DTM_ASCENT_LINE  ascentLine ;
- DTM_POINT_ARRAY  **pointArraysPP=NULL,**pointArrayPP ;
+ DTM_POINT_ARRAY  **pointArraysPP=nullptr,**pointArrayPP ;
  DTMUserTag nullUserTag = DTM_NULL_USER_TAG ;
  DTMFeatureId nullFeatureId = DTM_NULL_FEATURE_ID ;
 /*
@@ -1962,7 +1965,7 @@ int bcdtmDrainage_traceCatchmentFromInternalSumpPointDtmObject
 ** Expand Tptr Polygon To Pond Exit Point
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Expanding Pond To Exit Point") ;
- if( bcdtmDrainage_expandPondToExitPointDtmObject(dtmP,NULL,NULL,NULL,startPnt,&exitPnt,&priorPnt,&nextPnt)) goto errexit ;
+ if( bcdtmDrainage_expandPondToExitPointDtmObject(dtmP,nullptr,nullptr,nullptr,startPnt,&exitPnt,&priorPnt,&nextPnt)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"exitPnt = %9ld",exitPnt) ;
  if( exitPnt == dtmP->nullPnt )
    {
@@ -2141,9 +2144,9 @@ int bcdtmDrainage_traceCatchmentFromInternalSumpPointDtmObject
 ** Clean Up
 */
  cleanup :
- if( pondPtsP != NULL ) { free(pondPtsP) ; pondPtsP = NULL ; }
- if( tempDtmP != NULL ) bcdtmObject_destroyDtmObject(&tempDtmP) ;
- if( pointArraysPP != NULL ) bcdtmMem_freePointerArrayToPointArrayMemory(&pointArraysPP,numPointArrays) ;
+ if( pondPtsP != nullptr ) { free(pondPtsP) ; pondPtsP = nullptr ; }
+ if( tempDtmP != nullptr ) bcdtmObject_destroyDtmObject(&tempDtmP) ;
+ if( pointArraysPP != nullptr ) bcdtmMem_freePointerArrayToPointArrayMemory(&pointArraysPP,numPointArrays) ;
  if( bcdtmList_checkForNoneNullTptrValuesDtmObject(dtmP,&noneNullTptr) ) goto errexit ;
  if( noneNullTptr )
    {
@@ -2183,8 +2186,8 @@ int bcdtmDrainage_refineTinForDrainageDtmObject
 {
  int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
  long              numHullPts,startTime=bcdtmClock(),polygonTime=bcdtmClock() ;
- BC_DTM_OBJ        *clipDtmP=NULL ;
- DPoint3d          *hullPtsP=NULL ;
+ BC_DTM_OBJ        *clipDtmP=nullptr ;
+ DPoint3d          *hullPtsP=nullptr ;
 
 // Log Entry Arguments
 
@@ -2201,7 +2204,7 @@ int bcdtmDrainage_refineTinForDrainageDtmObject
 // Validate Fence
 
  if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside;
- if (useFence && (fencePtsP == NULL || numFencePts <= 2)) useFence = false;
+ if (useFence && (fencePtsP == nullptr || numFencePts <= 2)) useFence = false;
  if( useFence && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = false ;
 
 // Test For Valid DTM Object
@@ -2228,7 +2231,7 @@ int bcdtmDrainage_refineTinForDrainageDtmObject
 // Clean Up
 
  cleanup :
- if( clipDtmP  != NULL ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
+ if( clipDtmP  != nullptr ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
 
 // Return
 
@@ -2266,13 +2269,14 @@ int bcdtmDrainage_determineCatchmentsDtmObject
 */
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
- int     numScanned=-1,numTraced=0,zeroSlopeOption=1 ;
+ int     numScanned = -1, numTraced = 0;
+ ZeroSlopeTraceOption zeroSlopeOption = ZeroSlopeTraceOption::TraceLastAngle;
  long    startTime=bcdtmClock() ;
  long    pnt1,pnt2,pnt3,index,trgPnt1,trgPnt2,trgPnt3,fndPnt,lowPnt1,lowPnt2 ;
  double  startX,startY,startZ ;
  bool    traceToLowPoint=false ;
  DPoint3d *pointP ;
- BC_DTM_OBJ    *clipTinP=NULL ;
+ BC_DTM_OBJ    *clipTinP=nullptr ;
  DTMTriangleIndex*  triangleIndexP=nullptr ;
 
  double time=0.0,maxTime=0.0 ;
@@ -2305,7 +2309,7 @@ int bcdtmDrainage_determineCatchmentsDtmObject
  if( useFence )
    {
    if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside;
-   if (useFence && (fencePtsP == NULL || numFencePts <= 2)) useFence = false;
+   if (useFence && (fencePtsP == nullptr || numFencePts <= 2)) useFence = false;
     if( useFence && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = false ;
    }
 
@@ -2461,7 +2465,7 @@ int bcdtmDrainage_determineCatchmentsDtmObject
 // Clean Up
 
  cleanup :
- if( clipTinP   != NULL ) bcdtmObject_destroyDtmObject(&clipTinP) ;
+ if( clipTinP   != nullptr ) bcdtmObject_destroyDtmObject(&clipTinP) ;
 
 // Return
 
@@ -2496,7 +2500,7 @@ int bcdtmDrainage_polygoniseAndLoadTriangleIndexPolygonsDtmObject
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  int     numBefore,numAfter,numTrace=0 ;
  long    pnt1,pnt2,pnt3,pnt4,clPtr,lineOffset1,lineOffset2 ;
- long    *tinLineP=NULL,*lineP,lineOffset,lineValue,nullValue=-9999999 ;
+ long    *tinLineP=nullptr,*lineP,lineOffset,lineValue,nullValue=-9999999 ;
  double  x,y,sx,sy,area ;
  DTMFeatureType dtmFeatureType=DTMFeatureType::Catchment ;
  DTMPointCache pointCache ;
@@ -2521,7 +2525,7 @@ int bcdtmDrainage_polygoniseAndLoadTriangleIndexPolygonsDtmObject
 // Allocate Memory To Hold Values For Tin Lines
 
  tinLineP  = ( long * ) malloc (dtmP->cListPtr * sizeof(long)) ;
- if( tinLineP  == NULL )
+ if( tinLineP  == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit  ;
@@ -2731,7 +2735,7 @@ int bcdtmDrainage_polygoniseAndLoadTriangleIndexPolygonsDtmObject
 ** Clean Up
 */
  cleanup :
- if( tinLineP    != NULL ) free(tinLineP) ;
+ if( tinLineP    != nullptr ) free(tinLineP) ;
 /*
 ** Job Completed
 */
@@ -2765,7 +2769,7 @@ int  bcdtmDrainage_catchmentCallBackFunction
 {
  int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  char dtmFeatureTypeName[100] ;
- BC_DTM_OBJ *dtmP=NULL ;
+ BC_DTM_OBJ *dtmP=nullptr ;
 /*
 ** Write Record
 */
@@ -2777,7 +2781,7 @@ int  bcdtmDrainage_catchmentCallBackFunction
 **  Store Catchment Polygon
 */
     dtmP = ( BC_DTM_OBJ *) userP ;
-    if( dtmP != NULL )
+    if( dtmP != nullptr )
       {
        if( bcdtmObject_storeDtmFeatureInDtmObject(dtmP,DTMFeatureType::Breakline,userTag,2,&userFeatureId,featurePtsP,(long)numFeaturePts)) goto errexit ;
       }
@@ -2822,12 +2826,12 @@ int bcdtmDrainage_traceCatchmentsDtmObject
  int          ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0);
  long         numCatchPts,dtmFeature,startCatchment=0;
  DTMDirection direction ;
- long         descentTraceOverZeroSlope=FALSE,maxSpots=10000 ;
+ long         descentTraceOverZeroSlope=false,maxSpots=10000 ;
  long         startPnt=0,insert=0  ;
  long         catchmentNum=0 ;
  DPoint3d     *catchPtsP=nullptr ;
  double       area,largestArea=0.0 ;
- BC_DTM_OBJ   *catchmentDtmP=NULL,*cloneDtmP=NULL ;
+ BC_DTM_OBJ   *catchmentDtmP=nullptr,*cloneDtmP=nullptr ;
  DTMUserTag   catchmentNumber=0 ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
  DTMDrainageTables* refinedTablesP=nullptr ;
@@ -2918,7 +2922,7 @@ int bcdtmDrainage_traceCatchmentsDtmObject
 //  Refine Catchment Boundaries
 
     if( dbg )  bcdtmWrite_message(0,0,0,"Refining Catchments") ;
-    if( bcdtmDrainage_refineCatchmentBoundariesDtmObject(cloneDtmP,catchmentDtmP,0.0,1)) goto errexit ;
+    if( bcdtmDrainage_refineCatchmentBoundariesDtmObject(cloneDtmP,catchmentDtmP,0.0,ZeroSlopeTraceOption::TraceLastAngle)) goto errexit ;
 
 //  Round Elevation Values To 8 Decimal Places
 
@@ -2966,9 +2970,9 @@ int bcdtmDrainage_traceCatchmentsDtmObject
 ** Clean Up
 */
  cleanup :
- if( catchPtsP     != NULL ) { free(catchPtsP) ; catchPtsP = NULL ; }
- if( catchmentDtmP != NULL ) bcdtmObject_destroyDtmObject(&catchmentDtmP) ;
- if( cloneDtmP     != NULL ) bcdtmObject_destroyDtmObject(&cloneDtmP) ;
+ if( catchPtsP     != nullptr ) { free(catchPtsP) ; catchPtsP = nullptr ; }
+ if( catchmentDtmP != nullptr ) bcdtmObject_destroyDtmObject(&catchmentDtmP) ;
+ if( cloneDtmP     != nullptr ) bcdtmObject_destroyDtmObject(&cloneDtmP) ;
 /*
 ** Job Completed
 */
@@ -2989,16 +2993,16 @@ int bcdtmDrainage_traceCatchmentsDtmObject
 +-------------------------------------------------------------------*/
 int bcdtmDrainage_refineCatchmentBoundariesDtmObject
 (
- BC_DTM_OBJ   *dtmP,                      // ==> Pointer To DTM Object
- BC_DTM_OBJ   *catchmentDtmP,             // ==> Pointer To DTM Object With The Un Refined Catchment Boundaries
- double       falseLowDepth,              // ==> False Low Depth
- long         descentTraceOverZeroSlope   // ==> Trace Over Zero Slope Triangles
+ BC_DTM_OBJ          *dtmP,                      // ==> Pointer To DTM Object
+ BC_DTM_OBJ          *catchmentDtmP,             // ==> Pointer To DTM Object With The Un Refined Catchment Boundaries
+ double              falseLowDepth,              // ==> False Low Depth
+ZeroSlopeTraceOption descentTraceOverZeroSlope   // ==> Trace Over Zero Slope Triangles
 )
 {
  int      ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long     dtmFeature,startPnt,numCatchments=-1,pnt1,pnt2,numCatchPts ;
  BC_DTM_FEATURE *dtmFeatureP ;
- DPoint3d     *p3dP,*catchPtsP=NULL ;
+ DPoint3d     *p3dP,*catchPtsP=nullptr ;
 
  long maxCatchment=0 ;
  double x,y,z,area,maxArea=0.0 ;
@@ -3007,7 +3011,7 @@ int bcdtmDrainage_refineCatchmentBoundariesDtmObject
  int pnt,antPnt,clkPnt,insertStartPoint,numAscentsInserted=0 ;
  DTMFeatureType lineType;
  DTMRidgeLineCache ridgeLineCache,edgeLineCache ;
- DTMCatchmentLine  *catchmentLineP,*pLineP,*nLineP=NULL ;
+ DTMCatchmentLine  *catchmentLineP,*pLineP,*nLineP=nullptr ;
  DTMCatchmentLineCache  catchmentLineCache,tempLineCache ;
  long lowPnt1,lowPnt2,testFeature ;
  int catchmentId ;
@@ -3061,7 +3065,7 @@ int bcdtmDrainage_refineCatchmentBoundariesDtmObject
 
 //     Add Catchment Feature To DTM
 
-       if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,NULL,0,DTMFeatureType::Catchment,ftableAddrP(catchmentDtmP,dtmFeature)->dtmUserTag,dtmP->nullFeatureId,startPnt,1)) goto errexit ;
+       if( bcdtmInsert_addDtmFeatureToDtmObject(dtmP,nullptr,0,DTMFeatureType::Catchment,ftableAddrP(catchmentDtmP,dtmFeature)->dtmUserTag,dtmP->nullFeatureId,startPnt,1)) goto errexit ;
 
       }
 
@@ -3793,12 +3797,14 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
 {
  int     ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
  long    pnt,pnt1,pnt2,pnt3,pnt4,clPtr,trgPnt1,trgPnt2,trgPnt3,fndPnt,lowPnt1=0,lowPnt2=0;
- long    useTables=TRUE,dtmFeature,trgNum=0,traceOverZeroSlope=0  ;
+ long    useTables = true, dtmFeature, trgNum = 0;
+ ZeroSlopeTraceOption traceOverZeroSlope = ZeroSlopeTraceOption::None;
  long    clkPnt,lineOffset,lineOffset1,lineOffset2,lineOffset3,flowPoint,numPolygons=0 ;
- long    *lineP,*tinLineP=NULL,nullValue=-9999999,lineValue,traceToLowPoint ;
+ long    *lineP, *tinLineP = nullptr, nullValue = -9999999, lineValue;
+ bool  traceToLowPoint;
  long    numFeaturePts=0,memFeaturePts=0,memFeaturePtsInc=1000,numBefore,numAfter ;
  double  x,y,sx,sy,area,startX,startY,startZ ;
- DPoint3d     *p3d1P,*p3d2P,*featurePtsP=NULL ;
+ DPoint3d     *p3d1P,*p3d2P,*featurePtsP=nullptr ;
  DPoint3d *pnt1P,*pnt2P,*pnt3P ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
@@ -3823,7 +3829,7 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
 ** Allocate Memory To Hold Values For Tin Lines
 */
  tinLineP  = ( long * ) malloc (catchmentDtmP->cListPtr * sizeof(long)) ;
- if( tinLineP  == NULL )
+ if( tinLineP  == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit  ;
@@ -3897,22 +3903,22 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
             {
              if( trgNum % 10000 == 0 ) bcdtmWrite_message(0,0,0,"Processing Triangle %8ld of %8ld",trgNum,catchmentDtmP->numTriangles) ;
              ++trgNum ;
-             traceToLowPoint = TRUE ;
+             traceToLowPoint = true;
              if( true) goto trace ;    // Following Code Still Needs To Be perfected
 
 /*
 **           Check If Catchment Has Been Set For Triangle
 */
-             traceToLowPoint = FALSE ;
+             traceToLowPoint = false ;
              if( bcdtmTheme_getLineOffsetDtmObject(catchmentDtmP,&lineOffset1,pnt1,pnt2) ) goto errexit ;
              if( bcdtmTheme_getLineOffsetDtmObject(catchmentDtmP,&lineOffset2,pnt2,pnt3) ) goto errexit ;
              if( bcdtmTheme_getLineOffsetDtmObject(catchmentDtmP,&lineOffset3,pnt3,pnt1) ) goto errexit ;
-             if( *(tinLineP+lineOffset1) != catchmentID || *(tinLineP+lineOffset2) != catchmentID || *(tinLineP+lineOffset3) != catchmentID ) traceToLowPoint = TRUE ;
+             if( *(tinLineP+lineOffset1) != catchmentID || *(tinLineP+lineOffset2) != catchmentID || *(tinLineP+lineOffset3) != catchmentID ) traceToLowPoint = true ;
 /*
 **           Trace To LowPoint
 */
              trace :
-             if( traceToLowPoint == TRUE )
+             if( traceToLowPoint == true )
                {
                 startX = ( pnt1P->x + pnt2P->x + pnt3P->x ) / 3.0 ;
                 startY = ( pnt1P->y + pnt2P->y + pnt3P->y ) / 3.0 ;
@@ -3921,7 +3927,7 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
                 if( fndPnt )
                   {
                    if( dbg == 2 ) bcdtmWrite_message(0,0,0,"Tracing To Low Point From %12.5lf %12.5lf %10.4lf",startX,startY,startZ) ;
-//                   if( bcdtmDrainage_traceToLowPointDtmObject(dtmP,NULL,falseLowDepth,traceOverZeroSlope,useTables,FALSE,trgPnt1,trgPnt3,trgPnt2,startX,startY,startZ,userP,&lowPnt1,&lowPnt2) ) goto errexit ;
+//                   if( bcdtmDrainage_traceToLowPointDtmObject(dtmP,nullptr,falseLowDepth,traceOverZeroSlope,useTables,false,trgPnt1,trgPnt3,trgPnt2,startX,startY,startZ,userP,&lowPnt1,&lowPnt2) ) goto errexit ;
                    if( dbg == 2 )
                      {
                       bcdtmWrite_message(0,0,0,"lowPnt1 = %8ld ** %12.5lf %12.5lf %10.4lf",lowPnt1,pointAddrP(dtmP,lowPnt1)->x,pointAddrP(dtmP,lowPnt1)->y,pointAddrP(dtmP,lowPnt1)->z) ;
@@ -4165,8 +4171,8 @@ int bcdtmDrainage_determineRefinedCatchmentBoundaryDtmObject
 ** Clean Up
 */
  cleanup :
- if( tinLineP    != NULL ) { free(tinLineP)    ; tinLineP    = NULL ; }
- if( featurePtsP != NULL ) { free(featurePtsP) ; featurePtsP = NULL ; }
+ if( tinLineP    != nullptr ) { free(tinLineP)    ; tinLineP    = nullptr ; }
+ if( featurePtsP != nullptr ) { free(featurePtsP) ; featurePtsP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -4197,7 +4203,7 @@ int bcdtmDrainage_expandTptrPolygonDtmObject
  DPoint3d  polygonLine[2] ;
  double dd ;
  DPoint3d *pntP ;
- BC_DTM_OBJ *polygonDtmP=NULL ;
+ BC_DTM_OBJ *polygonDtmP=nullptr ;
  DTMFeatureId  nullFeatureId=DTM_NULL_FEATURE_ID  ;
 /*
 ** Write Entry Message
@@ -4342,7 +4348,7 @@ int bcdtmDrainage_expandTptrPolygonDtmObject
 ** Clean Up
 */
  cleanup :
- if( polygonDtmP != NULL ) bcdtmObject_destroyDtmObject(&polygonDtmP) ;
+ if( polygonDtmP != nullptr ) bcdtmObject_destroyDtmObject(&polygonDtmP) ;
 /*
 ** Job Completed
 */
@@ -5229,7 +5235,7 @@ int bcdtmDrainage_copyCatchmentTrianglesDtmObject
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
  long   p1,firstPnt,nextPnt,numTrgPts;
  DTMDirection direction ;
- long   pnt1,pnt2,pnt3,clPtr,addPnt,listPnt,*pointsP=NULL ;
+ long   pnt1,pnt2,pnt3,clPtr,addPnt,listPnt,*pointsP=nullptr ;
  double area ;
  DPoint3d    dtmPoint[4] ;
  DPoint3d *pntP ;
@@ -5247,7 +5253,7 @@ int bcdtmDrainage_copyCatchmentTrianglesDtmObject
 /*
 ** Initialise
 */
- if( *catchDtmPP != NULL ) bcdtmObject_destroyDtmObject(catchDtmPP) ;
+ if( *catchDtmPP != nullptr ) bcdtmObject_destroyDtmObject(catchDtmPP) ;
 /*
 ** Check Direction Of Tptr Polygon
 */
@@ -5284,7 +5290,7 @@ int bcdtmDrainage_copyCatchmentTrianglesDtmObject
 ** Allocate Memory For Point Offsets
 */
  pointsP = ( long * ) malloc(dtmP->numPoints*sizeof(long)) ;
- if( pointsP == NULL )
+ if( pointsP == nullptr )
    {
     bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
     goto errexit ;
@@ -5429,7 +5435,7 @@ int bcdtmDrainage_copyCatchmentTrianglesDtmObject
 ** Clean Up
 */
  cleanup :
- if( pointsP != NULL ) { free(pointsP) ; pointsP = NULL ; }
+ if( pointsP != nullptr ) { free(pointsP) ; pointsP = nullptr ; }
 /*
 ** Job Completed
 */
@@ -6150,7 +6156,7 @@ int  bcdtmDrainage_genericCallBackFunction
     {
     int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
     char  dtmFeatureTypeName[100] ;
-    BC_DTM_OBJ *dtmP=NULL ;
+    BC_DTM_OBJ *dtmP=nullptr ;
     DPoint3d  *p3dP ;
     /*
     ** Check For DTMFeatureType::CheckStop
@@ -6182,8 +6188,8 @@ int  bcdtmDrainage_genericCallBackFunction
     /*
     ** Store DTM Features In DTM
     */
-//    if( userP != NULL && ( dtmFeatureType == DTMFeatureType::LowPointPond || dtmFeatureType == DTMFeatureType::DescentTrace ))
-    if( userP != NULL && dtmFeatureType != DTMFeatureType::CheckStop )
+//    if( userP != nullptr && ( dtmFeatureType == DTMFeatureType::LowPointPond || dtmFeatureType == DTMFeatureType::DescentTrace ))
+    if( userP != nullptr && dtmFeatureType != DTMFeatureType::CheckStop )
         {
         dtmP = (BC_DTM_OBJ *) userP ;
         if(bcdtmObject_testForValidDtmObject(dtmP)) goto errexit ;
@@ -6378,12 +6384,13 @@ int bcdtmDrainage_refineTptrCatchmentPolygonDtmObject
     {
     int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0),tdbg=DTM_TIME_VALUE(0) ;
     long   p1,p2,p3;
-    BC_DTM_OBJ    *catchmentDtmP=NULL,*catchDtmP=NULL,*catchmentPolygonsDtmP=NULL,*tempDtmP=NULL ;
+    BC_DTM_OBJ    *catchmentDtmP=nullptr,*catchDtmP=nullptr,*catchmentPolygonsDtmP=nullptr,*tempDtmP=nullptr ;
 
     long   pnt,npnt,smpPnt1,smpPnt2,smpType=0,numTriangles ;
-    DPoint3d sumpPoint,tracePoints[4],*catchPtsP=NULL  ;
+    DPoint3d sumpPoint,tracePoints[4],*catchPtsP=nullptr  ;
     long    drainPoint,numTracedToSump ;
-    bool   refine=true,tracedToSump,traceOverZeroSlope=true ;
+    bool   refine = true, tracedToSump;
+    ZeroSlopeTraceOption traceOverZeroSlope = ZeroSlopeTraceOption::TraceLastAngle;
     double x,y,z,drainPointX,drainPointY,drainPointZ ;
     DTMTriangleIndex *triangleIndexP=nullptr ;
     long startTime ;
@@ -6699,10 +6706,10 @@ int bcdtmDrainage_refineTptrCatchmentPolygonDtmObject
     // Clean Up
 
  cleanup :
-    if( catchPtsP             != NULL ) { free(catchPtsP) ; catchPtsP = NULL ; }
-    if( catchDtmP             != NULL ) bcdtmObject_destroyDtmObject(&catchDtmP) ;
-    if( catchmentDtmP         != NULL ) bcdtmObject_destroyDtmObject(&catchmentDtmP) ;
-    if( catchmentPolygonsDtmP != NULL ) bcdtmObject_destroyDtmObject(&catchmentPolygonsDtmP) ;
+    if( catchPtsP             != nullptr ) { free(catchPtsP) ; catchPtsP = nullptr ; }
+    if( catchDtmP             != nullptr ) bcdtmObject_destroyDtmObject(&catchDtmP) ;
+    if( catchmentDtmP         != nullptr ) bcdtmObject_destroyDtmObject(&catchmentDtmP) ;
+    if( catchmentPolygonsDtmP != nullptr ) bcdtmObject_destroyDtmObject(&catchmentPolygonsDtmP) ;
 
     // Return
 
@@ -7099,5 +7106,6 @@ int bcdtmDrainage_insertMaximumAscentLinesFromSumpPointDtmObject
     }
 
 
+END_BENTLEY_TERRAINMODEL_NAMESPACE
 
 

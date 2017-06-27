@@ -2,7 +2,7 @@
 |
 |   $Source: Core/cppwrappers/DTMIterators.cpp $
 |
-| $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/TerrainModel.h>
@@ -374,7 +374,7 @@ const DTMMeshEnumerator::iterator& DTMMeshEnumerator::iterator::operator++ ()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Daryl.Holmwood  11/2015
 //---------------------------------------------------------------------------------------
-DTMMeshEnumerator::DTMMeshEnumerator(BcDTMR dtm) : m_dtm(&dtm)
+DTMMeshEnumerator::DTMMeshEnumerator(BcDTMR dtm) : m_dtm(&dtm), m_polyfaceHeader(PolyfaceHeader::CreateFixedBlockIndexed (3))
     {
     m_dtmP = dtm.GetTinHandle ();
     clipDtmP = nullptr;
@@ -382,7 +382,6 @@ DTMMeshEnumerator::DTMMeshEnumerator(BcDTMR dtm) : m_dtm(&dtm)
     maxTriangles = 50000;
     m_tilingMode = false;
     zAxisFactor = 1;
-//D    m_polyface = PolyfaceHeader::CreateFixedBlockIndexed (3);
     }
 
 //---------------------------------------------------------------------------------------
@@ -595,7 +594,7 @@ DTMStatusInt DTMMeshEnumerator::Initialize() const
     /*
     ** Allocate Memory For Mesh Faces
     */
-    meshFaces.resize (maxTriangles * 3);
+    m_polyfaceHeader->PointIndex().resize (maxTriangles * 3);
     m_useFence = useFence;
     return DTM_SUCCESS;
 errexit:
@@ -1052,13 +1051,11 @@ bool DTMMeshEnumerator::bcdtmList_testForRegionTriangleDtmObject(BC_DTM_OBJ *dtm
         if (P4 == P3)
             return false;
 
+        if (bcdtmList_testForRegionLineDtmObject(dtmP, P4, P1))
+            return true;
         if (bcdtmList_testForRegionLineDtmObject(dtmP, P1, P4))
             return false;
-        if (bcdtmList_testForRegionLineDtmObject(dtmP, P4, P1))
-            {
 
-            return true;
-            }
         P2 = P4;
         }
 
@@ -1088,8 +1085,8 @@ bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
         if (pnt1 == -1)
             pnt1 = leftMostPnt;
         // Reset the pointers/counters.
-        meshFaces.resize(maxTriangles * 3);
-        faceP = &meshFaces[0];
+        m_polyfaceHeader->PointIndex().resize(maxTriangles * 3);
+        faceP = &m_polyfaceHeader->PointIndex()[0];
         numTriangles = 0;
         /*
         ** Scan DTM And Accumulate Triangle Mesh
@@ -1184,7 +1181,7 @@ bool DTMMeshEnumerator::MoveNext(long& pnt1, long& pnt2) const
                     }
                 }
             }
-        meshFaces.resize (numTriangles * 3);
+        m_polyfaceHeader->PointIndex().resize (numTriangles * 3);
         /*
         ** Check For Unloaded Triangles
         */
@@ -1234,13 +1231,13 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     */
     minTptrPnt = m_dtmP->numPoints;
     maxTptrPnt = -1;
-    BlockedVectorDPoint3dR points = m_p_vec->meshPoints;
-    BlockedVectorDVec3dR normals = m_p_vec->meshNormals;
+    BlockedVectorDPoint3dR points = m_p_vec->m_polyfaceHeader->Point();
+    BlockedVectorDVec3dR normals = m_p_vec->m_polyfaceHeader->Normal();
 
     if (!m_p_vec->m_useRealPointIndexes)
         {
         numMeshPts = 0;
-        for (long face : m_p_vec->meshFaces)
+        for (long face : m_p_vec->m_polyfaceHeader->PointIndex())
             {
             nodeP = nodeAddrP(m_dtmP, face);
             if (nodeP->tPtr == nullPnt)
@@ -1290,13 +1287,13 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
         /*
         **                       Reset Point Indexes In Mesh Faces
         */
-        for (int& ptIndex : m_p_vec->meshFaces)
+        for (int& ptIndex : m_p_vec->m_polyfaceHeader->PointIndex())
             ptIndex = nodeAddrP(m_dtmP, ptIndex)->tPtr;
         }
     else
         {
         numMeshPts = 0;
-        for (long face : m_p_vec->meshFaces)
+        for (long face : m_p_vec->m_polyfaceHeader->PointIndex())
             {
             nodeP = nodeAddrP(m_dtmP, face);
             if (nodeP->tPtr == nullPnt)
@@ -1314,10 +1311,13 @@ PolyfaceQueryP DTMMeshEnumerator::iterator::operator* () const
     */
     for (node = minTptrPnt; node <= maxTptrPnt; ++node)
         nodeAddrP (m_dtmP, node)->tPtr = nullPnt;
+    if (m_p_vec->m_usePolyfaceHeader)
+        return m_p_vec->m_polyfaceHeader.get();
+
     if (!m_polyface)
-        m_polyface = new PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->meshFaces.size (), (size_t)points.size (), points.GetCP (), m_p_vec->meshFaces.GetCP (), normals.size (), normals.GetCP (), m_p_vec->meshFaces.GetCP ());
+        m_polyface = new PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->m_polyfaceHeader->PointIndex().size (), (size_t)points.size (), points.GetCP (), m_p_vec->m_polyfaceHeader->PointIndex().GetCP (), normals.size (), normals.GetCP (), m_p_vec->m_polyfaceHeader->PointIndex().GetCP ());
     else
-        *m_polyface = PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->meshFaces.size (), (size_t)points.size (), points.GetCP (), m_p_vec->meshFaces.GetCP (), normals.size (), normals.GetCP (), m_p_vec->meshFaces.GetCP ());
+        *m_polyface = PolyfaceQueryCarrier (3, false, (size_t)m_p_vec->m_polyfaceHeader->PointIndex().size (), (size_t)points.size (), points.GetCP (), m_p_vec->m_polyfaceHeader->PointIndex().GetCP (), normals.size (), normals.GetCP (), m_p_vec->m_polyfaceHeader->PointIndex().GetCP ());
     return m_polyface;
     }
 
@@ -1329,14 +1329,14 @@ DRange3d DTMMeshEnumerator::iterator::GetRange () const
     DRange3d range;
     range.Init ();
 
-    if (!m_p_vec->meshFaces.empty ())
+    if (!m_p_vec->m_polyfaceHeader->PointIndex().empty ())
         {
         BC_DTM_OBJ* m_dtmP = m_p_vec->m_dtm->GetTinHandle ();
         long nullPnt = m_dtmP->nullPnt;
         /*
         ** Mark Mesh Points
         */
-        for (long face : m_p_vec->meshFaces)
+        for (long face : m_p_vec->m_polyfaceHeader->PointIndex())
             {
             range.Extend (*pointAddrP (m_dtmP, face));
             }

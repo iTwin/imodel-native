@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* fndftr.c					   twl	    28-Oct-1998                           */
@@ -17,18 +17,18 @@
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_findFeatureByGUID
- DESC: Given a feature BeSQLite::BeGuid, this function returns a pointer to the
+ DESC: Given a feature InroadsGuid, this function returns a pointer to the
        corresponding feature.
  HIST: Original - twl 10-Oct-1998
  MISC:
- KEYW: DTM FIND FEATURE BeSQLite::BeGuid
+ KEYW: DTM FIND FEATURE InroadsGuid
 -----------------------------------------------------------------------------%*/
 
 int aecDTM_findFeatureByGUID /* <= TRUE if error                   */
 (
     struct CIVdtmftr **ftrPP,             /* <= found feature                   */
     struct CIVdtmsrf *srfP,               /* => DTM surface (or NULL)           */
-    BeSQLite::BeGuid *guidP                           /* => surface guid pointer            */
+    InroadsGuid *guidP                           /* => surface guid pointer            */
 )
 {
     CIVdtmsrf *srf;
@@ -98,7 +98,7 @@ int aecDTM_findExteriorFeature /* <= TRUE if error                 */
     struct CIVdtmblk *blkP;
     BOOL fnd = FALSE;
     int sts = SUCCESS;
-    
+
     *ftrPP = NULL;
 
     if ( srfP != NULL )
@@ -160,7 +160,7 @@ int aecDTM_findFeatureByPoint  /* <= TRUE if error                   */
     {
       ftrType = aecDTM_featureFileFromPointFile ( pntType );
       aecDTM_getSurfaceFeatureFileIndex ( &ftrInd, ftrType );
-    
+
       filP = srfP->ftrf[ftrInd];
 
       for ( ftrblkP = filP->blk; ftrblkP && !fnd; ftrblkP = ftrblkP->nxt )
@@ -172,7 +172,7 @@ int aecDTM_findFeatureByPoint  /* <= TRUE if error                   */
               *ftrPP = fP;
               fnd = TRUE;
             }
-          }    
+          }
     }
 
     if ( !fnd )

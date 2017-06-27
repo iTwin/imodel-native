@@ -5,6 +5,7 @@ using BECO = Bentley.ECObjects;
 using Bentley.DgnPlatformNET;
 using Bentley.ECObjects.Instance;
 
+
 namespace Bentley.TerrainModel.ElementTemplate
     {
 
@@ -273,23 +274,27 @@ namespace Bentley.TerrainModel.ElementTemplate
             property = contourStructValue[prefix + "_TextLevel"];
             if (property != null && !property.IsNull)
                 {
-                LevelHandle level;
+                LevelId levelId = 0;
 
                 if (property.StringValue == "")
-                    level = contourElement.GetElement ().DgnModel.GetFileLevelCache ().GetLevel (64);
+                    levelId = 64;
                 else
-                    level = contourElement.GetElement ().DgnModel.GetFileLevelCache ().GetLevelByName (property.StringValue, true);
-
-                if (level == null || !level.IsValid)
-                    level = contourElement.GetElement ().DgnModel.GetFileLevelCache ().CreateLevel (property.StringValue);
-                if (level != null && level.IsValid)
-                    contourElement.TextLevelId = level.LevelId;
+                    {
+                    levelId = Bentley.TerrainModelNET.Element.ElementTemplateAdmin.GetLevelIdFromName(property.StringValue, contourElement.GetElement().DgnModelRef);
+                    }
+                if (levelId == 0)
+                    {
+                    LevelHandle level = contourElement.GetElement().DgnModel.GetFileLevelCache().CreateLevel(property.StringValue);
+                    if (null != level)
+                        levelId = level.LevelId;
+                    }
+                contourElement.TextLevelId = levelId;
                 }
 
             // Apply text style.
             property = contourStructValue[prefix + "_TextStyles"];
             if (property != null && !property.IsNull)
-                contourElement.TextStyle = DgnTextStyle.GetByName (property.StringValue, contourElement.GetElement ().DgnModelRef.GetDgnFile ());
+                contourElement.TextStyleId = Bentley.TerrainModelNET.Element.ElementTemplateAdmin.GetTextStyleIdFromName (property.StringValue, contourElement.GetElement ().DgnModelRef);
 
             // Apply Max Slope Option.
             property = generalStructValue[PREFIX_CONTOURS + "_MaxSlopeOption"];

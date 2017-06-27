@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 22:19:19 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -160,7 +160,7 @@ bool                            OutputDGNFileModel             (BinaryOStream&  
                                                                 const IDTMDgnModelSource&               source,
                                                                 const DocumentEnv&                      env)
     {
-    if (!WriteValue<uint32_t>(stream, source.GetModelID()))
+    if (!WriteValue<UInt32>(stream, source.GetModelID()))
         return false;
 
     if (!WriteStringW(stream, source.GetModelName()))
@@ -173,7 +173,7 @@ bool                            OutputDGNFileLevel             (BinaryOStream&  
                                                                 const IDTMDgnLevelSource&               source,
                                                                 const DocumentEnv&                      env)
     {
-    if (!WriteValue<uint32_t>(stream, source.GetLevelID()))
+    if (!WriteValue<UInt32>(stream, source.GetLevelID()))
         return false;
 
     if (!WriteStringW(stream, source.GetLevelName()))
@@ -206,7 +206,7 @@ bool                            OutputDGNFileReferenceLevel    (BinaryOStream&  
                                                                 const IDTMDgnReferenceLevelSource&      source,
                                                                 const DocumentEnv&                      env)
     {
-    if (!WriteValue<uint32_t>(stream, source.GetLevelID()))
+    if (!WriteValue<UInt32>(stream, source.GetLevelID()))
         return false;
 
     if (!WriteStringW(stream, source.GetLevelName()))
@@ -365,10 +365,10 @@ bool                            LoadDGNV0LevelPart         (BinaryIStream&      
 
 
 bool                            LoadDGNV1ModelPart         (BinaryIStream&      stream,
-                                                            uint32_t&             modelID,
+                                                            UInt32&             modelID,
                                                             WString&            modelName)
     {
-    uint32_t modelIDField = 0;
+    UInt32 modelIDField = 0;
     if (!ReadValue(stream, modelIDField))
         return false;
 
@@ -427,10 +427,10 @@ bool                            LoadDGNV1ReferencePart     (BinaryIStream&      
 
 
 bool                            LoadDGNV1LevelPart         (BinaryIStream&      stream,
-                                                            uint32_t&             levelID,
+                                                            UInt32&             levelID,
                                                             WString&            levelName)
     {
-    uint32_t levelIDField = 0;
+    UInt32 levelIDField = 0;
     if (!ReadValue(stream, levelIDField))
         return false;
 
@@ -476,9 +476,9 @@ struct IDTMDgnLevelSourceCreator : public IDTMSourceCreator
         {
         DTMSourceDataType   sourceType;
         IMonikerPtr         monikerPtr;
-        uint32_t              modelID;
+        UInt32              modelID;
         WString             modelName;
-        uint32_t              levelID;
+        UInt32              levelID;
         WString             levelName;
 
 
@@ -505,11 +505,11 @@ struct IDTMDgnReferenceLevelSourceCreatorV0 : public IDTMSourceCreator
         {
         DTMSourceDataType   sourceType;
         IMonikerPtr         monikerPtr;
-        uint32_t              modelID;
+        UInt32              modelID;
         WString             modelName;
         WString             referencePersistantPath;
         WString             referenceName;
-        uint32_t              levelID;
+        UInt32              levelID;
         WString             levelName;
 
 
@@ -539,12 +539,12 @@ struct IDTMDgnReferenceLevelSourceCreator : public IDTMSourceCreator
         {
         DTMSourceDataType   sourceType;
         IMonikerPtr         monikerPtr;
-        uint32_t              modelID;
+        UInt32              modelID;
         WString             modelName;
         WString             referencePersistantPath;
         WString             referenceName;
         WString             referenceModelName;
-        uint32_t              levelID;
+        UInt32              levelID;
         WString             levelName;
 
 

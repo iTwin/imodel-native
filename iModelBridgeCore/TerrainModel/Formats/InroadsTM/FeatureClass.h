@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 #pragma once
 
@@ -28,7 +28,7 @@ public:
     ~CFeature();
 
     // Methods for loading and saving features.
-    int     LoadFromDTMByGuid ( BeSQLite::BeGuid *guidP, struct CIVdtmsrf *srfP = NULL );
+    int     LoadFromDTMByGuid ( InroadsGuid *guidP, struct CIVdtmsrf *srfP = NULL );
     int     LoadFromDTMExteriorBoundary ( struct CIVdtmsrf *srfP = NULL );
     int     SaveToDTM ( struct CIVdtmsrf *srfP = NULL, long opt = 0, BOOL bReTin = TRUE );
     int     SaveAsNewToDTM ( struct CIVdtmsrf *srfP = NULL, long opt = 0 );
@@ -75,7 +75,7 @@ public: // IPlanLinearEntity implementation
     void ReversePointDisconFlags ( BOOL bFeatureToDTM );
 
     // Member variables to hold feature properties.
-    BeSQLite::BeGuid              m_guid;
+    InroadsGuid              m_guid;
     long              m_nType;
     wchar_t           m_sName[DTM_C_NAMSIZ];
     wchar_t           m_sDesc[DTM_C_NAMSIZ];
@@ -98,7 +98,7 @@ public: // IPlanLinearEntity implementation
     CIVdtmpaynam     *m_payItemsP;
     long              m_nNumPayItems;
     long              m_nPayItemsAlc;
-    GUID             *m_locateGuidsP;
+    InroadsGuid      *m_locateGuidsP;
 };
 
 //{{AFX_INSERT_LOCATION}}

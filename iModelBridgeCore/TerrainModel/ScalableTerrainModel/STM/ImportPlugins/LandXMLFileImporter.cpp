@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:45:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -158,14 +158,14 @@ private:
     typedef vector<Surface>             SurfaceList;
     friend class LandXMLFileCreator;
 
-    BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporterPtr m_landImporterP;
+    Bentley::TerrainModel::LandXMLImporterPtr m_landImporterP;
     SurfaceList                             m_surfaces; 
 
     /*---------------------------------------------------------------------------------**//**
     * @description  
     * @bsimethod                                                Jean-Francois.Cote   02/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
-    explicit        LandXMLSource  (BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter& landImporter) 
+    explicit        LandXMLSource  (Bentley::TerrainModel::LandXMLImporter& landImporter) 
         :   m_landImporterP(&landImporter)
         { 
         TerrainInfoList const& landSurfaceList = m_landImporterP->GetTerrains();
@@ -225,9 +225,9 @@ private:
 
 
 public:
-    uint32_t                                GetSurfaceCount                                () const 
+    UInt32                                GetSurfaceCount                                () const 
         {
-        return (uint32_t)m_surfaces.size();
+        return (UInt32)m_surfaces.size();
         }
 
     Surface*                            FindSurfaceFor                                    (UInt                    layer)
@@ -271,7 +271,7 @@ class LandXMLFileCreator : public LocalFileSourceCreatorBase
             return false;
 
         // Look for the element by the name LandXML and at the same moment, check if this file contains at least one surface
-        BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporterPtr landImporterP(BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
+        Bentley::TerrainModel::LandXMLImporterPtr landImporterP(Bentley::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
 
         return landImporterP->GetTerrains().size() > 0;
         }
@@ -283,7 +283,7 @@ class LandXMLFileCreator : public LocalFileSourceCreatorBase
     virtual SourceBase*                _Create                                         (const LocalFileSourceRef&       sourceRef,
                                                                                         Log&                     log) const override
         {  
-        BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporterPtr landImporterP(BENTLEY_NAMESPACE_NAME::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
+        Bentley::TerrainModel::LandXMLImporterPtr landImporterP(Bentley::TerrainModel::LandXMLImporter::Create(sourceRef.GetPath().c_str()));
         return new LandXMLSource(*landImporterP);
         }
     };

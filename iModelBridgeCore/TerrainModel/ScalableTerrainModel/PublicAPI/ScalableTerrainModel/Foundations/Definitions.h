@@ -6,7 +6,7 @@
 |       $Date: 2011/12/20 16:23:45 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -76,7 +76,7 @@ struct ShareableObjectTypeTrait
     class RefCountedBase : public Bentley::IRefCounted
         {
     private:
-        mutable uint32_t  m_refCount;
+        mutable UInt32  m_refCount;
 
     protected:
         virtual         ~RefCountedBase() {}         // force virtual destructor for all subclasses
@@ -91,8 +91,8 @@ struct ShareableObjectTypeTrait
 
         bool            IsShared () const {return m_refCount > 1;}
 
-        virtual uint32_t  AddRef   () const {return ++m_refCount;}
-        virtual uint32_t  Release  () const
+        virtual UInt32  AddRef   () const {return ++m_refCount;}
+        virtual UInt32  Release  () const
             {
             if (1 < m_refCount--)
                 return  m_refCount;

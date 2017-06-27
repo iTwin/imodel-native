@@ -280,9 +280,6 @@
     <ClCompile Include="..\Drainage\bcdtmDrainageUtility.cpp">
       <Filter>Source\Drainage</Filter>
     </ClCompile>
-    <ClCompile Include="..\Drainage\drainage.cpp">
-      <Filter>Source\Drainage</Filter>
-    </ClCompile>
     <ClCompile Include="2d\bcdtmLidarFilter.cpp">
       <Filter>Source\2D</Filter>
     </ClCompile>
@@ -291,6 +288,9 @@
     </ClCompile>
     <ClCompile Include="cppwrappers\TMEditor.cpp">
       <Filter>Source\CPPWrappers</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Drainage\WaterAnalysis.cpp">
+      <Filter>Source\Drainage</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -399,6 +399,9 @@
     </ClInclude>
     <ClInclude Include="PublicAPI\DTMIterators.h">
       <Filter>PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Drainage\PublicAPI\WaterAnalysis.h">
+      <Filter>Source\Drainage\PublicAPI</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* loddtm.c                                         tmi    24-Apr-1990        */
@@ -286,10 +286,10 @@ struct CIVdtmsrf **srfPP
 
 /*%-----------------------------------------------------------------------------
 FUNC: aecDTM_loadGUID
-DESC: Loads the surface BeSQLite::BeGuid from the .DTM file.
+DESC: Loads the surface InroadsGuid from the .DTM file.
 HIST: Original - twl 22-Oct-1998
 MISC: static
-KEYW: DTM LOAD BeSQLite::BeGuid
+KEYW: DTM LOAD InroadsGuid
 -----------------------------------------------------------------------------%*/
 
 static int aecDTM_loadGUID
@@ -308,7 +308,7 @@ struct CIVdtmsrf *srf,
         }
     else
         {
-        BeSQLite::BeGuid guid;
+        InroadsGuid guid;
 
         if ( fread ( &guid, sizeof(srf->guid), 1, handleP ) != 1 )
             sts = DTM_M_RDFILF;

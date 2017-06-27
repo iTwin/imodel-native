@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/bcDTMClass.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -219,7 +219,11 @@ struct BcDTM : RefCounted<TerrainModel::IDTM>
 
         static BENTLEYDTM_EXPORT BcDTMPtr CreateFromXyzFile (WCharCP fileNameP, double p2pTol, double p2lTol, long edgeOption, double maxSide) ;
 
-        static BENTLEYDTM_EXPORT BcDTMPtr DesignPondToTargetVolumeOrElevation (long* pondFlag, double* pondElevation, double* pondVolume, DPoint3dP points, long numPoints, long perimeterOrInvert,
+/////////////////////////////////////////////
+//  Obsolete functions
+/////////////////////////////////////////////
+    private:
+        static BENTLEYDTM_EXPORT BcDTMPtr DesignPondToTargetVolumeOrElevation(long* pondFlag, double* pondElevation, double* pondVolume, DPoint3dP points, long numPoints, long perimeterOrInvert,
             long targetVolumeOrElevation, double targetVolume, double targetElevation, double sideSlope, double freeBoard);
 
     protected:
@@ -260,6 +264,7 @@ struct BcDTM : RefCounted<TerrainModel::IDTM>
         virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) override;
 
         virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
+        virtual bool _IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) override;
 
         virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) override;
 

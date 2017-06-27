@@ -2,7 +2,7 @@
 |
 |     $Source: formats/ImagePP.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/WString.h>
@@ -12,12 +12,16 @@
 #include <TerrainModel/Formats/ImagePP.h>
 #include <Bentley/BeFileName.h>
 #include <Bentley/BeFile.h>
+#ifdef BUILDTMFORDGNDB
 #include <ImagePP/h/ImageppAPI.h>
+#else
+#include <ImagePP/h/hstdcpp.h>
+
+#endif
 #include <Imagepp/all/h/HFCURLFile.h>
 #include <ImagePP/all/h/HPMPool.h>
 #include <ImagePP/all/h/HUTDEMRasterXYZPointsExtractor.h>
 #include <ImagePP/all/h/HRFRasterFileFactory.h>
-#include <ImagePP/all/h/HFCException.h>
 #include <ImagePP/all/h/HFCException.h>
 
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
@@ -2383,8 +2387,12 @@ WCharCP    projectionKeyP
         if (dbg) bcdtmWrite_message (0, 0, 0, "Instantiated");
 
         //  Get  Pointer To Raster Coordinate System Instance
-
+#ifdef BUILDTMFORDGNDB
         BaseGCSCP pRasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSysCP ();
+#else
+        auto rasterCoordSys = RasterPointExtractor.GetDEMRasterCoordSysCP();
+        BaseGCSP pRasterCoordSys = rasterCoordSys == nullptr ? nullptr : rasterCoordSys->GetBaseGCS();
+#endif
         if (pRasterCoordSys != NULL) geoCordSysSet = 1;
         if (dbg)
             {
@@ -2606,7 +2614,11 @@ void ImagePPConverter::GetImageProperties ()
             RasterPointExtractor.GetDimensionInPixels (&m_widthInPixels, &m_heightInPixels);
             //   Get BaseGCS Pointer To Raster Coordinate System
             if(RasterPointExtractor.GetDEMRasterCoordSysCP () != nullptr)
+#ifdef BUILDTMFORDGNDB
                 m_gcs = GeoCoordinates::BaseGCS::CreateGCS(*RasterPointExtractor.GetDEMRasterCoordSysCP ());
+#else
+                m_gcs = RasterPointExtractor.GetDEMRasterCoordSysCP ()->GetBaseGCS ();
+#endif
             else
                 m_gcs = nullptr;
             }
@@ -2904,7 +2916,9 @@ double     elevationScaleFactor               // Elevation Scale Factor
         if (dbg) bcdtmWrite_message (0, 0, 0, "Voiding Missing Values");
         if (bcdtmObject_placeVoidsAroundNullValuesDtmObject (dtmP, nullValue)) goto errexit;
         }
-
+    /*
+    ** Apply Unit Conversion Factor To Elevation Values
+    */
     if (unitConversionFactor != 1.0)
         {
         if (dbg) bcdtmWrite_message (0, 0, 0, "Applying Unit Conversions To Elevations");

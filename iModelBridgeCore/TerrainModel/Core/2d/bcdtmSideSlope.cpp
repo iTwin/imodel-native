@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmSideSlope.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcDTMBaseDef.h"
@@ -1283,7 +1283,7 @@ int bcdtmSideSlope_insertVerticesAtCutFillTransitions(DTM_SIDE_SLOPE_TABLE **Sid
 **  Test For Cut Fill Option
 */
     if( radial->cutFillOption && (radial+1)->cutFillOption &&
-        radial->cutFillTin == (radial+1)->cutFillTin &&
+        radial->cutFillTin == (radial+1)->cutFillTin && radial->cutFillTin != nullptr &&
         radial->radialStatus  &&  (radial+1)->radialStatus )
       {
 /*
@@ -4087,7 +4087,7 @@ int bcdtmSideSlope_intersectRadialsWithSurface(DTM_SIDE_SLOPE_TABLE *SideSlopeTa
        if( radial->sideSlopeOption == 5 || radial->sideSlopeOption == 6 || radial->sideSlopeOption == 7 )
          {
          long flag = 0;
-          if( bcdtmDrape_pointDtmObject((BC_DTM_OBJ *)radial->slopeToTin,radial->radialEndPoint.x,radial->radialEndPoint.y,&radial->surfaceZ,&EndFlag)) goto errexit ;
+          if( bcdtmDrape_pointDtmObject((BC_DTM_OBJ *)radial->slopeToTin,radial->radialEndPoint.x,radial->radialEndPoint.y,&radial->surfaceZ,&flag)) goto errexit ;
          if (EndFlag == 0 && flag == 0)
                 EndFlag = 1; // Outside
          }
@@ -4437,7 +4437,7 @@ int bcdtmSideSlope_intersectSurfaceDtmObject(BC_DTM_OBJ *Tin,double Sx,double Sy
             P2 = Tin->nullPnt;
             Ptype = 1;
             }
-        else if (bcdtmMath_normalDistanceToLineDtmObject(Tin, P1, P2, Sx, Sx) <= Tin->ppTol )
+        else if (bcdtmMath_normalDistanceToLineDtmObject(Tin, P1, P2, Sx, Sy) <= Tin->ppTol )
             Ptype = 3;
         }
      }

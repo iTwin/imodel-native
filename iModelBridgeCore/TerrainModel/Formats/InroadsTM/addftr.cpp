@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* addftr.c                                     twl    16-Nov-1998            */
@@ -35,7 +35,7 @@
 
 int aecDTM_addFeature        /* <= TRUE if error                   */
 (
-  BeSQLite::BeGuid *guidP,                          /*<=  guid of created feature         */
+  InroadsGuid *guidP,                          /*<=  guid of created feature         */
   struct CIVdtmsrf *srfP,               /* => surface to add feature to       */
   long opt,                             /* => DTM_C_APPEND, etc.              */
   wchar_t *name,                        /* => name of feature                 */

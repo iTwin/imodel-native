@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* cmputi.cpp                                   twl    24-Apr-2002            */
@@ -25,7 +25,7 @@ typedef struct
 {
     wchar_t name[DTM_C_NAMSIZ];
     struct CIVdtmsrf *srfP;
-    BeSQLite::BeGuid guid;
+    InroadsGuid guid;
 } InExItem;
 
 typedef struct
@@ -37,15 +37,15 @@ typedef struct
     long                count;
     long                alc;
     int                 nStyleFlag;
-    int                 (*pStyleFilterFunc)(BeSQLite::BeGuid *, struct CIVdtmsrf *, int, BOOL *);
+    int                 (*pStyleFilterFunc)(InroadsGuid *, struct CIVdtmsrf *, int, BOOL *);
 } ComponentListDat;
 
 typedef struct
 {
     struct CIVdtmsrf *dstSrfP;
     CMapStringToString *ftrGuidMapP;
-    BeSQLite::BeGuid oldCorGuid;
-    BeSQLite::BeGuid newCorGuid;
+    InroadsGuid oldCorGuid;
+    InroadsGuid newCorGuid;
     BOOL bOneCmpAdded;
 } TransferCompsDat;
 
@@ -62,17 +62,17 @@ static int aecDTM_removeComponentfromGuidIndex ( struct CIVdtmsrf *, struct CIVd
 
 /*%-----------------------------------------------------------------------------
  FUNC: aecDTM_findComponentByGuid
- DESC: Given a component BeSQLite::BeGuid, this function returns a pointer to the
+ DESC: Given a component InroadsGuid, this function returns a pointer to the
        corresponding component.
  HIST: Original - twl 21-Jul-2002
  MISC:
- KEYW: DTM FIND COMPONENT BY BeSQLite::BeGuid
+ KEYW: DTM FIND COMPONENT BY InroadsGuid
 -----------------------------------------------------------------------------%*/
 
 struct CIVdtmcmp *aecDTM_findComponentByGuid /* <= pointer to component       */
 (
     struct CIVdtmsrf *srfP,                 /* => DTM surface (or NULL)       */
-    BeSQLite::BeGuid *guidP                             /* => component guid pointer      */
+    InroadsGuid *guidP                             /* => component guid pointer      */
 )
 {
     struct CIVdtmcmp *cmpP = NULL;
@@ -80,7 +80,7 @@ struct CIVdtmcmp *aecDTM_findComponentByGuid /* <= pointer to component       */
 
     if ( srfP->cmpGuidMapP )
     {
-        aecGuid_toString ( guidString, guidP );        
+        aecGuid_toString ( guidString, guidP );
         srfP->cmpGuidMapP->Lookup ( guidString, (void *&)cmpP );
     }
 
@@ -230,7 +230,7 @@ int aecDTM_indexComponentsByParent
  DESC: Indexes components by guid
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INDEX COMPONENTS BY BeSQLite::BeGuid
+ KEYW: DTM INDEX COMPONENTS BY InroadsGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_indexComponentsByGuid
@@ -293,7 +293,7 @@ int aecDTM_destroyComponentsParentIndex
  DESC: Destorys the components guid index;
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM DESTROY INDEX COMPONENT BeSQLite::BeGuid
+ KEYW: DTM DESTROY INDEX COMPONENT InroadsGuid
 -----------------------------------------------------------------------%*/
 
 int aecDTM_destroyComponentsGuidIndex
@@ -352,7 +352,7 @@ static int aecDTM_insertComponentIntoParentIndex
  DESC: Inserts a component into the component guid index.
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM INSERT INDEX COMPONENT BY BeSQLite::BeGuid
+ KEYW: DTM INSERT INDEX COMPONENT BY InroadsGuid
 -----------------------------------------------------------------------%*/
 
 static int aecDTM_insertComponentIntoGuidIndex
@@ -399,7 +399,7 @@ static int aecDTM_insertComponentIntoStyleIndex
  DESC: Removes a component from the component guid index.
  HIST: Original - twl 26-Apr-2002
  MISC:
- KEYW: DTM REMOVE INDEX COMPONENT BY BeSQLite::BeGuid
+ KEYW: DTM REMOVE INDEX COMPONENT BY InroadsGuid
 -----------------------------------------------------------------------%*/
 
 static int aecDTM_removeComponentfromGuidIndex
@@ -453,9 +453,9 @@ static int aecComponent_DoesComponentPassNameList
         bFound = TRUE;
 
     if ( !dat->includeNames )
-        bFound = !bFound;        
+        bFound = !bFound;
 
-    return ( (int)bFound );    
+    return ( (int)bFound );
 }
 static int compareInExItems( const void *pParm1, const void *pParm2 )
 {
@@ -463,7 +463,7 @@ static int compareInExItems( const void *pParm1, const void *pParm2 )
     InExItem *item2 = (InExItem *)pParm2;
 
     int sts = 0;
-    
+
     if (item1 && item1->srfP && item2 && item2->srfP )
     {
         sts = aecGuid_compare ( &item1->srfP->guid, &item2->srfP->guid );

@@ -2,7 +2,7 @@
 |
 |     $Source: formats/bcdtmLidar.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "TerrainModel/Formats/Formats.h"
@@ -331,6 +331,11 @@ struct LasVLR
 
     };
 
+#ifdef BUILDTMFORDGNDB
+#define GEOTIFFKEYSLISTCONST const
+#else
+#define GEOTIFFKEYSLISTCONST
+#endif
 struct GeoTiffKeysList : IGeoTiffKeysList
     {
     struct sGeoKeys
@@ -383,12 +388,12 @@ struct GeoTiffKeysList : IGeoTiffKeysList
 
     bvector<IGeoTiffKeysList::GeoKeyItem> m_keys;
     mutable int m_index;
-    virtual bool            GetFirstKey (GeoKeyItem* po_Key) const
+    virtual bool            GetFirstKey (GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
         {
         m_index = 0;
         return GetNextKey (po_Key);
         }
-    virtual bool            GetNextKey (GeoKeyItem* po_Key) const
+    virtual bool            GetNextKey (GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
         {
         if (m_index < (int)m_keys.size())
             {
@@ -397,7 +402,7 @@ struct GeoTiffKeysList : IGeoTiffKeysList
             }
         return false;
         }
-
+    virtual void            AddKey (unsigned short pi_KeyID, unsigned long pi_value) {}
     virtual void            AddKey (unsigned short pi_KeyID, uint32_t pi_value) {}
     virtual void            AddKey (unsigned short pi_KeyID, double pi_value) {}
     virtual void            AddKey (unsigned short pi_KeyID, const std::string& pi_value) {}
@@ -473,7 +478,11 @@ DTMStatusInt bcdtmFormatLidar_getCoordinateSystem (BeFile& lasFile, BCCIVIL_LASP
         GeoTiffKeysList geoTiffKeys (vlrs[geoKeyRecordIndex].data, geoDoubleParamsTagIndex != -1 ? vlrs[geoDoubleParamsTagIndex].data : nullptr, geoAsciiParamsTagIndex != -1 ? vlrs[geoAsciiParamsTagIndex].data : nullptr);
         WString msg;
         StatusInt warning;
+#ifdef BUILDTMFORDGNDB
         if (gcs->InitFromGeoTiffKeys (&warning, &msg, &geoTiffKeys, true) != SUCCESS)
+#else
+        if (gcs->InitFromGeoTiffKeys (&warning, &msg, &geoTiffKeys) != SUCCESS)
+#endif
             gcs = nullptr;
         }
 
@@ -552,7 +561,11 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_importLasFileFeaturesDtmO
     /*
     ** Open The Files
     */
+#ifdef BUILDTMFORDGNDB
     if (lasFile.Open (lasFileNameP, BeFileAccess::Read) != BeFileStatus::Success)
+#else
+    if (lasFile.Open (lasFileNameP, BeFileAccess::Read, BeFileSharing::None) != BeFileStatus::Success)
+#endif
         {
         bcdtmWrite_message(1,0,0,"Cannot Open LAS File %s",lasFileNameP) ;
         goto errexit ;
@@ -672,7 +685,11 @@ BENTLEYDTMFORMATS_EXPORT DTMStatusInt bcdtmFormatLidar_getLasFileFeatureTypes (W
     /*
     ** Open The Files
     */
+#ifdef BUILDTMFORDGNDB
     if (lasFile.Open (lasFileNameP, BeFileAccess::Read) != BeFileStatus::Success)
+#else
+    if (lasFile.Open (lasFileNameP, BeFileAccess::Read, BeFileSharing::None) != BeFileStatus::Success)
+#endif
         {
         bcdtmWrite_message (1, 0, 0, "Cannot Open LAS File %s", lasFileNameP);
         goto errexit;
@@ -772,7 +789,11 @@ errexit :
         /*
         ** Open The Files
         */
+#ifdef BUILDTMFORDGNDB
         if (lasFile.Open (lasFileNameP, BeFileAccess::Read) != BeFileStatus::Success)
+#else
+        if (lasFile.Open (lasFileNameP, BeFileAccess::Read, BeFileSharing::None) != BeFileStatus::Success)
+#endif
             {
             bcdtmWrite_message (1, 0, 0, "Cannot Open LAS File %s", lasFileNameP);
             goto errexit;

@@ -6,7 +6,7 @@
 |       $Date: 2012/02/23 18:20:09 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -251,12 +251,12 @@ public:
 
 
     IMPORT_DLLE static SourceRef            CreateFrom                             (const WChar*              dgnPath,
-                                                                                    uint32_t                      modelID,
-                                                                                    uint32_t                      levelID);
+                                                                                    UInt32                      modelID,
+                                                                                    UInt32                      levelID);
 
     IMPORT_DLLE explicit                    DGNLevelByIDSourceRef                  (const WChar*              dgnPath,
-                                                                                    uint32_t                      modelID,
-                                                                                    uint32_t                      levelID);
+                                                                                    UInt32                      modelID,
+                                                                                    UInt32                      levelID);
 
     IMPORT_DLLE                             DGNLevelByIDSourceRef                  (const DGNLevelByIDSourceRef&
                                                                                                                 rhs);
@@ -266,9 +266,9 @@ public:
     IMPORT_DLLE const WString&           GetDGNPath                             () const;
     IMPORT_DLLE const WChar*             GetDGNPathCStr                         () const;
 
-    IMPORT_DLLE uint32_t                      GetModelID                             () const;
+    IMPORT_DLLE UInt32                      GetModelID                             () const;
     
-    IMPORT_DLLE uint32_t                      GetLevelID                             () const;
+    IMPORT_DLLE UInt32                      GetLevelID                             () const;
     };
 
 
@@ -286,14 +286,14 @@ public:
     IMPORT_DLLE static ClassID              s_GetClassID                           ();
 
     IMPORT_DLLE static SourceRef            CreateFrom                             (const WChar*              dgnPath,
-                                                                                    uint32_t                      rootModelID,
+                                                                                    UInt32                      rootModelID,
                                                                                     const WChar*                 rootToRefPersistentPath,
-                                                                                    uint32_t                      referenceLevelID);
+                                                                                    UInt32                      referenceLevelID);
 
     IMPORT_DLLE explicit                    DGNReferenceLevelByIDSourceRef         (const WChar*              dgnPath,
-                                                                                    uint32_t                      rootModelID,
+                                                                                    UInt32                      rootModelID,
                                                                                     const WChar*                 rootToRefPersistentPath,
-                                                                                    uint32_t                      referenceLevelID);
+                                                                                    UInt32                      referenceLevelID);
 
     IMPORT_DLLE                             DGNReferenceLevelByIDSourceRef         (const DGNReferenceLevelByIDSourceRef&
                                                                                                                 rhs);
@@ -303,12 +303,12 @@ public:
     IMPORT_DLLE const WString&           GetDGNPath                             () const;
     IMPORT_DLLE const WChar*             GetDGNPathCStr                         () const;
 
-    IMPORT_DLLE uint32_t                      GetRootModelID                         () const;
+    IMPORT_DLLE UInt32                      GetRootModelID                         () const;
     
     IMPORT_DLLE const WString&          GetRootToRefPersistentPath             () const;
     IMPORT_DLLE const WChar*                 GetRootToRefPersistentPathCStr         () const;
 
-    IMPORT_DLLE uint32_t                      GetLevelID                             () const;
+    IMPORT_DLLE UInt32                      GetLevelID                             () const;
     };
 
 

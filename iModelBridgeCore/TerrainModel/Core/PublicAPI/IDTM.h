@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/IDTM.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -107,6 +107,23 @@ public:
     BENTLEYDTM_EXPORT unsigned int GetPointCount() const;
 };
 
+struct DTMRayIntersection
+    {
+    DTMRayIntersection() { isOnMesh = true; hasNormal = false; rayFraction = 0; }
+    DPoint3d point;     // intersection point
+    DVec3d normal;      // normal on point if exists
+    bool isOnMesh;      // is it on the mesh or on Node
+    bool hasNormal;     // normal exists ?
+    double rayFraction; // the distance from point to the Ray source along Ray direction
+    };
+
+struct DTMIntersectionCompare {
+    DTMIntersectionCompare() {};
+    bool operator() (DTMRayIntersection pt1, DTMRayIntersection pt2) {
+        return (pt1.rayFraction < pt2.rayFraction);
+        }
+    };
+
 /*=================================================================================**//**
 * Interface implemented by DTM engines.
 * @bsiclass                                                     Bentley Systems
@@ -123,6 +140,7 @@ virtual DTMStatusInt _DrapeLinear(DTMDrapedLinePtr& ret, const DPoint3d pts[], i
 virtual bool _ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DPoint3dCR testPoint) = 0;
 
 virtual bool _IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) = 0;
+virtual bool _IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint) = 0;
 
 virtual bool _DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector) = 0;
 
@@ -156,6 +174,12 @@ BENTLEYDTM_EXPORT bool ProjectPoint(DPoint3dR pointOnDTM, DMatrix4dCR w2vMap, DP
 //! @param[in]  direction           The vector giving the direction of projection
 //! @param[in]  testPoint           The point to project.
 BENTLEYDTM_EXPORT bool IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint);
+
+//! Projects point on the DTM along a given direction
+//! @param[out]  hitsOnDTM          Projected elements (points/normals/...) ordered from closest to fardest.
+//! @param[in]  direction           The vector giving the direction of projection
+//! @param[in]  testPoint           The point to project.
+BENTLEYDTM_EXPORT bool IntersectRay(bvector<DTMRayIntersection>& hitsOnDTM, DVec3dCR direction, DPoint3dCR testPoint);
 
 //! Drapes a point onto the DTM along a vector.
 //! @param[out] endPt           Projected point.

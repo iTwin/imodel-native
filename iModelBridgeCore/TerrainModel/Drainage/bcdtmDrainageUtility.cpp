@@ -2,11 +2,14 @@
 |
 |     $Source: Drainage/bcdtmDrainageUtility.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 extern int DrainageDebug ;
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -164,7 +167,7 @@ int bcdtmDrainage_getTriangleSlopeAndSlopeAnglesDtmObject
  
     // Get Flow Direction From Drainage Tables
       
-    if( drainageTablesP != NULL )
+    if( drainageTablesP != nullptr )
       {
        drainageTablesP->GetTriangleSlopeAndSlopeAngles(trgPoint1,trgPoint2,trgPoint3,trgFound,voidTriangle,ascentAngle,descentAngle,slope) ;
        if( trgFound == false )
@@ -469,6 +472,71 @@ int bcdtmDrainage_getTriangleFlowDirectionDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
+int bcdtmDrainage_findEdgeFromPointAndAngleDtmObject
+(
+    BC_DTM_OBJ *dtmP,      /* ==> Pointer To Tin Object                                        */
+    long apexPnt,          /* ==> Triangle Apex Point                                          */
+    double angle,          /* ==> Angle Of Intersect Radial                                    */
+    long& edgeP1,
+    long& edgeP2
+    )
+/*
+** This Function Calculates The Intersection Of A Radial With Tin Line <basePnt1,basePnt2> 
+*/
+    {
+    /*
+    ** Initialise
+    */
+    edgeP1 = dtmP->nullPnt;
+    edgeP2 = dtmP->nullPnt;
+
+    double radX = pointAddrP(dtmP,apexPnt)->x;
+    double radY = pointAddrP(dtmP,apexPnt)->y;
+    long clPtr = nodeAddrP(dtmP, apexPnt)->cPtr;
+
+    if (clPtr != dtmP->nullPtr)
+        {
+        long firstPt = clistAddrP(dtmP, clPtr)->pntNum;
+        long pnt1 = firstPt;
+        double lastAngle = bcdtmMath_getAngle(radX, radY, pointAddrP(dtmP, pnt1)->x, pointAddrP(dtmP, pnt1)->y);
+        while (clPtr != dtmP->nullPtr)
+            {
+            auto clist = clistAddrP(dtmP, clPtr);
+            long nextPtr = clist->nextPtr;
+            long pnt2 = (nextPtr == dtmP->nullPtr) ? firstPt : clistAddrP(dtmP, nextPtr)->pntNum;
+
+            double nextAngle = bcdtmMath_getAngle(radX, radY, pointAddrP(dtmP, pnt2)->x, pointAddrP(dtmP, pnt2)->y);
+            bool found = false;
+            if (nextAngle > lastAngle)
+                {
+                if (lastAngle >= angle || nextAngle <= angle)
+                    found = true;
+                }
+            else if (angle >= nextAngle && angle <= lastAngle)
+                found = true;
+
+            if (found)
+                {
+                edgeP1 = pnt1;
+                edgeP2 = pnt2;
+                return DTM_SUCCESS;
+                }
+            lastAngle = nextAngle;
+            clPtr = nextPtr;
+            pnt1 = pnt2;
+            }
+
+        }
+    /*
+    ** Job Completed
+    */
+    return(DTM_SUCCESS) ;
+    }
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
 int bcdtmDrainage_calculateIntersectOfApexRadialWithTriangleBaseDtmObject
 (
  BC_DTM_OBJ *dtmP,      /* ==> Pointer To Tin Object                                        */
@@ -560,9 +628,9 @@ int bcdtmDrainage_calculateAngleIntersectOfRadialFromTriangleEdgeWithTriangleDtm
 //
     {
     int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0),cdbg=DTM_CHECK_VALUE(0) ;
-	int sdof ;
+    int sdof ;
     long intPnt ;
-	double dx,dy,radius ;
+    double dx,dy,radius ;
 
     // Log Arguments
 
@@ -578,10 +646,10 @@ int bcdtmDrainage_calculateAngleIntersectOfRadialFromTriangleEdgeWithTriangleDtm
        bcdtmWrite_message(0,0,0,"angle       = %12.10lf",angle) ; 
        } 
 
-	// Initialise
+    // Initialise
 
-	*xP = *yP = *zP = 0.0 ;
-	*nextPnt1P = *nextPnt2P = *nextApexP = dtmP->nullPnt ;
+    *xP = *yP = *zP = 0.0 ;
+    *nextPnt1P = *nextPnt2P = *nextApexP = dtmP->nullPnt ;
     dx = dtmP->xMax - dtmP->xMin ;
     dy = dtmP->yMax - dtmP->yMin ;
 
@@ -596,7 +664,7 @@ int bcdtmDrainage_calculateAngleIntersectOfRadialFromTriangleEdgeWithTriangleDtm
             }  
         }  
 
-	//  Calculate Radial Out From Start Point At Angle
+    //  Calculate Radial Out From Start Point At Angle
 
     radius = sqrt(dx * dx + dy * dy) ;
     dx = startX + radius * cos(angle) ;
@@ -663,7 +731,7 @@ cleanup : ;
     if ( dbg && ret != DTM_SUCCESS )
         bcdtmWrite_message(0,0,0,"Calculating Angle Intersect From Triangle Edge With Triangle Error") ; 
 
-	return ret ;
+    return ret ;
 
 errexit : 
 
@@ -693,7 +761,7 @@ int bcdtmDrainage_internallyCleanPointArrayPolygon
  long         node,process,startPoint,startNextPoint=0,startDirection=0 ;
  double       area,featureArea=0.0 ;
  DPoint3d     *p3dP,*p3d1P,polyPoint[2] ;
- BC_DTM_OBJ   *dtmP=NULL ;
+ BC_DTM_OBJ   *dtmP=nullptr ;
  DTMFeatureId nullFeatureId=DTM_NULL_FEATURE_ID ;
 /*
 ** Write Status Message
@@ -708,7 +776,7 @@ int bcdtmDrainage_internallyCleanPointArrayPolygon
 /*
 ** Check For Existence Of DPoint3d Points
 */
- if( *polyPtsPP == NULL || *numPolyPtsP < 3 ) 
+ if( *polyPtsPP == nullptr || *numPolyPtsP < 3 ) 
    { 
     bcdtmWrite_message(1,0,0,"Less Than 3 Polygon Points") ;
     goto errexit ; 
@@ -866,7 +934,7 @@ int bcdtmDrainage_internallyCleanPointArrayPolygon
 ** Free Memory
 */
     free(*polyPtsPP) ; 
-    *polyPtsPP = NULL ;
+    *polyPtsPP = nullptr ;
     *numPolyPtsP = 0 ;
     spnt = startPoint ;
     np   = startNextPoint ; 
@@ -894,7 +962,7 @@ int bcdtmDrainage_internallyCleanPointArrayPolygon
 ** Free Memory
 */
  cleanup :
- if( dtmP != NULL ) bcdtmObject_destroyDtmObject(&dtmP) ; 
+ if( dtmP != nullptr ) bcdtmObject_destroyDtmObject(&dtmP) ; 
 /*
 ** Job Completed
 */
@@ -949,15 +1017,15 @@ int bcdtmDrainage_insertPointIntoTinLineDtmObject
         {
         if( ( antPnt = bcdtmList_nextAntDtmObject(dtmP,linePoint1,linePoint2)) < 0 ) goto errexit ;
         if( ( clkPnt = bcdtmList_nextClkDtmObject(dtmP,linePoint1,linePoint2)) < 0 ) goto errexit ;
-  	    if(bcdtmList_deleteLineDtmObject(dtmP,linePoint1,linePoint2)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,linePoint1,point,antPnt)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,linePoint1,dtmP->nullPnt)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,linePoint2,point,clkPnt)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,linePoint2,linePoint1)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,point,linePoint2)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,antPnt,linePoint1)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,point,linePoint1)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,clkPnt,linePoint2)) goto errexit ; 
+        if(bcdtmList_deleteLineDtmObject(dtmP,linePoint1,linePoint2)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,linePoint1,point,antPnt)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,linePoint1,dtmP->nullPnt)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,linePoint2,point,clkPnt)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,linePoint2,linePoint1)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,point,linePoint2)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,antPnt,linePoint1)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,clkPnt,point,linePoint1)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,clkPnt,linePoint2)) goto errexit ; 
         if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,linePoint1,linePoint2) )
             {
             if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,linePoint1,linePoint2,point)) goto errexit ; 
@@ -974,20 +1042,20 @@ int bcdtmDrainage_insertPointIntoTinLineDtmObject
             linePoint1 = linePoint2 ;
             linePoint2 = savePoint ; 
             } 
-	    if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,linePoint1,linePoint2))   < 0 ) goto errexit ; 
-	    if(bcdtmList_deleteLineDtmObject(dtmP,linePoint1,linePoint2)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,linePoint1,point,antPnt)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,linePoint1,dtmP->nullPnt)) goto errexit ; 
-	    if(bcdtmList_insertLineBeforePointDtmObject(dtmP,linePoint2,point,antPnt)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,linePoint2,linePoint1)) goto errexit ; 
+        if( (antPnt = bcdtmList_nextAntDtmObject(dtmP,linePoint1,linePoint2))   < 0 ) goto errexit ; 
+        if(bcdtmList_deleteLineDtmObject(dtmP,linePoint1,linePoint2)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,linePoint1,point,antPnt)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,linePoint1,dtmP->nullPnt)) goto errexit ; 
+        if(bcdtmList_insertLineBeforePointDtmObject(dtmP,linePoint2,point,antPnt)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,linePoint2,linePoint1)) goto errexit ; 
         if(bcdtmList_insertLineAfterPointDtmObject(dtmP,antPnt,point,linePoint2)) goto errexit ; 
-	    if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,antPnt,linePoint1)) goto errexit ; 
+        if(bcdtmList_insertLineAfterPointDtmObject(dtmP,point,antPnt,linePoint1)) goto errexit ; 
         if(bcdtmList_testForDtmFeatureLineDtmObject(dtmP,linePoint1,linePoint2) )
             {
             if( bcdtmInsert_pointIntoAllDtmFeaturesDtmObject(dtmP,linePoint1,linePoint2,point)) goto errexit ;
             }  
-	    nodeAddrP(dtmP,linePoint1)->hPtr = point ;
-	    nodeAddrP(dtmP,point)->hPtr = linePoint2 ;
+        nodeAddrP(dtmP,linePoint1)->hPtr = point ;
+        nodeAddrP(dtmP,point)->hPtr = linePoint2 ;
         }
 
     // Clean Up
@@ -1006,3 +1074,5 @@ cleanup :
      if( ret == DTM_SUCCESS ) ret = DTM_ERROR ; 
      goto cleanup ;
 }
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

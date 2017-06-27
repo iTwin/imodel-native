@@ -2,7 +2,7 @@
 |
 |     $Source: Formats/MXModelFile.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -695,12 +695,21 @@ class DLL MXModelFile
             BeFile* hand = new BeFile ();
 
             BeFileStatus status;
+#ifdef BUILDTMFORDGNDB
             if (strcmp (type, "rb") == 0)
                 status = hand->Open (filename, BeFileAccess::Read);
             else if(strcmp(type, "r+b") == 0)
                 status = hand->Open (filename, BeFileAccess::ReadWrite);
             else
                 status = hand->Create (filename, true);
+#else
+            if (strcmp (type, "rb") == 0)
+                status = hand->Open (filename, BeFileAccess::Read, BeFileSharing::ReadWrite);
+            else if(strcmp(type, "r+b") == 0)
+                status = hand->Open (filename, BeFileAccess::ReadWrite, BeFileSharing::Read);
+            else
+                status = hand->Create (filename, true);
+#endif
             if(status != BeFileStatus::Success)
                 hand = 0;
             _pos = 0;

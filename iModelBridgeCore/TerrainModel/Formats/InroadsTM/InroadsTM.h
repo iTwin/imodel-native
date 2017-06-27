@@ -1,16 +1,16 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 //-----------------------------------------------------------------------------
 //
-// MicroStation, InRoads, InRail and MDL are registered trademarks and 
+// MicroStation, InRoads, InRail and MDL are registered trademarks and
 // "MicroCSL" is a trademark of Bentley Systems, Inc.
 //
 // Limited permission is hereby granted to reproduce and modify this
-// copyrighted material provided that the resulting code is used only in 
-// conjunction with Bentley Systems products under the terms of the license 
-// agreement provided therein, and that this notice is retained in its entirety 
+// copyrighted material provided that the resulting code is used only in
+// conjunction with Bentley Systems products under the terms of the license
+// agreement provided therein, and that this notice is retained in its entirety
 // in any such reproduction or modification.
 //
 //-----------------------------------------------------------------------------
@@ -24,7 +24,6 @@
 
 #pragma once
 
-//#include <Bentley\stg\guid.h>
 #include "portable.h"
 #include "dtmcon.h"
 #include "txtsiz.h"

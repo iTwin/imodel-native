@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMPropertyEnabler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -154,7 +154,7 @@ struct DTMElementDataCache : IECPerDelegateData, IQueryProperties
         Int32 m_originalHeaderLsId;
         UInt32 m_originalHeaderWeight;
         //LineStyleParams m_headerLsParams;
-        
+
     public:
         DgnModelRefP m_activeModel;
         bool m_symbologyReadOnly;
@@ -1048,7 +1048,7 @@ protected:
 void DTMELEMENTECExtension::_InitializeCompoundDelegate (ICompoundECDelegateR del, ECN::ECClassCR ecClass) const
     {
     bool isDTMElementClass = ecClass.GetName().Equals(L"DTMElement");
-    
+
     if (!isDTMElementClass)
         {
         for (auto baseClass : ecClass.GetBaseClasses())
@@ -2630,7 +2630,7 @@ struct DTMElementRegionsECDelegate : BaseOSElementECDelegate
             {
             static const ElementECDelegate::MapEntry s_BESMAP[] =
                 {
-                DTMELEMENT_PROPERTYID_Description, L"Description", NULL_MAP,
+                DTMELEMENT_PROPERTYID_Description, L"Name", NULL_MAP,
                 DTMELEMENT_PROPERTYID_RegionTag, L"RegionTag", NULL_MAP,
                 ElementECDelegate::END_OF_MAP, NULL_ACCESSOR, NULL_MAP
                 };

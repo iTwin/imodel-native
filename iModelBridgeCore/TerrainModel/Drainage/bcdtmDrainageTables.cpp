@@ -2,11 +2,13 @@
 |
 |     $Source: Drainage/bcdtmDrainageTables.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 #pragma warning (disable: 4101)
 #pragma warning (disable: 4102)
@@ -1381,3 +1383,6 @@ int DTMSumpLinePondTable::FindZeroSlopeLinePond
       
    return(ret) ;
   }
+
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

@@ -2,17 +2,14 @@
 #
 #  $Source: ScalableTerrainModel/STM/STM.mke $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------------------------
+baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)ScalableTerrainModel/mki/AssertScalableTerrainModelPolicy.mki
+SolutionPolicyMki=$(baseDir)STM.mki
+
 %include  mdl.mki
-
-baseDir             = $(_MakeFilePath)
-%include $(SrcRoot)ScalableTerrainModel/mki/ScalableTerrainModelCommon.mki
-
-CompileOptionsMki   = $(baseDir)STM.mki
-%include (CompileOptionsMki)
-
 
 #----------------------------------------------------------------------
 #       Create output directories
@@ -241,7 +238,8 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)$(BaseGeocoordLib)
 
 LINKER_LIBRARIES            = \
-    $(ContextSubpartsLibs)$(ImageppLib) \
+    $(ContextSubpartsLibs)$(IppGraLibsLib) \
+    $(ContextSubpartsLibs)$(IppUtlLibsLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
     $(ContextSubpartsLibs)$(TerrainModelCoreLib) \
     $(ContextSubpartsLibs)$(TerrainModelFormatsLib)

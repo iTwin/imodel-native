@@ -2,11 +2,13 @@
 |
 |     $Source: Drainage/bcdtmDrainageList.cpp $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "bcdtmDrainage.h"
 #include <TerrainModel/Core/bcdtmInlines.h>
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 extern int DrainageDebug ;
 /*-------------------------------------------------------------------+
@@ -22,7 +24,7 @@ int bcdtmDrainageList_copyTptrListToPointListDtmObject
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
- long   numPointList,*pointListP=NULL ;   
+ long   numPointList,*pointListP=nullptr ;   
 
 // Log Entry Parameters
 
@@ -34,29 +36,19 @@ int bcdtmDrainageList_copyTptrListToPointListDtmObject
     bcdtmWrite_message(0,0,0,"pointList   = %p",pointList) ;
    }
 
-// Initialise   
-
-   if( pointList.pointsP != NULL ) 
-     {
-      delete [] pointList.pointsP ;
-      pointList.pointsP = NULL ;
-     }
-   pointList.numPoints = 0 ;  
-   
+  
 // Copy Tptr List
 
   if( bcdtmList_copyTptrListToPointListDtmObject(dtmP,startPoint,&pointListP,&numPointList)) goto errexit ;
   
 // Assign To Point List Structure
 
-  pointList.pointsP   = ( int * ) pointListP ;
-  pointList.numPoints = numPointList ;
-  pointListP          = NULL ;
+  pointList.Set(pointListP, numPointList);
      
 // Clean Up
 
  cleanup :
- if( pointListP != NULL ) free(pointListP) ;
+ if( pointListP != nullptr ) free(pointListP) ;
 
 // Exit
 
@@ -83,7 +75,7 @@ int bcdtmDrainageList_copySptrListToPointListDtmObject
 )
 {
  int    ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0);
- long   numPointList,*pointListP=NULL ;   
+ long   numPointList,*pointListP=nullptr ;   
 
 // Log Entry Parameters
 
@@ -97,12 +89,6 @@ int bcdtmDrainageList_copySptrListToPointListDtmObject
 
 // Initialise   
 
-   if( pointList.pointsP != NULL ) 
-     {
-      delete [] pointList.pointsP ;
-      pointList.pointsP = NULL ;
-     }
-   pointList.numPoints = 0 ;  
    
 // Copy Tptr List
 
@@ -110,14 +96,12 @@ int bcdtmDrainageList_copySptrListToPointListDtmObject
   
 // Assign To Point List Structure
 
-  pointList.pointsP   = ( int * ) pointListP ;
-  pointList.numPoints = numPointList ;
-  pointListP          = NULL ;
+  pointList.Set(pointListP, numPointList);
      
 // Clean Up
 
  cleanup :
- if( pointListP != NULL ) free(pointListP) ;
+ if( pointListP != nullptr ) free(pointListP) ;
 
 // Exit
 
@@ -162,20 +146,20 @@ int bcdtmDrainageList_copyPointListToTptrListDtmObject
  
 // Copy Point List
 
- if( pointList.numPoints > 1 )
+ if( pointList.size() > 1 )
    {
    
 //  Check For Point Range Error
    
-    if( pointList.pointsP[0] < 0 || pointList.pointsP[0] >= dtmP->numPoints )
+    if( pointList[0] < 0 || pointList[0] >= dtmP->numPoints )
       {
        bcdtmWrite_message(1,0,0,"Point Range Error") ;
        goto errexit ;
       } 
-    pnt = *startPointP = pointList.pointsP[0] ;
-    for( int n = 1 ; n < pointList.numPoints ; ++n )
+    pnt = *startPointP = pointList[0] ;
+    for( int n = 1 ; n < (int)pointList.size(); ++n )
       {
-       npnt = pointList.pointsP[n] ;
+       npnt = pointList[n] ;
    
 //     Check For Point Range Error
    
@@ -236,21 +220,21 @@ int bcdtmDrainageList_copyPointListToSptrListDtmObject
  
 // Copy Point List
 
- if( pointList.numPoints > 1 )
+ if( pointList.size()> 1 )
    {
    
 //  Check For Point Range Error
    
-    if( pointList.pointsP[0] < 0 || pointList.pointsP[0] >= dtmP->numPoints )
+    if( pointList[0] < 0 || pointList[0] >= dtmP->numPoints )
       {
        bcdtmWrite_message(1,0,0,"Point Range Error") ;
        goto errexit ;
       } 
       
-    pnt = *startPointP = pointList.pointsP[0] ;
-    for( int n = 1 ; n < pointList.numPoints ; ++n )
+    pnt = *startPointP = pointList[0] ;
+    for( int n = 1 ; n < (int)pointList.size(); ++n )
       {
-       npnt = pointList.pointsP[n] ;
+       npnt = pointList[n] ;
    
 //     Check For Point Range Error
    
@@ -315,15 +299,15 @@ int bcdtmDrainageList_expandTptrPolygonAtPointDtmObject
     if( dbg == 2 ) 
       {
        bcdtmList_writeTptrListDtmObject(dtmP,*pointP) ;
-       DPoint3d *tptrPtsP=NULL ;
-       BC_DTM_OBJ *temP=NULL ;
+       DPoint3d *tptrPtsP=nullptr ;
+       BC_DTM_OBJ *temP=nullptr ;
        long     numTptrPts=0 ;
        if( bcdtmObject_createDtmObject(&temP)) goto errexit ;
        if( bcdtmList_copyTptrListToPointArrayDtmObject(dtmP,*pointP,&tptrPtsP,&numTptrPts) ) goto errexit ;
        if( bcdtmObject_storeDtmFeatureInDtmObject(temP,DTMFeatureType::Breakline,temP->nullUserTag,1,&temP->nullFeatureId,tptrPtsP,numTptrPts)) goto errexit ;
        if( bcdtmWrite_geopakDatFileFromDtmObject(temP,L"expansionPolygon.dat")) goto errexit ;
-       if( tptrPtsP != NULL ) free(tptrPtsP) ;
-       if( temP != NULL ) bcdtmObject_destroyDtmObject(&temP) ; 
+       if( tptrPtsP != nullptr ) free(tptrPtsP) ;
+       if( temP != nullptr ) bcdtmObject_destroyDtmObject(&temP) ; 
       }
    }
 
@@ -600,7 +584,7 @@ bool bcdtmDrainageList_checkForVoidsInDtmObject(BC_DTM_OBJ *dtmP)
 
     // Scan Dtm Features
 
-    if( dtmP->fTablePP != NULL )
+    if( dtmP->fTablePP != nullptr )
         {
         ofs = 0 ;
         partitionNum = 0 ;
@@ -634,3 +618,4 @@ bool bcdtmDrainageList_checkForVoidsInDtmObject(BC_DTM_OBJ *dtmP)
 
     }
 
+END_BENTLEY_TERRAINMODEL_NAMESPACE

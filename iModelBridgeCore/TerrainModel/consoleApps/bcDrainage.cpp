@@ -2,7 +2,7 @@
 |
 |     $Source: consoleApps/bcDrainage.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //#include "stdafx.h"
@@ -17,9 +17,7 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 
-class DTMDrainageTables ;
-
-int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm) ;
+int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr ibcDtm) ;
 int bcdtmDrainage_callBackFunction(DTMFeatureType dtmFeatureType,DTMUserTag userTag,DTMFeatureId featureId,DPoint3d *featurePtsP,size_t numFeaturePts,void *userP) ;
 
 static int numDtmFeatures = 0 ;
@@ -207,7 +205,7 @@ errexit :
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-int bcdtmDrainage_testDrainageMethods(Bentley::TerrainModel::BcDTMPtr ibcDtm)
+int bcdtmDrainage_testDrainageMethods(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr ibcDtm)
     {
     int ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(1) ;
     long startTime=bcdtmClock() ;

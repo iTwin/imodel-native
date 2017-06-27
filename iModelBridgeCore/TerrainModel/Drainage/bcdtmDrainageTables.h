@@ -2,12 +2,14 @@
 |
 |     $Source: Drainage/bcdtmDrainageTables.h $
 |
-|  $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 #include <algorithm>
 #include <stack>
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -15,306 +17,210 @@
 |                                                                    |
 +-------------------------------------------------------------------*/
 
-class DTMPointCache
-   {
-    
-    public :
-
-    DTMPointCache()
-      {
-       m_numPoints = 0 ;
-       m_memPoints = 0 ;
-       m_memPointsInc = 1000 ;
-       m_pointsP = NULL ;
-      }  
-       
-    ~DTMPointCache()
-       {
-        if( m_pointsP != NULL )
-          {
-           free( m_pointsP ) ;
-           m_pointsP = NULL ;  
-          }
-       }
-       
-    
-    int  StorePointInCache( double X , double Y , double Z)
-      {
-      
-       // Check Memory
-       
-       if(  m_numPoints == m_memPoints )
-         {
-          m_memPoints = m_memPoints + m_memPointsInc ;
-          if( m_pointsP == NULL )
-             m_pointsP = ( DPoint3d * ) malloc( m_memPoints * sizeof(DPoint3d)) ;
-          else
-             m_pointsP = ( DPoint3d * ) realloc( m_pointsP , m_memPoints * sizeof(DPoint3d)) ;
-          if( m_pointsP == NULL )
-            return(DTM_ERROR) ;   
-         } 
-         
-       // Store Point
-       
-       (m_pointsP+m_numPoints)->x = X ;
-       (m_pointsP+m_numPoints)->y = Y ;
-       (m_pointsP+m_numPoints)->z = Z ;
-       ++m_numPoints ;
-       
-       // Return
-       
-       return DTM_SUCCESS ;
-         
-      }   
-
-    void  ClearCache( void )
-      {
-       m_numPoints = 0 ;      
-      }
-
-    void  FreeCache( void )
-      {
-        if( m_pointsP != NULL )
-          {
-           free( m_pointsP ) ;
-           m_pointsP = NULL ;  
-          }
-       m_numPoints = 0 ;      
-      }
-      
-    int  CallUserDelegateWithCachePoints 
-    (
-     DTMFeatureCallback  delegateP,
-     DTMFeatureType      dtmFeatureType,
-     DTMUserTag          dtmUserTag,
-     DTMFeatureId        dtmFeatureID, 
-     void *              userP               
-    )
-      {
-       int ret=DTM_SUCCESS ; 
-       if( m_numPoints > 0 )
-          { 
-	       ret = delegateP(dtmFeatureType,dtmUserTag,dtmFeatureID,m_pointsP,m_numPoints,userP) ;
-           m_numPoints = 0 ;
-	      } 
-	    return ret ;   
-      } 
-
-    void LogCachePoints(void)
+class DTMPointCache : bvector<DPoint3d>
     {
-        bcdtmWrite_message(0,0,0,"Number Of Cache Points = %8ld",m_numPoints) ;
-        for( DPoint3d * p3dP = m_pointsP ; p3dP < m_pointsP + m_numPoints ; ++p3dP )
+    public:
+
+        int  StorePointInCache(double X, double Y, double Z)
             {
-             bcdtmWrite_message(0,0,0,"Cache Point[%8d] = %12.5lf %12.5lf %12.5lf",(int)(p3dP-m_pointsP),p3dP->x,p3dP->y,p3dP->z) ;  
+            push_back(DPoint3d::From(X, Y, Z));
+            return DTM_SUCCESS;
+
             }
-    }
 
-    bool CheckIfPointInCache(double x , double y , double z )
-    {
-         bool ret=false ;
-         for( DPoint3d * p3dP = m_pointsP ; p3dP < m_pointsP + m_numPoints && ret == false ; ++p3dP )
-         {
-              if( p3dP->x == x && p3dP->y == y && p3dP->z == z ) ret = true ;
-               
-         }
-
-         return ret ;
-    }
-
-    int CopyCachePointsToPointArray( DPoint3d **pointsPP, long *numPointsP )
-    {
-         *numPointsP = 0 ;
-         if( *pointsPP != nullptr ) 
-         { 
-              free(*pointsPP) ; 
-              *pointsPP = nullptr ; 
-         }  
-
-         if( m_numPoints > 0 )
-         {
-             *numPointsP = m_numPoints ; 
-             *pointsPP = ( DPoint3d *) malloc( *numPointsP*sizeof(DPoint3d)) ;
-             if( *pointsPP == NULL )
-             {
-                  bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-                  return DTM_ERROR ;
-             } 
-
-             memcpy(*pointsPP,m_pointsP,*numPointsP*sizeof(DPoint3d)) ;
-         }
-
-         return DTM_SUCCESS ;
-    }
-
-    int SizeOfCache(void)
-    {
-         return m_numPoints ;
-    }
-
-    void RemoveDuplicatePoints(void) 
-        {
-        if( m_numPoints > 1 )
+        int  StorePointInCache(DPoint3dCR pt)
             {
-            DPoint3d* p3d1P = m_pointsP ;
-            DPoint3d* p3d2P = nullptr ;
-            for( p3d2P = m_pointsP + 1 ; p3d2P < m_pointsP + m_numPoints ; ++p3d2P )
-                {
-                if( p3d2P->x != p3d1P->x || p3d2P->y != p3d1P->y )
-                     {
-                     ++p3d1P ;
-                     if( p3d1P != p3d2P ) *p3d1P = *p3d2P ;
-                     }
-                } 
-            m_numPoints = ( int ) ( p3d1P - m_pointsP ) + 1 ;
-            } 
-        }
-   
+            push_back(pt);
+            return DTM_SUCCESS;
 
-    private :
-    
-    int    m_numPoints ;
-    int    m_memPoints ;
-    int    m_memPointsInc ;
-    DPoint3d*   m_pointsP ;
-    
-    } ;
+            }
+
+        void  ClearCache(void)
+            {
+            clear();
+            }
+
+        void  FreeCache(void)
+            {
+            clear();
+            }
+
+        int  CallUserDelegateWithCachePoints
+        (
+            DTMFeatureCallback  delegateP,
+            DTMFeatureType      dtmFeatureType,
+            DTMUserTag          dtmUserTag,
+            DTMFeatureId        dtmFeatureID,
+            void *              userP
+        )
+            {
+            int ret = DTM_SUCCESS;
+            if (!empty())
+                {
+                ret = delegateP(dtmFeatureType, dtmUserTag, dtmFeatureID, data(), (long)size(), userP);
+                clear();
+                }
+            return ret;
+            }
+
+        void LogCachePoints(void)
+            {
+            bcdtmWrite_message(0, 0, 0, "Number Of Cache Points = %8ld", size());
+            for (auto&& p3dP : *this)
+                {
+                bcdtmWrite_message(0, 0, 0, "Cache Point[%8d] = %12.5lf %12.5lf %12.5lf", (int)(&p3dP - data()), p3dP.x, p3dP.y, p3dP.z);
+                }
+            }
+
+        bool CheckIfPointInCache(double x, double y, double z)
+            {
+            for (auto&& p3dP : *this)
+                if (p3dP.x == x && p3dP.y == y && p3dP.z == z)
+                    return true;
+
+            return false;
+            }
+
+
+        int CopyCachePointsToPointArray(DPoint3d **pointsPP, long *numPointsP)
+            {
+            *numPointsP = 0;
+            if (*pointsPP != nullptr)
+                {
+                free(*pointsPP);
+                *pointsPP = nullptr;
+                }
+
+            if (size() > 0)
+                {
+                *numPointsP = (long)size();
+                *pointsPP = (DPoint3d *)malloc(*numPointsP * sizeof(DPoint3d));
+                if (*pointsPP == nullptr)
+                    {
+                    bcdtmWrite_message(1, 0, 0, "Memory Allocation Failure");
+                    return DTM_ERROR;
+                    }
+
+                memcpy(*pointsPP, data(), *numPointsP * sizeof(DPoint3d));
+                }
+
+            return DTM_SUCCESS;
+            }
+
+        int CopyCachePointsToPointArray(bvector<DPoint3d>& points)
+            {
+            points = *this;
+            return DTM_SUCCESS;
+            }
+
+        int SizeOfCache(void)
+            {
+            return (long)size();
+            }
+
+        void RemoveDuplicatePoints(void)
+            {
+            if (size() > 1)
+                {
+                DPoint3d* p3d1P = data();
+                DPoint3d* p3d2P = nullptr;
+                for (p3d2P = data() + 1; p3d2P < data() + size(); ++p3d2P)
+                    {
+                    if (p3d2P->x != p3d1P->x || p3d2P->y != p3d1P->y)
+                        {
+                        ++p3d1P;
+                        if (p3d1P != p3d2P) *p3d1P = *p3d2P;
+                        }
+                    }
+                resize((p3d1P - data()) + 1);
+                }
+            }
+    };
 
 /*-------------------------------------------------------------------+
 |                                                                    |
 |  Class For Caching DTM Lines                                       |
 |                                                                    |
 +-------------------------------------------------------------------*/
+    struct DTMLine
+        {
+        DPoint3d  point1 ;
+        DPoint3d  point2 ;
+        } ;
 
-struct DTMLine
-{
- DPoint3d  point1 ;
- DPoint3d  point2 ;
-} ;
-
-class DTMLineCache
-   {
-    
-    public :
-
-    DTMLineCache()
-      {
-       m_numLines    = 0 ;
-       m_memLines    = 0 ;
-       m_memLinesInc = 1000 ;
-       m_linesP      = nullptr ;
-      }  
-       
-    ~DTMLineCache()
-       {
-        if( m_linesP != NULL )
-          {
-           free( m_linesP ) ;
-           m_linesP = NULL ;  
-          }
-       }
-    
-    int  StoreLineInCache( double X1 , double Y1 , double Z1, double X2, double Y2, double Z2)
-      {
-      
-       // Check Memory
-       
-       if(  m_numLines == m_memLines )
-         {
-          m_memLines = m_memLines + m_memLinesInc ;
-          if( m_linesP == NULL )
-              m_linesP = ( DTMLine * ) malloc( m_memLines * sizeof(DTMLine)) ;
-          else
-              m_linesP = ( DTMLine * ) realloc( m_linesP , m_memLines * sizeof(DTMLine)) ;
-          if( m_linesP == NULL )
-              return(DTM_ERROR) ;   
-         } 
-         
-       // Store Line
-       
-       (m_linesP+m_numLines)->point1.x = X1 ;
-       (m_linesP+m_numLines)->point1.y = Y1 ;
-       (m_linesP+m_numLines)->point1.z = Z1 ;
-       (m_linesP+m_numLines)->point2.x = X2 ;
-       (m_linesP+m_numLines)->point2.y = Y2 ;
-       (m_linesP+m_numLines)->point2.z = Z2 ;
-       ++m_numLines ;
-       
-       // Return
-       
-       return DTM_SUCCESS ;
-         
-      }   
-
-    void  ClearCache( void )
-      {
-       m_numLines = 0 ;      
-      }
-
-    void  FreeCache( void )
-      {
-        if( m_linesP != NULL )
-          {
-           free( m_linesP ) ;
-           m_linesP = NULL ;  
-          }
-       m_numLines = 0 ;      
-      }
-      
-    int  CallUserDelegateWithCacheLines 
-    (
-     DTMFeatureCallback  delegateP,
-     DTMFeatureType      dtmFeatureType,
-     DTMUserTag          dtmUserTag,
-     DTMFeatureId        dtmFeatureID, 
-     void *              userP               
-    )
-      {
-       int ret=DTM_SUCCESS ; 
-       if( m_numLines > 0 )
-          { 
-	       ret = delegateP(dtmFeatureType,dtmUserTag,dtmFeatureID,(DPoint3d *)m_linesP,m_numLines,userP) ;
-           m_numLines = 0 ;
-	      } 
-	    return ret ;   
-      } 
-
-    void LogCacheLines(void)
+class DTMLineCache : bvector<DTMLine>
     {
-        bcdtmWrite_message(0,0,0,"Number Of Cache Lines = %8ld",m_numLines) ;
-        for( DTMLine* lineP = m_linesP ; lineP < m_linesP + m_numLines ; ++lineP )
+    public:
+
+        int  StoreLineInCache(double X1, double Y1, double Z1, double X2, double Y2, double Z2)
             {
-             bcdtmWrite_message(0,0,0,"Cache Line[%8d] = %12.5lf %12.5lf %10.4lf ** %12.5lf %12.5lf %10.4lf",(int)(lineP-m_linesP),lineP->point1.x,lineP->point1.y,lineP->point1.z,lineP->point2.x,lineP->point2.y,lineP->point2.z) ;  
+
+            DTMLine newLine;
+            newLine.point1 = DPoint3d::From(X1, Y1, Z1);
+            newLine.point2 = DPoint3d::From(X2, Y2, Z2);
+            push_back(newLine);
+            return DTM_SUCCESS;
+
             }
-    }
 
-    bool CheckIfLineInCache(double x1 , double y1 , double z1, double x2 , double y2 , double z2 )
-    {
-         bool ret=false ;
-         for( DTMLine* lineP = m_linesP ; lineP < m_linesP + m_numLines ; ++lineP )
-         {
-              if( lineP->point1.x == x1 && lineP->point1.y == y1 && lineP->point1.z == z1 ) 
-               {
-                   if( lineP->point2.x == x2 && lineP->point2.y == y2 && lineP->point2.z == z2 ) ret = true ;
-               }   
-         }
+        void  ClearCache(void)
+            {
+            clear();
+            }
 
-         return ret ;
-    }
+        void  FreeCache(void)
+            {
+            clear();
+            }
+
+        int  CallUserDelegateWithCacheLines
+        (
+            DTMFeatureCallback  delegateP,
+            DTMFeatureType      dtmFeatureType,
+            DTMUserTag          dtmUserTag,
+            DTMFeatureId        dtmFeatureID,
+            void *              userP
+        )
+            {
+            int ret = DTM_SUCCESS;
+            if (!empty())
+                {
+                ret = delegateP(dtmFeatureType, dtmUserTag, dtmFeatureID, (DPoint3d *)data(), (long)size(), userP);
+                clear();
+                }
+            return ret;
+            }
+
+        void LogCacheLines(void)
+            {
+            bcdtmWrite_message(0, 0, 0, "Number Of Cache Lines = %8ld", size());
+            for (auto&& lineP : *this)
+                {
+                bcdtmWrite_message(0, 0, 0, "Cache Line[%8d] = %12.5lf %12.5lf %10.4lf ** %12.5lf %12.5lf %10.4lf", (int)(&lineP - data()), lineP.point1.x, lineP.point1.y, lineP.point1.z, lineP.point2.x, lineP.point2.y, lineP.point2.z);
+                }
+            }
+
+        bool CheckIfLineInCache(double x1, double y1, double z1, double x2, double y2, double z2)
+            {
+            for (auto&& lineP : *this)
+                {
+                if (lineP.point1.x == x1 && lineP.point1.y == y1 && lineP.point1.z == z1)
+                    {
+                    if (lineP.point2.x == x2 && lineP.point2.y == y2 && lineP.point2.z == z2)
+                        return true;
+                    }
+                }
+
+            return false;
+            }
 
 
-    int SizeOfCache(void)
-    {
-         return m_numLines ;
-    }
+        int SizeOfCache(void)
+            {
+            return (int)size();
+            }
 
-    private :
-    
-    int        m_numLines ;
-    int        m_memLines ;
-    int        m_memLinesInc ;
-    DTMLine*   m_linesP ;
-    
-    } ;
+    };
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -342,10 +248,10 @@ class DTMRidgeLineCache
        
     ~DTMRidgeLineCache()
         {
-        if( m_linesP != NULL )
+        if( m_linesP != nullptr )
            {
            free( m_linesP ) ;
-           m_linesP = NULL ;  
+           m_linesP = nullptr ;  
            }
        }
     
@@ -357,11 +263,11 @@ class DTMRidgeLineCache
        if(  m_numLines == m_memLines )
          {
           m_memLines = m_memLines + m_memLinesInc ;
-          if( m_linesP == NULL )
+          if( m_linesP == nullptr )
               m_linesP = ( DTMRidgeLine * ) malloc( m_memLines * sizeof(DTMRidgeLine)) ;
           else
               m_linesP = ( DTMRidgeLine * ) realloc( m_linesP , m_memLines * sizeof(DTMRidgeLine)) ;
-          if( m_linesP == NULL )
+          if( m_linesP == nullptr )
               return(DTM_ERROR) ;   
          }
          
@@ -393,10 +299,10 @@ class DTMRidgeLineCache
 
     void  FreeCache( void )
        {
-       if( m_linesP != NULL )
+       if( m_linesP != nullptr )
           {
            free( m_linesP ) ;
-           m_linesP = NULL ;  
+           m_linesP = nullptr ;  
           }
        m_numLines = 0 ;      
       }
@@ -458,13 +364,13 @@ class DTMRidgeLineCache
 +-------------------------------------------------------------------*/
 struct DTMCatchmentLine
     {
-	DTMFeatureType  edgeType     ;   // DTMFeatureType::RidgeLine , DTMFeatureType::SumpLine , DTMFeatureType::CCWFLOW_LINE , DTMFeatureType::ClkFlowLine
+    DTMFeatureType  edgeType     ;   // DTMFeatureType::RidgeLine , DTMFeatureType::SumpLine , DTMFeatureType::CCWFLOW_LINE , DTMFeatureType::ClkFlowLine
     DTMUserTag      catchmentId  ;   // Catchment Id == Tin Drain Point
     int             edgeStatus   ;   // Use Dependent On Application , Set To 1 On Store
     int             startPoint   ;   // Start Point Of Catchment Line
     int             endPoint     ;   // End   Point Of Catchment line
-	int             clkPoint     ;   // Next Clockwise Point From Start To End Point
-	int             ccwPoint     ;   // Next Counter Clockwise Point From Start To End Point
+    int             clkPoint     ;   // Next Clockwise Point From Start To End Point
+    int             ccwPoint     ;   // Next Counter Clockwise Point From Start To End Point
     double          lowElevation ;   // Lowest elevation On Line 
     } ;
 
@@ -487,10 +393,10 @@ class DTMCatchmentLineCache
        
     ~DTMCatchmentLineCache()
         {
-        if( m_linesP != NULL )
+        if( m_linesP != nullptr )
            {
            free( m_linesP ) ;
-           m_linesP = NULL ;  
+           m_linesP = nullptr ;  
            }
        }
     
@@ -502,11 +408,11 @@ class DTMCatchmentLineCache
        if(  m_numLines == m_memLines )
          {
           m_memLines = m_memLines + m_memLinesInc ;
-          if( m_linesP == NULL )
+          if( m_linesP == nullptr )
               m_linesP = ( DTMCatchmentLine * ) malloc( m_memLines * sizeof(DTMCatchmentLine)) ;
           else
               m_linesP = ( DTMCatchmentLine * ) realloc( m_linesP , m_memLines * sizeof(DTMCatchmentLine)) ;
-          if( m_linesP == NULL )
+          if( m_linesP == nullptr )
               return(DTM_ERROR) ;   
          }
 
@@ -567,10 +473,10 @@ class DTMCatchmentLineCache
 
     void  FreeCache( void )
         {
-        if( m_linesP != NULL )
+        if( m_linesP != nullptr )
             {
             free( m_linesP ) ;
-            m_linesP = NULL ;  
+            m_linesP = nullptr ;  
             }
          m_numLines = m_memLines = 0 ;      
         }
@@ -701,99 +607,59 @@ private :
 |                                                                    |
 +-------------------------------------------------------------------*/
 
-class DTMDrainageTracePoints
-   {
+class DTMDrainageTracePoints : bvector<DTM_STREAM_TRACE_POINTS>
+{
 
-    public :
-  
-    DTMDrainageTracePoints()
-      {
-       m_numPoints = 0 ;
-       m_memPoints = 0 ;
-       m_memPointsInc = 100 ;
-       m_tracePointsP = NULL ;
-      }  
-       
-    ~DTMDrainageTracePoints()
-       {
-        if( m_tracePointsP != NULL )
-          {
-           free( m_tracePointsP ) ;
-           m_tracePointsP = NULL ;  
-          }
-       }
-       
-    
-    int  StoreTracePoint( double X , double Y , double Z , int point1 , int point2 )
-      {
-      
-       // Check Memory
-       
-       if(  m_numPoints == m_memPoints )
-         {
-          m_memPoints = m_memPoints + m_memPointsInc ;
-          if( m_tracePointsP == NULL )
-             m_tracePointsP = ( DTM_STREAM_TRACE_POINTS * ) malloc( m_memPoints * sizeof(DTM_STREAM_TRACE_POINTS)) ;
-          else
-             m_tracePointsP = ( DTM_STREAM_TRACE_POINTS * ) realloc( m_tracePointsP , m_memPoints * sizeof(DTM_STREAM_TRACE_POINTS)) ;
-          if( m_tracePointsP == NULL )
-            return(DTM_ERROR) ;   
-         } 
-         
-       // Store Point
-       
-       (m_tracePointsP+m_numPoints)->x = X ;
-       (m_tracePointsP+m_numPoints)->y = Y ;
-       (m_tracePointsP+m_numPoints)->z = Z ;
-       (m_tracePointsP+m_numPoints)->P1 = point1 ;
-       (m_tracePointsP+m_numPoints)->P2 = point2 ;
-       ++m_numPoints ;
-       
-       // Return
-       
-       return DTM_SUCCESS ;
-      } 
+    public:
 
-    void  LogTracePoints( void )
-      {
-       DTM_STREAM_TRACE_POINTS *traceP ;
-       bcdtmWrite_message(0,0,0,"Number Of Trace Points = %8ld",m_numPoints) ;
-       for( traceP = m_tracePointsP ; traceP < m_tracePointsP + m_numPoints ; ++traceP )
-         {
-          bcdtmWrite_message(0,0,0,"Trace Point[%8ld] = %12.5lf %12.5lf %10.4lf ** %8ld %8ld",(long)(traceP-m_tracePointsP),traceP->x,traceP->y,traceP->z,traceP->P1,traceP->P2) ;
-         }   
-      }  
-      
-    bool CheckForPriorTracePoint( int point )
-      {
-       bool ret=false ;
-       for( DTM_STREAM_TRACE_POINTS* traceP = m_tracePointsP ; traceP < m_tracePointsP + m_numPoints && ret == false ; ++traceP )
-         {
-          if( traceP->P1 == point )
-            ret = true ;
-         } 
-       return ret ;    
-      }   
-     
-    bool CheckForPriorExitPoint( int point , int nullPnt )
-      {
-       bool ret=false ;
-       for( DTM_STREAM_TRACE_POINTS* traceP = m_tracePointsP ; traceP < m_tracePointsP + m_numPoints && ret == false ; ++traceP )
-         {
-          if( traceP->P1 == point && traceP->P2 == nullPnt )
-            ret = true ;
-         } 
-       return ret ;    
-      }   
+        int  StoreTracePoint(double X, double Y, double Z, int point1, int point2)
+            {
+            if (CheckForPriorExitPoint(point1, point2))
+                X = X;
+            // Check Memory
+            DTM_STREAM_TRACE_POINTS newPoint;
+            newPoint.x = X;
+            newPoint.y = Y;
+            newPoint.z = Z;
+            newPoint.P1 = point1;
+            newPoint.P2 = point2;
+            push_back(newPoint);
 
-    private :
-    
-    int    m_numPoints ;
-    int    m_memPoints ;
-    int    m_memPointsInc ;
-    DTM_STREAM_TRACE_POINTS*   m_tracePointsP ;
-    
-    } ;
+            // Return
+
+            return DTM_SUCCESS;
+            }
+
+        void  LogTracePoints(void)
+            {
+            bcdtmWrite_message(0, 0, 0, "Number Of Trace Points = %8ld", size());
+            for (auto&& traceP : *this)
+                {
+                bcdtmWrite_message(0, 0, 0, "Trace Point[%8ld] = %12.5lf %12.5lf %10.4lf ** %8ld %8ld", (long)(&traceP - data()), traceP.x, traceP.y, traceP.z, traceP.P1, traceP.P2);
+                }
+            }
+
+        bool CheckForPriorTracePoint(int point)
+            {
+            for (auto&& traceP : *this)
+                {
+                if (traceP.P1 == point)
+                    return true;
+                }
+            return false;
+            }
+
+        bool CheckForPriorExitPoint(int point, int nullPnt)
+            {
+            for (auto&& traceP : *this)
+                {
+                if (traceP.P1 == point && traceP.P2 == nullPnt)
+                    return true;
+                }
+            return false;
+            }
+
+    };
 
 /*-------------------------------------------------------------------+
 |                                                                    |
@@ -801,60 +667,37 @@ class DTMDrainageTracePoints
 |                                                                    |
 +-------------------------------------------------------------------*/
 
-struct DTMPointList
+struct DTMPointList : bvector<int>
     {
-    
-     int  *pointsP ;
-     int  numPoints ; 
-     
-     DTMPointList()
-       {
-        pointsP = NULL ;
-        numPoints = 0 ;
-       } ;
-       
-     ~DTMPointList()
-       {
-        if( pointsP ) delete [] pointsP ;
-       } ;
+           
+    DTMPointList(int* pointsP, int numPoints)
+        {
+        resize(numPoints);
+        memcpy(data(), pointsP, numPoints * sizeof(int));
+        }
         
-     DTMPointList(int* pointsP, int numPoints)
-       {
-        this->pointsP = new int[numPoints];
-        this->numPoints = numPoints;
-        memcpy(this->pointsP,pointsP,numPoints*sizeof(int)) ;
-       }
-        
-     DTMPointList(long* pointsP, long numPoints)  // For Compatiability With Core
-       {
-        this->pointsP = new int[numPoints];
-        this->numPoints = numPoints;
-        memcpy(this->pointsP,pointsP,numPoints*sizeof(int)) ;
-       }
+    DTMPointList(long* pointsP, long numPoints)  // For Compatiability With Core
+        {
+        resize(numPoints);
+        memcpy(data(), pointsP, numPoints * sizeof(int));
+        }
         
      DTMPointList(const DTMPointList& dtmPointList)
        {
-        pointsP = new int[dtmPointList.numPoints];
-        numPoints = dtmPointList.numPoints;
-        memcpy(pointsP,dtmPointList.pointsP,dtmPointList.numPoints*sizeof(int)) ;
+         *this = dtmPointList;
        }
         
      DTMPointList&   operator=(const DTMPointList& dtmPointList)
        {
-        if (pointsP) delete [] pointsP;
-        numPoints = dtmPointList.numPoints;
-        if (dtmPointList.pointsP)
-          {
-           pointsP = new int[dtmPointList.numPoints];
-           memcpy(pointsP,dtmPointList.pointsP,dtmPointList.numPoints*sizeof(int)) ;
-          }
-        else
-          { 
-           pointsP = NULL;
-          }  
+        assign(std::begin(dtmPointList), std::end(dtmPointList));
         return *this;
        }
-        
+      
+     void Set(long* pointsP, long numPoints)  // For Compatiability With Core
+         {
+         resize(numPoints);
+         memcpy(data(), pointsP, numPoints * sizeof(int));
+         }
     };
 
 typedef  bvector<DTMPointList>  DTMVectorPointList ;
@@ -1251,7 +1094,7 @@ struct DTMZeroSlopePolygon
      int  nextPoint  ;  
      DTMPointList pointList ;
      
-     DTMZeroSlopePolygon( DTMDirection direction , DTMPointList pointList )
+     DTMZeroSlopePolygon(DTMDirection direction, const DTMPointList& pointList) : pointList(pointList)
        {
         this->index      =   0 ;
         this->priorPoint = - 1 ;
@@ -1274,3 +1117,4 @@ typedef  bvector<DTMZeroSlopePolygon>  DTMZeroSlopePolygonVector ;
 BENTLEYDTMDRAINAGE_EXPORT int bcdtmTables_createAndCheckDrainageTablesDtmObject(BC_DTM_OBJ *dtmP) ;
     
     
+END_BENTLEY_TERRAINMODEL_NAMESPACE

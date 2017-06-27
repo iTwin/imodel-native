@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -27,10 +27,10 @@
 
 #include <ScalableTerrainModel/IMrDTMClipContainer.h>
 #include <ScalableTerrainModel/IMrDTM.h>
-#include <hash_map>
+//#include <hash_map>
 
-//Only way found to deactivate warning C4250 since the pragma warning(disable... doesn't work
-#pragma warning( push, 0 )
+#pragma warning( push )
+#pragma warning(disable:4250)
 
 
 
@@ -256,7 +256,7 @@ struct MrDTMFullResolutionLinearQueryParams : public virtual IMrDTMFullResolutio
 
         MrDTMFullResolutionLinearQueryParams()
             {
-            m_maximumNumberOfPointsForLinear = UINT64_MAX;
+            m_maximumNumberOfPointsForLinear = SIZE_MAX;
             m_useDecimation = true;
             m_cutLinears = false;
             m_addLinears = true;
@@ -563,7 +563,7 @@ class MrDTMQuery : public IMrDTMQuery
                                                             const GeoCoords::GCS&   targetGCStr,
                                                             const DRange3d&        extentInTargetGCS);
 
-        int _Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&   dtmPtr, 
+        int _Query(Bentley::TerrainModel::DTMPtr&   dtmPtr, 
                    const DPoint3d*                  pClipShapePts, 
                    int                              nbClipShapePts, 
                    const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const ;
@@ -586,7 +586,7 @@ template <class POINT> class MrDTMFullResolutionPointQuery : public MrDTMQuery
     protected :
 
         // Inherited from IMrDTMQuery
-        virtual int _Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&   dtmPtr, 
+        virtual int _Query(Bentley::TerrainModel::DTMPtr&   dtmPtr, 
                            const DPoint3d*                  pQueryShapePts, 
                            int                              nbQueryShapePts, 
                            const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const;
@@ -615,7 +615,7 @@ template <class POINT> class MrDTMViewDependentPointQuery : public MrDTMQuery
     protected :
 
         // Inherited from IMrDTMQuery
-        virtual int _Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&            dtmPtr, 
+        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
                            const DPoint3d*                  pQueryShapePts, 
                            int                              nbQueryShapePts, 
                            const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const;
@@ -646,7 +646,7 @@ class MrDTMFullResolutionLinearQuery : public MrDTMQuery
     protected :
 
         // Inherited from IMrDTMQuery
-        virtual int _Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&            dtmPtr, 
+        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
                            const DPoint3d*                  pQueryShapePts, 
                            int                              nbQueryShapePts, 
                            const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const;
@@ -676,7 +676,7 @@ template <class POINT> class MrDTMFixResolutionViewPointQuery : public MrDTMQuer
     protected :
 
         // Inherited from IMrDTMQuery
-        virtual int _Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&            dtmPtr, 
+        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
                            const DPoint3d*                  pQueryShapePts, 
                            int                              nbQueryShapePts, 
                            const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const;
@@ -711,7 +711,7 @@ class MrDTMReprojectionQuery : public MrDTMQuery
     protected :
 
         // Inherited from IMrDTMQuery
-        virtual int _Query(BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr&            dtmPtr, 
+        virtual int _Query(Bentley::TerrainModel::DTMPtr&            dtmPtr, 
                            const DPoint3d*                  pQueryShapePts, 
                            int                              nbQueryShapePts, 
                            const IMrDTMQueryParametersPtr&  mrDTMQueryParamsPtr) const;

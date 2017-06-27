@@ -6,7 +6,7 @@
 |       $Date: 2011/10/21 17:32:16 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -525,12 +525,12 @@ DGNLevelByIDSourceRef::ClassID DGNLevelByIDSourceRef::s_GetClassID () { return s
 struct DGNLevelByIDSourceRef::Impl
     {
     WString                  m_path;
-    uint32_t                      m_modelID;
-    uint32_t                      m_levelID;
+    UInt32                      m_modelID;
+    UInt32                      m_levelID;
 
     explicit                    Impl                   (const WChar*     path,
-                                                        uint32_t              modelID,
-                                                        uint32_t              levelID) 
+                                                        UInt32              modelID,
+                                                        UInt32              levelID) 
         :   m_path(path), m_modelID(modelID), m_levelID(levelID) {}
     };
 
@@ -539,8 +539,8 @@ struct DGNLevelByIDSourceRef::Impl
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourceRef DGNLevelByIDSourceRef::CreateFrom(const WChar*  dgnPath,
-                                            uint32_t          modelID,
-                                            uint32_t          levelID)
+                                            UInt32          modelID,
+                                            UInt32          levelID)
     {
     return CreateFromBase(new DGNLevelByIDSourceRef(dgnPath, modelID ,levelID));
     }
@@ -550,8 +550,8 @@ SourceRef DGNLevelByIDSourceRef::CreateFrom(const WChar*  dgnPath,
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNLevelByIDSourceRef::DGNLevelByIDSourceRef   (const WChar*  dgnPath,
-                                                uint32_t          modelID,
-                                                uint32_t          levelID)
+                                                UInt32          modelID,
+                                                UInt32          levelID)
     :   m_pImpl(new Impl(dgnPath, 
                          modelID, 
                          levelID))
@@ -597,7 +597,7 @@ const WChar* DGNLevelByIDSourceRef::GetDGNPathCStr () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DGNLevelByIDSourceRef::GetModelID () const
+UInt32 DGNLevelByIDSourceRef::GetModelID () const
     {
     return m_pImpl->m_modelID;
     }
@@ -606,7 +606,7 @@ uint32_t DGNLevelByIDSourceRef::GetModelID () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DGNLevelByIDSourceRef::GetLevelID () const
+UInt32 DGNLevelByIDSourceRef::GetLevelID () const
     {
     return m_pImpl->m_levelID;
     }
@@ -617,14 +617,14 @@ DGNReferenceLevelByIDSourceRef::ClassID DGNReferenceLevelByIDSourceRef::s_GetCla
 struct DGNReferenceLevelByIDSourceRef::Impl
     {
     WString                  m_path;
-    uint32_t                      m_rootModelID;
+    UInt32                      m_rootModelID;
     WString                 m_rootToRefPersistantPath;
-    uint32_t                      m_levelID;
+    UInt32                      m_levelID;
 
     explicit                    Impl                   (const WChar*     path,
-                                                        uint32_t              rootModelID,
+                                                        UInt32              rootModelID,
                                                         const WChar*         rootToRefPersistentPath,
-                                                        uint32_t              referenceLevelID) 
+                                                        UInt32              referenceLevelID) 
         :   m_path(path), m_rootModelID(rootModelID), m_rootToRefPersistantPath(rootToRefPersistentPath), m_levelID(referenceLevelID) {}
     };
 
@@ -633,9 +633,9 @@ struct DGNReferenceLevelByIDSourceRef::Impl
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 SourceRef DGNReferenceLevelByIDSourceRef::CreateFrom   (const WChar*  dgnPath,
-                                                        uint32_t          rootModelID,
+                                                        UInt32          rootModelID,
                                                         const WChar*     rootToRefPersistentPath,
-                                                        uint32_t          referenceLevelID)
+                                                        UInt32          referenceLevelID)
     {
     return CreateFromBase(new DGNReferenceLevelByIDSourceRef(dgnPath, rootModelID, rootToRefPersistentPath, referenceLevelID));
     }
@@ -645,9 +645,9 @@ SourceRef DGNReferenceLevelByIDSourceRef::CreateFrom   (const WChar*  dgnPath,
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNReferenceLevelByIDSourceRef::DGNReferenceLevelByIDSourceRef (const WChar*  dgnPath,
-                                                                uint32_t          rootModelID,
+                                                                UInt32          rootModelID,
                                                                 const WChar*     rootToRefPersistentPath,
-                                                                uint32_t          referenceLevelID)
+                                                                UInt32          referenceLevelID)
     :   m_pImpl(new Impl(dgnPath, 
                          rootModelID, 
                          rootToRefPersistentPath,
@@ -694,7 +694,7 @@ const WChar* DGNReferenceLevelByIDSourceRef::GetDGNPathCStr () const
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DGNReferenceLevelByIDSourceRef::GetRootModelID () const
+UInt32 DGNReferenceLevelByIDSourceRef::GetRootModelID () const
     {
     return m_pImpl->m_rootModelID;
     }
@@ -721,7 +721,7 @@ const WChar* DGNReferenceLevelByIDSourceRef::GetRootToRefPersistentPathCStr () c
 * @description  
 * @bsimethod                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t DGNReferenceLevelByIDSourceRef::GetLevelID () const
+UInt32 DGNReferenceLevelByIDSourceRef::GetLevelID () const
     {
     return m_pImpl->m_levelID;
     }

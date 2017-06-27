@@ -2,7 +2,7 @@
 |
 |     $Source: TerrainModelNET/DTMFeatureEnumerator.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -47,7 +47,7 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
         ReleaseMarshaller* m_marshaller;
         BENTLEY_NAMESPACE_NAME::TerrainModel::DTMFeatureEnumerator& m_native;
         internal:
-            Enumerator (Bentley::TerrainModel::DTMFeatureEnumerator& native) : m_native (native)
+            Enumerator(Bentley::TerrainModel::DTMFeatureEnumerator& native, ReleaseMarshaller* marshaller) : m_native(native), m_marshaller(marshaller)
                 {
                 m_native.AddRef ();
                 m_impl = nullptr;
@@ -132,7 +132,7 @@ public ref class DTMFeatureEnumerator : System::Collections::Generic::IEnumerabl
             bool get ();
             void set (bool value);
             }
-            
+
         property DTMUserTagRange UserTagRange
             {
             DTMUserTagRange get ();
@@ -182,7 +182,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Initializes a new instance of the DTMFeatureScanCriteria class.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     DTMFeatureScanCriteria();
@@ -190,7 +190,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Includes a given feature type.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     void IncludeFeatureType (DTMFeatureType featureType);
@@ -198,7 +198,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Excludes all feature types.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     void ExcludeAllFeatureTypes ();
@@ -206,7 +206,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Sets the range of the scan.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     void SetRange(BGEO::DRange3d range);
@@ -214,7 +214,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Gets the range of the scan.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     property BGEO::DRange3d Range
@@ -225,7 +225,7 @@ public:
     //=======================================================================================
     /// <summary>
     /// Gets whether the range is defined.
-    /// </summary>                
+    /// </summary>
     /// <author>Sylvain.Pucci</author>                              <date>08/2005</date>
     //=======================================================================================
     property bool IsRangeDefined

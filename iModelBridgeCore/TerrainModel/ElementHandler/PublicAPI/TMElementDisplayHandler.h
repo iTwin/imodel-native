@@ -2,11 +2,11 @@
 |
 |     $Source: ElementHandler/PublicAPI/TMElementDisplayHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+//__BENTLEY_INTERNAL_ONLY__
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform\TerrainModel\TMElementHandler.h>

@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 
 //---------------------------------------------------------------------------
@@ -17,8 +17,8 @@
 //---------------------------------------------------------------------------
 
 int CFeature::LoadFromDTMByGuid     // <=  Non-zero status code if error occurred.
-( 
-    BeSQLite::BeGuid *guidP,                    //  => BeSQLite::BeGuid of feature to search for.
+(
+    InroadsGuid *guidP,                    //  => InroadsGuid of feature to search for.
     struct CIVdtmsrf *srfP          //  => Surface to be searched (NULL indicates
                                     //     the active surface is to be searched).
 )
@@ -35,7 +35,7 @@ int CFeature::LoadFromDTMByGuid     // <=  Non-zero status code if error occurre
         m_ftrP = ftrP;
         m_srfP = srfP;
 
-        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP, 
+        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP,
                                       &m_guid, &m_nType, m_sName, m_sDesc, m_sParent, NULL, NULL, &m_dPntDensity,
                                       NULL, NULL, NULL, NULL, &m_flag );
     }
@@ -52,7 +52,7 @@ int CFeature::LoadFromDTMByGuid     // <=  Non-zero status code if error occurre
 //---------------------------------------------------------------------------
 
 int CFeature::LoadFromDTMExteriorBoundary // <=  Non-zero status code if error occurred.
-( 
+(
     struct CIVdtmsrf *srfP      //  => Surface to be searched (NULL indicates
                                 //     the active surface is to be searched).
 )
@@ -69,7 +69,7 @@ int CFeature::LoadFromDTMExteriorBoundary // <=  Non-zero status code if error o
         m_ftrP = ftrP;
         m_srfP = srfP;
 
-        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP, 
+        sts = aecDTM_getFeatureInfo ( m_ftrP, m_srfP,
                                       &m_guid, &m_nType, m_sName, m_sDesc, m_sParent, NULL, NULL, &m_dPntDensity,
                                       NULL, NULL, NULL, NULL, &m_flag );
     }
@@ -80,11 +80,11 @@ int CFeature::LoadFromDTMExteriorBoundary // <=  Non-zero status code if error o
 
 //---------------------------------------------------------------------------
 // DESC: Searches the specified surface (active if srfP is NULL) for a
-//       feature whose BeSQLite::BeGuid matches that of the feature object.  If found,
+//       feature whose InroadsGuid matches that of the feature object.  If found,
 //       the surface feature will be overwritten with the contents of the
 //       feature object.  If not found, the contents of the feature object
 //       will be written to the surface as a new feature.  The feature will
-//       be assigned a newly generated BeSQLite::BeGuid and a name unique to the
+//       be assigned a newly generated InroadsGuid and a name unique to the
 //       specified surface. The opt argument can be used to provide additional
 //       information which determine how duplicate feature names are handled if
 //       a new feature is being save or can speed up re-triangululization of
@@ -104,7 +104,7 @@ int CFeature::LoadFromDTMExteriorBoundary // <=  Non-zero status code if error o
 //---------------------------------------------------------------------------
 
 int CFeature::SaveToDTM     // <=  Non-zero status code if error occurred.
-( 
+(
     struct CIVdtmsrf *srfP,  //  => Target surface (active if NULL).
     long opt,                //  => Options (optional).
     BOOL bReTin              //  => Retriangulate feature ( optional )
@@ -157,14 +157,14 @@ int CFeature::SaveToDTM     // <=  Non-zero status code if error occurred.
         if ( sts == SUCCESS )
             sts = LoadFromDTMByGuid ( &m_guid, m_srfP );
     }
-    return ( sts );        
+    return ( sts );
 }
 
 
 //---------------------------------------------------------------------------
 // DESC: Writes the contents of the feature object to the specified
 //       surface (active if srfP is NULL) as a new feature.  The feature
-//       will be assigned a new BeSQLite::BeGuid and a name unique to the specified
+//       will be assigned a new InroadsGuid and a name unique to the specified
 //       surface.  The opt argument can be used to provide additional
 //       information which determine how duplicate feature names are handled if
 //       a new feature is being save or can speed up re-triangululization of

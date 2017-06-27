@@ -2,9 +2,10 @@
 |
 |     $Source: AutomaticGroundDetection/PublicAPI/IPointsAccumulator.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $ 
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #pragma once
 #include <Bentley/NonCopyableClass.h>
 #include <Bentley/BeFileName.h>
@@ -25,13 +26,17 @@ struct IGroundPointsAccumulator : public RefCountedBase
 
         virtual void _AddPoints(const bvector<DPoint3d>& points) = 0;        
 
+        virtual void _GetPreviewTransform(Transform& transform) const = 0;
+
         virtual void _OutputPreview(PolyfaceQueryCR currentGround) const = 0;
 
         virtual bool _ShouldContinue() const = 0;
 
     public : 
     
-        void AddPoints(const bvector<DPoint3d>& points);        
+        void AddPoints(const bvector<DPoint3d>& points);     
+
+        void GetPreviewTransform(Transform& transform) const;
 
         void OutputPreview(PolyfaceQueryCR currentGround) const;
 

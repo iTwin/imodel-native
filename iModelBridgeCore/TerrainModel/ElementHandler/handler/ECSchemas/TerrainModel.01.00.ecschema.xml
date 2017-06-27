@@ -1595,7 +1595,7 @@
                 <Hidden>True</Hidden>
             </DisplayOptions>
         </ECCustomAttributes>
-        <ECProperty propertyName="Description" typeName="string" displayLabel="Description">
+        <ECProperty propertyName="Name" typeName="string" displayLabel="Description">
             <ECCustomAttributes>
                 <ExtendType xmlns="EditorCustomAttributes.01.00">
                     <Standard>16</Standard>

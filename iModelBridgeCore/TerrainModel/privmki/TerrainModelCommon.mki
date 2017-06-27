@@ -2,14 +2,15 @@
 #
 #     $Source: privmki/TerrainModelCommon.mki $
 #
-#  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 ##  Define source and output directories
-%include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
-%include $(SrcRoot)TerrainModel/privmki/outputdirs.mki
+%include $(SrcRoot)TerrainModel/privmki/sourcedirsDgnDb.mki
+%include $(SrcRoot)TerrainModel/privmki/outputdirsDgnDb.mki
 
-BuildContext    = $(OutBuildContexts)TerrainModel/
+BuildContext    = $(OutBuildContexts)TerrainModelDgnDb/
+terrainModelBuildDir_ = $(OutputRootDir)build/TerrainModelDgnDb/
 o               = !Must be defined by individual mke files!
 
 always:
@@ -34,6 +35,9 @@ DelayLoadByDefault = 1
     dirToSearch     = $(BSI_PRG_H_DIR)
     %include cincapnd.mki
 %endif
+
+nameToDefine=BUILDTMFORDGNDB
+%include cdefapnd.mki
 
 %search $(SrcTerrainModel)privmki
 %search $(OutTerrainModel)build/gensrc

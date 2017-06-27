@@ -2,7 +2,7 @@
 |
 |     $Source: Core/PublicAPI/TMTransformHelper.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -194,7 +194,7 @@ struct TMTransformHelper : RefCountedBase
                     {
                     if (m_ownValues) delete m_params;
                     }
-                operator TerrainModel::DTMFenceParamsCR () const
+                operator BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR () const
                     {
                     return *m_params;
                     }

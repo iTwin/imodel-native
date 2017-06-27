@@ -51,8 +51,8 @@
                 <TransKit SourceDirectory="Delivery\Transkit\TerrainModelApp"/>
             </Assemblies>
             <Files ProductDirectoryName="TerrainModelElementHandler">
-                Delivery/TerrainModelHandlerApp.ma
-                <LoadConfig AppName="TerrainModelHandlerApp" ConfigVars="_USTN_FIRSTDGNFILE" />
+              Delivery/TerrainModelHandlerApp.ma
+              <LoadConfig ConfigVars="EC_EXTENSION_ASSEMBLIES,_USTN_FIRSTDGNFILE" AppName="TerrainModelHandlerApp"/>
                 <!--LoadConfig AppName="TerrainModelHandlerApp" ConfigVars="MS_HANDLER_LOAD,MS_XATTRIBUTE_HANDLER_LOAD" /-->
             </Files>
         </Bindings>

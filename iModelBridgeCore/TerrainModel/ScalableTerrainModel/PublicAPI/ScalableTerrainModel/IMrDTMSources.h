@@ -6,7 +6,7 @@
 |       $Date: 2011/12/01 18:51:39 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -241,7 +241,7 @@ struct IDTMDgnModelSource : public IDTMSource
         BENTLEYSTM_EXPORT const WChar*          GetPath                    () const;
         BENTLEYSTM_EXPORT const WChar*          GetPath                    (StatusInt&                  status) const;
 
-        BENTLEYSTM_EXPORT uint32_t                  GetModelID                 () const;
+        BENTLEYSTM_EXPORT UInt32                  GetModelID                 () const;
         BENTLEYSTM_EXPORT const WChar*          GetModelName               () const;
 
         BENTLEYSTM_EXPORT void                    UpdateModelName            (const WChar*              name) const;
@@ -307,7 +307,7 @@ struct IDTMDgnLevelSource : public IDTMDgnModelSource
     public :          
         BENTLEYSTM_EXPORT virtual                 ~IDTMDgnLevelSource        ();
 
-        BENTLEYSTM_EXPORT uint32_t                  GetLevelID                 () const;
+        BENTLEYSTM_EXPORT UInt32                  GetLevelID                 () const;
         BENTLEYSTM_EXPORT const WChar*          GetLevelName               () const;
 
 
@@ -316,9 +316,9 @@ struct IDTMDgnLevelSource : public IDTMDgnModelSource
         BENTLEYSTM_EXPORT static IDTMDgnLevelSourcePtr 
                                             Create                     (DTMSourceDataType           sourceDataType, 
                                                                         const ILocalFileMonikerPtr& dgnFileMonikerPtr,
-                                                                        uint32_t                      modelID, 
+                                                                        UInt32                      modelID, 
                                                                         const WChar*              modelName,
-                                                                        uint32_t                      levelID,
+                                                                        UInt32                      levelID,
                                                                         const WChar*              levelName);
     };
 
@@ -349,7 +349,7 @@ struct IDTMDgnReferenceLevelSource : public IDTMDgnReferenceSource
         BENTLEYSTM_EXPORT virtual                 ~IDTMDgnReferenceLevelSource
                                                                        ();
 
-        BENTLEYSTM_EXPORT uint32_t                  GetLevelID                 () const;
+        BENTLEYSTM_EXPORT UInt32                  GetLevelID                 () const;
         BENTLEYSTM_EXPORT const WChar*          GetLevelName               () const;
 
 
@@ -359,12 +359,12 @@ struct IDTMDgnReferenceLevelSource : public IDTMDgnReferenceSource
         BENTLEYSTM_EXPORT static IDTMDgnReferenceLevelSourcePtr 
                                             Create                     (DTMSourceDataType           sourceDataType, 
                                                                         const ILocalFileMonikerPtr& rootDgnFileMonikerPtr,
-                                                                        uint32_t                      rootModelID, 
+                                                                        UInt32                      rootModelID, 
                                                                         const WChar*              rootModelName,
                                                                         const WChar*                 rootToRefPersistentPath,
                                                                         const WChar*              referenceName,
                                                                         const WChar*              referenceModelName,
-                                                                        uint32_t                      referenceLevelID,
+                                                                        UInt32                      referenceLevelID,
                                                                         const WChar*              referenceLevelName);
 
     };

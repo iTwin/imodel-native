@@ -2,10 +2,12 @@
 |
 | $Source: Drainage/bcdtmDrainagePond.h $
 |
-| $Copyright: (c) 2014 Bentley Systems, Incorporated. All rights reserved. $
+| $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
 
 class DTMDrainageTables;
 struct DTMZeroSlopePolygon;
@@ -14,19 +16,18 @@ struct DTM_ZERO_SLOPE_SUMP_LINE;
 
 int bcdtmDrainage_calculatePondDtmObject(BC_DTM_OBJ *dtmP,double x,double y,double falseLowDepth,DTMFeatureCallback loadFunctionP,bool drawPond,bool*pondDeterminedP, double *pondElevationP,double *pondDepthP,double *pondAreaP,double *pondVolumeP,void *userP) ;
 int bcdtmDrainage_calculatePondWithLowPointDtmObject (BC_DTM_OBJ *dtmP, double x, double y, double falseLowDepth, DTMFeatureCallback loadFunctionP, bool drawPond, bool* pondDeterminedP, double* pondElevationP, double* pondDepthP, double* pondAreaP, double* pondVolumeP, DPoint3d* lowPtP, void* userP);
-int bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject (BC_DTM_OBJ *dtmP, long dtmPnt1, long dtmPnt2, long dtmPnt3, DTMFeatureCallback loadFunctionP, bool loadFlag, bool boundaryFlag, long *exitPointP, long *priorPointP, long *nextPointP, void *userP);
+int bcdtmDrainage_determinePondAboutZeroSlopeTriangleDtmObject (BC_DTM_OBJ *dtmP, long dtmPnt1, long dtmPnt2, long dtmPnt3, DTMFeatureCallback loadFunctionP, bool loadFlag, bool boundaryFlag, long *exitPointP, long *priorPointP, long *nextPointP, DTM_POLYGON_OBJ **polygonPP,void *userP);
 int bcdtmDrainage_traceIslandBoundaryDtmObject(BC_DTM_OBJ *dtmP,double pondElevation,long startPoint,long nextPoint,long mark,DTMFeatureCallback loadFunctionP,bool loadFlag,bool boundaryFlag,DTM_POLYGON_OBJ *polygonP, void* userP) ;
 int bcdtmDrainage_tracePondBoundaryDtmObject(BC_DTM_OBJ *dtmP,double pondElevation,long startPoint,long nextPoint,DTMFeatureCallback loadFunctionP,bool loadFlag,bool boundaryFlag,DTM_POLYGON_OBJ *polygonP,DPoint3d **pondPtsPP,long *numPondPtsP,void* userP) ;
 int bcdtmDrainage_extractPondBoundaryDtmObject(BC_DTM_OBJ *dtmP,double pondElevation,long startPoint,long nextPoint,DTMFeatureCallback loadFunctionP,bool loadFlag,bool boundaryFlag,DTM_POLYGON_OBJ **polygonPP,void* userP) ;
 int bcdtmDrainage_placePolygonAroundZeroSlopeTriangleDtmObject(BC_DTM_OBJ *dtmP,long P1,long P2,long P3,long *startPointP) ;
-int bcdtmDrainage_determinePondAboutZeroSlopeSumpLineDtmObject(BC_DTM_OBJ *dtmP,long point1,long point2,DTMFeatureCallback loadFunctionP,bool loadFlag,bool boundaryFlag,long *exitPointP,long *priorPointP,long *nextPointP,DTM_POLYGON_OBJ **polygonPP,void *userP) ;
 
 int bcdtmDrainage_determinePondsDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,DTMFeatureCallback loadFunctionP,bool loadFlag,bool buildTable,void *userP) ;
 int bcdtmDrainage_determineLowPointPondsDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,DTMZeroSlopePolygonVector* zeroSlopePolygons,int *zeroSlopePointsIndexP,DTMFeatureCallback loadFunctionP,bool loadFlag,bool buildTable,void *userP,int& numLowPointPonds) ;
 int bcdtmDrainage_determinePondAboutLowPointDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,DTMZeroSlopePolygonVector* zeroSlopePolygons,int *zeroSlopePointsIndexP,DTMFeatureCallback loadFunctionP,long lowPoint,bool loadFlag,bool boundaryFlag,long *exitPointP,long *priorPointP,long *nextPointP,DTM_POLYGON_OBJ **polygonPP,void *userP) ;
 int bcdtmDrainage_expandPondToExitPointDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,DTMZeroSlopePolygonVector *zeroSlopePolygons,int *zeroSlopePointsIndexP,long startPoint,long *exitPointP,long *priorPointP,long *nextPointP);
-int bcdtmDrainage_scanPondForExitPointDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,long startPoint,double lowPointZ,long *exitPointFoundP,long *exitPointP,long *priorPointP,long *nextPointP) ;
-int bcdtmDrainage_testForPondExitPointDtmObject(BC_DTM_OBJ *dtmP,long lowPoint,long *priorPointP,long *nextPointP,long *exitFromPointP) ;
+int bcdtmDrainage_scanPondForExitPointDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,long startPoint,double lowPointZ,bool& exitPointFoundP,long *exitPointP,long *priorPointP,long *nextPointP) ;
+int bcdtmDrainage_testForPondExitPointDtmObject(BC_DTM_OBJ *dtmP,long lowPoint,long *priorPointP,long *nextPointP,bool& exitFromPointP) ;
 int bcdtmDrainage_expandPondAboutPointDtmObject(BC_DTM_OBJ *dtmP,long lowPoint,double lastArea,long *startPointP,double *areaP,long *extStartPntP,long *extEndPntP) ;
 
 int bcdtmDrainage_determineZeroSlopeSumpLinePondsDtmObject(BC_DTM_OBJ *dtmP,DTMDrainageTables *drainageTablesP,DTMZeroSlopePolygonVector* zeroSlopePolygons,int *zeroSlopePointsIndexP,DTMFeatureCallback loadFunctionP,bool loadFlag,bool buildTable,void* userP,int& numSumpLinePonds) ;
@@ -71,3 +72,6 @@ int bcdtmDrainage_markPointsInternalToZeroSlopePolygonsDtmObject(BC_DTM_OBJ *dtm
 int bcdtmDrainage_indexAllPointsAtZeroSlopeElevationDtmObject(BC_DTM_OBJ *dtmP,DTMZeroSlopePolygonVector *zeroSlopePolygonsP,int *pointIndexP,int zeroSlopePond,int priorPoint,int exitPoint,int nextPoint) ;
 int bcdtmDrainage_writeZeroSlopePolygonPointsDtmObject(BC_DTM_OBJ *dtmP,DTMZeroSlopePolygonVector *zeroSlopePolygonsP,int zeroSlopePolygon) ;
 int bcdtmDrainage_createDepressionDtmObject(BC_DTM_OBJ *dtmP,BC_DTM_OBJ **depressionDtmPP,DTMFeatureCallback loadFunctionP,void *userP) ;
+int bcdtmDrainage_designPondToATargetVolumeOrElevationDtmObject(BC_DTM_OBJ* pondObjectP, DTMPondResult& pondFlag, double* pondElevationP, double* pondVolumeP, DPoint3d* pondPtsP, long numPondPts, DTMPondDesignMethod outsideInsideOpt, DTMPondTarget volElevOpt, double volume, double elevation, double pondSlope, double freeBoard, bool isBerm, double bermSlope, double bermWidth, bool isCrown, double crownWidth, double cornerStrokeTolerance, bool isBermFillOnly, BC_DTM_OBJ* fillTinP, double fillSlope);
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

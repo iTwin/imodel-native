@@ -2,11 +2,11 @@
 |
 |     $Source: ElementHandler/PublicAPI/TerrainModelElementHandler.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-
+//__BENTLEY_INTERNAL_ONLY__
 //__PUBLISH_SECTION_START__
 #if !defined (BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE)
 #define BEGIN_BENTLEY_TERRAINMODEL_ELEMENT_NAMESPACE namespace Bentley { namespace TerrainModel { namespace Element {

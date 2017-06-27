@@ -6,6 +6,8 @@
 #
 #----------------------------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)
+PolicyFile      = $(SrcRoot)TerrainModel/privmki/AssertTerrainModelPolicy.mki
+SolutionPolicyMki=$(baseDir)AutomaticGroundDetection.mki
 
 %include  mdl.mki
 %include $(SrcRoot)TerrainModel/privmki/sourcedirs.mki
@@ -119,10 +121,11 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BaseGeoCoord.lib \
     $(ContextSubpartsLibs)Bentley.lib \
     $(ContextSubpartsLibs)BentleyGeom.lib \
-    $(ContextSubpartsLibs)CGAL.lib \
     ws2_32.lib \
     $(ContextSubpartsLibs)TerrainModelCore.lib \
     $(ContextSubpartsLibs)TerrainModelFormats.lib
+
+    #$(ContextSubpartsLibs)CGAL.lib \
     #D:\BSI\DgnDb06Dev\src\libsrc\boost_1.57.0_lib\stage\lib\libboost_system-vc140-mt-1_57.lib \
     #D:\BSI\DgnDb06Dev\src\libsrc\boost_1.57.0_lib\stage\lib\libboost_thread-vc140-mt-1_57.lib    
     # \$(ContextSubpartsLibs)$(TerrainModelFormatsLib)

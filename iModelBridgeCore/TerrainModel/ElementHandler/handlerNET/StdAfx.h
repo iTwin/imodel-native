@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handlerNET/StdAfx.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -55,4 +55,4 @@ namespace DGNET = Bentley::DgnPlatformNET;
 
 USING_NAMESPACE_BENTLEY_TERRAINMODEL_ELEMENT
 
-[assembly: System::Runtime::CompilerServices::InternalsVisibleTo ("Bentley.TerrainModel.ElementTemplate, PublicKey=00240000048000009400000006020000002400005253413100040000010001008b52bb3e32d2a2d9252516a4a9f6bd166f0e1f3edbe0ef8466b15dda2b3c5219539cafe036e6d07373dea23eab1e4479e1f0874894b963a3910fb847c9f7177ce439031100d699613c94e2b8f201c2f2e531211b18910158d50a7ba8353939dbe3ed7b483096b1bd6ed19b413eb2d2f5dd7bec25b810aaafe20d6dc6c0af579b")];
+[assembly: System::Runtime::CompilerServices::InternalsVisibleTo ("Bentley.TerrainModel.ElementTemplate, PublicKey=002400000480000094000000060200000024000052534131000400000100010047f1bc496d5be7f2b61bf2abb530ef55c6a6ff377677780ff34785c98aea2f309cd4556a5ded8ea70af8f623b3f3b6663c547a6a1c68a6146eb871375e3f48b44d02e5ad5c7db943a185fd20a661844a874046e49d2d58a4571b3ddf4606c094a2008aa4be9a8596a42b6ec0f54993f633b71b709d88d6c229499c61729fddba")];

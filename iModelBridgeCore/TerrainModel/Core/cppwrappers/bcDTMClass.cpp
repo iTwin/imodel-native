@@ -68,6 +68,14 @@ class FeatureCallbackTransformHelper
                 return &TransformFunction;
             return m_callBackFunctP;
             }
+		void* GetOriginalUserArg()
+			{
+			return m_userP;
+			}
+		DTMFeatureCallback GetOriginalCallBackFunc()
+			{
+			return m_callBackFunctP;
+			}
     private:
         static int TransformFunction (DTMFeatureType featureType, DTMUserTag featureTag, DTMFeatureId featureId, DPoint3d *tPoint, size_t nPoint, void *userP)
             {
@@ -900,23 +908,20 @@ BcDTMPtr BcDTM::DesignPondToTargetVolumeOrElevation
     double freeBoard
     )
     {
-
     DTMStatusInt status = DTM_ERROR;
-    BcDTMPtr dtmP = BcDTM::Create ();
-    // ToDo Translatation
-// TODO: Drainage
-    //status = bcdtmDrainage_designPondToATargetVolumeOrElevationDtmObject(dtmP->GetTinHandle(), pondFlag, pondElevation, pondVolume,
-    //    points,  numPoints, perimeterOrInvert, targetVolumeOrElevation,
-    //    targetVolume, targetElevation, sideSlope, freeBoard,
-    //    0,0.0,0.0,0,0.0,100.0, 0, nullptr, 0.0);
 
-    if ( status != DTM_SUCCESS)
-        {
+    DtmPondDesignCriteria pondDesignCrit((DTMPondDesignMethod)perimeterOrInvert, points, (int)numPoints, sideSlope, freeBoard, (DTMPondTarget)targetVolumeOrElevation, (DTMPondTarget)targetVolumeOrElevation == DTMPondTarget::Elevation ? targetElevation : targetVolume);
+    BcDTMPtr dtm;
+    DTMPondResult result = pondDesignCrit.CreatePond(dtm);
+    if ( dtm.IsNull())
         return nullptr ;
-        }
+
+    if (pondElevation) *pondElevation = pondDesignCrit.pondElevation;
+    if (pondVolume) *pondVolume = pondDesignCrit.pondVolume;
+    if (pondFlag) *pondFlag = (long)result;
 
     // Return this DTM
-    return dtmP;
+    return dtm;
     }
 
 
@@ -1413,6 +1418,23 @@ bool  BcDTM::_IntersectRay(DPoint3dR pointOnDTM, DVec3dCR direction, DPoint3dCR 
     DPoint3d endPoint;
     endPoint.SumOf(testPoint, direction);
     return IntersectVector(pointOnDTM, testPoint, endPoint);
+    }
+
+bool  BcDTM::_IntersectRay(bvector<DTMRayIntersection>& pointOnDTM, DVec3dCR direction, DPoint3dCR testPoint)
+    {
+    // in DTM we return only one intersection for now
+    assert("DTM multiple Ray Intersect will return only one intersection" && false);
+    DPoint3d interP;
+    bool bRet = _IntersectRay(interP, direction, testPoint);
+    if (bRet)
+        {
+        DTMRayIntersection RayInter;
+        RayInter.point = interP;
+        RayInter.hasNormal = false;
+        RayInter.rayFraction = (interP - testPoint).Magnitude();
+        pointOnDTM.push_back(RayInter);
+        }
+    return bRet;
     }
 
 bool BcDTM::_DrapeAlongVector(DPoint3d* endPt, double *slope, double *aspect, DPoint3d triangle[3], int *drapedType, DPoint3dCR point, double directionOfVector, double slopeOfVector)
@@ -2643,6 +2665,10 @@ DTMStatusInt BcDTM::BrowseFeatures (DTMFeatureType featureType, const DTMFencePa
                 // Not Yet Implemented So Return Error
                 break;
 
+			case DTMFeatureType::TriangleIndex:
+                status = (DTMStatusInt)bcdtmInterruptLoad_dtmFeatureTypeFromDtmObject (GetTinHandle (), featureType, maxSpots, helper.GetOriginalCallBackFunc(), isFence, fence.fenceType, fence.fenceOption,
+                                                                         TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, helper.GetOriginalUserArg());
+                break;
             default:
                 status = (DTMStatusInt)bcdtmInterruptLoad_dtmFeatureTypeFromDtmObject (GetTinHandle (), featureType, maxSpots, callBackFunctP, isFence, fence.fenceType, fence.fenceOption,
                                                                          TMTransformHelper::copyPointsToDTM (_dtmTransformHelper.get (), fence.points, fence.numPoints), fence.numPoints, userP);

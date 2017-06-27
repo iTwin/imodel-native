@@ -90,6 +90,8 @@ struct TINPointContainer : public PointCollection, RefCountedBase
 
     private:
 
+        BeMutex  m_pointContainerMutex;
+
         explicit TINPointContainer();
         ~TINPointContainer();
     }; // SeedPointContainer
@@ -172,6 +174,8 @@ private:
     TINPointContainerPtr                    m_pAcceptedPointCollection;
     size_t                                  m_memorySize;
     IPointsProviderPtr                      m_pPointsProvider;
+    BeMutex                                 m_queryPointMutex;
+    
     };
 
 

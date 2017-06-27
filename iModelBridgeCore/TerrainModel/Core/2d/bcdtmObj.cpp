@@ -2,7 +2,7 @@
 |
 |     $Source: Core/2d/bcdtmObj.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
  #include "bcDTMBaseDef.h"
@@ -2240,226 +2240,298 @@ BENTLEYDTM_EXPORT int bcdtmObject_setFeatureMemoryAllocationParametersDtmObject
 |                                                                    |
 |                                                                    |
 +-------------------------------------------------------------------*/
-BENTLEYDTM_Public int  bcdtmObject_allocateFeaturesMemoryDtmObject(BC_DTM_OBJ *dtmP)
+BENTLEYDTM_Public int bcdtmObject_resizeFeaturesMemoryDtmObject(BC_DTM_OBJ *dtmP, long newSize)
 /*
 ** This Function Allocates Memory For DTM Features
 */
-{
- int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- long n,feature,numPartitions,remPartition,numCurPartitions,remCurPartition,partitionNum,partitionOfs,partitionSize ;
- BC_DTM_FEATURE *dtmFeatureP=NULL ;
-/*
-** Write Entry Message
-*/
- if( dbg )
-   {
-    bcdtmWrite_message(0,0,0,"Allocating Memory For Features Array") ;
-    bcdtmWrite_message(0,0,0,"dtmP                       = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"dtmP->numFeatures          = %8ld",dtmP->numFeatures) ;
-    bcdtmWrite_message(0,0,0,"dtmP->memFeatures          = %8ld",dtmP->memFeatures) ;
-    bcdtmWrite_message(0,0,0,"dtmP->iniFeatures          = %8ld",dtmP->iniFeatures) ;
-    bcdtmWrite_message(0,0,0,"dtmP->incFeatures          = %8ld",dtmP->incFeatures) ;
-    bcdtmWrite_message(0,0,0,"dtmP->featurePartitionSize = %8ld",dtmP->featurePartitionSize) ;
-    bcdtmWrite_message(0,0,0,"dtmP->numFeaturePartitions = %8ld",dtmP->numFeaturePartitions) ;
-   }
-/*
-** Check For Valid Dtm Object
-*/
- if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit  ;
-/*
-** Initial Allocation
-*/
- if( dtmP->memFeatures == 0 )
-   {
-     if (dtmP->iniFeatures == 0)
-         dtmP->iniFeatures = dtmP->incFeatures;
-    if( dbg ) bcdtmWrite_message(0,0,0,"**** Allocating Initial Memory For Features Array") ;
-    dtmP->memFeatures = dtmP->iniFeatures ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"dtmP->memFeatures = %8ld",dtmP->memFeatures) ;
-/*
-**  Determine Number Of Feature Partitions
-*/
-    numPartitions = dtmP->memFeatures / dtmP->featurePartitionSize + 1 ; 
-    remPartition  = dtmP->memFeatures % dtmP->featurePartitionSize ;
-    if( remPartition == 0 ) { --numPartitions ; remPartition = dtmP->featurePartitionSize ; }
-    if( dbg ) bcdtmWrite_message(0,0,0,"numPartitions = %8ld ** remPartition = %8ld",numPartitions,remPartition) ;
-/*
-**  Allocate Memory For Pointers To Feature Partitions
-*/
-    dtmP->numFeaturePartitions = numPartitions ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"Allocating Memory For Feature Partition Pointers") ;
-    dtmP->fTablePP  = ( BC_DTM_FEATURE  ** ) malloc( dtmP->numFeaturePartitions * sizeof( BC_DTM_FEATURE * )) ;
-    if( dtmP->fTablePP == NULL )
-      {
-       bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-       goto errexit ; 
-      }
-    for( n = 0 ; n < dtmP->numFeaturePartitions ; ++n ) dtmP->fTablePP[n] = NULL ;
-/*
-**  Allocate Memory For Feature Partitions
-*/
-    for( n = 0 ; n < dtmP->numFeaturePartitions ; ++n )
-      {
-/*
-**     Determine Partition Size
-*/
-       if( n < dtmP->numFeaturePartitions - 1 ) partitionSize = dtmP->featurePartitionSize ;
-       else                                     partitionSize = remPartition ;
-       if( dbg ) bcdtmWrite_message(0,0,0,"Allocationg Memory Amount Of %8ld for Partition %8ld",partitionSize,n) ;
-/*
-**     Allocate Partition Memory
-*/
-       dtmP->fTablePP[n] = ( BC_DTM_FEATURE * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Feature, n, partitionSize * sizeof( BC_DTM_FEATURE)) ;
-       if( dtmP->fTablePP[n] == NULL )
-         {
-          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-          goto errexit ;
-         }
-       if( dbg ) bcdtmWrite_message(0,0,0,"Allocationg Memory Amount Of %8ld for Partition %8ld Completed",partitionSize,n) ;
-      }
-   }
-/*
-** Incremental Allocation
-*/
- else
-   {
-    if( dbg ) bcdtmWrite_message(0,0,0,"**** Allocating Incremental Memory For Features Array") ;
-/*
-**  Determine Current Number Of Partitions
-*/
-    numCurPartitions  = dtmP->memFeatures / dtmP->featurePartitionSize + 1 ;
-    remCurPartition   = dtmP->memFeatures % dtmP->featurePartitionSize ;
-    if( remCurPartition == 0 ) { --numCurPartitions ; remCurPartition = dtmP->featurePartitionSize ; }
-    if( numCurPartitions != dtmP->numFeaturePartitions )
-      {
-       if( dbg ) bcdtmWrite_message(0,0,0,"numCurPartitions = %6ld ** dtmP->numFeaturePartitions = %6ld",numCurPartitions,dtmP->numFeaturePartitions) ;
-       bcdtmWrite_message(2,0,0,"Inconsistent Number Of Feature Partitions") ;
-      } 
-/*
-**  Increment Number Of Memory Features
-*/
-    dtmP->memFeatures = dtmP->memFeatures + dtmP->incFeatures ;
-    if( dbg ) bcdtmWrite_message(0,0,0,"dtmP->memFeatures = %8ld",dtmP->memFeatures) ;
-/*
-**  Determine Required Number Of Partitions
-*/
-    numPartitions = dtmP->memFeatures / dtmP->featurePartitionSize + 1 ; 
-    remPartition  = dtmP->memFeatures % dtmP->featurePartitionSize ;
-    if( remPartition == 0 ) { --numPartitions ; remPartition = dtmP->featurePartitionSize ; }
-    if( dbg ) 
-      { 
-       bcdtmWrite_message(0,0,0,"dtmP->numFeaturePartitions = %8ld",dtmP->numFeaturePartitions) ;
-       bcdtmWrite_message(0,0,0,"numPartitions = %8ld remPartition = %8ld",numPartitions,remPartition) ;
-      } 
-/*
-**  Memory Allocation Within Current Partition
-*/
-    if( numPartitions == dtmP->numFeaturePartitions )
-      {
-       dtmP->fTablePP[dtmP->numFeaturePartitions-1] = ( BC_DTM_FEATURE * ) bcdtmMemory_reallocatePartition(dtmP, DTMPartition::Feature, dtmP->numFeaturePartitions - 1, dtmP->fTablePP[dtmP->numFeaturePartitions-1],remPartition*sizeof(BC_DTM_FEATURE)) ;      
-       if( dtmP->fTablePP[dtmP->numFeaturePartitions-1] == NULL )
-         {
-          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-          goto errexit ;
-         }
-      }
-/*
-**  Memory Allocation Over A Number Of Partitions
-*/
-    if( numPartitions > dtmP->numFeaturePartitions )
-      {
-/*
-**     Allocate Memory For Additional Feature Partitions
-*/
-       if( dbg ) bcdtmWrite_message(0,0,0,"**** Allocating Memory For Additional Feature Partition Pointers") ;
-       dtmP->fTablePP  = ( BC_DTM_FEATURE  ** ) realloc(dtmP->fTablePP,numPartitions * sizeof( BC_DTM_FEATURE * )) ;
-       if( dtmP->fTablePP == NULL )
-         {
-          bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-          goto errexit ; 
-         }
-       for( n = dtmP->numFeaturePartitions ; n < numPartitions ; ++n ) dtmP->fTablePP[n] = NULL ;
-/*
-**     Allocate Memory In Current Partition
-*/
-       if( remCurPartition < dtmP->featurePartitionSize )
-         {
-          if( dbg ) bcdtmWrite_message(0,0,0,"Reallocating Memory Witin Current Partition") ;
-          dtmP->fTablePP[dtmP->numFeaturePartitions-1] = ( BC_DTM_FEATURE * ) bcdtmMemory_reallocatePartition(dtmP, DTMPartition::Feature, dtmP->numFeaturePartitions - 1, dtmP->fTablePP[dtmP->numFeaturePartitions-1],dtmP->featurePartitionSize*sizeof(BC_DTM_FEATURE)) ;      
-          if( dtmP->fTablePP[dtmP->numFeaturePartitions-1] == NULL )
-            {
-             bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-             goto errexit ;
-            }
-         }
-/*
-**     Allocate Memory For Feature Partitions
-*/
-       for( n = dtmP->numFeaturePartitions ; n < numPartitions ; ++n )
-         {
-/*
-**        Determine Partition Size
-*/
-          if( n < numPartitions - 1 ) partitionSize = dtmP->featurePartitionSize ;
-          else                        partitionSize = remPartition ;
-          if( dbg ) bcdtmWrite_message(0,0,0,"Allocationg Memory Amount Of %8ld for Partition %8ld",partitionSize,n) ;
-/*
-**        Allocate Partition Memory
-*/
-          dtmP->fTablePP[n] = ( BC_DTM_FEATURE * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Feature, n, partitionSize * sizeof( BC_DTM_FEATURE)) ;
-          if( dtmP->fTablePP[n] == NULL )
-            {
-             bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
-             goto errexit ;
-            }
-         }
-      }
-/*
-**  Reset Number Of Partitions
-*/
-    dtmP->numFeaturePartitions = numPartitions ;
-   }
-/*
-** Initialise Allocated Memory
-*/
-  if( dbg ) bcdtmWrite_message(0,0,0,"Initialising Allocated Memory") ;
-  partitionNum = dtmP->numFeatures / dtmP->featurePartitionSize ;
-  partitionOfs = dtmP->numFeatures % dtmP->featurePartitionSize ;
-  dtmFeatureP = dtmP->fTablePP[partitionNum] + partitionOfs ;
-  for( feature = dtmP->numFeatures ; feature < dtmP->memFeatures ; ++feature )
     {
-     dtmFeatureP->dtmFeatureState          =  DTMFeatureState::Unused  ;
-     dtmFeatureP->dtmFeatureType           =  (DTMFeatureType)0           ;
-     dtmFeatureP->dtmUserTag               =  DTM_NULL_USER_TAG ;
-     dtmFeatureP->dtmFeatureId             =  DTM_NULL_FEATURE_ID    ;
-     dtmFeatureP->dtmFeaturePts.pointsPI   =  0        ;
-     dtmFeatureP->numDtmFeaturePts         =  0           ;
-     ++partitionOfs ;
-     if( partitionOfs == dtmP->featurePartitionSize ) 
-       {
-        ++partitionNum ;
-        partitionOfs = 0 ;
-        dtmFeatureP = dtmP->fTablePP[partitionNum]   ;
-       }
-     else ++dtmFeatureP ; 
+    int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
+    long n,feature,numPartitions,remPartition,numCurPartitions,remCurPartition,partitionNum,partitionOfs,partitionSize ;
+    BC_DTM_FEATURE *dtmFeatureP=NULL ;
+    /*
+    ** Write Entry Message
+    */
+    if( dbg )
+        {
+        bcdtmWrite_message(0,0,0,"Resizing Memory For Features Array") ;
+        bcdtmWrite_message(0,0,0,"dtmP                       = %p",dtmP) ;
+        bcdtmWrite_message(0,0,0,"dtmP->numFeatures          = %8ld",dtmP->numFeatures) ;
+        bcdtmWrite_message(0,0,0,"dtmP->memFeatures          = %8ld",dtmP->memFeatures) ;
+        bcdtmWrite_message(0,0,0,"dtmP->iniFeatures          = %8ld",dtmP->iniFeatures) ;
+        bcdtmWrite_message(0,0,0,"dtmP->incFeatures          = %8ld",dtmP->incFeatures) ;
+        bcdtmWrite_message(0,0,0,"dtmP->featurePartitionSize = %8ld",dtmP->featurePartitionSize) ;
+        bcdtmWrite_message(0,0,0,"dtmP->numFeaturePartitions = %8ld",dtmP->numFeaturePartitions) ;
+        }
+    /*
+    ** Check For Valid Dtm Object
+    */
+    if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit  ;
+    /*
+    ** Dont Allow reduction insize yet.
+    */
+    if (dtmP->memFeatures > newSize)
+        {
+        goto cleanup;
+        }
+    /*
+    ** Initial Allocation
+    */
+    if( dtmP->memFeatures == 0 )
+        {
+        if (dtmP->iniFeatures == 0)
+            dtmP->iniFeatures = newSize;
+        if( dbg ) bcdtmWrite_message(0,0,0,"**** Allocating Initial Memory For Features Array") ;
+        dtmP->memFeatures = dtmP->iniFeatures ;
+        if( dbg ) bcdtmWrite_message(0,0,0,"dtmP->memFeatures = %8ld",dtmP->memFeatures) ;
+        /*
+        **  Determine Number Of Feature Partitions
+        */
+        numPartitions = dtmP->memFeatures / dtmP->featurePartitionSize + 1 ; 
+        remPartition  = dtmP->memFeatures % dtmP->featurePartitionSize ;
+        if( remPartition == 0 ) { --numPartitions ; remPartition = dtmP->featurePartitionSize ; }
+        if( dbg ) bcdtmWrite_message(0,0,0,"numPartitions = %8ld ** remPartition = %8ld",numPartitions,remPartition) ;
+        /*
+        **  Allocate Memory For Pointers To Feature Partitions
+        */
+        dtmP->numFeaturePartitions = numPartitions ;
+        if( dbg ) bcdtmWrite_message(0,0,0,"Allocating Memory For Feature Partition Pointers") ;
+        dtmP->fTablePP  = ( BC_DTM_FEATURE  ** ) malloc( dtmP->numFeaturePartitions * sizeof( BC_DTM_FEATURE * )) ;
+        if( dtmP->fTablePP == NULL )
+            {
+            bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+            goto errexit ; 
+            }
+        for( n = 0 ; n < dtmP->numFeaturePartitions ; ++n ) dtmP->fTablePP[n] = nullptr ;
+        /*
+        **  Allocate Memory For Feature Partitions
+        */
+        for( n = 0 ; n < dtmP->numFeaturePartitions ; ++n )
+            {
+            /*
+            **     Determine Partition Size
+            */
+            if( n < dtmP->numFeaturePartitions - 1 ) partitionSize = dtmP->featurePartitionSize ;
+            else                                     partitionSize = remPartition ;
+            if( dbg ) bcdtmWrite_message(0,0,0,"Allocationg Memory Amount Of %8ld for Partition %8ld",partitionSize,n) ;
+            /*
+            **     Allocate Partition Memory
+            */
+            dtmP->fTablePP[n] = ( BC_DTM_FEATURE * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Feature, n, partitionSize * sizeof( BC_DTM_FEATURE)) ;
+            if( dtmP->fTablePP[n] == nullptr )
+                {
+                bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+                goto errexit ;
+                }
+            if( dbg ) bcdtmWrite_message(0,0,0,"Allocationg Memory Amount Of %8ld for Partition %8ld Completed",partitionSize,n) ;
+            }
+        }
+    /*
+    ** Incremental Allocation
+    */
+    else
+        {
+        if( dbg ) bcdtmWrite_message(0,0,0,"**** Allocating Incremental Memory For Features Array") ;
+        /*
+        **  Determine Current Number Of Partitions
+        */
+        numCurPartitions  = dtmP->memFeatures / dtmP->featurePartitionSize + 1 ;
+        remCurPartition   = dtmP->memFeatures % dtmP->featurePartitionSize ;
+        if( remCurPartition == 0 ) { --numCurPartitions ; remCurPartition = dtmP->featurePartitionSize ; }
+        if( numCurPartitions != dtmP->numFeaturePartitions )
+            {
+            if( dbg ) bcdtmWrite_message(0,0,0,"numCurPartitions = %6ld ** dtmP->numFeaturePartitions = %6ld",numCurPartitions,dtmP->numFeaturePartitions) ;
+            bcdtmWrite_message(2,0,0,"Inconsistent Number Of Feature Partitions") ;
+            } 
+        /*
+        **  Increment Number Of Memory Features
+        */
+        dtmP->memFeatures =  newSize;
+        if( dbg ) bcdtmWrite_message(0,0,0,"dtmP->memFeatures = %8ld",dtmP->memFeatures) ;
+        /*
+        **  Determine Required Number Of Partitions
+        */
+        numPartitions = dtmP->memFeatures / dtmP->featurePartitionSize + 1 ; 
+        remPartition  = dtmP->memFeatures % dtmP->featurePartitionSize ;
+        if( remPartition == 0 ) { --numPartitions ; remPartition = dtmP->featurePartitionSize ; }
+        if( dbg ) 
+            { 
+            bcdtmWrite_message(0,0,0,"dtmP->numFeaturePartitions = %8ld",dtmP->numFeaturePartitions) ;
+            bcdtmWrite_message(0,0,0,"numPartitions = %8ld remPartition = %8ld",numPartitions,remPartition) ;
+            } 
+        /*
+        **  Memory Allocation Within Current Partition
+        */
+        if( numPartitions == dtmP->numFeaturePartitions )
+            {
+            dtmP->fTablePP[dtmP->numFeaturePartitions-1] = ( BC_DTM_FEATURE * ) bcdtmMemory_reallocatePartition(dtmP, DTMPartition::Feature, dtmP->numFeaturePartitions - 1, dtmP->fTablePP[dtmP->numFeaturePartitions-1],remPartition*sizeof(BC_DTM_FEATURE)) ;      
+            if( dtmP->fTablePP[dtmP->numFeaturePartitions-1] == NULL )
+                {
+                bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+                goto errexit ;
+                }
+            }
+        /*
+        **  Memory Allocation Over A Number Of Partitions
+        */
+        if( numPartitions > dtmP->numFeaturePartitions )
+            {
+            /*
+            **     Allocate Memory For Additional Feature Partitions
+            */
+            if( dbg ) bcdtmWrite_message(0,0,0,"**** Allocating Memory For Additional Feature Partition Pointers") ;
+            dtmP->fTablePP  = ( BC_DTM_FEATURE  ** ) realloc(dtmP->fTablePP,numPartitions * sizeof( BC_DTM_FEATURE * )) ;
+            if( dtmP->fTablePP == NULL )
+                {
+                bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+                goto errexit ; 
+                }
+            for( n = dtmP->numFeaturePartitions ; n < numPartitions ; ++n ) dtmP->fTablePP[n] = NULL ;
+            /*
+            **     Allocate Memory In Current Partition
+            */
+            if( remCurPartition < dtmP->featurePartitionSize )
+                {
+                if( dbg ) bcdtmWrite_message(0,0,0,"Reallocating Memory Witin Current Partition") ;
+                dtmP->fTablePP[dtmP->numFeaturePartitions-1] = ( BC_DTM_FEATURE * ) bcdtmMemory_reallocatePartition(dtmP, DTMPartition::Feature, dtmP->numFeaturePartitions - 1, dtmP->fTablePP[dtmP->numFeaturePartitions-1],dtmP->featurePartitionSize*sizeof(BC_DTM_FEATURE)) ;      
+                if( dtmP->fTablePP[dtmP->numFeaturePartitions-1] == NULL )
+                    {
+                    bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+                    goto errexit ;
+                    }
+                }
+            /*
+            **     Allocate Memory For Feature Partitions
+            */
+            for( n = dtmP->numFeaturePartitions ; n < numPartitions ; ++n )
+                {
+                /*
+                **        Determine Partition Size
+                */
+                if( n < numPartitions - 1 ) partitionSize = dtmP->featurePartitionSize ;
+                else                        partitionSize = remPartition ;
+                if( dbg ) bcdtmWrite_message(0,0,0,"Allocationg Memory Amount Of %8ld for Partition %8ld",partitionSize,n) ;
+                /*
+                **        Allocate Partition Memory
+                */
+                dtmP->fTablePP[n] = ( BC_DTM_FEATURE * ) bcdtmMemory_allocatePartition(dtmP, DTMPartition::Feature, n, partitionSize * sizeof( BC_DTM_FEATURE)) ;
+                if( dtmP->fTablePP[n] == NULL )
+                    {
+                    bcdtmWrite_message(1,0,0,"Memory Allocation Failure") ;
+                    goto errexit ;
+                    }
+                }
+            }
+        /*
+        **  Reset Number Of Partitions
+        */
+        dtmP->numFeaturePartitions = numPartitions ;
+        }
+    /*
+    ** Initialise Allocated Memory
+    */
+    if( dbg ) bcdtmWrite_message(0,0,0,"Initialising Allocated Memory") ;
+    partitionNum = dtmP->numFeatures / dtmP->featurePartitionSize ;
+    partitionOfs = dtmP->numFeatures % dtmP->featurePartitionSize ;
+    dtmFeatureP = dtmP->fTablePP[partitionNum] + partitionOfs ;
+    for( feature = dtmP->numFeatures ; feature < dtmP->memFeatures ; ++feature )
+        {
+        dtmFeatureP->dtmFeatureState          =  DTMFeatureState::Unused  ;
+        dtmFeatureP->dtmFeatureType           =  (DTMFeatureType)0           ;
+        dtmFeatureP->dtmUserTag               =  DTM_NULL_USER_TAG ;
+        dtmFeatureP->dtmFeatureId             =  DTM_NULL_FEATURE_ID    ;
+        dtmFeatureP->dtmFeaturePts.pointsPI   =  0        ;
+        dtmFeatureP->numDtmFeaturePts         =  0           ;
+        ++partitionOfs ;
+        if( partitionOfs == dtmP->featurePartitionSize ) 
+            {
+            ++partitionNum ;
+            partitionOfs = 0 ;
+            dtmFeatureP = dtmP->fTablePP[partitionNum]   ;
+            }
+        else ++dtmFeatureP ; 
+        }
+    /*
+    ** Clean Up
+    */
+cleanup :
+    /*
+    ** Job Completed
+    */
+    if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Allocating Memory For Features Array Completed") ;
+    if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Allocating Memory For Features Array Error") ;
+    return(ret) ;
+    /*
+    ** Error Exit
+    */
+errexit :
+    if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
+    goto cleanup ;
     }
-/*
-** Clean Up
-*/
- cleanup :
-/*
-** Job Completed
-*/
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Allocating Memory For Features Array Completed") ;
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Allocating Memory For Features Array Error") ;
- return(ret) ;
-/*
-** Error Exit
-*/
- errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ;
-}
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+BENTLEYDTM_Public int bcdtmObject_allocateFeaturesMemoryDtmObject(BC_DTM_OBJ *dtmP)
+    /*
+    ** This Function Allocates Memory For DTM Features
+    */
+    {
+    int  ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
+    //long n,feature,numPartitions,remPartition,numCurPartitions,remCurPartition,partitionNum,partitionOfs,partitionSize ;
+    //BC_DTM_FEATURE *dtmFeatureP=NULL ;
+    /*
+    ** Write Entry Message
+    */
+    if( dbg )
+        {
+        bcdtmWrite_message(0,0,0,"Allocating Memory For Features Array") ;
+        bcdtmWrite_message(0,0,0,"dtmP                       = %p",dtmP) ;
+        bcdtmWrite_message(0,0,0,"dtmP->numFeatures          = %8ld",dtmP->numFeatures) ;
+        bcdtmWrite_message(0,0,0,"dtmP->memFeatures          = %8ld",dtmP->memFeatures) ;
+        bcdtmWrite_message(0,0,0,"dtmP->iniFeatures          = %8ld",dtmP->iniFeatures) ;
+        bcdtmWrite_message(0,0,0,"dtmP->incFeatures          = %8ld",dtmP->incFeatures) ;
+        bcdtmWrite_message(0,0,0,"dtmP->featurePartitionSize = %8ld",dtmP->featurePartitionSize) ;
+        bcdtmWrite_message(0,0,0,"dtmP->numFeaturePartitions = %8ld",dtmP->numFeaturePartitions) ;
+        }
+    /*
+    ** Check For Valid Dtm Object
+    */
+    if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit  ;
+    /*
+    ** Initial Allocation
+    */
+    if( dtmP->memFeatures == 0 )
+        {
+        if (dtmP->iniFeatures == 0)
+            dtmP->iniFeatures = dtmP->incFeatures;
+        if( dbg ) bcdtmWrite_message(0,0,0,"**** Allocating Initial Memory For Features Array") ;
+        if (bcdtmObject_resizeFeaturesMemoryDtmObject(dtmP, dtmP->iniFeatures)) goto errexit;
+        }
+    /*
+    ** Incremental Allocation
+    */
+    else
+        {
+        if (bcdtmObject_resizeFeaturesMemoryDtmObject(dtmP, dtmP->memFeatures + dtmP->incFeatures)) goto errexit;
+        }
+    /*
+    ** Clean Up
+    */
+cleanup :
+    /*
+    ** Job Completed
+    */
+    if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Allocating Memory For Features Array Completed") ;
+    if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Allocating Memory For Features Array Error") ;
+    return(ret) ;
+    /*
+    ** Error Exit
+    */
+errexit :
+    if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
+    goto cleanup ;
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

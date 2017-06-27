@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="..\bsicommon\build\PartFile.xsd" >
+
+    <Part Name="ExternalDependencies">
+        <SubPart PartName="BentleyDll" PartFile="Bentley" Repository="Bentley" />
+    </Part>
+
+    <Part Name="HeaderFiles" BMakeFile="TerrainModelDgnDb.prewire.mke" >
+        <SubPart PartName="Base" PartFile="Bentley" Repository="Bentley" />
+        <SubPart PartName="PublicAPI"  PartFile="geomlibs"                            Repository="GeomLibs" />
+        <Bindings>
+            <PublicAPI Domain="TerrainModel" />
+        </Bindings>
+    </Part>
+
+    <Part Name="Core" BMakeFile="core\coreDgnDb.mke" ApiNumber="G">
+        <SubPart PartName="HeaderFiles"/>
+        <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/$(shlibprefix)TerrainModelCore$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs ProductDirectoryName="TerrainModelNativeCoreLibs" Required="false"> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="Formats" BMakeFile="formats\formatsDgnDb.mke" ApiNumber="G">
+        <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
+        <SubPart PartName="Core" />
+		<SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
+        <SubPart PartName="BeXmlDll"         PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
+        <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
+        <SubPart PartName="ImagePPDll"  PartFile="ImagePP" Repository="ImagePP" />
+        <Bindings>
+            <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies" >Delivery\$(shlibprefix)TerrainModelFormats$(ApiNumber)$(shlibext)</Assemblies>
+            <Libs>Delivery\$(libprefix)TerrainModelFormats$(libext)</Libs>
+        </Bindings>
+    </Part>
+
+    <Part Name="AutomaticGroundDetection" BMakeFile="AutomaticGroundDetection\AutomaticGroundDetectionDgnDb.mke" ApiNumber="G">      
+      <SubPart PartName="Core" />
+      <SubPart PartName="Formats" />      
+      <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />
+      <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
+      <Bindings>
+        <Assemblies ProductDirectoryName="AutomaticGroundDetection" >Delivery\$(shlibprefix)AutomaticGroundDetection$(ApiNumber)$(shlibext)</Assemblies>
+        <Libs>Delivery\$(libprefix)AutomaticGroundDetection$(libext)</Libs>
+      </Bindings>
+    </Part>
+
+</BuildContext>

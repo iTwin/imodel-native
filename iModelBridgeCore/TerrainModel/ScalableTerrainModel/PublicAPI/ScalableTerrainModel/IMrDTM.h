@@ -1,7 +1,7 @@
 /*--------------------------------------------------------------------------------------+
 |
 |
-|   $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|   $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 |
 +--------------------------------------------------------------------------------------*/
@@ -34,7 +34,7 @@ struct Count;
 * Interface implemented by MRDTM engines.
 * @bsiclass                                                     Bentley Systems
 +===============+===============+===============+===============+===============+======*/
-struct IMrDTM abstract:  BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM
+struct IMrDTM abstract:  Bentley::TerrainModel::IDTM
     {
     private:
         
@@ -117,7 +117,7 @@ struct IMrDTM abstract:  BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM
 
 
         BENTLEYSTM_EXPORT const Bentley::GeoCoordinates::BaseGCSPtr&
-                                                 GetBaseGCS() const;
+                                           GetBaseGCS() const;
         BENTLEYSTM_EXPORT StatusInt              SetBaseGCS(const Bentley::GeoCoordinates::BaseGCSPtr& sourceGCS);
 
         BENTLEYSTM_EXPORT const GeoCoords::GCS&  GetGCS() const;

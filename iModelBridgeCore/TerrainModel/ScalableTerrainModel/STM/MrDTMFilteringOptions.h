@@ -6,7 +6,7 @@
 |       $Date: 2011/08/02 14:59:47 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -67,7 +67,7 @@ class MrDTMGlobalFilteringOptions : public MrDTMFilteringOptionsBase
     public:     
                       
         BENTLEYSTM_EXPORT MrDTMGlobalFilteringOptions(RelevanceEvaluationMethod pi_relevanceEvalMethod, 
-                                                uint8_t                     pi_localImportance, 
+                                                UInt8                     pi_localImportance, 
                                                 bool                      pi_filterBoundaryPoints, 
                                                 int                       pi_nbBins, 
                                                 int                       pi_relevanceMinValue, 
@@ -78,7 +78,7 @@ class MrDTMGlobalFilteringOptions : public MrDTMFilteringOptionsBase
         RelevanceEvaluationMethod GetRelevanceEvaluationMethod() const;          
 
         //MST : Local importance value should be typedef.
-        uint8_t                     GetLocalImportance() const;          
+        UInt8                     GetLocalImportance() const;          
 
         bool                      GetFilterBoundaryPoints() const;          
 
@@ -89,7 +89,7 @@ class MrDTMGlobalFilteringOptions : public MrDTMFilteringOptionsBase
         
     private : 
         
-        uint8_t                     m_localImportance;
+        UInt8                     m_localImportance;
         bool                      m_filterBoundaryPoints;
         int                       m_nbBins; 
         int                       m_relevanceMinValue;

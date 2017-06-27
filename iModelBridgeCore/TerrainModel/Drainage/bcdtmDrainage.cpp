@@ -2,12 +2,15 @@
 |
 |     $Source: Drainage/bcdtmDrainage.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 //
 
 #include "bcdtmDrainage.h"
+
+BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -17,7 +20,7 @@ DTMDrainageTables* dtmDrainageTablesP = nullptr;
 
 DTMStatusInt BcDTMDrainage::CreateDrainageTables
     (
-    TerrainModel::BcDTMP   dtm,
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP   dtm,
     DTMDrainageTables*&     dtmDrainageTablesPP 
     ) 
     {
@@ -66,7 +69,7 @@ DTMStatusInt BcDTMDrainage::CreateDrainageTables
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::DeterminePonds
     (
-    TerrainModel::BcDTMP dtm,
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP dtm,
     DTMDrainageTables*     dtmDrainageTablesP,
     DTMFeatureCallback     callBackFunctionP,
     void*                  userP
@@ -95,7 +98,7 @@ DTMStatusInt BcDTMDrainage::DeterminePonds
 
 DTMStatusInt BcDTMDrainage::TraceMaximumDescent
     (
-    TerrainModel::BcDTMP   dtm,
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP   dtm,
     DTMDrainageTables*       dtmDrainageTablesP, 
     double                   minDepth, 
     double                   x, 
@@ -112,10 +115,6 @@ DTMStatusInt BcDTMDrainage::TraceMaximumDescent
         bcdtmWrite_message(1,0,0, "DTM is Read Only");
         return DTM_ERROR;
         }
-
-    // Create Drainage Class
-
-    DTMDrainage  dtmDrainage ;
 
     // Convert Trace Start Point
 
@@ -147,7 +146,7 @@ DTMStatusInt BcDTMDrainage::TraceMaximumDescent
 
 DTMStatusInt BcDTMDrainage::TraceMaximumAscent
     (
-    TerrainModel::BcDTMP  dtm,
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP  dtm,
     DTMDrainageTables*      dtmDrainageTablesP,
     double                  minDepth, 
     double                  x, 
@@ -222,7 +221,7 @@ DTMStatusInt bcdtmDrainage_calculatePondCallBack
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::CalculatePondForPoint
     (
-    TerrainModel::BcDTMP dtm,
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP dtm,
     double                 x, 
     double                 y, 
     double                 minDepth, 
@@ -278,7 +277,7 @@ DTMStatusInt BcDTMDrainage::CalculatePondForPoint
 
 DTMStatusInt BcDTMDrainage::TraceCatchmentForPoint
     (
-    TerrainModel::BcDTMP  dtm,
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP  dtm,
     DPoint3d   tracePoint,
     double     maxPondDepth, 
     bool&      catchmentDetermined,
@@ -335,7 +334,7 @@ DTMStatusInt BcDTMDrainage::TraceCatchmentForPoint
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::CreateDepressionDtm
     (
-    TerrainModel::BcDTMP dtmP,               // ==> Pointer to Dtm object     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP dtmP,               // ==> Pointer to Dtm object     
     BC_DTM_OBJ*&          depressionDtmP,     // <== Depression Dtm    
     DTMFeatureCallback    loadFunctionP,      // <== Call Back Function For Check Stop Purposes
     void*                 userP               // <== Pointer To User Argument For Check Stop Purposes
@@ -351,7 +350,7 @@ DTMStatusInt BcDTMDrainage::CreateDepressionDtm
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::CreateAndCheckDrainageTables
     (
-    TerrainModel::BcDTMP dtmP               // ==> Pointer to Dtm object     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP dtmP               // ==> Pointer to Dtm object     
     )
     {
     return (DTMStatusInt)bcdtmTables_createAndCheckDrainageTablesDtmObject (dtmP->GetTinHandle()) ;
@@ -364,9 +363,9 @@ DTMStatusInt BcDTMDrainage::CreateAndCheckDrainageTables
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::ReturnLowPoints
     (
-    TerrainModel::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
     DTMFeatureCallback                   loadFunctionP,     // ==> Call Back Function 
-    TerrainModel::DTMFenceParamsCR  fence,             // ==> Fence Parameters
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR  fence,             // ==> Fence Parameters
     void*                                userP              // <==> Pointer To User Call Back Function
     )
     {
@@ -400,10 +399,10 @@ DTMStatusInt BcDTMDrainage::ReturnLowPoints
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::ReturnNoneFalseLowPoints
     (
-    TerrainModel::BcDTMP                dtmP,              // ==> Pointer to Dtm object   
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP                dtmP,              // ==> Pointer to Dtm object   
     double                               falseLowDepth,     // ==> Depth Must Be greater To return As a Low Point  
     DTMFeatureCallback                   loadFunctionP,     // ==> Call Back Function 
-    TerrainModel::DTMFenceParamsCR  fence,             // ==> Fence Parameters
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR  fence,             // ==> Fence Parameters
     void*                                userP              // <==> Pointer To User Call Back Function
     )
     {
@@ -437,9 +436,9 @@ DTMStatusInt BcDTMDrainage::ReturnNoneFalseLowPoints
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::ReturnHighPoints
     (
-    TerrainModel::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
     DTMFeatureCallback                   loadFunctionP,     // ==> Call Back Function 
-    TerrainModel::DTMFenceParamsCR  fence,             // ==> Fence Parameters
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR  fence,             // ==> Fence Parameters
     void*                                userP              // <==> Pointer To User Call Back Function
     )
     {
@@ -474,9 +473,9 @@ DTMStatusInt BcDTMDrainage::ReturnHighPoints
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::ReturnSumpLines
     (
-    TerrainModel::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
     DTMFeatureCallback                   loadFunctionP,     // ==> Call Back Function 
-    TerrainModel::DTMFenceParamsCR  fence,             // ==> Fence Parameters
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR  fence,             // ==> Fence Parameters
     void*                                userP              // <==> Pointer To User Call Back Function
     )
     {
@@ -510,9 +509,9 @@ DTMStatusInt BcDTMDrainage::ReturnSumpLines
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::ReturnZeroSlopeSumpLines
     (
-    TerrainModel::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
     DTMFeatureCallback                   loadFunctionP,     // ==> Call Back Function 
-    TerrainModel::DTMFenceParamsCR  fence,             // ==> Fence Parameters
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR  fence,             // ==> Fence Parameters
     void*                                userP              // <==> Pointer To User Call Back Function
     )
     {
@@ -546,9 +545,9 @@ DTMStatusInt BcDTMDrainage::ReturnZeroSlopeSumpLines
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::ReturnRidgeLines
     (
-    TerrainModel::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
     DTMFeatureCallback                   loadFunctionP,     // ==> Call Back Function 
-    TerrainModel::DTMFenceParamsCR  fence,             // ==> Fence Parameters
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR  fence,             // ==> Fence Parameters
     void*                                userP              // <==> Pointer To User Call Back Function
     )
     {
@@ -582,9 +581,9 @@ DTMStatusInt BcDTMDrainage::ReturnRidgeLines
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::ReturnZeroSlopePolygons
     (
-    TerrainModel::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP                dtmP,              // ==> Pointer to Dtm object     
     DTMFeatureCallback                   loadFunctionP,     // ==> Call Back Function 
-    TerrainModel::DTMFenceParamsCR  fence,             // ==> Fence Parameters
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR  fence,             // ==> Fence Parameters
     void*                                userP              // <==> Pointer To User Call Back Function
     )
     {
@@ -618,8 +617,8 @@ DTMStatusInt BcDTMDrainage::ReturnZeroSlopePolygons
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::CreateRefinedDrainageDtm
     (
-    TerrainModel::BcDTMP                dtmP,              // ==> Pointer to Dtm     
-    TerrainModel::DTMFenceParamsCR  fence,             // ==> Fence Parameters
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP                dtmP,              // ==> Pointer to Dtm     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR  fence,             // ==> Fence Parameters
     BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr*              refinedDtmP        // <== Pointer To Refined DTM 
     )
     {
@@ -687,12 +686,12 @@ DTMStatusInt BcDTMDrainage::CreateRefinedDrainageDtm
 +-------------------------------------------------------------------*/
 DTMStatusInt BcDTMDrainage::ReturnCatchments
     (
-    TerrainModel::BcDTMP                dtmP,     // ==> Pointer to Dtm     
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::BcDTMP                dtmP,     // ==> Pointer to Dtm     
     class DTMDrainageTables*             drainageTablesP,   // ==> Pointer To Drainage Tables                  
     double                               falseLowDepth,     // ==> Downstrean Trace Will Flow Out Of Ponds Less Than this Depth
     bool                                 refineOption,      // ==> If True Refine TM For Catchment Delineation 
     DTMFeatureCallback                   loadFunctionP,     // ==> Call Back Function 
-    TerrainModel::DTMFenceParamsCR  fence,             // ==> Fence Parameters
+    BENTLEYTERRAINMODEL_NAMESPACE_NAME::DTMFenceParamsCR  fence,             // ==> Fence Parameters
     void*                                userP              // <==> Pointer To User Call Back Function
     )
     {
@@ -727,3 +726,39 @@ DTMStatusInt BcDTMDrainage::ReturnCatchments
     return  ( DTMStatusInt ) bcdtmDrainage_traceCatchmentsDtmObject(dtmP->GetTinHandle(),loadFunctionP,drainageTablesP,falseLowDepth,refineOption,useFence,fenceType,fenceOption,fencePtsP,numFencePts,userP,numCatchments) ;
     
     }
+
+DTMPondResult DtmPondDesignCriteria::CreatePond(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& dtm)
+    {
+    dtm = TerrainModel::BcDTM::Create ();
+
+    if (bcdtmDrainage_designPondToATargetVolumeOrElevationDtmObject(
+        dtm->GetTinHandle(),
+        result,
+        &pondElevation,
+        &pondVolume,
+        points.data(),
+        (long)points.size(),
+        designMethod,
+        pondTarget,
+        target,
+        target,
+        sideSlope,
+        freeBoard,
+        isBerm,
+        bermSlope,
+        bermWidth,
+        isCrown,
+        crownWidth,
+        cornerStrokeTolerance,
+        isBermFillOnly,
+        fillTinP == nullptr ? nullptr : fillTinP->GetTinHandle(),
+        fillSlope) != DTM_SUCCESS)
+        {
+        dtm = nullptr;
+        return DTMPondResult::UnknownError;
+        }
+    return result;
+
+    }
+
+END_BENTLEY_TERRAINMODEL_NAMESPACE

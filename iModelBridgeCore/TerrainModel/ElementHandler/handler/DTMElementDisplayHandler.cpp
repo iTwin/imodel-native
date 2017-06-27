@@ -2,7 +2,7 @@
 |
 |     $Source: ElementHandler/handler/DTMElementDisplayHandler.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "StdAfx.h"
@@ -359,15 +359,26 @@ struct HitPathLazyDTMDrawingInfoProvider : public LazyDTMDrawingInfoProvider
 // @bsiclass                                                   Piotr.Slowinski 05/11
 //=======================================================================================
 class DTMAnnotationHandler : public IAnnotationHandler
-{
-public: static DTMAnnotationHandler s_singleton;
-private: bool _GetAnnotationScale ( double *scale, ElementHandleCR element ) const override
     {
-    if ( scale )
-        *scale = dgnModel_getEffectiveAnnotationScale (element.GetModelRef ()->GetDgnModelP () );
-    return true;
-    }
-}; // End DTMAnnotationHandler class
+    public: static DTMAnnotationHandler s_singleton;
+    private: bool _GetAnnotationScale(double *scale, ElementHandleCR element) const override
+        {
+        if (scale)
+            *scale = dgnModel_getEffectiveAnnotationScale(element.GetModelRef()->GetDgnModelP());
+        return true;
+        }
+
+    /*---------------------------------------------------------------------------------------
+    * @bsimethod                                    Daryl.Holmwood                  01/2017
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    virtual StatusInt  _ComputeAnnotationScaledRange(ElementHandleCR eh, DRange3dR drange, double rescale) override
+        {
+        if (!GetAnnotationScale(NULL, eh))
+            return ERROR;
+        DataConvert::ScanRangeToDRange3d(drange, eh.GetElementCP()->hdr.dhdr.range);
+        return SUCCESS;
+        }
+    }; // End DTMAnnotationHandler class
 
 DTMAnnotationHandler DTMAnnotationHandler::s_singleton;
 
@@ -1133,7 +1144,7 @@ void DTMElementDisplayHandler::_Draw (ElementHandleCR element, ViewContextR cont
         ElementHandle original = element;
 
         DTMDrawingInfo info;
-        bool forceTriangleDraw = purpose == DrawPurpose::CutXGraphicsCreate || purpose == DrawPurpose::Measure || purpose == DrawPurpose::VisibilityCalculation || purpose == DrawPurpose::ComputeModelRefRange;
+        bool forceTriangleDraw = purpose == DrawPurpose::CutXGraphicsCreate || purpose == DrawPurpose::Measure || purpose == DrawPurpose::ModelFacet || purpose == DrawPurpose::VisibilityCalculation || purpose == DrawPurpose::ComputeModelRefRange;
 
         GetDTMDrawingInfo (info, element, DTMDataRef.get(), &context);
 
@@ -1501,6 +1512,8 @@ StatusInt DTMElementDisplayHandler::_DrawCut (ElementHandleCR thisElm, ICutPlane
                             return ERROR;
                             }
                         }
+                    else
+                        return ERROR;
                     }
                 else
                     return ERROR;

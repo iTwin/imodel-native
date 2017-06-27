@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* portable.h                                                                 */
@@ -84,7 +84,6 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/BeFilename.h>
-#include <BeSQLite/BeSQLite.h>
 
 using namespace BENTLEY_NAMESPACE_NAME;
 
@@ -255,10 +254,12 @@ template <class A> class CArray : public bvector<A>
 class CPtrArray :public CArray<void*>
     { };
 
+#ifdef BUILDTMFORDGNDB
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    sam.wilson                      06/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BeGetUserName (WStringR s);
+#endif
 
 #define _tcscpy wcscpy
 #define _T(a) L a
@@ -368,4 +369,4 @@ inline double mdlVec_distance (DPoint3d* v1, DPoint3d* v2)
     return v1->Distance (*v2);
     }
 
-typedef BENTLEY_NAMESPACE_NAME::BeSQLite::BeGuid BeGuid;
+#include "inroadsGuid.h"

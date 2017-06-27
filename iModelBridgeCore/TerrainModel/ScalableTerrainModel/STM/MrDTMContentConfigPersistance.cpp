@@ -6,7 +6,7 @@
 |       $Date: 2012/02/16 22:19:31 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableTerrainModelPCH.h>
@@ -61,6 +61,7 @@ enum ConfigComponentSerializationID
     CCSID_GCS_ExtendedV2, 
     CCSID_GCS_ExtendedV1,
     CCSID_GCS_LocalAdjustment,        
+    CCSID_GCS_ExtendedV3,
     CCSID_QTY,
     };
 
@@ -188,7 +189,7 @@ bool                                OutputType                 (BinaryOStream&  
     assert(0 < orgGroup.GetTypeSize());
     //assert(orgGroup.IsComplete());
 
-    const uint32_t orgCountField = static_cast<uint32_t>(orgGroup.GetSize());
+    const UInt32 orgCountField = static_cast<UInt32>(orgGroup.GetSize());
     if (!WriteValue(stream, orgCountField))
         return false;
 
@@ -196,7 +197,7 @@ bool                                OutputType                 (BinaryOStream&  
          orgIt != orgsEnd;
          ++orgIt)
         {
-        const uint32_t dimensionCountField = static_cast<uint32_t>(orgIt->GetSize());
+        const UInt32 dimensionCountField = static_cast<UInt32>(orgIt->GetSize());
         if (!WriteValue(stream, dimensionCountField))
             return false;
 
@@ -240,7 +241,7 @@ bool                                OutputGCS                  (BinaryOStream&  
 bool                                OutputLayer                (BinaryOStream&                              stream,
                                                                 UInt                                        layer)
     {
-    const uint32_t layerField = layer;
+    const UInt32 layerField = layer;
     return WriteValue(stream, layerField);
     }
 
@@ -272,7 +273,7 @@ private:
                                                                             BinaryOStream&                      stream) const override
         {
         const GCS& gcs = component.GetGCS();
-        uint32_t flagsField(0);
+        UInt32 flagsField(0);
             
         SetBitsTo(flagsField, 0x1, component.IsPrependedToExistingLocalTransform());
         SetBitsTo(flagsField, 0x2, component.IsExistingPreservedIfGeoreferenced());
@@ -293,6 +294,32 @@ public:
     } s_GCSExtendedConfigComponentSerializer;
 
 
+struct GCSExtendedConfigComponentSerializer2 : public ComponentSerializerMixinBase<GCSExtendedConfig>
+    {
+private:
+    virtual bool                _Serialize(const GCSExtendedConfig&            component,
+        BinaryOStream&                      stream) const override
+        {
+        const GCS& gcs = component.GetGCS();
+        UInt32 flagsField(0);
+
+        SetBitsTo(flagsField, 0x1, component.IsPrependedToExistingLocalTransform());
+        SetBitsTo(flagsField, 0x2, component.IsExistingPreservedIfGeoreferenced());
+        SetBitsTo(flagsField, 0x4, component.IsExistingPreservedIfLocalCS());
+
+        return OutputCommandID(stream, GetSerializationID()) &&
+            OutputGCS(stream, gcs) &&
+            WriteValue(stream, flagsField) && WriteStringW(stream, gcs.GetVerticalUnit().GetNameCStr()) && WriteValue(stream, gcs.GetVerticalUnit().GetRatioToBase());
+        }
+
+public:
+
+    virtual                     ConfigComponentSerializationID GetSerializationID() const override
+        {
+        return CCSID_GCS_ExtendedV3;
+        }
+
+    } s_GCSExtendedConfigComponentSerializer2;
 
 const struct GCSLocalAdjustmentConfigComponentSerializer : public ComponentSerializerMixinBase<GCSLocalAdjustmentConfig>
     {
@@ -370,7 +397,15 @@ class LayerCfgVisitor : public ILayerConfigVisitor
 
     virtual void                    _Visit                     (const GCSExtendedConfig&                config) override
         {
-        m_commands.push_back(SerializeCommand(s_GCSExtendedConfigComponentSerializer, config));
+        const GCS& gcs = config.GetGCS();
+
+        // Use the old Serializer if the horizontal and vertical unit are the same.  We do that because we want V8i to be able to open
+        // the source of a STM generated in Vancouver when the user didn't change the vertical unit since in V8i the vertical unit was
+        // equal to the horizontal unit
+        if (gcs.GetHorizontalUnit().IsEquivalent(gcs.GetVerticalUnit()))
+            m_commands.push_back(SerializeCommand(s_GCSExtendedConfigComponentSerializer, config));
+        else
+            m_commands.push_back(SerializeCommand(s_GCSExtendedConfigComponentSerializer2, config));
         }
 
     virtual void                    _Visit                     (const TypeConfig&                       config) override
@@ -418,7 +453,15 @@ class ContentCfgVisitor : public IContentConfigVisitor
 
    virtual void                    _Visit                     (const GCSExtendedConfig&                     config) override
         {
-        m_commands.push_back(SerializeCommand(s_GCSExtendedConfigComponentSerializer, config));
+        const GCS& gcs = config.GetGCS();
+
+        // Use the old Serializer if the horizontal and vertical unit are the same.  We do that because we want V8i to be able to open
+        // the source of a STM generated in Vancouver when the user didn't change the vertical unit since in V8i the vertical unit was
+        // equal to the horizontal unit
+        if (gcs.GetHorizontalUnit().IsEquivalent(gcs.GetVerticalUnit()))
+            m_commands.push_back(SerializeCommand(s_GCSExtendedConfigComponentSerializer, config));
+        else
+            m_commands.push_back(SerializeCommand(s_GCSExtendedConfigComponentSerializer2, config));
         }
 
     virtual void                    _Visit                     (const TypeConfig&                           config) override
@@ -462,7 +505,7 @@ bool                                GenericSerialize           (const SerializeC
         bool operator () (const SerializeCommand& command) { return !command.Run(m_stream); }
         };
 
-    const uint32_t componentCountField = (uint32_t)serializeCommands.size();
+    const UInt32 componentCountField = (UInt32)serializeCommands.size();
 
     return WriteValue(stream, componentCountField) &&
            (serializeCommands.end() == find_if(serializeCommands.begin(), serializeCommands.end(), RunCommand(stream))) && 
@@ -557,7 +600,7 @@ protected:
 
     static UInt                 LoadLayer                  (BinaryIStream&      stream)
         {
-        uint32_t layerField = INVALID_LAYER;
+        UInt32 layerField = INVALID_LAYER;
         ReadValue(stream, layerField);
         return layerField;
         }
@@ -690,7 +733,7 @@ const struct GCSExtendedConfigCreatorV2 : public ComponentCreator
         if (!ReadStringW(stream, gcsWKT))
             return 0;
         
-        uint32_t flagsField;
+        UInt32 flagsField;
         if (!ReadValue(stream, flagsField))
             return 0;
                            
@@ -722,6 +765,59 @@ const struct GCSExtendedConfigCreatorV2 : public ComponentCreator
 
 
 /*---------------------------------------------------------------------------------**//**
+* @description
+* @bsiclass                                                  Raymond.Gauthier   07/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+const struct GCSExtendedConfigCreatorV3 : public ComponentCreator
+    {
+    virtual Component*          _Create(BinaryIStream&      stream) const override
+        {
+        WString gcsWKT;
+        if (!ReadStringW(stream, gcsWKT))
+            return 0;
+
+        UInt32 flagsField;
+        if (!ReadValue(stream, flagsField))
+            return 0;
+
+        IDTMFile::WktFlavor fileWktFlavor = GetWKTFlavor(&gcsWKT, gcsWKT);
+
+        Bentley::GeoCoordinates::BaseGCS::WktFlavor baseGcsWktFlavor;
+
+        bool result = MapWktFlavorEnum(baseGcsWktFlavor, fileWktFlavor);
+        assert(result == true);
+
+        GCS gcs(GCS::GetNull());
+
+        GCSFactory::Status gcsFromWKTStatus = GCSFactory::S_SUCCESS;
+        gcs = GetGCSFactory().Create(gcsWKT.c_str(), baseGcsWktFlavor, gcsFromWKTStatus);
+
+        if (GCSFactory::S_SUCCESS != gcsFromWKTStatus)
+            return 0;
+
+        WString verticalUnitName;
+        if (!ReadStringW(stream, verticalUnitName))
+            return 0;
+
+        double ratioToMeter;
+        if (!ReadValue(stream, ratioToMeter))
+            return 0;
+
+        Unit vertUnit(Unit::CreateLinearFrom(verticalUnitName.c_str(), ratioToMeter));
+        gcs.SetVerticalUnit(vertUnit);
+
+        auto_ptr<GCSExtendedConfig> configP(new GCSExtendedConfig(gcs));
+
+        configP->
+            PrependToExistingLocalTransform(HasBitsOn(flagsField, 0x1)).
+            PreserveExistingIfGeoreferenced(HasBitsOn(flagsField, 0x2)).
+            PreserveExistingIfLocalCS(HasBitsOn(flagsField, 0x4));
+
+        return configP.release();
+        }
+    } s_GCSExtendedConfigCreatorV3;
+
+/*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   09/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -749,21 +845,21 @@ const struct TypeConfigCreator : ComponentCreator
             return 0;
 
         // Load type
-        uint32_t orgCountField = 0;
+        UInt32 orgCountField = 0;
         if (!ReadValue(stream, orgCountField) || 0 == orgCountField)
             return 0;
 
         DimensionOrgGroup orgGroup(orgCountField);
 
-        for (uint32_t orgIdx = 0; orgIdx < orgCountField; ++orgIdx)
+        for (UInt32 orgIdx = 0; orgIdx < orgCountField; ++orgIdx)
             {
-            uint32_t dimensionCountField = 0;
+            UInt32 dimensionCountField = 0;
             if (!ReadValue(stream, dimensionCountField) || 0 == dimensionCountField)
                 return 0;
 
             DimensionOrg org(dimensionCountField);
 
-            for (uint32_t dimIdx = 0; dimIdx < dimensionCountField; ++dimIdx)
+            for (UInt32 dimIdx = 0; dimIdx < dimensionCountField; ++dimIdx)
                 {
                 const UInt dimensionTypeField = stream.get();
                 const UInt dimensionRoleField = stream.get();
@@ -831,6 +927,7 @@ const ComponentFactory::CreatorItem* ComponentFactory::GetCreatorIndex ()
         &s_GCSExtendedConfigCreatorV2,
         &s_GCSExtendedConfigCreatorV1,
         &s_GCSLocalAdjustmentConfigCreator,
+        &s_GCSExtendedConfigCreatorV3,
         };
     
     static_assert(CCSID_QTY == sizeof(CREATORS_INDEX)/sizeof(CREATORS_INDEX[0]), "");
@@ -872,13 +969,13 @@ template <typename ConfigT>
 bool                                GenericDeserialize         (BinaryIStream&                  stream,
                                                                 ConfigT&                        config)
     {
-    uint32_t componentCountField = 0;
+    UInt32 componentCountField = 0;
     if (!ReadValue(stream, componentCountField))
         return false;
 
     static const ComponentFactory COMPONENT_FACTORY;
     
-    for (uint32_t i = 0; i < componentCountField; ++i)
+    for (UInt32 i = 0; i < componentCountField; ++i)
         {
         bool isNewerSerializationID;
 

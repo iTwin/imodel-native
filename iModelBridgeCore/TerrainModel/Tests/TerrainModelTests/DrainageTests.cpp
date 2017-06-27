@@ -2,16 +2,19 @@
 |
 |     $Source: Tests/TerrainModelTests/DrainageTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma warning(disable:4505) // unreferenced local function has been removed [in gtest-port.h]
 
 #include "stdafx.h"
+#include <TerrainModel/Drainage/Drainage.h>
+USING_NAMESPACE_BENTLEY
+USING_NAMESPACE_BENTLEY_TERRAINMODEL
 
 TEST (TmTest, Triangulate)
     {
-    Bentley::TerrainModel::BcDTMPtr dtm = Bentley::TerrainModel::BcDTM::Create ();
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm = Bentley::TerrainModel::BcDTM::Create ();
 
     DPoint3d pts[4];
 
@@ -246,7 +249,7 @@ errexit:
 
 TEST (TmTest, LoadDTM)
     {
-    Bentley::TerrainModel::BcDTMPtr dtm = TMHelpers::LoadTerrainModel (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.Light.NUnit.dll\\groupSpot.tin");
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm = TMHelpers::LoadTerrainModel (L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.Light.NUnit.dll\\groupSpot.tin");
     ASSERT_TRUE(dtm.IsValid());
     ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
     DoPondTest (*dtm);
@@ -258,7 +261,7 @@ TEST (TmTest, LoadDTM)
 TEST (TmTest, DeterminePonds)
     {
     WString fullFilePath = TMHelpers::GetTestDataPath(L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.NUnit.dll\\DTMDrainageTests\\DTMDrainageCatchmentTests\\mine.dtm");
-    Bentley::TerrainModel::BcDTMPtr dtm = Bentley::TerrainModel::BcDTM::CreateFromTinFile(fullFilePath.c_str());
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm = Bentley::TerrainModel::BcDTM::CreateFromTinFile(fullFilePath.c_str());
     ASSERT_TRUE (dtm.IsValid ());
     ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
 
@@ -268,7 +271,7 @@ TEST (TmTest, DeterminePonds)
 
 TEST (TmTest, CreateFromXyz)
     {
-    Bentley::TerrainModel::BcDTMPtr dtm = TMHelpers::LoadTerrainModel(L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.NUnit.dll\\DTMTriangulationTest\\DTMTriangulationXyzTest\\1M.xyz");
+    BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr dtm = TMHelpers::LoadTerrainModel(L"Data\\TerrainModelNet\\Bentley.Civil.Dtm.NUnit.dll\\DTMTriangulationTest\\DTMTriangulationXyzTest\\1M.xyz");
     ASSERT_TRUE(dtm.IsValid());
     ASSERT_TRUE (dtm->Triangulate () == SUCCESS);
     DoPondTest (*dtm);

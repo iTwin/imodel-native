@@ -1,5 +1,5 @@
 //---------------------------------------------------------------------------+
-// $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+// $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //---------------------------------------------------------------------------+
 /*----------------------------------------------------------------------------*/
 /* dtmedtfnc.h                                           aec    08-Feb-1994   */
@@ -63,7 +63,7 @@ int aecDTM_addPointsCheck   /*  <= TRUE if error                   */
 
 int aecDTM_addFeature /* <= TRUE if error                  */
 (
-  BeSQLite::BeGuid *guidP,                          /*<=  guid of created feature         */
+  InroadsGuid *guidP,                          /*<=  guid of created feature         */
   struct CIVdtmsrf *srfP,               /* => surface to add feature to       */
   long opt,                             /* => DTM_C_APPEND, etc.              */
   wchar_t *name,                        /* => name of feature                 */
@@ -177,7 +177,7 @@ int aecDTM_getPointNeighbors /* <= TRUE if error                   */
 int aecDTM_deleteFeatureByGUID /* <= TRUE if error                 */
 (
   struct CIVdtmsrf *srfP,              /*  => surface with feature (or NULL)  */
-  BeSQLite::BeGuid *guidP                          /*  => guid of feature to delete       */
+  InroadsGuid *guidP                          /*  => guid of feature to delete       */
 );
 
 int aecDTM_deleteFeature /* <= TRUE if error                         */
