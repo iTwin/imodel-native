@@ -488,7 +488,15 @@
         <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        
+        <!-- WIP to silence build warnings. -->
+        <Directories DirectoryListName="WSClient-Tests-Dirs"/>
     </Product>
+
+    <!-- WIP to silence build warnings. -->
+    <ProductDirectoryList ListName="WSClient-Tests-Dirs">
+        <ProductDirectory Name="Gtest-NativeAssemblies" Deliver="false"/>
+    </ProductDirectoryList>
 
     <Part Name="Gtest" DeferType="BuildUnitTests" 
         BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" 
@@ -694,7 +702,10 @@
         <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
         <ProductDirectory Name="WSClientAssemblies"                 Path=""/>
         <ProductDirectory Name="WSClientCompatibilityTests"         Path=""/>
-
+        
+        <!-- WIP to silence build warnings. -->
+        <ProductDirectory Name="WSClientTestAssets" Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList" Deliver="false"/>
     </ProductDirectoryList>
 
     <Part Name="WSClientCompatibilityTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x64" >
