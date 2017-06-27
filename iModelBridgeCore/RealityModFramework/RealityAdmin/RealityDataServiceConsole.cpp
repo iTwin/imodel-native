@@ -161,6 +161,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::ChoiceIndex, &RealityDataConsole::DummyFunction);
     m_functionMap.Insert(Command::ChoiceValue, &RealityDataConsole::DummyFunction);
     m_functionMap.Insert(Command::Dummy, &RealityDataConsole::DummyFunction);
+    m_functionMap.Insert(Command::Cancel, &RealityDataConsole::DummyFunction);
 
     m_realityDataProperties = bvector<Utf8String>();
     //m_realityDataProperties.push_back("Id");
@@ -1223,10 +1224,10 @@ void RealityDataConsole::ChangeProps()
     std::string str;
     Utf8String propertyString = "";
     Utf8String value;
-    while (input != "-Finish-")
+    while (!input.Equals("-Finish-"))
         {
         Choice(m_realityDataProperties, input);
-        if (input == "-Finish-")
+        if (input.Equals("-Finish-"))
             break;
         else
             {
@@ -1237,19 +1238,22 @@ void RealityDataConsole::ChangeProps()
                 propertyString.append(",");
 
             value = Utf8String(str.c_str()).Trim();
-            if (input == "Listable")
+            if (input.Equals("Listable") || input.Equals("Streamed"))
                 {
                 if (value.EqualsI("false")) // a little cumbersome but forces proper format of boolean values
-                    propertyString.append("\"Listable\" : false");
+                    propertyString.append(Utf8PrintfString("\"%s\" : false", input));
                 else if (value.EqualsI("true"))
-                    propertyString.append("\"Listable\" : true");
+                    propertyString.append(Utf8PrintfString("\"%s\" : true", input));
                 else
-                    DisplayInfo("Listable is boolean. Value must be true or false\n", DisplayOption::Error);
+                    DisplayInfo(Utf8PrintfString("%s is boolean. Value must be true or false\n", input), DisplayOption::Error);
                 }
             else
                 propertyString.append(Utf8PrintfString("\"%s\" : \"%s\"", input, value));
             }
         }
+
+    if(propertyString.empty())
+        return Details();
 
     RealityDataChangeRequest changeReq = RealityDataChangeRequest(m_currentNode->node.GetRootId(), propertyString);
 
