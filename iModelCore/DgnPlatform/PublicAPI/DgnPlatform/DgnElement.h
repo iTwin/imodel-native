@@ -41,6 +41,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
+    struct DriverBundle;
     struct Definition; struct PhysicalType; struct GraphicalType2d; struct SpatialLocationType; struct TemplateRecipe2d; struct TemplateRecipe3d;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct InformationRecordPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
@@ -2704,6 +2705,19 @@ struct EXPORT_VTABLE_ATTRIBUTE InformationRecordElement : InformationContentElem
 
 protected:
     explicit InformationRecordElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
+//! Element used in conjunction with bis:ElementDrivesElement relationships to bundle multiple inputs before driving the output element.
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DriverBundleElement : InformationContentElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DriverBundleElement, InformationContentElement);
+    friend struct dgn_ElementHandler::DriverBundle;
+
+protected:
+    explicit DriverBundleElement(CreateParams const& params) : T_Super(params) {}
 };
 
 //=======================================================================================

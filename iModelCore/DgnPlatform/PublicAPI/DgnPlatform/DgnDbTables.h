@@ -46,6 +46,7 @@
 #define BIS_CLASS_DrawingCategory           "DrawingCategory"
 #define BIS_CLASS_DrawingGraphic            "DrawingGraphic"
 #define BIS_CLASS_DrawingModel              "DrawingModel"
+#define BIS_CLASS_DriverBundleElement       "DriverBundleElement"
 #define BIS_CLASS_Element                   "Element"
 #define BIS_CLASS_ElementAspect             "ElementAspect"
 #define BIS_CLASS_ElementMultiAspect        "ElementMultiAspect"

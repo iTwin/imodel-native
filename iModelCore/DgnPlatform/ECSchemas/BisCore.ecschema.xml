@@ -480,6 +480,17 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
+    <ECEntityClass typeName="DriverBundleElement" modifier="Abstract" displayLabel="Driver Bundle Element" description="Element used in conjunction with bis:ElementDrivesElement relationships to bundle multiple inputs before driving the output element.">
+        <BaseClass>InformationContentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+            <ShareColumns xmlns="ECDbMap.2.0">
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
     <ECEntityClass typeName="InformationRecordElement" modifier="Abstract" displayLabel="Information Record Element" description="Information Record Element is an abstract base class for modeling information records. Information Record Element is the default choice if no other subclass of Information Content Element makes sense.">
         <BaseClass>InformationContentElement</BaseClass>
         <ECCustomAttributes>
