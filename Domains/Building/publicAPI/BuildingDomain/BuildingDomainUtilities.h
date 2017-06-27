@@ -38,10 +38,11 @@ namespace BuildingDomain
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildTypeDefinitionModelCode      (Utf8StringCR modelCodeName);
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildDynamicSchemaName            (Utf8StringCR modelCodeName);
 		BUILDING_DOMAIN_EXPORT static BentleyStatus                                    RegisterDomainHandlers            ();
-		BUILDING_DOMAIN_EXPORT static BentleyStatus                                    CreateBuildingModels              (Utf8StringCR modelCodeName, Dgn::DgnDbPtr db, Dgn::SubjectCPtr parentSubject = nullptr, bool createDynamicSchema = true, ECN::ECSchemaPtr suppliedDynamicSchema = nullptr);
-		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelCPtr      GetBuildingPhyicalModel           (Utf8StringCR modelCodeName, Dgn::DgnDbPtr db);
-		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr       CreateBuildingPhyicalModel        (Utf8StringCR modelCodeName, Dgn::DgnDbPtr db, Dgn::SubjectCPtr parentSubject = nullptr);
-		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingTypeDefinitionModelPtr CreateBuildingTypeDefinitionModel (Utf8StringCR modelCodeName, Dgn::DgnDbPtr db);
+		BUILDING_DOMAIN_EXPORT static BentleyStatus                                    CreateBuildingModels              (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr, bool createDynamicSchema = true, ECN::ECSchemaPtr suppliedDynamicSchema = nullptr);
+		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr      GetBuildingPhyicalModel           (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+        BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingTypeDefinitionModelPtr GetBuildingTypeDefinitionModel    (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr       CreateBuildingPhyicalModel        (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingTypeDefinitionModelPtr CreateBuildingTypeDefinitionModel (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaCP                                  CreateBuildingDynamicSchema       (Utf8StringCR modelCodeName, BuildingPhysical::BuildingPhysicalModelPtr model);
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaCP                                  GetBuildingDynamicSchema          (BuildingPhysical::BuildingPhysicalModelCPtr model);
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       GetSchemaNameFromModel            (BuildingPhysical::BuildingPhysicalModelCPtr model);

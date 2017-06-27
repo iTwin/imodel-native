@@ -39,12 +39,12 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	BuildingPhysical::BuildingPhysicalModelPtr BuildingDomainUtilities::CreateBuildingPhyicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbPtr db, Dgn::SubjectCPtr parentSubject)
+	BuildingPhysical::BuildingPhysicalModelPtr BuildingDomainUtilities::CreateBuildingPhyicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
 		{
 
 		if (!parentSubject.IsValid())
 			{
-			parentSubject = db->Elements().GetRootSubject();
+			parentSubject = db.Elements().GetRootSubject();
 			}
 
 		// Create the partition and the BuildingPhysicalModel.
@@ -100,13 +100,14 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	BuildingPhysical::BuildingTypeDefinitionModelPtr BuildingDomainUtilities::CreateBuildingTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbPtr db)
+	BuildingPhysical::BuildingTypeDefinitionModelPtr BuildingDomainUtilities::CreateBuildingTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
 		{
-		Dgn::SubjectCPtr rootSubject = db->Elements().GetRootSubject();
+        if (parentSubject.IsNull())
+            parentSubject = db.Elements().GetRootSubject();
 
 		Utf8String defModelCode = BuildTypeDefinitionModelCode(modelCodeName);
 
-		Dgn::DefinitionPartitionCPtr defPartition = Dgn::DefinitionPartition::CreateAndInsert(*rootSubject, defModelCode);
+		Dgn::DefinitionPartitionCPtr defPartition = Dgn::DefinitionPartition::CreateAndInsert(*parentSubject, defModelCode);
 
 		if (!defPartition.IsValid())
 			return nullptr;
@@ -198,7 +199,7 @@ namespace BuildingDomain
 		Utf8String alias;
 
 		alias.Sprintf("BLDG%d", rand());
-		
+
 		if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(dynSchema, schemaName, alias, 1, 1, 0))
 			return nullptr;
 
@@ -206,7 +207,7 @@ namespace BuildingDomain
 
 		if (nullptr == bisSchema)
 			return nullptr;
-		
+
 
 		if (ECN::ECObjectsStatus::Success != dynSchema->AddReferencedSchema((ECN::ECSchemaR)(*bisSchema)))
 			return nullptr;
@@ -218,7 +219,7 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	BentleyStatus BuildingDomainUtilities::CreateBuildingModels(Utf8StringCR modelCodeName, Dgn::DgnDbPtr db, Dgn::SubjectCPtr parentSubject, bool createDynamicSchema, ECN::ECSchemaPtr suppliedDynamicSchema)
+	BentleyStatus BuildingDomainUtilities::CreateBuildingModels(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject, bool createDynamicSchema, ECN::ECSchemaPtr suppliedDynamicSchema)
 		{
 
 		BuildingPhysical::BuildingPhysicalModelPtr physicalModel = CreateBuildingPhyicalModel(modelCodeName, db, parentSubject);
@@ -251,36 +252,37 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	BuildingPhysical::BuildingPhysicalModelCPtr BuildingDomainUtilities::GetBuildingPhyicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbPtr db)
+	BuildingPhysical::BuildingPhysicalModelPtr BuildingDomainUtilities::GetBuildingPhyicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
 		{
+        if (parentSubject.IsNull())
+            parentSubject = db.Elements().GetRootSubject();
 
-		BuildingPhysical::BuildingPhysicalModelCPtr buildingModel;
+        Dgn::DgnCode partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, BuildPhysicalModelCode(modelCodeName));
+        Dgn::DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+        Dgn::PhysicalPartitionCPtr partition = db.Elements().Get<Dgn::PhysicalPartition>(partitionId);
+        if (!partition.IsValid())
+            return nullptr;
 
-		Dgn::ElementIterator itr = db->Elements().MakeIterator(BIS_SCHEMA("PhysicalPartition"));
-
-		Utf8String PhysicalModelCode = BuildPhysicalModelCode(modelCodeName);
-
-		for each (Dgn::ElementIteratorEntry ele in itr)
-			{
-			Utf8CP codeValue = ele.GetCodeValue();
-
-			if (PhysicalModelCode != codeValue)
-				continue;
-
-			Dgn::DgnElementCPtr element = db->Elements().GetElement(ele.GetElementId());
-
-			Dgn::PhysicalPartitionCPtr partition = const_pointer_cast<Dgn::PhysicalPartition>(element);
-
-			if (partition.IsValid())
-				{
-				Dgn::DgnModelCPtr model = partition->GetSubModel();
-				buildingModel = const_pointer_cast<BuildingPhysical::BuildingPhysicalModel>(model);
-				}
-			break;
-			}
-
-		return buildingModel;
+        return dynamic_cast<BuildingPhysical::BuildingPhysicalModelP>(partition->GetSubModel().get());
 		}
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+    BuildingPhysical::BuildingTypeDefinitionModelPtr BuildingDomainUtilities::GetBuildingTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+        {
+        if (parentSubject.IsNull())
+            parentSubject = db.Elements().GetRootSubject();
+
+        Dgn::DgnCode partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, BuildTypeDefinitionModelCode(modelCodeName));
+        Dgn::DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+        Dgn::DefinitionPartitionCPtr partition = db.Elements().Get<Dgn::DefinitionPartition>(partitionId);
+        if (!partition.IsValid())
+            return nullptr;
+
+        return dynamic_cast<BuildingPhysical::BuildingTypeDefinitionModelP>(partition->GetSubModel().get());
+        }
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
@@ -468,7 +470,7 @@ namespace BuildingDomain
 		newRelationshipClass->GetSource().SetMultiplicity (ECN::RelationshipMultiplicity::OneOne());
 		newRelationshipClass->GetTarget().SetMultiplicity (ECN::RelationshipMultiplicity::ZeroOne());
 
-		ECN::ECClassCP baseRelationshipClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect); 
+		ECN::ECClassCP baseRelationshipClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect);
 
 		if (ECN::ECObjectsStatus::Success != newRelationshipClass->AddBaseClass(*baseRelationshipClass))
 			{

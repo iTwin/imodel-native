@@ -54,7 +54,7 @@ TEST_F(BuildingDomainTestFixture, EnsureDomainsAreRegistered)
 	ASSERT_TRUE(db.IsValid());
 
 	//This should create a DGN db with building domain.
-	
+
 	ASSERT_FALSE(BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers());
 
     DgnDomainCP architecturalDomain = db->Domains().FindDomain(ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain().GetDomainName());
@@ -80,9 +80,9 @@ TEST_F(BuildingDomainTestFixture, CreatePhysicalPartion)
 	ASSERT_TRUE(db.IsValid());
 
 	// Testing the minimal arguments for CreateBuildingModels
-	ASSERT_FALSE(BuildingDomain::BuildingDomainUtilities::CreateBuildingModels(MODEL_TEST_NAME, db ));
+	ASSERT_FALSE(BuildingDomain::BuildingDomainUtilities::CreateBuildingModels(MODEL_TEST_NAME, *db ));
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -100,15 +100,15 @@ TEST_F(BuildingDomainTestFixture, CreatePhysicalPartion)
 
 	ASSERT_TRUE(element.IsValid() && Dgn::DgnDbStatus::Success == status);
 
-	ASSERT_FALSE(BuildingDomain::BuildingDomainUtilities::CreateBuildingModels(MODEL_TEST_NAME1, db, subject));
+	ASSERT_FALSE(BuildingDomain::BuildingDomainUtilities::CreateBuildingModels(MODEL_TEST_NAME1, *db, subject));
 
-	buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME1, db);
+	buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME1, *db);
 
 	// Testing the minimal arguments for CreateBuildingModels where we are supressing the creation of the dynamic schema
 
-	ASSERT_FALSE(BuildingDomain::BuildingDomainUtilities::CreateBuildingModels(MODEL_TEST_NAME2, db, nullptr, false));
+	ASSERT_FALSE(BuildingDomain::BuildingDomainUtilities::CreateBuildingModels(MODEL_TEST_NAME2, *db, nullptr, false));
 
-	buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME2, db);
+	buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME2, *db);
 
 	ECN::ECSchemaCP schema = BuildingDomain::BuildingDomainUtilities::GetBuildingDynamicSchema(buildingModel);
 
@@ -126,9 +126,9 @@ TEST_F(BuildingDomainTestFixture, CreatePhysicalPartion)
 
 	ASSERT_TRUE(ECN::ECObjectsStatus::Success == dynSchema->AddReferencedSchema((ECN::ECSchemaR)(*bisSchema)));
 
-	ASSERT_FALSE(BuildingDomain::BuildingDomainUtilities::CreateBuildingModels(MODEL_TEST_NAME3, db, nullptr, false, dynSchema));
+	ASSERT_FALSE(BuildingDomain::BuildingDomainUtilities::CreateBuildingModels(MODEL_TEST_NAME3, *db, nullptr, false, dynSchema));
 
-	buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME3, db);
+	buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME3, *db);
 
 	schema = BuildingDomain::BuildingDomainUtilities::GetBuildingDynamicSchema(buildingModel);
 
@@ -150,19 +150,19 @@ TEST_F(BuildingDomainTestFixture, GetBuildingModel)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel  = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel  = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel1 = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME1, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel1 = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME1, *db);
 
 	ASSERT_TRUE(buildingModel1.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel2 = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME2, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel2 = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME2, *db);
 
 	ASSERT_TRUE(buildingModel2.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel3 = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME3, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel3 = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME3, *db);
 
 	ASSERT_TRUE(buildingModel3.IsValid());
 	}
@@ -177,7 +177,7 @@ TEST_F(BuildingDomainTestFixture, AddClassesToDynamicSchema)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -226,7 +226,7 @@ TEST_F(BuildingDomainTestFixture, AddClassesToSuppliedSchema)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME3, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME3, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -274,7 +274,7 @@ TEST_F(BuildingDomainTestFixture, DoorClassTests)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -295,7 +295,7 @@ TEST_F(BuildingDomainTestFixture, DoorClassTests)
 	Dgn::DgnDbStatus status;
 
 	Dgn::DgnElementCPtr element = door->Insert( &status );
-	        
+
 	ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
 
 	Dgn::PhysicalElementPtr queriedDoor = BuildingDomain::BuildingDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*buildingModel, DOOR_CODE_VALUE);
@@ -334,7 +334,7 @@ TEST_F(BuildingDomainTestFixture, WindowClassTests)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -395,7 +395,7 @@ TEST_F(BuildingDomainTestFixture, WallClassTests)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -440,15 +440,15 @@ TEST_F(BuildingDomainTestFixture, WallClassTests)
 	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, GROSS_SIDE_AREA));
 	testValue = propVal.GetDouble();
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
-	
+
 	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, NET_SIDE_AREA));
 	testValue = propVal.GetDouble();
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
-	
+
 	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, GROSS_VOLUME));
 	testValue = propVal.GetDouble();
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
-	
+
 	ASSERT_TRUE(Dgn::DgnDbStatus::Success == queriedWall->GetPropertyValue(propVal, NET_VOLUME));
 	testValue = propVal.GetDouble();
 	ASSERT_NEAR(testValue, DOUBLE_TEST_VALUE, 0.00001);
@@ -478,7 +478,7 @@ TEST_F(BuildingDomainTestFixture, WallLeafClassTests)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -532,7 +532,7 @@ TEST_F(BuildingDomainTestFixture, WallOwnsWallLeafsTests)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -581,7 +581,7 @@ TEST_F(BuildingDomainTestFixture, AddAspectClassesToDynamicSchema)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -629,7 +629,7 @@ TEST_F(BuildingDomainTestFixture, DynamicClassInstancing)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -674,7 +674,7 @@ TEST_F(BuildingDomainTestFixture, AddingAspectsTests)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, db);
+	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 
 	ASSERT_TRUE(buildingModel.IsValid());
 
@@ -697,7 +697,7 @@ TEST_F(BuildingDomainTestFixture, AddingAspectsTests)
 
 	ASSERT_TRUE(element.IsValid());
 
-	// Read back the data to make sure it was persisted correctly. 
+	// Read back the data to make sure it was persisted correctly.
 
 	Dgn::PhysicalElementPtr queriedInstance = BuildingDomain::BuildingDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*buildingModel, DYNAMIC_CODE_VALUE);
 
