@@ -114,7 +114,7 @@
     (see BentleyApi::DateTime::ToJulianDay).
     The metadata that comes along with a DateTime instance is not persisted per-instance. Instead, clients can
     decorate the respective ECProperty with the @b %DateTimeInfo custom attribute from the standard ECSchema
-    @b Bentley_Standard_CustomAttributes. So all date times within a given ECProperty have the same date time metadata.
+    @b CoreCustomAttributes. So all date times within a given ECProperty have the same date time metadata.
     @see @ref ECInstancesDateTimePropertiesHowTos
 
     ### How the @b %DateTimeInfo custom attribute affects ECSqlStatement::GetValueDateTime

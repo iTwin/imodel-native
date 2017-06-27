@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="StartupCompany" alias="stco" version="02.00.00" description="My Startup Company" displayLabel="My Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECCustomAttributes>
         <SchemaMap xmlns="ECDbMap.02.00">
@@ -241,14 +240,7 @@
         <BaseClass>Furniture</BaseClass>
         <ECProperty propertyName="DeskFootPrint" typeName="string"/>
         <ECProperty propertyName="NumberOfCabinets" typeName="int" displayLabel="Number Of Cabinets"/>
-        <ECProperty propertyName="Size" typeName="string">
-            <ECCustomAttributes>
-                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
-                    <ECExpression>&quot;(&quot; &amp; this.Length &amp; &quot;, &quot; &amp; this.Breadth &amp; &quot;)&quot;</ECExpression>
-                    <FailureValue>-</FailureValue>
-                </CalculatedECPropertySpecification>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="Size" typeName="string"/>
         <ECProperty propertyName="Type" typeName="string"/>
         <ECProperty propertyName="Length" typeName="double"/>
         <ECProperty propertyName="Breadth" typeName="double"/>
@@ -271,15 +263,7 @@
         <ECProperty propertyName="Project" typeName="string" displayLabel="Department/Project"/>
         <ECArrayProperty propertyName="WorkPhone" typeName="string" displayLabel="Work Phone (s)" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="MobilePhone" typeName="string" displayLabel="Mobile Phone (s)" minOccurs="0" maxOccurs="unbounded"/>
-        <ECProperty propertyName="FullName" typeName="string" displayLabel="Full Name">
-            <ECCustomAttributes>
-                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
-                    <ECExpression>this.LastName &amp; &quot; &quot; &amp; this.FirstName</ECExpression>
-                    <FailureValue> - </FailureValue>
-                    <ParserRegularExpression/>
-                </CalculatedECPropertySpecification>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="FullName" typeName="string" displayLabel="Full Name"/>
         <ECStructArrayProperty propertyName="Certifications" typeName="EmployeeCertification" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructProperty propertyName="Location" typeName="Location" displayLabel="Office Location"/>
         <ECProperty propertyName="EmployeeType" typeName="Employee_EmployeeType" displayLabel="Employee Type"/>

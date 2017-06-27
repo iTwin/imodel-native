@@ -4886,7 +4886,6 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA_TableLayout)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ShareColumnsCA.ecdb",SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                         "<ECSchema schemaName='SchemaWithShareColumnsCA' nameSpacePrefix='rc' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-                        "    <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.00' prefix='bsca' />"
                         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                         "    <ECEntityClass typeName='BaseClass' modifier='None'>"
                         "        <ECCustomAttributes>"
@@ -9662,13 +9661,11 @@ TEST_F(DbMappingTestFixture, LoadECSchemas)
     ASSERT_EQ(SUCCESS, SetupECDb("StartupCompany.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml"), ECDb::OpenParams(Db::OpenMode::Readonly)));
 
     std::vector<Utf8CP> expectedSchemas;
-    expectedSchemas.push_back("Bentley_Standard_CustomAttributes");
     expectedSchemas.push_back("CoreCustomAttributes");
     expectedSchemas.push_back("ECDbFileInfo");
     expectedSchemas.push_back("ECDbMap");
     expectedSchemas.push_back("ECDbMeta");
     expectedSchemas.push_back("ECDbSystem");
-    expectedSchemas.push_back("EditorCustomAttributes");
     expectedSchemas.push_back("StartupCompany");
 
     // Validate the expected ECSchemas in the project
@@ -10010,9 +10007,9 @@ TEST_F(DbMappingTestFixture, ImportSupplementalSchemas)
     ASSERT_EQ(SUCCESS, ReopenECDb());
     ECSchemaCP startupCompanySchema = m_ecdb.Schemas().GetSchema("StartupCompany");
     ASSERT_TRUE(startupCompanySchema != nullptr);
-    ECClassCP aaa2 = startupCompanySchema->GetClassCP("AAA");
+    ECClassCP aaa = startupCompanySchema->GetClassCP("AAA");
 
-    ECCustomAttributeInstanceIterable allCustomAttributes2 = aaa2->GetCustomAttributes(false);
+    ECCustomAttributeInstanceIterable allCustomAttributes2 = aaa->GetCustomAttributes(false);
     uint32_t allCustomAttributesCount2 = 0;
     for (IECInstancePtr attribute : allCustomAttributes2)
         {
@@ -10394,8 +10391,6 @@ TEST_F(DbMappingTestFixture, SharedColumnConflictIssueWhenUsingMixinsAsRelations
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
-            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
-            <ECSchemaReference name="EditorCustomAttributes" version="01.03" alias="beca" />
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
             <!-- Subset of BisCore schema -->
             <ECEntityClass typeName="Element" modifier="Abstract" >
@@ -10547,8 +10542,6 @@ TEST_F(DbMappingTestFixture, NullViewForMixIn)
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Diego" alias="diego" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
-            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
-            <ECSchemaReference name="EditorCustomAttributes" version="01.03" alias="beca" />
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
             <!-- Subset of BisCore schema -->
             <ECEntityClass typeName="Element" modifier="Abstract" >
