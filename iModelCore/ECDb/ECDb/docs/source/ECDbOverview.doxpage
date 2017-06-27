@@ -188,14 +188,14 @@
     @section ECDbBuiltInSchemas Built-in schemas
     Every ECDb file comes with the following ECSchemas already included. That means you don't have to import them anymore:
     
-        - %ECDbFileInfo (see also @ref ECDbFileInfo)
-        - %ECDbMeta
-        - %ECDbMap
+    - %ECDbFileInfo (see also @ref ECDbFileInfo)
+    - %ECDbMeta
+    - %ECDbMap
     
     @section ECDbDeployedSchemas Deployed schemas
     The following schemas are deployed to the application's asset directory, but are not included in an ECDb file by default.
 
-        - %ECDbSchemaPolicies
+    - %ECDbSchemaPolicies
 
     @see @ref ECDbOverview
     */
