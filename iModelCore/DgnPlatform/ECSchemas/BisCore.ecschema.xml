@@ -2,8 +2,6 @@
 <ECSchema schemaName="BisCore" alias="bis" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1" displayLabel="BIS Core" description="The BIS core classes that all other domain schemas extend.">
 
     <ECSchemaReference name="CoreCustomAttributes" version="1.0" alias="CoreCA"/>
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.12" alias="bsca"/>
-    <ECSchemaReference name="EditorCustomAttributes" version="1.3" alias="beca" />
     <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
     <ECSchemaReference name="ECDbSchemaPolicies" version="1.0" alias="ecdbpol"/>
 
@@ -109,7 +107,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ParentModel" relationshipName="ModelOwnsSubModel" direction="Backward" readOnly="True" displayLabel="Parent Model" description="The Parent Model (which contains the Modeled Element) is above this model in the information hierarchy.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <ForeignKeyConstraint xmlns="ECDbMap.2.0">
                     <!-- Creates the ParentModelId foreign key column in the bis_Model table -->
                     <OnDeleteAction>NoAction</OnDeleteAction>
@@ -126,17 +124,17 @@
         </ECNavigationProperty>
         <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="IsTemplate" typeName="boolean" displayLabel="Is Template" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -361,7 +359,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward" readOnly="True" description="The Model that contains this element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>2</StatementTypes>
                 </CustomHandledProperty>
@@ -379,12 +377,12 @@
                 <CustomHandledProperty>
                     <StatementTypes>0</StatementTypes>
                 </CustomHandledProperty>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="CodeSpec" displayLabel="Code Specification" relationshipName="CodeSpecSpecifiesCode" direction="Backward" description="The Code Specification used to generate and validate the code for the element. The combination of Code Specification, Code Scope Element, and the Code value must be unique.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
@@ -396,7 +394,7 @@
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="CodeScope" displayLabel="Code Scope" relationshipName="ElementScopesCode" direction="Backward"  description="Code Scope identifies the element that provides the uniqueness scope for the code value. The combination of Code Specification, Code Scope, and the Code value must be unique.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
@@ -431,7 +429,7 @@
         </ECProperty>
         <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward" description="The parent element that owns this element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
@@ -451,12 +449,12 @@
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
@@ -755,7 +753,7 @@
         <ECProperty propertyName="RepositoryGuid" typeName="binary" extendedTypeName="BeGuid" displayLabel="Repository GUID">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -926,7 +924,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Category" relationshipName="GeometricElement3dIsInCategory" direction="Forward" description="The Spatial Category used to categorize the 3D Geometric Element">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
                 <ForeignKeyConstraint xmlns="ECDbMap.2.0">
                     <!-- Creates the CategoryId foreign key column in the bis_GeometricElement3d table -->
@@ -936,56 +934,56 @@
         </ECNavigationProperty>
         <ECProperty propertyName="InSpatialIndex" typeName="boolean" displayLabel="In Spatial Index" description="If true, this element will have an entry in the Spatial Index.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Origin" typeName="point3d" description="The placement origin of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Yaw" typeName="double" description="The Yaw angle (in degrees) of the orientation of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Pitch" typeName="double" description="The Pitch angle (in degrees) of the orientation of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Roll" typeName="double" description="The Roll angle (in degrees) of the orientation of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d" displayLabel="Bounding Box Low" description="The 'low' point of the element-aligned bounding box of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point3d" displayLabel="Bounding Box High" description="The 'high' point of the element-aligned bounding box of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream" displayLabel="Geometry Stream" description="Binary stream used to persist the geometry of this Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="TypeDefinition" relationshipName="GeometricElement3dHasTypeDefinition" direction="Forward" displayLabel="Type Definition">
             <!-- NOTE: Has same propertyName as other element subclasses in case the concept of "TypeDefinition" needs to move down to bis:Element. -->
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
                 <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement3d table -->
                 <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
@@ -1070,13 +1068,13 @@
         <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream" displayLabel="Geometry Stream" description="Binary stream used to persist the geometry of this Element.">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="TypeDefinition" relationshipName="GeometricElement2dHasTypeDefinition" direction="Forward" displayLabel="Type Definition">
             <!-- NOTE: Has same propertyName as other element subclasses in case the concept of "TypeDefinition" needs to move down to bis:Element. -->
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
                 <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement2d table -->
                 <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
@@ -1106,7 +1104,7 @@
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TextAnnotation" typeName="binary" displayLabel="Text Annotation">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1300,7 +1298,7 @@
         <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex" displayLabel="Cell Index"/>
         <ECProperty propertyName="TextBlock" typeName="binary" displayLabel="Text Block">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="FillKey" typeName="int" displayLabel="Fill Key"/>
@@ -1510,7 +1508,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsUniqueAspect" direction="Backward" description="The owning Element">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <!-- Creates the ElementId foreign key column in the bis_ElementUniqueAspect table -->
                 <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
@@ -1541,7 +1539,7 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsMultiAspects" direction="Backward" description="The owning Element">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <!-- Creates the ElementId foreign key column in the bis_ElementMultiAspect table -->
                 <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
@@ -1630,13 +1628,13 @@
         </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string" DisplayLabel="Description">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Rank" typeName="int">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
@@ -1749,7 +1747,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1767,7 +1765,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1785,7 +1783,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1803,7 +1801,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1831,7 +1829,7 @@
             <ECCustomAttributes>
                 <!-- IsNullable=False -->
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Format" typeName="int" description="Format of the encoded texture data">
@@ -2111,7 +2109,7 @@
             <!-- IsNullable = False -->
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d" displayLabel="Bounding Box Low">
