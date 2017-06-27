@@ -315,7 +315,14 @@ public:
     int GetResetCount() const { return m_resetCount; }
     bool IsIndexCorrect(size_t indx) const { return indx < m_proxys.size(); }
     UnitProxyCP GetProxy(size_t indx) const { return (indx < m_proxys.size()) ? &m_proxys[indx] : nullptr; }
-    void Clear() { for (int i = 0; IsIndexCorrect(i); ++i){m_proxys[i].Clear();} m_unitReg = &BEU::UnitRegistry::Instance(); }
+    void Clear() 
+        { 
+        for (int i = 0; IsIndexCorrect(i); ++i)
+            {
+            m_proxys[i].Clear();
+            }
+        m_unitReg = &BEU::UnitRegistry::Instance(); 
+        }
     BEU::UnitCP GetUnit(size_t indx) const { Validate();  return IsIndexCorrect(indx) ? m_proxys[indx].GetUnit() : nullptr; }
     Utf8CP GetUnitName(size_t indx, Utf8CP subst=nullptr) const { return  IsIndexCorrect(indx) ? m_proxys[indx].GetName() : subst; }
     Utf8CP GetUnitLabel(size_t indx, Utf8CP subst = nullptr) const { return IsIndexCorrect(indx) ? m_proxys[indx].GetLabel() : subst; }

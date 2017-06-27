@@ -206,11 +206,14 @@ TEST(FormattingTest, Preliminary)
 
 TEST(FormattingTest, PhysValues)
     {
-    FormattingDividers fdiv = FormattingDividers("()[]{}");
+    FormattingDividers fdiv = FormattingDividers("()[]{} ");
     EXPECT_TRUE(fdiv.IsDivider('('));
     EXPECT_TRUE(fdiv.IsDivider(')'));
     EXPECT_TRUE(fdiv.IsDivider('{'));
+    EXPECT_TRUE(fdiv.IsDivider(' '));
     EXPECT_FALSE(fdiv.IsDivider('A'));
+
+    FormattingTestFixture::ShowTextSectionsByDividers("sample of [text] separated {by stoppers}", "()[]{} ");
 
     FormattingTestFixture::TestFUS("MM", "MM(DefaultReal)","MM(real)");
     FormattingTestFixture::TestFUS("MM|fract8", "MM(Fractional8)", "MM(fract8)");

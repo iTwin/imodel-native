@@ -40,6 +40,7 @@ struct FormattingTestFixture
         static NumericAccumulator* NumericAccState(NumericAccumulator* nacc, Utf8CP txt);
         static void TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space);
         static int FindLastDividerPos(Utf8CP txt, Utf8Char div);
+        static void ShowTextSectionsByDividers(Utf8CP txt, Utf8CP divDef);
         static size_t FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8Char div);
         static bool OpenTestData();
         static void CloseTestData();

@@ -198,6 +198,20 @@ size_t FormattingTestFixture::FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8
     return pos->size();
     }
 
+
+void ShowTextSectionsByDividers(Utf8CP txt, Utf8CP divDef)
+    {
+    FormattingDividers div = FormattingDividers(divDef);
+    LOG.infov("Examining:|%s|", txt);
+    for (Utf8CP p = txt; *p != '\0'; p++)
+        {
+        if(div.IsDivider(*p))
+            LOG.infov("Stopper:|%c| at %d", *p, (p - txt));
+        }
+    return;
+    }
+
+
 bool FormattingTestFixture::OpenTestData()
     {
 #if defined (BENTLEY_WIN32)
