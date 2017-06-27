@@ -104,6 +104,7 @@
                 <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ParentModel" relationshipName="ModelOwnsSubModel" direction="Backward" readOnly="True" displayLabel="Parent Model" description="The Parent Model (which contains the Modeled Element) is above this model in the information hierarchy.">
             <ECCustomAttributes>
@@ -140,6 +141,9 @@
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel" modifier="Abstract" displayLabel="Geometric Model" description="A container for persisting geometric elements.">
         <BaseClass>Model</BaseClass>
+        <ECCustomAttributes>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel3d" modifier="Abstract" displayLabel="3D Geometric Model" description="A container for persisting 3D geometric elements.">
         <BaseClass>GeometricModel</BaseClass>
@@ -323,6 +327,7 @@
             <ClassMap xmlns="ECDbMap.2.0">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
             <DbIndexList xmlns="ECDbMap.2.0">
                 <Indexes>
                     <DbIndex>
@@ -467,6 +472,11 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0">
+                <Exceptions>
+                    <string>Planning:PlanningElement</string>
+                </Exceptions>
+            </NotSubclassableInReferencingSchemas>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -892,6 +902,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -909,6 +920,7 @@
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement3d" modifier="Abstract" displayLabel="3D Geometric Element" description="3D Geometric Element is an abstract base class used to model real world entities that intrinsicly have 3D geometry.">
@@ -1491,6 +1503,7 @@
         <!-- BIS Guideline: Subclass ElementUniqueAspect or ElementMultiAspect rather than subclassing ElementAspect directly. -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -1625,6 +1638,7 @@
         <BaseClass>IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string" DisplayLabel="Description">
             <ECCustomAttributes>
@@ -1955,7 +1969,10 @@
 
     <ECEntityClass typeName="DisplayStyle" modifier="Abstract" displayLabel="Display Style">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
+        </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="DisplayStyle2d" displayLabel="2D Display Style">
@@ -1970,7 +1987,10 @@
 
     <ECEntityClass typeName="ViewDefinition" modifier="Abstract" displayLabel="View Definition">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string"/>
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward" displayLabel="Category Selector">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
@@ -2083,6 +2103,11 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0">
+                <Exceptions>
+                    <string>Functional:FunctionalElement</string>
+                </Exceptions>
+            </NotSubclassableInReferencingSchemas>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -2138,22 +2163,25 @@
 
     <ECEntityClass typeName="AuxCoordSystem" modifier="Abstract" displayLabel="Auxiliary Coordinate System">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Type" typeName="int"></ECProperty>
-        <ECProperty propertyName="Description" typeName="string"></ECProperty>
+        <ECCustomAttributes>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="int"/>
+        <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
     <ECEntityClass typeName="AuxCoordSystem2d" displayLabel="2D Auxiliary Coordinate System" description="A 2D coordinate system.">
         <BaseClass>AuxCoordSystem</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
-        <ECProperty propertyName="Origin" typeName="Point2d"></ECProperty>
-        <ECProperty propertyName="Angle" typeName="double"></ECProperty>
+        <ECProperty propertyName="Origin" typeName="Point2d"/>
+        <ECProperty propertyName="Angle" typeName="double"/>
     </ECEntityClass>
     <ECEntityClass typeName="AuxCoordSystem3d" displayLabel="3D Auxiliary Coordinate System" description="A 3D coordinate system.">
         <BaseClass>AuxCoordSystem</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
-        <ECProperty propertyName="Origin" typeName="Point3d"></ECProperty>
-        <ECProperty propertyName="Yaw" typeName="double"></ECProperty>
-        <ECProperty propertyName="Pitch" typeName="double"></ECProperty>
-        <ECProperty propertyName="Roll" typeName="double"></ECProperty>
+        <ECProperty propertyName="Origin" typeName="Point3d"/>
+        <ECProperty propertyName="Yaw" typeName="double"/>
+        <ECProperty propertyName="Pitch" typeName="double"/>
+        <ECProperty propertyName="Roll" typeName="double"/>
     </ECEntityClass>
     <ECEntityClass typeName="AuxCoordSystemSpatial" displayLabel="Spatial Auxiliary Coordinate System" description="A spatial coordinate system.">
         <BaseClass>AuxCoordSystem3d</BaseClass>
