@@ -859,63 +859,63 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxLength)
     EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="string" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="string" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength supported for String";
 
     EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="binary" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="binary" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength supported for Binary";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="boolean" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="boolean" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for bools";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="int" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="int" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for int";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="long" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="long" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for Long";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="double" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="double" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for double";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="dateTime" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="dateTime" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for DateTime";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="point2d" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="point2d" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for Point2d";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="point3d" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="point3d" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for Point3d";
 
@@ -923,7 +923,7 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxLength)
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
-                <ECProperty propertyName="Prop" typeName="Bentley.Geometry.Common.IGeometry" MinimumLength="5" MaximumLength="10"/>
+                <ECProperty propertyName="Prop" typeName="Bentley.Geometry.Common.IGeometry" minimumLength="5" maximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for IGeometry";
 
@@ -931,20 +931,20 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxLength)
     ASSERT_EQ(SUCCESS, SetupECDb("GetPropertyMinMaxLength.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECStructClass typeName="MyStruct">
-               <ECProperty propertyName="StrProp1" typeName="string" MinimumLength="5" MaximumLength="10"/>
-               <ECProperty propertyName="StrProp2" typeName="string" MinimumLength="5"/>
-               <ECProperty propertyName="StrProp3" typeName="string" MaximumLength="5"/>
-               <ECProperty propertyName="BinaryProp1" typeName="string" MinimumLength="5" MaximumLength="10"/>
-               <ECProperty propertyName="BinaryProp2" typeName="string" MinimumLength="5"/>
-               <ECProperty propertyName="BinaryProp3" typeName="string" MaximumLength="5"/>
+               <ECProperty propertyName="StrProp1" typeName="string" minimumLength="5" maximumLength="10"/>
+               <ECProperty propertyName="StrProp2" typeName="string" minimumLength="5"/>
+               <ECProperty propertyName="StrProp3" typeName="string" maximumLength="5"/>
+               <ECProperty propertyName="BinaryProp1" typeName="string" minimumLength="5" maximumLength="10"/>
+               <ECProperty propertyName="BinaryProp2" typeName="string" minimumLength="5"/>
+               <ECProperty propertyName="BinaryProp3" typeName="string" maximumLength="5"/>
             </ECStructClass>
             <ECEntityClass typeName="Foo" modifier="None" >
-               <ECProperty propertyName="StrProp1" typeName="string" MinimumLength="5" MaximumLength="10"/>
-               <ECProperty propertyName="StrProp2" typeName="string" MinimumLength="5"/>
-               <ECProperty propertyName="StrProp3" typeName="string" MaximumLength="5"/>
-               <ECProperty propertyName="BinaryProp1" typeName="string" MinimumLength="5" MaximumLength="10"/>
-               <ECProperty propertyName="BinaryProp2" typeName="string" MinimumLength="5"/>
-               <ECProperty propertyName="BinaryProp3" typeName="string" MaximumLength="5"/>
+               <ECProperty propertyName="StrProp1" typeName="string" minimumLength="5" maximumLength="10"/>
+               <ECProperty propertyName="StrProp2" typeName="string" minimumLength="5"/>
+               <ECProperty propertyName="StrProp3" typeName="string" maximumLength="5"/>
+               <ECProperty propertyName="BinaryProp1" typeName="string" minimumLength="5" maximumLength="10"/>
+               <ECProperty propertyName="BinaryProp2" typeName="string" minimumLength="5"/>
+               <ECProperty propertyName="BinaryProp3" typeName="string" maximumLength="5"/>
                <ECStructProperty propertyName="MyStruct" typeName="MyStruct"/>
             </ECEntityClass>
        </ECSchema>)xml")));
@@ -989,91 +989,91 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxValue)
     EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="int" MinimumValue="5" MaximumValue="10"/>
+            <ECProperty propertyName="Prop" typeName="int" minimumValue="5" maximumValue="10"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue supported for int";
 
     EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="long" MinimumValue="-5" MaximumValue="10"/>
+            <ECProperty propertyName="Prop" typeName="long" minimumValue="-5" maximumValue="10"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue supported for long";
 
     EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="double" MinimumValue="-5.3" MaximumValue="10.13"/>
+            <ECProperty propertyName="Prop" typeName="double" minimumValue="-5.3" maximumValue="10.13"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue supported for double";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="bool" MinimumValue="0" MaximumValue="1"/>
+            <ECProperty propertyName="Prop" typeName="bool" minimumValue="0" maximumValue="1"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for bool";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="bool" MinimumValue="false"/>
+            <ECProperty propertyName="Prop" typeName="bool" minimumValue="false"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for bool";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="bool" MaximumValue="true"/>
+            <ECProperty propertyName="Prop" typeName="bool" maximumValue="true"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for bool";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="dateTime" MinimumValue="250000.5"/>
+            <ECProperty propertyName="Prop" typeName="dateTime" minimumValue="250000.5"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for date times";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="dateTime" MinimumValue="2000-01-01T12:00:00"/>
+            <ECProperty propertyName="Prop" typeName="dateTime" minimumValue="2000-01-01T12:00:00"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for date times";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="Bentley.Geometry.Common.IGeometry" MaximumValue="1"/>
+            <ECProperty propertyName="Prop" typeName="Bentley.Geometry.Common.IGeometry" maximumValue="1"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for IGeometry";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="Point2d" MinimumValue="0" MaximumValue="1"/>
+            <ECProperty propertyName="Prop" typeName="Point2d" minimumValue="0" maximumValue="1"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for Point2d";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="Point3d" MinimumValue="0" MaximumValue="1"/>
+            <ECProperty propertyName="Prop" typeName="Point3d" minimumValue="0" maximumValue="1"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for Point3d";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="string" MinimumValue="0" MaximumValue="1"/>
+            <ECProperty propertyName="Prop" typeName="string" minimumValue="0" maximumValue="1"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for string";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="Prop" typeName="string" MinimumValue="aaa" MaximumValue="DDD"/>
+            <ECProperty propertyName="Prop" typeName="string" minimumValue="aaa" maximumValue="DDD"/>
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for string";
 
@@ -1081,50 +1081,50 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxValue)
     ASSERT_EQ(SUCCESS, SetupECDb("getpropertyminmaxvalue.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECStructClass typeName="MyStruct" modifier="None" >
-            <ECProperty propertyName="IntProp1" typeName="int" MinimumValue="0"/>
-            <ECProperty propertyName="IntProp2" typeName="int" MaximumValue="10"/>
-            <ECProperty propertyName="IntProp3" typeName="int" MinimumValue="-10" MaximumValue="10"/>
-            <ECProperty propertyName="LongProp1" typeName="long" MinimumValue="0"/>
-            <ECProperty propertyName="LongProp2" typeName="long" MaximumValue="10"/>
-            <ECProperty propertyName="LongProp3" typeName="long" MinimumValue="-10" MaximumValue="10"/>
-            <ECProperty propertyName="DoubleProp1" typeName="double" MinimumValue="0"/>
-            <ECProperty propertyName="DoubleProp2" typeName="double" MaximumValue="10"/>
-            <ECProperty propertyName="DoubleProp3" typeName="double" MinimumValue="-10.5" MaximumValue="10.5"/>
+            <ECProperty propertyName="IntProp1" typeName="int" minimumValue="0"/>
+            <ECProperty propertyName="IntProp2" typeName="int" maximumValue="10"/>
+            <ECProperty propertyName="IntProp3" typeName="int" minimumValue="-10" maximumValue="10"/>
+            <ECProperty propertyName="LongProp1" typeName="long" minimumValue="0"/>
+            <ECProperty propertyName="LongProp2" typeName="long" maximumValue="10"/>
+            <ECProperty propertyName="LongProp3" typeName="long" minimumValue="-10" maximumValue="10"/>
+            <ECProperty propertyName="DoubleProp1" typeName="double" minimumValue="0"/>
+            <ECProperty propertyName="DoubleProp2" typeName="double" maximumValue="10"/>
+            <ECProperty propertyName="DoubleProp3" typeName="double" minimumValue="-10.5" maximumValue="10.5"/>
     
-            <ECArrayProperty propertyName="IntArrayProp1" typeName="int" MinimumValue="0"/>
-            <ECArrayProperty propertyName="IntArrayProp2" typeName="int" MaximumValue="10"/>
-            <ECArrayProperty propertyName="IntArrayProp3" typeName="int" MinimumValue="-10" MaximumValue="10"/>
+            <ECArrayProperty propertyName="IntArrayProp1" typeName="int" minimumValue="0"/>
+            <ECArrayProperty propertyName="IntArrayProp2" typeName="int" maximumValue="10"/>
+            <ECArrayProperty propertyName="IntArrayProp3" typeName="int" minimumValue="-10" maximumValue="10"/>
 
-            <ECArrayProperty propertyName="LongArrayProp1" typeName="long" MinimumValue="0"/>
-            <ECArrayProperty propertyName="LongArrayProp2" typeName="long" MaximumValue="10"/>
-            <ECArrayProperty propertyName="LongArrayProp3" typeName="long" MinimumValue="-10" MaximumValue="10"/>
+            <ECArrayProperty propertyName="LongArrayProp1" typeName="long" minimumValue="0"/>
+            <ECArrayProperty propertyName="LongArrayProp2" typeName="long" maximumValue="10"/>
+            <ECArrayProperty propertyName="LongArrayProp3" typeName="long" minimumValue="-10" maximumValue="10"/>
 
-            <ECArrayProperty propertyName="DoubleArrayProp1" typeName="double" MinimumValue="0"/>
-            <ECArrayProperty propertyName="DoubleArrayProp2" typeName="double" MaximumValue="10"/>
-            <ECArrayProperty propertyName="DoubleArrayProp3" typeName="double" MinimumValue="-10.5" MaximumValue="10.5"/>
+            <ECArrayProperty propertyName="DoubleArrayProp1" typeName="double" minimumValue="0"/>
+            <ECArrayProperty propertyName="DoubleArrayProp2" typeName="double" maximumValue="10"/>
+            <ECArrayProperty propertyName="DoubleArrayProp3" typeName="double" minimumValue="-10.5" maximumValue="10.5"/>
         </ECStructClass>
         <ECEntityClass typeName="Foo" modifier="None" >
-            <ECProperty propertyName="IntProp1" typeName="int" MinimumValue="0"/>
-            <ECProperty propertyName="IntProp2" typeName="int" MaximumValue="10"/>
-            <ECProperty propertyName="IntProp3" typeName="int" MinimumValue="-10" MaximumValue="10"/>
-            <ECProperty propertyName="LongProp1" typeName="long" MinimumValue="0"/>
-            <ECProperty propertyName="LongProp2" typeName="long" MaximumValue="10"/>
-            <ECProperty propertyName="LongProp3" typeName="long" MinimumValue="-10" MaximumValue="10"/>
-            <ECProperty propertyName="DoubleProp1" typeName="double" MinimumValue="0"/>
-            <ECProperty propertyName="DoubleProp2" typeName="double" MaximumValue="10"/>
-            <ECProperty propertyName="DoubleProp3" typeName="double" MinimumValue="-10.5" MaximumValue="10.5"/>
+            <ECProperty propertyName="IntProp1" typeName="int" minimumValue="0"/>
+            <ECProperty propertyName="IntProp2" typeName="int" maximumValue="10"/>
+            <ECProperty propertyName="IntProp3" typeName="int" minimumValue="-10" maximumValue="10"/>
+            <ECProperty propertyName="LongProp1" typeName="long" minimumValue="0"/>
+            <ECProperty propertyName="LongProp2" typeName="long" maximumValue="10"/>
+            <ECProperty propertyName="LongProp3" typeName="long" minimumValue="-10" maximumValue="10"/>
+            <ECProperty propertyName="DoubleProp1" typeName="double" minimumValue="0"/>
+            <ECProperty propertyName="DoubleProp2" typeName="double" maximumValue="10"/>
+            <ECProperty propertyName="DoubleProp3" typeName="double" minimumValue="-10.5" maximumValue="10.5"/>
     
-            <ECArrayProperty propertyName="IntArrayProp1" typeName="int" MinimumValue="0"/>
-            <ECArrayProperty propertyName="IntArrayProp2" typeName="int" MaximumValue="10"/>
-            <ECArrayProperty propertyName="IntArrayProp3" typeName="int" MinimumValue="-10" MaximumValue="10"/>
+            <ECArrayProperty propertyName="IntArrayProp1" typeName="int" minimumValue="0"/>
+            <ECArrayProperty propertyName="IntArrayProp2" typeName="int" maximumValue="10"/>
+            <ECArrayProperty propertyName="IntArrayProp3" typeName="int" minimumValue="-10" maximumValue="10"/>
 
-            <ECArrayProperty propertyName="LongArrayProp1" typeName="long" MinimumValue="0"/>
-            <ECArrayProperty propertyName="LongArrayProp2" typeName="long" MaximumValue="10"/>
-            <ECArrayProperty propertyName="LongArrayProp3" typeName="long" MinimumValue="-10" MaximumValue="10"/>
+            <ECArrayProperty propertyName="LongArrayProp1" typeName="long" minimumValue="0"/>
+            <ECArrayProperty propertyName="LongArrayProp2" typeName="long" maximumValue="10"/>
+            <ECArrayProperty propertyName="LongArrayProp3" typeName="long" minimumValue="-10" maximumValue="10"/>
 
-            <ECArrayProperty propertyName="DoubleArrayProp1" typeName="double" MinimumValue="0"/>
-            <ECArrayProperty propertyName="DoubleArrayProp2" typeName="double" MaximumValue="10"/>
-            <ECArrayProperty propertyName="DoubleArrayProp3" typeName="double" MinimumValue="-10.5" MaximumValue="10.5"/>
+            <ECArrayProperty propertyName="DoubleArrayProp1" typeName="double" minimumValue="0"/>
+            <ECArrayProperty propertyName="DoubleArrayProp2" typeName="double" maximumValue="10"/>
+            <ECArrayProperty propertyName="DoubleArrayProp3" typeName="double" minimumValue="-10.5" maximumValue="10.5"/>
 
             <ECStructProperty propertyName="MyStruct" typeName="MyStruct" />
         </ECEntityClass>
