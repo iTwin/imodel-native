@@ -321,7 +321,7 @@ BentleyStatus SchemaWriter::ImportClass(ECN::ECClassCR ecClass)
         {
         if (SUCCESS != ImportProperty(*ecProperty, propertyIndex++))
             {
-            LOG.errorv("Failed to import ECProperty '%s' of ECClass '%s'.", ecProperty->GetName().c_str(), ecClass.GetFullName());
+            Issues().Report("Failed to import ECProperty '%s' of ECClass '%s'.", ecProperty->GetName().c_str(), ecClass.GetFullName());
             return ERROR;
             }
         }
