@@ -17,7 +17,7 @@ struct PropertyDeserializationTest : ECTestFixture
     {
     void VerifyDeserializedProperty(ECSchemaPtr deserializedSchema, ECPropertyCP expectedProp, Utf8StringCR className, Utf8StringCR propName);
 
-    void RoundTripSchema(ECSchemaCP schema, bvector<ECPropertyCP> expectedProperties);
+    void RoundTripSchema(ECSchemaCP schema, bvector<ECPropertyCP> expectedProperties, ECVersion versionToSerialize = ECVersion::Latest);
     };
 
 //---------------------------------------------------------------------------------------
@@ -258,15 +258,17 @@ void PropertyDeserializationTest::VerifyDeserializedProperty(ECSchemaPtr deseria
     ASSERT_EQ(expectedProp->GetName(), ecProp->GetName()) << "Property '" << propName << "' does not have correct name in deserialized schema";
     ASSERT_EQ(expectedProp->GetPriority(), ecProp->GetPriority()) << "Property '" << propName << "' does not have correct priority in deserialized schema";
     ASSERT_EQ(expectedProp->IsPriorityLocallyDefined(), ecProp->IsPriorityLocallyDefined());
+    ASSERT_EQ(expectedProp->IsMaximumValueDefined(), ecProp->IsMaximumValueDefined());
+    ASSERT_EQ(expectedProp->IsMinimumValueDefined(), ecProp->IsMinimumValueDefined());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                       06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void PropertyDeserializationTest::RoundTripSchema(ECSchemaCP schema, bvector<ECPropertyCP> expectedProperties)
+void PropertyDeserializationTest::RoundTripSchema(ECSchemaCP schema, bvector<ECPropertyCP> expectedProperties, ECVersion versionToRoundTrip)
     {
     Utf8String schemaString;
-    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString);
+    SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString, versionToRoundTrip);
     ASSERT_EQ(SchemaWriteStatus::Success, writeStatus) << "Failed to serialize schema";
 
     ECSchemaPtr deserializedSchema;
@@ -310,6 +312,71 @@ TEST_F(PropertyDeserializationTest, MinMaxValue)
 
     ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
     ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, MinMaxValue_EC2)
+    {
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+            <ECClass typeName='Foo' isDomainClass="true">
+               <ECProperty propertyName='DoubleProp' typeName='double' MinimumValue='3.0' MaximumValue='42'/>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP cp = schema->GetClassP("Foo");
+    ASSERT_NE(cp, nullptr);
+
+    ECPropertyP pp = cp->GetPropertyP("DoubleProp");
+    ASSERT_NE(pp, nullptr);
+
+    ECValue minVal;
+    ECValue maxVal;
+    ASSERT_EQ(pp->GetMinimumValue(minVal), ECObjectsStatus::Success);
+    ASSERT_EQ(pp->GetMaximumValue(maxVal), ECObjectsStatus::Success);
+
+    ASSERT_EQ(minVal.IsNull(), false);
+    ASSERT_EQ(maxVal.IsNull(), false);
+
+    ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+
+    bvector<ECPropertyCP> expectedProps;
+    expectedProps.push_back(pp);
+    RoundTripSchema(schema.get(), expectedProps, ECVersion::V2_0);
+    }
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+            <ECClass typeName='Foo' isDomainClass="true">
+               <ECProperty propertyName='DoubleProp' typeName='double' minimumValue='3.0' maximumValue='42'/>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    ECClassP cp = schema->GetClassP("Foo");
+    ASSERT_NE(cp, nullptr);
+    
+    ECPropertyP pp = cp->GetPropertyP("DoubleProp");
+    ASSERT_NE(pp, nullptr);
+
+    ASSERT_FALSE(pp->IsMinimumValueDefined());
+    ASSERT_FALSE(pp->IsMaximumValueDefined());
+
+    bvector<ECPropertyCP> expectedProps;
+    expectedProps.push_back(pp);
+    RoundTripSchema(schema.get(), expectedProps, ECVersion::V2_0);
+    }
     }
 
 void TestMinMaxValueTypeEnforcement(Utf8CP primitiveType, bool shouldFail)

@@ -735,7 +735,10 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         Utf8String minValue;
         if (m_minimumValue.ConvertPrimitiveToString(minValue))
             {
-            xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, minValue.c_str());
+            if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
+                xmlWriter.WriteAttribute("MinimumValue", minValue.c_str());
+            else
+                xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, minValue.c_str());
             }
         }
         
@@ -744,7 +747,10 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         Utf8String maxValue;
         if (m_maximumValue.ConvertPrimitiveToString(maxValue))
             {
-            xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, maxValue.c_str());
+            if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
+                xmlWriter.WriteAttribute("MaximumValue", maxValue.c_str());
+            else
+                xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, maxValue.c_str());
             }
         }
 
@@ -1265,7 +1271,13 @@ SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
         }
 
     Utf8String minValue;
-    if (propertyNode.GetAttributeStringValue(minValue, MINIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
+    BeXmlStatus status;
+    if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
+        status = propertyNode.GetAttributeStringValue(minValue, "MinimumValue");
+    else
+        status = propertyNode.GetAttributeStringValue(minValue, MINIMUM_VALUE_ATTRIBUTE);
+
+    if (BEXML_Success == status)
         {
         ECValue minECValue(minValue.c_str());
         PrimitiveType pt;
@@ -1281,7 +1293,12 @@ SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
         }
 
     Utf8String maxValue;
-    if (propertyNode.GetAttributeStringValue(maxValue, MAXIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
+    if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
+        status = propertyNode.GetAttributeStringValue(maxValue, "MaximumValue");
+    else
+        status = propertyNode.GetAttributeStringValue(maxValue, MAXIMUM_VALUE_ATTRIBUTE);
+
+    if (BEXML_Success == status)
         {
         PrimitiveType pt;
         ResolvePrimitiveType(this, pt);
