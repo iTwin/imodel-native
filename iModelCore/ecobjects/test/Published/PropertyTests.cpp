@@ -36,6 +36,7 @@ struct PropertyOverrideTests : ECTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PropertyTest, SetGetMinMaxInt)
     {
+    {
     ECSchemaPtr schema;
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     Utf8CP schemaXml =
@@ -73,6 +74,41 @@ TEST_F(PropertyTest, SetGetMinMaxInt)
     primp->ResetMaximumValue();
     ASSERT_EQ(primp->IsMaximumValueDefined(), false);
     ASSERT_EQ(primp->GetMaximumValue(val), ECObjectsStatus::Error);
+    }
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP entity;
+    ECStructClassP structClass;
+    PrimitiveECPropertyP primProp;
+    PrimitiveECPropertyP structProp;
+    PrimitiveArrayECPropertyP arrPrimProp;
+    
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
+    schema->CreateEntityClass(entity, "Entity");
+    entity->CreatePrimitiveProperty(primProp, "PrimProp");
+    primProp->SetType(PrimitiveType::PRIMITIVETYPE_Integer);
+    entity->CreatePrimitiveArrayProperty(arrPrimProp, "ArrPrimProp");
+    arrPrimProp->SetPrimitiveElementType(PrimitiveType::PRIMITIVETYPE_Integer);
+
+    ECValue arrValue;
+    arrValue.SetPrimitiveArrayInfo(PrimitiveType::PRIMITIVETYPE_Integer, 5, true);
+    EXPECT_EQ(ECObjectsStatus::DataTypeNotSupported, primProp->SetMaximumValue(arrValue));
+    EXPECT_EQ(ECObjectsStatus::DataTypeNotSupported, primProp->SetMinimumValue(arrValue));
+    EXPECT_EQ(ECObjectsStatus::DataTypeNotSupported, arrPrimProp->SetMaximumValue(arrValue));
+    EXPECT_EQ(ECObjectsStatus::DataTypeNotSupported, arrPrimProp->SetMinimumValue(arrValue));
+
+    schema->CreateStructClass(structClass, "Struct");
+    structClass->CreatePrimitiveProperty(structProp, "StructProp");
+
+    IECInstancePtr structInstance = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    ECValue structValue;
+    structValue.SetStruct(structInstance.get());
+    EXPECT_EQ(ECObjectsStatus::DataTypeNotSupported, primProp->SetMaximumValue(structValue));
+    EXPECT_EQ(ECObjectsStatus::DataTypeNotSupported, primProp->SetMinimumValue(structValue));
+    EXPECT_EQ(ECObjectsStatus::DataTypeNotSupported, arrPrimProp->SetMaximumValue(structValue));
+    EXPECT_EQ(ECObjectsStatus::DataTypeNotSupported, arrPrimProp->SetMinimumValue(structValue));
+    }
     }
 
 //---------------------------------------------------------------------------------------
