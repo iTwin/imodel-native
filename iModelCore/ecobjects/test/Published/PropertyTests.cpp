@@ -252,7 +252,7 @@ TEST_F(PropertyDeserializationTest, MinMaxValue)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName='Foo'>"
-        "       <ECProperty propertyName='DoubleProp' typeName='double' MinimumValue='3.0' MaximumValue='42'/>"
+        "       <ECProperty propertyName='DoubleProp' typeName='double' minimumValue='3.0' maximumValue='42'/>"
         "    </ECEntityClass>"
         "</ECSchema>";
 
@@ -281,7 +281,7 @@ void TestMinMaxValueTypeEnforcement(Utf8CP primitiveType, bool shouldFail)
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
             <ECEntityClass typeName='Foo'>
-               <ECProperty propertyName='DoubleProp' typeName='%s' MinimumValue='3.0' MaximumValue='42'/>
+               <ECProperty propertyName='DoubleProp' typeName='%s' minimumValue='3.0' maximumValue='42'/>
             </ECEntityClass>
         </ECSchema>)xml";
 
@@ -329,7 +329,7 @@ TEST_F(PropertyDeserializationTest, MinMaxLength)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='Foo'>"
-        "       <ECProperty propertyName='StringProp' typeName='string' MinimumLength='3' MaximumLength='42'/>"
+        "       <ECProperty propertyName='StringProp' typeName='string' minimumLength='3' maximumLength='42'/>"
         "    </ECEntityClass>"
         "</ECSchema>";
 
@@ -353,7 +353,7 @@ void TestMinMaxLengthTypeEnforcement(Utf8CP primitiveType, bool shouldFail)
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
             <ECEntityClass typeName='Foo'>
-               <ECProperty propertyName='DoubleProp' typeName='%s' MinimumLength='3.0' MaximumLength='42'/>
+               <ECProperty propertyName='DoubleProp' typeName='%s' minimumLength='3.0' maximumLength='42'/>
             </ECEntityClass>
         </ECSchema>)xml";
 
