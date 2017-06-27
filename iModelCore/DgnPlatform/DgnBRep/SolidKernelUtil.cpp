@@ -3628,11 +3628,6 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
     bvector<PK_FACE_t>    replaceFaces;
     bvector<PK_SURF_t>    replaceSurfs;
     bvector<PK_LOGICAL_t> replaceSenses;
-#if defined (NOT_NOW)
-    bvector<PK_EDGE_t>    replaceEdges;
-    bvector<PK_CURVE_t>   replaceCurves;
-    bool                  isSheetBody = (IBRepEntity::EntityType::Sheet == targetEntity.GetEntityType());
-#endif
 
     for (FaceVertexData& data : faceData)
         {
@@ -3729,27 +3724,6 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
             replaceFaces.push_back(resultFaces[iResult]);
             replaceSurfs.push_back(planeTag);
             replaceSenses.push_back(PK_LOGICAL_true);
-
-#if defined (NOT_NOW)
-            if (!isSheetBody)
-                continue;
-
-            bvector<PK_EDGE_t> resultEdges;
-
-            if (SUCCESS != PSolidTopo::GetFaceEdges(resultEdges, resultFaces[iResult]))
-                continue;
-
-            for (PK_EDGE_t edgeTag : resultEdges)
-                {
-                PK_EDGE_ask_type_t edgeType;
-
-                if (SUCCESS != PK_EDGE_ask_type(edgeTag, &edgeType) || PK_EDGE_type_laminar_c != edgeType.fins_type)
-                    continue;
-
-                replaceEdges.push_back(edgeTag);
-                replaceCurves.push_back(PK_ENTITY_null);
-                }
-#endif
             }
         }
 
@@ -3760,15 +3734,6 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
     PK_FACE_replace_surfs_o_m(options);
     options.merge = PK_replace_merge_out_c;
-
-#if defined (NOT_NOW)
-    if (!replaceEdges.empty())
-        {
-        options.edge_data.n_edges = (int) replaceEdges.size();
-        options.edge_data.edges = &replaceEdges.front();
-        options.edge_data.curves = &replaceCurves.front();
-        }
-#endif
 
     PK_TOPOL_local_r_t results;
     PK_TOPOL_track_r_t tracking;
