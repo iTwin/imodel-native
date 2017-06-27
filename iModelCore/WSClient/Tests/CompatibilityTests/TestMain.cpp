@@ -31,10 +31,7 @@ int main(int argc, char** argv)
 
     auto host = TestsHost::Create(GetProgramPath(), workDir, logLevel);
     BeTest::Initialize(*host);
-    BeTest::SetAssertionFailureHandler([] (wchar_t const*)
-        {
-        FAIL();
-        });
+
 
     ::testing::InitGoogleMock(&argc, argv);
 
