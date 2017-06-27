@@ -870,49 +870,49 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxLength)
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength supported for Binary";
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
                 <ECProperty propertyName="Prop" typeName="boolean" MinimumLength="5" MaximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for bools";
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
                 <ECProperty propertyName="Prop" typeName="int" MinimumLength="5" MaximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for int";
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
                 <ECProperty propertyName="Prop" typeName="long" MinimumLength="5" MaximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for Long";
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
                 <ECProperty propertyName="Prop" typeName="double" MinimumLength="5" MaximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for double";
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
                 <ECProperty propertyName="Prop" typeName="dateTime" MinimumLength="5" MaximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for DateTime";
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
                 <ECProperty propertyName="Prop" typeName="point2d" MinimumLength="5" MaximumLength="10"/>
             </ECEntityClass>
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for Point2d";
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
                 <ECProperty propertyName="Prop" typeName="point3d" MinimumLength="5" MaximumLength="10"/>
@@ -920,7 +920,7 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxLength)
         </ECSchema>)xml"))) << "MinimumLength/MaximumLength not supported for Point3d";
 
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
             <ECEntityClass typeName="Foo" modifier="None" >
                 <ECProperty propertyName="Prop" typeName="Bentley.Geometry.Common.IGeometry" MinimumLength="5" MaximumLength="10"/>
@@ -1033,14 +1033,14 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxValue)
         <ECEntityClass typeName="Foo" modifier="None" >
             <ECProperty propertyName="Prop" typeName="dateTime" MinimumValue="250000.5"/>
         </ECEntityClass>
-    </ECSchema>)xml"))) << "MinimumValue/MaximumValue is expected to be supported for date times";
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for date times";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
             <ECProperty propertyName="Prop" typeName="dateTime" MinimumValue="2000-01-01T12:00:00"/>
         </ECEntityClass>
-    </ECSchema>)xml"))) << "MinimumValue/MaximumValue is expected to be supported for date times";
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for date times";
 
     EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -1063,19 +1063,19 @@ TEST_F(SchemaManagerTests, GetPropertyMinMaxValue)
         </ECEntityClass>
     </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for Point3d";
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
             <ECProperty propertyName="Prop" typeName="string" MinimumValue="0" MaximumValue="1"/>
         </ECEntityClass>
-    </ECSchema>)xml"))) << "MinimumValue/MaximumValue is expected to be supported for string";
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for string";
 
-    EXPECT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    EXPECT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
         <ECEntityClass typeName="Foo" modifier="None" >
             <ECProperty propertyName="Prop" typeName="string" MinimumValue="aaa" MaximumValue="DDD"/>
         </ECEntityClass>
-    </ECSchema>)xml"))) << "MinimumValue/MaximumValue is expected to be supported for string";
+    </ECSchema>)xml"))) << "MinimumValue/MaximumValue not expected to be supported for string";
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("getpropertyminmaxvalue.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
