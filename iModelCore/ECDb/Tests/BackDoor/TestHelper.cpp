@@ -71,6 +71,14 @@ BentleyStatus TestHelper::ImportSchemas(ECDbR ecdb, std::vector<SchemaItem> cons
 BentleyStatus TestHelper::ImportSchema(ECDbR ecdb, SchemaItem const& testItem)
     {
     ECN::ECSchemaReadContextPtr context = ECN::ECSchemaReadContext::CreateContext();
+
+    //not all ECDb schemas are included in the ECDb file by default. So add the path to the ECDb
+    //XML files to the search paths
+    BeFileName ecdbSchemaSearchPath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(ecdbSchemaSearchPath);
+    ecdbSchemaSearchPath.AppendToPath(L"ECSchemas").AppendToPath(L"ECDb");
+    context->AddSchemaPath(ecdbSchemaSearchPath);
+
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
     if (SUCCESS != ECDbTestFixture::ReadECSchema(context, ecdb, testItem))
         return ERROR;

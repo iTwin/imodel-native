@@ -114,6 +114,7 @@
     @li @subpage ECSQLSamples
     @li @subpage ECSqlStatementOverview
     @li @subpage ECDbTransactions
+    @li @subpage ECDbSchemas
     @li @subpage ECDbECSchemaImportAndUpgrade
     @li @subpage ECDbECSchemaRules
     @li @subpage ECDbRelationshipRules
@@ -180,6 +181,27 @@
     */
 
     /**
+    @page ECDbSchemas ECDb's ECSchemas
+    
+    ECDb ships with a set of ECSchemas.
+
+    @section ECDbBuiltInSchemas Built-in schemas
+    Every ECDb file comes with the following ECSchemas already included. That means you don't have to import them anymore:
+    
+        - %ECDbFileInfo (see also @ref ECDbFileInfo)
+        - %ECDbMeta
+        - %ECDbMap
+    
+    @section ECDbDeployedSchemas Deployed schemas
+    The following schemas are deployed to the application's asset directory, but are not included in an ECDb file by default.
+
+        - %ECDbSchemaPolicies
+
+    @see @ref ECDbOverview
+    */
+
+
+    /**
     @page ECDbECSchemaImportAndUpgrade ECSchema Import and Upgrade
     
     @ref BentleyApi::BeSQLite::EC::SchemaManager::ImportSchemas "SchemaManager::ImportSchemas" is the key API to
@@ -192,7 +214,8 @@
     @note If @ref BentleyApi::BeSQLite::EC::SchemaManager::ImportSchemas "SchemaManager::ImportSchemas" fails, callers
     should roll back the current savepoint or transaction. %ECDb, by design, does not do any transaction management itself and
     does not ensure that its operations are atomic. See @ref ECDbTransactions for details.
-      
+    
+
     @section ECDbECSchemaUpgradeSupportedFeatures ECSchema Upgrade Supported Features
     
     @note Deleting ECClasses, ECEnumerations, KindOfQuantities, ECProperties is only supported in a major schema version change, i.e. 
@@ -247,6 +270,16 @@
         - @ref BentleyApi::ECN::ECProperty::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECProperty::GetIsReadOnly "IsReadOnly"
         - @ref BentleyApi::ECN::ECProperty::GetCategory "Category"
+        - @ref BentleyApi::ECN::ECProperty::GetPriority "Priority"
+        - @ref BentleyApi::ECN::ECProperty::GetMinimumValue "MinimumValue"
+        - @ref BentleyApi::ECN::ECProperty::GetMaximumValue "MaximumValue"
+        - @ref BentleyApi::ECN::ECProperty::GetMinimumLength "MinimumLength"
+        - @ref BentleyApi::ECN::ECProperty::GetMaximumLength "MaximumLength"
+        - @ref BentleyApi::ECN::ECProperty::GetKindOfQuantity "KindOfQuantity"
+            - It is possible to 
+                - assign a KindOfQuantity to an ECProperty that didn't have one before
+                - change the KindOfQuantity of an ECProperty to another KindOfQuantity
+                - remove the KindOfQuantity from the ECProperty
 
     - @b CustomAttributes on the ECProperty
         - @b Add, @b delete, @b modify
@@ -263,20 +296,19 @@
                 - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
                 - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
                 or if the @ref BentleyApi::ECN::PrimitiveECProperty::GetType "property type" and the ECEnumeration's underlying type is the same.
-        - @ref BentleyApi::ECN::PrimitiveECProperty::GetKindOfQuantity "KindOfQuantity"
-            - It is possible to 
-                - assign a KindOfQuantity to an ECProperty that didn't have one before
-                - change the KindOfQuantity of an ECProperty to another KindOfQuantity
-                - remove the KindOfQuantity from the ECProperty
 
     #### Primitive Array ECProperty
     - @b Modify 
         - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetExtendedTypeName "ExtendedTypeName"
-        - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetKindOfQuantity "KindOfQuantity"
+        - @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetEnumeration "ECEnumeration"
             - It is possible to 
-                - assign a KindOfQuantity to an ECProperty that didn't have one before
-                - change the KindOfQuantity of an ECProperty to another KindOfQuantity
-                - remove the KindOfQuantity from the ECProperty
+                - assign an ECEnumeration to an ECProperty that was an ordinary primitive property before
+                - change the ECEnumeration of an ECProperty to another ECEnumeration
+                - remove the ECEnumeration from the ECProperty, so that it becomes an ordinary primitive property
+            - This is possible only if
+                - the involved ECEnumerations are @ref BentleyApi::ECN::ECEnumeration::GetIsStrict "not strict"
+                - the @ref BentleyApi::ECN::ECEnumeration::GetType "underlying type" of the involved ECEnumerations is the same,
+                or if the @ref BentleyApi::ECN::PrimitiveArrayECProperty::GetPrimitiveElementType "array element type" and the ECEnumeration's underlying type is the same.
 
     ### ECRelationshipConstraint
     - @b Modify 
@@ -366,7 +398,7 @@
     @note The schema import fails if the ECRelationshipClass evaluates to <b>Link Table</b> mapping by one of the first three criteria above and
           also has a navigation property defined for it.
 
-    @subsection ECDbForeignKeyMapping Foreign Key Mapping
+    @subsection ECDbForeignKeyMapping Foreign Key Mapping (a.k.a Navigation Property Mapping)
     Foreign key mapping means that a foreign key column (and sometimes an additional column for the relationship class id) 
     is created in the table of the class on the <i>foreign key constraint end</i>. It is used to store the id of the related instance.
     

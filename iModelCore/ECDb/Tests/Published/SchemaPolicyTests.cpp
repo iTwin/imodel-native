@@ -17,6 +17,15 @@ struct SchemaPolicyTestFixture : DbMappingTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                06/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaPolicyTestFixture, SchemaPolicesNotIncludedByDefault)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaPolicesNotIncludedByDefault.ecdb"));
+    ASSERT_FALSE(m_ecdb.Schemas().ContainsSchema("ECDbSchemaPolicies"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                      Krischan.Eberle                06/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaPolicyTestFixture, NoAdditionalRootEntityClasses)
     {
     ASSERT_EQ(ERROR, TestHelper::ImportSchemas({SchemaItem(
