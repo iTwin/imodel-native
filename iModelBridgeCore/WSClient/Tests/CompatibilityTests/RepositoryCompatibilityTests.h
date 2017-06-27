@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <WebServices/Client/WSError.h>
 #include "Parser/TestData.h"
 #include <Bentley/BeTest.h>
 #include <WebServices/Configuration/UrlProvider.h>

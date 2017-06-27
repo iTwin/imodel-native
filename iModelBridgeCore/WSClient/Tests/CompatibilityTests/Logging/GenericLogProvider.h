@@ -9,10 +9,10 @@
 #pragma once
 
 // TODO: better way to reference non-published API?
-#include "../../../../Bentley/PublicAPI/Logging/bentleylogging.h"
+#include <Logging/bentleylogging.h>
 
 #include <Bentley/bmap.h>
-#include <Bentley/BeCriticalSection.h>
+#include <Bentley/BeSharedMutex.h>
 
 #include "GenericLogProviderActivator.h"
 
@@ -47,7 +47,7 @@ class SeverityMap
 
         NamespaceSeverityMap        m_severity;
         SEVERITY                    m_defaultSeverity;
-        BeCriticalSection           m_lock;
+        BeSharedMutex               m_lock;
     };
 
 /*--------------------------------------------------------------------------------------+

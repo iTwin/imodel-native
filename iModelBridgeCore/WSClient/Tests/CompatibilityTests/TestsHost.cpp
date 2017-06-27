@@ -8,8 +8,10 @@
 
 #include "TestsHost.h"
 
-#include <MobileDgn/MobileDgnCommon.h>
-#include <MobileDgn/MobileDgnL10N.h>
+#include <BeSQLite/L10N.h>
+
+#include <Bentley/Tasks/AsyncResult.h>
+#include <Bentley/Tasks/AsyncTask.h>
 
 #include "../UnitTests/Published/Utils/TestAppPathProvider.h"
 
@@ -18,7 +20,6 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_MOBILEDGN
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 
 #define LOGGING_OPTION_CONFIG_FILE L"CONFIG_FILE"
@@ -59,15 +60,25 @@ void TestsHost::SetupTestEnvironment()
     BeFileName::CreateNewDirectory(tempDir);
     }
 
+static BeFileName getSqlangFile ()
+    {
+    BeFileName frameworkSqlangFile;
+    BeTest::GetHost ().GetFrameworkSqlangFiles (frameworkSqlangFile);
+
+    BeFileName wsClientSqlangFile = frameworkSqlangFile.GetDirectoryName ();
+    wsClientSqlangFile.AppendToPath (L"WSClient_test.sqlang.db3");
+
+    return wsClientSqlangFile;
+    }
+
 void TestsHost::InitLibraries()
     {
-    MobileDgnCommon::SetApplicationPathsProvider(s_pathProvider.get());
-
+    CachingDataSource::Initialize (s_pathProvider->GetTemporaryDirectory ());
     BeSQLiteLib::Initialize(s_pathProvider->GetTemporaryDirectory());
     BeSQLite::EC::ECDb::Initialize(s_pathProvider->GetTemporaryDirectory(), &s_pathProvider->GetAssetsRootDirectory());
-
-    L10N::SqlangFiles sqlangFiles(BeFileName(s_pathProvider->GetAssetsRootDirectory()).AppendToPath(L"sqlang\\platform\\MobileDgn_en.sqlang.db3"));
-    MobileDgnL10N::ReInitialize(sqlangFiles, sqlangFiles);
+    
+    L10N::SqlangFiles sqlangFiles (getSqlangFile ());
+    BeSQLite::L10N::Initialize (sqlangFiles);
     }
 
 void TestsHost::InitLogging(int logLevel)
@@ -78,28 +89,28 @@ void TestsHost::InitLogging(int logLevel)
     bool silent = logLevel == 0;
 
     // Log LOG_ERROR as test failures. We should consider LOG_WARNING as failures in future as well.
-    GenericLogProviderActivator::Activate([=] (Bentley::NativeLogging::SEVERITY sev, WCharCP msg)
+    GenericLogProviderActivator::Activate([=] (NativeLogging::SEVERITY sev, WCharCP msg)
         {
-        if (sev >= Bentley::NativeLogging::LOG_ERROR)
+        if (sev >= NativeLogging::LOG_ERROR)
             s_errorLog += Utf8String(msg);
 
         if (!silent)
             fwprintf(stdout, msg);
         });
 
-    NativeLogging::LoggingConfig::SetSeverity("BeAssert", Bentley::NativeLogging::LOG_WARNING);
-    NativeLogging::LoggingConfig::SetSeverity("BeSQLite", Bentley::NativeLogging::LOG_WARNING);
-    NativeLogging::LoggingConfig::SetSeverity("ECDb", Bentley::NativeLogging::LOG_WARNING);
-    NativeLogging::LoggingConfig::SetSeverity("ECDbMap", Bentley::NativeLogging::LOG_WARNING);
-    NativeLogging::LoggingConfig::SetSeverity("ECObjectsNative", Bentley::NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity("BeAssert", NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity("BeSQLite", NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity("ECDb", NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity("ECDbMap", NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity("ECObjectsNative", NativeLogging::LOG_WARNING);
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_HTTP, Bentley::NativeLogging::LOG_INFO);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_MOBILEDGN_UTILS_THREADING, Bentley::NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_HTTP, NativeLogging::LOG_INFO);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_BENTLEY_TASKS, NativeLogging::LOG_WARNING);
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, Bentley::NativeLogging::LOG_WARNING);
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, Bentley::NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCACHE, NativeLogging::LOG_WARNING);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCLIENT, NativeLogging::LOG_WARNING);
 
-    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCCTESTS, Bentley::NativeLogging::LOG_INFO);
+    NativeLogging::LoggingConfig::SetSeverity(LOGGER_NAMESPACE_WSCCTESTS, NativeLogging::LOG_INFO);
     }
 
 Utf8String& TestsHost::GetErrorLog()
@@ -107,7 +118,7 @@ Utf8String& TestsHost::GetErrorLog()
     return s_errorLog;
     }
 
-void* TestsHost::_InvokeP(char const* function_and_args)
+void* TestsHost::_InvokeP(char const* function, void* args)
     {
     return nullptr;
     }
@@ -130,4 +141,9 @@ void TestsHost::_GetOutputRoot(BeFileName& path)
 void TestsHost::_GetTempDir(BeFileName& path)
     {
     path = s_pathProvider->GetTemporaryDirectory();
+    }
+
+void TestsHost::_GetFrameworkSqlangFiles (BeFileName& path)
+    {
+    path = getSqlangFile ();
     }
