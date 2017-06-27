@@ -399,7 +399,6 @@ public:
 //! and used to extend the initial range.
 //! After mesh generation completes, the entire list is requantized to the actual range
 //! if necessary.         
-
 // @bsistruct                                                   Paul.Connelly   05/17
 //=======================================================================================
 struct QVertex3dList

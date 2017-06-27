@@ -2093,9 +2093,6 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
         geometries.MarkIncomplete();
         }
 
-    if (collector.AnySkipped())
-        geometries.MarkIncomplete();
-
     IFacetOptionsPtr facetOptions = Geometry::CreateFacetOptions(m_tolerance);
 
     facetOptions->SetHideSmoothEdgesWhenGeneratingNormals(false);        // We'll do this ourselves when generating meshes - This will turn on sheet edges that should be hidden (Pug.dgn).
@@ -2120,7 +2117,7 @@ GeometryList Tile::CollectGeometry(LoadContextCR loadContext)
             }
         }
 
-    if (!loadContext.WasAborted() && !IsLeaf() && !HasZoomFactor() && collector.GetEntries().size() <= s_minElementsPerTile)
+    if (!loadContext.WasAborted() && !IsLeaf() && !HasZoomFactor() && !collector.AnySkipped() && collector.GetEntries().size() <= s_minElementsPerTile)
         {
         // If no elements were skipped and only a small number of elements exist within this tile's range:
         //  - Make it a leaf tile, if it contains no curved geometry; otherwise
@@ -2192,6 +2189,8 @@ void TileContext::PushGeometry(GeometryR geom)
     {
     if (!BelowMinRange(geom.GetTileRange()))
         m_geometries.push_back(geom);
+    else
+        MarkIncomplete();
     }
 
 /*---------------------------------------------------------------------------------**//**
