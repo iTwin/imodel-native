@@ -450,6 +450,10 @@ public:
     //! Load tile. This method is called when the tile data becomes available, regardless of the source of the data. Called from worker threads.
     virtual BentleyStatus _LoadTile() = 0; 
 
+    //! Given the time (in unix millis) at which the tile was written to the cache, return true if the cached tile is no longer usable.
+    //! If so, it will be deleted from the cache and _LoadTile() will be used to produce a new tile instead.
+    virtual bool _IsExpired(uint64_t cachedTileCreateTime) { return false; }
+
     struct LoadFlag
         {
         TileLoadStatePtr m_state;

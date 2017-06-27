@@ -53,6 +53,7 @@ private:
 
     folly::Future<BentleyStatus> _GetFromSource() override;
     BentleyStatus _LoadTile() override;
+    bool _IsExpired(uint64_t) override;
 
     BentleyStatus LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry);
     BentleyStatus DoGetFromSource();
