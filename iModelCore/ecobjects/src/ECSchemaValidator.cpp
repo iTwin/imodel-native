@@ -192,7 +192,6 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
         LOG.errorv("Failed to validate '%s' since its original ECXML version is not ECVersion, %s", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
         status = ECObjectsStatus::Error;
         }
-
     
     for (bpair <SchemaKey, ECSchemaPtr> ref : schema.GetReferencedSchemas())
         {
