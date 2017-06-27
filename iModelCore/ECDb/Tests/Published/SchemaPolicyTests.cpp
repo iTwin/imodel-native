@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
+#include <initializer_list>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -16,7 +17,7 @@ struct SchemaPolicyTestFixture : DbMappingTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
+TEST_F(SchemaPolicyTestFixture, NoAdditionalRootEntityClasses)
     {
     ASSERT_EQ(ERROR, TestHelper::ImportSchemas({SchemaItem(
         R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -291,7 +292,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalRootEntityClasses)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
+TEST_F(SchemaPolicyTestFixture, NoAdditionalLinkTables)
     {
     ASSERT_EQ(ERROR, TestHelper::ImportSchemas({SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -652,7 +653,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalLinkTables)
 //---------------------------------------------------------------------------------------
 // @bsiMethod                                      Krischan.Eberle                06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints)
+TEST_F(SchemaPolicyTestFixture, NoAdditionalForeignKeyConstraints)
     {
         {
             ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaPolicies_NoAdditionalForeignKeys.ecdb"));
@@ -810,7 +811,7 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_NoAdditionalForeignKeyConstraints
 //---------------------------------------------------------------------------------------
 // @bsiTest                                      Krischan.Eberle                06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaPolicyTestFixture, SchemaPolicies_ExceptionTests)
+TEST_F(SchemaPolicyTestFixture, ExceptionTests)
     {
     Utf8CP coreSchemaXmlTemplate = R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 <ECSchema schemaName="Core" alias="core" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
@@ -885,5 +886,67 @@ TEST_F(SchemaPolicyTestFixture, SchemaPolicies_ExceptionTests)
     ASSERT_EQ(ERROR, assertImport("Schema1:Foo", "Schema1:Rel2", "Schema1:Child.Parent")) << "Wrong rel class name";
     ASSERT_EQ(ERROR, assertImport("Schema1:Foo", "Schema1:Rel", "Schema1:Child2.Parent")) << "Wrong nav prop class name";
     ASSERT_EQ(ERROR, assertImport("Schema1:Foo", "Schema1:Rel", "Schema1:Child.Parent2")) << "Wrong nav prop class name";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiTest                                      Krischan.Eberle                06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaPolicyTestFixture, UpdatingECDbSchemas)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("schemapolicy_updatingecdbschemas.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+                    <ECSchemaReference name="ECDbSchemaPolicies" version="01.00" alias="ecdbpol"/>
+                    <ECCustomAttributes>
+                        <NoAdditionalRootEntityClasses xmlns="ECDbSchemaPolicies.01.00"/>
+                        <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.01.00"/>
+                        <NoAdditionalForeignKeyConstraints xmlns="ECDbSchemaPolicies.01.00"/>
+                    </ECCustomAttributes>
+                </ECSchema>)xml")));
+
+    
+    for (Utf8CP ecdbSchema : {"ECDbFileInfo", "ECDbMap", "ECDbMeta", "ECDbSchemaPolicies", "ECDbSystem"})
+        {
+        ASSERT_EQ(BE_SQLITE_OK, ReopenECDb());
+        ECSchemaCP schema = m_ecdb.Schemas().GetSchema(ecdbSchema, true);
+        ASSERT_TRUE(schema != nullptr);
+
+        //Add to the ECDb schema new root entity classes, a link table rel, and a nav prop relationship with FK constraint
+        ECSchemaR schemaR = const_cast<ECSchemaR>(*schema);
+        ASSERT_EQ(ECObjectsStatus::Success, schemaR.SetVersionMinor(schemaR.GetVersionMinor() + 1));
+
+        ECEntityClassP parentClass, childClass = nullptr;
+        ECRelationshipClassP navPropRelClass, linkTableRelClass = nullptr;
+        ASSERT_EQ(ECObjectsStatus::Success, schemaR.CreateEntityClass(parentClass, "Parent"));
+        ASSERT_EQ(ECObjectsStatus::Success, schemaR.CreateEntityClass(childClass, "Child"));
+
+        ASSERT_EQ(ECObjectsStatus::Success, schemaR.CreateRelationshipClass(linkTableRelClass, "LinkTableRelClass"));
+        linkTableRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
+        ASSERT_EQ(ECObjectsStatus::Success, linkTableRelClass->GetSource().AddClass(*parentClass));
+        linkTableRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
+        ASSERT_EQ(ECObjectsStatus::Success, linkTableRelClass->GetTarget().AddClass(*childClass));
+
+        ASSERT_EQ(ECObjectsStatus::Success, schemaR.CreateRelationshipClass(navPropRelClass, "NavPropRelClass"));
+        navPropRelClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+        ASSERT_EQ(ECObjectsStatus::Success, navPropRelClass->GetSource().AddClass(*parentClass));
+        navPropRelClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroMany());
+        ASSERT_EQ(ECObjectsStatus::Success, navPropRelClass->GetTarget().AddClass(*childClass));
+
+        NavigationECPropertyP navProp = nullptr;
+        ASSERT_EQ(ECObjectsStatus::Success, childClass->CreateNavigationProperty(navProp, "Parent", *navPropRelClass, ECRelatedInstanceDirection::Backward));
+        
+        ECClassCP fkConstraintCaClass = m_ecdb.Schemas().GetClass("ECDbMap", "ForeignKeyConstraint");
+        ASSERT_TRUE(fkConstraintCaClass != nullptr);
+        if (schema->GetReferencedSchemas().find(SchemaKey("ECDbMap", 2, 0)) == schema->GetReferencedSchemas().end())
+            schemaR.AddReferencedSchema(const_cast<ECSchemaR> (fkConstraintCaClass->GetSchema()));
+
+        IECInstancePtr fkConstraintCa = fkConstraintCaClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        ASSERT_TRUE(fkConstraintCa != nullptr);
+        navProp->SetCustomAttribute(*fkConstraintCa);
+
+        bvector<ECSchemaCP> modifiedSchemas;
+        modifiedSchemas.push_back(schema);
+        ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(modifiedSchemas));
+        ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+        }
     }
 END_ECDBUNITTESTS_NAMESPACE
