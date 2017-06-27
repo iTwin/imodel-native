@@ -715,6 +715,7 @@ protected:
     virtual ~ECProperty();
 
     ECObjectsStatus                     SetName (Utf8StringCR name);
+    SchemaReadStatus                    ReadMinMaxXml(BeXmlNodeR propertyNode);
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion);

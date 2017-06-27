@@ -574,30 +574,6 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
     READ_OPTIONAL_XML_ATTRIBUTE(propertyNode, DESCRIPTION_ATTRIBUTE, this, Description)
 
-    Utf8String minValue;
-    if (propertyNode.GetAttributeStringValue(minValue, MINIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
-        {
-        m_minimumValue.SetUtf8CP(minValue.c_str(), true); //TODO: cast type
-        }
-
-    Utf8String maxValue;
-    if (propertyNode.GetAttributeStringValue(maxValue, MAXIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
-        {
-        m_maximumValue.SetUtf8CP(maxValue.c_str(), true); //TODO: cast type
-        }
-
-    uint32_t minLength;
-    if (propertyNode.GetAttributeUInt32Value(minLength, MINIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
-        {
-        SetMinimumLength(minLength);
-        }
-
-    uint32_t maxLength;
-    if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
-        {
-        SetMaximumLength(maxLength);
-        }
-
     uint32_t priority;
     if (propertyNode.GetAttributeUInt32Value(priority, PRIORITY_ATTRIBUTE) == BEXML_Success)
         {
@@ -831,8 +807,11 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
         this->SetExtendedTypeName(value.c_str());
         }
 
-    _AdjustMinMaxAfterTypeChange();
-    return SchemaReadStatus::Success;
+    status = ReadMinMaxXml(propertyNode);
+    if (SchemaReadStatus::Success != status)
+        return status;
+
+    return status;
     }
 
 void getExtendedTypeAndKindOfQuantityAttributes(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECPropertyCP ecProperty, ECVersion ecXmlVersion)
@@ -1261,6 +1240,66 @@ ECObjectsStatus StructECProperty::SetType (ECStructClassCR structType)
     return ECObjectsStatus::Success;
     }
 
+SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
+    {
+    uint32_t minLength;
+    if (propertyNode.GetAttributeUInt32Value(minLength, MINIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+        {
+        if (ECObjectsStatus::Success != SetMinimumLength(minLength) && GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+            {
+            LOG.errorv("Cannot set the minimum length attribute on ECProperty, %s.%s, because the datatype is not supported. Minimum length can only be set on a property with a primitive type of string and binary.",
+                    GetClass().GetFullName(), GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
+    uint32_t maxLength;
+    if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+        {
+        if (ECObjectsStatus::Success != SetMaximumLength(maxLength) && GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+            {
+            LOG.errorv("Cannot set the maximum length attribute on ECProperty, %s.%s, because the datatype is not supported. Maximum length can only be set on a property with a primitive type of string and binary.",
+                GetClass().GetFullName(), GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
+    Utf8String minValue;
+    if (propertyNode.GetAttributeStringValue(minValue, MINIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
+        {
+        ECValue minECValue(minValue.c_str());
+        PrimitiveType pt;
+        ResolvePrimitiveType(this, pt);
+        
+        if ((!minECValue.ConvertToPrimitiveType(pt) || ECObjectsStatus::Success != SetMinimumValue(minECValue)) && 
+            GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+            {
+            LOG.errorv("Cannot set the minimum value attribute on ECProperty, %s.%s, because the datatype is not supported. Minimum value can only be set on a property with a primitive type of double, int, or long.",
+                GetClass().GetFullName(), GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
+    Utf8String maxValue;
+    if (propertyNode.GetAttributeStringValue(maxValue, MAXIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
+        {
+        PrimitiveType pt;
+        ResolvePrimitiveType(this, pt);
+
+        ECValue maxECValue(maxValue.c_str());
+
+        if ((!maxECValue.ConvertToPrimitiveType(pt) || ECObjectsStatus::Success != SetMaximumValue(maxECValue)) && 
+            GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+            {
+            LOG.errorv("Cannot set the maximum value attribute on ECProperty, %s.%s, because the datatype is not supported. Maximum value can only be set on a property with a primitive type of double, int, or long.",
+                GetClass().GetFullName(), GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
+    return SchemaReadStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1279,6 +1318,10 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
 
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())  
+
+    status = ReadMinMaxXml(propertyNode);
+    if (SchemaReadStatus::Success != status)
+        return status;
 
     if (ECObjectsStatus::Success != setterStatus)
         {

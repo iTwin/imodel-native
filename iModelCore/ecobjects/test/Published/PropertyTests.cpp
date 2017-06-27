@@ -252,7 +252,7 @@ TEST_F(PropertyDeserializationTest, MinMaxValue)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECEntityClass typeName='Foo'>"
-        "       <ECProperty propertyName='DoubleProp' typeName='double' MaximumValue='3.0' MinimumValue='42'/>"
+        "       <ECProperty propertyName='DoubleProp' typeName='double' MinimumValue='3.0' MaximumValue='42'/>"
         "    </ECEntityClass>"
         "</ECSchema>";
 
@@ -274,6 +274,48 @@ TEST_F(PropertyDeserializationTest, MinMaxValue)
 
     ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
     ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
+    }
+
+void TestMinMaxValueTypeEnforcement(Utf8CP primitiveType, bool shouldFail)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECEntityClass typeName='Foo'>
+               <ECProperty propertyName='DoubleProp' typeName='%s' MinimumValue='3.0' MaximumValue='42'/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8String formattedSchemaXml;
+    formattedSchemaXml.Sprintf(schemaXml, primitiveType);
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus readStatus = ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *context);
+    if (shouldFail)
+        {
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, readStatus) << "A property with primitive type " << primitiveType << " should fail to deserialize.";
+        return;
+        }
+
+    ASSERT_EQ(SchemaReadStatus::Success, readStatus) << "A property with primitive type " << primitiveType << " should deserialize successfully.";
+    ASSERT_TRUE(schema.IsValid()) << "The schema is invalid even though deserialization was successful";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, MinMaxValueTypeEnforcement)
+    {
+    TestMinMaxValueTypeEnforcement("double", false);
+    TestMinMaxValueTypeEnforcement("int", false);
+    TestMinMaxValueTypeEnforcement("long", false);
+    TestMinMaxValueTypeEnforcement("binary", true);
+    TestMinMaxValueTypeEnforcement("string", true);
+    TestMinMaxValueTypeEnforcement("bool", true);
+    TestMinMaxValueTypeEnforcement("dateTime", true);
+    TestMinMaxValueTypeEnforcement("Bentley.Geometry.Common.IGeometry", true);
+    TestMinMaxValueTypeEnforcement("point2d", true);
+    TestMinMaxValueTypeEnforcement("point3d", true);
     }
 
 //---------------------------------------------------------------------------------------
@@ -304,6 +346,48 @@ TEST_F(PropertyDeserializationTest, MinMaxLength)
 
     EXPECT_EQ(3, pp->GetMinimumLength());
     EXPECT_EQ(42, pp->GetMaximumLength());
+    }
+
+void TestMinMaxLengthTypeEnforcement(Utf8CP primitiveType, bool shouldFail)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='utf-8'?>
+        <ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+            <ECEntityClass typeName='Foo'>
+               <ECProperty propertyName='DoubleProp' typeName='%s' MinimumLength='3.0' MaximumLength='42'/>
+            </ECEntityClass>
+        </ECSchema>)xml";
+
+    Utf8String formattedSchemaXml;
+    formattedSchemaXml.Sprintf(schemaXml, primitiveType);
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus readStatus = ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *context);
+    if (shouldFail)
+        {
+        ASSERT_EQ(SchemaReadStatus::InvalidECSchemaXml, readStatus) << "A property with primitive type " << primitiveType << " should fail to deserialize.";
+        return;
+        }
+
+    ASSERT_EQ(SchemaReadStatus::Success, readStatus) << "A property with primitive type " << primitiveType << " should deserialize successfully.";
+    ASSERT_TRUE(schema.IsValid()) << "The schema is invalid even though deserialization was successful";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyDeserializationTest, MinMaxLengthTypeEnforcement)
+    {
+    TestMinMaxLengthTypeEnforcement("binary", false);
+    TestMinMaxLengthTypeEnforcement("string", false);
+    TestMinMaxLengthTypeEnforcement("double", true);
+    TestMinMaxLengthTypeEnforcement("int", true);
+    TestMinMaxLengthTypeEnforcement("long", true);
+    TestMinMaxLengthTypeEnforcement("bool", true);
+    TestMinMaxLengthTypeEnforcement("dateTime", true);
+    TestMinMaxLengthTypeEnforcement("Bentley.Geometry.Common.IGeometry", true);
+    TestMinMaxLengthTypeEnforcement("point2d", true);
+    TestMinMaxLengthTypeEnforcement("point3d", true);
     }
 
 //---------------------------------------------------------------------------------------

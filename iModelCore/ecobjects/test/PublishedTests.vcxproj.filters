@@ -60,9 +60,6 @@
     <ClCompile Include="TestFixture\TestFixture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ValueValidationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ExtendedTypeTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
