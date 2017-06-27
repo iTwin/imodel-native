@@ -3240,85 +3240,9 @@ static BentleyStatus getBodyCurves(bvector<PK_CURVE_t>& curves, bvector<PK_INTER
 
     return SUCCESS;
     }
+#endif
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Brien.Bastings  06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void getLoopVertices(bvector<ISubEntityPtr>& loopVertices, ISubEntityCR vertex, ISubEntityCR face)
-    {
-    bvector<ISubEntityPtr> vertexEdges;
-
-    if (SUCCESS != BRepUtil::GetVertexEdges(vertexEdges, vertex))
-        return;
-
-    ISubEntityPtr faceEdgeLoopPtr;
-
-    for (ISubEntityPtr edgePtr : vertexEdges)
-        {
-        bvector<ISubEntityPtr> edgeFaces;
-
-        if (SUCCESS != BRepUtil::GetEdgeFaces(edgeFaces, *edgePtr))
-            continue;
-
-        bvector<ISubEntityPtr>::iterator it2 = std::find_if(edgeFaces.begin(), edgeFaces.end(), std::bind2nd(IsSubEntityPtrEqual(), &face));
-
-        if (it2 == edgeFaces.end())
-            continue;
-
-        faceEdgeLoopPtr = edgePtr;
-        break;
-        }
-
-    if (!faceEdgeLoopPtr.IsValid())
-        return;
-
-    bvector<ISubEntityPtr> loopEdges;
-
-    if (SUCCESS != BRepUtil::GetLoopEdgesFromEdge(loopEdges, *faceEdgeLoopPtr, face) || loopEdges.size() < 3)
-        return;
-
-    for (ISubEntityPtr edgePtr : loopEdges)
-        {
-        bvector<ISubEntityPtr> edgeVertices;
-
-        if (SUCCESS != BRepUtil::GetEdgeVertices(edgeVertices, *edgePtr) || edgeVertices.size() != 2)
-            continue;
-
-        ISubEntityPtr vertex1Ptr = edgeVertices.at(0);
-        ISubEntityPtr vertex2Ptr = edgeVertices.at(1);
-
-        if (loopVertices.empty())
-            {
-            loopVertices.push_back(vertex1Ptr);
-            loopVertices.push_back(vertex2Ptr);
-            }
-        else if (vertex1Ptr->IsEqual(*loopVertices.back()))
-            {
-            if (!vertex2Ptr->IsEqual(*loopVertices.front()))
-                loopVertices.push_back(vertex2Ptr);
-            }
-        else if (vertex2Ptr->IsEqual(*loopVertices.back()))
-            {
-            if (!vertex1Ptr->IsEqual(*loopVertices.front()))
-                loopVertices.push_back(vertex1Ptr);
-            }
-        else if (vertex1Ptr->IsEqual(*loopVertices.front()))
-            {
-            if (!vertex2Ptr->IsEqual(*loopVertices.back()))
-                loopVertices.insert(loopVertices.begin(), vertex2Ptr);
-            }
-        else if (vertex2Ptr->IsEqual(*loopVertices.front()))
-            {
-            if (!vertex1Ptr->IsEqual(*loopVertices.back()))
-                loopVertices.insert(loopVertices.begin(), vertex1Ptr);
-            }
-        else
-            {
-            BeAssert(false);
-            }
-        }
-    }
-
+#if defined (BENTLEYCONFIG_PARASOLID)
 //=======================================================================================
 // @bsiclass 
 //=======================================================================================
@@ -3374,6 +3298,84 @@ bool SetupFromFace(ISubEntityR face)
 
     m_facePtr = &face;
     return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GetLoopVertices(bvector<ISubEntityPtr>& loopVertices, ISubEntityCR vertex)
+    {
+    bvector<ISubEntityPtr> vertexEdges;
+
+    if (SUCCESS != BRepUtil::GetVertexEdges(vertexEdges, vertex))
+        return;
+
+    ISubEntityPtr faceEdgeLoopPtr;
+
+    for (ISubEntityPtr edgePtr : vertexEdges)
+        {
+        bvector<ISubEntityPtr> edgeFaces;
+
+        if (SUCCESS != BRepUtil::GetEdgeFaces(edgeFaces, *edgePtr))
+            continue;
+
+        bvector<ISubEntityPtr>::iterator it2 = std::find_if(edgeFaces.begin(), edgeFaces.end(), std::bind2nd(IsSubEntityPtrEqual(), m_facePtr.get()));
+
+        if (it2 == edgeFaces.end())
+            continue;
+
+        faceEdgeLoopPtr = edgePtr;
+        break;
+        }
+
+    if (!faceEdgeLoopPtr.IsValid())
+        return;
+
+    bvector<ISubEntityPtr> loopEdges;
+
+    if (SUCCESS != BRepUtil::GetLoopEdgesFromEdge(loopEdges, *faceEdgeLoopPtr, *m_facePtr) || loopEdges.size() < 3)
+        return;
+
+    for (ISubEntityPtr edgePtr : loopEdges)
+        {
+        bvector<ISubEntityPtr> edgeVertices;
+
+        if (SUCCESS != BRepUtil::GetEdgeVertices(edgeVertices, *edgePtr) || edgeVertices.size() != 2)
+            continue;
+
+        ISubEntityPtr vertex1Ptr = edgeVertices.at(0);
+        ISubEntityPtr vertex2Ptr = edgeVertices.at(1);
+
+        if (loopVertices.empty())
+            {
+            loopVertices.push_back(vertex1Ptr);
+            loopVertices.push_back(vertex2Ptr);
+            }
+        else if (vertex1Ptr->IsEqual(*loopVertices.back()))
+            {
+            if (!vertex2Ptr->IsEqual(*loopVertices.front()))
+                loopVertices.push_back(vertex2Ptr);
+            }
+        else if (vertex2Ptr->IsEqual(*loopVertices.back()))
+            {
+            if (!vertex1Ptr->IsEqual(*loopVertices.front()))
+                loopVertices.push_back(vertex1Ptr);
+            }
+        else if (vertex1Ptr->IsEqual(*loopVertices.front()))
+            {
+            if (!vertex2Ptr->IsEqual(*loopVertices.back()))
+                loopVertices.insert(loopVertices.begin(), vertex2Ptr);
+            }
+        else if (vertex2Ptr->IsEqual(*loopVertices.front()))
+            {
+            if (!vertex1Ptr->IsEqual(*loopVertices.back()))
+                loopVertices.insert(loopVertices.begin(), vertex1Ptr);
+            }
+        else
+            {
+            BeAssert(false);
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3455,7 +3457,9 @@ bool GetNewSurfaceForResultFace(PK_PLANE_sf_t& plane, PK_FACE_t faceTag, Transfo
     }
 
 }; // FaceVertexData
+#endif
 
+#if defined (BENTLEYCONFIG_PARASOLID)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3498,7 +3502,7 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
             bvector<ISubEntityPtr> loopVertices;
 
-            getLoopVertices(loopVertices, *vertices[iVertex], *facePtr);
+            data.GetLoopVertices(loopVertices, *vertices[iVertex]);
 
             if (loopVertices.size() < 3)
                 continue;
@@ -3624,6 +3628,11 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
     bvector<PK_FACE_t>    replaceFaces;
     bvector<PK_SURF_t>    replaceSurfs;
     bvector<PK_LOGICAL_t> replaceSenses;
+#if defined (NOT_NOW)
+    bvector<PK_EDGE_t>    replaceEdges;
+    bvector<PK_CURVE_t>   replaceCurves;
+    bool                  isSheetBody = (IBRepEntity::EntityType::Sheet == targetEntity.GetEntityType());
+#endif
 
     for (FaceVertexData& data : faceData)
         {
@@ -3720,6 +3729,27 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
             replaceFaces.push_back(resultFaces[iResult]);
             replaceSurfs.push_back(planeTag);
             replaceSenses.push_back(PK_LOGICAL_true);
+
+#if defined (NOT_NOW)
+            if (!isSheetBody)
+                continue;
+
+            bvector<PK_EDGE_t> resultEdges;
+
+            if (SUCCESS != PSolidTopo::GetFaceEdges(resultEdges, resultFaces[iResult]))
+                continue;
+
+            for (PK_EDGE_t edgeTag : resultEdges)
+                {
+                PK_EDGE_ask_type_t edgeType;
+
+                if (SUCCESS != PK_EDGE_ask_type(edgeTag, &edgeType) || PK_EDGE_type_laminar_c != edgeType.fins_type)
+                    continue;
+
+                replaceEdges.push_back(edgeTag);
+                replaceCurves.push_back(PK_ENTITY_null);
+                }
+#endif
             }
         }
 
@@ -3730,6 +3760,15 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
     PK_FACE_replace_surfs_o_m(options);
     options.merge = PK_replace_merge_out_c;
+
+#if defined (NOT_NOW)
+    if (!replaceEdges.empty())
+        {
+        options.edge_data.n_edges = (int) replaceEdges.size();
+        options.edge_data.edges = &replaceEdges.front();
+        options.edge_data.curves = &replaceCurves.front();
+        }
+#endif
 
     PK_TOPOL_local_r_t results;
     PK_TOPOL_track_r_t tracking;
