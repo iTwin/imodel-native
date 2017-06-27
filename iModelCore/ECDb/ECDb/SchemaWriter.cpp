@@ -1002,7 +1002,10 @@ BentleyStatus SchemaWriter::BindPropertyMinMaxValue(Statement& stmt, int paramIn
             case PRIMITIVETYPE_Double:
                 if (val.IsDouble())
                     return BE_SQLITE_OK == stmt.BindDouble(paramIndex, val.GetDouble()) ? SUCCESS : ERROR;
-
+                else if (val.IsInteger())
+                    return BE_SQLITE_OK == stmt.BindInt(paramIndex, val.GetInteger()) ? SUCCESS : ERROR;
+                else if (val.IsLong())
+                    return BE_SQLITE_OK == stmt.BindInt64(paramIndex, val.GetLong()) ? SUCCESS : ERROR;
                 break;
 
             case PRIMITIVETYPE_Integer:
@@ -1014,6 +1017,8 @@ BentleyStatus SchemaWriter::BindPropertyMinMaxValue(Statement& stmt, int paramIn
             case PRIMITIVETYPE_Long:
                 if (val.IsLong())
                     return BE_SQLITE_OK == stmt.BindInt64(paramIndex, val.GetLong()) ? SUCCESS : ERROR;
+                else if (val.IsInteger())
+                    return BE_SQLITE_OK == stmt.BindInt(paramIndex, val.GetInteger()) ? SUCCESS : ERROR;
 
                 break;
 
