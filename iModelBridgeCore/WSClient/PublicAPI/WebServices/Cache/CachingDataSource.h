@@ -128,10 +128,15 @@ struct CachingDataSource :
     public:
         virtual ~CachingDataSource() override;
 
+        //! Host should call to establish search paths for caching.
+        //! @param[in] hostAssetsDirectory Directory to where the application has deployed assets that come with the API,
+        //!            e.g. standard ECSchemas.
+        WSCACHE_EXPORT static void Initialize (BeFileNameCR hostAssetsDirectory);
+
         //! Be sure to initialize APIs before executing caching code:
         //!     [Required] BeSQLite::EC::ECDb::Initialize()
-        //!     [Required] DgnClientFx {platform specific} Initialize
-        //!     [Required] DgnClientFxL10N::Initialize() (error message localization needs SQLang file built from HttpError.xliff.h)
+        //!     [Required] BeSQLite::L10N::Initialize ()
+        //!     [Required] CachingDataSource::Initialize ()
         //!     [Optional] HttpClient::InitializeNetworkActivityCallback()
         //! @param client - used for communicating to server
         //! @param cacheFilePath - cache database file path to store or open
@@ -157,6 +162,11 @@ struct CachingDataSource :
             WorkerThreadPtr cacheAccessThread,
             BeFileNameCR temporaryDir
             );
+
+        //! Gets the host assets directory to where the application deploys assets that come with the API, e.g. standard ECSchemas.
+        //! Must have been set via CachingDataSource::Initialize.
+        //! @return Host assets directory
+        WSCACHE_EXPORT static BeFileNameCR GetHostAssetsDirectory ();
 
         WSCACHE_EXPORT IWSRepositoryClientPtr GetClient() const override;
         WSCACHE_EXPORT void SetClient(IWSRepositoryClientPtr client) override;
