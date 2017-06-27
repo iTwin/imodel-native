@@ -108,6 +108,9 @@
     <ClCompile Include="Published\CustomAttributeUnitsConversionTests.cpp">
       <Filter>Source Files\CustomAttributeConversion</Filter>
     </ClCompile>
+    <ClCompile Include="Published\ECEnumerationTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h">
