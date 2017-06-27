@@ -119,8 +119,7 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
 
     auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
 
-    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(1)
-        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
 
     auto t1 = HttpRequest("https://foo.com/a", "GET", authHandler).PerformAsync();
     auto t2 = HttpRequest("https://foo.com/b", "GET", authHandler).PerformAsync();
@@ -130,6 +129,29 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
 
     t1->Wait();
     t2->Wait();
+    }
+
+TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_RequestFailsWithAuthenticationError_NewDelegationTokenWasNotRequested)
+    {
+    // This test guards of too many Forbidden requests being done
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    Credentials creds("Foo", "Boo");
+    SamlTokenPtr identityToken = StubSamlToken();
+
+    EXPECT_CALL(*imsClient, RequestToken(creds, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken))));
+    ASSERT_TRUE(manager->SignInWithCredentials(creds)->GetResult().IsSuccess());
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(StubSamlToken()))));
+    GetHandler().ForAnyRequest(StubHttpResponse(HttpStatus::Forbidden));
+
+    auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr());
+
+    EXPECT_EQ(0, GetHandler().GetRequestsPerformed());
+    HttpResponse response = HttpRequest("https://foo.com/a", "GET", authHandler).PerformAsync()->GetResult();
+    EXPECT_EQ(1, GetHandler().GetRequestsPerformed());
+
+    EXPECT_EQ(HttpStatus::Forbidden, response.GetHttpStatus());
     }
 
 TEST_F(ConnectSignInManagerTests, GetUserInfo_NotSignedIn_ReturnsEmpty)
