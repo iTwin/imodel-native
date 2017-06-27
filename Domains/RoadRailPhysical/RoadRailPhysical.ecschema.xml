@@ -230,110 +230,48 @@
     </ECEntityClass>
     <!-- END Tunnel-related Classes -->
     
-    <!-- BEGIN FurnitureElement Class Hierarchy -->
-    <ECEntityClass typeName="FurnitureElement" modifier="Abstract" description="Physical element supplementing Road and Rail models.">
+    <!-- BEGIN Linearly-located PhysicalElement Class Hierarchy (Furniture-related) -->
+    <ECEntityClass typeName="GenericLinearlyLocatedPhysicalElement" modifier="Sealed" description="Generic Physical Element that is linearly located.">
         <BaseClass>bis:PhysicalElement</BaseClass>
-        <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="Forward"/>
-    </ECEntityClass>
-    <ECEntityClass typeName="DiscreteFurnitureElement" modifier="Abstract" description="Base class for Furniture Elements with a single placement-point.">
-        <BaseClass>FurnitureElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="GenericDiscreteFurniture" modifier="Sealed" description="Generic Furniture Element with a single placement-point.">
-        <BaseClass>DiscreteFurnitureElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="LinearlyLocatedFurnitureElement" modifier="Abstract" description="Base class for Furniture Elements linearly located.">
-        <BaseClass>FurnitureElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
-    </ECEntityClass>    
-    <ECEntityClass typeName="LinearlyLocatedDiscreteFurnitureElement" modifier="Abstract" description="Base class for Furniture Elements with a single linearly located point.">
-        <BaseClass>LinearlyLocatedFurnitureElement</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="GenericLinearlyLocatedDiscreteFurniture" modifier="Sealed" description="Generic Furniture Element with a single linearly located point.">
-        <BaseClass>LinearlyLocatedDiscreteFurnitureElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="LinearFurnitureElement" modifier="Abstract" description="Base class for Linear Furniture Elements placed along a Linear-Element.">
-        <BaseClass>LinearlyLocatedFurnitureElement</BaseClass>        
+    <ECEntityClass typeName="LinearlyLocatedPhysicalElementArray" modifier="Abstract" description="Base class for a linearly-located array of physical elements.">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
         <ECProperty propertyName="ForceLastGeometry" typeName="boolean"/>
         <ECProperty propertyName="Spacing" typeName="double" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
-    <ECEntityClass typeName="GenericLinearFurniture" modifier="Sealed" description="Generic Linear Furniture element.">
-        <BaseClass>LinearFurnitureElement</BaseClass>
+    <ECEntityClass typeName="GenericLinearlyLocatedPhysicalElementArray" modifier="Sealed" description="Generic linearly-located array of physical element.">
+        <BaseClass>LinearlyLocatedPhysicalElementArray</BaseClass>
     </ECEntityClass>
-    <!-- END FurnitureElement Class Hierarchy -->
+    <!-- END Linearly-located PhysicalElement Class Hierarchy -->
 
-    <!-- BEGIN FurnitureDefinitionElement Class Hierarchy -->
-    <ECEntityClass typeName="FurnitureDefinitionElement" modifier="Abstract">
-        <BaseClass>bis:DefinitionElement</BaseClass>
+    <!-- BEGIN PhysicalType Class Hierarchy (Furniture-related) -->
+    <ECEntityClass typeName="GenericFurnitureType" modifier="Sealed" description="Physical type for generic furniture elements. Template graphics expected to be stored in a related bis:TemplateRecipe3d.">
+        <BaseClass>bis:PhysicalType</BaseClass>
         <ECProperty propertyName="Thumbnail" typeName="binary" />
         <ECProperty propertyName="LightsJson" typeName="string" />
-        <ECNavigationProperty propertyName="ElementGeometryDefinition" relationshipName="FurnitureDefinitionRefersToGeometryDefinition" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Abstract">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is referred by N furniture elements">
-            <Class class="FurnitureElement"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 furniture definition">
-            <Class class="FurnitureDefinitionElement"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="GenericFurnitureDefinition" modifier="Sealed">
-        <BaseClass>FurnitureDefinitionElement</BaseClass>
+    <ECEntityClass typeName="GuardRailType" modifier="Sealed" description="Physical type identifying Guard-Rail. Graphics may optionally be stored in a related TemplateRecipe3d.">
+        <BaseClass>bis:PhysicalType</BaseClass>
     </ECEntityClass>
-    <ECEntityClass typeName="GuardRailFurnitureDefinitionElement" modifier="Sealed">
-        <BaseClass>FurnitureDefinitionElement</BaseClass>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing" modifier="Abstract">
-        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 Geometry definition">
-            <Class class="FurnitureDefinitionElement"/>
-        </Source>
-        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by zero or more furniture definitions">
-            <Class class="GeometryDefinitionElement"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="FurnitureAssemblyElement" modifier="Abstract" description="Top-level element, assemblying other furniture elements." >
-        <BaseClass>bis:PhysicalElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="GenericFurnitureAssembly" modifier="Sealed" description="Generic top-level element, assemblying other furniture elements." >
-        <BaseClass>FurnitureAssemblyElement</BaseClass>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="FurnitureAssemblyOwnsParts" strength="embedding" modifier="None">
-        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is assembled by 1 furniture assembly">
-            <Class class="FurnitureAssemblyElement"/>
-        </Source>
-        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N furniture elements">
-            <Class class="FurnitureElement"/>
-        </Target>
-    </ECRelationshipClass>
-    <!-- END FurnitureDefinitionElement Class Hierarchy -->
+    <!-- END PhysicalType Class Hierarchy -->
 
-    <!-- BEGIN GeometryDefinition Class Hierarchy -->
-    <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
-        <BaseClass>bis:DefinitionElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="TemplateGeometryDefinitionElement" modifier="Abstract">
-        <BaseClass>GeometryDefinitionElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="GenericTemplateGeometryDefinition" modifier="Sealed">
-        <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="RepetitiveTemplateGeometryDefinitionElement" modifier="Abstract">
-        <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
+    <!-- BEGIN TemplateRecipe3d Class Hierarchy -->
+    <ECEntityClass typeName="GenericRepetitiveTemplateRecipe3d" modifier="Sealed" description="TemplateRecipe that generates graphics by repeating a GeometryPart, in between a start and end parts.">
+        <BaseClass>bis:TemplateRecipe3d</BaseClass>
         <ECProperty propertyName="DefaultSpacing" typeName="double" kindOfQuantity="LENGTH"/>
         <ECNavigationProperty propertyName="StartGeometryPart" relationshipName="PartEncapsulatedAsStartGeometry" direction="Backward" />
         <ECNavigationProperty propertyName="EndGeometryPart" relationshipName="PartEncapsulatedAsEndGeometry" direction="Backward" />
         <ECNavigationProperty propertyName="RepeatedGeometryPart" relationshipName="PartEncapsulatedAsRepeatedGeometry" direction="Backward" />
         <ECNavigationProperty propertyName="ExtrudedGeometryPart" relationshipName="PartEncapsulatedAsExtrudedGeometry" direction="Backward" />
     </ECEntityClass>
-    <ECEntityClass typeName="GenericRepetitiveTemplateGeometryDefinition" modifier="Sealed">
-        <BaseClass>RepetitiveTemplateGeometryDefinitionElement</BaseClass>
-    </ECEntityClass>
     <ECRelationshipClass typeName="PartEncapsulatedAsStartGeometry" strength="referencing" modifier="Sealed">
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
             <Class class="bis:GeometryPart"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
-            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
+            <Class class="GenericRepetitiveTemplateRecipe3d"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PartEncapsulatedAsEndGeometry" strength="referencing" modifier="Sealed">
@@ -341,7 +279,7 @@
             <Class class="bis:GeometryPart"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
-            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
+            <Class class="GenericRepetitiveTemplateRecipe3d"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PartEncapsulatedAsRepeatedGeometry" strength="referencing" modifier="Sealed">
@@ -349,7 +287,7 @@
             <Class class="bis:GeometryPart"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
-            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
+            <Class class="GenericRepetitiveTemplateRecipe3d"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PartEncapsulatedAsExtrudedGeometry" strength="referencing" modifier="Sealed">
@@ -357,29 +295,17 @@
             <Class class="bis:GeometryPart"/>
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
-            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
+            <Class class="GenericRepetitiveTemplateRecipe3d"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="TemplateGeometryDefinitionEncapsulatesParts" strength="embedding" modifier="Sealed">
-        <BaseClass>bis:ElementEncapsulatesElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is encapsulated by a definition">
-            <Class class="TemplateGeometryDefinitionElement"/>
-        </Source>
-        <Target multiplicity="(0..N)" polymorphic="false" roleLabel="encapsulates N parts">
-            <Class class="bis:GeometryPart"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECEntityClass typeName="GeneratedGeometryDefinitionElement" modifier="Abstract">
-        <BaseClass>GeometryDefinitionElement</BaseClass>
-    </ECEntityClass>
-    <ECEntityClass typeName="LinearlyDroppedGeometryDefinitionElement" modifier="Abstract">
-        <BaseClass>GeneratedGeometryDefinitionElement</BaseClass>
+    <ECEntityClass typeName="LinearTemplateRecipe3d" modifier="Sealed" description="TemplateRecipe that generates graphics by dropping a GeometryPart along a linear-path.">
+        <BaseClass>bis:TemplateRecipe3d</BaseClass>
         <ECProperty propertyName="DropInterval" typeName="double" kindOfQuantity="LENGTH" />
     </ECEntityClass>
-    <ECEntityClass typeName="GeneratedSurfaceDefinitionElement" modifier="Abstract">
-        <BaseClass>GeneratedGeometryDefinitionElement</BaseClass>
+    <ECEntityClass typeName="SurfaceTemplateRecipe3d" modifier="Sealed" description="TemplateRecipe that generates graphics by creating a volume from a GeometryPart applied on an Area.">
+        <BaseClass>bis:TemplateRecipe3d</BaseClass>
     </ECEntityClass>
-    <!-- END GeometryDefinitionElement Class Hierarchy -->
+    <!-- END TemplateRecipe3d Class Hierarchy -->
     
     <!-- BEGIN General Aspects classes -->
     <ECEntityClass typeName="StatusAspect" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements whose status needs to be tracked.">
@@ -388,6 +314,10 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Status" typeName="PhysicalElement_Status" displayLabel="Status" />
+    </ECEntityClass>
+    <ECEntityClass typeName="LinearlyLocatedStatusAspect" modifier="Sealed" description="Attribution element enabling linearly-referenced Status assignment.">
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalElementDataCache" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements to hold general cached-data.">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
@@ -457,7 +387,7 @@
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="RoadDesignSpeed" modifier="Sealed"  displayLabel="Design Speed" description="Linearly located property of a Roadway specifying design-speeds along it." >
-        <BaseClass>bis:InformationContentElement</BaseClass>
+        <BaseClass>bis:InformationRecordElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -513,7 +443,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="RoadClass" modifier="Sealed"  displayLabel="Classification" description="Linearly located property of a Roadway specifying road-class along it." >
-        <BaseClass>bis:InformationContentElement</BaseClass>
+        <BaseClass>bis:InformationRecordElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>

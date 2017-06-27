@@ -114,9 +114,9 @@ public:
 //! Linearly-located attribution on a Roadway whose value is its Road-Class.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadClass : Dgn::InformationContentElement, LinearReferencing::ILinearlyLocatedAttribution, LinearReferencing::ILinearlyLocatedSingleFromTo
+struct EXPORT_VTABLE_ATTRIBUTE RoadClass : Dgn::InformationRecordElement, LinearReferencing::ILinearlyLocatedAttribution, LinearReferencing::ILinearlyLocatedSingleFromTo
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadClass, Dgn::InformationContentElement);
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadClass, Dgn::InformationRecordElement);
     friend struct RoadClassHandler;
 
 protected:
@@ -180,9 +180,9 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadClassDefinition, RoadClassDefiniti
 //! ElementHandler for RoadClass Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadClassHandler : Dgn::dgn_ElementHandler::InformationContent
+struct EXPORT_VTABLE_ATTRIBUTE RoadClassHandler : Dgn::dgn_ElementHandler::InformationRecord
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadClass, RoadClass, RoadClassHandler, Dgn::dgn_ElementHandler::InformationContent, ROADRAILPHYSICAL_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadClass, RoadClass, RoadClassHandler, Dgn::dgn_ElementHandler::InformationRecord, ROADRAILPHYSICAL_EXPORT)
 }; // RoadClassHandler
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
