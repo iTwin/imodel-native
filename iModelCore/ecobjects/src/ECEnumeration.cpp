@@ -37,10 +37,14 @@ ECEnumeration::~ECEnumeration()
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ECEnumeration::SetName(Utf8CP name)
+ECObjectsStatus ECEnumeration::SetName(Utf8CP name)
     {
+    if (!ECNameValidation::IsValidName(name))
+        return ECObjectsStatus::InvalidName;
+
     m_validatedName.SetName(name);
     m_fullName = GetSchema().GetName() + ":" + GetName();
+    return ECObjectsStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -218,15 +222,7 @@ SchemaReadStatus ECEnumeration::ReadXml(BeXmlNodeR enumerationNode, ECSchemaRead
     {
     Utf8String value;      // used by the macros.
     if (GetName().length() == 0)
-        {
-        if (BEXML_Success != enumerationNode.GetAttributeStringValue(value, TYPE_NAME_ATTRIBUTE))
-            {
-            LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", TYPE_NAME_ATTRIBUTE, enumerationNode.GetName());
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
-
-        SetName(value.c_str());
-        }
+        READ_REQUIRED_XML_ATTRIBUTE(enumerationNode, TYPE_NAME_ATTRIBUTE, this, Name, enumerationNode.GetName())
 
     if (BEXML_Success == enumerationNode.GetAttributeStringValue(value, DESCRIPTION_ATTRIBUTE))
         {

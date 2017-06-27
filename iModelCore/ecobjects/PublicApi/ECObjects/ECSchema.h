@@ -1727,7 +1727,7 @@ friend struct SchemaXmlReaderImpl;
         ~ECEnumeration();
 
         // schemas index enumeration by name so publicly name can not be reset
-        void SetName(Utf8CP name);
+        ECObjectsStatus SetName(Utf8CP name);
 
         //! Sets the PrimitiveType of this Enumeration.  The default type is ::PRIMITIVETYPE_Integer
         ECObjectsStatus SetType(PrimitiveType value);

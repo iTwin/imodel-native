@@ -155,7 +155,7 @@ bool ResolvePrimitiveType(ECPropertyCP prop, PrimitiveType& type)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetMinimumValue(ECValueCR min)
     {
-    if (min.IsNull() || min.IsStruct())
+    if (min.IsNull() || !min.IsPrimitive())
         return ECObjectsStatus::DataTypeNotSupported;
 
     PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
@@ -213,7 +213,7 @@ ECObjectsStatus ECProperty::GetMinimumValue(ECValueR value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetMaximumValue(ECValueCR max)
     {
-    if (max.IsNull() || max.IsStruct())
+    if (max.IsNull() || !max.IsPrimitive())
         return ECObjectsStatus::DataTypeNotSupported;
 
     PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
