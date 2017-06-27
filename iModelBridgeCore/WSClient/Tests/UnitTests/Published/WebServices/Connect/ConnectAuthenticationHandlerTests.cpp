@@ -111,12 +111,40 @@ TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_TokenIsNotPersi
     EXPECT_EQ(newToken->ToAuthorizationString(), result.GetValue());
     }
 
-TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_AttemptedOnceWithTokenAuth_ReturnsError)
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_NonLegacyModeAttemptedOnceWithTokenAuth_ReturnsError)
     {
     auto provider = std::make_shared<MockConnectTokenProvider>();
-    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr());
+    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr(), false); // legacyMode = false
 
     AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
+    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
+
+    EXPECT_FALSE(result.IsSuccess());
+    }
+
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttemptedOnceWithTokenAuth_RetrievesNewTokenAndRetries)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr()); // default parameter legacyMode = true
+
+    SamlTokenPtr newToken = StubSamlToken(100);
+
+    EXPECT_CALL(*provider, GetToken()).WillOnce(Return(nullptr));
+    EXPECT_CALL(*provider, UpdateToken()).WillOnce(Return(CreateCompletedAsyncTask(newToken)));
+
+    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 1);
+    auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
+
+    EXPECT_TRUE(result.IsSuccess());
+    EXPECT_EQ(newToken->ToAuthorizationString(), result.GetValue());
+    }
+
+TEST_F(ConnectAuthenticationHandlerTests, _RetrieveAuthorization_LegacyModeAttemptedTwiceWithTokenAuth_ReturnsError)
+    {
+    auto provider = std::make_shared<MockConnectTokenProvider>();
+    ConnectAuthenticationHandler authHandler("http://test.com", provider, GetHandlerPtr()); // default parameter legacyMode = true
+
+    AuthenticationHandler::Attempt attempt("http://test.com", "token SomeTestToken", DateTime(), 2);
     auto result = authHandler._RetrieveAuthorization(attempt)->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());
