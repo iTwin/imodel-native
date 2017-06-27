@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/BaseCachingDataSourceTest.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -50,6 +50,8 @@ class BaseCachingDataSourceTest : public BaseCacheTest
         CachingDataSourcePtr GetTestDataSourceV2();
         // Get seed WebApi 2.4 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
         CachingDataSourcePtr GetTestDataSourceV24();
+        // Get seed WebApi 2.5 CachingDataSource created with GetMockClient() MockWSRepositoryClient;
+        CachingDataSourcePtr GetTestDataSourceV25();
         // Get seed WebApi version CachingDataSource created with GetMockClient() MockWSRepositoryClient;
         CachingDataSourcePtr GetTestDataSource(BeVersion webApiVersion);
 
