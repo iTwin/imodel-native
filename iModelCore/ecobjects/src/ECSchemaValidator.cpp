@@ -193,7 +193,7 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
         status = ECObjectsStatus::Error;
         }
 
-    /* 
+    
     for (bpair <SchemaKey, ECSchemaPtr> ref : schema.GetReferencedSchemas())
         {
         ECSchemaPtr refSchema = ref.second;
@@ -219,7 +219,7 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
             status = ECObjectsStatus::Error;
             }
         }
-        */
+       
     return status;
     }
 
