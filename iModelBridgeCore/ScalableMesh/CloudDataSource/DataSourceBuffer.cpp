@@ -12,12 +12,12 @@ bool DataSourceBuffer::isSegmented(void)
 
 void DataSourceBuffer::setSegmentSize(BufferSize size)
 {
-    segmentSize = size;
+    m_segmentSize = size;
 }
 
 DataSourceBuffer::BufferSize DataSourceBuffer::getSegmentSize(void)
 {
-    return segmentSize;
+    return m_segmentSize;
 }
 
 
@@ -40,13 +40,13 @@ DataSourceBuffer::BufferSize DataSourceBuffer::getLastSegmentSize(void)
 
 void DataSourceBuffer::setCurrentSegmentIndex(SegmentIndex index)
 {
-    currentSegmentIndex = index;
+    m_currentSegmentIndex = index;
 }
 
 
 DataSourceBuffer::SegmentIndex DataSourceBuffer::getCurrentSegmentIndex(void)
 {
-    return currentSegmentIndex;
+    return m_currentSegmentIndex;
 }
 
 void DataSourceBuffer::setSegmented(const bool & value)

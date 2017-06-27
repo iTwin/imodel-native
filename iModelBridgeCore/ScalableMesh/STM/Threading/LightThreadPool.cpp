@@ -5,8 +5,46 @@
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-std::recursive_mutex s_nodeMapLock;
-std::map<void*, std::atomic<unsigned int>> s_nodeMap;
+LightThreadPool::LightThreadPool()
+    {
+    m_nbThreads = std::max((int)1, (int)std::thread::hardware_concurrency() - 2);
+    m_threads = new std::thread[m_nbThreads];
+    m_areThreadsBusy = new std::atomic<bool>[m_nbThreads];                    
+
+    for (size_t threadInd = 0; threadInd < m_nbThreads; threadInd++)        
+        { 
+        m_areThreadsBusy[threadInd] = false;        
+        }
+    }
+
+LightThreadPool::~LightThreadPool()
+    {
+    delete [] m_threads;
+    delete [] m_areThreadsBusy;
+    }
+
+
+LightThreadPool* LightThreadPool::GetInstance()
+    {
+    if (s_pool == nullptr)
+        { 
+        s_pool = new LightThreadPool;
+        }
+
+    return s_pool;
+    }
+
+
+LightThreadPool* LightThreadPool::s_pool = nullptr;
+    
+/*
+extern int LightThreadPool::GetInstance()->m_nbThreads = std::max((int)1, (int)std::thread::hardware_concurrency() - 2);
+extern std::thread LightThreadPool::GetInstance()->m_threads[LightThreadPool::GetInstance()->m_nbThreads];
+extern std::atomic<bool> LightThreadPool::GetInstance()->m_areThreadsBusy[LightThreadPool::GetInstance()->m_nbThreads];
+extern std::recursive_mutex s_nodeMapLock;
+extern std::map<void*, std::atomic<unsigned int>> s_nodeMap;
+*/
+
 
 bool TryReserveNodes(std::map<void*, std::atomic<unsigned int>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id)
     {
@@ -25,12 +63,11 @@ bool TryReserveNodes(std::map<void*, std::atomic<unsigned int>>& map, void** res
     return isReserved;
     }
 
-std::thread s_threads[8];
-std::atomic<bool> s_areThreadsBusy[8];
+
 void SetThreadAvailableAsync(size_t threadId)
     {
-    std::atomic<bool>* areThreadsBusy = s_areThreadsBusy;
-    /*std::thread* threadP = s_threads;
+    std::atomic<bool>* areThreadsBusy = LightThreadPool::GetInstance()->m_areThreadsBusy;
+    /*std::thread* threadP = LightThreadPool::GetInstance()->m_threads;
     std::thread t = std::thread([areThreadsBusy, threadId, threadP] ()
         {
         if(threadP[threadId].joinable()) threadP[threadId].join();*/
@@ -47,14 +84,27 @@ void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda)
     bool wait = true;
     while (wait)
         {
-        for (size_t t = 0; t < 8; ++t)
+//#ifndef NDEBUG
+//        static std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+//       std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+//        if (std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() > 500)
+//            {
+//            int nBusyThreads = 0;
+//            for (size_t t = 0; t < LightThreadPool::GetInstance()->m_nbThreads; ++t)
+//                if (LightThreadPool::GetInstance()->m_areThreadsBusy[t]) ++nBusyThreads;
+//            std::cout << nBusyThreads << std::endl;
+//            start_time = std::chrono::steady_clock::now();
+//            }
+//
+//#endif
+        for (size_t t = 0; t < LightThreadPool::GetInstance()->m_nbThreads; ++t)
             {
             bool expected = false;
-            if (s_areThreadsBusy[t].compare_exchange_weak(expected, true))
+            if (LightThreadPool::GetInstance()->m_areThreadsBusy[t].compare_exchange_weak(expected, true))
                 {
-                if (s_threads[t].joinable()) s_threads[t].join();
+                if (LightThreadPool::GetInstance()->m_threads[t].joinable()) LightThreadPool::GetInstance()->m_threads[t].join();
                 wait = false;
-                s_threads[t] = std::thread(std::bind(lambda, t));
+                LightThreadPool::GetInstance()->m_threads[t] = std::thread(std::bind(lambda, t));
                 break;
                 }
             }
@@ -68,24 +118,24 @@ void WaitForThreadStop()
     while (notAllThreadsStopped)
         {
         volatile int n = 0;
-        std::thread* arrayT = s_threads;
+        std::thread* arrayT = LightThreadPool::GetInstance()->m_threads;
         volatile uint64_t ptr = (uint64_t)arrayT;
         ptr = ptr;
-        for (size_t t = 0; t < 8; ++t)
+        for (size_t t = 0; t < LightThreadPool::GetInstance()->m_nbThreads; ++t)
             {
-            if (!s_areThreadsBusy[t] || !s_threads[t].joinable()) ++n;
+            if (!LightThreadPool::GetInstance()->m_areThreadsBusy[t] || !LightThreadPool::GetInstance()->m_threads[t].joinable()) ++n;
             }
-        if (n == 8) notAllThreadsStopped = false;
+        if (n == LightThreadPool::GetInstance()->m_nbThreads) notAllThreadsStopped = false;
         else         std::this_thread::sleep_for(std::chrono::seconds(1));
         }
-    for (size_t t = 0; t < 8; ++t)
+    for (size_t t = 0; t < LightThreadPool::GetInstance()->m_nbThreads; ++t)
         {
-        s_areThreadsBusy[t] = false;
+        LightThreadPool::GetInstance()->m_areThreadsBusy[t] = false;
 
-        if (s_threads[t].joinable())
-            s_threads[t].join();
+        if (LightThreadPool::GetInstance()->m_threads[t].joinable())
+            LightThreadPool::GetInstance()->m_threads[t].join();
 
-        s_threads[t] = std::thread();
+        LightThreadPool::GetInstance()->m_threads[t] = std::thread();
         }
     }
 

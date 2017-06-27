@@ -14,12 +14,12 @@ DataSourceAccountCached::~DataSourceAccountCached(void)
 
 void DataSourceAccountCached::setCacheDataSource(DataSource * dataSource)
 {
-    cacheDataSource = dataSource;
+    m_cacheDataSource = dataSource;
 }
 
 DataSource *DataSourceAccountCached::getCacheDataSource(void)
 {
-    return cacheDataSource;
+    return m_cacheDataSource;
 }
 
 DataSourceStatus DataSourceAccountCached::getFormattedCacheURL(const DataSourceURL & sourceURL, DataSourceURL & cacheURL)
@@ -59,11 +59,15 @@ DataSourceStatus DataSourceAccountCached::setCaching(DataSourceAccount & cacheAc
 
 void DataSourceAccountCached::setCacheAccount(DataSourceAccount * account)
 {
-    cacheAccount = account;
+    m_cacheAccount = account;
 }
 
 DataSourceAccount * DataSourceAccountCached::getCacheAccount(void)
 {
-    return cacheAccount;
+    return m_cacheAccount;
 }
 
+unsigned int DataSourceAccountCached::getDefaultNumTransferTasks(void)
+    {
+    return DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS;
+    }

@@ -1009,6 +1009,15 @@
     <ClInclude Include="stm\ReprojectionModel.h">
       <Filter>Includes\Core</Filter>
     </ClInclude>
+    <ClInclude Include="STM\ScalableMeshGroup.h">
+      <Filter>Includes\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshFrom3MX.h">
+      <Filter>Includes\PublicAPI</Filter>
+    </ClInclude>
+    <ClInclude Include="STM\Stores\SMCesiumPublisher.h">
+      <Filter>Includes\Core\Stores</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">
@@ -1374,9 +1383,6 @@
     <ClCompile Include="STM\CGALEdgeCollapse.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
-    <ClCompile Include="STM\SMSQLiteFile.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="STM\DrapeOnGraph.cpp">
       <Filter>Source\Core</Filter>
     </ClCompile>
@@ -1433,15 +1439,6 @@
     <ClCompile Include="STM\ScalableMeshSourceCreator.cpp">
       <Filter>Source\Core\Stores</Filter>
     </ClCompile>
-    <ClCompile Include="STM\SMSQLiteDiffsetFile.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\SMSQLiteClipDefinitionsFile.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
-    <ClCompile Include="STM\SMSQLiteFeatureFile.cpp">
-      <Filter>Source\Core</Filter>
-    </ClCompile>
     <ClCompile Include="AutomaticGroundDetection\ScalableMeshGroundExtractor.cpp">
       <Filter>Source\AutomaticGroundDetection</Filter>
     </ClCompile>
@@ -1464,6 +1461,30 @@
     </ClCompile>
     <ClCompile Include="stm\ReprojectionModel.cpp">
       <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshGroup.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ScalableMeshFrom3MX.cpp">
+      <Filter>Source\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\ImportPlugins\PODImporter_dgndb.cpp">
+      <Filter>Source\Core\ImportPlugins</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\Stores\SMCesiumPublisher.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteClipDefinitionsFile.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteDiffsetFile.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteFeatureFile.cpp">
+      <Filter>Source\Core\Stores</Filter>
+    </ClCompile>
+    <ClCompile Include="STM\SMSQLiteFile.cpp">
+      <Filter>Source\Core\Stores</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -3,12 +3,19 @@
 #include "ISMDataStore.h"
 #include "SMSQLiteSisterFile.h"
 #include "SMStoreUtils.h"
+#include "..\ScalableMeshSources.h"
 
 template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>, public SMSQLiteSisterFile
     {        
     private:
         SMSQLiteFilePtr m_smSQLiteFile;
         DRange3d m_totalExtent;
+        GeoCoordinates::BaseGCSCPtr m_cs;
+        IDTMSourceCollection m_sources;
+        HFCPtr<HRFRASTERFILE> m_streamingRasterFile;
+        HFCPtr<HRARASTER> m_raster;
+        SMIndexMasterHeader<EXTENT> m_masterHeader;
+
 
     public : 
     
@@ -28,11 +35,17 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
             
         virtual size_t LoadNodeHeader(SMIndexNodeHeader<EXTENT>* header, HPMBlockID blockID) override;
 
-        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation) override;
-                        
-        virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;
+        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) override;
 
-        virtual bool GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+        virtual void SaveProjectFiles() override;
+
+		virtual void CompactProjectFiles() override;
+
+        virtual void PreloadData(const bvector<DRange3d>& tileRanges) override;
+        
+        virtual void CancelPreloadData() override;
+                                
+        virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;        
 
         virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType) override;        
 
@@ -40,13 +53,22 @@ template <class EXTENT> class SMSQLiteStore : public ISMDataStore<SMIndexMasterH
 
         virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType = SMStoreDataType::Texture) override;
 
-        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType = SMStoreDataType::UvCoords) override;        
 
+        virtual bool GetSisterNodeDataStore(ISDiffSetDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile) override;
 
+        virtual bool GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, bool createSisterFile) override;
+
+        virtual bool GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader, SMStoreDataType dataType, bool createSisterFile) override;
+
+        
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
 
-        
+        virtual bool GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+
+        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, SMIndexNodeHeader<EXTENT>* nodeHeader) override;
+
         static RefCountedPtr<ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>> Create (SMSQLiteFilePtr database)
         {
         return new SMSQLiteStore(database);
@@ -68,6 +90,8 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
 
         HPMBlockID StoreTexture(DATATYPE* DataTypeArray, size_t countData, HPMBlockID blockID);
 
+        bool IsCompressedType();
+
     public:      
               
         SMSQLiteNodeDataStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader,/* ISMDataStore<SMIndexMasterHeader<EXTENT>, SMIndexNodeHeader<EXTENT>>* dataStore,*/ SMSQLiteFilePtr& smSQLiteFile);
@@ -82,7 +106,7 @@ template <class DATATYPE, class EXTENT> class SMSQLiteNodeDataStore : public ISM
             
         virtual size_t LoadBlock(DATATYPE* DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
 
-        virtual size_t LoadCompressedBlock(bvector<DATATYPE>& DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
+        virtual size_t LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID) override;
             
         virtual bool DestroyBlock(HPMBlockID blockID) override;         
 
@@ -113,8 +137,20 @@ class SMSQLiteClipDefinitionExtOps : public IClipDefinitionExtOps
 
         virtual void GetAllIDs(bvector<uint64_t>& allIds) override;
 
+        virtual void GetIsClipActive(uint64_t id, bool& isActive) override;
+
+        virtual void GetClipType(uint64_t id, SMNonDestructiveClipType& type) override;
+
+        virtual void SetClipOnOrOff(uint64_t id, bool isActive) override;
+
         virtual void GetAllPolys(bvector<bvector<DPoint3d>>& polys) override;
 
         virtual void SetAutoCommit(bool autoCommit) override;
+
+        virtual void GetAllCoverageIDs(bvector<uint64_t>& allIds) override;
+
+        virtual void StoreClipWithParameters(const bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) override;
+        
+        virtual void LoadClipWithParameters(bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) override;
     };
 

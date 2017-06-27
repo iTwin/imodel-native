@@ -52,15 +52,16 @@ extern bool   GET_HIGHEST_RES;
 #include <ImagePP\all\h\HIMMosaic.h>
 #include "LogUtils.h"
 #include "ScalableMeshEdit.h"
+#include "ScalableMeshAnalysis.h"
 #include <ScalableMesh/ScalableMeshLib.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
 #include "MosaicTextureProvider.h"
+#include "ScalableMeshGroup.h"
+#include "ScalableMeshMesher.h"
 //#include "CGALEdgeCollapse.h"
 
 //DataSourceManager s_dataSourceManager;
 
-extern bool s_stream_from_disk;
-extern bool s_stream_from_file_server;
 extern bool s_stream_from_wsg;
 extern bool s_stream_from_grouped_store;
 extern bool s_is_virtual_grouping;
@@ -137,9 +138,9 @@ const size_t DEFAULT_WORKING_LAYER = 0;
 |IScalableMesh Method Definition Section - Begin
 +----------------------------------------------------------------------------*/
 
-void IScalableMesh::TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
+void IScalableMesh::TextureFromRaster(ITextureProviderPtr provider)
     {
-    return _TextureFromRaster(provider, unitTransform);
+    return _TextureFromRaster(provider);
     }
 
 _int64 IScalableMesh::GetPointCount()
@@ -147,9 +148,24 @@ _int64 IScalableMesh::GetPointCount()
     return _GetPointCount();
     }
 
+uint64_t IScalableMesh::GetNodeCount()
+    {
+    return _GetNodeCount();
+    }
+
 bool IScalableMesh::IsTerrain()
     {
     return _IsTerrain();
+    }
+
+bool IScalableMesh::IsTextured()
+    {
+    return _IsTextured();
+    }
+
+bool IScalableMesh::IsCesium3DTiles()
+    {
+    return _IsCesium3DTiles();
     }
 
 DTMStatusInt IScalableMesh::GetRange(DRange3dR range)
@@ -220,6 +236,11 @@ IScalableMeshNodeRayQueryPtr IScalableMesh::GetNodeQueryInterface() const
 IScalableMeshEditPtr IScalableMesh::GetMeshEditInterface() const
     {
     return _GetMeshEditInterface();
+    }
+
+IScalableMeshAnalysisPtr IScalableMesh::GetMeshAnalysisInterface()
+    {
+    return _GetMeshAnalysisInterface();
     }
 
 BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* IScalableMesh::GetDTMInterface(DTMAnalysisType type)
@@ -309,9 +330,26 @@ bool IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID
     return _AddClip(pts, ptsSize, clipID);
     }
 
+bool IScalableMesh::AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+    {
+    return _AddClip(pts, ptsSize, clipID, geom, type, isActive);
+    }
+
+
 bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID)
     {
     return _ModifyClip(pts, ptsSize, clipID);
+    }
+
+
+bool IScalableMesh::ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+    {
+    return _ModifyClip(pts, ptsSize, clipID, geom, type, isActive);
+    }
+
+void IScalableMesh::SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts)
+    {
+    return _SynchronizeClipData(listOfClips, listOfSkirts);
     }
 
 void IScalableMesh::ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions)
@@ -324,9 +362,25 @@ bool IScalableMesh::RemoveClip(uint64_t clipID)
     return _RemoveClip(clipID);
     }
 
+bool IScalableMesh::GetClip(uint64_t clipID, bvector<DPoint3d>& clipData)
+{
+    return _GetClip(clipID, clipData);
+}
+
 void IScalableMesh::SetIsInsertingClips(bool toggleInsertClips)
     {
     return _SetIsInsertingClips(toggleInsertClips);
+    }
+
+
+bool   IScalableMesh::ShouldInvertClips()
+    {
+    return _ShouldInvertClips();
+    }
+
+void   IScalableMesh::SetInvertClip(bool invertClips)
+    {
+    return _SetInvertClip(invertClips);
     }
 
 bool IScalableMesh::AddSkirt(const bvector<bvector<DPoint3d>>& skirt, uint64_t clipID)
@@ -344,6 +398,26 @@ void IScalableMesh::GetAllClipIds(bvector<uint64_t>& ids)
     return _GetAllClipsIds(ids);
     }
 
+void                              IScalableMesh::SetClipOnOrOff(uint64_t id, bool isActive)
+    {
+    return _SetClipOnOrOff(id, isActive);
+    }
+
+void                               IScalableMesh::GetIsClipActive(uint64_t id, bool& isActive)
+    {
+    return _GetIsClipActive(id, isActive);
+    }
+
+void                        IScalableMesh::GetClipType(uint64_t id, SMNonDestructiveClipType& type)
+    {
+    return _GetClipType(id, type);
+    }
+
+void IScalableMesh::CompactExtraFiles()
+{
+	return _CompactExtraFiles();
+}
+
 void IScalableMesh::GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
     {
     return _GetCurrentlyViewedNodes(nodes);
@@ -354,7 +428,6 @@ void IScalableMesh::SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>&
     return _SetCurrentlyViewedNodes(nodes);
     }
 
-
 void IScalableMesh::SetEditFilesBasePath(const Utf8String& path)
     {
     return _SetEditFilesBasePath(path);
@@ -363,6 +436,11 @@ void IScalableMesh::SetEditFilesBasePath(const Utf8String& path)
 Utf8String IScalableMesh::GetEditFilesBasePath()
     {
     return _GetEditFilesBasePath();
+    }
+
+void IScalableMesh::GetExtraFileNames(bvector<BeFileName>& extraFileNames) const
+    {
+    return _GetExtraFileNames(extraFileNames);
     }
 
 IScalableMeshNodePtr IScalableMesh::GetRootNode()
@@ -383,19 +461,39 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
-int IScalableMesh::ConvertToCloud(const WString& outContainerName, WString outDatasetName, SMCloudServerType server) const
+int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
     {
-    return _ConvertToCloud(outContainerName, outDatasetName, server);
+    return _Generate3DTiles(outContainerName, outDatasetName, server, progress);
     }
 
-BentleyStatus IScalableMesh::CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
+BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
     {    
-    return _CreateCoverage(coverageTempDataFolder, coverageData, id, groundPreviewer);
+    return _CreateCoverage(coverageData, id, coverageName);
+    }
+
+BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
+    {
+    return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer);
     }
 
 void IScalableMesh::GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
     {
     return _GetAllCoverages(coverageData);
+    }
+
+void IScalableMesh::GetCoverageIds(bvector<uint64_t>& ids) const
+    {
+    return _GetCoverageIds(ids);
+    }
+
+void IScalableMesh::GetCoverageName(Utf8String& name, uint64_t id) const
+    {
+    return _GetCoverageName(name, id);
+    }
+
+BentleyStatus IScalableMesh::DeleteCoverage(uint64_t id)
+    {
+    return _DeleteCoverage(id);
     }
 
 void IScalableMesh::ImportTerrainSM(WString terrainPath)
@@ -418,7 +516,52 @@ BentleyStatus   IScalableMesh::SetReprojection(GeoCoordinates::BaseGCSCR targetC
     return _SetReprojection(targetCS, approximateTransform);
     }
 
+#ifdef VANCOUVER_API
+BentleyStatus   IScalableMesh::Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel)
+    {
+    return _Reproject(targetCS, dgnModel);
+    }
+#endif
+
+IScalableMeshPtr IScalableMesh::GetGroup()
+    {
+    return _GetGroup();
+    }
+
+void IScalableMesh::AddToGroup(IScalableMeshPtr& sMesh, bool isRegionRestricted, const DPoint3d* region, size_t nOfPtsInRegion)
+    {
+    return _AddToGroup(sMesh, isRegionRestricted, region, nOfPtsInRegion);
+    }
+
+
+void IScalableMesh::RemoveFromGroup(IScalableMeshPtr& sMesh)
+    {
+    return _RemoveFromGroup(sMesh);
+    }
+
+void IScalableMesh::SetGroupSelectionFromPoint(DPoint3d firstPoint)
+    {
+    return _SetGroupSelectionFromPoint(firstPoint);
+    }
+
+void  IScalableMesh::ClearGroupSelection()
+    {
+    return _ClearGroupSelection();
+    }
+
+void  IScalableMesh::RemoveAllDisplayData()
+    {
+    return _RemoveAllDisplayData();
+    }
+
+
 #ifdef SCALABLE_MESH_ATP
+    
+int IScalableMesh::ChangeGeometricError(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const
+    {
+    return _ChangeGeometricError(outContainerName, outDatasetName, server, newGeometricErrorValue);
+    }
+
 int IScalableMesh::LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const
     {
     return _LoadAllNodeHeaders(nbLoadedNodes, level);
@@ -493,23 +636,57 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
     bool                    openShareable,
     StatusInt&              status)
 {
+    return GetFor(filePath, baseEditsFilePath, true, openReadOnly, openShareable, status);
+}
+
+IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
+                                       const Utf8String&      baseEditsFilePath,
+                                       bool                  needsNeighbors,
+    bool                    openReadOnly,
+    bool                    openShareable,
+    StatusInt&              status)
+{
     status = BSISUCCESS;
+    bool isLocal = true;
+    Utf8String newBaseEditsFilePath(baseEditsFilePath);
+    SMSQLiteFilePtr smSQLiteFile;
+    if (BeFileName::GetExtension(filePath).CompareToI(L"3sm") == 0)
+        { // Open 3sm file
+        StatusInt openStatus;
+        smSQLiteFile = SMSQLiteFile::Open(filePath, openReadOnly, openStatus);
+        if (smSQLiteFile == nullptr)
+            {
+            status = BSIERROR;
+
+            return 0; // Error opening file
+            }
+        }
+    else if (BeFileName::GetExtension(filePath).CompareToI(L"json") == 0)
+        { // Open json streaming format
+        auto directory = BeFileName::GetDirectoryName(filePath);
+        isLocal = BeFileName::DoesPathExist(directory.c_str());
+        if (!isLocal)
+            {
+            wchar_t* temp = L"C:\\Temp\\Bentley\\3SM";
+            if (!BeFileName::DoesPathExist(temp)) BeFileName::CreateNewDirectory(temp);
+            newBaseEditsFilePath.Assign(temp);
+            }
+        }
+    else
+        {
+        status = BSIERROR;
+        return 0;
+        }
+
     if (ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath) != nullptr) return ScalableMeshLib::GetHost().GetRegisteredScalableMesh(filePath);
-    if(0 != _waccess(filePath, 04))
+    if(isLocal && 0 != _waccess(filePath, 04))
     {
         status = BSISUCCESS;
         return 0; // File not found
     }
 
-    StatusInt openStatus;
-    SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(filePath, openReadOnly, openStatus));
-    if(smSQLiteFile == nullptr)
-    {
-            status = BSIERROR;
+    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, newBaseEditsFilePath, needsNeighbors, status);
 
-        return 0; // Error opening file
-    }
-    return ScalableMesh<DPoint3d>::Open(smSQLiteFile, filePath, baseEditsFilePath, status);
 }
 
 IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
@@ -518,6 +695,15 @@ IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
                                        StatusInt&              status)
     {
     return GetFor(filePath, Utf8String(filePath), openReadOnly, openShareable, status);
+    }
+
+IScalableMeshPtr IScalableMesh::GetFor(const WChar*          filePath,
+                                       bool                  needsNeighbors,
+                                       bool                    openReadOnly,
+                                       bool                    openShareable,
+                                       StatusInt&              status)
+    {
+    return GetFor(filePath, Utf8String(filePath), needsNeighbors, openReadOnly, openShareable, status);
     }
 
 /*----------------------------------------------------------------------------+
@@ -569,7 +755,8 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
 {
     memset(&m_contentExtent, 0, sizeof(m_contentExtent));
 
-    HPRECONDITION(smSQliteFile != 0);
+    // NEEDS_WORK_SM_STREAMING : if sqlite file is null, check for streaming parameters
+    //HPRECONDITION(smSQliteFile != 0);
 
     SetDataSourceAccount(nullptr);
 }
@@ -580,11 +767,6 @@ ScalableMeshBase::ScalableMeshBase(SMSQLiteFilePtr& smSQliteFile,
 +----------------------------------------------------------------------------*/
 ScalableMeshBase::~ScalableMeshBase ()
     {
-
-        if (GetDataSourceAccount())
-            {
-            GetDataSourceManager().getService(GetDataSourceAccount()->getServiceName())->destroyAccount(GetDataSourceAccount()->getAccountName());
-            }
     }
 
 /*----------------------------------------------------------------------------+
@@ -608,29 +790,47 @@ const WChar* ScalableMeshBase::GetPath () const
 |ScalableMeshBase::LoadGCSFrom
 +----------------------------------------------------------------------------*/
 
-bool ScalableMeshBase::LoadGCSFrom()
-{
-    WString wktStr;
-    if (m_smSQLitePtr->GetWkt(wktStr)) // if true, ScalableMesh has not Wkt
-        return true;
+bool ScalableMeshBase::LoadGCSFrom(WString wktStr)
+    {
+    assert(!wktStr.empty()); // invalid parameter
 
-    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktStr, wktStr);
+    auto wktTemp = wktStr;
+    ISMStore::WktFlavor fileWktFlavor = GetWKTFlavor(&wktTemp, wktStr);
     BaseGCS::WktFlavor  wktFlavor = BaseGCS::WktFlavor::wktFlavorUnknown;
 
     bool result = MapWktFlavorEnum(wktFlavor, fileWktFlavor);
 
-    assert(result);
-
     SMStatus gcsCreateStatus;
-    GCS gcs(GetGCSFactory().Create(wktStr.c_str(), wktFlavor, gcsCreateStatus));
+    if (result)
+        {
+        GCS gcs(GetGCSFactory().Create(wktTemp.c_str(), wktFlavor, gcsCreateStatus));
 
-    if (SMStatus::S_SUCCESS != gcsCreateStatus)
-        return false;
+        if (SMStatus::S_SUCCESS != gcsCreateStatus)
+            return false;
+
+        using std::swap;
+        swap(m_sourceGCS, gcs);
+        return true;
+        }
+
+    // NEEDS_WORK_SM_STREAMING : assume default gcs for streaming only?
+    auto baseGCS = BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCS::CreateGCS(wktStr.c_str());
+
+    GCS gcs(GetGCSFactory().Create(baseGCS.get(), gcsCreateStatus));
 
     using std::swap;
     swap(m_sourceGCS, gcs);
-
     return true;
+    }
+
+bool ScalableMeshBase::LoadGCSFrom()
+{
+    assert(m_smSQLitePtr != nullptr); // Must only be called with valid sqlite file
+
+    WString wktStr;
+    if (m_smSQLitePtr == nullptr || m_smSQLitePtr->GetWkt(wktStr))
+        return true;
+    return LoadGCSFrom(wktStr);
 }
 
 /*----------------------------------------------------------------------------+
@@ -641,8 +841,10 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
     : ScalableMeshBase(smSQLiteFile, path),
     m_areDataCompressed(false),
     m_computeTileBoundary(false),
+    m_isCesium3DTiles(false),
     m_minScreenPixelsPerPoint(MEAN_SCREEN_PIXELS_PER_POINT),
-    m_reprojectionTransform(Transform::FromIdentity())
+    m_reprojectionTransform(Transform::FromIdentity()),
+    m_isInvertingClips(false)
     { 
     }
 
@@ -651,7 +853,7 @@ template <class POINT> ScalableMesh<POINT>::ScalableMesh(SMSQLiteFilePtr& smSQLi
 |ScalableMesh::~ScalableMesh
 +----------------------------------------------------------------------------*/
 template <class POINT> ScalableMesh<POINT>::~ScalableMesh()
-    {
+    {    
     Close();
     }
 
@@ -761,11 +963,13 @@ template <class POINT>
 IScalableMeshPtr ScalableMesh<POINT>::Open(SMSQLiteFilePtr& smSQLiteFile,
                                     const WString&     filePath,
                                     const Utf8String&     baseEditsFilePath,
+                                           bool         needsNeighbors,
                                     StatusInt&              status)
 {
-     ScalableMesh<POINT>* scmPtr = new ScalableMesh<POINT>(smSQLiteFile, filePath);
+    ScalableMesh<POINT>* scmPtr = new ScalableMesh<POINT>(smSQLiteFile, filePath);
     IScalableMeshPtr scmP(scmPtr);
     scmP->SetEditFilesBasePath(baseEditsFilePath);
+    scmPtr->SetNeedsNeighbors(needsNeighbors);
     status = scmPtr->Open();
     if (status == BSISUCCESS)
         {
@@ -784,133 +988,188 @@ template <class POINT> int ScalableMesh<POINT>::Open()
 
     try 
         {
-        //m_smSQLitePtr->Open(m_path);
+        bool isSingleFile = m_smSQLitePtr != nullptr ? m_smSQLitePtr->IsSingleFile() : false;
+
         // If there are no masterHeader => file empty ?
-        bool notEmpty = m_smSQLitePtr->HasMasterHeader();
-        if (!notEmpty && m_smSQLitePtr->IsSingleFile())
+        if (isSingleFile && m_smSQLitePtr != nullptr && !m_smSQLitePtr->HasMasterHeader())
             return BSISUCCESS; // File is empty.
 
-        if (!LoadGCSFrom())
-            return BSIERROR; // Error loading layer gcs
-
-       // bool hasPoints = m_smSQLitePtr->HasPoints();                 
-        
-        bool isSingleFile = true;
-                
-        isSingleFile = m_smSQLitePtr->IsSingleFile();
-
+        // bool hasPoints = m_smSQLitePtr->HasPoints();                 
         //if (hasPoints || !isSingleFile)
             {    
-
-
-         //NEEDS_WORK_SM - Why correct filter is not saved?                                             
-         //auto_ptr<ISMPointIndexFilter<POINT, YProtPtExtentType>> filterP(CreatePointIndexFilter(featureDir));
             auto_ptr<ISMMeshIndexFilter<POINT, Extent3dType>> filterP(s_filterClass != nullptr ? (ISMMeshIndexFilter<POINT, Extent3dType>*)s_filterClass : new ScalableMeshQuadTreeBCLIBMeshFilter1<POINT, Extent3dType>());
 
             ISMDataStoreTypePtr<Extent3dType> dataStore;
-
-                if (!isSingleFile)
+            if (!isSingleFile)
+                {
+                Json::Value     config;
+                {
+                // NEEDS_WORK_SM_STREAMING - replace json config file with 3sm data when available 
+                BeFileName config_file_name(BEFILENAME(GetDirectoryName, BeFileName(m_path.c_str())).c_str());
+                config_file_name.AppendToPath(L"3sm_config.json");
+                BeFile config_file;
+                if (BeFileStatus::Success == OPEN_FILE(config_file, config_file_name.c_str(), BeFileAccess::Read))
                     {
-                    bool isVirtualGroups = false; // Streaming without node grouping by default
-                    isVirtualGroups = isVirtualGroups || s_is_virtual_grouping; // Override default when possible
-
-                    // NEEDS_WORK_SM - Check existence of the following directories
-                    // NEEDS_WORK_SM - Path should not depend on the existence of an stm file
-                    WString streamingSourcePath;
-                    WString cloudIndicator(L"_cloud");
-                    WString datasetName; // NEEDS_WORK_STREAMING: make this build on topaz = BeFileName(m_path.c_str()).GetFileNameWithoutExtension();
-                    assert(false);
-                    if (datasetName.Contains(cloudIndicator))
-                        {
-                        datasetName.resize(datasetName.length() - cloudIndicator.length());
-                        }
-
-                    if (s_stream_from_disk)
-                        {
-                        // NEEDS_WORK_STREAMING: make this build on topaz 
-                        //streamingSourcePath = BeFileName(m_path).GetDirectoryName();
-                        assert(false);
-                        streamingSourcePath += L"cloud\\";
-                        streamingSourcePath += datasetName;
-                        }
-                    else if (s_stream_from_wsg)
-                        {
-                        streamingSourcePath = L"scalablemesh" + (L"~2F" + datasetName);
-                        }
-                    else
-                        {
-                        streamingSourcePath = L"scalablemeshtest" + (L"/" + datasetName);
-                        }
-
-#ifndef VANCOUVER_API                                       
-                    dataStore = new SMStreamingStore<Extent3dType>(this->GetDataSourceManager(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store, isVirtualGroups);
+                    bvector<Byte> config_file_buffer;
+#ifndef VANCOUVER_API
+                    config_file.ReadEntireFile(config_file_buffer);
 #else
-                    dataStore = SMStreamingStore<Extent3dType>::Create(this->GetDataSourceManager(), streamingSourcePath, AreDataCompressed(), s_stream_from_grouped_store);
+                    uint32_t maxConfigFileBytes = 100000;
+                    uint32_t bytesRead = 0;
+                    config_file_buffer.resize(maxConfigFileBytes);
+                    config_file.Read(config_file_buffer.data(), &bytesRead, maxConfigFileBytes);
+                    assert(bytesRead > 0 && bytesRead < maxConfigFileBytes);
+                    config_file_buffer.resize(bytesRead);
 #endif
-                    m_scmIndexPtr = new MeshIndexType(dataStore, 
-                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),                                                                                                              
-                                                      10000,
-                                                      filterP.get(),
-                                                      false,
-                                                      false,
-                                                      false,
-                                                      0,
-                                                      0);
 
+                    Json::Reader    config_reader;
+                    config_reader.parse(reinterpret_cast<char *>(config_file_buffer.data()), reinterpret_cast<char *>(config_file_buffer.data() + config_file_buffer.size()), config);
                     }
                 else
                     {
-#ifndef VANCOUVER_API                       
-                    dataStore = new SMSQLiteStore<Extent3dType>(m_smSQLitePtr);
+                    config["data_type"] = "3DTiles";
+                    auto& config_server = config["server"];
+                    auto utf8Path = Utf8String(m_path.c_str());
+                    if (BeFileName::DoesPathExist(m_path.c_str()))
+                        { // local
+                        config_server["type"] = "local";
+                        config_server["settings"]["url"] = Json::Value(utf8Path.c_str());
+                        }
+                    else
+                        { // RDS
+                        config_server["type"] = "rds";
+                        auto& server_settings = config_server["settings"];
+                        assert(m_path.substr(0, 8) == L"https://");
+                        auto firstSeparatorPos = m_path.find(L".");
+                        auto serverID = Utf8String(m_path.substr(8, firstSeparatorPos - 8));
+                        server_settings["id"] = Json::Value(serverID.c_str());
+                        server_settings["authentication"]["public"] = true;
+
+                        // compute positions and lengths for guid, root file and azure token
+                        auto guidPos = m_path.find(L"/", 8) + 1;
+                        auto guidLength = m_path.find(L"/", guidPos) - guidPos;
+                        auto rootTilesetPathPos = guidPos + guidLength + 1;
+                        auto azureTokenPos = m_path.find(L"?", rootTilesetPathPos);
+                        auto rootTilesetPathLength = azureTokenPos - rootTilesetPathPos;
+                        auto azureTokenLength = m_path.size() - azureTokenPos;
+
+                        // guid
+                        auto guid = Utf8String(m_path.substr(guidPos, guidLength));
+
+                        // root file
+                        auto rootTilesetPath = Utf8String(m_path.substr(rootTilesetPathPos, rootTilesetPathLength));
+
+                        // azure token
+                        auto azureToken = Utf8String(m_path.substr(azureTokenPos + 1, azureTokenLength));
+
+                        // NEEDS_WORK_SM_STREAMING : handle Azure token properly
+
+                        server_settings["url"] = Json::Value(rootTilesetPath.c_str());
+                        config["guid"] = Json::Value(guid.c_str());
+                        }
+                    }
+
+                    }
+                SMStreamingStore<Extent3dType>::SMStreamingSettingsPtr stream_settings = new SMStreamingStore<Extent3dType>::SMStreamingSettings(config);
+                m_isCesium3DTiles = stream_settings->IsCesium3DTiles();
+
+                if (stream_settings->IsLocal() && stream_settings->GetURL().empty())
+                    { // Provide default cloud data directory for streaming from local disk when url is not specified
+                    BeFileName localDataFilesPath(m_baseExtraFilesPath.c_str());
+                    localDataFilesPath.PopDir();
+                    localDataFilesPath.AppendToPath(L"cloud");
+                    stream_settings->m_url = localDataFilesPath.GetNameUtf8().c_str();
+                    }
+#ifndef VANCOUVER_API                                       
+                dataStore = new SMStreamingStore<Extent3dType>(stream_settings);
 #else
-                    dataStore = SMSQLiteStore<Extent3dType>::Create(m_smSQLitePtr);
+                dataStore = SMStreamingStore<Extent3dType>::Create(stream_settings);
 #endif
 
-                    m_scmIndexPtr = new MeshIndexType(dataStore, 
-                                                      ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
-                                                      10000,
-                                                      filterP.get(),
-                                                      false,
-                                                      false,
-                                                      false,
-                                                      0,
-                                                      0);  
-                    }          
-                
-            
+                m_scmIndexPtr = new MeshIndexType(dataStore,
+                    ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
+                    10000,
+                    filterP.get(),
+                    this->m_needsNeighbors,
+                    false,
+                    false,
+                    false,
+                    0,
+                    0);
+
+                if (stream_settings->IsGCSStringSet())
+                    {
+                    // even if it is 3DTiles, the GCS is extracted so the data is not cessessarily xyz
+                    m_isCesium3DTiles = false;
+
+                    if (!LoadGCSFrom(stream_settings->GetGCSString()))
+                        return BSIERROR; // Error loading layer gcs
+                    }
+                else
+                    {
+                    if (!LoadGCSFrom(WString(L"ll84")))
+                        return BSIERROR; // Error loading layer gcs
+                    }
+
+                }
+            else
+                {
+
+                if (!LoadGCSFrom())
+                    return BSIERROR; // Error loading layer gcs
+
+#ifndef VANCOUVER_API                       
+                dataStore = new SMSQLiteStore<Extent3dType>(m_smSQLitePtr);
+#else
+                dataStore = SMSQLiteStore<Extent3dType>::Create(m_smSQLitePtr);
+#endif
+
+                m_scmIndexPtr = new MeshIndexType(dataStore,
+                    ScalableMeshMemoryPools<POINT>::Get()->GetGenericPool(),
+                    10000,
+                    filterP.get(),
+                    this->m_needsNeighbors,
+                    false,
+                    false,
+                    false,
+                    0,
+                    0);
+                }
+
+
             BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
 
-            bool result = dataStore->SetProjectFilesPath(projectFilesPath, false);
+            bool result = dataStore->SetProjectFilesPath(projectFilesPath);
             assert(result == true);
-                                                                 
+
             ClipRegistry* registry = new ClipRegistry(dataStore);
             m_scmIndexPtr->SetClipRegistry(registry);
-            
-            if (!m_scmIndexPtr->IsTerrain())
-                {
-                WString newPath = m_path + L"_terrain.3sm";
-                Utf8String newBaseEditsFilePath = Utf8String(m_path) + "_terrain";
-                StatusInt openStatus;
-                SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
-                if (openStatus && smSQLiteFile != nullptr)
-                    {
-                    m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
-                    m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
-                    }
-                }
+
+            /*  if (!m_scmIndexPtr->IsTerrain())
+                  {
+                  WString newPath = m_baseExtraFilesPath + L"_terrain.3sm";
+                  Utf8String newBaseEditsFilePath = Utf8String(m_baseExtraFilesPath) + "_terrain";
+                  StatusInt openStatus;
+                  SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
+                  if (openStatus && smSQLiteFile != nullptr)
+                      {
+                      m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
+                      m_terrainP->SetInvertClip(true);
+                      m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
+                      }
+                  }*/
             filterP.release();
 
 #ifdef INDEX_DUMPING_ACTIVATED
             if (s_dropNodes)
-                {                                        
-              //  m_scmIndexPtr->DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\nodeAfterOpen.xml", false); 
-                m_scmIndexPtr->DumpOctTree("D:\\MyDoc\\RM - SM - Sprint 13\\New Store\\Dump\\nodeDump.xml", false);      
+                {
+                //  m_scmIndexPtr->DumpOctTree("D:\\MyDoc\\Scalable Mesh Iteration 8\\PartialUpdate\\Neighbor\\Log\\nodeAfterOpen.xml", false); 
+                m_scmIndexPtr->DumpOctTree("D:\\MyDoc\\RM - SM - Sprint 13\\New Store\\Dump\\nodeDump.xml", false);
                 //m_scmIndexPtr->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMeshWorkDir\\QuebecCityMini\\nodeAfterOpen.xml", false);      
            //     m_scmMPointIndexPtr->ValidateNeighbors();
                 }
 #endif
-            }
-
+        }
 
 #ifndef NDEBUG
 
@@ -922,10 +1181,10 @@ template <class POINT> int ScalableMesh<POINT>::Open()
             IDTMSourceCollection sources;
             DocumentEnv sourceEnv(L"");
 
-            SourcesDataSQLite* sourcesData = new SourcesDataSQLite();
-            m_smSQLitePtr->LoadSources(*sourcesData);
+            SourcesDataSQLite sourcesData;
+            m_smSQLitePtr->LoadSources(sourcesData);
 
-            bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, *sourcesData, sourceEnv);
+            bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(sources, sourcesData, sourceEnv);
             assert(success == true);
 
 
@@ -960,6 +1219,7 @@ template <class POINT> int ScalableMesh<POINT>::Open()
                        
 
         m_contentExtent = ComputeTotalExtentFor(&*m_scmIndexPtr);
+        //if (m_contentExtent.isNull() || m_contentExtent.isEmpty() || m_contentExtent.DiagonalDistance() == 0) return BSIERROR;
         for (int i = 0; i < (int)DTMAnalysisType::Qty; ++i)
         {
             m_scalableMeshDTM[i] = ScalableMeshDTM::Create(this);
@@ -989,6 +1249,9 @@ template <class POINT> int ScalableMesh<POINT>::Close
         ((ScalableMeshDraping*)m_scalableMeshDTM[DTMAnalysisType::Precise]->GetDTMDraping())->ClearNodes();
 
     SMMemoryPool::CleanVideoMemoryPool();
+
+    SaveEditFiles();
+
     m_scmIndexPtr = 0;
 
     if(m_smSQLitePtr != nullptr)
@@ -1099,23 +1362,105 @@ template <class POINT> void ScalableMesh<POINT>::CreateSpatialIndexFromExtents(l
         }
     }
 
+
+ScalableMeshDTM::ScalableMeshDTM(IScalableMeshPtr& scMesh)
+    {
+    m_draping = new ScalableMeshDraping(scMesh);
+    m_dtmVolume = new ScalableMeshVolume(scMesh);
+    m_scMesh = scMesh.get();   
+    m_tryCreateDtm = false;    
+    }
+
+void ScalableMeshDTM::SetStorageToUors(DMatrix4d& storageToUors)
+    {
+    m_transformToUors.InitFrom(storageToUors);
+    m_draping->SetTransform(m_transformToUors);
+    ((ScalableMeshVolume*)m_dtmVolume)->SetTransform(m_transformToUors);
+    }
+
 /*-------------------Methods inherited from IDTM-----------------------------*/
-
-
 int64_t ScalableMeshDTM::_GetPointCount()
     {
     return m_scMesh->GetPointCount();
     }
 
 BcDTMP ScalableMeshDTM::_GetBcDTM()
-{
-return 0;
-};
+    {    
+    if (!m_tryCreateDtm)
+        {
+        m_tryCreateDtm = true;
+
+        //find the highest resolution that has less than 5M points
+        IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
+        IScalableMeshMeshQueryPtr meshQueryInterface = m_scMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
+        bvector<IScalableMeshNodePtr> returnedNodes;
+        params->SetLevel(m_scMesh->GetTerrainDepth());
+
+        size_t totalPts = 0;
+        if (meshQueryInterface->Query(returnedNodes, 0, 0, params) != SUCCESS)
+            return nullptr;
+        for (auto& node : returnedNodes)
+        {
+            totalPts += node->GetPointCount();
+        }
+        while (totalPts > 5000000 && params->GetLevel() > 1)
+        {
+            returnedNodes.clear();
+            params->SetLevel(params->GetLevel() - 1);
+            meshQueryInterface->Query(returnedNodes, 0, 0, params);
+            totalPts = 0;
+            for (auto& node : returnedNodes)
+            {
+                totalPts += node->GetPointCount();
+            }
+        }
+        if (returnedNodes.size() == 0) return nullptr;
+
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
+        auto meshPtr = returnedNodes.front()->GetMesh(flags);
+        ScalableMeshMesh* meshP = dynamic_cast<ScalableMeshMesh*>(meshPtr.get());
+        //add all triangles from returned nodes to DTM
+        for (auto nodeIter = returnedNodes.begin() + 1; nodeIter != returnedNodes.end(); ++nodeIter)
+        {
+            if ((*nodeIter)->GetPointCount() <= 4) continue;
+            auto currentMeshPtr = (*nodeIter)->GetMesh(flags);
+            if (!currentMeshPtr.IsValid()) continue;
+            bvector<int32_t> indices(currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCount());
+            memcpy(&indices[0], currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCP(), indices.size() * sizeof(int32_t));
+            for (auto&idx : indices) idx += (int)meshP->GetNbPoints();
+            meshP->AppendMesh(currentMeshPtr->GetPolyfaceQuery()->GetPointCount(), const_cast<DPoint3d*>(currentMeshPtr->GetPolyfaceQuery()->GetPointCP()), (int)indices.size(), &indices[0], 0, 0, 0, 0, 0, 0);
+        }
+		meshP->RemoveDuplicates();
+        DTMStatusInt val = meshP->GetAsBcDTM(m_dtm);
+        if (val == DTM_ERROR) 
+            {
+            m_dtm = nullptr;
+            return nullptr;
+            }
+        
+        if (!m_transformToUors.IsIdentity())
+            {
+            val = m_dtm->Transform(m_transformToUors);
+
+            if (val == DTM_ERROR)
+                {
+                m_dtm = nullptr;
+                return nullptr;
+                }            
+            }        
+        }
+
+    return m_dtm.get();    
+    }
 
 DTMStatusInt ScalableMeshDTM::_GetBoundary(DTMPointArray& result)
-{
-return m_scMesh->GetBoundary(result) == SUCCESS ? DTM_SUCCESS : DTM_ERROR;
-}
+    {
+    DTMPointArray boundary;
+    if (m_scMesh->GetBoundary(boundary) != SUCCESS)
+        return DTM_ERROR;
+    m_transformToUors.Multiply(result, boundary);
+    return DTM_SUCCESS;
+    }
 
 IDTMDrapingP ScalableMeshDTM::_GetDTMDraping()
     {
@@ -1339,53 +1684,15 @@ DTMStatusInt ScalableMeshDTM::_CalculateSlopeArea(double& flatArea, double& slop
     }
 
     DTMStatusInt ScalableMeshDTM::_ExportToGeopakTinFile(WCharCP fileNameP, TransformCP transformation)
-    {
-    //find the highest resolution that has less than 5M points
-    IScalableMeshMeshQueryParamsPtr params = IScalableMeshMeshQueryParams::CreateParams();
-    IScalableMeshMeshQueryPtr meshQueryInterface = m_scMesh->GetMeshQueryInterface(MESH_QUERY_FULL_RESOLUTION);
-    bvector<IScalableMeshNodePtr> returnedNodes;
-    params->SetLevel(m_scMesh->GetTerrainDepth());
+    {   
+    BcDTMP dtm(_GetBcDTM());
 
-    size_t totalPts = 0;
-    if (meshQueryInterface->Query(returnedNodes, 0, 0, params) != SUCCESS)
+    if (dtm == nullptr)
+        {
         return DTM_ERROR;
-    for (auto& node : returnedNodes)
-        {
-        totalPts += node->GetPointCount();
         }
-    while (totalPts > 5000000 && params->GetLevel() > 1)
-        {
-        returnedNodes.clear();
-        params->SetLevel(params->GetLevel() - 1);
-        meshQueryInterface->Query(returnedNodes, 0,0, params);
-        totalPts = 0;
-        for (auto& node : returnedNodes)
-            {
-            totalPts += node->GetPointCount();
-            }
-        }
-    if (returnedNodes.size() == 0) return DTM_ERROR;
-
-    IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
-    auto meshPtr = returnedNodes.front()->GetMesh(flags);
-    ScalableMeshMesh* meshP = dynamic_cast<ScalableMeshMesh*>(meshPtr.get());
-    //add all triangles from returned nodes to DTM
-    for (auto nodeIter = returnedNodes.begin() + 1; nodeIter != returnedNodes.end(); ++nodeIter)
-        {
-        if ((*nodeIter)->GetPointCount() <= 4) continue;
-        auto currentMeshPtr = (*nodeIter)->GetMesh(flags);
-        if (!currentMeshPtr.IsValid()) continue;
-        bvector<int32_t> indices(currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCount());
-        memcpy(&indices[0], currentMeshPtr->GetPolyfaceQuery()->GetPointIndexCP(), indices.size()*sizeof(int32_t));
-        for (auto&idx : indices) idx += (int)meshP->GetNbPoints();
-        meshP->AppendMesh(currentMeshPtr->GetPolyfaceQuery()->GetPointCount(), const_cast<DPoint3d*>(currentMeshPtr->GetPolyfaceQuery()->GetPointCP()), (int)indices.size(), &indices[0],0,0,0,0,0,0);
-        }
-
-    TerrainModel::BcDTMPtr dtm;
-    DTMStatusInt val = meshP->GetAsBcDTM(dtm);
-    if (val == DTM_ERROR) return val;
-    val = dtm->ExportToGeopakTinFile(fileNameP, transformation);
-    return val;
+    
+    return dtm->ExportToGeopakTinFile(fileNameP, transformation);
     }
 
 bool ScalableMeshDTM::_GetTransformation(TransformR transformation)
@@ -1417,7 +1724,7 @@ template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<
 
 template <class POINT> BENTLEY_NAMESPACE_NAME::TerrainModel::IDTM* ScalableMesh<POINT>::_GetDTMInterface(DMatrix4d& storageToUors, DTMAnalysisType type)
     {
-    m_scalableMeshDTM[type]->SetStorageToUors(storageToUors);
+    //m_scalableMeshDTM[type]->SetStorageToUors(storageToUors);
     return m_scalableMeshDTM[type].get();
     }
 
@@ -1454,26 +1761,63 @@ template <class POINT> __int64 ScalableMesh<POINT>::_GetPointCount()
     return nbPoints;
     }
 
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_GetNodeCount
++----------------------------------------------------------------------------*/
+template <class POINT> uint64_t ScalableMesh<POINT>::_GetNodeCount()
+    {
+    if (m_scmIndexPtr != 0)
+        {
+        return m_scmIndexPtr->GetNodeCount();
+        }
+    return 0;
+    }
+
 template <class POINT> bool ScalableMesh<POINT>::_IsTerrain()
     {
 
     if (m_scmIndexPtr != 0)
         {
-        return true;
-        //return m_scmIndexPtr->IsTerrain();
+        return m_scmIndexPtr->IsTerrain();
         }
     return false;
 
     }
 
-template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
+template <class POINT> bool ScalableMesh<POINT>::_IsTextured()
+    {
+
+    if (m_scmIndexPtr != 0)
+        {
+        return m_scmIndexPtr->IsTextured() != IndexTexture::None;
+        }
+    return false;
+
+    }
+
+template <class POINT> bool ScalableMesh<POINT>::_IsCesium3DTiles()
+    {
+    return m_isCesium3DTiles;
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_TextureFromRaster(ITextureProviderPtr provider)
     {
     auto nextID = m_scmIndexPtr->GetDataStore()->GetNextID();
     nextID = nextID != uint64_t(-1) ? nextID : m_scmIndexPtr->GetNextID();
     m_scmIndexPtr->SetNextID(nextID);
-    m_scmIndexPtr->TextureFromRaster(provider, unitTransform);
+
+    double ratioToMeter(GetGCS().GetUnit().GetRatioToBase());
+#ifndef VANCOUVER_API
+    Transform smUnitToMeterTransform(Transform::FromScaleFactors(ratioToMeter, ratioToMeter, ratioToMeter));
+#else
+    Transform smUnitToMeterTransform(Transform::FromRowValues(ratioToMeter, 0, 0, 0, 
+                                                              0, ratioToMeter, 0, 0, 
+                                                              0, 0, ratioToMeter, 0));
+#endif
+
+    m_scmIndexPtr->TextureFromRaster(provider, smUnitToMeterTransform);
     m_scmIndexPtr->Store();
-    m_smSQLitePtr->CommitAll();
+    m_smSQLitePtr->Save();
     m_scmIndexPtr = 0;
     Open();
     }
@@ -1513,6 +1857,9 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
     if (returnedNodes.size() == 0) return ERROR;
     bvector<DPoint3d> current;
     DRange3d rangeCurrent = DRange3d::From(current);
+	//PolyfaceHeaderPtr polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+	//bmap<DPoint3d, DPoint3d, DPoint3dZYXTolerancedSortComparison> ptsWithTolerance(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+	bvector<bvector<DPoint3d>> bounds;
     for (auto& node : returnedNodes)
         {
         IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create();
@@ -1521,7 +1868,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
         bvector<DPoint3d> bound;
         if (meshP.get() != nullptr && meshP->GetBoundary(bound) == DTM_SUCCESS)
             {
-            if (current.empty()) current = bound;
+           /* if (current.empty()) current = bound;
             else
                 {
                 VuPolygonClassifier vu(1e-8, 0);
@@ -1536,9 +1883,54 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_GetBoundary(bvector<DPoin
                         rangeCurrent = rangeXYZ;
                         }
                     }
-                }
+                }*/
+			/*for (auto& pt : bound)
+			    {
+				if (ptsWithTolerance.count(pt) == 0) ptsWithTolerance[pt] = pt;
+				pt = ptsWithTolerance[pt];
+			    }*/
+			bound.push_back(bound[0]);
+			if (bsiGeom_getXYPolygonArea(&bound[0], (int)bound.size()) > 0)
+				std::reverse(bound.begin(), bound.end());
+			bounds.push_back(bound);
+			//polyface->AddPolygon(bound);
             }
         }
+	MergePolygonSets(bounds);
+	current = bounds[0];
+	//polyface->Compress();
+	//size_t numOpen = 0, numClosed = 0;
+/*	PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface);
+	int n = 0;
+	for (visitor->Reset(); visitor->AdvanceToNextFace();)
+	{
+		{
+			WString namePoly = WString(L"C:\\work\\2017q2\\cs\\") + L"newpoly_";
+			namePoly.append(to_wstring(n).c_str());
+			namePoly.append(L".p");
+			FILE* polyCliPFile = _wfopen(namePoly.c_str(), L"wb");
+			size_t polySize = visitor->Point().size();
+			fwrite(&polySize, sizeof(size_t), 1, polyCliPFile);
+			fwrite(&visitor->Point()[0], sizeof(DPoint3d), polySize, polyCliPFile);
+			fclose(polyCliPFile);
+		}
+		++n;
+	}*/
+
+	/*CurveVectorPtr boundCurve = polyface->ExtractBoundaryStrings(numOpen, numClosed);
+	for (auto& curve : *boundCurve)
+	    {
+		if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curve->GetCurvePrimitiveType() && curve->GetChildCurveVectorCP()->GetBoundaryType() == CurveVector::BOUNDARY_TYPE_Outer)
+ 		    {
+			bvector<bvector<DPoint3d>> loops;
+			curve->GetChildCurveVectorCP()->CollectLinearGeometry(loops);
+			if (loops.empty())
+			    {
+				current = loops.front();
+				break;
+			    }
+		    }
+	    }*/
     if (current.size() == 0) return ERROR;
 
     boundary = current;
@@ -1661,8 +2053,17 @@ template <class POINT> IScalableMeshNodeRayQueryPtr ScalableMesh<POINT>::_GetNod
 +----------------------------------------------------------------------------*/
 template <class POINT> IScalableMeshEditPtr ScalableMesh<POINT>::_GetMeshEditInterface() const
     {
-    return ScalableMeshEdit::Create(&*m_scmIndexPtr);
+    return ScalableMeshEdit::Create((SMMeshIndex<DPoint3d,DRange3d>*)(&*m_scmIndexPtr));
     }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_GetMeshAnalysisInterface
++----------------------------------------------------------------------------*/
+template <class POINT> IScalableMeshAnalysisPtr ScalableMesh<POINT>::_GetMeshAnalysisInterface()
+    {
+    return ScalableMeshAnalysis::Create(this);
+    }
+
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetNbResolutions
 +----------------------------------------------------------------------------*/
@@ -1800,7 +2201,9 @@ template <class POINT> uint64_t ScalableMesh<POINT>::_AddClip(const DPoint3d* pt
         delete[] flippedPts;
         return clipId;
         }
-    return m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize)+1;
+    uint64_t id = m_scmIndexPtr->GetClipRegistry()->AddClip(pts, ptsSize)+1;
+    SaveEditFiles();
+    return id;
     }
 
 /*----------------------------------------------------------------------------+
@@ -1809,7 +2212,6 @@ template <class POINT> uint64_t ScalableMesh<POINT>::_AddClip(const DPoint3d* pt
 template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, bool alsoAddOnTerrain)
     {
     bvector<bvector<DPoint3d>> coverageData;
-    m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
 
     const DPoint3d* targetPts;
@@ -1833,11 +2235,40 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
         }
     else
         {
-        if (m_terrainP.IsValid())
+       /* if (m_terrainP.IsValid())
             {
             m_terrainP->AddClip(targetPts, ptsSize, clipID);
-            }
+            }*/
         }
+
+    SaveEditFiles();
+
+    return true;
+    }
+
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_AddClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+    {
+    const DPoint3d* targetPts;
+    bvector<DPoint3d> reprojectedPts(ptsSize);
+    if (!m_reprojectionTransform.IsIdentity())
+        {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        trans.Multiply(&reprojectedPts[0], pts, (int)ptsSize);
+        targetPts = reprojectedPts.data();
+        }
+    else targetPts = pts;
+
+    DRange3d extent = DRange3d::From(targetPts, (int)ptsSize);
+
+    if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
+    m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
+    SaveEditFiles();
     return true;
     }
 
@@ -1866,8 +2297,41 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
 
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, targetPts, ptsSize);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
-    return true;
+    
+    SaveEditFiles();    
 
+    return true;
+    }
+
+/*----------------------------------------------------------------------------+
+|ScalableMesh::_ModifyClip
++----------------------------------------------------------------------------*/
+template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts, size_t ptsSize, uint64_t clipID, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive)
+    {
+    const DPoint3d* targetPts;
+    bvector<DPoint3d> reprojectedPts(ptsSize);
+    if (!m_reprojectionTransform.IsIdentity())
+        {
+        Transform trans;
+        trans.InverseOf(m_reprojectionTransform);
+        trans.Multiply(&reprojectedPts[0], pts, (int)ptsSize);
+        targetPts = reprojectedPts.data();
+        }
+    else targetPts = pts;
+
+    DRange3d extent = DRange3d::From(targetPts, (int)ptsSize);
+
+	bvector<DPoint3d> clipData;
+	m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
+	if(!clipData.empty())
+		extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
+
+    m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
+        
+    SaveEditFiles();        
+
+    return true;
     }
 
 /*----------------------------------------------------------------------------+
@@ -1881,20 +2345,95 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveClip(uint64_t clipID)
     DRange3d extent = DRange3d::From(&clipData[0], (int)clipData.size());
     m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent);
+    
+    SaveEditFiles();
+    
     return true;
     }
+
+template <class POINT> bool ScalableMesh<POINT>::_GetClip(uint64_t clipID, bvector<DPoint3d>& clipData)
+{
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
+    m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
+    return !clipData.empty();
+}
 
 template <class POINT> void ScalableMesh<POINT>::_SetIsInsertingClips(bool toggleInsertClips)
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->SetAutoCommit(!toggleInsertClips);
-    m_scmIndexPtr->m_isInsertingClips = toggleInsertClips;    
+    m_scmIndexPtr->m_isInsertingClips = toggleInsertClips;        
+    
+    SaveEditFiles();
+    }
+
+template <class POINT>  bool   ScalableMesh<POINT>::_ShouldInvertClips()
+    {
+    return m_isInvertingClips;
+    }
+
+template <class POINT>  void   ScalableMesh<POINT>::_SetInvertClip(bool invertClips)
+    {
+    m_isInvertingClips = invertClips;
     }
 
 template <class POINT> void ScalableMesh<POINT>::_ModifyClipMetadata(uint64_t clipId, double importance, int nDimensions)
     {
     if (nullptr == m_scmIndexPtr || m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->SetClipMetadata(clipId, importance, nDimensions);
+    
+    SaveEditFiles();
+    }
+
+
+template <class POINT>  void ScalableMesh<POINT>::_SynchronizeClipData(const bvector<bpair<uint64_t, bvector<DPoint3d>>>& listOfClips, const bvector<bpair<uint64_t, bvector<bvector<DPoint3d>>>>& listOfSkirts)
+    {
+    SetIsInsertingClips(true);
+
+    bvector<uint64_t> existingClipIds;
+    GetAllClipIds(existingClipIds);
+    std::sort(existingClipIds.begin(), existingClipIds.end());
+
+    bset<uint64_t> foundIds;
+    
+    for (auto& clip : listOfClips)
+        {
+        uint64_t* addr = std::lower_bound(existingClipIds.begin(), existingClipIds.end(), clip.first);
+        if (addr == existingClipIds.end() || *addr != clip.first)
+            {
+            AddClip(clip.second.data(), clip.second.size(), clip.first);
+            }
+        else
+            {
+            foundIds.insert(clip.first);
+            ModifyClip(clip.second.data(), clip.second.size(), clip.first);
+            }
+        }
+
+    for (auto& skirt : listOfSkirts)
+        {
+        uint64_t* addr = std::lower_bound(existingClipIds.begin(), existingClipIds.end(), skirt.first);
+        if (addr == existingClipIds.end() || *addr != skirt.first)
+            {
+            AddSkirt(skirt.second, skirt.first);
+            }
+        else
+            {
+            foundIds.insert(skirt.first);
+            ModifySkirt(skirt.second, skirt.first);
+            }
+        }
+
+    for (auto& id : existingClipIds)
+        {
+        if (foundIds.count(id) == 0)
+            {
+            RemoveClip(id);
+            RemoveSkirt(id);
+            }
+        }
+
+    SetIsInsertingClips(false);
     }
 
 /*----------------------------------------------------------------------------+
@@ -1930,11 +2469,14 @@ template <class POINT> bool ScalableMesh<POINT>::_AddSkirt(const bvector<bvector
         }
     else
         {
-        if (m_terrainP.IsValid())
+     /*   if (m_terrainP.IsValid())
             {
             m_terrainP->AddSkirt(skirt, clipID);
-            }
+            }*/
         }
+
+    SaveEditFiles();
+
     return true;
     }
 
@@ -1962,6 +2504,9 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifySkirt(const bvector<bvec
     for (auto& vec : reprojSkirt) extent.Extend(vec, nullptr);
     m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, reprojSkirt);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent, false);
+    
+    SaveEditFiles();
+    
     return true;
     }
 
@@ -1970,6 +2515,36 @@ template <class POINT> void ScalableMesh<POINT>::_GetAllClipsIds(bvector<uint64_
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
     m_scmIndexPtr->GetClipRegistry()->GetAllClipsIds(allClipIds);
     }
+
+template <class POINT>  void                         ScalableMesh<POINT>::_SetClipOnOrOff(uint64_t id, bool isActive)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
+    m_scmIndexPtr->GetClipRegistry()->SetClipOnOrOff(id, isActive);
+    
+    SaveEditFiles();
+    }
+
+template <class POINT>  void                       ScalableMesh<POINT>::_GetIsClipActive(uint64_t id, bool& isActive)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetIsClipActive(id, isActive);
+    }
+
+template <class POINT>  void                    ScalableMesh<POINT>::_GetClipType(uint64_t id, SMNonDestructiveClipType& type)
+    {
+    if (m_scmIndexPtr->GetClipRegistry() == nullptr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetClipType(id, type);
+    }
+
+template <class POINT>  void                    ScalableMesh<POINT>::_CompactExtraFiles()
+   {
+	assert(m_scmIndexPtr.GetPtr() != nullptr && m_scmIndexPtr->GetDataStore().IsValid());
+
+	if (m_scmIndexPtr->m_isInsertingClips == true)
+		return;
+
+	m_scmIndexPtr->GetDataStore()->CompactProjectFiles();
+   }
 
 template <class POINT> void ScalableMesh<POINT>::_GetCurrentlyViewedNodes(bvector<IScalableMeshNodePtr>& nodes)
     {
@@ -1981,6 +2556,29 @@ template <class POINT> void ScalableMesh<POINT>::_SetCurrentlyViewedNodes(const 
     m_viewedNodes = nodes;
     }
 
+template <class POINT> void ScalableMesh<POINT>::SaveEditFiles()
+    {        
+    assert(m_scmIndexPtr.GetPtr() != nullptr && m_scmIndexPtr->GetDataStore().IsValid());
+
+    if (m_scmIndexPtr->m_isInsertingClips == true)
+        return;
+
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DiffSet, (uint64_t)m_scmIndexPtr.GetPtr());
+
+    m_scmIndexPtr->GetDataStore()->SaveProjectFiles();
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_RemoveAllDisplayData()
+    {                    
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DisplayMesh, (uint64_t)m_scmIndexPtr.GetPtr());
+    SMMemoryPool::GetInstance()->RemoveAllItemsOfType(SMStoreDataType::DisplayTexture, (uint64_t)m_scmIndexPtr.GetPtr());
+    SMMemoryPool::GetInstanceVideo()->RemoveAllItemsOfType(SMStoreDataType::DisplayMesh, (uint64_t)m_scmIndexPtr.GetPtr());
+    SMMemoryPool::GetInstanceVideo()->RemoveAllItemsOfType(SMStoreDataType::DisplayTexture, (uint64_t)m_scmIndexPtr.GetPtr());    
+    
+    m_scmIndexPtr->TextureManager()->RemoveAllPoolIdForTexture();
+    m_scmIndexPtr->TextureManager()->RemoveAllPoolIdForTextureVideo();
+    }
+
 template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf8String& path)
     {
     m_baseExtraFilesPath = WString(path.c_str(), BentleyCharEncoding::Utf8);
@@ -1989,6 +2587,48 @@ template <class POINT> void ScalableMesh<POINT>::_SetEditFilesBasePath(const Utf
 template <class POINT> Utf8String ScalableMesh<POINT>::_GetEditFilesBasePath()
     {
     return Utf8String(m_baseExtraFilesPath);
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFileName>& extraFileNames) const
+    {
+    //Clip files
+    //NEEDS_WORK_SM : Might be better to get the name from SMSQLiteSisterFile.cpp
+#ifdef VANCOUVER_API
+    BeFileName fileName(m_baseExtraFilesPath.GetWCharCP());
+#else
+    BeFileName fileName(m_baseExtraFilesPath);
+#endif
+    fileName.AppendString(L"_clipDefinitions");
+
+    extraFileNames.push_back(fileName);
+
+    fileName.clear();
+#ifdef VANCOUVER_API
+    fileName = BeFileName(m_baseExtraFilesPath.GetWCharCP());
+#else
+    fileName = BeFileName(m_baseExtraFilesPath);
+#endif
+    fileName.AppendString(L"_clips");
+
+    extraFileNames.push_back(fileName);
+
+    //Coverage terrain files
+    bvector<uint64_t> ids;
+    GetCoverageIds(ids);
+
+    for (auto& id : ids)
+        { 
+        wchar_t idStr[1000];
+        swprintf(idStr, L"%llu", id);
+                    
+        //Note that the clips file for the coverage terrain are extra files to the coverage terrain.
+        fileName.clear();   
+        Utf8String coverageName; 
+        GetCoverageName(coverageName, id);
+     
+        GetCoverageTerrainAbsFileName(fileName, m_baseExtraFilesPath, coverageName);
+        extraFileNames.push_back(fileName);        
+        }    
     }
 
 template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
@@ -2045,9 +2685,34 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveSkirt(uint64_t clipID)
     for (auto& vec : skirt) extent.Extend(vec, nullptr);
     m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
     m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent, false);
+    SaveEditFiles();
     return true;
     }
 
+
+template <class POINT> IScalableMeshPtr ScalableMesh<POINT>::_GetGroup()
+    {
+    return m_groupP;
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_AddToGroup(IScalableMeshPtr& sMesh, bool isRegionRestricted, const DPoint3d* region, size_t nOfPtsInRegion)
+    {
+    if (!m_groupP.IsValid())
+        {
+        m_groupP = ScalableMeshGroup::Create();
+        }
+    
+    dynamic_cast<ScalableMeshGroup*>(m_groupP.get())->AddMember(sMesh, isRegionRestricted, region, nOfPtsInRegion);
+    }
+
+
+template <class POINT> void ScalableMesh<POINT>::_RemoveFromGroup(IScalableMeshPtr& sMesh)
+    {
+    if (m_groupP.IsValid())
+        {
+        dynamic_cast<ScalableMeshGroup*>(m_groupP.get())->RemoveMember(sMesh);
+        }
+    }
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_GetState
 +----------------------------------------------------------------------------*/
@@ -2064,8 +2729,14 @@ template <class POINT> ScalableMeshState ScalableMesh<POINT>::_GetState() const
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_InSynchWithSources() const
     {
-    //NEEDS_WORK_SM: Get LastModifiedTime from sqlite file
-    return false;
+    if (!m_smSQLitePtr.IsValid())
+        return false; 
+
+    SourcesDataSQLite sourcesData;
+    m_smSQLitePtr->LoadSources(sourcesData);
+
+    const bool InSync = sourcesData.GetLastModifiedTime() < sourcesData.GetLastSyncTime();
+    return InSync;
     }
 
 /*----------------------------------------------------------------------------+
@@ -2098,7 +2769,15 @@ template <class POINT> int ScalableMesh<POINT>::_GetRangeInSpecificGCS(DPoint3d&
 +----------------------------------------------------------------------------*/
 template <class POINT> bool ScalableMesh<POINT>::_LastSynchronizationCheck(time_t& lastCheckTime) const
     {
+    if (!m_smSQLitePtr.IsValid())
         return false;
+
+    SourcesDataSQLite sourcesData;
+    m_smSQLitePtr->LoadSources(sourcesData);
+
+    lastCheckTime = sourcesData.GetLastModifiedCheckTime();
+
+    return true;
     }
 
 /*----------------------------------------------------------------------------+
@@ -2140,9 +2819,9 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
     } 
 
 /*----------------------------------------------------------------------------+
-|ScalableMesh::_ConvertToCloud
+|ScalableMesh::_Generate3DTiles
 +----------------------------------------------------------------------------*/
-template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server) const
+template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
 
@@ -2150,7 +2829,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     if (server == SMCloudServerType::Azure)
         {
         // Setup streaming stores to use Azure
-        s_stream_from_disk = false; 
+        //s_stream_from_disk = false; 
         s_stream_from_wsg = false;
 
         path += outContainerName + L"/" + outDatasetName;
@@ -2158,74 +2837,52 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_ConvertToCloud(const WStr
     else if (server == SMCloudServerType::WSG)
         {
         // Setup streaming stores to use WSG
-        s_stream_from_disk = false;
+        //s_stream_from_disk = false;
         s_stream_from_wsg = true;
 
         path += outContainerName + L"~2F" + outDatasetName;
+        }
+    else if (server == SMCloudServerType::LocalDiskCURL)
+        {
+        // Setup streaming stores to use local disk (relative to attached 3sm file location)
+        //s_stream_from_disk = true;
+        s_stream_using_curl = true;
+
+        const auto smFileName = BeFileName(this->GetPath());
+        path += BEFILENAME(GetDirectoryName, smFileName);
+        path += L"cloud\\";
+        path += BEFILENAME(GetFileNameWithoutExtension, smFileName);
         }
     else
         {
         assert(server == SMCloudServerType::LocalDisk);
 
-        // Setup streaming stores to use local disk (relative to attached stm file location)
-        s_stream_from_disk = true;
-
-        const auto smFileName = BeFileName(this->GetPath());
-        #ifndef VANCOUVER_API
-        path += smFileName.GetDirectoryName();
-        #else
-        BeFileName dirName;
-        dirName = BeFileName(BeFileName::GetDirectoryName(smFileName).c_str());
-        path += dirName;
-        #endif
-        path += L"cloud\\";
-        //NEEDS_WORK_STREAMING: make this work on topaz
-        assert(false);
-        //path += smFileName.GetFileNameWithoutExtension();
+        // Setup streaming stores to use local disk (relative to attached 3sm file location)
+        //s_stream_from_disk = true;
+        path = outContainerName;
         }
     
     //s_stream_from_grouped_store = false;
-
-    return m_scmIndexPtr->SaveMeshToCloud(&this->GetDataSourceManager(), path, true);
+    m_scmIndexPtr->SetProgressCallback(progress);
+    return m_scmIndexPtr->Publish3DTiles(path, this->_GetGCS().GetGeoRef().GetBasePtr());
     }
 
-static bool s_doGroundExtract = true; 
+template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
+    {    
+    BeFileName terrainAbsName;
 
-template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer)
-    {
-    WString newPath = m_path + L"_terrain.3sm";
+    Utf8String coverageName(createdTerrain);
 
-#if 0     
-    if (m_scmTerrainIndexPtr == nullptr)
-        {
-        StatusInt status;
-        m_terrainP = IScalableMesh::GetFor(newPath.c_str(), false, true, status);
-        if (status != SUCCESS) return BSIERROR;
-        if (m_terrainP == nullptr)
-            {
-            auto sm = IScalableMeshNodeCreator::GetFor(newPath.c_str(),  status);            
-            sm->SetBaseExtraFilesPath(newPath);
-            sm->Create();
-            StatusInt addStatus;
-            auto node = sm->AddNode(addStatus);
-            DRange3d range;
-            GetRange(range);
-            node->SetNodeExtent(range);
-            node = 0;
-            sm->SaveToFile();
-            sm = 0;
-            //m_terrainP = IScalableMesh::GetFor(newPath.c_str(), false, true, status);
-            }
-
-       // dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->SetMainIndexP(m_scmIndexPtr->CloneIndex(dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP()->GetDataStore()));
-        //m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
-
-        }
-#endif       
+    GetCoverageTerrainAbsFileName(terrainAbsName, m_baseExtraFilesPath, coverageName);
 
 #ifndef VANCOUVER_API
+    assert(!terrainAbsName.DoesPathExist());
+#else    
+    assert(!BeFileName::DoesPathExist(terrainAbsName.c_str()));
+#endif
+
     if (s_doGroundExtract /*&& m_scmTerrainIndexPtr == nullptr*/)
-        {        
+        {
         IScalableMeshPtr scalableMeshPtr(this);
 
         m_scmTerrainIndexPtr = 0;
@@ -2234,40 +2891,77 @@ template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage(const 
         int result = _wremove(newPath.c_str());
         assert(result == 0);
         */
-        IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(newPath, scalableMeshPtr));        
-        
+        IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(terrainAbsName, scalableMeshPtr));
+
         smGroundExtractor->SetExtractionArea(coverageData);
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
 
-        StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);                
+        StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
-        assert(status == SUCCESS);    
-                
-        Utf8String newBaseEditsFilePath = Utf8String(m_path) + "_terrain.3sm";
+        assert(status == SUCCESS);
+/*
+        Utf8String newBaseEditsFilePath = Utf8String(m_baseExtraFilesPath) + "_terrain_";
+        newBaseEditsFilePath.append(std::to_string(id).c_str());
+*/
+
         StatusInt openStatus;
-        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(newPath, false, openStatus));
+        SMSQLiteFilePtr smSQLiteFile(SMSQLiteFile::Open(terrainAbsName, false, openStatus));
         if (openStatus && smSQLiteFile != nullptr)
             {
-            m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
-            m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();
-            }                
+ /*           m_terrainP = ScalableMesh<DPoint3d>::Open(smSQLiteFile, newPath, newBaseEditsFilePath, openStatus);
+            m_terrainP->SetInvertClip(true);
+            m_scmTerrainIndexPtr = dynamic_cast<ScalableMesh<DPoint3d>*>(m_terrainP.get())->GetMainIndexP();*/
+            }
         }
-#endif
 
-    if (m_scmTerrainIndexPtr == nullptr) return ERROR;
+
+    createdTerrain = terrainAbsName;
+    return SUCCESS;
+    }
+
+
+static bool s_doGroundExtract = true; 
+
+template <class POINT> BentleyStatus ScalableMesh<POINT>::_CreateCoverage( const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
+    {
+   // if (m_scmTerrainIndexPtr == nullptr) return ERROR;
     _AddClip(coverageData.data(), coverageData.size(), id, false);
     bvector<bvector<DPoint3d>> skirts;
     skirts.push_back(coverageData);
    // _AddSkirt(skirts, id, false);
 
 /*    DRange3d extent = */DRange3d::From(&coverageData[0], (int)coverageData.size());
-    m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size());
+    m_scmIndexPtr->GetClipRegistry()->ModifyCoverage(id, coverageData.data(), coverageData.size(), coverageName);
+
+    //m_terrainP->AddClip(coverageData.data(), coverageData.size(), id);
+
+    SaveEditFiles();
     return SUCCESS;
     }
 
 template <class POINT> void ScalableMesh<POINT>::_GetAllCoverages(bvector<bvector<DPoint3d>>& coverageData)
     {
     m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_GetCoverageIds(bvector<uint64_t>& ids) const
+    {
+    if (nullptr == m_scmIndexPtr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetAllCoverageIds(ids);
+    }
+
+template <class POINT> void ScalableMesh<POINT>::_GetCoverageName(Utf8String& name, uint64_t id) const
+    {
+    if (nullptr == m_scmIndexPtr) return;
+    m_scmIndexPtr->GetClipRegistry()->GetCoverageName(id, name);    
+    }
+
+template <class POINT> BentleyStatus ScalableMesh<POINT>::_DeleteCoverage(uint64_t id)
+    {
+    m_scmIndexPtr->GetClipRegistry()->DeleteCoverage(id);
+    _RemoveClip(id);
+    SaveEditFiles();
+    return SUCCESS;
     }
 
 template <class POINT> IScalableMeshPtr ScalableMesh<POINT>::_GetTerrainSM()
@@ -2285,22 +2979,79 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_SetReprojection(GeoC
     m_reprojectionTransform = approximateTransform;
     for (size_t i = 0; i < DTMAnalysisType::Qty; ++i)
         {
-        Transform tr;
-        if (m_scalableMeshDTM[i]->GetTransformation(tr))
-            {
-            tr.FromProduct(tr, approximateTransform);
-            auto mat4d = DMatrix4d::From(tr);
-            m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
-            }
-        else
-            {
-            auto mat4d = DMatrix4d::From(approximateTransform);
-            m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
-            }
+
+        auto mat4d = DMatrix4d::From(approximateTransform);
+        m_scalableMeshDTM[i]->SetStorageToUors(mat4d);
         }
 
     return ERROR;
     }
+
+#ifdef VANCOUVER_API
+template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordinates::BaseGCSCP targetCS, DgnModelRefP dgnModel)
+    {
+    Transform computedTransform = Transform::FromIdentity();
+
+    // Greate a GCS from the ScalableMesh
+    GeoCoords::GCS gcs(this->GetGCS());
+    GeoCoords::Unit unit(gcs.GetHorizontalUnit());
+
+    auto& modelInfo = dgnModel->AsDgnModelCP()->GetModelInfo();
+    
+    if (targetCS == nullptr || !gcs.HasGeoRef())
+        {
+        BaseGCSPtr targetGcs(BaseGCS::CreateGCS());
+                
+        double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * unit.GetRatioToBase();
+
+        computedTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0, 0, 0), scaleUorPerMeters, scaleUorPerMeters, scaleUorPerMeters);
+                        
+        return _SetReprojection(*targetGcs, computedTransform);
+        }
+    else
+        {
+        GeoCoordinates::DgnGCSPtr  smGCS = GeoCoordinates::DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnModel);
+        assert(smGCS != nullptr); // Error creating SM GCS from GeoRef for reprojection
+        
+        DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
+        if (smGCS != nullptr && !targetCS->IsEquivalent(*smGCS))
+            {
+            DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
+            smGCS->UorsFromCartesian(scale, scale);
+            scale.DifferenceOf(scale, globalOrigin);            
+            
+            computedTransform = Transform::FromRowValues(scale.x,       0,       0, globalOrigin.x,
+                                                               0, scale.y,       0, globalOrigin.y,
+                                                               0,       0, scale.z, globalOrigin.z);
+
+            DRange3d smExtent, smExtentUors;
+            this->GetRange(smExtent);
+            computedTransform.Multiply(smExtentUors, smExtent);
+
+            DPoint3d extent;
+            extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
+            Transform       approxTransform;
+
+            auto coordInterp = this->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
+
+            auto status = smGCS->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, static_cast<DgnGCSCR>(*targetCS));
+
+            if (0 == status || 1 == status)
+                {
+                computedTransform = Transform::FromProduct(approxTransform, computedTransform);
+                }
+            }
+        else
+            {             
+            double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * unit.GetRatioToBase();
+
+            computedTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0, 0, 0), scaleUorPerMeters, scaleUorPerMeters, scaleUorPerMeters);
+            }
+        }
+
+    return _SetReprojection(*targetCS, computedTransform);
+    }
+#endif
 
 template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrainPath)
     {
@@ -2316,7 +3067,7 @@ template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrai
                                         pool,
                                    10000,
                                    dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get())->GetNodePtr()->GetFilter(),
-                                   true, true, true,
+                                   true, true, true, true,
                                    dynamic_cast<SMMeshIndexNode<POINT,Extent3dType>*>((dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get()))->GetNodePtr().GetPtr())->GetMesher2_5d(),
                                    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>((dynamic_cast<ScalableMeshNode<POINT>*>(nodeP.get()))->GetNodePtr().GetPtr())->GetMesher3d()
                                    );
@@ -2326,11 +3077,73 @@ template <class POINT> void ScalableMesh<POINT>::_ImportTerrainSM(WString terrai
 
 #ifdef SCALABLE_MESH_ATP
 /*----------------------------------------------------------------------------+
+|ScalableMesh::_ChangeGeometricError
++----------------------------------------------------------------------------*/
+template <class POINT> StatusInt ScalableMesh<POINT>::_ChangeGeometricError(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, const double& newGeometricErrorValue) const
+    {
+    if (m_scmIndexPtr == nullptr) return ERROR;
+
+    WString path;
+    if (server == SMCloudServerType::Azure)
+        {
+        // Setup streaming stores to use Azure
+        //s_stream_from_disk = false;
+        s_stream_from_wsg = false;
+
+        path += outContainerName + L"/" + outDatasetName;
+        }
+    else if (server == SMCloudServerType::WSG)
+        {
+        // Setup streaming stores to use WSG
+        //s_stream_from_disk = false;
+        s_stream_from_wsg = true;
+
+        path += outContainerName + L"~2F" + outDatasetName;
+        }
+    else if (server == SMCloudServerType::LocalDiskCURL)
+        {
+        // Setup streaming stores to use local disk (relative to attached 3sm file location)
+        //s_stream_from_disk = true;
+        s_stream_using_curl = true;
+
+        const auto smFileName = BeFileName(this->GetPath());
+
+#ifndef VANCOUVER_API   
+        path += smFileName.GetDirectoryName();
+#else
+        WChar pathBuffer[5000];
+        path += smFileName.GetDirectoryName(pathBuffer);
+#endif
+        
+        path += L"cloud\\";
+        
+#ifndef VANCOUVER_API   
+        path += smFileName.GetFileNameWithoutExtension();
+#else        
+        path += smFileName.GetFileNameWithoutExtension(pathBuffer);
+#endif
+
+        }
+    else
+        {
+        assert(server == SMCloudServerType::LocalDisk);
+
+        // Setup streaming stores to use local disk (relative to attached 3sm file location)
+        //s_stream_from_disk = true;
+        path = outContainerName;
+        }
+
+    //s_stream_from_grouped_store = false;
+
+    return m_scmIndexPtr->ChangeGeometricError(path, true, newGeometricErrorValue);
+    }
+
+/*----------------------------------------------------------------------------+
 |MrDTM::_LoadAllNodeHeaders
 +----------------------------------------------------------------------------*/
 template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLoadedNodes, int level) const
     {    
-    m_scmIndexPtr->LoadTree(nbLoadedNodes, level, true);
+    m_scmIndexPtr->LoadIndexNodes(nbLoadedNodes, level, true);
     return SUCCESS;
     } 
 
@@ -2339,7 +3152,7 @@ template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeHeaders(size_t& nbLo
 +----------------------------------------------------------------------------*/
 template <class POINT> int ScalableMesh<POINT>::_LoadAllNodeData(size_t& nbLoadedNodes, int level) const
 {
-    m_scmIndexPtr->LoadTree(nbLoadedNodes, level, false);
+    m_scmIndexPtr->LoadIndexNodes(nbLoadedNodes, level, false);
     return SUCCESS;
 }
 
@@ -2351,11 +3164,11 @@ template <class POINT> int ScalableMesh<POINT>::_SaveGroupedNodeHeaders(const WS
     if (m_scmIndexPtr == nullptr) return ERROR;
     if (m_smSQLitePtr->IsSingleFile()) return ERROR;
 
-    s_stream_from_disk = true;
+    //s_stream_from_disk = true;
     s_stream_from_grouped_store = false;
-    s_is_virtual_grouping = pi_pGroupMode == SMNodeGroup::VIRTUAL;
+    s_is_virtual_grouping = pi_pGroupMode == SMGroupGlobalParameters::VIRTUAL;
 
-    //m_smSQLitePtr->SetVirtualGroups(pi_pGroupMode == SMNodeGroup::VIRTUAL);
+    //m_smSQLitePtr->SetVirtualGroups(pi_pGroupMode == SMGroupGlobalParameters::VIRTUAL);
 
     m_scmIndexPtr->SaveGroupedNodeHeaders(this->GetDataSourceAccount(), pi_pOutputDirPath, pi_pGroupMode, true);
     return SUCCESS;
@@ -2395,7 +3208,7 @@ template <class POINT> ScalableMeshSingleResolutionPointIndexView<POINT>::~Scala
     {
     } 
 
-template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(ITextureProviderPtr provider, Transform unitTransform)
+template <class POINT> void ScalableMeshSingleResolutionPointIndexView<POINT>::_TextureFromRaster(ITextureProviderPtr provider)
     {}
 
 // Inherited from IDTM   
@@ -2404,11 +3217,17 @@ template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>
     return m_scmIndexPtr->GetNbObjectsAtLevel(m_resolutionIndex);
     }
 
+template <class POINT> uint64_t ScalableMeshSingleResolutionPointIndexView<POINT>::_GetNodeCount()
+    {
+    uint64_t numNodes = 0;
+    m_scmIndexPtr->LoadIndexNodes(numNodes, m_resolutionIndex, true);
+    return numNodes;
+    }
+
 template <class POINT> bool ScalableMeshSingleResolutionPointIndexView<POINT>::_IsTerrain()
     {
     return false;
     }
-
 
 template <class POINT> __int64 ScalableMeshSingleResolutionPointIndexView<POINT>::_GetBreaklineCount() const
     {

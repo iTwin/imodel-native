@@ -15,9 +15,18 @@ using namespace std;
 #include <ScalableMesh\IScalableMeshURL.h>
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnView/DgnViewLib.h>
-#include <DgnPlatform/DgnGeoCoord.h>
 
+#ifndef VANCOUVER_API   
+#include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#define VIEWMANAGER ViewManager
+#else 
+#define VIEWMANAGER IViewManager
+#include <DgnGeoCoord\DgnGeoCoord.h>
+#endif
+
+
+
 #include <ScalableMesh\ScalableMeshAdmin.h>
 #include <ScalableMesh\ScalableMeshLib.h>
 
@@ -32,13 +41,20 @@ using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 namespace ScalableMeshATPexe
 {
-struct AppViewManager : ViewManager
+struct AppViewManager : VIEWMANAGER
     {
     protected:
+#ifndef VANCOUVER_API   
         virtual DgnDisplay::QvSystemContextP _GetQvSystemContext() override { return nullptr; }
+#else
+        virtual Bentley::DgnPlatform::DgnDisplayCoreTypes::WindowP _GetTopWindow(int) override { return nullptr; }
+        virtual int                                                _GetCurrentViewNumber() override { return 0; }
+        virtual HUDManager*                                        _GetHUDManager() { return nullptr; }
+#endif
         virtual bool                _DoesHostHaveFocus()        override { return true; }
         virtual IndexedViewSetR     _GetActiveViewSet()         override { return *(IndexedViewSetP)nullptr; }
         virtual int                 _GetDynamicsStopInterval()  override { return 200; }
+
 
     public:
         AppViewManager() {}
@@ -53,12 +69,17 @@ class AppHost : public DgnViewLib::Host
 
     protected:
 
+#ifndef VANCOUVER_API   
         virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new BentleyApi::Dgn::WindowsKnownLocationsAdmin(); }
-        virtual DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;
-        virtual void                                      _SupplyProductName(Utf8StringR name) override;
-        virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() { return BeSQLite::L10N::SqlangFiles(BeFileName()); }
-        virtual ViewManager& _SupplyViewManager() override { return *new AppViewManager(); }
+        virtual void                                      _SupplyProductName(Utf8StringR name) override;
+#else
+        virtual void                                      _SupplyProductName(WStringR name) override;
+#endif
+
+        virtual DgnPlatformLib::Host::NotificationAdmin&  _SupplyNotificationAdmin() override;        
+        virtual DgnPlatformLib::Host::GeoCoordinationAdmin& _SupplyGeoCoordinationAdmin() override;        
+        virtual VIEWMANAGER& _SupplyViewManager() override { return *new AppViewManager(); }
 
     public:
         void Startup();
@@ -71,9 +92,11 @@ class AppHost : public DgnViewLib::Host
 //=======================================================================================
 struct AppNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
     {
+#ifndef VANCOUVER_API   
     virtual StatusInt _OutputMessage(BentleyApi::Dgn::NotifyMessageDetails const& msg) override;
     virtual void      _OutputPrompt(Utf8CP) override;
     virtual NotificationManager::MessageBoxValue _OpenMessageBox(NotificationManager::MessageBoxType, Utf8CP, NotificationManager::MessageBoxIconType) override;
+#endif
     };
 
 void AppHost::Startup()
@@ -86,16 +109,24 @@ void AppHost::Terminate()
     {
     }
 
+#ifndef VANCOUVER_API   
 void                                                                   AppHost::_SupplyProductName(Utf8StringR name) { name.assign("DgnView Demo"); }
+#else
+void                                                                   AppHost::_SupplyProductName(WStringR name) { name.assign(L"DgnView Demo"); }
+#endif
+
 DgnPlatformLib::Host::NotificationAdmin&         AppHost::_SupplyNotificationAdmin() { return *new AppNotificationAdmin(); }
 DgnPlatformLib::Host::GeoCoordinationAdmin&      AppHost::_SupplyGeoCoordinationAdmin()
     {
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
-
+#ifndef VANCOUVER_API  
     return *DgnGeoCoordinationAdmin::Create(geocoordinateDataPath);
+#else    
+    return *DgnGeoCoordinationAdmin::Create(geocoordinateDataPath, IACSManager::GetManager());
+#endif
     }
 
-
+#ifndef VANCOUVER_API  
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Kevin.Nyman     11/09
 +---------------+---------------+---------------+---------------+---------------+-****/
@@ -118,6 +149,7 @@ NotificationManager::MessageBoxValue AppNotificationAdmin::_OpenMessageBox(Notif
     {
     return NotificationManager::MESSAGEBOX_VALUE_Ok;
     }
+#endif
 
 
 

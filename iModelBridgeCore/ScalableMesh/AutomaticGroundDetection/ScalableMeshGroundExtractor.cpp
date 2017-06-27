@@ -67,6 +67,11 @@ StatusInt IScalableMeshGroundPreviewer::UpdatePreview(PolyfaceQueryCR currentGro
     {
     return _UpdatePreview(currentGround);
     }
+
+bool IScalableMeshGroundPreviewer::UpdateProgress(IScalableMeshProgress* progress)
+    {
+    return _UpdateProgress(progress);
+    }
 /*----------------------------------------------------------------------------+
 |IScalableMeshGroundPreviewer - End
 +----------------------------------------------------------------------------*/
@@ -113,6 +118,7 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
         FILE*                           m_xyzFile;
         size_t                          m_nbPoints;
         IScalableMeshGroundPreviewerPtr m_groundPreviewer;
+        Transform                       m_previewTransform;
 
     protected : 
 
@@ -136,6 +142,11 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             m_nbPoints += points.size();
             }
 
+        virtual void _GetPreviewTransform(Transform& transform) const
+            {
+            transform = m_previewTransform;
+            }
+
         virtual void _OutputPreview(PolyfaceQueryCR currentGround) const override
             {
             if (m_groundPreviewer.IsValid())
@@ -152,12 +163,13 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
 
     public :
 
-        ScalableMeshPointsAccumulator(IScalableMeshGroundPreviewerPtr& groundPreviewer)
+        ScalableMeshPointsAccumulator(IScalableMeshGroundPreviewerPtr& groundPreviewer, Transform previewTransform)
             {            
             BeFileName xyzFile(GetTempXyzFilePath());
             m_xyzFile = _wfopen(xyzFile.c_str(), L"w+");
             m_nbPoints = 0;
             m_groundPreviewer = groundPreviewer;
+            m_previewTransform = previewTransform;
             }
 
         ~ScalableMeshPointsAccumulator()
@@ -174,7 +186,6 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             {
             return m_nbPoints;
             }
-
     };
 
 
@@ -188,6 +199,9 @@ ScalableMeshGroundExtractor::ScalableMeshGroundExtractor(const WString& smTerrai
     {
     m_scalableMesh = scalableMesh;
     m_smTerrainPath = smTerrainPath;
+
+    const GeoCoords::GCS& gcs(m_scalableMesh->GetGCS());
+    m_smGcsRatioToMeter = gcs.GetUnit().GetRatioToBase();
     }
 
 ScalableMeshGroundExtractor::~ScalableMeshGroundExtractor()
@@ -279,7 +293,6 @@ StatusInt ScalableMeshGroundExtractor::CreateAndAddTexture(IDTMSourceCollection&
     }
     */
 
-static bool s_deactivateForMultiCoverage = true;
 static bool s_deactivateTexturing = false;
 #define DEFAULT_TEXTURE_RESOLUTION 0.05
 
@@ -305,11 +318,11 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
             minTextureResolution = std::min(minTextureResolution, (double)textureResolution);
             }
         }   
-
+        
     if (minTextureResolution != DBL_MAX)
-        return minTextureResolution;
+        return minTextureResolution * m_smGcsRatioToMeter;
 
-    return DEFAULT_TEXTURE_RESOLUTION;
+    return DEFAULT_TEXTURE_RESOLUTION * m_smGcsRatioToMeter;
     }
 
 
@@ -321,7 +334,13 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     assert(status == SUCCESS);
     //auto editFilesString = ((ScalableMeshBase*)m_scalableMesh.get())->GetPath();
-    terrainCreator->SetBaseExtraFilesPath(m_smTerrainPath);
+    m_createProgress.ProgressStep() = ScalableMeshStep::STEP_GENERATE_TEXTURE;
+    m_createProgress.ProgressStepIndex() = 1;
+    m_createProgress.Progress() = 0.0f;
+    
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
+        
     if (m_scalableMesh->GetBaseGCS().IsValid())
         status = terrainCreator->SetBaseGCS(m_scalableMesh->GetBaseGCS());
 
@@ -356,33 +375,18 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         
         textureGenerator->SetPixelSize(ComputeTextureResolution());
         textureGenerator->SetTextureTempDir(currentTextureDir);
+        textureGenerator->SetTransform(m_scalableMesh->GetReprojectionTransform());
 
-        DRange3d covExt = DRange3d::From(m_extractionArea);
-
-       // if (!s_deactivateForMultiCoverage)
-            {
-            bvector<bvector<DPoint3d>> polys;
-            m_scalableMesh->GetAllCoverages(polys);
-
-            for (auto& poly : polys)
-                {
-                DRange3d newRange = DRange3d::From(poly);
-                covExt.Extend(newRange);
-                }
-            }
-
-    
+        DRange3d covExt = DRange3d::From(m_extractionArea);               
         covExt.ScaleAboutCenter(covExt, 1.1);
 
-         //if (!s_deactivateForMultiCoverage)
-            {
-            bvector<DPoint3d> closedPolygonPoints;
-            DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.high.y, 0), DPoint3d::From(covExt.high.x, covExt.high.y, 0),
-                DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
-            closedPolygonPoints.assign(rangePts, rangePts + 5);
+        bvector<DPoint3d> closedPolygonPoints;
+        DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.high.y, 0), DPoint3d::From(covExt.high.x, covExt.high.y, 0),
+            DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
+        closedPolygonPoints.assign(rangePts, rangePts + 5);
+        if (m_createProgress.IsCanceled()) return status;
 
-            textureGenerator->GenerateTexture(closedPolygonPoints);
-            }
+        textureGenerator->GenerateTexture(closedPolygonPoints, &m_createProgress);
 
         BeDirectoryIterator directoryIter(currentTextureDir);
 
@@ -390,7 +394,13 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         bool       isDir;            
         while (SUCCESS == directoryIter.GetCurrentEntry (currentTextureName, isDir))
             {        
-            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
+#ifndef VANCOUVER_API
+            if (0 == currentTextureName.GetExtension().CompareToI(L"jpg") || 
+                0 == currentTextureName.GetExtension().CompareToI(L"itiff64"))
+#else
+            if (0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"jpg") || 
+                0 == BeFileName::GetExtension(currentTextureName.c_str()).CompareToI(L"itiff64"))
+#endif
                 {
                 IDTMLocalFileSourcePtr textureSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_IMAGE, currentTextureName.c_str()));            
                 terrainCreator->EditSources().Add(textureSource);                       
@@ -400,22 +410,38 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
             }
         }
 
+
+    m_createProgress.Progress() = 1.0f;
+    
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
+
+    if (m_createProgress.IsCanceled()) return status;
+
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
     coverageBreaklineFile.AppendString(L"\\");    
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());    
-    
+
+#ifndef VANCOUVER_API    
     if (coverageBreaklineFile.DoesPathExist())
-        {
-        //if (!s_deactivateForMultiCoverage)
-            {
-            IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
-            terrainCreator->EditSources().Add(coverageBreaklineSource);                       
-            }        
+#else
+    if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
+#endif     
+        {        
+        IDTMLocalFileSourcePtr coverageBreaklineSource(IDTMLocalFileSource::Create(DTM_SOURCE_DATA_BREAKLINE, coverageBreaklineFile.c_str()));
+        terrainCreator->EditSources().Add(coverageBreaklineSource);                               
         }
 
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(terrainCreator->GetProgress());
+    
     status = terrainCreator->Create(true, true);
     terrainCreator->SaveToFile();
+    
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(nullptr);
     terrainCreator = nullptr;
+
 
 #if 0
     StatusInt openStatus;
@@ -432,12 +458,9 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
 
     assert(status == SUCCESS);
     s_xyzId++;
-
-    if (!s_deactivateForMultiCoverage)
-        {    
-        int result = _wremove(xyzFile.c_str());
-        assert(result == 0);
-        }
+    
+    int result = _wremove(xyzFile.c_str());
+    assert(result == 0);    
 
     return status;
     }
@@ -470,7 +493,11 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
     coverageBreaklineFile.AppendString(L"\\");
     coverageBreaklineFile.AppendString(extraLinearFeatureFileName.c_str());
 
+#ifndef VANCOUVER_API    
     if (coverageBreaklineFile.DoesPathExist())
+#else
+    if (BeFileName::DoesPathExist(coverageBreaklineFile.c_str()))
+#endif
         {
         BcDTMPtr dtmPtr(BcDTM::CreateFromGeopakDatFile(coverageBreaklineFile.c_str()));
 
@@ -507,6 +534,15 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     
     AddXYZFilePointsAsSeedPoints(params, coverageTempDataFolder);
 
+    m_createProgress.ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_DETECT_GROUND;
+    m_createProgress.ProgressStep() = ScalableMeshStep::STEP_DETECT_GROUND;
+    m_createProgress.ProgressStepIndex() = 0;
+    m_createProgress.Progress() = 0.0f;
+
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
+
+    if (m_createProgress.IsCanceled()) return SUCCESS;
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
     smPtsProviderCreator->SetExtractionArea(m_extractionArea);
 
@@ -525,7 +561,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     IPointsProviderCreatorPtr ptsProviderCreator(smPtsProviderCreator.get());     
     params->SetPointsProviderCreator(ptsProviderCreator);        
 
-    IGroundPointsAccumulatorPtr accumPtr(new ScalableMeshPointsAccumulator(m_groundPreviewer));
+    IGroundPointsAccumulatorPtr accumPtr(new ScalableMeshPointsAccumulator(m_groundPreviewer, m_scalableMesh->GetReprojectionTransform()));
 
     params->SetGroundPointsAccumulator(accumPtr);
 
@@ -537,6 +573,12 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     clock_t startTime = clock();
     
     StatusInt status = serviceP->_DoGroundDetection(*params.get());
+    m_createProgress.Progress() = 1.0f;
+
+    if (m_groundPreviewer.IsValid())
+        m_groundPreviewer->UpdateProgress(&m_createProgress);
+
+    if (m_createProgress.IsCanceled()) return status;
     assert(status == SUCCESS);
 
     clock_t endTime = clock() - startTime;
@@ -572,7 +614,29 @@ static bool s_fixTest = false;
 StatusInt ScalableMeshGroundExtractor::_SetExtractionArea(const bvector<DPoint3d>& area) 
     {
     if (!s_fixTest)
-        m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
+        {                 
+        Transform transform(m_scalableMesh->GetReprojectionTransform());
+
+        if (transform.IsIdentity())
+            { 
+            m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());            
+
+            double ratioFromMeter = 1.0 / m_smGcsRatioToMeter;
+
+            //Convert from UOR to SM unit.
+            for (auto& pt : m_extractionArea)
+                {
+                pt.Scale(ratioFromMeter);
+                }
+            }            
+        else
+            {        
+            Transform transformToSm;
+            bool result = transformToSm.InverseOf(transform);
+            assert(result == true);            
+            transformToSm.Multiply(m_extractionArea, area);
+            }               
+        }
     else
         {        
         /*Small Melaka*/

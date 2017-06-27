@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:07:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -69,16 +69,16 @@ public:
 +---------------+---------------+---------------+---------------+---------------+------*/
 class DimTypeConvSame__To__Same : public DimensionFilter
     {
-    //ConstPacketProxy<byte>                      m_srcRawPacket;
-    //PODPacketProxy<byte>                        m_dstRawPacket;
+    ConstPacketProxy<byte>                      m_srcRawPacket;
+    PODPacketProxy<byte>                        m_dstRawPacket;
 
-    virtual void                                _Assign                (const Import::Packet&           pi_Src,
-                                                                        Import::Packet&                 po_Dst) override
+    virtual void                                _Assign                (const Packet&           pi_Src,
+                                                                        Packet&                 po_Dst) override
         {
         //assert (pi_Src.Get<byte>() == po_Dst.Get<byte>());
 
-        //pi_Src.AssignTo(m_srcRawPacket);
-        //po_Dst.AssignTo(m_dstRawPacket);
+      //  m_srcRawPacket.AssignTo(pi_Src);
+      //  m_dstRawPacket.AssignTo(po_Dst);
 
 
         }
@@ -86,7 +86,7 @@ class DimTypeConvSame__To__Same : public DimensionFilter
 
     virtual void                                _Run                   () override
         {
-        //memcpy(m_dstRawPacket.Edit(), m_srcRawPacket.Get(), m_srcRawPacket.GetSize());
+       // memcpy(m_dstRawPacket.Edit(), m_srcRawPacket.Get(), m_srcRawPacket.GetSize());
         }
 
 public:

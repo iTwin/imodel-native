@@ -26,6 +26,9 @@ need be.
 #include <ImagePP\all\h\HPMDataStore.h>
 
 #include "..\Edits\DifferenceSet.h"
+#ifndef VANCOUVER_API
+#include <TilePublisher\MeshTile.h>
+#endif
 
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH //NEEDS_WORK_SM : all this code here should be in this namespace instead.
@@ -40,6 +43,7 @@ enum class SMStoreDataType
     DiffSet, 
     Graph,
     Texture,    
+    TextureCompressed,
     LinearFeature,    
     Skirt,     
     ClipDefinition,     
@@ -49,13 +53,17 @@ enum class SMStoreDataType
     BcDTM,    
     //Composite datatype - allows to treat different data as an atomic pool item.
     PointAndTriPtIndices, 
+    Cesium3DTiles,
     MeshParts,
     Metadata,
     //Not persisted data type
     DisplayMesh,
     //Not persisted data type
     DisplayTexture,
-    Coverage,
+    CoveragePolygon,
+    CoverageName,
+    //Not persisted data type
+    Mesh3D,
     Unknown, 
     };
 
@@ -73,6 +81,18 @@ class IClipDefinitionExtOps : public RefCountedBase
         virtual void SetAutoCommit(bool autoCommit) = 0;
 
         virtual void GetAllPolys(bvector<bvector<DPoint3d>>& polys) = 0;
+
+        virtual void GetIsClipActive(uint64_t id, bool& isActive) = 0;
+
+        virtual void GetClipType(uint64_t id, SMNonDestructiveClipType& type) = 0;
+
+        virtual void SetClipOnOrOff(uint64_t id, bool isActive) = 0;
+
+        virtual void GetAllCoverageIDs(bvector<uint64_t>& allIds) = 0;
+
+        virtual void StoreClipWithParameters(const bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive) = 0;
+
+        virtual void LoadClipWithParameters(bvector<DPoint3d>& clipData, uint64_t id, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) = 0;
         
     };
 
@@ -128,7 +148,7 @@ template <class DataType> class ISMNodeDataStore : public RefCountedBase
         to loading the block, the method GetBlockDataCount() can be used. No decompression
         prior to loading will be performed before loading the block.
         -----------------------------------------------------------------------------*/
-        virtual size_t LoadCompressedBlock(bvector<DataType>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
+        virtual size_t LoadCompressedBlock(bvector<uint8_t>& DataTypeArray, size_t maxCountData, HPMBlockID blockID)
             {
             HASSERT(false); // Not implemented;
             return 0;
@@ -148,16 +168,28 @@ struct PointAndTriPtIndicesBase
     int32_t*  m_indicesData;
     };
 
+struct Cesium3DTilesBase
+    {
+    DPoint3d* m_pointData = nullptr;
+    int32_t*  m_indicesData = nullptr;
+    int32_t*  m_uvIndicesData = nullptr;
+    DPoint2d* m_uvData = nullptr;
+    Byte*     m_textureData = nullptr;
+    };
+
 typedef RefCountedPtr<ISMNodeDataStore<DPoint3d>>      ISM3DPtDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<DifferenceSet>> ISDiffSetDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<int32_t>>       ISMInt32DataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<MTGGraph>>      ISMMTGGraphDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<Byte>>          ISMTextureDataStorePtr;
 typedef RefCountedPtr<ISMNodeDataStore<DPoint2d>>      ISMUVCoordsDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<Utf8String>>    ISMCoverageNameDataStorePtr;
 
 
 //NEEDS_WORK_SM : Put that and all multiple item demo code in define 
 typedef RefCountedPtr<ISMNodeDataStore<PointAndTriPtIndicesBase>> ISMPointTriPtIndDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<bvector<Byte>>>  ISMTileMeshDataStorePtr;
+typedef RefCountedPtr<ISMNodeDataStore<Cesium3DTilesBase>>  ISMCesium3DTilesDataStorePtr;
 
 
 
@@ -199,7 +231,37 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
         /**----------------------------------------------------------------------------
          Set the path of the files created for a given project (e.g. : dgndb file). 
         -----------------------------------------------------------------------------*/
-        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath, bool inCreation) = 0;
+        virtual bool SetProjectFilesPath(BeFileName& projectFilesPath) = 0;
+
+        /**----------------------------------------------------------------------------
+        Save the content of the project files.
+        -----------------------------------------------------------------------------*/
+        virtual void SaveProjectFiles() = 0;
+
+		/**----------------------------------------------------------------------------
+		Compact (vacuum) the content of the project files, if possible.
+		-----------------------------------------------------------------------------*/
+		virtual void CompactProjectFiles() = 0;
+
+        /**----------------------------------------------------------------------------
+        Preload data that will be required
+        -----------------------------------------------------------------------------*/
+        virtual void PreloadData(const bvector<DRange3d>& tileRanges) = 0;
+
+        /**----------------------------------------------------------------------------
+        Preload data that will be required
+        -----------------------------------------------------------------------------*/
+        virtual void CancelPreloadData() = 0;
+
+        /**----------------------------------------------------------------------------
+        Register a scalable mesh to the store (useful for streaming type store).
+        -----------------------------------------------------------------------------*/
+        virtual void Register(const uint64_t& smID) {};
+
+        /**----------------------------------------------------------------------------
+        Unregister a scalable mesh from the store (useful for streaming type store).
+        -----------------------------------------------------------------------------*/
+        virtual void Unregister(const uint64_t& smID) {};
 
         /**----------------------------------------------------------------------------
          Get the next node ID available.
@@ -208,19 +270,27 @@ template <class MasterHeaderType, class NodeHeaderType>  class ISMDataStore : pu
 
         virtual void Close () = 0;
                                         
-        virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;
-
-        virtual bool GetNodeDataStore(ISDiffSetDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
-
+        virtual bool GetNodeDataStore(ISM3DPtDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;        
+        
         virtual bool GetNodeDataStore(ISMInt32DataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType) = 0;                
 
         virtual bool GetNodeDataStore(ISMMTGGraphDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
         
         virtual bool GetNodeDataStore(ISMTextureDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType = SMStoreDataType::Texture) = 0;
         
-        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;               
+        virtual bool GetNodeDataStore(ISMUVCoordsDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType = SMStoreDataType::UvCoords) = 0;
 
+        virtual bool GetSisterNodeDataStore(ISDiffSetDataStorePtr& dataStore, NodeHeaderType* nodeHeader, bool createSisterFile) = 0;
+        
+        virtual bool GetSisterNodeDataStore(ISMCoverageNameDataStorePtr& dataStore, NodeHeaderType* nodeHeader, bool createSisterFile) = 0;
+
+        virtual bool GetSisterNodeDataStore(ISM3DPtDataStorePtr& dataStore, NodeHeaderType* nodeHeader, SMStoreDataType dataType, bool createSisterFile) = 0;
+        
+        
         //Multi-items loading store
         virtual bool GetNodeDataStore(ISMPointTriPtIndDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
-                                            
+
+        virtual bool GetNodeDataStore(ISMTileMeshDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;
+
+        virtual bool GetNodeDataStore(ISMCesium3DTilesDataStorePtr& dataStore, NodeHeaderType* nodeHeader) = 0;        
     };

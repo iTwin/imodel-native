@@ -6,18 +6,37 @@
         <SubPart PartName="cpprestsdk"      PartFile="${SrcRoot}bsicommon/CvsPartfiles/cpprestsdk"   Repository="Bin-cpprestsdk" />        
         <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
         <Bindings>
-            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
-            <Files ProductDirectoryName="ScalableMeshAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
+            <Files ProductDirectoryName="ScalableMeshAssemblies" Required="false">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Files>
+            <Files ProductDirectoryName="PPNativeAssemblies">SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Files>
         </Bindings>
     </Part>
 
-    <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke">
+    <!--<Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1" ApiNumber="G">-->
+      <Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" ApiNumber="G">
         <SubPart PartName="AzureSDK" />
         <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>		
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
         <Bindings>
-            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>    
-            <PublicAPI Domain="CloudDataSource" />
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)CloudDataSource$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)CloudDataSource$(ApiNumber)$(shlibext)</Assemblies>
+            <VendorAPI Domain="CloudDataSource" />
         </Bindings>
     </Part>
-  
+
+    <Part Name="CloudDataSource_Vancouver" BMakeFile="CloudDataSource_Vancouver.mke">
+        <SubPart PartName="Base"     PartFile="Bentley"  Repository="Bentley" />
+        <SubPart PartName="AzureSDK" />
+        <SubPart PartName="BeCurl" PartFile="BeCurl" Repository="Libsrc-Curl"/>		
+        <SubPart PartName="BeJsonCpp" PartFile="BeJsonCpp" Repository="Libsrc-Jsoncpp"/>
+        <Bindings>
+            <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)CloudDataSource$(libext)</Libs>    
+            <Assemblies ProductDirectoryName="ScalableMeshAssemblies" Required="false">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)CloudDataSource$(shlibext)</Assemblies>
+            <VendorAPI Domain="CloudDataSource" />
+        </Bindings>
+    </Part>
+	
   </BuildContext>

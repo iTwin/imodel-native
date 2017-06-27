@@ -6,7 +6,7 @@
 |       $Date: 2015/11/30 15:09:23 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 // This file contains glue code to use CGAL algorithms on BentleyGeometry types. It follows the traits pattern; see following external links for additional information.

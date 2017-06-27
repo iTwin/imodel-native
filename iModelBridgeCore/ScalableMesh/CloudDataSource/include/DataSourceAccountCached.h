@@ -9,9 +9,9 @@ class DataSourceAccountCached : public DataSourceAccount
 {
 protected:
 
-    DataSourceAccount        *      cacheAccount;
-    DataSourceURL                   cacheRoot;
-    DataSource               *      cacheDataSource;
+    DataSourceAccount        *      m_cacheAccount;
+    DataSourceURL                   m_cacheRoot;
+    DataSource               *      m_cacheDataSource;
 
 protected:
 
@@ -29,4 +29,6 @@ public:
         DataSourceAccount    *      getCacheAccount               (void);
 
         DataSourceStatus            getFormattedCacheURL          (const DataSourceURL & sourceURL, DataSourceURL & cacheURL);
+        
+        unsigned int                getDefaultNumTransferTasks(void);
 };

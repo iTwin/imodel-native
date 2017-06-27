@@ -6,7 +6,7 @@
 |       $Date: 2012/01/17 16:06:21 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -237,6 +237,20 @@ private:
         m_pointPacket.SetSize(readPtsQty);
         }
 
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        long pos = ftell(m_rFile.GetFile());
+        fseek(m_rFile.GetFile(), 0, SEEK_END);
+        long total = ftell(m_rFile.GetFile());
+        fseek(m_rFile.GetFile(), pos, SEEK_SET);
+        return (size_t)total;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return (size_t)ftell(m_rFile.GetFile());
+        }
     /*---------------------------------------------------------------------------------**//**
     * @description  
     * @bsimethod                                                  Raymond.Gauthier   10/2010

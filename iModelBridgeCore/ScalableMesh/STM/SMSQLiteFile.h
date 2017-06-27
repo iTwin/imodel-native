@@ -4,6 +4,7 @@
 #include <BeSQLite\BeSQLite.h>
 #include <ScalableMesh/import/DataSQLite.h>
 #include "ScalableMeshDb.h"
+#include <json/json.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
@@ -98,7 +99,7 @@ class SMSQLiteFile : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 {
 public:
     SMSQLiteFile();
-    ~SMSQLiteFile();
+    virtual ~SMSQLiteFile();
 
     bool Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOnly = true, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Open(BENTLEY_NAMESPACE_NAME::WString& filename, bool openReadOnly = true, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
@@ -106,8 +107,7 @@ public:
     bool Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     bool Close();
     bool IsOpen() { return m_database->IsDbOpen(); }
-
-    void CommitAll();
+    void Save();
 
     static SMSQLiteFilePtr Open(const WString& filename, bool openReadOnly, StatusInt& status, SQLDatabaseType type = SQLDatabaseType::SM_MAIN_DB_FILE);
     void SetSource();
@@ -121,6 +121,7 @@ public:
     bool SetMasterHeader(const SQLiteIndexHeader& newHeader);
     bool SetNodeHeader(const SQLiteNodeHeader& newNodeHeader);
     bool SetSingleFile(bool isSingleFile);
+    bool SetProperties(const Json::Value& properties);
 
     bool GetSource();
     bool GetGCS();
@@ -129,6 +130,7 @@ public:
     bool GetNodeHeader(SQLiteNodeHeader& nodeHeader);
     bool GetAccessMode() { return m_database->IsReadonly(); }
     bool IsSingleFile();
+    bool GetProperties(Json::Value& properties);
 
     //uint64_t GetLastInsertRowId() { return m_database->GetLastInsertRowId(); }
     uint64_t GetLastNodeId();
@@ -165,6 +167,7 @@ public:
     size_t GetNumberOfUVs(int64_t nodeID);
     size_t GetNumberOfUVIndices(int64_t nodeID);
     size_t GetTextureByteCount(int64_t nodeID);
+    size_t GetTextureCompressedByteCount(int64_t nodeID);
 
 #ifdef WIP_MESH_IMPORT
     size_t CountTextures();
@@ -172,7 +175,7 @@ public:
     size_t GetNumberOfMetadataChars(int64_t nodeId);
 #endif
 
-    void GetAllClipIDs(bvector<uint64_t>& allIds); 
+    virtual void GetAllClipIDs(bvector<uint64_t>& allIds) { assert(false); };
 
     bool GetFileName(Utf8String& fileName) const; 
 
@@ -184,27 +187,44 @@ public:
 
     virtual size_t GetNumberOfFeaturePoints(int64_t featureID) { assert(false); return 0; }
 
-    virtual void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize) { assert(false); }
+    virtual void StoreClipPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize, SMClipGeometryType geom = SMClipGeometryType::Polygon, SMNonDestructiveClipType type = SMNonDestructiveClipType::Mask, bool isActive = true) { assert(false); }
     virtual void SetClipPolygonMetadata(uint64_t& clipID, double importance, int nDimensions) { assert(false); }
     virtual void GetClipPolygonMetadata(uint64_t clipID, double& importance, int& nDimensions) { assert(false); }
     virtual void StoreSkirtPolygon(int64_t& clipID, const bvector<uint8_t>& clipData, size_t uncompressedSize) { assert(false); }
 
-    virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize) { assert(false); }
+    virtual void GetClipPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive) { assert(false); }
     virtual void GetSkirtPolygon(int64_t clipID, bvector<uint8_t>& clipData, size_t& uncompressedSize) { assert(false); }
+
+    virtual void SetClipOnOrOff(uint64_t id, bool isActive) { assert(false); }
+
+    virtual void GetIsClipActive(uint64_t id, bool& isActive) { assert(false); }
+
+    virtual void GetClipType(uint64_t id, SMNonDestructiveClipType& type) { assert(false); }
 
     virtual size_t GetClipPolygonByteCount(int64_t clipID) { assert(false); return 0; }
     virtual size_t GetSkirtPolygonByteCount(int64_t skirtID) { assert(false); return 0; }
-
+    
+    virtual void GetCoverageName(int64_t coverageID, Utf8String* name, size_t& uncompressedSize) { assert(false); }
+    virtual size_t GetCoverageNameByteCount(int64_t coverageID) { assert(false); return 0; }
     virtual void GetCoveragePolygon(int64_t coverageID, bvector<uint8_t>& coverageData, size_t& uncompressedSize) { assert(false); }
     virtual void StoreCoveragePolygon(int64_t& coverageID, const bvector<uint8_t>& coverageData, size_t uncompressedSize) { assert(false); }
+    virtual void StoreCoverageName(int64_t& coverageID, Utf8String& coverageName, size_t uncompressedSize) { assert(false); }
     virtual size_t GetCoveragePolygonByteCount(int64_t coverageID) { assert(false); return 0; }
+
+    virtual void GetAllCoverageIDs(bvector<uint64_t>& ids) { assert(false); }
 
     virtual void GetAllPolys(bvector<bvector<uint8_t>>& polys, bvector<size_t>& sizes) { assert(false); }
 
     virtual void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize) { assert(false); }
     virtual void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize) { assert(false); }
+
+    virtual void DeleteCoveragePolygon(int64_t coverageID) { assert(false); }
+    virtual void DeleteClipPolygon(int64_t clipID) { assert(false); }
     
-    bool m_autocommit = true;
+	void Compact();
+
+    bool m_autocommit = true;    
+
     static const SchemaVersion CURRENT_VERSION;
 protected:
     ScalableMeshDb* m_database;

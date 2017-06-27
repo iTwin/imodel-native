@@ -685,8 +685,9 @@ class QueryProcessor
         QueryProcessor(MemoryPool& memPool)
             : m_memPool (memPool)
             {       
-            m_currentActionInd = std::numeric_limits<size_t>::max();
+            m_currentActionInd = std::numeric_limits<size_t>::max();            
             m_numWorkingThreads = std::thread::hardware_concurrency() - 1;            
+            m_numWorkingThreads = max(1, m_numWorkingThreads);
             //m_numWorkingThreads = 1;
             m_workingThreads = new std::thread[m_numWorkingThreads];                        
             m_run = false;   

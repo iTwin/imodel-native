@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/XYZAsciiSource.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -662,6 +662,20 @@ private:
             throw CustomException(L"Incorrect line format"); // TDORAY: Create a new exception taken erroneous line number as parameter
 
         m_pointPacket.SetEnd(ptIt);
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        long pos = ftell(m_source.GetFile());
+        fseek(m_source.GetFile(),0,SEEK_END);
+        long total = ftell(m_source.GetFile());
+        fseek(m_source.GetFile(), pos, SEEK_SET);
+        return (size_t)total;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return (size_t)ftell(m_source.GetFile());
         }
 
     /*---------------------------------------------------------------------------------**//**

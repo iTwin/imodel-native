@@ -44,14 +44,14 @@ CLOUD_EXPORT   void                operator=                (const DataSourceURL
                DataSourceStatus    normalize                (void);
                DataSourceStatus    normalizeDirUp           (void);
                
-               DataSourceStatus    getDirectory             (unsigned int directoryIndex, DataSourceURL &dest) const;
+CLOUD_EXPORT   DataSourceStatus    getDirectory             (unsigned int directoryIndex, DataSourceURL &dest) const;
                DataSourceStatus    getPathAfterDirectory    (unsigned int directoryIndex, DataSourceURL &dest) const;
                
                DataSourceStatus    getContainerAndBlob      (DataSourceURL &containerName, DataSourceURL &blobPathName) const;
                
                unsigned int        findAndReplace           (const std::wstring & findStr, const std::wstring & replaceStr);
                
-               DataSourceStatus    collapseDirectories      (DataSourceURL &result) const;
+CLOUD_EXPORT   DataSourceStatus    collapseDirectories      (DataSourceURL &result) const;
 
                bool                endsWithSeparator();
 

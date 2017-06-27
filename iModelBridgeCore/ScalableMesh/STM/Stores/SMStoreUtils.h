@@ -1,14 +1,25 @@
 #pragma once
 
-#include <ImagePP\h\ImageppAPI.h>
-#include <ImagePP\h\ImagePPClassId.h>
-#include <ImagePP\all\h\HPMDataStore.h>
-#include <ImagePP\all\h\HCDPacket.h>
-#include <ImagePP\all\h\HFCAccessMode.h>
+#include "../ImagePPHeaders.h"
 
 #include "ISMDataStore.h"
 #include "../SMSQLiteFile.h"
 
+#ifndef HRARASTER
+#ifndef VANCOUVER_API
+#define HRFRASTERFILE ImagePP::HRFRasterFile
+#define HRARASTER ImagePP::HRARaster
+#else
+#define HRFRASTERFILE HRFRasterFile
+#define HRARASTER HRARaster
+#endif
+#endif
+
+#ifndef VANCOUVER_API
+#define BEFILENAME(function, filename) filename.function()
+#else
+#define BEFILENAME(function, filename) BeFileName::function(filename.c_str())
+#endif
 
 template <class POINT> struct PointOp
     {
@@ -224,6 +235,8 @@ template <class EXTENT> class SMIndexMasterHeader
         size_t                  m_terrainDepth;                 //Maximum number of LODs for terrain(mesh) data, set at generation time
         bool                    m_isTerrain;
         HPMBlockID              m_rootNodeBlockID;
+        bool                    m_isCesiumFormat = false;
+        bool                    m_isStreamingFormat = false;
 
         float                   m_resolution;                  //Dataset resolution, usually dependent on the means of capture. 
 
@@ -265,7 +278,11 @@ template <class EXTENT> class SMIndexNodeHeaderBase
         bool        m_totalCountDefined;         // Indicates if the total count of objects in node and subnode is up to date
         uint64_t    m_totalCount;                // This value indicates the total number of points in node all recursively all sub-nodes.
         bool        m_arePoints3d;               //Indicates if the node contains 3D points or 2.5D points only. 
-        bool        m_isTextured;               // Indicates if the node contains Texture or not
+        bool        m_isTextured;                // Indicates if the node contains Texture or not
+
+        map<size_t, EXTENT> m_childrenExtents;   // Only used and required by Cesium 3D tiles format
+        double      m_geometryResolution = -1.0;        // Only used and required by Cesium 3D tiles format
+
 
 
 
@@ -294,7 +311,7 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         vector<HPMBlockID>  m_apSubNodeID;
         HPMBlockID          m_SubNodeNoSplitID;
         bool                m_filtered;    
-    
+   
         //NEEDS_WORK_SM - m_meshed ?
         size_t      m_nbFaceIndexes;
         size_t      m_nbUvIndexes;

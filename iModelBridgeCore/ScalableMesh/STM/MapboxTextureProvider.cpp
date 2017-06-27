@@ -32,6 +32,12 @@ DRange2d MapBoxTextureProvider::_GetTextureExtent()
 
 StatusInt MapBoxTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData, int width, int height, DRange2d& area)
     {
+    double unitsPerPixelX = (area.high.x - area.low.x) / width;
+    double unitsPerPixelY = (area.high.y - area.low.y) / height;
+    area.low.x -= 5 * unitsPerPixelX;
+    area.low.y -= 5 * unitsPerPixelY;
+    area.high.x += 5 * unitsPerPixelX;
+    area.high.y += 5 * unitsPerPixelY;
     return SUCCESS;
     }
 
@@ -43,4 +49,5 @@ MapBoxTextureProvider::MapBoxTextureProvider(WString url, DRange3d totalExtent, 
     auto mapBoxRaster = RasterUtilities::LoadRaster(url, targetCS, extent2d);
     HGF2DExtent maxExt;
     mapBoxRaster->GetPixelSizeRange(m_minExt, maxExt);
+    m_minExt.ChangeCoordSys(mapBoxRaster->GetCoordSys());
     }

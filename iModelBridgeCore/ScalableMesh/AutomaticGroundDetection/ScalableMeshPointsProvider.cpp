@@ -174,10 +174,14 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
             }        
         }
 
-    Transform inverseTrans;
-    inverseTrans.InverseOf(m_transform);
-    if (!points.empty())
-        inverseTrans.Multiply(&points[0], (int)points.size());
+    if (!m_transform.IsIdentity())
+        { 
+        Transform inverseTrans;
+        inverseTrans.InverseOf(m_transform);
+        if (!points.empty())
+            inverseTrans.Multiply(&points[0], (int)points.size());
+        }
+
     return SUCCESS;
     }
 

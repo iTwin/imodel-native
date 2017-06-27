@@ -6,7 +6,7 @@
 //:>       $Date: 2012/11/29 17:30:30 $
 //:>     $Author: Mathieu.St-Pierre $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
@@ -256,43 +256,59 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
         DPoint3d   m_viewBox[8];         
         ClipVectorCP m_extent3d;
         bool m_useAllRes;
+        bool m_alwaysVisible;
+        bool m_includeUnbalancedLeafs;
+        bool m_ignoreFaceIndexes;
+        double m_pixelTolerance;
 
     public:
 
-                            ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent, 
-                                                              size_t         level,                                                     
-                                                              const DPoint3d viewBox[]) 
-                                                              : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr)
-                                {                                                             
-                                memcpy(m_viewBox, viewBox, sizeof(DPoint3d) * 8);                                
-                                }    
+        ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent,
+                                                size_t         level,
+                                                const DPoint3d viewBox[],
+                                                double         pixelTol=0.0)
+            : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(false), m_includeUnbalancedLeafs(true), m_ignoreFaceIndexes(false), m_pixelTolerance(pixelTol)
+            {
+            memcpy(m_viewBox, viewBox, sizeof(DPoint3d) * 8);
+            }
 
-                            ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent,
-                                                                    size_t         level,
-                                                                    ClipVectorCP extent3d,
-                                                                    bool useAllResolutions)
-                                                                    :HGFLevelPointIndexQuery(extent, level), m_useAllRes(useAllResolutions), m_extent3d(extent3d)
-                                {
+        ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent,
+                                                size_t         level,
+                                                bool           alwaysVisible,
+                                                bool           includeUnbalancedLeafs,
+                                                bool           ignoreIndexes)
+            : HGFLevelPointIndexQuery(extent, level), m_useAllRes(false), m_extent3d(nullptr), m_alwaysVisible(alwaysVisible), m_includeUnbalancedLeafs(includeUnbalancedLeafs), m_ignoreFaceIndexes(ignoreIndexes), m_pixelTolerance(0.0)
+            {
 
-                                }
+            }
+
+        ScalableMeshQuadTreeLevelMeshIndexQuery(const EXTENT   extent,
+                                                size_t         level,
+                                                ClipVectorCP   extent3d,
+                                                bool           useAllResolutions,
+                                                double         pixelTol = 0.0)
+            : HGFLevelPointIndexQuery(extent, level), m_useAllRes(useAllResolutions), m_extent3d(extent3d), m_alwaysVisible(false), m_includeUnbalancedLeafs(true), m_ignoreFaceIndexes(false), m_pixelTolerance(pixelTol)
+            {
+
+            }
 
 
-                            virtual ~ScalableMeshQuadTreeLevelMeshIndexQuery() {}
+        virtual ~ScalableMeshQuadTreeLevelMeshIndexQuery() {}
 
-        
+
         // The Query process gathers points up to level depth        
-      /*  virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
+        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
-                                   HPMMemoryManagedVector<POINT>& resultPoints);*/
+                                   HPMMemoryManagedVector<POINT>& resultPoints);
         virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
                                    HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                    size_t numSubNodes,
                                    BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);           
-        virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
-                                  HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                  size_t numSubNodes,
-                                  vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
+        virtual bool        Query (HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
+                                   HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
+                                   size_t numSubNodes,
+                                   vector<typename SMPointIndexNode<POINT, EXTENT>::QueriedNode>& meshNodes);
 
 };     
 
@@ -417,6 +433,8 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
     private: 
 
         size_t        m_maxNumberOfPoints;
+
+        bool m_invertClips;
                  
     protected: 
         ClipVectorPtr m_viewClipVector;
@@ -429,6 +447,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                             const double         viewportRotMatrix[][3],                                                                 
                                             bool                 gatherTileBreaklines, 
                                             const ClipVectorPtr& viewClipVector,
+                                            bool invertClips = false,
                                             size_t               maxNumberOfPoints = std::numeric_limits<std::size_t>::max())
         : ScalableMeshQuadTreeViewDependentPointQuery(extent,
                                               rootToViewMatrix,
@@ -436,6 +455,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                               gatherTileBreaklines)
             {              
             m_maxNumberOfPoints = maxNumberOfPoints;
+            m_invertClips = invertClips;
             m_viewClipVector = viewClipVector;
             }
 
@@ -459,6 +479,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                                                                  const DPoint3d       viewBox[],                                                                 
                                                                  bool                 gatherTileBreaklines, 
                                                                  const ClipVectorPtr& viewClipVector,
+                                                                 bool invertClips = false,
                                                                  size_t               maxNumberOfPoints = std::numeric_limits<std::size_t>::max())
                             : ScalableMeshQuadTreeViewDependentPointQuery(extent, 
                                                                   rootToViewMatrix,
@@ -468,6 +489,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeViewDependentMeshQ
                             {                                                            
                             m_maxNumberOfPoints = maxNumberOfPoints;
                             m_viewClipVector = viewClipVector;
+                            m_invertClips = invertClips;
                             }
                                                         
         virtual             ~ScalableMeshQuadTreeViewDependentMeshQuery() {};

@@ -253,7 +253,7 @@ inline T * Manager<T, managePointered>::get(const ItemName & name)
     Iterator it;
 
     if (itemMutex.try_lock_for(Timeout(getAccessTimeout())) == false)
-        return false;
+        return nullptr;
 
     if ((it = getEntry(name)) != items.end())
     {

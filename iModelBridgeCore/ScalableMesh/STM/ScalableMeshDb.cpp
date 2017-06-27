@@ -5,6 +5,13 @@
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
+/*
+Here is how the version logic works. All files (including secondary files) have individual 4-part version numbers.
+All files with an inferior version number get automatically upgraded.
+On platforms that support version checks, we also refuse to open too-recent files (files that have higher major or minor versions).
+This is consistent with other BeSQLite profiles.
+*/
+
 const SchemaVersion ScalableMeshDb::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
 static bool s_checkShemaVersion = true;
 
@@ -44,28 +51,29 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
     SchemaVersion databaseSchema(schemaVs.c_str());
    
     SchemaVersion currentVersion = GetCurrentVersion();
-    if (s_checkShemaVersion && databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_All) != 0)
+    if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_MajorMinor) != 0))
         return BE_SQLITE_SCHEMA;
 
     return BE_SQLITE_OK;
     }
+#else
+static Utf8CP s_versionfmt = "{\"major\":%d,\"minor\":%d,\"sub1\":%d,\"sub2\":%d}";
+Utf8String SchemaVersion::ToJson() const { return Utf8PrintfString(s_versionfmt, m_major, m_minor, m_sub1, m_sub2); }
 #endif
+
 
 DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
     {        
     Savepoint sp(*this, "CreateVersion");
-    CreateTable("SMFileMetadata", "Version TEXT");
+    CreateTable("SMFileMetadata", "Version TEXT, Properties TEXT");
     //m_database->GetCachedStatement(stmt, "INSERT INTO SMMasterHeader (MasterHeaderId, Balanced, RootNodeId, SplitTreshold, Depth, TerrainDepth, IsTextured, IsTerrain) VALUES(?,?,?,?,?,?,?,?)");
 
     CachedStatementPtr stmt;
-    GetCachedStatement(stmt, "INSERT INTO SMFileMetadata (Version) VALUES(?)");
+    GetCachedStatement(stmt, "INSERT INTO SMFileMetadata (Version, Properties) VALUES(?,?)");
     SchemaVersion currentVersion = GetCurrentVersion();
     Utf8String versonJson(currentVersion.ToJson());
-#ifndef VANCOUVER_API
-       stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
-#else
-        stmt->BindUtf8String(1, versonJson, Statement::MAKE_COPY_Yes);
-#endif
+    stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
+    stmt->BindText(2, "", Statement::MakeCopy::Yes);
     DbResult status = stmt->Step();
     status = status;
         

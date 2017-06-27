@@ -3,15 +3,14 @@
 #include <string>
 #include <map>
 #include <curl/curl.h>
+#include <json/json.h>
+
 
 #include "DataSource.h"
-#include "DataSourceAccount.h"
-#include "DataSourceAccountCached.h"
+#include "DataSourceAccountCURL.h"
 #include "DataSourceBuffer.h"
 #include "DataSourceMode.h"
 #include "Manager.h"
-
-unsigned int const DATA_SOURCE_SERVICE_WSG_DEFAULT_TRANSFER_TASKS = 16;
 
 namespace WSGServer
     {
@@ -21,7 +20,7 @@ namespace WSGServer
         typedef   std::wstring     server;
         typedef   std::wstring     port;
         }
-    typedef   std::wstring     token;
+    typedef   std::string      token;
     typedef   std::wstring     version;
     typedef   std::wstring     apiID;
     typedef   std::wstring     repository;
@@ -32,112 +31,31 @@ namespace WSGServer
     typedef   std::wstring     parameters;
     }
 
-class OpenSSLMutexes
-    {
-    private:
-        static OpenSSLMutexes *s_instance;
-        /* This array will store all of the mutexes available to OpenSSL. */
-        std::mutex* m_mutexes;
-        
-        OpenSSLMutexes() = delete;
-        OpenSSLMutexes(size_t numMutexes);
-
-    public:
-        ~OpenSSLMutexes();
-        std::mutex* GetMutexes();
-
-        static OpenSSLMutexes *CreateInstance(const size_t& numMutexes);
-        static OpenSSLMutexes *Instance();
-    };
-
-class DataSourceAccountWSG : public DataSourceAccountCached
+class DataSourceAccountWSG : public DataSourceAccountCURL
 {
-
-private:
-
-    class CurlHandle
-    {
-    protected:
-
-        CURL *  handle;
-
-    public:
-
-        CurlHandle(void)
-        {
-            setHandle(nullptr);
-        }
-
-        CurlHandle(CURL *initHandle)
-        {
-            setHandle(initHandle);
-        }
-
-        DataSourceStatus destroyAll(void)
-        {
-            return DataSourceStatus();
-        }
-
-        void setHandle(CURL *initHandle)
-        {
-            handle = initHandle;
-        }
-
-        CURL *getHandle(void)
-        {
-            return handle;
-        }
-    };
-
-    class CURLHandleManager : public Manager<CurlHandle, true>
-        {
-        public:
-            typedef std::wstring                            HandleName;
-
-        public:
-
-            CURL *     getOrCreateCURLHandle(const HandleName &name, bool *created = nullptr);
-            CURL *     getOrCreateThreadCURLHandle(bool *created = nullptr);
-
-        private:
-
-            CURL *  createCURLHandle(const HandleName &name);
-
-
-        };
-
-    CURLHandleManager m_CURLManager;
 
 protected:
 
+    typedef DataSourceAccountCURL           Super;
+    typedef std::string                     WSGEtag;
+    typedef std::string                     WSGToken;
+    typedef std::string                     AzureDirectPrefix;
+    typedef std::string                     AzureDirectSuffix;
+
     WSGServer::Request::protocol            wsgProtocol         = L"https:";
     WSGServer::Request::port                wsgPort             = L"443";
-    WSGServer::version                      wsgVersion          = L"v2.3";
+    WSGServer::version                      wsgVersion          = L"v2.4";
     WSGServer::apiID                        wsgAPIID            = L"Repositories";
     WSGServer::repository                   wsgRepository       = L"S3MXECPlugin--Server";
     WSGServer::schema                       wsgSchema           = L"S3MX";
     WSGServer::class_name                   wsgClassName        = L"Document";
-    WSGServer::organizationID               wsgOrganizationID   = L"5e41126f-6875-400f-9f75-4492c99ee544";
-
-    DataSourceBuffer::BufferSize            defaultSegmentSize;
-    DataSourceBuffer::Timeout               defaultTimeout;
-
-    typedef std::string WSGEtag;
-
-protected:
-
-    unsigned int                            getDefaultNumTransferTasks          (void);
+    WSGServer::organizationID               wsgOrganizationID; // Obtained by making a first call to RDS
 
 
 public:
+                                            DataSourceAccountWSG                (void) = delete;
                                             DataSourceAccountWSG                (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
         virtual                            ~DataSourceAccountWSG                (void);
-
-        void                                setDefaultSegmentSize               (DataSourceBuffer::BufferSize size);
-        DataSourceBuffer::BufferSize        getDefaultSegmentSize               (void);
-
-        void                                setDefaultTimeout                   (DataSourceBuffer::Timeout time);
-        DataSourceBuffer::Timeout           getDefaultTimeout                   (void);
 
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier & identifier, const AccountKey & key);
 
@@ -152,21 +70,24 @@ public:
         DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, const WSGEtag &etag, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 
+        virtual void                        setWSGTokenGetterCallback           (const std::function<std::string (void)>& tokenUpdater);
+
+        CLOUD_EXPORT      void              setOrganizationID                   (const WSGServer::organizationID& orgID);
+        CLOUD_EXPORT      void              setUseDirectAzureCalls(const bool& isDirect);
+
 private :
+       std::function<std::string (void)>    m_getWSGToken;
+       WSGToken                             m_wsgToken;
+       bool                                 m_isValid = true;
+       bool                                 m_useDirectAzureCalls = true;
+       AzureDirectPrefix                    m_AzureDirectPrefix;
+       AzureDirectSuffix                    m_AzureDirectSuffix;
+
+       WSGToken                             getWSGToken                         (DataSourceURL &url);
        WSGEtag                              getWSGHandshake                     (const DataSourceURL &url, const DataSourceURL &filename, DataSourceBuffer::BufferSize size);
+       bool                                 needsUpdateToken                    (const WSGToken& token);
+       void                                 updateToken                         (const WSGToken& newToken, DataSourceURL url);
+       WSGServer::organizationID            getOrganizationID                   (const DataSourceURL& url);
 
-       struct CURLDataMemoryBuffer {
-           DataSourceBuffer::BufferData* data;
-           size_t                        size;
-           };
-       struct CURLDataResponseHeader {
-           std::map<std::string, std::string> data;
-           };
-    
-       static size_t CURLWriteHeaderCallback        (void *contents, size_t size, size_t nmemb,  void *userp);
-       static size_t CURLWriteDataCallback          (void *contents, size_t size, size_t nmemb,  void *userp);
-       static size_t CURLDummyWriteDataCallback     (void *contents, size_t size, size_t nmemb,  void *userp);
-       static size_t CURLReadDataCallback           (char *bufptr,   size_t size, size_t nitems, void *userp);
-
-       static void   OpenSSLLockingFunction(int mode, int n, const char * file, int line);
+       bool                                 isValid                             (void);
     };

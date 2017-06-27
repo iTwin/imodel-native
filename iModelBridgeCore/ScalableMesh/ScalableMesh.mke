@@ -38,6 +38,12 @@ always:
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnV8Api=$(BuildContext)SdkSources/ScalableMeshSDK/PublicAPI"
 
+always:
+   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"
+   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/Constants.h=$(tilePublisherDir)Constants.h"
+   @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/MeshTile.h=$(tilePublisherDir)MeshTile.h"
+
+
 CCompOpts + -openmp -bigobj -DCGAL_NO_AUTOLINK -DBOOST_ALL_NO_LIB -DBOOST_SYSTEM_NO_DEPRECATED -GR
 
 #Uncomment this to allow generating design meshes
@@ -206,6 +212,8 @@ $(o)CGALEdgeCollapse$(oext) : $(stmDir)CGALEdgeCollapse.cpp $(PCHHeaderDepends) 
 
 $(o)ScalableMeshCreator$(oext) : $(stmDir)ScalableMeshCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
+$(o)ScalableMeshProgress$(oext) : $(stmDir)ScalableMeshProgress.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+
 $(o)ScalableMeshSourceCreator$(oext) : $(stmDir)ScalableMeshSourceCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 $(o)ScalableMeshNodeCreator$(oext) : $(stmDir)ScalableMeshNodeCreator.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
@@ -296,6 +304,8 @@ $(o)Skirts$(oext) : $(stmDir)Edits/Skirts.cpp $(stmDir)Edits/Skirts.h ${MultiCom
 
 $(o)ScalableMeshEdit$(oext) : $(stmDir)ScalableMeshEdit.cpp $(stmDir)ScalableMeshEdit.h ${MultiCompileDepends}
 
+$(o)ScalableMeshAnalysis$(oext) : $(stmDir)ScalableMeshAnalysis.cpp $(stmDir)ScalableMeshAnalysis.h ${MultiCompileDepends}
+
 $(o)ScalableMeshTextureGenerator$(oext) : $(stmDir)ScalableMeshTextureGenerator.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 $(o)TextureProvider$(oext) : $(stmDir)TextureProvider.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
@@ -311,6 +321,22 @@ $(o)Tracer$(oext) : $(stmDir)Tracer.cpp $(PCHHeaderDepends) ${MultiCompileDepend
 $(o)RasterUtilities$(oext) : $(stmDir)RasterUtilities.cpp $(stmDir)RasterUtilities.h ${MultiCompileDepends}
 
 $(o)ReprojectionModel$(oext) : $(stmDir)ReprojectionModel.cpp $(stmDir)ReprojectionModel.h ${MultiCompileDepends}
+
+$(o)ScalableMeshGroup$(oext) : $(stmDir)ScalableMeshGroup.cpp $(stmDir)ScalableMeshGroup.h ${MultiCompileDepends}
+
+$(o)ScalableMeshFrom3MX$(oext) : $(stmDir)ScalableMeshFrom3MX.cpp $(SCMPublicAPISrc)ScalableMesh\ScalableMeshFrom3MX.h ${MultiCompileDepends}
+
+#-----------------------------------------------------------------------
+#   Build Tile Publisher
+#-----------------------------------------------------------------------
+
+$(o)MeshTile$(oext) : $(tilePublisherDir)MeshTile.cpp $(tilePublisherDir)MeshTile.h ${MultiCompileDepends}
+
+$(o)TilePublisher$(oext) : $(tilePublisherDir)TilePublisher.cpp $(tilePublisherDir)TilePublisher.h ${MultiCompileDepends}
+
+$(o)SMPublisher$(oext) : $(stmDir)Stores/SMPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
+
+$(o)SMCesiumPublisher$(oext) : $(stmDir)Stores/SMCesiumPublisher.cpp $(PCHHeaderDepends) ${MultiCompileDepends}
 
 #-----------------------------------------------------------------------
 #   Build Stores
@@ -475,13 +501,14 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)Imagepp.lib \
     $(ContextSubpartsLibs)$(BeJsonCppLib) \
     $(ContextSubpartsLibs)$(BentleyGeomLib) \
+    $(ContextSubpartsLibs)BeLibJpegTurbo.lib \
     $(ContextSubpartsLibs)DgnPlatform.lib \
     $(ContextSubpartsLibs)CloudDataSource.lib \
     $(ContextSubpartsLibs)CGAL.lib \
     $(ContextSubpartsLibs)ECObjects.lib \
     $(ContextSubpartsLibs)BePointCloud.lib \
-    $(ContextSubpartsLibs)AutomaticGroundDetection.lib
-    
+    $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
+    $(ContextSubpartsLibs)ThreeMxReader.lib
 
 %include $(sharedMki)LinkLibrary.mki
 

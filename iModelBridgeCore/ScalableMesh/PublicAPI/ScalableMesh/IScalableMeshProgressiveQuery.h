@@ -6,7 +6,7 @@
 |       $Date: 2012/11/29 17:30:53 $
 |     $Author: Mathieu.St-Pierre $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -97,6 +97,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
         virtual void          _SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr) = 0;
 
+        virtual void          _GetActiveClips(bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr) = 0;
+
         virtual bool          _IsQueryComplete(int queryId) = 0; 
 
         virtual void _ClearOverviews(IScalableMesh* scalableMeshP) = 0;
@@ -127,6 +129,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
 
         BENTLEY_SM_EXPORT bool IsQueryComplete(int queryId); 
 
+        BENTLEY_SM_EXPORT void GetActiveClips(bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
+
         BENTLEY_SM_EXPORT void SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
 
         BENTLEY_SM_EXPORT static IScalableMeshProgressiveQueryEnginePtr Create(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
@@ -134,6 +138,8 @@ struct IScalableMeshProgressiveQueryEngine abstract: RefCountedBase
         BENTLEY_SM_EXPORT void InitScalableMesh(IScalableMeshPtr& scalableMeshPtr);
 
         BENTLEY_SM_EXPORT void ClearOverviews(IScalableMesh* scalableMeshP);
+
+        BENTLEY_SM_EXPORT static void CancelAllQueries();
     };
 
 

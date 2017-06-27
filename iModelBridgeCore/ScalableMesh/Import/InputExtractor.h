@@ -6,7 +6,7 @@
 |       $Date: 2011/08/26 18:46:46 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -71,6 +71,8 @@ public:
 
     void                                        Read                               ();
     bool                                        Next                               ();
+    size_t                                      GetPhysicalSize                    ();
+    size_t                                      GetReadPosition                    ();
     };
 
 

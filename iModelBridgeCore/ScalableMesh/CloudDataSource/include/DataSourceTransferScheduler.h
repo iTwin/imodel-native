@@ -7,12 +7,24 @@
 #include <deque>
 #include "DataSourceBuffer.h"
 #include "DataSourceStatus.h"
+#include <Bentley/RefCounted.h>
 
-const unsigned int DEFAULT_NUM_TRANSFERS = 16;
 
-
-class DataSourceTransferScheduler
+class DataSourceTransferScheduler : public RefCountedBase
 {
+public:
+
+    typedef RefCountedPtr<DataSourceTransferScheduler> Ptr;
+
+private:
+
+    static DataSourceTransferScheduler* m_dataSourceTransferScheduler;
+
+    void                            shutDown(void);
+
+private:
+
+    DataSourceTransferScheduler(void);
 
 protected:
 
@@ -54,16 +66,14 @@ protected:
     bool                            getShutDownFlag                 (void);
 
 public:
+    static Ptr                      Get                    (void);
 
-                                    DataSourceTransferScheduler     (void);
                                    ~DataSourceTransferScheduler     (void);
 
     DataSourceStatus                initializeTransferTasks         (unsigned int maxTasks);
 
     DataSourceStatus                addBuffer                       (DataSourceBuffer &buffer);
     DataSourceStatus                removeBuffer                    (DataSourceBuffer &buffer);
-
-    void                            shutDown                        (void);
 
 };
 

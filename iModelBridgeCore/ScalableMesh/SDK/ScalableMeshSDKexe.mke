@@ -2,7 +2,7 @@
 #
 #     $Source: SDK/ScalableMeshSDKexe.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 baseDir         = $(_MakeFilePath)../
@@ -76,6 +76,7 @@ EXE_TMP_DIR  = $(o)
 
 always:
     ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+	~linkfile "$(BuildContext)Delivery/freeimage.dll=$(BuildContext)SubParts/Assemblies/freeimage.dll"
 #   ~linkfile "$(BuildContext)Delivery/TerrainModel.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/TerrainModel.01.00.ecschema.xml"
 #    ~linkfile "$(BuildContext)Delivery/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml=$(ContextSubpartsLibs)../Files/DTMElement_TemplateExtender_Schema.01.00.ecschema.xml"
 

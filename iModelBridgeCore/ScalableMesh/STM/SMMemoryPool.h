@@ -193,8 +193,12 @@ class SMMemoryPoolItemBase : public RefCountedBase
             
         void SetPoolItemId(SMMemoryPoolItemId poolItemId);
 
-        void SetDirty() { m_dirty = true; }
+        void SetDirty(bool dirty = true) { m_dirty = dirty; }
 
+        bool IsCompressedType()
+            {
+            return m_dataType == SMStoreDataType::TextureCompressed;
+            }
         SMMemoryPoolType m_poolId;
     };
 
@@ -225,6 +229,22 @@ class SMMemoryPoolMultiItemsBase : public SMMemoryPoolItemBase,
                 if (item->GetDataType() == dataType)
                     {
                     poolMemVectorItemPtr = item->GetAsPoolVector<T>();
+                    return true;
+                    }
+                }
+
+            assert(!"Should not occur");
+            return false;
+            }
+
+        template<typename T>
+        bool GetItem(RefCountedPtr<SMMemoryPoolBlobItem<T>>& poolMemBlobItemPtr, SMStoreDataType dataType)
+            {
+            for (auto& item : m_items)
+                {
+                if (item->GetDataType() == dataType)
+                    {
+                    poolMemBlobItemPtr = item->GetAsBlobPoolItem<T>();
                     return true;
                     }
                 }
@@ -273,6 +293,46 @@ template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemor
             return item;
             }
 
+        SMMemoryPoolItemBasePtr GetNodeDataStore(Cesium3DTilesBase& multiData, size_t nbItems, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId)
+            {
+            SMMemoryPoolItemBasePtr item;
+            switch (dataType)
+                {
+                case SMStoreDataType::Points:
+                    {
+                    item = new SMMemoryPoolVectorItem<DPoint3d>(nbItems, nodeId, dataType, smId);
+                    multiData.m_pointData = (DPoint3d*)item->m_data;
+                    break;
+                    }
+                case SMStoreDataType::TriPtIndices:
+                    {
+                    item = new SMMemoryPoolVectorItem<int32_t>(nbItems, nodeId, dataType, smId);
+                    multiData.m_indicesData = (int32_t*)item->m_data;
+                    multiData.m_uvIndicesData = multiData.m_indicesData;
+                    break;
+                    }
+                case SMStoreDataType::UvCoords:
+                    {
+                    item = new SMMemoryPoolVectorItem<DPoint2d>(nbItems, nodeId, dataType, smId);
+                    multiData.m_uvData = (DPoint2d*)item->m_data;
+                    break;
+                    }
+                case SMStoreDataType::Texture:
+                    {
+                    item = new SMMemoryPoolBlobItem<Byte>(nbItems, nodeId, dataType, smId);
+                    multiData.m_textureData = (Byte*)item->m_data;
+                    break;
+                    }
+                default:
+                    {
+                    assert(!"Unhandled store data type");
+                    break;
+                    }
+                }
+
+            return item;
+            }
+
     public : 
                 
         SMStoredMemoryPoolMultiItems(ISMNodeDataStoreTypePtr<DataType>& dataStore, uint64_t nodeId, SMStoreDataType compositeDataType, uint64_t smId)
@@ -297,8 +357,8 @@ template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemor
             if (m_size > 0)
                 {
                 HPMBlockID blockID(m_nodeId);
-                size_t nbBytesLoaded = m_dataStore->LoadBlock(&multiData, 1, blockID);
-                assert(nbBytesLoaded == 1 * sizeof(DataType));
+                size_t nbBytesLoaded = m_dataStore->LoadBlock(&multiData, m_size, blockID);
+                assert(nbBytesLoaded <= m_size);
                 }                                    
             } 
 
@@ -321,6 +381,13 @@ template <typename DataType> class SMStoredMemoryPoolMultiItems : public SMMemor
                 item->RemoveListener(this);
                 }                                    
             }
+
+#ifdef VANCOUVER_API
+        static SMStoredMemoryPoolMultiItems* CreateItem(ISMNodeDataStoreTypePtr<DataType>& dataStore, uint64_t nodeId, SMStoreDataType compositeDataType, uint64_t smId)
+            {
+            return new SMStoredMemoryPoolMultiItems(dataStore, nodeId, compositeDataType, smId);
+            }
+#endif
 
         virtual void NotifyListener(SMMemoryPoolItemBase* poolMemoryItem, int64_t sizeDelta, int64_t nbItemDelta) override
             {            
@@ -1019,6 +1086,8 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
         size_t newSize = GetSizeInMemory((DataType*)&val);
         *((DataType*)m_data + index) = val;
         m_size += newSize - oldSize;
+        m_dirty = true;
+
         NotifySizeChangePoolItem(newSize - oldSize, newSize - oldSize);
         }
 
@@ -1032,7 +1101,7 @@ template <typename DataType> class SMMemoryPoolGenericVectorItem : public SMMemo
 
         NotifySizeChangePoolItem(-1 * (int64_t)erasedSize, -1 * (int64_t)erasedSize);
         }
-
+   
     virtual bool push_back(const DataType& newObject)
         {
         if (m_allocatedSize < (m_nbItems + 1) * sizeof(DataType))
@@ -1266,7 +1335,7 @@ class SMMemoryPool : public RefCountedBase
                 {
                 poolMemBlobItemPtr = memItemPtr->GetAsGenericBlobPoolItem<T>();       
 
-                TRACEPOINT(THREAD_ID(), EventType::POOL_GETITEM, memItemPtr->GetNodeId(), (uint64_t)-1, memItemPtr->GetDataType() == SMStoreDataType::DisplayTexture ? memItemPtr->GetNodeId() : -1, memItemPtr->GetPoolItemId(), (uint64_t)&poolMemBlobItemPtr, memItemPtr->GetRefCount())
+               TRACEPOINT(THREAD_ID(), EventType::POOL_GETITEM, memItemPtr->GetNodeId(), (uint64_t)-1, memItemPtr->GetDataType() == SMStoreDataType::DisplayTexture ? memItemPtr->GetNodeId() : -1, memItemPtr->GetPoolItemId(), (uint64_t)&poolMemBlobItemPtr, memItemPtr->GetRefCount())
 
                 }
 
@@ -1294,6 +1363,8 @@ class SMMemoryPool : public RefCountedBase
         bool GetItem(SMMemoryPoolItemBasePtr& memItemPtr, SMMemoryPoolItemId id);
             
         bool RemoveItem(SMMemoryPoolItemId id, uint64_t nodeId, SMStoreDataType dataType, uint64_t smId);
+
+        uint64_t RemoveAllItemsOfType(SMStoreDataType dataType, uint64_t smId);
             
         SMMemoryPoolItemId AddItem(SMMemoryPoolItemBasePtr& poolItem);
 

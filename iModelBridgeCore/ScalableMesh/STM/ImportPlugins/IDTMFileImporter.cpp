@@ -6,7 +6,7 @@
 |       $Date: 2012/01/27 16:45:33 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -408,6 +408,16 @@ private:
         m_rawPointPacket.SetSize(m_packet.GetSize());
         }
 
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
+
     /*---------------------------------------------------------------------------------**//**
     * @description  
     * @bsimethod                                                  Raymond.Gauthier   10/2010
@@ -625,6 +635,16 @@ class IDTMLinearExtractor : public InputExtractorBase
 
         m_rawHeaderPacket.SetSize(m_headerPacket.GetSize());
         m_rawPointPacket.SetSize(m_pointPacket.GetSize());
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
         }
 
     /*---------------------------------------------------------------------------------**//**

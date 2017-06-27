@@ -2,11 +2,17 @@
 |
 |     $Source: STM/ImportPlugins/PODImporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
+// all code in this file is for PP, see PODImporter_dgndb for other dgndb version
+// there are too much discrepencies ...
+
 #include <ScalableMeshPCH.h>
+
+#ifdef VANCOUVER_API
+
 #include "../ImagePPHeaders.h"
 #include <ScalableMesh\ScalableMeshLib.h>
 #include <ScalableMesh/Import/ScalableMeshData.h>
@@ -498,6 +504,10 @@ private:
         {
         return !m_reachedEof;   
         }
+
+    // We are unable to get precisely the read position for pod file
+    virtual size_t                              _GetPhysicalSize() { return 0; } // used only for progress bar
+    virtual size_t                              _GetReadPosition() { return 0; } // used only for progress bar
     };
 
 
@@ -557,8 +567,10 @@ private:
 #endif
             //NEEDS_WORK_SM_IMPORTER_GROUND
             //NEEDS_WORK_SM_IMPORTER : Should backup the current classif file if any and restore it after
+#if 0
             GroundDetectionParametersPtr pParam(GroundDetectionParameters::Create());
             GroundDetectionManager::DoGroundDetection(m_elHandle, *pParam);
+#endif
 
 #ifdef SCALABLE_MESH_ATP
             double t = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -568,7 +580,9 @@ private:
         }
         
         ////NEEDS_WORK_SM_IMPORTER_GROUND
+#if 0
         m_queryChannels.push_back(GroundDetectionManager::GetChannelFromPODElement(m_elHandle));
+#endif
 
         uint32_t channelFlags = ((uint32_t)PointCloudChannelId::Rgb | (uint32_t)PointCloudChannelId::Xyz | (uint32_t)PointCloudChannelId::Intensity | (uint32_t)PointCloudChannelId::Classification| (uint32_t)PointCloudChannelId::Filter);
         m_pointCloudQueryBufferPtr = m_dataQueryPtr->CreateBuffers(MAX_PT_QTY, channelFlags, m_queryChannels);
@@ -680,6 +694,10 @@ private:
         {
             m_elHandle.DeleteFromModel();
         }
+
+    // We are unable to get precisely the read position for pod file
+    virtual size_t                              _GetPhysicalSize() { return 0; } // used only for progress bar
+    virtual size_t                              _GetReadPosition() { return 0; } // used only for progress bar
     };
 
 /*---------------------------------------------------------------------------------**//**
@@ -948,3 +966,5 @@ void RegisterPODImportPlugin()
     } 
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
+
+#endif

@@ -7,10 +7,14 @@
 #include "DataSource.h"
 #include "DataSourceAccount.h"
 #include "DataSourceAccountCached.h"
+#include "DataSourceAccountCURL.h"
 #include "DataSourceBuffer.h"
 #include "DataSourceMode.h"
 
-unsigned int const DATA_SOURCE_SERVICE_AZURE_DEFAULT_TRANSFER_TASKS = 16;
+#ifdef SM_STREAMING_PERF
+#include <mutex>
+extern std::mutex s_consoleMutex;
+#endif
 
 
 class DataSourceAccountAzure : public DataSourceAccountCached
@@ -45,8 +49,6 @@ protected:
     void                                    setBlobClient                       (const AzureBlobClient &client);
     AzureBlobClient                    &    getBlobClient                       (void);
 
-    unsigned int                            getDefaultNumTransferTasks          (void);
-
 
 public:
                                             DataSourceAccountAzure              (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
@@ -61,7 +63,7 @@ public:
         DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
 
         DataSource                   *      createDataSource                    (void);
-        DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);
+        //DataSourceStatus                    destroyDataSource                   (DataSource *dataSource);
 
         AzureContainer                      initializeContainer                 (const DataSourceURL &containerName, DataSourceMode mode);
 
@@ -70,3 +72,26 @@ public:
         DataSourceStatus                    uploadBlobSync                      (DataSource & dataSource, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
         DataSourceStatus                    uploadBlobSync                      (const DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
 };
+
+class DataSourceAccountAzureCURL : public DataSourceAccountCURL
+    {
+    protected:
+
+        typedef       DataSourceAccountAzure    SuperAzure;
+        typedef       DataSourceAccountCURL     SuperCURL;
+
+    private:
+        std::function<std::string(const Utf8String& docGuid)>   m_getSASToken;
+
+    public:
+                                            DataSourceAccountAzureCURL          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+        virtual                            ~DataSourceAccountAzureCURL          (void) = default;
+
+        DataSourceStatus                    setAccount                          (const AccountName &account, const AccountIdentifier &identifier, const AccountKey &key);
+
+        virtual void                        SetSASTokenGetterCallback           (const std::function<std::string(const Utf8String& docGuid)>& tokenUpdater);
+
+        DataSourceStatus                    downloadBlobSync                    (DataSourceURL &blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize &readSize, DataSourceBuffer::BufferSize size);
+        DataSourceStatus                    uploadBlobSync                      (DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size);
+
+    };

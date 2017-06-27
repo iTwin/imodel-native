@@ -6,13 +6,13 @@
 //:>       $Date: 2011/06/27 14:53:05 $
 //:>     $Author: Alain.Robert $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
         
         
 #include <ScalableMeshPCH.h>
-#include "ImagePPHeaders.h"
+#include "ImagePPHeaders.h"   
 
 /*----------------------------------------------------------------------+
 | Include MicroStation SDK header files
@@ -88,13 +88,103 @@ int AddPolygonsToDTMObject(bvector<bvector<DPoint3d>>& polygons, DTMFeatureType 
     return status;
     }
 
-int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, BC_DTM_OBJ* dtmObjP)
+//Limited case. If a void and an island exactly overlap, remove them both.
+void PruneFeatures(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, bvector<DTMFeatureType> types)
+    {
+
+	bvector<bool> deleteIslands(islandFeatures.size());
+	bvector<bool> deleteVoids(voidFeatures.size());
+	for (auto& island : islandFeatures)
+	{
+		ICurvePrimitivePtr curvePtr;
+		CurveVectorPtr curveVectorPtr;
+
+		curvePtr = ICurvePrimitive::CreateLineString(island);
+		curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+
+		for (auto& hole : voidFeatures)
+	    {
+
+			bool allInsidePolygon = true;
+			for (size_t i = 0; i < hole.size() && allInsidePolygon; ++i)
+			{
+				auto classif = curveVectorPtr->PointInOnOutXY(hole[i]);
+				if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
+			}
+
+			if (allInsidePolygon)
+			{
+
+				bool allInsideVoid= true;
+				ICurvePrimitivePtr curvePtrVoid;
+				CurveVectorPtr curveVectorPtrVoid;
+
+				curvePtrVoid = ICurvePrimitive::CreateLineString(hole);
+				curveVectorPtrVoid = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtrVoid);
+				for (size_t i = 0; i < island.size() && allInsidePolygon; ++i)
+				{
+					auto classif = curveVectorPtrVoid->PointInOnOutXY(island[i]);
+					if (classif == CurveVector::InOutClassification::INOUT_Out) allInsideVoid = false;
+				}
+				deleteIslands[&island - &islandFeatures[0]] = true;
+				deleteVoids[&hole - &voidFeatures[0]] = true;
+			}
+				
+        }
+
+		}
+
+
+	bvector<bvector<DPoint3d>> newIslands;
+	bvector<bvector<DPoint3d>> newVoids;
+	bvector<DTMFeatureType> newTypes;
+	for (auto& island : islandFeatures)
+	{
+		if (!deleteIslands[&island - &islandFeatures[0]])
+			newIslands.push_back(island);
+	}
+
+	for (auto& hole : voidFeatures)
+	{
+		if (!deleteVoids[&hole - &voidFeatures[0]])
+		{
+			newVoids.push_back(hole);
+			newTypes.push_back(types[&hole - &voidFeatures[0]]);
+		}
+	}
+
+	islandFeatures.swap(newIslands);
+	voidFeatures.swap(newVoids);
+	types.swap(newTypes);
+    }
+
+int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bvector<DPoint3d>>& voidFeatures, bvector<bvector<DPoint3d>>& boundary, BC_DTM_OBJ* dtmObjP)
     {
     VuPolygonClassifier vu(1e-8, 0);
     int status = DTM_SUCCESS;
+	ICurvePrimitivePtr curvePtr;
+	CurveVectorPtr curveVectorPtr;
+	if (!boundary.empty())
+	{
+		curvePtr = ICurvePrimitive::CreateLineString(boundary.front());
+		curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+	}
+
     for (auto& island : islandFeatures)
         {
         bool intersect = false;
+		if (!boundary.empty())
+		{
+			bool allInsidePolygon = true;
+			for (size_t i = 0; i < island.size() && allInsidePolygon; ++i)
+			{
+				auto classif = curveVectorPtr->PointInOnOutXY(island[i]);
+				if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
+			}
+
+			if (allInsidePolygon)
+				continue;
+		}
         for (auto& hole : voidFeatures)
             {
             vu.ClassifyAIntersectB(island, hole);
@@ -102,6 +192,18 @@ int AddIslandsToDTMObject(bvector<bvector<DPoint3d>>& islandFeatures, bvector<bv
             for (; vu.GetFace(xyz);)
                 {
                 intersect = true;
+				if (!boundary.empty())
+				{
+					bool allInsidePolygon = true;
+					for (size_t i = 0; i < xyz.size() && allInsidePolygon; ++i)
+					{
+						auto classif = curveVectorPtr->PointInOnOutXY(xyz[i]);
+						if (classif == CurveVector::InOutClassification::INOUT_Out) allInsidePolygon = false;
+					}
+
+					if (allInsidePolygon)
+						continue;
+				}
                 status = bcdtmObject_storeDtmFeatureInDtmObject(dtmObjP, DTMFeatureType::Island, dtmObjP->nullUserTag, 1, &dtmObjP->nullFeatureId, (DPoint3d*)&(xyz[0]), (long)xyz.size());
                 assert(status == SUCCESS);
                 }
@@ -161,31 +263,189 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
     bvector<bool> used(polygons.size(),false);
     VuPolygonClassifier vu(1e-8, 0);
 
+	bvector<bool> available(polygons.size(), false);
+	for (auto& poly : polygons)
+	{
+		available[&poly - &polygons.front()] = choosePolygonInSet(&poly - &polygons.front(), poly);
+	}
+
+	//Apparently, intersection on a single vertex, even though it has no bearing on the "inside" section of voids, trips up the Civil triangulation.
+	//So we find out and disconnect single vertex intersections first, since they cannot be unified.
+	for (auto& poly : polygons)
+	{
+		if (!available[&poly-&polygons.front()]) continue;
+		DRange3d range = DRange3d::From(poly);
+		if (poly.empty()) continue;
+		bvector<DPoint3d> poly_2d = poly;
+		for (auto&pt : poly_2d) pt.z = 0;
+		for (auto& poly2 : polygons)
+		{
+			if (!available[&poly2 - &polygons.front()]) continue;
+			if (&poly == &poly2) continue;
+			if (poly2.empty()) continue;
+			if (!DRange3d::From(poly2).IntersectsWith(range)) continue;
+			bvector<DPoint3d> poly2_2d = poly2;
+			for (auto&pt : poly2_2d) pt.z = 0;
+
+			//There are cases where the clash functions on non-coplanar 3d polygons says 2 polygons which share a vertex don't clash.
+			if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size()) ||
+				bsiDPoint3dArray_polygonClashXYZ(&poly_2d.front(), (int)poly_2d.size(), &poly2_2d.front(), (int)poly2_2d.size()))
+			{
+				vu.ClassifyAUnionB(poly, poly2);
+				bvector<DPoint3d> xyz;
+				bvector<bvector<DPoint3d>> faces;
+				for (; vu.GetFace(xyz);)
+				{
+					if (bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size()) < 0) continue;
+					else
+					{
+						//  postFeatureBoundary.push_back(xyz);
+						faces.push_back(xyz);
+
+					}
+
+				}
+				if (faces.size() == 1)
+					continue;
+				//compute intersects on single vertices
+				bset<DPoint3d, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+				bvector<DPoint3d> intersectingVertices;
+				int minConsecutiveIntersectingVertices = INT_MAX;
+				int consecutiveIntersectingVertices = 0;
+				for (auto& pt : poly)
+					setOfPts.insert(pt);
+				for (auto& pt : poly2)
+					if (setOfPts.count(pt))
+					{
+						intersectingVertices.push_back(pt);
+						consecutiveIntersectingVertices++;
+					}
+					else
+					{
+						minConsecutiveIntersectingVertices = std::min(consecutiveIntersectingVertices, minConsecutiveIntersectingVertices);
+						consecutiveIntersectingVertices = 0;
+					}
+
+				//No single vertex intersection
+				if (minConsecutiveIntersectingVertices > 1) continue;
+				if (!intersectingVertices.empty())
+				{
+					bvector<DPoint3d> withoutIntersect;
+					if (poly.size() < poly2.size())
+					{
+						for (auto& pt : poly)
+						{
+							bool insert = true;
+							for (auto& ptB : intersectingVertices)
+								if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+							if (insert) withoutIntersect.push_back(pt);
+						}
+					}
+					else
+					{
+						for (auto& pt : poly2)
+						{
+							bool insert = true;
+							for (auto& ptB : intersectingVertices)
+								if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+							if (insert) withoutIntersect.push_back(pt);
+						}
+					}
+					if (poly.size() < poly2.size())
+					{
+						poly = poly2;
+						poly_2d = poly2_2d;
+						range = DRange3d::From(poly);
+					}
+					if (!withoutIntersect.empty() && !bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+					if (withoutIntersect.size() > 4)
+					{
+						poly2 = withoutIntersect;
+					}
+					else poly2.clear();
+
+				}
+			}
+		}
+	}
+
     for (auto& poly : polygons)
         {
+		if (!available[&poly - &polygons.front()]) continue;
         if (used[&poly - &polygons[0]]) continue;
+		if (poly.empty()) continue;
 
         //pre-compute the union of polys with this function because apparently sometimes Unify hangs
         for (auto& poly2:polygons)
             { 
+			if (!available[&poly2 - &polygons.front()]) continue;
             if (&poly == &poly2) continue;
+			if (poly2.empty()) continue;
             if (used[&poly2 - &polygons[0]]) continue;
             if (bsiDPoint3dArray_polygonClashXYZ(&poly.front(), (int)poly.size(), &poly2.front(), (int)poly2.size()))
                 {
-                used[&poly2 - &polygons[0]] = true;
                 vu.ClassifyAUnionB(poly, poly2);
                 bvector<DPoint3d> xyz;
+				bvector<bvector<DPoint3d>> faces;
                 for (; vu.GetFace(xyz);)
                     {
                     if (bsiGeom_getXYPolygonArea(&xyz[0], (int)xyz.size()) < 0) continue;
                     else
                         {
                         //  postFeatureBoundary.push_back(xyz);
-                        poly = xyz;
+						faces.push_back(xyz);
 
                         }
 
                     }
+				if (faces.size() == 1)
+				    {
+					poly = faces.front();
+					used[&poly2 - &polygons[0]] = true;
+				    }
+				else
+				   {
+					//compute intersects on vertices
+					bset<DPoint3d, DPoint3dZYXTolerancedSortComparison> setOfPts(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
+					bvector<DPoint3d> intersectingVertices;
+					for (auto& pt : poly)
+						setOfPts.insert(pt);
+					for (auto& pt : poly2)
+						if (setOfPts.count(pt))
+							intersectingVertices.push_back(pt);
+					if (!intersectingVertices.empty())
+					{
+						bvector<DPoint3d> withoutIntersect;
+						if (poly.size() < poly2.size())
+						{
+							for (auto& pt : poly)
+							{
+								bool insert = true;
+								for (auto& ptB : intersectingVertices)
+									if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+								if(insert) withoutIntersect.push_back(pt);
+							}
+						}
+						else
+						{
+							for (auto& pt : poly2)
+							{
+								bool insert = true;
+								for (auto& ptB : intersectingVertices)
+									if (bsiDPoint3d_pointEqualTolerance(&pt, &ptB, 1e-8)) insert = false;
+								if (insert) withoutIntersect.push_back(pt);
+							}
+						}
+						if (poly.size() < poly2.size()) poly = poly2;
+
+						if (!withoutIntersect.empty() && !bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+						if (withoutIntersect.size() > 4)
+						{
+							poly2 = withoutIntersect;
+						}
+						else used[&poly2 - &polygons[0]] = true;
+					}
+			        }
                 }
 
             }
@@ -193,8 +453,10 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 
     for (auto& poly : polygons)
         {
-        if (!choosePolygonInSet(&poly - &polygons.front(), poly)) continue;
+		if (!available[&poly - &polygons.front()]) continue;
         if (used[&poly - &polygons[0]]) continue;
+		if (poly.empty()) continue;
+
         UntieLoopsFromPolygon(poly);
         HArrayAutoPtr<double> tempBuffer(new double[poly.size() * 2]);
 

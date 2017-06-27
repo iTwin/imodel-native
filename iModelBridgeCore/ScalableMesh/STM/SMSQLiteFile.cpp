@@ -5,15 +5,6 @@
 #include "SMSQLiteDiffsetFile.h"
 #include "SMSQLiteFeatureFile.h"
 
-#ifdef VANCOUVER_API
-#define WSTRING_FROM_CSTR(cstr) WString(cstr)
-#define MAKE_COPY_NO Statement::MAKE_COPY_No
-#define MAKE_COPY_YES Statement::MAKE_COPY_Yes
-#define GET_VALUE_STR(stmt, id) stmt->GetValueUtf8(id)
-#define BIND_VALUE_STR(stmt, id, utf8str, copyval) stmt->BindUtf8String(id, utf8str, copyval)
-#define READONLY Db::OpenMode::OPEN_Readonly
-#define READWRITE Db::OpenMode::OPEN_ReadWrite
-#else
 #define WSTRING_FROM_CSTR(cstr) WString(cstr, BentleyCharEncoding::Utf8)
 #define MAKE_COPY_NO Statement::MakeCopy::No
 #define MAKE_COPY_YES Statement::MakeCopy::Yes
@@ -21,9 +12,8 @@
 #define BIND_VALUE_STR(stmt, id, utf8str, copyval) stmt->BindText(id, utf8str, copyval)
 #define READONLY Db::OpenMode::Readonly
 #define READWRITE Db::OpenMode::ReadWrite
-#endif
 
-const SchemaVersion SMSQLiteFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 2);
+const SchemaVersion SMSQLiteFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 3);
 
 SMSQLiteFile::SMSQLiteFile()
 {
@@ -33,14 +23,19 @@ SMSQLiteFile::SMSQLiteFile()
 SMSQLiteFile::~SMSQLiteFile()
     {
     if (m_database != nullptr)
-        {    
+        {            
+        if (m_database->IsDbOpen())
+            {
+            Close();
+            }
+
         delete m_database;
         }
 
     m_database = nullptr;
     }
 
-void SMSQLiteFile::CommitAll()
+void SMSQLiteFile::Save()
     {
     if (m_database != nullptr) m_database->SaveChanges();
     }
@@ -53,11 +48,11 @@ bool SMSQLiteFile::Close()
     }
 
 
-const SchemaVersion s_listOfReleasedSchemas[3] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2) };
-const size_t s_numberOfReleasedSchemas = 3;
-double s_expectedTimeUpdate[2] = { 1.2*1e-5, 1e-6 };
+const SchemaVersion s_listOfReleasedSchemas[4] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2), SchemaVersion(1, 1, 0, 3) };
+const size_t s_numberOfReleasedSchemas = 4;
+double s_expectedTimeUpdate[3] = { 1.2*1e-5, 1e-6,1e-6};
 //all the functions for each schema transition. 
-std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[2] = {
+std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[3] = {
     [](BeSQLite::Db* database)
         {
         assert(database->TableExists("SMMasterHeader"));
@@ -140,6 +135,10 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[2] = {
         database->ExecuteSql("ALTER TABLE SMMasterHeader ADD COLUMN DataResolution REAL DEFAULT 0.0");
         database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN GeometryResolution REAL DEFAULT 0.0");
         database->ExecuteSql("ALTER TABLE SMNodeHeader ADD COLUMN TextureResolution REAL DEFAULT 0.0");
+        },
+            [](BeSQLite::Db* database)
+        {
+            database->ExecuteSql("ALTER TABLE SMFileMetadata ADD COLUMN Properties TEXT DEFAULT NULL");
         }
     };
 
@@ -186,7 +185,7 @@ bool SMSQLiteFile::UpdateDatabase()
         }
     #endif
     assert(!"ERROR - Unknown database schema version");
-    return false;
+    return true; //for now, allow opening more recent versions
     }
 
 
@@ -200,7 +199,9 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
 
     result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY: READWRITE));
 
+//#ifndef VANCOUVER_API
     if (result == BE_SQLITE_SCHEMA)
+//#endif
         {
         Db::OpenParams openParamUpdate(READWRITE);
 
@@ -211,10 +212,13 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
         assert(result == BE_SQLITE_OK);
-        
-        UpdateDatabase();
 
-        m_database->CloseDb();
+        if (result == BE_SQLITE_OK)
+        {
+            UpdateDatabase();
+
+            m_database->CloseDb();
+        }
 
         result = m_database->OpenBeSQLiteDb(filename, Db::OpenParams(openReadOnly ? READONLY : READWRITE));
         }
@@ -411,8 +415,20 @@ DbResult SMSQLiteFile::CreateTables()
     return result == BE_SQLITE_OK;
 }
 
-    bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type)
+bool SMSQLiteFile::Create(BENTLEY_NAMESPACE_NAME::WString& filename, SQLDatabaseType type)
     {
+    BeFileName sqlFileName(filename.GetWCharCP());
+
+#ifndef VANCOUVER_API
+    if (!sqlFileName.GetDirectoryName().DoesPathExist())
+        BeFileName::CreateNewDirectory(sqlFileName.GetDirectoryName().GetWCharCP());
+#else
+    BeFileName path(sqlFileName.GetWCharCP());
+    BeFileName dirname(BeFileName::GetDirectoryName(path).GetWCharCP());
+    if (!BeFileName::DoesPathExist(dirname))
+        BeFileName::CreateNewDirectory(dirname.GetWCharCP());
+#endif
+
     Utf8String utf8FileName(filename);            
     return Create(utf8FileName.c_str(), type);
     }
@@ -593,6 +609,35 @@ bool SMSQLiteFile::GetNodeHeader(SQLiteNodeHeader& nodeHeader)
     stmt->ClearBindings();
     return true;
     }
+
+bool SMSQLiteFile::SetProperties(const Json::Value& properties)
+{
+    CachedStatementPtr stmt;
+    Utf8String propertiesStr(Json::FastWriter().write(properties));
+    m_database->GetCachedStatement(stmt, "UPDATE SMFileMetadata SET Properties=?");
+
+    BIND_VALUE_STR(stmt, 1, propertiesStr, MAKE_COPY_NO);
+
+    DbResult status = stmt->Step();
+
+    assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
+    return ((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
+}
+
+bool SMSQLiteFile::GetProperties(Json::Value& properties)
+{
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT Properties  FROM SMFileMetadata");
+    DbResult status = stmt->Step();
+
+    Utf8String propertiesUtf8 = GET_VALUE_STR(stmt, 0);
+    assert((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW)); 
+
+    Json::Reader reader;
+    reader.parse(propertiesUtf8, properties);
+
+    return !propertiesUtf8.empty();
+}
 
 void SMSQLiteFile::GetPoints(int64_t nodeID, bvector<uint8_t>& pts, size_t& uncompressedSize)
     {
@@ -1132,6 +1177,21 @@ size_t SMSQLiteFile::GetTextureByteCount(int64_t nodeID)
     return stmt->GetValueInt64(0);
     }
 
+size_t SMSQLiteFile::GetTextureCompressedByteCount(int64_t nodeID)
+    {
+    std::lock_guard<std::mutex> lock(dbLock);
+    CachedStatementPtr stmt;
+    m_database->GetCachedStatement(stmt, "SELECT length(TexData) FROM SMTexture WHERE NodeId=?");
+    stmt->BindInt64(1, nodeID);
+    DbResult status = stmt->Step();
+    // assert(status == BE_SQLITE_ROW);
+    if (status == BE_SQLITE_DONE || stmt->GetValueInt64(0) == 0)
+        {
+        return 0;
+        }
+    return stmt->GetValueInt64(0);
+    }
+
 size_t SMSQLiteFile::GetNumberOfUVs(int64_t nodeID)
     {
     std::lock_guard<std::mutex> lock(dbLock);
@@ -1179,18 +1239,6 @@ size_t SMSQLiteFile::GetNumberOfMetadataChars(int64_t nodeId)
 #endif
 
 
-void SMSQLiteFile::GetAllClipIDs(bvector<uint64_t>& allIds)
-    {
-    std::lock_guard<std::mutex> lock(dbLock);
-    CachedStatementPtr stmt;
-    m_database->GetCachedStatement(stmt, "SELECT PolygonId FROM SMClipDefinitions");
-    DbResult status = stmt->Step();
-    while (status == BE_SQLITE_ROW)
-        {
-        allIds.push_back(stmt->GetValueInt64(0));
-        status = stmt->Step();
-        }
-    }
 
 
     bool SMSQLiteFile::SetWkt(WCharCP extendedWkt)
@@ -1294,6 +1342,14 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
     BeAssert(m_database->IsTransactionActive());
     Savepoint s(*m_database, "sources");
     s.Begin();
+
+    CachedStatementPtr stmtClear;
+    //Savepoint insertTransaction(*m_database, "replace");
+    m_database->GetCachedStatement(stmtClear, "DELETE FROM SMSources");
+
+    DbResult statusClear = stmtClear->Step();
+    assert(statusClear == BE_SQLITE_DONE);
+
     std::vector<SourceDataSQLite> vecSourceDataSQLite = sourcesData.GetSourceDataSQLite();
 
     for (SourceDataSQLite& sourceData : vecSourceDataSQLite)
@@ -1402,11 +1458,7 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
             stmtSeq->BindInt(6, pos);
             stmtSeq->Step();
             }
-#ifdef VANCOUVER_API
-        s.Save();
-#else
         s.Save("newSource");
-#endif
    }
     CachedStatementPtr stmtTest;
     m_database->GetCachedStatement(stmtTest, "SELECT COUNT(MasterHeaderId) FROM SMMasterHeader WHERE MasterHeaderId=?");
@@ -1430,10 +1482,10 @@ bool SMSQLiteFile::SaveSource(SourcesDataSQLite& sourcesData)
 
     }
     
-    stmt->BindInt64(1, id);
-    stmt->BindInt64(2, sourcesData.GetLastModifiedCheckTime());
-    stmt->BindInt64(3, sourcesData.GetLastModifiedTime());
-    stmt->BindInt64(4, sourcesData.GetLastSyncTime());
+    stmt->BindInt64(1, id);    
+    stmt->BindInt64(2, sourcesData.GetLastModifiedTime());
+    stmt->BindInt64(3, sourcesData.GetLastSyncTime());
+    stmt->BindInt64(4, sourcesData.GetLastModifiedCheckTime());
 
     if (nRows != 0)
         stmt->BindInt64(5, id);
@@ -1515,24 +1567,25 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
         while (stmtSequence->Step() == BE_SQLITE_ROW)
             {
             ImportCommandData data;
-            if (!stmt->IsColumnNull(0))
+            
+            if (!stmtSequence->IsColumnNull(0))
                 {
-                data.sourceLayerID = stmt->GetValueInt(0);
+                data.sourceLayerID = stmtSequence->GetValueInt(0);
                 data.sourceLayerSet = true;
                 }
-            if (!stmt->IsColumnNull(1))
+            if (!stmtSequence->IsColumnNull(1))
                 {
-                data.targetLayerID = stmt->GetValueInt(1);
+                data.targetLayerID = stmtSequence->GetValueInt(1);
                 data.targetLayerSet = true;
                 }
-            if (!stmt->IsColumnNull(2))
+            if (!stmtSequence->IsColumnNull(2))
                 {
-                data.sourceTypeID = stmt->GetValueInt(2);
+                data.sourceTypeID = stmtSequence->GetValueInt(2);
                 data.sourceTypeSet = true;
                 }
-            if (!stmt->IsColumnNull(3))
+            if (!stmtSequence->IsColumnNull(3))
                 {
-                data.targetTypeID = stmt->GetValueInt(3);
+                data.targetTypeID = stmtSequence->GetValueInt(3);
                 data.targetTypeSet = true;
                 }
             sequenceData.push_back(data);
@@ -1543,14 +1596,16 @@ bool SMSQLiteFile::LoadSources(SourcesDataSQLite& sourcesData)
 
     CachedStatementPtr stmt2;
     m_database->GetCachedStatement(stmt2, "SELECT LastModifiedTime, LastSyncTime, CheckTime"
-        " FROM SMMasterHeader WHERE MasterHEaderId=?");
+        " FROM SMMasterHeader WHERE MasterHeaderId=?");
     size_t id = 0;
     stmt2->BindInt64(1, id);
-    stmt2->Step();
-
-    sourcesData.SetLastModifiedCheckTime(stmt->GetValueInt64(0));
-    sourcesData.SetLastModifiedTime(stmt->GetValueInt64(1));
-    sourcesData.SetLastSyncTime(stmt->GetValueInt64(2));
+    DbResult result = stmt2->Step();
+    
+    assert(result == BE_SQLITE_ROW);
+        
+    sourcesData.SetLastModifiedTime(stmt2->GetValueInt64(0));
+    sourcesData.SetLastSyncTime(stmt2->GetValueInt64(1));
+    sourcesData.SetLastModifiedCheckTime(stmt2->GetValueInt64(2));
 
     return true;
 }
@@ -1585,3 +1640,11 @@ bool SMSQLiteFile::SetSingleFile(bool isSingleFile)
     return ((status == BE_SQLITE_DONE) || (status == BE_SQLITE_ROW));
 }
 
+void SMSQLiteFile::Compact()
+{
+	m_database->SaveChanges();
+	Savepoint* savepoint = m_database->GetSavepoint(0);
+	savepoint->Commit(nullptr);
+	m_database->TryExecuteSql("VACUUM");
+	savepoint->Begin();
+}

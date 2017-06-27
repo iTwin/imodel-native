@@ -6,12 +6,13 @@
 |       $Date: 2012/03/21 18:37:07 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
 /*__PUBLISH_SECTION_START__*/
+typedef uint8_t byte;
 
 #include <GeoCoord/BaseGeoCoord.h>
 #include <TerrainModel/TerrainModel.h>
@@ -38,8 +39,11 @@ namespace BENTLEY_NAMESPACE_NAME
 #endif
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
+
+
 struct IScalableMeshCreator;
 typedef RefCountedPtr<IScalableMeshCreator>            IScalableMeshCreatorPtr;
+
  
 /*=================================================================================**//**
 * Interface implemented by MRDTM engines.
@@ -73,10 +77,10 @@ public:
 
         //BENTLEY_SM_EXPORT bool                    AreAllSourcesReachable     () const;
 
-        BENTLEY_SM_EXPORT StatusInt               Create(bool isSingleFile = true, bool restrictLevelForPropagation = false);
+        BENTLEY_SM_EXPORT StatusInt               Create(bool isSingleFile = true, bool restrictLevelForPropagation = false, bool doPartialUpdate = false);
 
-        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP, Transform unitTransform = Transform::FromIdentity());
-        BENTLEY_SM_EXPORT StatusInt               SetTextureProvider(ITextureProviderPtr texProvider, Transform unitTransform = Transform::FromIdentity());
+        BENTLEY_SM_EXPORT StatusInt               SetTextureMosaic(MOSAIC_TYPE* mosaicP);
+        BENTLEY_SM_EXPORT StatusInt               SetTextureProvider(ITextureProviderPtr texProvider);
 
 
         // TDORAY: Rename in GetGCS once GetBaseGCS is used.
@@ -114,12 +118,7 @@ public:
         BENTLEY_SM_EXPORT StatusInt               SetBaseGCS                 (const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& 
                                                                                                     gcsPtr);
 
-        BENTLEY_SM_EXPORT  void                   SetBaseExtraFilesPath(const WString& path);
-
-        BENTLEY_SM_EXPORT  bool                   IsCanceled();
-
-
-        BENTLEY_SM_EXPORT  void                   Cancel();
+        BENTLEY_SM_EXPORT  IScalableMeshProgress* GetProgress();
 
 
         BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath,
@@ -128,7 +127,7 @@ public:
         BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const IScalableMeshPtr&     scmPtr,
                                                                                      StatusInt&                  status);
 
-        BENTLEY_SM_EXPORT StatusInt  SetTextureStreamFromUrl(WString url, Transform unitTransform = Transform::FromIdentity());
+        BENTLEY_SM_EXPORT StatusInt  SetTextureStreamFromUrl(WString url);
 
        /* BENTLEY_SM_EXPORT static IScalableMeshCreatorPtr GetFor                     (const WChar*              filePath);
 

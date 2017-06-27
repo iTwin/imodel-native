@@ -6,7 +6,7 @@
 |       $Date: 2011/11/22 16:26:59 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -74,6 +74,10 @@ private:
 
     virtual void                                _Read                              () = 0;
     virtual bool                                _Next                              () = 0;
+
+    virtual size_t                              _GetPhysicalSize() = 0;
+
+    virtual size_t                              _GetReadPosition() = 0;
 
 protected:
     struct                                      Handler;

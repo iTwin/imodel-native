@@ -289,17 +289,29 @@ int loadFunc(DTMFeatureType dtmFeatureType, int numTriangles, int numMeshPts, DP
     return SUCCESS;
     }
 
+void print_polygonarray(std::string& s, const char* tag, DPoint3d* polyArray, int polySize)
+    {
+    s += tag;
+    s += " : ARRAY " + std::to_string((long long)polySize) + " POINTS \n";
+    for (int i = 0; i < polySize; i++)
+        {
+        s += "POINT (" + std::to_string(polyArray[i].x) + "," + std::to_string(polyArray[i].y) + "," + std::to_string(polyArray[i].z) + ")\n";
+        }
+    }
+
 void RunDTMClipTest()
     {
-    WString pathMeshes = L"E:\\makeTM\\meshes\\";
-    WString pathPolys = L"E:\\makeTM\\polys\\";
+    WString pathMeshes = L"E:\\makeTM\\85\\meshes\\";
+    WString pathPolys = L"E:\\makeTM\\85\\polys\\";
     bvector<int> meshes(1);
     meshes[0] = 0;
-    bvector<int> polys(1);
-    for (size_t polyn = 11; polyn < 12; polyn++)
-        polys[polyn-11] = (int)polyn;
-    polys.push_back(43);
-    //polys[1] = 1;
+    bvector<int> polys(4);
+   // for (size_t polyn = 0; polyn < 11; polyn++)
+   //     polys[polyn] = (int)polyn;
+    polys[0] = 1;
+    polys[1] = 2;
+    polys[2] = 3;
+    polys[3] = 4;
    // polys[2] = 2;
 
     bvector<bvector<DPoint3d>> polyDefs(polys.size());
@@ -370,17 +382,33 @@ void RunDTMClipTest()
             }*/
             userTag++;
             }
+
+                    {
+                    WString str(L"e:\\makeTM\\endtm");
+                    str.append(L".bcdtm");
+                    bcdtmWrite_toFileDtmObject(mesh->GetBcDTM()->GetTinHandle(), str.c_str());
+                        }
+
         BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*mesh->GetBcDTM());
         //en->SetUseRealPointIndexes(true);
         en->SetExcludeAllRegions();
         en->SetMaxTriangles(2000000);
         bmap<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints(DPoint3dZYXTolerancedSortComparison(1e-6, 0));
+        std::ofstream stats;
+        stats.open("E:\\makeTM\\stats.txt", std::ios_base::trunc);
         for (size_t i = 0; i < (size_t)mesh->GetBcDTM()->GetPointCount(); ++i)
             {
             DPoint3d pt;
             mesh->GetBcDTM()->GetPoint((int)i, pt);
             mapOfPoints[pt] = (int)i;
+
+            stats << "INDEX " + std::to_string(i) + " IS VERTEX: ";
+            std::string s;
+            print_polygonarray(s, "", &pt, 1);
+            stats << s;
             }
+        stats.close();
+
         bvector<DPoint3d> newVertices;
         bvector<int32_t> newIndices;
         std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints2(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
@@ -412,7 +440,7 @@ void RunDTMClipTest()
                 newIndices.push_back(idx[2]);
                 }
             }
-        WString name = L"E:\\makeTM\\testClip.m";
+        WString name = L"E:\\makeTM\\testClipOut.m";
         LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
         for (size_t j = 0; j < polys.size(); ++j)
             {
@@ -422,6 +450,36 @@ void RunDTMClipTest()
                 {
                 PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
                 vec->CopyFrom(*pf);
+                newVertices.clear();
+                newIndices.clear();
+                mapOfPoints2.clear();
+                for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+                    {
+                    DPoint3d face[3];
+                    int32_t idx[3] = { -1, -1, -1 };
+                    for (size_t i = 0; i < 3; ++i)
+                        {
+                        face[i] = addedFacets->GetPointCP()[i];
+                        idx[i] = mapOfPoints2.count(face[i]) != 0 ? mapOfPoints2[face[i]] : -1;
+                        }
+                    for (size_t i = 0; i < 3; ++i)
+                        {
+                        if (idx[i] == -1)
+                            {
+                            newVertices.push_back(face[i]);
+                            idx[i] = (int)newVertices.size();
+                            mapOfPoints2[face[i]] = idx[i] - 1;
+                            }
+                        else idx[i]++;
+                        }
+                    newIndices.push_back(idx[0]);
+                    newIndices.push_back(idx[1]);
+                    newIndices.push_back(idx[2]);
+                    }
+            WString name = L"E:\\makeTM\\testClipOut";
+            name.append(std::to_wstring(j).c_str());
+            name.append(L".m");
+            LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
                 //PolyfaceTag(vec, mesh);
                 for (size_t idx = 0; idx < vec->GetPointIndexCount(); idx += 3)
                     {
@@ -459,6 +517,82 @@ void RunDTMClipTest()
     std::cout << (nNotContained > 0 ? " FAIL " : " PASS ") << std::endl;
     std::cout << nNotContained << " NOT CONTAINED " << std::endl;
     }
+
+    bvector<DPoint3d> ReadPts(WCharCP filename)
+        {
+        FILE* fp = bcdtmFile_open(filename, L"rb");
+        size_t numPts = 0;
+        bcdtmFread(&numPts, sizeof(numPts), 1, fp);
+
+        bvector<DPoint3d> pts;
+        pts.resize(numPts);
+        bcdtmFread(pts.data(), sizeof(pts[0]), numPts, fp);
+
+        bcdtmFile_close(fp);
+        return pts;
+        }
+
+    void DarylsTestFunction()
+        {
+        BC_DTM_OBJ *dtmP = NULL;
+        const wchar_t* fileName = L"e:\\makeTM\\newcliptm.tin";
+
+        //fileName = L"D:\\data\\elenie\\clipIssue.bcdtm";
+        if (bcdtmRead_fromFileDtmObject(&dtmP, fileName))
+            return;
+
+        bvector<DPoint3d> pts;
+        DTMFeatureId* featureIdP = nullptr;
+        long numFeatureIds;
+        pts = ReadPts(L"e:\\makeTM\\polys\\7.p");
+        bcdtmInsert_internalDtmFeatureMrDtmObject(dtmP, DTMFeatureType::Region, 1, 2, 0, &featureIdP, &numFeatureIds, pts.data(), (long)pts.size(), nullptr);
+
+        pts = ReadPts(L"e:\\makeTM\\polys\\9.p");
+        bcdtmInsert_internalDtmFeatureMrDtmObject(dtmP, DTMFeatureType::Region, 1, 2, 0, &featureIdP, &numFeatureIds, pts.data(), (long)pts.size(), nullptr);
+
+        bcdtmWrite_toFileDtmObject(dtmP, L"e:\\makeTM\\darylstest.bcdtm");
+
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMPtr mesh2 = BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTM::CreateFromDtmHandle(*dtmP);
+        BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumeratorPtr en = BENTLEY_NAMESPACE_NAME::TerrainModel::DTMMeshEnumerator::Create(*mesh2->GetBcDTM());
+        en->SetExcludeAllRegions();
+        en->SetMaxTriangles(2000000);
+        bvector<DPoint3d> newVertices;
+        bvector<int32_t> newIndices;
+        std::map<DPoint3d, int32_t, DPoint3dZYXTolerancedSortComparison> mapOfPoints2(DPoint3dZYXTolerancedSortComparison(1e-12, 0));
+        for (PolyfaceQueryP pf : *en)
+            {
+            PolyfaceHeaderPtr vec = PolyfaceHeader::CreateFixedBlockIndexed(3);
+            vec->CopyFrom(*pf);
+            for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*vec); addedFacets->AdvanceToNextFace();)
+                {
+                DPoint3d face[3];
+                int32_t idx[3] = { -1, -1, -1 };
+                for (size_t i = 0; i < 3; ++i)
+                    {
+                    face[i] = addedFacets->GetPointCP()[i];
+                    idx[i] = mapOfPoints2.count(face[i]) != 0 ? mapOfPoints2[face[i]] : -1;
+                    }
+                for (size_t i = 0; i < 3; ++i)
+                    {
+                    if (idx[i] == -1)
+                        {
+                        newVertices.push_back(face[i]);
+                        idx[i] = (int)newVertices.size();
+                        mapOfPoints2[face[i]] = idx[i] - 1;
+                        }
+                    else idx[i]++;
+                    }
+                newIndices.push_back(idx[0]);
+                newIndices.push_back(idx[1]);
+                newIndices.push_back(idx[2]);
+                }
+            }
+                {
+                WString name = L"E:\\makeTM\\testClip.m";
+                LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, newVertices.size(), newIndices.size(), &newVertices[0], &newIndices[0])
+                    }
+        }
+
 
 void RunPrecisionTest(WString& stmFileName)
     {
@@ -652,7 +786,19 @@ void RunDTMSTMTriangulateTest()
     fread(&allIndices[0], sizeof(int32_t), nIndices, mesh);
     TerrainModel::BcDTMPtr bcdtm;
     //SortPoints(allVerts, allIndices);
-    MakeDTM(bcdtm, allVerts, allIndices);
+    for (size_t i = 5065; i < 10000; i++)
+        {
+        bvector<int32_t> indicesList;
+        indicesList.insert(indicesList.end(), allIndices.begin(), allIndices.end());
+        for (size_t j = 0; j < i; ++j)
+            {
+            indicesList.push_back(allIndices[allIndices.size() - 3]);
+            indicesList.push_back(allIndices[allIndices.size() - 2]);
+            indicesList.push_back(allIndices[allIndices.size() - 1]);
+            }
+
+        MakeDTM(bcdtm, allVerts, indicesList);
+        }
     }
 
 void LoadMesh(bvector<DPoint3d>& vertices, bvector<int>& indices, WString& path)
@@ -1270,11 +1416,11 @@ Dgn::DgnPlatformLib::Initialize(host, false);
    /* WString stmFileName(argv[1]);
     RunPrecisionTest(stmFileName);*/
 
-
-    RunDTMClipTest();
+    //DarylsTestFunction();
+   // RunDTMClipTest();
     //RunDTMTriangulateTest();
-   //RunDTMSTMTriangulateTest();
-  //  RunSelectPointsTest();
+   RunDTMSTMTriangulateTest();
+   // RunSelectPointsTest();
     //RunIntersectRay();
     //WString stmFileName(argv[1]);
    // RunParseTree(stmFileName);

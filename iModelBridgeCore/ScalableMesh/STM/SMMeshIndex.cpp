@@ -11,6 +11,8 @@ USING_NAMESPACE_IMAGEPP
 #include "SMMeshIndex.hpp"
 #include "ScalableMeshQuery.h"
 
+
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 //template class SMPointIndex<DPoint3d, ISMStore::Extent3d64f>;
@@ -24,6 +26,48 @@ template class SMMeshIndex<DPoint3d, DRange3d>;
 template class SMMeshIndexNode<DPoint3d, DRange3d>;
 
 template class ISMPointIndexMesher<DPoint3d, DRange3d>;
+
+void ComputeAndRemoveIntersections(bvector<bvector<DPoint3d>>& polygons, bvector<uint64_t>& ids)
+{
+    bvector<bvector<DPoint3d>> outPolys;
+    bvector<uint64_t> outIds;
+
+    bset<size_t> canceledPolys;
+
+    //"count out" polygons that intersect any previous ones
+    for (auto& poly : polygons)
+    {
+        DRange3d extPoly = DRange3d::From(poly);
+        auto curvePtr = ICurvePrimitive::CreateLineString(poly);
+        auto curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+        size_t polyI = &poly - &polygons.front();
+        bool foundIntersect = false;
+        for (size_t index = 0; index < polyI; ++index)
+        {
+            if (canceledPolys.count(index) > 0) continue;
+            DRange3d extOfSecondPolygon = DRange3d::From(polygons[index]);
+            if (!extPoly.IntersectsWith(extOfSecondPolygon, 2)) continue;
+
+            //real intersect
+
+            auto outerCurvePtr = ICurvePrimitive::CreateLineString(polygons[index]);
+            auto outerCurveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, outerCurvePtr);
+
+            const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *outerCurveVectorPtr);
+            if (!intersection.IsNull())
+                foundIntersect = true;
+        }
+        if (!foundIntersect)
+        {
+            outPolys.push_back(poly);
+            outIds.push_back(ids[polyI]);
+        }
+        else canceledPolys.insert(polyI);
+    }
+
+    polygons.swap(outPolys);
+    ids.swap(outIds);
+}
 
 template<typename T> size_t GetSizeInMemory(T* item)
     {

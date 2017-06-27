@@ -148,6 +148,7 @@ PointHandler& Surface::GetPointHandler () { return m_implP->m_pointHandler; }
 LinearHandler& Surface::GetLinearHandler () { return m_implP->m_linearHandler; }
 TINAsLinearHandler& Surface::GetTINLinearHandler () { return m_implP->m_tinLinearHandler; }
 
+#define FILE_MINUS_GCS_UNIT_DIFF_PRECISION 0.00000001
 /*---------------------------------------------------------------------------------**//**
 * @description     
 * @bsiclass                                                 Jean-Francois.Cote   02/2011
@@ -189,6 +190,51 @@ private:
     * @description   
     * @bsimethod                                                Jean-Francois.Cote   02/2011
     +---------------+---------------+---------------+---------------+---------------+------*/
+    double GetFileUnitToMeterScale(bool& unitFound) const
+        {
+        FileUnit fileUnit = m_landImporterP->GetFileUnit();    
+        unitFound = true;
+
+        switch (fileUnit)
+            {
+            case FileUnit::Unknown:
+                unitFound = false;
+                return 1.0;                
+                break;
+            case FileUnit::Millimeter:
+                return 0.001;
+                break;
+            case FileUnit::Centimeter:
+                return 0.01;
+                break;
+            case FileUnit::Meter:
+                return 1.0;                
+                break;
+            case FileUnit::Kilometer:
+                return 1000;
+                break;
+            case FileUnit::Inch:
+                return 0.02540000;
+                break;
+            case FileUnit::Foot:
+                return 0.3048000;
+                break;
+            case FileUnit::USSurveyFoot:
+                return 1200.0 / 3937.0;
+                break;
+            case FileUnit::Mile:
+                return 1609.3440;
+                break;
+            default:
+                unitFound = false;
+                assert(!"Unknown LandXML unit");                
+                break;
+            }
+        return 1.0;
+        }
+    
+    
+
     virtual ContentDescriptor           _CreateDescriptor                              () const override       
         {
         ContentDescriptor contentDesc(L"");
@@ -198,51 +244,36 @@ private:
         GeoCoordinates::BaseGCSPtr gcsPtr(m_landImporterP->GetGCS());
 
         SMStatus status = S_ERROR;
+
+        bool fileUnitToMetersFound;
+        double fileUnitToMeters = GetFileUnitToMeterScale(fileUnitToMetersFound);
         
         if (gcsPtr.IsValid())
-            {             
+            {                                   
             fileGcs = GetGCSFactory().Create(gcsPtr, status);
+
+            if (status == S_SUCCESS)
+                {             
+                double metersToFileUnit = gcsPtr->UnitsFromMeters();
+                
+                //OpenRoad ConceptStation might create LandXML with unit different then the GCS unit for backcompatibility with PowerInroads SS2, 
+                //thus the local unit transform.
+                if (fileUnitToMetersFound && fabs(1 / metersToFileUnit - fileUnitToMeters) > FILE_MINUS_GCS_UNIT_DIFF_PRECISION)
+                    {                                                                         
+                    double localToGlobalTransformScale = fileUnitToMeters * metersToFileUnit;
+
+                    TransfoModel transfoModel(TransfoModel::CreateScalingFrom(localToGlobalTransformScale));
+                    TransfoModel invTransfoModel(TransfoModel::CreateScalingFrom(1 / localToGlobalTransformScale));
+                    LocalTransform localTransform(LocalTransform::CreateFrom(transfoModel, invTransfoModel));
+                    fileGcs.SetLocalTransform(localTransform);
+                    }
+                }
             }
-
+                
         if (status != S_SUCCESS)
-            {            
-            FileUnit fileUnit = m_landImporterP->GetFileUnit();
+            {             
             WCharCP fileUnitStr = m_landImporterP->GetFileUnitString();
-
-            switch (fileUnit)
-                {
-                case FileUnit::Unknown :
-                    fileGcs = GetGCSFactory().Create(Unit::GetMeter());
-                    break;
-                case FileUnit::Millimeter:
-                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 0.001));
-                    break;
-                case FileUnit::Centimeter:
-                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 0.01));
-                    break;
-                case FileUnit::Meter:
-                    fileGcs = GetGCSFactory().Create(Unit::GetMeter());
-                    break;
-                case FileUnit::Kilometer:
-                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 1000));
-                    break;
-                case FileUnit::Inch:
-                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 0.02540000));
-                    break;
-                case FileUnit::Foot:
-                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 0.3048000));
-                    break;
-                case FileUnit::USSurveyFoot:
-                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 1200.0 / 3937.0));
-                    break;
-                case FileUnit::Mile:                                        
-                    fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, 1609.3440));
-                    break;
-                default:
-                    assert(!"Unknown LandXML unit");
-                    fileGcs = GetGCSFactory().Create(Unit::GetMeter());
-                    break;
-                }  
+            fileGcs = GetGCSFactory().Create(Unit::CreateLinearFrom(fileUnitStr, fileUnitToMeters));
             }                              
         
         for (auto& surface : m_surfaces)
@@ -473,6 +504,16 @@ private:
     virtual bool                    _Next                              () override
         {
         return false;
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
         }
     };
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/ScalableMesh/ScalableMeshLib.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -30,6 +30,7 @@ public:
 
             ScalableMeshAdmin*            m_scalableTerrainModelAdmin;
             WsgTokenAdmin*                m_wsgTokenAdmin;
+            SASTokenAdmin*                m_sasTokenAdmin;
             SSLCertificateAdmin*          m_sslCertificateAdmin;
 
             bmap<WString, IScalableMesh*>* m_smPaths;
@@ -38,6 +39,8 @@ public:
             BENTLEY_SM_EXPORT virtual ScalableMeshAdmin& _SupplyScalableMeshAdmin();            
 
             BENTLEY_SM_EXPORT virtual WsgTokenAdmin& _SupplyWsgTokenAdmin();
+
+            BENTLEY_SM_EXPORT virtual SASTokenAdmin& _SupplySASTokenAdmin();
 
             BENTLEY_SM_EXPORT virtual SSLCertificateAdmin& _SupplySSLCertificateAdmin();
 
@@ -49,6 +52,7 @@ public:
 
             ScalableMeshAdmin&      GetScalableMeshAdmin()              { return *m_scalableTerrainModelAdmin; }
             WsgTokenAdmin&          GetWsgTokenAdmin()                  { return *m_wsgTokenAdmin; }
+            SASTokenAdmin&          GetSASTokenAdmin()                  { return *m_sasTokenAdmin; }
             SSLCertificateAdmin&    GetSSLCertificateAdmin()            { return *m_sslCertificateAdmin; }
             
         //! Returns true if this Host has been initialized; otherwise, false
@@ -61,8 +65,8 @@ public:
         //! @param[in] onProgramExit Whether the entire program is exiting. If true, some cleanup operations can be skipped for faster program exits.
         BENTLEY_SM_EXPORT void Terminate(bool onProgramExit);
 
-        IScalableMeshPtr GetRegisteredScalableMesh(const WString& path);
-        void             RemoveRegisteredScalableMesh(const WString& path);
+        BENTLEY_SM_EXPORT IScalableMeshPtr GetRegisteredScalableMesh(const WString& path);
+        BENTLEY_SM_EXPORT void             RemoveRegisteredScalableMesh(const WString& path);
         void RegisterScalableMesh(const WString& path, IScalableMeshPtr& ref);
         };
 

@@ -6,7 +6,12 @@
 
 
 #define DATA_SOURCE_SERVICE_AZURE_DEFAULT_SEGMENT_SIZE  (32 * 1024)
+
+#ifndef NDEBUG
+#define DATA_SOURCE_SERVICE_AZURE_DEFAULT_TIMEOUT       (6000 * 1000)
+#else
 #define DATA_SOURCE_SERVICE_AZURE_DEFAULT_TIMEOUT       (60 * 1000)
+#endif
 
 class DataSourceServiceAzure : public DataSourceService
 {
@@ -34,3 +39,16 @@ public:
         DataSourceBuffer::Timeout       getDefaultTimeout               (void);
 };
 
+class DataSourceServiceAzureCURL : public DataSourceServiceAzure
+    {
+
+    public:
+
+        typedef DataSourceServiceAzure   Super;
+
+    public:
+
+                                        DataSourceServiceAzureCURL          (DataSourceManager &manager, const ServiceName &service);
+
+        DataSourceAccount *             createAccount                   (const AccountName & account, const DataSourceAccount::AccountIdentifier identifier, const DataSourceAccount::AccountKey &key);
+    };

@@ -6,7 +6,7 @@
 |       $Date: 2013/03/27 15:53:21 $
 |     $Author: Jean-Francois.Cote $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -989,6 +989,24 @@ bool GCSMathematicalDomainsOverlap(BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseG
 
     return !(pDomainIntersection->IsEmpty());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    MathieuSt-Pierre  04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void GetCoverageTerrainAbsFileName(BeFileName& coverageFileName, const WString& baseExtraFilesPath, const Utf8String& coverageName)
+    {
+    coverageFileName = BeFileName(baseExtraFilesPath.GetWCharCP());
+#ifndef VANCOUVER_API
+    coverageFileName = coverageFileName.GetDirectoryName();
+#else
+    coverageFileName = BeFileName(BeFileName::GetDirectoryName(coverageFileName).GetWCharCP());
+#endif
+
+    BeFileName coverageBeFileName(coverageName);
+    coverageFileName.AppendString(coverageBeFileName);
+    coverageFileName.AppendString(L".3sm");
+    }
+
 
 
 #ifdef SCALABLE_MESH_ATP

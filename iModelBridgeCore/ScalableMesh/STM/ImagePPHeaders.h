@@ -1,3 +1,4 @@
+#include "../mki/StaticAnalysisWarningsPush.h"
 #include <ImagePP/h/ExportMacros.h>
 #include <ImagePP/h/ImageppAPI.h>
 
@@ -25,7 +26,7 @@
 //#include <ImagePP/all/h/HVEDTMLinearFeature.h>
 #include <ImagePP/all/h/HVE2DComplexShape.h>
 #include <ImagePP/all/h/HFCException.h>
-
+#include <ImagePP/all/h/HCDPacket.h>
 
 #include "SMSQLiteFile.h"
 
@@ -54,3 +55,4 @@
 #include <RasterCore\RasterDEMFilters.h>
 #include <RasterCore\msrastercore.h>
 #endif
+#include "../mki/StaticAnalysisWarningsPop.h"

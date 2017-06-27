@@ -37,8 +37,8 @@ protected:
     BufferData                        * externalBuffer;
     BufferSize                          externalBufferSize;
 
-    BufferSize                          segmentSize;
-    SegmentIndex                        currentSegmentIndex;
+    BufferSize                          m_segmentSize;
+    SegmentIndex                        m_currentSegmentIndex;
 
     DataSourceStatus                    transferStatus;
 
@@ -58,9 +58,6 @@ protected:
     ActivitySemaphore                &  getActivitySemaphore                (void);
 
     DataSourceStatus                    getDataSourceStatus                 (TimeoutStatus status);
-
-    void                                setTransferStatus                   (DataSourceStatus status);
-    DataSourceStatus                    getTransferStatus                   (void);
 
 public:
 
@@ -97,6 +94,10 @@ public:
 
     void                                updateReadSize                      (DataSourceBuffer::BufferSize readSize);
     DataSourceBuffer::BufferSize        getReadSize                         (void);
+
+    void                                setTransferStatus(DataSourceStatus status);
+    DataSourceStatus                    getTransferStatus(void);
+
 
 };
 

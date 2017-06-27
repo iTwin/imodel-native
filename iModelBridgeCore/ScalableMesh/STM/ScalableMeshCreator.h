@@ -6,7 +6,7 @@
 |       $Date: 2011/12/21 17:04:24 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,6 +32,7 @@
 #include <ScalableMesh/IScalableMeshCreator.h>
 #include <ScalableMesh/IScalableMeshSourceCreator.h>
 #include <ScalableMesh/IScalableMeshNodeCreator.h>
+#include "ScalableMeshProgress.h"
 
 /*----------------------------------------------------------------------+
 | CLASS definitions                                                     |
@@ -98,6 +99,7 @@ inline bool fileExist(const WChar* fileName)
 
 bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename);
 
+
 /*---------------------------------------------------------------------------------**//**
 * @description  
 * @bsiclass                                                  Raymond.Gauthier   06/2011
@@ -153,6 +155,8 @@ struct IScalableMeshCreator::Impl
 
         virtual bool                                IsFileDirty();
 
+        IScalableMeshProgressPtr m_progress;
+
     protected:
         
         HFCPtr<MeshIndexType>               m_dataIndex;
@@ -177,7 +181,7 @@ struct IScalableMeshCreator::Impl
 
 
           HFCPtr<MeshIndexType>                   m_pDataIndex;
-          WString                             m_baseExtraFilesPath;
+          
     public :  
         explicit                            Impl                           (const WChar*                          scmFileName);
         explicit                            Impl                           (const IScalableMeshPtr&                        iDTMFilePtr);
@@ -193,15 +197,15 @@ struct IScalableMeshCreator::Impl
         StatusInt                           LoadFromFile                   ();
         StatusInt                           SaveToFile                     ();  
 
-        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation);  
+        virtual StatusInt                           CreateScalableMesh                    (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate);
 
-        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform = Transform::FromIdentity());
-        StatusInt  SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform = Transform::FromIdentity());
-        StatusInt  SetTextureStreamFromUrl(WString url, Transform unitTransform = Transform::FromIdentity());
+        StatusInt  SetTextureMosaic(HIMMosaic* mosaicP);
+        StatusInt  SetTextureProvider(ITextureProviderPtr provider);
+        StatusInt  SetTextureStreamFromUrl(WString url);
 
-        StatusInt                           Filter                         ();
+        StatusInt                           Filter                         ();        
 
-        void                               SetBaseExtraFilesPath(const WString& path);
+        IScalableMeshProgressPtr            GetProgress();
 
         bool                               IsCanceled();
 

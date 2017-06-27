@@ -744,6 +744,11 @@ bool IScalableMeshMesh::IntersectRay(DPoint3d& pt, const DRay3d& ray) const
     return _IntersectRay(pt,ray);
     }
 
+bool IScalableMeshMesh::IntersectRay(bvector<DTMRayIntersection>& pts, const DRay3d& ray) const
+    {
+    return _IntersectRay(pts, ray);
+    }
+
 bool IScalableMeshMesh::FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d) const
     {
     return _FindTriangleForProjectedPoint(outTriangle, point, use2d);
@@ -985,7 +990,11 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
     if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
     volatile double maxParam = -DBL_MAX;
     volatile bool canContinue = true;
-#pragma omp parallel for firstprivate(use2d)
+
+    // disable static analyzer warning : Code analysis ignores OpenMP constructs; analyzing single-threaded code.
+    #pragma warning (push)
+    #pragma warning (disable: 6993)
+    #pragma omp parallel for firstprivate(use2d)
     for (int i = 0; i < m_nbFaceIndexes; i += 3)
         {
         if (canContinue)
@@ -1029,6 +1038,8 @@ bool ScalableMeshMesh::_FindTriangleForProjectedPoint(int* outTriangle, DPoint3d
             }
         //if (maxParam > -DBL_MAX) return true;
         }
+    #pragma warning (pop)
+
     if (maxParam > -DBL_MAX) return true;
     return false;
     }
@@ -1548,8 +1559,15 @@ DTMStatusInt ScalableMeshMesh::_GetAsBcDTM(BcDTMPtr& bcdtm)
         }
     int status = bcdtmObject_storeTrianglesInDtmObject(bcdtm->GetTinHandle(), DTMFeatureType::GraphicBreak, &pts[0], (int)pts.size(), &indices[0], (int)indices.size() / 3);
 
+#ifndef NDEBUG
+   /* WString name = L"C:\\work\\2017q2\\CS\\bcdtm_";
+    name.append(std::to_wstring(indices.size()).c_str());
+    name.append(L".bcdtm");
+    bcdtmWrite_toFileDtmObject(bcdtm->GetTinHandle(), name.c_str());*/
+#endif
 
     assert(status == SUCCESS);
+
 
     status = bcdtmObject_triangulateStmTrianglesDtmObject(bcdtm->GetTinHandle());
     assert(status == SUCCESS);
@@ -1599,7 +1617,10 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
         pts[2] = m_points[m_faceIndexes[i + 2] - 1];
         if (ray.direction.x == 0 && ray.direction.y == 0 && ray.direction.z == -1)
             {
-            if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
+            if(m_boxes.size() > 0)
+                if (!m_boxes[i/3].IsContainedXY(ray.origin)) continue;
+            else
+                if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
             }
 
         bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
@@ -1610,6 +1631,57 @@ bool ScalableMeshMesh::_IntersectRay(DPoint3d& pt, const DRay3d& ray) const
             minParam = param;
             }
         }
+    return minParam < DBL_MAX;
+    }
+
+bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DRay3d& ray) const
+    {
+    if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
+    double minParam = DBL_MAX;
+ 
+    for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
+        {
+        DPoint3d projectedPt;
+        DPoint3d bary;
+        double param;
+        DPoint3d pts[3];
+        pts[0] = m_points[m_faceIndexes[i] - 1];
+        pts[1] = m_points[m_faceIndexes[i + 1] - 1];
+        pts[2] = m_points[m_faceIndexes[i + 2] - 1];
+        if (ray.direction.x == 0 && ray.direction.y == 0 && ray.direction.z == -1)
+            {
+            if (m_boxes.size() > 0)
+                if (!m_boxes[i / 3].IsContainedXY(ray.origin)) continue;
+                else
+                    if (!DRange3d::From(pts, 3).IsContainedXY(ray.origin)) continue;
+            }
+
+        bool intersectTri = bsiDRay3d_intersectTriangle(&ray, &projectedPt, &bary, &param, pts) && bary.x >= -1.0e-6f
+            && bary.x <= 1.0&& bary.y >= -1.0e-6f && bary.y <= 1.0 && bary.z >= -1.0e-6f && bary.z <= 1.0;
+        //&& param < minParam;
+        if (intersectTri)
+            {
+            DTMRayIntersection rayInter;
+            rayInter.point = projectedPt;
+            rayInter.rayFraction = param;
+
+            DVec3d normal = DVec3d::FromNormalizedCrossProduct(pts[1]-pts[0], pts[2]-pts[0]);
+            rayInter.normal = normal;
+            rayInter.hasNormal = true;
+
+            hits.push_back(rayInter);
+            if (param<minParam)
+                minParam = param;
+            }
+        }
+
+    // Sort
+    DTMIntersectionCompare Comparator;
+    std::sort(hits.begin(), hits.end(), Comparator);
+    
+    // filter the intersections
+    // TODO : need to filter the intersection to remove same points, update normals for degenrate cases
+
     return minParam < DBL_MAX;
     }
 
@@ -1665,6 +1737,22 @@ void ScalableMeshMesh::_WriteToFile(WString& filePath)
     LOG_MESH_FROM_FILENAME_AND_BUFFERS_W(name, m_nbPoints, m_nbFaceIndexes, m_points, m_faceIndexes)
     }
 
+void ScalableMeshMesh::StoreTriangleBoxes()
+    {
+    m_boxes.clear();
+    if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return;
+    for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
+        {
+
+        DPoint3d pts[3];
+        pts[0] = m_points[m_faceIndexes[i] - 1];
+        pts[1] = m_points[m_faceIndexes[i + 1] - 1];
+        pts[2] = m_points[m_faceIndexes[i + 2] - 1];
+        DRange3d range =  DRange3d::From(pts, 3);
+        m_boxes.push_back(range);
+        }
+    }
+
 const Byte* ScalableMeshTexture::_GetData() const
     {
     return m_textureData;
@@ -1693,9 +1781,17 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
         memcpy_s(&dimensionY, sizeof(int), (int*)m_texturePtr->GetData() + 1, sizeof(int));
         m_dimension.y = dimensionY;
         memcpy_s(&m_nbChannels, sizeof(int), (int*)m_texturePtr->GetData() + 2, sizeof(int));
-        m_dataSize = m_dimension.x * m_dimension.y * m_nbChannels;
+        if (!m_texturePtr->IsCompressedType())
+            {
+            m_dataSize = m_dimension.x * m_dimension.y * m_nbChannels;
+            m_textureData = m_texturePtr->GetData() + sizeof(int) * 3;
+            }
+        else
+            {
+            m_dataSize = m_texturePtr->GetSize() - sizeof(int) * 4;
+            m_textureData = m_texturePtr->GetData() + sizeof(int) * 4;
+            }
 
-        m_textureData = m_texturePtr->GetData() + sizeof(int) * 3;
         } 
     else
         {
@@ -2068,6 +2164,45 @@ void ScalableMeshMesh::RecalculateUVs(DRange3d& nodeRange)
         }
     }
 
+//=======================================================================================
+// @description Removes duplicated vertices. This function is used before ScalableMeshMesh::GetAsBcDTM
+//              as DTM library has several functions which react badly to datasets with duplicated
+//              vertices.
+// @bsimethod                                                   Elenie.Godzaridis 04/17
+//=======================================================================================
+void ScalableMeshMesh::RemoveDuplicates()
+{
+	bmap<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> firstOccurences(DPoint3dZYXTolerancedSortComparison(1e-5, 0)); // they use this tolerance in bclib
+
+
+	bvector<DPoint3d> newPoints;
+	bvector<int32_t> newIndices;
+
+	for (size_t i = 0; i < m_nbFaceIndexes; ++i)
+	    {
+		if (firstOccurences.count(m_points[m_faceIndexes[i]-1]) == 0)
+		    {
+			firstOccurences[m_points[m_faceIndexes[i]-1]] = (int32_t)newPoints.size();
+			newPoints.push_back(m_points[m_faceIndexes[i] - 1]);
+		    }
+		newIndices.push_back(firstOccurences[m_points[m_faceIndexes[i] - 1]]+1);
+	    }
+
+	delete[] m_faceIndexes;
+	delete[] m_points;
+
+	m_nbPoints = newPoints.size();
+
+	if (newPoints.size() == 0 || newIndices.size() == 0) return;
+	m_points = new DPoint3d[newPoints.size()];
+	m_faceIndexes = new int32_t[newIndices.size()];
+
+    m_nbFaceIndexes = newIndices.size();
+	memcpy(m_points, newPoints.data(), m_nbPoints * sizeof(DPoint3d));
+	memcpy(m_faceIndexes, newIndices.data(), newIndices.size() * sizeof(int32_t));
+
+}
+
 ScalableMeshMeshWithGraph::ScalableMeshMeshWithGraph(size_t nbPoints, DPoint3d* points, size_t nbFaceIndexes, int32_t* faceIndexes, size_t normalCount, DVec3d* pNormal, int32_t* pNormalIndex, MTGGraph* pGraph, bool is3d, size_t uvCount, DVec2d* pUv, int32_t* pUvIndex)
     : ScalableMeshMesh(nbPoints, points, nbFaceIndexes, faceIndexes, normalCount, pNormal, pNormalIndex, uvCount, pUv, pUvIndex)
     {
@@ -2117,6 +2252,16 @@ size_t IScalableMeshMeshQueryParams::GetLevel()
     {
     return _GetLevel();
     }
+
+double IScalableMeshMeshQueryParams::GetTargetPixelTolerance()
+{
+    return _GetTargetPixelTolerance();
+}
+
+void IScalableMeshMeshQueryParams::SetTargetPixelTolerance(double pixelTol)
+{
+    return _SetTargetPixelTolerance(pixelTol);
+}
 
 bool IScalableMeshMeshQueryParams::GetUseAllResolutions()
     {
@@ -2307,6 +2452,16 @@ bool IScalableMeshMeshFlags::ShouldLoadGraph() const
     return _ShouldLoadGraph();
     }
 
+bool IScalableMeshMeshFlags::ShouldSaveToCache() const
+{
+    return _ShouldSaveToCache();
+}
+
+bool IScalableMeshMeshFlags::ShouldPrecomputeBoxes() const
+{
+    return _ShouldPrecomputeBoxes();
+}
+
 void IScalableMeshMeshFlags::SetLoadTexture(bool loadTexture) 
     {
     _SetLoadTexture(loadTexture);
@@ -2321,6 +2476,17 @@ void IScalableMeshMeshFlags::SetLoadGraph(bool loadGraph)
     {
     _SetLoadGraph(loadGraph);
     }
+
+void IScalableMeshMeshFlags::SetSaveToCache(bool saveToCache)
+{
+    _SetSaveToCache(saveToCache);
+}
+
+void IScalableMeshMeshFlags::SetPrecomputeBoxes(bool precomputeBoxes)
+{
+    _SetPrecomputeBoxes(precomputeBoxes);
+}
+
 
 IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create()
     {
@@ -2350,6 +2516,16 @@ bool ScalableMeshMeshFlags::_ShouldLoadGraph() const
     return m_loadGraph;
     }
 
+bool ScalableMeshMeshFlags::_ShouldSaveToCache() const
+{
+    return m_saveToCache;
+}
+
+bool ScalableMeshMeshFlags::_ShouldPrecomputeBoxes() const
+{
+    return m_precomputeBoxes;
+}
+
 void ScalableMeshMeshFlags::_SetLoadIndices(bool loadIndices)
     {
     m_loadIndices = loadIndices;
@@ -2364,6 +2540,16 @@ void ScalableMeshMeshFlags::_SetLoadGraph(bool loadGraph)
     {
     m_loadGraph = loadGraph;
     }
+
+void ScalableMeshMeshFlags::_SetSaveToCache(bool saveToCache)
+{
+    m_saveToCache = saveToCache;
+}
+
+void ScalableMeshMeshFlags::_SetPrecomputeBoxes(bool precomputeBoxes)
+{
+    m_precomputeBoxes = precomputeBoxes;
+}
 
 bool IScalableMeshNode::ArePoints3d() const
     {
@@ -2410,6 +2596,11 @@ IScalableMeshTexturePtr IScalableMeshNode::GetTexture() const
     return _GetTexture();
     }
 
+IScalableMeshTexturePtr IScalableMeshNode::GetTextureCompressed() const
+    {
+    return _GetTextureCompressed();
+    }
+
 bool IScalableMeshNode::IsTextured() const
     {
     return _IsTextured();
@@ -2429,6 +2620,22 @@ bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetNeighborAt( char relativePo
 bvector<IScalableMeshNodePtr>  IScalableMeshNode::GetChildrenNodes() const
     {
     return _GetChildrenNodes();
+    }
+
+IScalableMeshNodePtr  IScalableMeshNode::GetParentNode() const
+    {
+    return _GetParentNode();
+    }
+
+
+bvector<IScalableMeshNodeEditPtr> IScalableMeshNodeEdit::EditChildrenNodes()
+    {
+    return _EditChildrenNodes();
+    }
+
+IScalableMeshNodeEditPtr  IScalableMeshNodeEdit::EditParentNode()
+    {
+    return _EditParentNode();
     }
 
 DRange3d  IScalableMeshNode::GetNodeExtent() const
@@ -2507,9 +2714,9 @@ bool IScalableMeshNode::IsClippingUpToDate() const
     return _IsClippingUpToDate();
     }
 
-void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes) const
+void IScalableMeshNode::GetSkirtMeshes(bvector<PolyfaceHeaderPtr>& meshes, bset<uint64_t>& activeClips) const
     {
-    return _GetSkirtMeshes(meshes);
+    return _GetSkirtMeshes(meshes, activeClips);
     }
 
 #ifdef WIP_MESH_IMPORT
@@ -2623,6 +2830,12 @@ void      IScalableMeshCachedDisplayNode::SetIsInVideoMemory(bool isInVideoMemor
 
 IScalableMeshCachedDisplayNodePtr IScalableMeshCachedDisplayNode::Create(uint64_t nodeId, IScalableMesh* smP)
     {
+    if (smP == nullptr)
+        { 
+        IScalableMeshCachedDisplayNodePtr displayNodePtr;
+        return displayNodePtr;
+        }
+
     auto index = ((ScalableMesh<DPoint3d>*)smP)->GetMainIndexP();
     auto node = index->FindLoadedNode(nodeId);
     return ScalableMeshCachedDisplayNode<DPoint3d>::Create(node, smP);

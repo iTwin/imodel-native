@@ -16,25 +16,45 @@
 #include <Imagepp/all/h/HRSObjectStore.h>
 #include <ImagePP/all/h/HGF2DIdentity.h>
 #include <ImagePP/all/h/HCPGCoordUtility.h>
+//#include <ImagePP/all/h/HRFVirtualEarthFile.h>
+#include <ImagePP/all/h/HRFVirtualEarthFile.h>
+#include <ImagePP/all/h/HRFRasterFileCache.h>
+
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 HPMPool* RasterUtilities::s_rasterMemPool = nullptr;
+
+static bool s_useMapBox = true;
 
 HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     {
     HFCPtr<HRFRasterFile> pRasterFile;
     HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
 
+#ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
-        {
-        pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        {   
+        if (s_useMapBox)
+            pRasterFile = HRFMapBoxCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        else
+            pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);        
         }
     else
+#endif
         {
         pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
         }
 
     pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);
+
+#ifndef VANCOUVER_API
+    if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
+        {
+        //pRasterFile = new HRFRasterFileCache(pRasterFile, HRFiTiffCacheFileCreator::GetInstance());
+        }
+#endif
+
     return pRasterFile;
     }
 
@@ -49,10 +69,10 @@ HGFHMRStdWorldCluster* RasterUtilities::GetWorldCluster()
     }
 
 
-HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path)
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path)
     {
     if (s_rasterMemPool == nullptr)
-        s_rasterMemPool = new HPMPool(30000, HPMPool::None);
+        s_rasterMemPool = new HPMPool(300000, HPMPool::None);
     auto cluster = GetWorldCluster();
 
     HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
@@ -72,17 +92,29 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path)
     }
 
 
-HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordinates::BaseGCSCPtr targetCS, DRange2d extentInTargetCS)
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(WString path, GCSCPTR targetCS, DRange2d extentInTargetCS)
+    {
+    HFCPtr<HRFRasterFile> rasterFile;
+
+    return LoadRaster(rasterFile, path, targetCS, extentInTargetCS);
+    }
+
+HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile, WString path, GCSCPTR targetCS, DRange2d extentInTargetCS)
     {
 
     if (s_rasterMemPool == nullptr)
-        s_rasterMemPool = new HPMPool(30000, HPMPool::None);
+        s_rasterMemPool = new HPMPool(300000, HPMPool::None);
     auto cluster = GetWorldCluster();
 
     HFCPtr<HRSObjectStore> pObjectStore;
     HFCPtr<HRFRasterFile> pRasterFile = LoadRasterFile(path);
 
-    GeoCoordinates::BaseGCSCP pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
+	GCSCP pRasterGcs;
+#ifndef VANCOUVER_API
+     pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
+#else
+	pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP()->GetBaseGCS();
+#endif
 
     HFCPtr<HGF2DTransfoModel> pReprojectionModel;
     if (pRasterGcs != nullptr && pRasterGcs->IsValid() && targetCS != nullptr && !targetCS->IsEquivalent(*pRasterGcs))
@@ -122,6 +154,7 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordina
 
     HGF2DExtent imageExtent;
 
+	#ifndef VANCOUVER_API
     // If the model doesn't preserve linearity try to simplify it. 
     if (!pReprojectionModel->PreservesLinearity())
         {
@@ -163,6 +196,7 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordina
         pRasterLogicalCS = new HGF2DCoordSys(*pRasterWorldToDgnWorldCS, pReprojCS);
         }
     else
+#endif
         {
         HVEShape rasterShape(0.0, 0.0, (double)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetWidth(), (double)pRasterFile->GetPageDescriptor(0)->GetResolutionDescriptor(0)->GetHeight(), pRasterPhysCS);
         rasterShape.ChangeCoordSys(pReprojCS);
@@ -176,26 +210,46 @@ HFCPtr<ImagePP::HRARaster> RasterUtilities::LoadRaster(WString path, GeoCoordina
 
     // Get the raster from the store
     HFCPtr<HRARaster> rasterSource = pObjectStore->LoadRaster();
-
+    
     HVEShape imageReprojectShape(imageExtent);
     rasterSource->SetShape(imageReprojectShape);
 
-   
+    rasterFile = pRasterFile;
+
+    return rasterSource;
+
+   /*
     HFCPtr<HIMMosaic> mosaicPtr = new HIMMosaic(GetWorldCluster()->GetCoordSysReference(HGF2DWorld_HMRWORLD));
     mosaicPtr->Add(rasterSource);
     return mosaicPtr.GetPtr();
+*/
 
     }
 
 
-StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, ImagePP::HRARaster& raster)
+StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, int height, const DRange2d area, const float* textureResolution, HRARASTER& raster)
     {
     HFCMatrix<3, 3> transfoMatrix;
-    transfoMatrix[0][0] = (area.high.x - area.low.x) / width;
+/*
+    if (textureResolution != nullptr)
+        transfoMatrix[0][0] = *textureResolution;
+    else
+*/
+        transfoMatrix[0][0] = (area.high.x - area.low.x) / width;
+
+
+    
+
     transfoMatrix[0][1] = 0;
     transfoMatrix[0][2] = area.low.x;
     transfoMatrix[1][0] = 0;
-    transfoMatrix[1][1] = -(area.high.y - area.low.y) / height;
+/*
+    if (textureResolution != nullptr)
+        transfoMatrix[1][1] = -*textureResolution;
+    else
+*/
+        transfoMatrix[1][1] = -(area.high.y - area.low.y) / height;
+
     transfoMatrix[1][2] = area.high.y;
     transfoMatrix[2][0] = 0;
     transfoMatrix[2][1] = 0;
@@ -222,7 +276,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
     pTextureBitmap = new HRABitmap(width,
                                    height,
                                    pTransfoModel.GetPtr(),
-                                   m_targetMosaic->GetCoordSys(),
+                                   raster.GetCoordSys(),
                                    pPixelType,
                                    8,
                                    HRABitmap::UPPER_LEFT_HORIZONTAL,
@@ -260,7 +314,7 @@ StatusInt RasterUtilities::CopyFromArea(bvector<uint8_t>& texData, int width, in
 
 #ifdef VANCOUVER_API
     copyFromOptions.SetGridShapeMode(true);
-    pTextureBitmap->CopyFrom(m_targetMosaic, copyFromOptions);
+    pTextureBitmap->CopyFrom(&raster, copyFromOptions);
 #else
     pTextureBitmap->CopyFrom(raster, copyFromOptions);
 #endif

@@ -210,7 +210,7 @@ DocumentEnv IScalableMeshSourceCreator::Impl::CreateSourceEnvFrom(const WChar* f
     }
 
 
-int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
+int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {
     int status = BSISUCCESS;
 
@@ -226,7 +226,11 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
             }
 
 
-        SetupFileForCreation();
+        SetupFileForCreation(doPartialUpdate);
+
+        if (!m_smSQLitePtr.IsValid() || !m_smSQLitePtr->IsOpen())
+            return BSIERROR;
+
 
         // Sync only when there are sources with which to sync
         // TR #325614: This special condition provides us with a way of efficiently detecting if STM is empty
@@ -257,30 +261,64 @@ int IScalableMeshSourceCreator::Impl::CreateScalableMesh(bool isSingleFile, bool
     return status;
     }
 
-void IScalableMeshSourceCreator::Impl::SetupFileForCreation()
+void IScalableMeshSourceCreator::Impl::SetupFileForCreation(bool doPartialUpdate)
 {
     using namespace ISMStore;
 
     //File::Ptr filePtr;
-    bool bAllRemoved = true;
-    bool bAllAdded = true;
-    for (IDTMSourceCollection::const_iterator it = m_sources.Begin(); it != m_sources.End(); it++)
-    {
-        SourceImportConfig conf = it->GetConfig();
-        ScalableMeshData data = conf.GetReplacementSMData();
-        if (data.GetUpToDateState() != UpToDateState::REMOVE)
-            bAllRemoved = false;
-        if (data.GetUpToDateState() != UpToDateState::ADD)
-            bAllAdded = false;
-    }
 
-    if (bAllRemoved)
-    {
-        _wremove(m_scmFileName.c_str());
-        // Remove sources.
-        m_sources.Clear();
-        return;
-    }
+    if (doPartialUpdate)
+        {
+        bool bAllRemoved = true;
+        bool bAllAdded = true;
+        for (IDTMSourceCollection::const_iterator it = m_sources.Begin(); it != m_sources.End(); it++)
+            {
+            SourceImportConfig conf = it->GetConfig();
+            ScalableMeshData data = conf.GetReplacementSMData();
+            if (data.GetUpToDateState() != UpToDateState::REMOVE)
+                bAllRemoved = false;
+            if (data.GetUpToDateState() != UpToDateState::ADD)
+                bAllAdded = false;
+            }
+
+        if (bAllRemoved)
+            {
+            _wremove(m_scmFileName.c_str());
+            // Remove sources.
+            m_sources.Clear();
+            return;
+            }
+        }
+    else
+        {
+        m_scmPtr = nullptr;
+        m_smSQLitePtr = nullptr;
+
+        if (FileExist() && 0 != _wremove(m_scmFileName.c_str()))
+            return ;        
+
+        m_smSQLitePtr = IScalableMeshCreator::Impl::GetFile(false);
+
+        if (!m_smSQLitePtr.IsValid() || !m_smSQLitePtr->IsOpen())
+            return;
+
+        for (IDTMSourceCollection::iterator it = m_sources.BeginEdit(); it != m_sources.EndEdit(); it++)
+            {
+            SourceImportConfig conf = it->GetConfig();
+            ScalableMeshData data = conf.GetReplacementSMData();
+            if (data.GetUpToDateState() == UpToDateState::REMOVE)
+                {
+                it = m_sources.Remove(it);
+                }                
+            else 
+            if (data.GetUpToDateState() == UpToDateState::MODIFY || data.GetUpToDateState() == UpToDateState::PARTIAL_ADD || data.GetUpToDateState() == UpToDateState::UP_TO_DATE)
+                {
+                data.SetUpToDateState(UpToDateState::ADD);
+                conf.SetReplacementSMData(data);
+                }
+            }
+        }
+
 
     // Ensure GCS and sources are save to the file.
     m_gcsDirty = true;
@@ -388,7 +426,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #endif
 
 
-
+    GetProgress()->SetTotalNumberOfSteps(6);
+    GetProgress()->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_GENERATION;
 
    // std::list<ISMStore::Extent3d64f> listRemoveExtent;
     std::list<DRange3d> listRemoveExtent;
@@ -465,14 +504,18 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
     if (BSISUCCESS != RemoveSourcesFrom<MeshIndexType>(*pDataIndex, listRemoveExtent))
         return BSIERROR;
 
-    if (IsCanceled()) return BSISUCCESS;
+    if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
     // Import sources
+
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_IMPORT_SOURCE;
+    GetProgress()->ProgressStepIndex() = 1;
+    GetProgress()->Progress() = 0.0;
 
     if (BSISUCCESS != ImportSourcesTo(new ScalableMeshStorage<PointType>(*pDataIndex, fileGCS)))
         return BSIERROR;
 
-    if (IsCanceled()) return BSISUCCESS;
+    if (GetProgress()->IsCanceled()) return BSISUCCESS;
         
 #ifndef VANCOUVER_API
 //apparently they don't have this here. Either way, we only need the non-convex polygon support for ConceptStation
@@ -481,7 +524,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             pDataIndex->GetMesher2_5d()->AddClip(m_filterPolygon);
         }
 #endif
-
+    GetProgress()->Progress() = 1.0;
 #ifdef SCALABLE_MESH_ATP
     s_getImportPointsDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
     s_getNbImportedPoints = pDataIndex->m_nbInputPoints;
@@ -505,7 +548,9 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             itEdit++;
         }
 
-
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_BALANCE;
+    GetProgress()->ProgressStepIndex() = 2;
+    GetProgress()->Progress() = 0.0;
     if (pDataIndex->GetRootNode() == 0)
         {
 #ifdef SCALABLE_MESH_ATP
@@ -526,13 +571,19 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         pDataIndex->PropagateDataDownImmediately((int)endLevel);
         }
 
-    if (IsCanceled()) return BSISUCCESS;
+    GetProgress()->Progress() = 1.0;
+    if (GetProgress()->IsCanceled()) return BSISUCCESS;
 #ifdef SCALABLE_MESH_ATP
     s_getLastBalancingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
 
     startClock = clock();
 #endif
 
+    pDataIndex->GatherCounts();
+
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_MESH;
+    GetProgress()->ProgressStepIndex() = 3;
+    GetProgress()->Progress() = 0.0;
     if (s_mesh)
         {
         // Mesh data             
@@ -540,7 +591,8 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             return BSIERROR;
         }
 
-    if (IsCanceled()) return BSISUCCESS;
+    GetProgress()->Progress() = 1.0;
+    if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP
     s_getLastMeshingDuration = ((double)clock() - startClock) / CLOCKS_PER_SEC / 60.0;
@@ -553,6 +605,11 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 #endif
 
         size_t depth = pDataIndex->GetDepth();
+        GetProgress()->ProgressStep() = ScalableMeshStep::STEP_GENERATE_LOD;
+        GetProgress()->ProgressStepIndex() = 4;
+        GetProgress()->Progress() = 0.0;
+
+        CachedDataEventTracer::GetInstance()->start();
 
         for (int level = (int)depth; level >= 0; level--)
             {
@@ -563,7 +620,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             if (BSISUCCESS != IScalableMeshCreator::Impl::Filter<MeshIndexType>(*pDataIndex, level))
                 return BSIERROR;
 
-            if (IsCanceled()) return BSISUCCESS;
+            if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastFilteringDuration += clock() - startClock;
@@ -572,7 +629,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
             if (BSISUCCESS != IScalableMeshCreator::Impl::Stitch<MeshIndexType>(*pDataIndex, level, false))
                 return BSIERROR;
 
-            if (IsCanceled()) return BSISUCCESS;
+            if (GetProgress()->IsCanceled()) return BSISUCCESS;
 
 #ifdef SCALABLE_MESH_ATP    
             s_getLastStitchingDuration += clock() - startClock;
@@ -582,6 +639,7 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
 
             }
 
+        GetProgress()->Progress() = 1.0;
 #ifdef SCALABLE_MESH_ATP    
         s_getLastStitchingDuration = s_getLastStitchingDuration / CLOCKS_PER_SEC / 60.0;
         s_getLastFilteringDuration = s_getLastFilteringDuration / CLOCKS_PER_SEC / 60.0;
@@ -624,9 +682,13 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         pDataIndex->PropagateFullMeshDown();
         }
 
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_TEXTURE;
+    GetProgress()->Progress() = 0.0;
+    GetProgress()->ProgressStepIndex() = 5;
     ImportRasterSourcesTo(pDataIndex);
     ApplyEditsFromSources(pDataIndex);
 
+    GetProgress()->Progress() = 1.0;
 #ifdef ACTIVATE_TEXTURE_DUMP
     pDataIndex->DumpAllNodeTextures();
 #endif
@@ -639,17 +701,24 @@ StatusInt IScalableMeshSourceCreator::Impl::SyncWithSources(
         //pDataIndex->DumpOctTree("C:\\Users\\Richard.Bois\\Documents\\ScalableMesh\\Streaming\\QuebecCityMini\\NodeAferCreationAfterTextures.xml", false);
         }
 #endif
+
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_SAVE;
+    GetProgress()->ProgressStepIndex() = 6;
+    GetProgress()->Progress() = 0.0;
+
     pDataIndex->Store();
-    m_smSQLitePtr->CommitAll();
+    m_smSQLitePtr->Save();
 
     pDataIndex = 0;
+
+    GetProgress()->Progress() = 1.0;
 
     if (RasterUtilities::s_rasterMemPool != nullptr)
         {
         delete RasterUtilities::s_rasterMemPool;
         RasterUtilities::s_rasterMemPool = nullptr;
         }
-            
+           
     return BSISUCCESS;
     }
 
@@ -1173,12 +1242,14 @@ int IScalableMeshSourceCreator::Impl::TraverseSource(SourcesImporter&           
 
         SourceRef sourceRef(CreateSourceRefFromIDTMSource(dataSource, m_scmFileName));
 
+#ifndef VANCOUVER_API    
         if (dynamic_cast<DGNLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr || dynamic_cast<DGNReferenceLevelByNameSourceRef*>((sourceRef.m_basePtr.get())) != nullptr)
             {
             importConfig->SetClipShape(clipShapePtr);
             importer.AddSDKSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
             }
         else
+#endif
             {
             importer.AddSource(sourceRef, sourceConfig, importConfig.get(), importSequence, srcImportConfig/*, vecRange*/);
             }

@@ -6,7 +6,7 @@
 |       $Date: 2015/09/14 15:28:03 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -28,6 +28,7 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     bool m_lastClipSet;
     uint64_t m_lastClipID;
     bvector<DPoint3d> m_lastClipValue;
+	std::mutex m_lastClipMutex;
 
     ISMDataStoreTypePtr<Extent3dType> m_smDataStore;
 
@@ -40,6 +41,8 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     void StoreAllClips();        
 
     uint64_t AddClip(const DPoint3d* clip, size_t clipSize);
+
+    void AddClipWithParameters(uint64_t clipID, const DPoint3d* pts, size_t ptsSize, SMClipGeometryType geom, SMNonDestructiveClipType type, bool isActive);
         
     void ModifyClip(uint64_t id, const DPoint3d* clip, size_t clipSize);        
 
@@ -50,6 +53,8 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
     bool HasSkirt(uint64_t id);
         
     void GetClip(uint64_t id, bvector<DPoint3d>& clip);
+
+    void GetClipWithParameters(uint64_t id, bvector<DPoint3d>& clip, SMClipGeometryType& geom, SMNonDestructiveClipType& type, bool& isActive);
         
     uint64_t AddSkirts(const bvector<bvector<DPoint3d>>& skirts);
         
@@ -59,13 +64,19 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         
     void GetSkirt(uint64_t id, bvector<bvector<DPoint3d>>& skirts);
 
-    void ModifyCoverage(uint64_t id, const DPoint3d* clip, size_t clipSize);
+    void ModifyCoverage(uint64_t id, const DPoint3d* clip, size_t clipSize, const Utf8String& coverageName);
 
-    void GetCoverage(uint64_t id, bvector<DPoint3d>& clip);
+    void GetCoverage(uint64_t id, bvector<DPoint3d>& clip);    
+
+    void GetCoverageName(uint64_t id, Utf8String& coverageName);
 
     bool HasCoverage(uint64_t id);
 
     void GetAllCoveragePolygons(bvector<bvector<DPoint3d>>& allPolys);
+
+    void GetAllCoverageIds(bvector<uint64_t>& ids);
+
+    void DeleteCoverage(uint64_t id);
         
     size_t GetNbClips();
         
@@ -75,6 +86,12 @@ class ClipRegistry : public HFCShareableObject<ClipRegistry>
         
     void GetAllClipsIds(bvector<uint64_t>& allClipIds);  
 
+    void SetClipOnOrOff(uint64_t id, bool isActive);
+    void GetIsClipActive(uint64_t id, bool& isActive);
+	void GetClipType(uint64_t id, SMNonDestructiveClipType& type);
+
+    bool IsClipDefinitionFileExist();
+    
     void SetAutoCommit(bool autoCommit);
     };
 

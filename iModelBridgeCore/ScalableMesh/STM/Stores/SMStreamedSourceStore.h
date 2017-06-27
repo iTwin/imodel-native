@@ -2,7 +2,6 @@
 
 #include "ISMDataStore.h"
 #include "SMStoreUtils.h"
-#include <ImagePP/all/h/HRARaster.h>
 
 template <class DATATYPE, class EXTENT> class SMStreamedSourceStore : public ISMNodeDataStore<DATATYPE>
     {
@@ -11,11 +10,12 @@ template <class DATATYPE, class EXTENT> class SMStreamedSourceStore : public ISM
         SMSQLiteFilePtr            m_smSQLiteFile;
         SMIndexNodeHeader<EXTENT>* m_nodeHeader;
         SMStoreDataType            m_dataType;
-        HFCPtr<ImagePP::HRARaster>          m_source;
+        HFCPtr<HRARASTER>          m_source;
+
 
     public:
 
-        SMStreamedSourceStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, DRange3d totalExt);
+        SMStreamedSourceStore(SMStoreDataType dataType, SMIndexNodeHeader<EXTENT>* nodeHeader, SMSQLiteFilePtr& smSQLiteFile, DRange3d totalExt, HFCPtr<HRARASTER> source);
 
         virtual ~SMStreamedSourceStore();
 

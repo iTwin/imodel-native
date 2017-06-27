@@ -5,7 +5,14 @@
 #include <cpprest/rawptrstream.h>
 #include <cpprest/producerconsumerstream.h>
 #include "include\DataSourceAccountAzure.h"
+#include <Bentley\BeStringUtilities.h>
+#include <Bentley/WString.h>
 
+#ifdef SM_STREAMING_PERF
+#include <iostream>
+#include <chrono>
+std::mutex s_consoleMutex;
+#endif
 
 DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const AccountIdentifier & identifier, const AccountKey & key)
 {
@@ -14,13 +21,7 @@ DataSourceAccountAzure::DataSourceAccountAzure(const ServiceName & name, const A
     setDefaultSegmentSize(0);
 
                                                             // Multi-threaded segmented transfers used for Azure, so initialize it
-    getTransferScheduler().initializeTransferTasks(getDefaultNumTransferTasks());
-}
-
-
-unsigned int DataSourceAccountAzure::getDefaultNumTransferTasks(void)
-{
-    return DATA_SOURCE_SERVICE_AZURE_DEFAULT_TRANSFER_TASKS;
+    getTransferScheduler()->initializeTransferTasks(getDefaultNumTransferTasks());
 }
 
 
@@ -87,17 +88,18 @@ DataSource * DataSourceAccountAzure::createDataSource(void)
 }
 
 
-DataSourceStatus DataSourceAccountAzure::destroyDataSource(DataSource *dataSource)
-{
-    if (dataSource)
-    {
-        delete dataSource;
-
-        return DataSourceStatus();
-    }
-
-    return DataSourceStatus(DataSourceStatus::Status_Error);
-}
+//DataSourceStatus DataSourceAccountAzure::destroyDataSource(DataSource *dataSource)
+//{
+//    DataSourceAccount::destroyDataSource(dataSource);
+//    if (dataSource)
+//    {
+//        delete dataSource;
+//
+//        return DataSourceStatus();
+//    }
+//
+//    return DataSourceStatus(DataSourceStatus::Status_Error);
+//}
 
 
 void DataSourceAccountAzure::setDefaultSegmentSize(DataSourceBuffer::BufferSize size)
@@ -122,7 +124,7 @@ DataSourceBuffer::Timeout DataSourceAccountAzure::getDefaultTimeout(void)
 
 DataSourceStatus DataSourceAccountAzure::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
 {
-    if (account.length() == 0 || identifier.length() == 0 || key.length() == 0)
+    if (account.length() == 0 || identifier.length() == 0 /*|| key.length() == 0*/)
         return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
                                                             // Set details in base class
     DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceAzure"), account, identifier, key);
@@ -188,8 +190,19 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSourceURL &url, Da
 
         concurrency::streams::ostream stream = pcb.create_ostream();
 
+#ifdef SM_STREAMING_PERF
+        std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
+#endif
+
         blockBlob.download_to_stream(stream);
 
+#ifdef SM_STREAMING_PERF
+        std::chrono::steady_clock::time_point end_time = std::chrono::steady_clock::now();
+        {
+        std::lock_guard<std::mutex> lk(s_consoleMutex);
+        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count() << std::endl;
+        }
+#endif
         p = stream.tell();
 
         readSize = p;
@@ -205,8 +218,15 @@ DataSourceStatus DataSourceAccountAzure::downloadBlobSync(DataSourceURL &url, Da
             })
             .wait();
     }
-    catch (...)
+    catch (const azure::storage::storage_exception& e)
     {
+        std::wcout << L"Error: " << e.what() << std::endl;
+        azure::storage::request_result result = e.result();
+        azure::storage::storage_extended_error extended_error = result.extended_error();
+        if (!extended_error.message().empty())
+            {
+            std::wcout << extended_error.message() << std::endl;
+            }
         return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Download);
     }
 
@@ -256,3 +276,59 @@ DataSourceStatus DataSourceAccountAzure::uploadBlobSync(const DataSourceURL &url
 
     return DataSourceStatus();
 }
+
+DataSourceAccountAzureCURL::DataSourceAccountAzureCURL(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
+    : SuperCURL(account, identifier, key)
+    {
+    }
+
+DataSourceStatus DataSourceAccountAzureCURL::setAccount(const AccountName & account, const AccountIdentifier & identifier, const AccountKey & key)
+    {
+    if (account.length() == 0 || identifier.length() == 0 || key.length() == 0)
+        return DataSourceStatus(DataSourceStatus::Status_Error_Bad_Parameters);
+                                                                                        // Set details in base class
+    DataSourceAccount::setAccount(ServiceName(L"DataSourceServiceAzureCURL"), account, identifier, key);
+                                                                                        // Calculate and store the Azure connection string
+    //setConnectionString(createConnectionString(identifier, key));
+    //
+    //if (getConnectionString().length() == 0)
+    //    return DataSourceStatus(DataSourceStatus::Status_Error);
+    //                                                                                    // Create storage account reference
+    //setStorageAccount(AzureStorageAccount::parse(getConnectionString()));
+    //if (getStorageAccount().is_initialized() == false)
+    //    return DataSourceStatus(DataSourceStatus::Status_Error_Failed_To_Initialize_Subsystem);
+    //
+    //setBlobClient(storageAccount.create_cloud_blob_client());
+
+    return DataSourceStatus();
+    }
+
+void DataSourceAccountAzureCURL::SetSASTokenGetterCallback(const std::function<std::string(const Utf8String& docGuid)>& tokenGetter)
+    {
+    m_getSASToken = tokenGetter;
+    }
+
+DataSourceStatus DataSourceAccountAzureCURL::downloadBlobSync(DataSourceURL & blobPath, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize & readSize, DataSourceBuffer::BufferSize size)
+    {
+    auto uriEncodedBlobUrl = BeStringUtilities::UriEncode(Utf8String(blobPath.c_str()).c_str());
+    auto azureToken = this->m_getSASToken(Utf8String(this->getAccountKey().c_str()));
+    if (!azureToken.empty()) uriEncodedBlobUrl += ("?" + azureToken).c_str();
+    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + DataSourceURL(WString(uriEncodedBlobUrl.c_str(), BentleyCharEncoding::Utf8).c_str()));
+
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+    CURL* curl = curl_handle->get();
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0/*1*/);  // &&RB TODO : Ask Francis.Boily about his server certificate
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0/*1*/);  // At some point we will have a valid CONNECT certificate and we'll need to reactivate OpenSSL
+
+    return SuperCURL::downloadBlobSync(url, source, readSize, size);
+    }
+
+DataSourceStatus DataSourceAccountAzureCURL::uploadBlobSync(DataSourceURL &blobPath, const std::wstring &filename, DataSourceBuffer::BufferData * source, DataSourceBuffer::BufferSize size)
+    {
+    DataSourceURL url(L"https://" + this->getAccountIdentifier() + L".blob.core.windows.net/" + blobPath);
+    CURLHandle* curl_handle = m_CURLManager.getOrCreateThreadCURLHandle();
+    CURL* curl = curl_handle->get();
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
+    curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
+    return SuperCURL::uploadBlobSync(url, filename, source, size);
+    }

@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: STM/ReprojectionModel.cpp $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 
@@ -12,7 +12,9 @@
 #include <Imagepp/all/h/HGF2DDisplacement.h>
 #include <Imagepp/all/h/HGF2DIdentity.h>
 #include <Imagepp/all/h/HCPGCoordUtility.h>
+#ifndef VANCOUVER_API
 #include <Imagepp/all/h/HCPGCoordLatLongModel.h>
+#endif
 #include <Imagepp/all/h/HVE2DShape.h>
 #include <Imagepp/all/h/HVE2DPolygonOfSegments.h>
 
@@ -25,8 +27,13 @@ USING_NAMESPACE_IMAGEPP
 //----------------------------------------------------------------------------------------
 ReprojectionModel::ReprojectionModel(GeoCoordinates::BaseGCSCR source, GeoCoordinates::BaseGCSCR destination)
 :HGF2DTransfoModel(),
+#ifndef VANCOUVER_API
 m_pSrcGCS(&source),
 m_pDestGCS(&destination),
+#else
+m_pSrcGCS(const_cast<GeoCoordinates::BaseGCSP>(&source)),
+m_pDestGCS(const_cast<GeoCoordinates::BaseGCSP>(&destination)),
+#endif
 m_domainComputed(false),
 m_domainDirect(NULL),
 m_domainInverse(NULL),
@@ -122,15 +129,26 @@ StatusInt ReprojectionModel::Reproject(double& pio_XInOut, double& pio_YInOut, b
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  10/2015
 //----------------------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 StatusInt ReprojectionModel::ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
+#else
+void ReprojectionModel::ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
+#endif
     {
-    return Reproject(*pio_pXInOut, *pio_pYInOut, m_isReverse);
+#ifndef VANCOUVER_API
+    return
+#endif
+	Reproject(*pio_pXInOut, *pio_pYInOut, m_isReverse);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  10/2015
 //----------------------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 StatusInt ReprojectionModel::ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+#else
+void ReprojectionModel::ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+#endif
     {
     HPRECONDITION(po_pXOut != NULL);
     HPRECONDITION(po_pYOut != NULL);
@@ -138,19 +156,28 @@ StatusInt ReprojectionModel::ConvertDirect(double pi_XIn, double pi_YIn, double*
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
 
-    return Reproject(*po_pXOut, *po_pYOut, m_isReverse);
+#ifndef VANCOUVER_API
+    return 
+#endif
+	Reproject(*po_pXOut, *po_pYOut, m_isReverse);
     }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  10/2015
 //----------------------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 StatusInt ReprojectionModel::ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+#else
+void ReprojectionModel::ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+#endif
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(po_pXOut != NULL);
     HPRECONDITION(po_pYOut != NULL);
 
+#ifndef VANCOUVER_API
     StatusInt status = SUCCESS;
+#endif
 
     double    X;
     uint32_t  Index;
@@ -159,52 +186,79 @@ StatusInt ReprojectionModel::ConvertDirect(double pi_YIn, double pi_XInStart, si
 
     for (Index = 0, X = pi_XInStart; Index < pi_NumLoc; ++Index, X += pi_XInStep, ++pCurrentX, ++pCurrentY)
         {
+#ifndef VANCOUVER_API
         StatusInt tempStatus = ConvertDirect(X, pi_YIn, pCurrentX, pCurrentY);
 
         // Return the first non-SUCCESS error and continue the process
         if ((SUCCESS != tempStatus) && (SUCCESS == status))
             status = tempStatus;
+#else
+	ConvertDirect(X, pi_YIn, pCurrentX, pCurrentY);
+#endif
         }
-
+#ifndef VANCOUVER_API
     return status;
+#endif
     }
 
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  10/2015
 //----------------------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 StatusInt ReprojectionModel::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+#else
+void ReprojectionModel::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+#endif
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(pio_aXInOut != NULL);
     HPRECONDITION(pio_aYInOut != NULL);
 
+#ifndef VANCOUVER_API
     StatusInt status = SUCCESS;
+#endif
 
     for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
+#ifndef VANCOUVER_API
         StatusInt tempStatus = ConvertDirect(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
 
         // Return the first non-SUCCESS error and continue the process
         if ((SUCCESS != tempStatus) && (SUCCESS == status))
             status = tempStatus;
+#else
+	ConvertDirect(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
+#endif
         }
-
+#ifndef VANCOUVER_API
     return status;
+#endif
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 StatusInt ReprojectionModel::ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
+#else
+void ReprojectionModel::ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
+#endif
     {
-    return Reproject(*pio_pXInOut, *pio_pYInOut, !m_isReverse);
+#ifndef VANCOUVER_API
+    return 
+#endif
+    Reproject(*pio_pXInOut, *pio_pYInOut, !m_isReverse);
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 StatusInt ReprojectionModel::ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+#else
+void ReprojectionModel::ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+#endif
     {
     HPRECONDITION(po_pXOut != NULL);
     HPRECONDITION(po_pYOut != NULL);
@@ -212,19 +266,29 @@ StatusInt ReprojectionModel::ConvertInverse(double pi_XIn, double pi_YIn, double
     *po_pXOut = pi_XIn;
     *po_pYOut = pi_YIn;
 
-    return Reproject(*po_pXOut, *po_pYOut, !m_isReverse);
+#ifndef VANCOUVER_API
+    return 
+#endif	
+	Reproject(*po_pXOut, *po_pYOut, !m_isReverse);
+
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 StatusInt ReprojectionModel::ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+#else
+void ReprojectionModel::ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+#endif
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(po_pXOut != NULL);
     HPRECONDITION(po_pYOut != NULL);
 
+#ifndef VANCOUVER_API
     StatusInt status = SUCCESS;
+#endif
     double   X;
     uint32_t Index;
     double* pCurrentX = po_pXOut;
@@ -232,37 +296,55 @@ StatusInt ReprojectionModel::ConvertInverse(double pi_YIn, double pi_XInStart, s
 
     for (Index = 0, X = pi_XInStart;
          Index < pi_NumLoc; ++Index, X += pi_XInStep, ++pCurrentX, ++pCurrentY)
-        {
+		 {
+#ifndef VANCOUVER_API        
+
         StatusInt tempStatus = ConvertInverse(X, pi_YIn, pCurrentX, pCurrentY);
 
         if ((SUCCESS != tempStatus) && (SUCCESS == status))
             status = tempStatus;
+#else
+	 ConvertInverse(X, pi_YIn, pCurrentX, pCurrentY);
+#endif
         }
 
+#ifndef VANCOUVER_API
     return status;
+#endif
     }
 
 //-----------------------------------------------------------------------------
 // Converter (inverse)
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
 StatusInt ReprojectionModel::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+#else
+void ReprojectionModel::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+#endif
     {
     // Make sure recipient arrays are provided
     HPRECONDITION(pio_aXInOut != NULL);
     HPRECONDITION(pio_aYInOut != NULL);
 
+#ifndef VANCOUVER_API
     StatusInt status = SUCCESS;
+#endif
 
     for (uint32_t i = 0; i < pi_NumLoc; i++)
         {
+#ifndef VANCOUVER_API
         StatusInt tempStatus = ConvertInverse(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
 
         // Return the first non-SUCCESS error yet continue the process as possible.
         if ((SUCCESS != tempStatus) && (SUCCESS == status))
             status = tempStatus;
+#else
+	ConvertInverse(pio_aXInOut[i], pio_aYInOut[i], pio_aXInOut + i, pio_aYInOut + i);
+#endif
         }
-
+#ifndef VANCOUVER_API
     return status;
+#endif
     }
 
 //-----------------------------------------------------------------------------
@@ -404,6 +486,7 @@ StatusInt ReprojectionModel::ComputeDomain() const
     {
     StatusInt status = SUCCESS;
 
+#ifndef VANCOUVER_API
     if (!m_domainComputed)
         {
         // Domain not computed ... we first obtain the geographic domain from both GCS
@@ -444,7 +527,8 @@ StatusInt ReprojectionModel::ComputeDomain() const
 
         m_domainComputed = true;
         }
-
+		
+#endif
     return status;
     }
 

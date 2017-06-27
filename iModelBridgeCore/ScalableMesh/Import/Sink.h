@@ -6,7 +6,7 @@
 |       $Date: 2011/09/01 14:06:58 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -52,10 +52,14 @@ private:
 protected:
      explicit                    Sink                   ();
 
+     size_t                    GetTotalNumberOfExpectedSources() const;
+
 public:
      virtual                     ~Sink                  () = 0;
 
      const ContentDescriptor&    GetDescriptor          () const;
+
+     void                       SetTotalNumberOfExpectedSources(size_t nSources);
 
     // TDORAY: Add insertion config replace layerID and type for insertion query.
 
@@ -82,6 +86,12 @@ private:
 
     virtual void                            _NotifySourceImported() {};
 
+    virtual void                            _NotifyImportSourceStarted(size_t totalBytes) {};
+
+    virtual void                            _NotifyImportProgress(size_t currentlyImportedBytes) {};
+
+    virtual bool                           _IsAcceptingData() { return true; }
+
 protected:
 
      bool m_is3dData;
@@ -98,6 +108,12 @@ public:
      void                        Write                  () { _Write(); }     
 
      void                        NotifySourceImported() { _NotifySourceImported(); }
+
+     void                        NotifyImportSourceStarted(size_t totalBytes) { _NotifyImportSourceStarted(totalBytes); }
+
+     void                        NotifyImportProgress(size_t currentlyImportedBytes) { _NotifyImportProgress(currentlyImportedBytes); }
+
+     bool                        IsAcceptingData() { return _IsAcceptingData(); }
     };
 
 

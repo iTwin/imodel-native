@@ -6,7 +6,7 @@
 |       $Date: 2012/02/23 01:54:03 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -735,18 +735,32 @@ void IDTMDgnReferenceSource::UpdateReferenceModelName (const WChar* name) const
 
 
 IDTMDgnReferenceSource::Impl::Impl (DTMSourceDataType               sourceDataType, 
-                                    const IMoniker*                 monikerP,                                                  
+                                    const IMoniker* moniker,                                                  
                                     uint32_t                          modelID, 
                                     const WChar*                  modelName,
                                     const WChar*                     rootToRefPersistentPath,
                                     const WChar*                  referenceName,
                                     const WChar*                  referenceModelName)
-    :   IDTMDgnModelSource::Impl(sourceDataType, monikerP, modelID, modelName),
+    :   IDTMDgnModelSource::Impl(sourceDataType, moniker, modelID, modelName),
         m_rootToRefPersistentPath(rootToRefPersistentPath),
         m_referenceName(referenceName),
         m_referenceModelName(referenceModelName)
     {    
     }
+
+IDTMDgnReferenceSource::Impl::Impl(DTMSourceDataType               sourceDataType,
+	const wchar_t* filePath,
+	uint32_t                          modelID,
+	const WChar*                  modelName,
+	const WChar*                     rootToRefPersistentPath,
+	const WChar*                  referenceName,
+	const WChar*                  referenceModelName)
+	: IDTMDgnModelSource::Impl(sourceDataType, filePath, modelID, modelName),
+	m_rootToRefPersistentPath(rootToRefPersistentPath),
+	m_referenceName(referenceName),
+	m_referenceModelName(referenceModelName)
+{
+}
 
 IDTMDgnReferenceSource::Impl::~Impl()
     {
@@ -944,6 +958,21 @@ IDTMDgnReferenceLevelSource::Impl::Impl(DTMSourceDataType               sourceDa
         m_levelName(levelName)
     {    
     }
+
+IDTMDgnReferenceLevelSource::Impl::Impl(DTMSourceDataType               sourceDataType,
+	const wchar_t* filePath,
+	uint32_t                          modelID,
+	const WChar*                  modelName,
+	const WChar*                     rootToRefPersistentPath,
+	const WChar*                  referenceName,
+	const WChar*                  referenceModelName,
+	uint32_t                          levelID,
+	const WChar*                  levelName)
+	: IDTMDgnReferenceSource::Impl(sourceDataType, filePath, modelID, modelName, rootToRefPersistentPath, referenceName, referenceModelName),
+	m_levelID(levelID),
+	m_levelName(levelName)
+{
+}
 
 IDTMDgnReferenceLevelSource::Impl::~Impl()
     {

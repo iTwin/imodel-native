@@ -2,7 +2,7 @@
 |
 |     $Source: STM/ImportPlugins/DGNLevelImporter.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -404,9 +404,12 @@ struct DGNSourceRefVisitor// : SourceRefVisitor
 
 
     static bool                         IsActiveDgnFile        (const WChar*                          dgnFilePath)
-        {
-        DgnFileP activeDgnFile(ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP());
-                            
+        {        
+        DgnFileP activeDgnFile = nullptr; 
+
+        if (ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef() != nullptr)
+            activeDgnFile = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._GetActiveModelRef()->GetDgnFileP();
+                                    
         return 0 != activeDgnFile && 0 == wcscmp(dgnFilePath, activeDgnFile->GetFileName().c_str());
         }
 
@@ -681,6 +684,16 @@ private:
         m_pointPacket.SetSize(m_pointArray.GetSize());
         }
 
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
+
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                  Raymond.Gauthier   03/2011
@@ -787,6 +800,16 @@ private:
         m_featureArray.EditPoints().WrapEditable(m_pointPacket.Edit(), 0, m_pointPacket.GetCapacity());
         }
 
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
+        }
     /*---------------------------------------------------------------------------------**//**
     * @description
     * @bsimethod                                                  Raymond.Gauthier   03/2011
@@ -854,9 +877,17 @@ class DGNLevelLinearExtractorCreator : public InputExtractorCreatorMixinBase<DGN
                                                                                     const ExtractionConfig&         config,
                                                                                     Log&                            log) const override
         {
-            SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
+        DTMFeatureType linearType = DTMFeatureType::Breakline;
+
+        SourceImportConfig* sourceImportConf = source.GetSourceImportConfigC();
+                
+        if (sourceImportConf != nullptr)
+            { 
             ScalableMeshData data = sourceImportConf->GetReplacementSMData();
-        return new DGNLevelLinearExtractor(sourceBase, data.GetLinearFeatureType());
+            linearType = data.GetLinearFeatureType();
+            }
+        
+        return new DGNLevelLinearExtractor(sourceBase, linearType);
         }
     };
 
@@ -928,6 +959,16 @@ private:
 
         m_headerPacket.SetSize(m_featureArray.GetHeaders().GetSize());
         m_pointPacket.SetSize(m_featureArray.GetPoints().GetSize());
+        }
+
+    virtual size_t              _GetPhysicalSize() override
+        {
+        return 0;
+        }
+
+    virtual size_t              _GetReadPosition() override
+        {
+        return 0;
         }
 
     /*---------------------------------------------------------------------------------**//**

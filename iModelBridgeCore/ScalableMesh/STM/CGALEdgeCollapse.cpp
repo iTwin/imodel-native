@@ -1,5 +1,6 @@
 #include "ScalableMeshPCH.h"
 #undef static_assert //needed because boost uses static_assert and apparently one of the headers we include redefines it
+#include "../mki/StaticAnalysisWarningsPush.h"
 #pragma warning(disable:4180) //using function for stop predicate
 #include "CGALEdgeCollapse.h"
 #include "CGAL_MTGGraphGraphTraits.h"
@@ -18,6 +19,8 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/linestring.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
+
+#include "../mki/StaticAnalysisWarningsPop.h"
 
 namespace SMS = CGAL::Surface_mesh_simplification;
 

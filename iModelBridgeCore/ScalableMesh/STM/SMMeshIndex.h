@@ -32,6 +32,7 @@
 #include "ScalableMeshDraping.h"
 
 
+
 namespace BENTLEY_NAMESPACE_NAME
     {
     namespace ScalableMesh
@@ -329,11 +330,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     void  BuildSkirts();
 
+#if 0
     void CreateSkirtsForMatchingTerrain();
 
     SMPointIndexNode<POINT, EXTENT>* FindMatchingTerrainNode();
 
     void FindMatchingTerrainNodes(bvector<IScalableMeshNodePtr>& terrainNodes);
+#endif
 
     bool HasClip(uint64_t clipId);
 
@@ -475,10 +478,21 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 #endif
             );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
-        m_displayMeshPoolItemId = isVideoMemory ? SMMemoryPool::GetInstanceVideo()->AddItem(memPoolItemPtr) : GetMemoryPool()->AddItem(memPoolItemPtr);
+
+        if (isVideoMemory)
+            { 
+            m_displayMeshVideoPoolItemId = SMMemoryPool::GetInstanceVideo()->AddItem(memPoolItemPtr);
+            assert(m_displayMeshVideoPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            }
+        else
+            {
+            m_displayMeshPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+            assert(m_displayMeshPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            }                
+
         customGenericBlobItemPtr->reserve(sizeToReserve);
         customGenericBlobItemPtr->push_back(*smCachedDisplayData);
-        assert(m_displayMeshPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        
         return customGenericBlobItemPtr;
         }
 
@@ -487,9 +501,17 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     {
         std::lock_guard<std::mutex> lock(m_displayMeshLock);
 
-
-        m_displayMeshPoolItemId = isVideoMemory ? SMMemoryPool::GetInstanceVideo()->AddItem(itemPtr) : GetMemoryPool()->AddItem(itemPtr);
-        assert(m_displayMeshPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+        if (isVideoMemory)
+            {
+            m_displayMeshVideoPoolItemId = SMMemoryPool::GetInstanceVideo()->AddItem(itemPtr);
+            assert(m_displayMeshVideoPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            }
+        else
+            {
+            m_displayMeshPoolItemId = GetMemoryPool()->AddItem(itemPtr);
+            assert(m_displayMeshPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            }
+                   
         return itemPtr;
     }
 
@@ -497,10 +519,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> AddDisplayTexture(SmCachedDisplayTextureData* smCachedDisplayData, uint64_t texID, bool isVideoMemory=false)
         {
         assert(smCachedDisplayData != 0);
-
-       /* SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
-        if (displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
-            GetMemoryPool()->RemoveItem(displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);*/
+    
 
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> customGenericBlobItemPtr(
 #ifndef VANCOUVER_API            
@@ -510,26 +529,64 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 #endif
             );
         SMMemoryPoolItemBasePtr memPoolItemPtr(customGenericBlobItemPtr.get());
-        auto displayTexDataPoolItemId = isVideoMemory ? SMMemoryPool::GetInstanceVideo()->AddItem(memPoolItemPtr) :GetMemoryPool()->AddItem(memPoolItemPtr);
-        m_textureIds.insert(texID);  
-        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexDataPoolItemId);
-        assert(displayTexDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+
+        if (isVideoMemory)
+            {
+            auto displayTexVideoPoolItemId = SMMemoryPool::GetInstanceVideo()->AddItem(memPoolItemPtr);
+            assert(displayTexVideoPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureVideo(texID, displayTexVideoPoolItemId);
+            m_textureVideoIds.insert(texID);
+            }
+        else
+            {            
+            auto displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+            
+            if (displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+                {
+                //If we get here is because a change of Display Cache Manager. Ensure to remove the display texture for the previous display cache manager first.
+                GetMemoryPool()->RemoveItem(displayTexPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);                
+                }
+            
+            displayTexPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
+            assert(displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexPoolItemId);
+            m_textureIds.insert(texID);
+            }
+                               
         smCachedDisplayData->AddConsumer((SMMeshIndexNode<DPoint3d,DRange3d>*)(this));
         return customGenericBlobItemPtr;
         }
 
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> AddDisplayTexture(SMMemoryPoolItemBasePtr itemPtr, uint64_t texID, bool isVideoMemory = false)
-    {
+        {
+        if (isVideoMemory)
+            {
+            auto displayTexVideoPoolItemId = SMMemoryPool::GetInstanceVideo()->AddItem(itemPtr);
+            assert(displayTexVideoPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureVideo(texID, displayTexVideoPoolItemId);
+            m_textureVideoIds.insert(texID);
+            }
+        else
+            {
+            auto displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
 
-        auto displayTexDataPoolItemId = isVideoMemory? SMMemoryPool::GetInstanceVideo()->AddItem(itemPtr) : GetMemoryPool()->AddItem(itemPtr);
-        m_textureIds.insert(texID);
-        ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexDataPoolItemId);
-        assert(displayTexDataPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            if (displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+                {
+                //If we get here is because a change of Display Cache Manager. Ensure to remove the display texture for the previous display cache manager first.
+                GetMemoryPool()->RemoveItem(displayTexPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+                }
+
+            displayTexPoolItemId = GetMemoryPool()->AddItem(itemPtr);
+            assert(displayTexPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
+            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTexture(texID, displayTexPoolItemId);
+            m_textureIds.insert(texID);
+            }                
+
         SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>* blobItemP = (dynamic_cast<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>*>(itemPtr.get()));
         SmCachedDisplayTextureData* data = const_cast<SmCachedDisplayTextureData*>(blobItemP->GetData());
         data->AddConsumer((SMMeshIndexNode<DPoint3d, DRange3d>*)(this));
         return blobItemP;
-    }
+        }
 
 #if 0
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayData>> GetDisplayData()
@@ -546,22 +603,42 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {
         std::lock_guard<std::mutex> lock(m_displayMeshLock);
         RefCountedPtr<SMMemoryPoolGenericVectorItem<SmCachedDisplayMeshData>> cachedDisplayMeshItemPtr;
-        if (m_displayMeshPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayMeshItemPtr;
-            if (!isVideoMemory) GetMemoryPool()->GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
-            else
-                SMMemoryPool::GetInstanceVideo()->GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+
+        if (isVideoMemory)
+            {
+            if (m_displayMeshVideoPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayMeshItemPtr;
+            
+            SMMemoryPool::GetInstanceVideo()->GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshVideoPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            }
+        else
+            {
+            if (m_displayMeshPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayMeshItemPtr;
+
+            GetMemoryPool()->GetItem<SmCachedDisplayMeshData>(cachedDisplayMeshItemPtr, m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);            
+            }
+        
         return cachedDisplayMeshItemPtr;
         }
 
     virtual RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> GetDisplayTexture(uint64_t texID, bool isVideoMemory = false)
         {
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
-        SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
-        if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
+        
         if(!isVideoMemory)
+            {
+            SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+            if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
+
             GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            }
         else
-            SMMemoryPool::GetInstanceVideo()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            {
+            SMMemoryPoolItemId displayTexVideoPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureVideo(texID);
+            if (displayTexVideoPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
+
+            SMMemoryPool::GetInstanceVideo()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexVideoPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            }
+
         return cachedDisplayDataItemPtr;
         }
 
@@ -569,12 +646,22 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         {
         uint64_t texID = GetSingleTextureID();
         RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>> cachedDisplayDataItemPtr;
-        SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
-        if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
-        if(!isVideoMemory)
+                
+        if (!isVideoMemory)
+            {
+            SMMemoryPoolItemId displayTexPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTexture(texID);
+            if (displayTexPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
+
             GetMemoryPool()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            }
         else
-            SMMemoryPool::GetInstanceVideo()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            {
+            SMMemoryPoolItemId displayTexVideoPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureVideo(texID);
+            if (displayTexVideoPoolItemId == SMMemoryPool::s_UndefinedPoolItemId) return cachedDisplayDataItemPtr;
+
+            SMMemoryPool::GetInstanceVideo()->GetItem<SmCachedDisplayTextureData>(cachedDisplayDataItemPtr, displayTexVideoPoolItemId, texID, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            }
+
         return cachedDisplayDataItemPtr;
         }
 
@@ -623,12 +710,18 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
     virtual void RemoveDisplayMesh(bool isVideoMemory=false)
         {
-        //std::lock_guard<std::mutex> lock(m_displayMeshLock);
+        //std::lock_guard<std::mutex> lock(m_displayMeshLock);      
+    
         if(!isVideoMemory)
+            { 
             GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            }
         else
-            SMMemoryPool::GetInstanceVideo()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
-        m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            { 
+            SMMemoryPool::GetInstanceVideo()->RemoveItem(m_displayMeshVideoPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshVideoPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            }        
         }
 
 	virtual void RefreshDisplayMesh()
@@ -669,9 +762,13 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return SMMemoryPool::GetInstance();
         }               
 
+    bool         Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress);
+
+    void         ChangeGeometricError(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const double& newGeometricErrorValue);
+
     void         SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore);
 
-    virtual void LoadTreeNode(size_t& nLoaded, int level, bool headersOnly) override; 
+    virtual void LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly) override;
 
 #ifdef INDEX_DUMPING_ACTIVATED
     virtual void         DumpOctTreeNode(FILE* pi_pOutputXmlFileStream,
@@ -692,7 +789,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr();
 
     virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTexturePtr(uint64_t texID);
-                             
+
+    virtual RefCountedPtr<SMMemoryPoolBlobItem<Byte>> GetTextureCompressedPtr();
+
     void PushUV(const DPoint2d* points, size_t size);
             
     virtual RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> GetUVCoordsPtr()
@@ -702,24 +801,16 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         if (!IsTextured())
             return poolMemVectorItemPtr;
                             
-        if (!SMMemoryPool::GetInstance()->GetItem<DPoint2d>(poolMemVectorItemPtr, m_uvCoordsPoolItemId, GetBlockID().m_integerID, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex))
-            {                              
-            ISMUVCoordsDataStorePtr nodeDataStore;
-            bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
-            assert(result == true);        
-
-            RefCountedPtr<SMStoredMemoryPoolVectorItem<DPoint2d>> storedMemoryPoolVector(
-#ifndef VANCOUVER_API
-                new SMStoredMemoryPoolVectorItem<DPoint2d>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex)
-#else
-            SMStoredMemoryPoolVectorItem<DPoint2d>::CreateItem(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::UvCoords, (uint64_t)m_SMIndex)
-#endif
-                );
-            SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-            m_uvCoordsPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-            assert(m_uvCoordsPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-            poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-            }    
+        if (!m_SMIndex->IsFromCesium())
+            {
+            poolMemVectorItemPtr = GetMemoryPoolItem<ISMUVCoordsDataStorePtr, DPoint2d, SMMemoryPoolVectorItem<DPoint2d>, SMStoredMemoryPoolVectorItem<DPoint2d>>(m_uvCoordsPoolItemId, SMStoreDataType::UvCoords, GetBlockID());
+            }
+        else
+            {
+            SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
+            bool result = poolMemMultiItemsPtr->GetItem<DPoint2d>(poolMemVectorItemPtr, SMStoreDataType::UvCoords);
+            assert(result == true);
+            }
 
         return poolMemVectorItemPtr;
         }           
@@ -787,6 +878,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     std::mutex m_dtmLock;
     std::mutex m_displayMeshLock;
     mutable SMMemoryPoolItemId m_graphPoolItemId;
+    mutable SMMemoryPoolItemId m_smMeshPoolItemId;
     private:
 
         bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);
@@ -802,7 +894,9 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         mutable SMMemoryPoolItemId m_featurePoolItemId;
         mutable SMMemoryPoolItemId m_dtmPoolItemId;
         mutable SMMemoryPoolItemId m_displayMeshPoolItemId;
+        mutable SMMemoryPoolItemId m_displayMeshVideoPoolItemId;
         mutable bset<uint64_t>     m_textureIds;
+        mutable bset<uint64_t>     m_textureVideoIds;
         
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher2_5d;
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;
@@ -835,7 +929,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
                     ISMPointIndexFilter<POINT, EXTENT>* filter, 
                     bool balanced, 
                     bool textured,
-                    bool propagatesDataDown, 
+                    bool propagatesDataDown,
+                    bool needsNeighbors,
                     ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d, 
                     ISMPointIndexMesher<POINT, EXTENT>* mesher3d);
 
@@ -851,12 +946,17 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
                         
-        StatusInt           SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress);
+        StatusInt           Publish3DTiles(const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS);
+
+        StatusInt           SaveMeshToCloud(const WString& path, const bool& pi_pCompress);
+
+        StatusInt           ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue);
 
         virtual void        Stitch(int pi_levelToStitch, bool do2_5dStitchFirst = false);
-
+        
         void                SetClipStore(HFCPtr<IScalableMeshDataStore<DifferenceSet, Byte, Byte>>& clipStore);
-        void                SetClipRegistry(ClipRegistry* registry);
+        void                SetClipRegistry(ClipRegistry* registry);       
+
 
         SMMemoryPoolPtr GetMemoryPool() const { return m_smMemoryPool; }                                
 
@@ -909,10 +1009,10 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         void SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP);
         SMMeshIndex<POINT, EXTENT>* GetSMTerrain();
-
+#if 0
         void SetSMTerrainMesh(IScalableMesh* terrainP);
         IScalableMesh* GetSMTerrainMesh();
-
+#endif
     private:
         
         SMMemoryPoolPtr             m_smMemoryPool;
@@ -922,17 +1022,16 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         ISMPointIndexMesher<POINT, EXTENT>* m_mesher3d;                
         HFCPtr<ClipRegistry> m_clipRegistry;
 
-
         size_t m_texId = 0;
 
         SharedTextureManager m_texMgr;
 
         std::vector<std::future<bool>> m_textureWorkerTasks;
         bvector < RefCountedPtr<EditOperation> > m_edits;
-
+#if 0
         SMMeshIndex<POINT, EXTENT>* m_smTerrain;
         IScalableMesh* m_smTerrainMesh;
-
+#endif
     };
 
         template <class POINT, class EXTENT> class SMIndexNodeVirtual<POINT, EXTENT, SMMeshIndexNode<POINT, EXTENT>> : public SMMeshIndexNode<POINT, EXTENT>
@@ -1072,3 +1171,5 @@ void MergeTextures(bvector<uint8_t>& outTex, DPoint2d& uvBotLeft, DPoint2d&  uvT
 void RemapAllUVs(bvector<DPoint2d>& inoutUvs, DPoint2d uvBotLeft, DPoint2d uvTopRight);
 
 void ComputeTexPart(bvector<uint8_t>&texPart, DPoint2d* uvPart, size_t nUvs, bvector<uint8_t>& texDataUnified);
+
+void ComputeAndRemoveIntersections(bvector<bvector<DPoint3d>>& polygons, bvector<uint64_t>& ids);

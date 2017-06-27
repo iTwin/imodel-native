@@ -13,6 +13,11 @@ USING_NAMESPACE_BENTLEY_SCALABLEMESH
 class SMSQLiteDiffsetFile : public SMSQLiteFile
     {
     public:
+
+             SMSQLiteDiffsetFile();
+
+    virtual ~SMSQLiteDiffsetFile();
+
     virtual void GetDiffSet(int64_t diffsetID, bvector<uint8_t>& diffsetData, size_t& uncompressedSize);
     virtual void StoreDiffSet(int64_t& diffsetID, const bvector<uint8_t>& diffsetData, size_t uncompressedSize);
 
@@ -32,5 +37,7 @@ class SMSQLiteDiffsetFile : public SMSQLiteFile
     virtual std::function<void(BeSQLite::Db*)>* GetFunctionsForAutomaticUpdate() override;
 
     private:
+
+        int  m_nbAutoCommitDone = 0;
 
     };

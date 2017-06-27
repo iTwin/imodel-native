@@ -9,10 +9,11 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
 
-size_t DifferenceSet::WriteToBinaryStream(void*& serialized)
+uint64_t DifferenceSet::WriteToBinaryStream(void*& serialized)
     {
-    size_t ct = sizeof(int32_t) + 7 * sizeof(uint64_t) + addedVertices.size()*sizeof(DPoint3d) + addedFaces.size()*sizeof(int32_t) + removedVertices.size()*sizeof(int32_t) + removedFaces.size() * sizeof(int32_t) + addedUvs.size()*sizeof(DPoint2d) + addedUvIndices.size()*sizeof(int32_t)+ sizeof(bool);
+    uint64_t ct = sizeof(int32_t) + 7 * sizeof(uint64_t) + addedVertices.size()*sizeof(DPoint3d) + addedFaces.size()*sizeof(int32_t) + removedVertices.size()*sizeof(int32_t) + removedFaces.size() * sizeof(int32_t) + addedUvs.size()*sizeof(DPoint2d) + addedUvIndices.size()*sizeof(int32_t)+ sizeof(bool);
     serialized = malloc(ct);
+
     size_t offset = 0;
     memcpy((uint8_t*)serialized + offset, &clientID, sizeof(uint64_t));
     offset += sizeof(uint64_t);
@@ -48,12 +49,13 @@ size_t DifferenceSet::WriteToBinaryStream(void*& serialized)
     offset += sizeof(uint64_t);
     if (addedUvIndices.size() > 0) memcpy((uint8_t*)serialized + offset, &addedUvIndices[0], addedUvIndices.size()*sizeof(int32_t));
     offset += addedUvIndices.size()*sizeof(int32_t);
+    if (clientID == (uint64_t)-1) toggledForID = upToDate;
     memcpy((uint8_t*)serialized + offset, &toggledForID, sizeof(bool));
     offset += sizeof(bool);
     return ct;
     }
 
-void DifferenceSet::LoadFromBinaryStream(void* serialized, size_t ct)
+void DifferenceSet::LoadFromBinaryStream(void* serialized, uint64_t ct)
     {
     addedVertices = bvector<DPoint3d>();
     addedFaces = bvector<int32_t>();
@@ -63,39 +65,40 @@ void DifferenceSet::LoadFromBinaryStream(void* serialized, size_t ct)
     addedUvIndices = bvector<int32_t>();
     memcpy(&clientID, serialized, sizeof(uint64_t));
     memcpy(&firstIndex, (uint8_t*)serialized+sizeof(uint64_t), sizeof(int32_t));
-    size_t size;
+	uint64_t size;
     memcpy(&size, (uint8_t*)serialized + sizeof(uint64_t)+sizeof(int32_t), sizeof(uint64_t));
     assert(size <= ct);
-    addedVertices.resize(size);
+    addedVertices.resize((size_t)size);
     memcpy(&addedVertices[0], (uint8_t*)serialized + 2*sizeof(uint64_t) + sizeof(int32_t), size*sizeof(DPoint3d));
-    size_t offset = 2 * sizeof(uint64_t) + sizeof(int32_t) + size*sizeof(DPoint3d);
+    size_t offset = 2 * sizeof(uint64_t) + sizeof(int32_t) + (size_t)size*sizeof(DPoint3d);
     memcpy(&size, (uint8_t*)serialized + offset, sizeof(uint64_t));
     assert(size <= ct);
-    addedFaces.resize(size);
-    memcpy(&addedFaces[0], (uint8_t*)serialized + offset + sizeof(uint64_t), size*sizeof(int32_t));
-    offset += sizeof(uint64_t) + size*sizeof(int32_t);
+    addedFaces.resize((size_t)size);
+    memcpy(&addedFaces[0], (uint8_t*)serialized + offset + sizeof(uint64_t), (size_t)size*sizeof(int32_t));
+    offset += sizeof(uint64_t) + (size_t)size*sizeof(int32_t);
     memcpy(&size, (uint8_t*)serialized + offset, sizeof(uint64_t));
     assert(size <= ct);
-    removedVertices.resize(size);
-    memcpy(&removedVertices[0], (uint8_t*)serialized + offset + sizeof(uint64_t), size*sizeof(int32_t));
-    offset += sizeof(uint64_t) + size*sizeof(int32_t);
+    removedVertices.resize((size_t)size);
+    memcpy(&removedVertices[0], (uint8_t*)serialized + offset + sizeof(uint64_t), (size_t)size*sizeof(int32_t));
+    offset += sizeof(uint64_t) + (size_t)size*sizeof(int32_t);
     memcpy(&size, (uint8_t*)serialized + offset, sizeof(uint64_t));
     assert(size <= ct);
-    removedFaces.resize(size);
-    memcpy(&removedFaces[0], (uint8_t*)serialized + offset + sizeof(uint64_t), size*sizeof(int32_t));
-    offset += sizeof(uint64_t) + size*sizeof(int32_t);
+    removedFaces.resize((size_t)size);
+    memcpy(&removedFaces[0], (uint8_t*)serialized + offset + sizeof(uint64_t), (size_t)size*sizeof(int32_t));
+    offset += sizeof(uint64_t) + (size_t)size*sizeof(int32_t);
     memcpy(&size, (uint8_t*)serialized + offset, sizeof(uint64_t));
     assert(size <= ct);
     addedUvs.resize(size);
-    memcpy(&addedUvs[0], (uint8_t*)serialized + offset + sizeof(uint64_t), size*sizeof(DPoint2d));
-    offset += sizeof(uint64_t) + size*sizeof(DPoint2d);
+    memcpy(&addedUvs[0], (uint8_t*)serialized + offset + sizeof(uint64_t), (size_t)size*sizeof(DPoint2d));
+    offset += sizeof(uint64_t) + (size_t)size*sizeof(DPoint2d);
     memcpy(&size, (uint8_t*)serialized + offset, sizeof(uint64_t));
     assert(size <= ct);
-    addedUvIndices.resize(size);
-    memcpy(&addedUvIndices[0], (uint8_t*)serialized + offset + sizeof(uint64_t), size*sizeof(int32_t));
-    offset += sizeof(uint64_t) + size*sizeof(int32_t);
+    addedUvIndices.resize((size_t)size);
+    memcpy(&addedUvIndices[0], (uint8_t*)serialized + offset + sizeof(uint64_t), (size_t)size*sizeof(int32_t));
+    offset += sizeof(uint64_t) + (size_t)size*sizeof(int32_t);
     memcpy(&toggledForID, (uint8_t*)serialized + offset, sizeof(bool));
     offset += sizeof(bool);
+    if (clientID == (uint64_t)-1) upToDate = toggledForID;
     }
 
 
@@ -486,7 +489,11 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
     DifferenceSet d;
     d.firstIndex = (int)maxPtIdx;
     if (polyMesh == nullptr) return d;
-    size_t originalNFaces = d.addedFaces.size();
+    //size_t originalNFaces = d.addedFaces.size();
+    size_t originalNUVs = d.addedUvs.size();
+    if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr)
+        d.addedUvs.insert(d.addedUvs.end(), polyMesh->GetParamCP(), polyMesh->GetParamCP() + polyMesh->GetParamCount());
+    size_t originalSize = d.addedUvIndices.size();
     for (PolyfaceVisitorPtr addedFacets = PolyfaceVisitor::Attach(*polyMesh); addedFacets->AdvanceToNextFace();)
         {
         DPoint3d face[3];
@@ -505,19 +512,53 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
                 }
             else idx[i]++;
             }
-        d.addedFaces.push_back(idx[0]);
-        d.addedFaces.push_back(idx[1]);
-        d.addedFaces.push_back(idx[2]);
+
+        if (bsiGeom_getXYPolygonArea(&face[0], 3) < 0)
+        {
+            d.addedFaces.push_back(idx[0]);
+            d.addedFaces.push_back(idx[2]);
+            d.addedFaces.push_back(idx[1]);
+        }
+        else
+        {
+            d.addedFaces.push_back(idx[0]);
+            d.addedFaces.push_back(idx[1]);
+            d.addedFaces.push_back(idx[2]);
+        }
+        if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr)
+        {
+            if (addedFacets->GetClientParamIndexCP() != nullptr)
+            {
+                if (bsiGeom_getXYPolygonArea(&face[0], 3) < 0)
+                {
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[0] + 1 + (int)originalNUVs);
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[2] + 1 + (int)originalNUVs);
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[1] + 1 + (int)originalNUVs);
+                }
+                else
+                {
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[0] + 1 + (int)originalNUVs);
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[1] + 1 + (int)originalNUVs);
+                    d.addedUvIndices.push_back(addedFacets->GetClientParamIndexCP()[2] + 1 + (int)originalNUVs);
+                }
+            }
+            else
+            {
+                d.addedUvIndices.push_back( 1 + (int)originalNUVs);
+                d.addedUvIndices.push_back(1 + (int)originalNUVs);
+                d.addedUvIndices.push_back( 1 + (int)originalNUVs);
+            }
+        }
         }
     if (polyMesh->GetParamCP() != nullptr && polyMesh->GetParamIndexCP() != nullptr)
         {
-        size_t originalNUVs = d.addedUvs.size();
+     /*   size_t originalNUVs = d.addedUvs.size();
         d.addedUvs.insert(d.addedUvs.end(), polyMesh->GetParamCP(), polyMesh->GetParamCP() + polyMesh->GetParamCount());
         size_t originalSize = d.addedUvIndices.size();
-        d.addedUvIndices.insert(d.addedUvIndices.end(), polyMesh->GetParamIndexCP(), polyMesh->GetParamIndexCP() + (int)(d.addedFaces.size() - originalNFaces));
+        d.addedUvIndices.insert(d.addedUvIndices.end(), polyMesh->GetParamIndexCP(), polyMesh->GetParamIndexCP() + (int)(d.addedFaces.size() - originalNFaces));*/
         for (size_t i = originalSize; i < d.addedUvIndices.size(); ++i)
             {
-            d.addedUvIndices[i] += (int)originalNUVs;
+           // d.addedUvIndices[i] += (int)originalNUVs;
             assert(d.addedUvs.size() >= d.addedUvIndices[i]);
             }
         }
@@ -550,11 +591,13 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
     }
 
 
+
     PolyfaceHeaderPtr DifferenceSet::ToPolyfaceMesh(const DPoint3d* points, size_t nOfPoints)
         {
         bvector<int32_t> indices;
         bvector<DPoint3d> pts;
         bmap<int, int> mapOfPts;
+        bmap<DPoint3d, int, DPoint3dZYXTolerancedSortComparison> mapOfCoordinates(DPoint3dZYXTolerancedSortComparison(1e-8, 0));
         size_t currentPt = 0;
         if (addedFaces.size() >= 3 && addedFaces.size() < 1024 * 1024)
             {
@@ -571,11 +614,14 @@ DifferenceSet DifferenceSet::MergeSetWith(DifferenceSet& d, const DPoint3d* vert
                 for (size_t j = 0; j < 3;  ++j)
                     {
                     int32_t idx = (int32_t)(addedFaces[i + j] >= firstIndex ? addedFaces[i + j] - firstIndex + nOfPoints + 1 : addedFaces[i + j]);
+                    DPoint3d pointVal = addedFaces[i + j] >= firstIndex ? addedVertices[addedFaces[i + j] - firstIndex] : points[addedFaces[i + j] - 1];
+                    if (mapOfCoordinates.count(pointVal) != 0) idx = mapOfCoordinates[pointVal];
                     assert(idx > 0 && idx <= nOfPoints + addedVertices.size());
                     if (mapOfPts.count(idx) == 0)
                         {
                         mapOfPts[idx] = (int)currentPt;
-                        pts.push_back(addedFaces[i + j] >= firstIndex ? addedVertices[addedFaces[i + j] - firstIndex] : points[addedFaces[i + j] - 1]);
+                        mapOfCoordinates[pointVal] = idx;
+                        pts.push_back(pointVal);
                         currentPt++;
                         }
                     indices.push_back(mapOfPts[idx]+1);

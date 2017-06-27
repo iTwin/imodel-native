@@ -8,6 +8,8 @@
 class DataSource;
 class DataSourceManager;
 
+unsigned int const DATA_SOURCE_SERVICE_DEFAULT_TRANSFER_TASKS = 16;
+
 
 class DataSourceAccount
 {
@@ -23,6 +25,7 @@ public:
 protected:
 
     DataSourceManager *                 dataSourceManager;
+    DataSourceTransferScheduler::Ptr    dataSourceTransferScheduler;
 
     ServiceName                         serviceName;
     AccountName                         accountName;
@@ -31,11 +34,9 @@ protected:
     AccountSSLCertificatePath           accountSSLCertificatePath;
     DataSourceURL                       prefixPath;
 
-    DataSourceTransferScheduler         transferScheduler;
-
 protected:
 
-    DataSourceTransferScheduler &       getTransferScheduler            (void);
+    DataSourceTransferScheduler::Ptr    getTransferScheduler            (void);
 
     virtual unsigned int                getDefaultNumTransferTasks      (void);
 
@@ -66,6 +67,10 @@ public:
     CLOUD_EXPORT    void                setAccountSSLCertificatePath    (const AccountSSLCertificatePath &path);
     const AccountSSLCertificatePath     getAccountSSLCertificatePath    (void) const;
 
+    
+    CLOUD_EXPORT virtual void           setWSGTokenGetterCallback       (const std::function<std::string(void)>& tokenGetter);
+    CLOUD_EXPORT virtual void           SetSASTokenGetterCallback       (const std::function<std::string(const Utf8String& docGuid)>& tokenGetter);
+
     virtual      DataSource       *     createDataSource                (void) = 0;
     CLOUD_EXPORT DataSource       *     createDataSource                (const DataSource::Name &name);
 
@@ -75,11 +80,12 @@ public:
             bool                        destroyAll                      (void);
 
             DataSourceStatus            destroyDataSources              (void);
-    virtual DataSourceStatus            destroyDataSource               (DataSource *dataSource) = 0;
+    virtual DataSourceStatus            destroyDataSource               (DataSource *dataSource);
 
             DataSourceStatus            uploadSegments                  (DataSource &dataSource);
             DataSourceStatus            downloadSegments                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize size);
 
+            DataSourceStatus            upload                          (DataSource & dataSource);
             DataSourceStatus            download                        (DataSource & dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize & readSize);
 
     virtual DataSourceStatus            downloadBlobSync                (DataSource &dataSource, DataSourceBuffer::BufferData * dest, DataSourceBuffer::BufferSize destSize, DataSourceBuffer::BufferSize &readSize);

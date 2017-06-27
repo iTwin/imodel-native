@@ -4,9 +4,13 @@
 #include <ScalableMesh\ScalableMeshUtilityFunctions.h>
 #include <ScalableMesh\IScalableMeshQuery.h>
 #include <ImagePP/all/h/HCDCodecIdentity.h>
+#include "ScalableMeshProgress.h"
 
-#include "Stores\SMStreamingDataStore.h"
-
+#include "Stores/SMStreamingDataStore.h"
+#include "ScalableMesh/IScalableMeshPublisher.h"
+#ifndef VANCOUVER_API
+#include "TilePublisher/TilePublisher.h"
+#endif
 //#include <eigen\Eigen\Dense>
 //#include <PCLWrapper\IDefines.h>
 //#include <PCLWrapper\INormalCalculator.h>
@@ -21,12 +25,16 @@
 #include "ScalableMeshMesher.h"
 #include <ctime>
 #include <fstream>
+#include <codecvt>
 #include "Edits/ClipUtilities.h"
 #include "vuPolygonClassifier.h"
 #include "LogUtils.h"
 #include "Edits\Skirts.h"
 #include <map>
 #include <json/json.h>
+
+
+#include "MapBoxTextureProvider.h"
 
 #include "ScalableMeshQuadTreeQueries.h"
 
@@ -43,6 +51,8 @@ template <class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Init()
     m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     m_displayDataPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    m_displayMeshVideoPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+    
     m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
     m_featurePoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
     m_dtmPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
@@ -258,6 +268,9 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
             std::lock_guard<std::mutex> lock(m_displayMeshLock);
             GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
             m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+            SMMemoryPool::GetInstanceVideo()->RemoveItem(m_displayMeshVideoPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshVideoPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
 
         GetMemoryPool()->RemoveItem(m_graphPoolItemId, GetBlockID().m_integerID, SMStoreDataType::Graph, (uint64_t)m_SMIndex);
@@ -267,11 +280,14 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Destroy
         nodeGraphStore->DestroyBlock(GetBlockID());
         m_graphPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
         
-        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
-        ISDiffSetDataStorePtr nodeDiffsetStore;
-        result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDiffsetStore, &m_nodeHeader);                                
-        if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
-        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+        if (m_nbClips > 0)
+            {
+            GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+            ISDiffSetDataStorePtr nodeDiffsetStore;
+            result = m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDiffsetStore, &m_nodeHeader, false);
+            if (nodeDiffsetStore.IsValid()) nodeDiffsetStore->DestroyBlock(GetBlockID());
+            m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;
+            }
 
         GetMemoryPool()->RemoveItem(m_featurePoolItemId, GetBlockID().m_integerID, SMStoreDataType::LinearFeature, (uint64_t)m_SMIndex);
         ISMInt32DataStorePtr nodeFeatureStore;
@@ -322,6 +338,7 @@ template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
     {
     auto node = new SMMeshIndexNode<POINT, EXTENT>(blockID, this, dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex), m_filter, m_needsBalancing, false, !(m_delayedDataPropagation), m_mesher2_5d, m_mesher3d, m_createdNodeMap);
     node->m_clipRegistry = m_clipRegistry;
+    node->m_loadNeighbors = m_loadNeighbors;
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(node);
     return pNewNode;
     }
@@ -380,6 +397,9 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Discard
             std::lock_guard<std::mutex> lock(m_displayMeshLock);
             GetMemoryPool()->RemoveItem(m_displayMeshPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
             m_displayMeshPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
+
+            SMMemoryPool::GetInstanceVideo()->RemoveItem(m_displayMeshVideoPoolItemId, GetBlockID().m_integerID, SMStoreDataType::DisplayMesh, (uint64_t)m_SMIndex);
+            m_displayMeshVideoPoolItemId = SMMemoryPool::s_UndefinedPoolItemId;
             }
 
         if (m_texturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
@@ -419,157 +439,333 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Load() 
     if (IsLoaded()) return;
     SMPointIndexNode<POINT, EXTENT>::Load();
 
-    GetDiffSetPtr();
+    //GetDiffSetPtr();
     
-    assert(m_triIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
-    assert(m_texturePoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
-    assert(m_triUvIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
-    assert(m_uvCoordsPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
-    assert(m_displayDataPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_triIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_texturePoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_triUvIndicesPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_uvCoordsPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
+    //assert(m_displayDataPoolItemId == SMMemoryPool::s_UndefinedPoolItemId);
     }
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::SaveMeshToCloud(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore)
+extern std::mutex s_createdNodeMutex;
+
+template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress)
     {
     assert(pi_pDataStore != nullptr);
 
+    static double startTime = clock();
+    static std::atomic<uint64_t> loadDataTime = 0;
+    static std::atomic<uint64_t> convertTime = 0;
+    static std::atomic<uint64_t> storeTime = 0;
+    static std::atomic<uint64_t> nbProcessedNodes = 0;
+    static std::atomic<uint64_t> nbNodes = 0;
+
+    if (progress != nullptr && progress->IsCanceled()) return false;
+
     if (!IsLoaded())
         Load();
-    //auto* node = this;
-    RunOnNextAvailableThread(std::bind([pi_pDataStore](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+
+    ++nbNodes;
+
+    static const uint64_t nbThreads = std::max((uint64_t)1, (uint64_t)(std::thread::hardware_concurrency() - 2));
+    static const uint64_t maxQueueSize = /*std::max((uint64_t)m_SMIndex->m_totalNumNodes, (uint64_t)*/30000;//);
+
+    typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
+    static auto nodeDataSaver = [&pi_pDataStore, sourceGCS, destinationGCS, progress](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
         {
-#ifndef VANCOUVER_API
-        // Save indices
-        RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
+        if (progress != nullptr  && progress->IsCanceled()) return;
 
-        if (indicePtr.IsValid() && indicePtr->size() > 0)
+        // Gather all data in one place
+        double t = clock();
+        node->GetPointsPtr();
+        node->GetPtsIndicePtr();
+        node->GetUVCoordsPtr();
+        node->GetUVsIndicesPtr();
+        node->GetTextureCompressedPtr();
+
+        loadDataTime += clock() - t;
+
+        // Convert data
+        t = clock();
+
+        auto nodePtr = HFCPtr<SMPointIndexNode<POINT, EXTENT>>(static_cast<SMPointIndexNode<POINT, EXTENT>*>(node.GetPtr()));
+        IScalableMeshNodePtr nodeP(new ScalableMeshNode<POINT>(nodePtr));
+
+        IScalableMeshPublisherPtr cesiumPublisher = IScalableMeshPublisher::Create(SMPublishType::CESIUM);
+        bvector<Byte> cesiumData;
+        cesiumPublisher->Publish(nodeP, sourceGCS, destinationGCS, cesiumData);
+
+
+        convertTime += clock() - t;
+
+        // Store data
+        t = clock();
+        ISMTileMeshDataStorePtr tileStore;
+        bool result = pi_pDataStore->GetNodeDataStore(tileStore, &node->m_nodeHeader);
+        assert(result == true); // problem getting the tile mesh data store
+
+        if (!cesiumData.empty())
+            tileStore->StoreBlock(&cesiumData, cesiumData.size(), node->GetBlockID());
+        storeTime += clock() - t;
+        //// Store header
+        //pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
+
+        //{
+        //std::lock_guard<mutex> clk(s_consoleMutex);
+        //std::wcout << "[" << std::this_thread::get_id() << "] Done publishing --> " << node->m_nodeId << "    addr: "<< node <<"   ref count: " << node->GetRefCount() << std::endl;
+        //}
+        node = nullptr;
+
+        if (progress != nullptr)
             {
-            ISMInt32DataStorePtr faceIndDataStore;
-            bool result = pi_pDataStore->GetNodeDataStore(faceIndDataStore, &node->m_nodeHeader, SMStoreDataType::TriPtIndices);
-            assert(result == true); // problem getting the indice data store for streaming
-            faceIndDataStore->StoreBlock(const_cast<int*>(&(*indicePtr)[0]), indicePtr->size(), node->GetBlockID());
+            // Report progress
+            static_cast<ScalableMeshProgress*>(progress.get())->SetCurrentIteration(++nbProcessedNodes);
             }
+        };
 
-        if (node->m_nodeHeader.m_isTextured)
+    static Distribution_Type::Ptr distributor (new Distribution_Type(nodeDataSaver, nbThreads, maxQueueSize));
+
+    static auto loadChildExtentHelper = [](SMPointIndexNode<POINT, EXTENT>* parent, SMPointIndexNode<POINT, EXTENT>* child) ->void
+        {
+        // parent header needs child extent for the Cesium format
+        if (child->m_nodeHeader.m_nodeCount > 0 && child->GetBlockID().IsValid())
             {
-            // Save UVs
-            RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
-
-            if (uvCoordsPtr.IsValid() && uvCoordsPtr->size() > 0)
-                {
-                ISMUVCoordsDataStorePtr uvCoordDataStore;
-                bool result = pi_pDataStore->GetNodeDataStore(uvCoordDataStore, &node->m_nodeHeader);
-                assert(result == true); // problem getting the uv data store for streaming
-                uvCoordDataStore->StoreBlock(const_cast<DPoint2d*>(&(*uvCoordsPtr)[0]), uvCoordsPtr->size(), node->GetBlockID());
-                }
-
-            // Save UVIndices
-            RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
-
-            if (uvIndicePtr.IsValid() && uvIndicePtr->size() > 0)
-                {
-                ISMInt32DataStorePtr uvIndiceDataStore;
-                bool result = pi_pDataStore->GetNodeDataStore(uvIndiceDataStore, &node->m_nodeHeader, SMStoreDataType::TriUvIndices);
-                assert(result == true); // problem getting the uvIndice data store for streaming
-                uvIndiceDataStore->StoreBlock(const_cast<int*>(&(*uvIndicePtr)[0]), uvIndicePtr->size(), node->GetBlockID());
-                }
-
-            // Save texture
-            ISMTextureDataStorePtr textureDataStore;
-            bool result = node->m_SMIndex->GetDataStore()->GetNodeDataStore(textureDataStore, &node->m_nodeHeader);
-            assert(result == true && textureDataStore.IsValid() && !textureDataStore.IsNull());
-            auto countTextureData = textureDataStore->GetBlockDataCount(node->GetBlockID());
-            if (countTextureData > 0)
-                {
-                bvector<uint8_t> textureData(countTextureData);
-                size_t newCount = textureDataStore->LoadCompressedBlock(textureData, countTextureData, node->GetBlockID());
-                ISMTextureDataStorePtr cloudTextureDataStore;
-                bool result = pi_pDataStore->GetNodeDataStore(cloudTextureDataStore, &node->m_nodeHeader);
-                assert(result == true && cloudTextureDataStore.IsValid() && !cloudTextureDataStore.IsNull());
-                cloudTextureDataStore->StoreCompressedBlock(textureData.data(), newCount, node->GetBlockID());
-                node->m_nodeHeader.m_blockSizes.push_back(SMIndexNodeHeader<EXTENT>::BlockSize{ newCount, 5 });
-                }
+            auto childExtent = child->m_nodeHeader.m_contentExtentDefined && !child->m_nodeHeader.m_contentExtent.IsNull() ? child->GetContentExtent() : child->GetNodeExtent();
+            parent->m_nodeHeader.m_childrenExtents[child->GetBlockID().m_integerID] = childExtent;
             }
-        // Save header and points (specific order must be kept to allow to fetch blob sizes for streaming performance)
-        ISMDataStoreTypePtr<EXTENT> pDataStore(pi_pDataStore.get());
-        node->SavePointDataToCloud(pDataStore);
-#else
-        assert(false && "Make this compile on Vancouver!");
-#endif
+        };
 
-        SetThreadAvailableAsync(threadId);
-        }, this, std::placeholders::_1));
+    //static auto disconnectChildHelper = [](SMPointIndexNode<POINT, EXTENT>* child) -> void
+    //    {
+    //    child->SetParentNodePtr(0);
+    //
+    //    s_createdNodeMutex.lock();
+    //
+    //    CreatedNodeMap::iterator nodeIter(child->m_createdNodeMap->find(child->GetBlockID().m_integerID));
+    //
+    //    if (nodeIter != child->m_createdNodeMap->end())
+    //        {
+    //        child->m_createdNodeMap->erase(nodeIter);
+    //        }
+    //
+    //    s_createdNodeMutex.unlock();
+    //    child = NULL;
+    //    };
 
     if (m_pSubNodeNoSplit != nullptr)
         {
-        static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->SaveMeshToCloud(pi_pDataStore);
+        assert(GetNumberOfSubNodesOnSplit() == 1);
+        if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS, progress)) return false;
+        loadChildExtentHelper(this, this->m_pSubNodeNoSplit.GetPtr());
+        //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
+        //this->m_pSubNodeNoSplit = nullptr;
         }
     else
         {
+        assert(GetNumberOfSubNodesOnSplit() > 1 || this->IsLeaf());
         for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
             {
-            if (m_apSubNodes[indexNode] != nullptr)
+            assert(this->m_apSubNodes[indexNode] != nullptr); // A sub node will be skipped
+            if (this->m_apSubNodes[indexNode] != nullptr)
                 {
-                static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->SaveMeshToCloud(pi_pDataStore);
+                if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS, progress)) return false;
+                loadChildExtentHelper(this, this->m_apSubNodes[indexNode].GetPtr());
+                //disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
+                //this->m_apSubNodes[indexNode] = nullptr;
                 }
             }
         }
-    if (m_nodeHeader.m_level == 0)
-        WaitForThreadStop();
+
+    if (this->m_nodeHeader.m_nodeCount > 0)
+        {
+        distributor->AddWorkItem(this/*, false*/);
+        }
+
+    if (this->m_nodeHeader.m_level == 0)
+        {
+        //distributor->Go();
+        std::cout << "\nTime to process tree: " << (clock() - startTime) / CLOCKS_PER_SEC << std::endl;
+        while (progress != nullptr && !distributor->empty())
+            {
+            progress->UpdateListeners();
+            if (progress->IsCanceled()) break;
+            }
+        distributor = nullptr; // join queue threads
+        std::cout << "\nTime to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / nbThreads << std::endl;
+        std::cout << "Time to convert data: " << (double)convertTime / CLOCKS_PER_SEC / nbThreads << std::endl;
+        std::cout << "Time to store data: " << (double)storeTime / CLOCKS_PER_SEC / nbThreads << std::endl;
+        auto tTime = (double)(clock() - startTime) / CLOCKS_PER_SEC;
+        std::cout << "Total time: " << tTime << std::endl;
+        std::cout << "Number processed nodes: " << nbProcessedNodes << std::endl;
+        std::cout << "Total number of nodes: " << nbNodes << std::endl;
+        std::cout << "Convert speed (nodes/sec): " << nbProcessedNodes / tTime << std::endl;
+
+        }
+    return true;
     }
 
-template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadTreeNode(size_t& nLoaded, int level, bool headersOnly)
-    {
-    if (!IsLoaded())
-        Load();
-
-    nLoaded++;
-    RunOnNextAvailableThread(std::bind([headersOnly](SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+    template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::ChangeGeometricError(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const double& newGeometricErrorValue)
         {
-        if (!headersOnly)
+        assert(pi_pDataStore != nullptr);
+
+        if (!IsLoaded())
+            Load();
+
+        this->m_nodeHeader.m_geometryResolution = newGeometricErrorValue;
+
+        typedef SMNodeDistributor<HFCPtr<SMPointIndexNode<POINT, EXTENT>>> Distribution_Type;
+        static Distribution_Type* distributor = new Distribution_Type([&pi_pDataStore](HFCPtr<SMPointIndexNode<POINT, EXTENT>> node)
             {
-            if (node->GetNbPoints() > 0)
+#ifndef VANCOUVER_API
+            auto loadChildExtentHelper = [](HFCPtr<SMPointIndexNode<POINT, EXTENT>> parent, HFCPtr<SMPointIndexNode<POINT, EXTENT>> child) ->void
                 {
-                // Points
-                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
+                if (!child->IsLoaded())
+                    child->Load();
 
-                // Indices
-                RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> indicePtr(node->GetPtsIndicePtr());
-
-                if (node->m_nodeHeader.m_isTextured)
+                // parent header needs child extent for the Cesium format
+                if (child->m_nodeHeader.m_nodeCount > 0 && child->GetBlockID().IsValid())
                     {
-                    // UVs
-                    RefCountedPtr<SMMemoryPoolVectorItem<DPoint2d>> uvCoordsPtr(node->GetUVCoordsPtr());
+                    auto childExtent = child->m_nodeHeader.m_contentExtentDefined && !child->m_nodeHeader.m_contentExtent.IsNull() ? child->GetContentExtent() : child->GetNodeExtent();
+                    parent->m_nodeHeader.m_childrenExtents[child->GetBlockID().m_integerID] = childExtent;
+                    }
+                };
 
-                    // UVIndices
-                    RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> uvIndicePtr(node->GetUVsIndicesPtr());
+            if (node->m_pSubNodeNoSplit != nullptr)
+                {
+                loadChildExtentHelper(node, node->m_pSubNodeNoSplit);
+                }
+            else
+                {
+                for (size_t indexNode = 0; indexNode < node->GetNumberOfSubNodesOnSplit(); indexNode++)
+                    {
+                    if (node->m_apSubNodes[indexNode] != nullptr)
+                        {
+                        loadChildExtentHelper(node, node->m_apSubNodes[indexNode]);
+                        }
+                    }
+                }
 
-                    // Texture
-                    RefCountedPtr<SMMemoryPoolBlobItem<Byte>> texturePtr(node->GetTexturePtr());
+            // Store header
+            pi_pDataStore->StoreNodeHeader(&node->m_nodeHeader, node->GetBlockID());
+
+            //node->Unload();
+#else
+            assert(false && "Make this compile on Vancouver!");
+#endif
+            });
+
+        distributor->AddWorkItem(this);
+
+        if (m_pSubNodeNoSplit != nullptr)
+            {
+            static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->ChangeGeometricError(pi_pDataStore, newGeometricErrorValue * 0.5);
+            //m_pSubNodeNoSplit->Unload();        
+            }
+        else
+            {
+            for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
+                {
+                if (m_apSubNodes[indexNode] != nullptr)
+                    {
+                    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNode]))->ChangeGeometricError(pi_pDataStore, newGeometricErrorValue * 0.5);
+                    //m_apSubNodes[indexNode]->Unload();
                     }
                 }
             }
-        SetThreadAvailableAsync(threadId);
-        }, this, std::placeholders::_1));
 
-    if (level != 0 && this->GetLevel() + 1 > level) return;
+        if (m_nodeHeader.m_level == 0)
+            {
+            delete distributor;
+            }
+        }
+    
+template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::LoadIndexNodes(uint64_t& nLoaded, int level, bool headersOnly)
+    {
+
+    static std::atomic<uint64_t> loadHeaderTime = 0;
+    static std::atomic<uint64_t> loadDataTime = 0;
+    double t = 0;
+    if (this->m_nodeHeader.m_level == 0)
+        {
+        t = clock();
+        }
+
+    if (!IsLoaded())
+        {
+        uint64_t loadTime = clock();
+        Load();
+        loadHeaderTime += clock() - loadTime;
+        }
+
+    nLoaded++;
+
+
+
+    //auto loadNodeHelper = [&loadHeaderTime](SMPointIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
+    //    {
+    //    //node->LoadTreeNode(nLoaded, level, headersOnly);
+    //    if (!node->IsLoaded())
+    //        {
+    //        uint64_t loadTime = clock();
+    //        node->Load();
+    //        loadHeaderTime += clock() - loadTime;
+    //        }
+    //    SetThreadAvailableAsync(threadId);
+    //    };
+    typedef SMNodeDistributor<HFCPtr<SMMeshIndexNode<POINT, EXTENT>>> Distribution_Type;
+    static Distribution_Type::Ptr distributor(new Distribution_Type([](HFCPtr<SMMeshIndexNode<POINT, EXTENT>>& node)
+        {
+            uint64_t loadTime = clock();
+            node->GetPointsPtr();
+            node->GetPtsIndicePtr();
+            if (node->m_nodeHeader.m_isTextured)
+                {
+                node->GetUVCoordsPtr();
+                node->GetUVsIndicesPtr();
+                node->GetTexturePtr();
+                }
+            loadDataTime += clock() - loadTime;
+        }));
 
     if (!m_nodeHeader.m_IsLeaf)
         {
         if (m_pSubNodeNoSplit != NULL)
             {
-            static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*m_pSubNodeNoSplit)->LoadTreeNode(nLoaded, level, headersOnly);
+            //s_distributor->AddWorkItem(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_pSubNodeNoSplit)));
+            //RunOnNextAvailableThread(std::bind(loadNodeHelper, m_pSubNodeNoSplit, std::placeholders::_1));
+            m_pSubNodeNoSplit->LoadIndexNodes(nLoaded, level, headersOnly);
             }
         else
             {
+            //for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
+            //    {
+            //    //s_distributor->AddWorkItem(static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNodes])));
+            //    RunOnNextAvailableThread(std::bind(loadNodeHelper, m_apSubNodes[indexNodes], std::placeholders::_1));
+            //    }
             for (size_t indexNodes = 0; indexNodes < GetNumberOfSubNodesOnSplit(); indexNodes++)
                 {
-                static_cast<SMPointIndexNode<POINT, EXTENT>*>(&*(m_apSubNodes[indexNodes]))->LoadTreeNode(nLoaded, level, headersOnly);
+                m_apSubNodes[indexNodes]->LoadIndexNodes(nLoaded, level, headersOnly);
                 }
-
             }
         }
+
+    if (headersOnly || (level != 0 && this->GetLevel() + 1 > level)) return;
+
+    if (this->GetNbPoints() > 0)
+        {
+        distributor->AddWorkItem(this/*, false*/);
+        }
+
     if (m_nodeHeader.m_level == 0)
-        WaitForThreadStop();
+        {
+        std::cout << "Time to process tree: " << (clock() - t) / CLOCKS_PER_SEC << std::endl;
+        //WaitForThreadStop();
+        distributor = nullptr;
+        std::cout << "Time to load headers: " << (double)loadHeaderTime / CLOCKS_PER_SEC / LightThreadPool::GetInstance()->m_nbThreads << std::endl;
+        std::cout << "Time to load data: " << (double)loadDataTime / CLOCKS_PER_SEC / LightThreadPool::GetInstance()->m_nbThreads << std::endl;
+        std::cout << "Total time: " << (double)(clock() - t) / CLOCKS_PER_SEC << std::endl;
+        }
 
     }
 
@@ -1021,7 +1217,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveM
             ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->RemovePoolIdForTexture(textureId);
             GetMemoryPool()->RemoveItem(displayTexturePoolItemId, textureId, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
             }
-
+               
         displayTexturePoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(textureId);
 
         if (displayTexturePoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
@@ -1032,6 +1228,19 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::RemoveM
         }
 
     m_textureIds.clear();
+
+    for (auto textureVideoId : m_textureVideoIds)
+        {
+        SMMemoryPoolItemId displayTextureVideoPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureVideo(textureVideoId);
+
+        if (displayTextureVideoPoolItemId != SMMemoryPool::s_UndefinedPoolItemId)
+            {
+            ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->RemovePoolIdForTextureVideo(textureVideoId);
+            SMMemoryPool::GetInstanceVideo()->RemoveItem(displayTextureVideoPoolItemId, textureVideoId, SMStoreDataType::DisplayTexture, (uint64_t)m_SMIndex);
+            }
+        }
+
+    m_textureVideoIds.clear();        
     }
 
 //=======================================================================================
@@ -1071,7 +1280,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
     HINVARIANTS;
 
     //deal with cancelling generation while it is still in progress
-    if (m_SMIndex->IsCanceled()) return;
+    if (m_SMIndex->m_progress->IsCanceled()) return;
 
     // If there are sub-nodes and these need filtering then first do the subnodes
     if (HasRealChildren())
@@ -1106,10 +1315,16 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
     else
         {
         assert(this->NeedsMeshing() == true);
+
+
+        m_SMIndex->m_nMeshedNodes++;
+        float progressForLevel = (float)m_SMIndex->m_nMeshedNodes / m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level];
+
+        if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForLevel;
         //assert(this->m_nodeHeader.m_balanced == true);
         if (s_useThreadsInMeshing)
             {
-            if (!m_SMIndex->IsCanceled())
+            if (!m_SMIndex->m_progress->IsCanceled())
                 RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, size_t threadId) ->void
                 {
                 bool isMeshed;
@@ -1121,6 +1336,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
                     {
                     isMeshed = node->m_mesher2_5d->Mesh(node);
                     }
+
 
                 if (isMeshed)
                     {
@@ -1175,7 +1391,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
 
     HINVARIANTS;
 
-    if (m_SMIndex->IsCanceled()) return;
+    if (m_SMIndex->m_progress->IsCanceled()) return;
 //    size_t nodeInd;
 
     if (pi_levelToStitch == -1 || this->m_nodeHeader.m_level == pi_levelToStitch && this->GetNbObjects() > 0)
@@ -1198,6 +1414,10 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
                     isStitched = m_mesher3d->Stitch(this);
                     }
 
+                m_SMIndex->m_nStitchedNodes++;
+                float progressForStep = (float)(m_SMIndex->m_nStitchedNodes) / m_SMIndex->m_countsOfNodesTotal * 2 / 3 + (float)(m_SMIndex->m_nFilteredNodes) / m_SMIndex->m_countsOfNodesTotal * 1 / 3;
+
+                if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
                 if (isStitched)
                     SetDirty(true);
 
@@ -1229,7 +1449,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
 #endif                
                         if (this->m_nodeHeader.m_level == 0 && nodesToStitch == 0 && pi_levelToStitch > 1 && s_useThreadsInStitching)
                             {
-                            if (!m_SMIndex->IsCanceled())
+                            if (!m_SMIndex->m_progress->IsCanceled())
                                 RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>* node, int pi_levelToStitch, size_t threadId) ->void
                                 {
                                 node->Stitch(pi_levelToStitch, 0);
@@ -1860,7 +2080,7 @@ bool SMMeshIndexNode<POINT, EXTENT>::InvalidateFilteringMeshing(bool becauseData
                     DPoint3d direction;
                     direction.DifferenceOf(pt, points[&pt - &points[0] - 1]);
                     DPoint2d dir2d = DPoint2d::From(direction);
-                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && par1 > 1e-5 && par2 > 1e-5 && par1 < 1+1e-5 && par2 < 1+1e-5)
+                    if (extent2d.IntersectRay(par1, par2, ptIntersect1, ptIntersect2,start ,dir2d ) && ((par1 > 1e-5 && par1 < 1 + 1e-5) ||( par2 > 1e-5  && par2 < 1+1e-5)))
                     noIntersect = false;
                     }
                 }
@@ -2174,12 +2394,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Propag
             assert(added >= featurePoints[i].size() - sentinels[i]);
             }
         }
-/*    for (auto& vec : m_featureDefinitions)
-        {
-        vec.clear();
-        vec.Discard();
-        }
-    m_featureDefinitions.clear();*/
+
     linearFeaturesPtr->clear();
 
     }
@@ -2232,10 +2447,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::AddCli
     uint64_t id = -1;
     if (bsiGeom_getXYPolygonArea(&points[0], (int)points.size()) < 0) //need to flip polygon so it's counterclockwise
         {
-        DPoint3d* flippedPts = new DPoint3d[points.size()];
+        bvector<DPoint3d> flippedPts(points.size());
+        
         for (size_t pt = 0; pt < points.size(); ++pt) flippedPts[pt] = points[points.size() - 1 - pt];
-        id = GetClipRegistry()->AddClip(flippedPts, points.size()) + 1;
-        delete[] flippedPts;
+
+        id = GetClipRegistry()->AddClip(flippedPts.data(), flippedPts.size()) + 1;
         }
     else id = GetClipRegistry()->AddClip(&points[0], points.size()) + 1;
     bool wasClipAdded = AddClip(id, false);
@@ -2312,6 +2528,12 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitMeshForChildNodes()
         if (childIndices.size() == 0) continue;
         
         DRange3d childContentRange;
+		if (contentRange.low.z == contentRange.high.z)
+		{
+			contentRange.low.z = nodeRange.low.z;
+			contentRange.high.z = nodeRange.high.z;
+		}
+
         childContentRange.IntersectionOf(contentRange, nodeRange);
         nodeP->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::Create(childContentRange.low.x, childContentRange.low.y, childContentRange.low.z, childContentRange.high.x, childContentRange.high.y, childContentRange.high.z);
         nodeP->m_nodeHeader.m_contentExtentDefined = true;
@@ -2731,9 +2953,16 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
     {
     HPRECONDITION(IsLeaf());
     POINT splitPosition = GetDefaultSplitPosition();
+    
+    if (m_nodeHeader.m_arePoints3d)
+        SetNumberOfSubNodesOnSplit(8);            
+    else
+        SetNumberOfSubNodesOnSplit(4);                 
+    
     if (m_nodeHeader.m_numberOfSubNodesOnSplit == 4)
-        {
-
+        {        
+        if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 2)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 2);
+        m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 4;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
             PointOp<POINT>::GetY(splitPosition),
             ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
@@ -2777,7 +3006,8 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitNodeBasedOnImageRes()
                 return;
             }
 
-
+        if (m_SMIndex->m_countsOfNodesAtLevel.size() < m_nodeHeader.m_level + 1)m_SMIndex->m_countsOfNodesAtLevel.resize(m_nodeHeader.m_level + 1);
+        m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level + 1] += 8;
         m_apSubNodes[0] = this->CloneChild(ExtentOp<EXTENT>::Create(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent),
             PointOp<POINT>::GetY(splitPosition),
             ExtentOp<EXTENT>::GetZMin(m_nodeHeader.m_nodeExtent),
@@ -3317,13 +3547,16 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolGenericVectorItem<
     {       
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> poolMemItemPtr;
 
-   // if (m_SMIndex->IsTerrain() == false) 
-   //     return poolMemItemPtr;
+    if (!GetClipRegistry()->IsClipDefinitionFileExist())
+        return false;
+
+   //if (m_SMIndex->IsTerrain() == false) 
+    //   return poolMemItemPtr;
 
     if (!SMMemoryPool::GetInstance()->GetItem<DifferenceSet>(poolMemItemPtr, m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex))
         {   
         ISDiffSetDataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
+        bool result = m_SMIndex->GetDataStore()->GetSisterNodeDataStore(nodeDataStore, &m_nodeHeader, true);
         assert(result == true);
         
         RefCountedPtr<SMStoredMemoryPoolGenericVectorItem<DifferenceSet>> storedMemoryPoolItem(
@@ -3400,24 +3633,18 @@ template<class POINT, class EXTENT>  RefCountedPtr<SMMemoryPoolVectorItem<int32_
     {    
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> poolMemVectorItemPtr;        
 
-    if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex))
-        {                          
-        ISMInt32DataStorePtr faceIndDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(faceIndDataStore, &m_nodeHeader, SMStoreDataType::TriPtIndices);
-        assert(result == true);      
-
-        RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(
-    #ifndef VANCOUVER_API
-        new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, faceIndDataStore, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex)
-#else
- SMStoredMemoryPoolVectorItem<int32_t>::CreateItem(GetBlockID().m_integerID, faceIndDataStore, SMStoreDataType::TriPtIndices, (uint64_t)m_SMIndex)
-#endif 
- );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        m_triIndicesPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-        assert(m_triIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemVectorItemPtr = storedMemoryPoolVector.get();            
-        }        
+    if (!m_SMIndex->IsFromCesium())
+        {
+        poolMemVectorItemPtr = GetMemoryPoolItem<ISMInt32DataStorePtr, int32_t, SMMemoryPoolVectorItem<int32_t>, SMStoredMemoryPoolVectorItem<int32_t>>(m_triIndicesPoolItemId, SMStoreDataType::TriPtIndices, GetBlockID());
+        }
+    else
+        {
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
+        // In the cesium format, indices are packaged with the points
+        m_triIndicesPoolItemId = m_pointsPoolItemId;
+        bool result = poolMemMultiItemsPtr->GetItem<int32_t>(poolMemVectorItemPtr, SMStoreDataType::TriPtIndices);
+        assert(result == true);
+        }
 
     return poolMemVectorItemPtr;
 
@@ -3456,23 +3683,14 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolVectorItem<int32_t
     if (!IsTextured())
         return poolMemVectorItemPtr;
             
-    if (!GetMemoryPool()->GetItem<int32_t>(poolMemVectorItemPtr, m_triUvIndicesPoolItemId, GetBlockID().m_integerID, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex))
-        {  
-        ISMInt32DataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader, SMStoreDataType::TriUvIndices);
-        assert(result == true);        
-               
-        RefCountedPtr<SMStoredMemoryPoolVectorItem<int32_t>> storedMemoryPoolVector(
-       #ifndef VANCOUVER_API
-        new SMStoredMemoryPoolVectorItem<int32_t>(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex)
-        #else
-        SMStoredMemoryPoolVectorItem<int32_t>::CreateItem(GetBlockID().m_integerID, nodeDataStore, SMStoreDataType::TriUvIndices, (uint64_t)m_SMIndex)
-        #endif
-        );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        m_triUvIndicesPoolItemId = SMMemoryPool::GetInstance()->AddItem(memPoolItemPtr);
-        assert(m_triUvIndicesPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        poolMemVectorItemPtr = storedMemoryPoolVector.get();            
+    if (!m_SMIndex->IsFromCesium())
+        {
+        poolMemVectorItemPtr = GetMemoryPoolItem<ISMInt32DataStorePtr, int32_t, SMMemoryPoolVectorItem<int32_t>, SMStoredMemoryPoolVectorItem<int32_t>>(m_triUvIndicesPoolItemId, SMStoreDataType::TriUvIndices, GetBlockID());
+        }
+    else
+        {
+        // In the Cesium format, UV indices are the same as mesh indices
+        poolMemVectorItemPtr = GetPtsIndicePtr();
         }
 
     return poolMemVectorItemPtr;          
@@ -3491,30 +3709,40 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
     if (!IsTextured())
         return poolMemBlobItemPtr;
 
-    SMMemoryPoolItemId texPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(texID);
-
-    //NEEDS_WORK_SM : Need to modify the pool to have a thread safe get or add.
-    if (!GetMemoryPool()->GetItem<Byte>(poolMemBlobItemPtr, texPoolItemId, texID, SMStoreDataType::Texture, (uint64_t)m_SMIndex))
+    if (!m_SMIndex->IsFromCesium())
         {
-        ISMTextureDataStorePtr nodeDataStore;
-        bool result = m_SMIndex->GetDataStore()->GetNodeDataStore(nodeDataStore, &m_nodeHeader);
-        assert(result == true);
+        SMMemoryPoolItemId texPoolItemId = ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->GetPoolIdForTextureData(texID);
 
-        RefCountedPtr<SMStoredMemoryPoolBlobItem<Byte>> storedMemoryPoolVector(
-#ifndef VANCOUVER_API
-            new SMStoredMemoryPoolBlobItem<Byte>(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
-#else
-            SMStoredMemoryPoolBlobItem<Byte>::CreateItem(texID, nodeDataStore, SMStoreDataType::Texture, (uint64_t)m_SMIndex)
-#endif
-            );
-        SMMemoryPoolItemBasePtr memPoolItemPtr(storedMemoryPoolVector.get());
-        texPoolItemId = GetMemoryPool()->AddItem(memPoolItemPtr);
-        m_textureIds.insert(texID);  
+        poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(texPoolItemId, SMStoreDataType::Texture, HPMBlockID(texID));
+        assert(poolMemBlobItemPtr.IsValid());
+
+        m_textureIds.insert(texID);
         ((SMMeshIndex<POINT, EXTENT>*)m_SMIndex)->TextureManager()->SetPoolIdForTextureData(texID, texPoolItemId);
-        assert(texPoolItemId != SMMemoryPool::s_UndefinedPoolItemId);
-        
-        poolMemBlobItemPtr = storedMemoryPoolVector.get();
         }
+    else
+        {
+        SMMemoryPoolMultiItemsBasePtr poolMemMultiItemsPtr = GetMemoryPoolMultiItem<ISMCesium3DTilesDataStorePtr, Cesium3DTilesBase, SMMemoryPoolMultiItemsBase, SMStoredMemoryPoolMultiItems<Cesium3DTilesBase>>(m_pointsPoolItemId, SMStoreDataType::Cesium3DTiles, GetBlockID()).get();
+        // In the cesium format, textures are packaged with the points
+        m_texturePoolItemId = m_pointsPoolItemId;
+        bool result = poolMemMultiItemsPtr->GetItem<Byte>(poolMemBlobItemPtr, SMStoreDataType::Texture);
+        assert(result == true);
+        }
+
+        
+    return poolMemBlobItemPtr;
+    }
+
+template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SMMeshIndexNode<POINT, EXTENT>::GetTextureCompressedPtr()
+    {
+    RefCountedPtr<SMMemoryPoolBlobItem<Byte>> poolMemBlobItemPtr;
+
+    if (!IsTextured())
+        return poolMemBlobItemPtr;
+
+    auto texID = m_nodeHeader.m_textureID.IsValid() && m_nodeHeader.m_textureID != ISMStore::GetNullNodeID() && m_nodeHeader.m_textureID.m_integerID != -1 ? m_nodeHeader.m_textureID : GetBlockID();
+
+    poolMemBlobItemPtr = GetMemoryPoolItem<ISMTextureDataStorePtr, Byte, SMMemoryPoolBlobItem<Byte>, SMStoredMemoryPoolBlobItem<Byte>>(m_texturePoolItemId, SMStoreDataType::TextureCompressed, texID);
+    assert(poolMemBlobItemPtr.IsValid());
 
     return poolMemBlobItemPtr;
     }
@@ -3528,36 +3756,62 @@ template<class POINT, class EXTENT> RefCountedPtr<SMMemoryPoolBlobItem<Byte>> SM
 //=======================================================================================
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRaster(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {
+    m_SMIndex->m_nTexturedNodes++;
+    float progressForStep = (float)(m_SMIndex->m_nTexturedNodes) / m_SMIndex->m_countsOfNodesTotal;
+
+    if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForStep;
+
+    if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
+
     if (!IsLoaded()) Load();
-    DRange2d rasterBox = sourceRasterP->GetTextureExtent(); 
+    DRange2d rasterBox = sourceRasterP->GetTextureExtent();
     //get overlap between node and raster extent
     DRange2d contentExtent = DRange2d::From(ExtentOp<EXTENT>::GetXMin(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMin(m_nodeHeader.m_nodeExtent),
                                             ExtentOp<EXTENT>::GetXMax(m_nodeHeader.m_nodeExtent), ExtentOp<EXTENT>::GetYMax(m_nodeHeader.m_nodeExtent));
 
-    Transform t;
-    t.InverseOf(unitTransform);
-    t.Multiply(contentExtent.low, contentExtent.low);
-    t.Multiply(contentExtent.high, contentExtent.high);
+    unitTransform.Multiply(contentExtent.low, contentExtent.low);
+    unitTransform.Multiply(contentExtent.high, contentExtent.high);
     if (!rasterBox.IntersectsWith(contentExtent)) return;
     if (GetPointsPtr()->size() == 0 || m_nodeHeader.m_nbFaceIndexes == 0) return;
-    
-
-
 
     int textureWidthInPixels = 1024, textureHeightInPixels = 1024;
+
+    if (dynamic_cast<MapBoxTextureProvider*>(sourceRasterP.get()))
+        {
+        textureWidthInPixels = 256;
+        textureHeightInPixels = 256;
+        }
+
 
     bvector<uint8_t> tex;
     sourceRasterP->GetTextureForArea(tex, textureWidthInPixels, textureHeightInPixels, contentExtent);
     DPoint2d pixSize = sourceRasterP->GetMinPixelSize();
-    
-        if (IsLeaf() && (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels))
-            SplitNodeBasedOnImageRes();
+
+
+    if (IsLeaf() && (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels))        
+        SplitNodeBasedOnImageRes();
+        
+
+
+    if (contentExtent.XLength() / pixSize.x > textureWidthInPixels || contentExtent.YLength() / pixSize.y > textureHeightInPixels)
+        {
+        m_nodeHeader.m_textureResolution = std::max(contentExtent.XLength() / textureWidthInPixels, contentExtent.YLength() / textureHeightInPixels);
+        }
+    else
+        {
+        m_nodeHeader.m_textureResolution = std::max(pixSize.x, pixSize.y);
+        }
+
+
+    if (m_nodeHeader.m_geometricResolution == 0)m_nodeHeader.m_geometricResolution = m_nodeHeader.m_textureResolution;
         if (!tex.empty())
         PushTexture(tex.data(), tex.size());     
 
         m_nodeHeader.m_isTextured = true;
+        m_nodeHeader.m_textureID = GetBlockID();
+        m_nodeHeader.m_nbTextures = 1;
     
-    UpdateNodeFromBcDTM();
+    //UpdateNodeFromBcDTM();
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> existingFaces(GetPtsIndicePtr());
 
     if (existingFaces->size() >= 4)
@@ -3571,8 +3825,12 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
             points[i] = DPoint3d::From(PointOp<POINT>::GetX(pointsPtr->operator[](i)), PointOp<POINT>::GetY(pointsPtr->operator[](i)), PointOp<POINT>::GetZ(pointsPtr->operator[](i)));
         vector<int32_t> indicesOfTexturedRegion;
         vector<DPoint2d> uvsOfTexturedRegion(points.size());
-        unitTransform.Multiply(contentExtent.low, contentExtent.low);
-        unitTransform.Multiply(contentExtent.high, contentExtent.high);
+
+        Transform t;
+        t.InverseOf(unitTransform);              
+
+        t.Multiply(contentExtent.low, contentExtent.low);
+        t.Multiply(contentExtent.high, contentExtent.high);
         for (size_t i = 0; i < existingFaces->size(); i+=3)
             {
             DPoint3d face[3];
@@ -3609,10 +3867,11 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
 //=======================================================================================
 // @bsimethod                                                   Elenie.Godzaridis 10/15
 //=======================================================================================
-    template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform)
+template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::TextureFromRasterRecursive(ITextureProviderPtr sourceRasterP, Transform unitTransform)
     {
 
-        TextureFromRaster(sourceRasterP, unitTransform);
+    TextureFromRaster(sourceRasterP, unitTransform);
+    if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
 
     if (m_pSubNodeNoSplit != NULL && !m_pSubNodeNoSplit->IsVirtualNode())
         {
@@ -3624,6 +3883,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Textur
             {
             if (m_apSubNodes[indexNodes] != nullptr)
                 {
+                if (m_SMIndex->m_progress != nullptr && m_SMIndex->m_progress->IsCanceled()) return;
                 auto mesh = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_apSubNodes[indexNodes]);
                 assert(mesh != nullptr);
                 mesh->TextureFromRasterRecursive(sourceRasterP, unitTransform);
@@ -3657,12 +3917,17 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Refres
 // @bsimethod                                                   Elenie.Godzaridis 02/16
 //=======================================================================================
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::HasClip(uint64_t clipId)
-    {
+{
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid()) return false;
+    bool isUpToDate = false;
     for (const auto& diffSet : *diffsetPtr)
-        {
-        if (diffSet.clientID == clipId && (!diffSet.upToDate || !diffSet.IsEmpty() || diffSet.clientID == (uint64_t)-1)) return true;
+    {
+        if (diffSet.clientID == (uint64_t)-1 && diffSet.upToDate) isUpToDate= true;
+    }
+    for (const auto& diffSet : *diffsetPtr)
+    {
+        if (diffSet.clientID == clipId && (!isUpToDate || !diffSet.upToDate || !diffSet.IsEmpty() || diffSet.clientID == (uint64_t)-1)) return true;
         }
     return false;
     }
@@ -3717,25 +3982,99 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     bvector<uint64_t> clipIds;
     bvector<DifferenceSet> skirts;
     bvector<bpair<double, int>> metadata;
+    //DRange3d extentOfBiggestPoly = DRange3d::NullRange(); 
+    bool polyInclusion = false;
+    bset<uint64_t> addedPolyIds;
+   // size_t indexOfBiggestPoly = 0;
     for (const auto& diffSet : *diffSetPtr)
         {
         //uint64_t upperId = (diffSet.clientID >> 32);
         if (diffSet.clientID < ((uint64_t)-1) && diffSet.clientID != 0 && diffSet.toggledForID)
             {
+            if (addedPolyIds.count(diffSet.clientID) > 0) continue;
+            addedPolyIds.insert(diffSet.clientID);
             clipIds.push_back(diffSet.clientID);
             polys.push_back(bvector<DPoint3d>());
-            GetClipRegistry()->GetClip(diffSet.clientID, polys.back());
+            SMClipGeometryType geom;
+            SMNonDestructiveClipType type;
+            bool isActive;
+            GetClipRegistry()->GetClipWithParameters(diffSet.clientID, polys.back(), geom, type, isActive);
+
+            if (type == SMNonDestructiveClipType::Boundary) polyInclusion = true;
             DRange3d polyExtent = DRange3d::From(&polys.back()[0], (int)polys.back().size());
+            /*if (extentOfBiggestPoly.IsNull() || (extentOfBiggestPoly.XLength()*extentOfBiggestPoly.YLength()) < polyExtent.XLength()*polyExtent.YLength())
+                {
+                extentOfBiggestPoly = polyExtent;
+                indexOfBiggestPoly = polys.size() - 1;
+                }
+            else if (polyExtent.IsStrictlyContainedXY(extentOfBiggestPoly))
+                {
+                bool allInPoly = true;
+                for (auto&pt : polys.back())
+                    {
+                    if (!polyExtent.IsContainedXY(pt)) allInPoly = false;
+                    }
+                if (allInPoly)
+                    {
+                    auto curvePtr = ICurvePrimitive::CreateLineString(polys.back());
+                    auto curveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, curvePtr);
+
+                    auto outerCurvePtr = ICurvePrimitive::CreateLineString(polys[indexOfBiggestPoly]);
+                    auto outerCurveVectorPtr = CurveVector::Create(CurveVector::BOUNDARY_TYPE_Outer, outerCurvePtr);
+
+                    const CurveVectorPtr intersection = CurveVector::AreaIntersection(*curveVectorPtr, *outerCurveVectorPtr);
+                    if (!intersection.IsNull())
+                        polyInclusion = true;
+                    }
+                }*/
+
             if (!polyExtent.IntersectsWith(nodeRange, 2))
                 {
                 polys.resize(polys.size() - 1);
                 clipIds.resize(clipIds.size() - 1);
                 continue;
                 }
+
+            int nOfLoops = 0;
+            if (geom == SMClipGeometryType::ComplexPolygon)
+                {
+                //count loops
+                bvector<bvector<DPoint3d>> polyLoops;
+                bvector<DPoint3d> currentLoop;
+                for (auto& pt : polys.back())
+                    {
+                    if (pt.IsDisconnect())
+                        {
+                        nOfLoops++;
+                        polyLoops.push_back(currentLoop);
+                        currentLoop.clear();
+                        }
+                    else currentLoop.push_back(pt);
+                    }
+
+                if (!currentLoop.empty())
+                    {
+                    nOfLoops++;
+                    polyLoops.push_back(currentLoop);
+                    currentLoop.clear();
+                    }
+
+                polys.resize(polys.size() - 1);
+                clipIds.resize(clipIds.size() - 1);
+                for (auto& loop : polyLoops)
+                    {
+                    clipIds.push_back(diffSet.clientID);
+                    polys.push_back(loop);
+                    }
+
+                }
+            else nOfLoops = 1;
+
             double importance;
             int nDimensions;
             GetClipRegistry()->GetClipMetadata(diffSet.clientID, importance, nDimensions);
-            metadata.push_back(make_bpair(importance, nDimensions));
+            for (size_t i = 0; i < nOfLoops; ++i)
+                metadata.push_back(make_bpair(importance, nDimensions));
             }
         else if (!diffSet.toggledForID)
             {
@@ -3746,6 +4085,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
     diffSetPtr->clear();
     for(auto& skirt: skirts) diffSetPtr->push_back(skirt);
     m_nbClips = skirts.size();
+
+
     
             
     RefCountedPtr<SMMemoryPoolVectorItem<int32_t>> ptIndices(GetPtsIndicePtr());
@@ -3779,8 +4120,8 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
             );
 
         bool hasClip = false;
-        if (!m_nodeHeader.m_arePoints3d)
-            {
+        if (!m_nodeHeader.m_arePoints3d && !polyInclusion)
+            {            
             BcDTMPtr dtm = nodeP->GetBcDTM().get();
             if (dtm.get() != nullptr)
                 {
@@ -3837,14 +4178,16 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Comput
         m_nbClips++;
         }
     assert(m_nbClips > 0 || diffSetPtr->size() == 0);
+
     //std::cout << "Merged clips for " << GetBlockID().m_integerID << " we have " << diffSetPtr->size() << "clips" << std::endl;
 
     }
 
 
 template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildSkirts()
-    {
+    {   
     if (dynamic_cast<SMMeshIndex<POINT, EXTENT>*>(m_SMIndex)->m_isInsertingClips) return;
+    
     RefCountedPtr<SMMemoryPoolGenericVectorItem<DifferenceSet>> diffsetPtr = GetDiffSetPtr();
     if (!diffsetPtr.IsValid() || diffsetPtr->size() == 0) return;
     for (const auto& diffSet : *diffsetPtr)
@@ -3930,10 +4273,10 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::BuildS
                 //diffSet = current;
                 diffsetPtr->Replace(&diffSet - &(*diffsetPtr->begin()), current);
                 }
-            }
+            }   
     }
 
-
+#if 0
 template<class POINT, class EXTENT> SMPointIndexNode<POINT, EXTENT>* SMMeshIndexNode<POINT, EXTENT>::FindMatchingTerrainNode()
     {
     auto firstNode = dynamic_cast<SMMeshIndex<POINT,EXTENT>*>(m_SMIndex)->GetSMTerrain()->FindNode(m_nodeHeader.m_nodeExtent, m_nodeHeader.m_level, true);
@@ -4015,6 +4358,7 @@ template<class POINT, class EXTENT>  void SMMeshIndexNode<POINT, EXTENT>::Create
         }
 
     }
+#endif
 
 template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIntersectsBox(uint64_t clipId, EXTENT ext)
     {
@@ -4112,6 +4456,9 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::ClipIn
                 {
                 if (other.clientID == ((uint64_t)-1)) const_cast<DifferenceSet&>(other).upToDate = false;
                 }
+
+          /*  GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+            m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
             
             }
 
@@ -4158,9 +4505,16 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Delete
         else if (it->clientID == (uint64_t)-1)
             {
             const_cast<DifferenceSet&>(*it).upToDate = false;
+            diffSetPtr->SetDirty(true);
             }
         }
-    if(found) diffSetPtr->erase(indices);
+    if (found)
+    {
+        diffSetPtr->erase(indices);
+       /* //force commit
+        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
+    }
     return found;
     }
 
@@ -4185,12 +4539,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
             const_cast<DifferenceSet&>(*it).clientID = clipId;
             const_cast<DifferenceSet&>(*it).toggledForID = setToggledWhenIdIsOn;
             found = true;
-
+            diffSetPtr->SetDirty(true);
             }
 
         else if (it->clientID == (uint64_t)-1)
             {
             const_cast<DifferenceSet&>(*it).upToDate = false;
+            diffSetPtr->SetDirty(true);
             }
 
         }
@@ -4199,6 +4554,13 @@ template<class POINT, class EXTENT>  bool SMMeshIndexNode<POINT, EXTENT>::Modify
         found = ClipIntersectsBox(clipId, m_nodeHeader.m_contentExtent); //m_nodeExtent
         if (found) AddClip(clipId, isVisible, setToggledWhenIdIsOn);
         }
+    else
+    {
+  /*      //force commit
+        GetMemoryPool()->RemoveItem(m_diffSetsItemId, GetBlockID().m_integerID, SMStoreDataType::DiffSet, (uint64_t)m_SMIndex);
+        m_diffSetsItemId = SMMemoryPool::s_UndefinedPoolItemId;*/
+
+    }
     return found;
     }
 //=======================================================================================
@@ -4418,12 +4780,14 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::SMMeshIndex(ISM
                                                                              bool balanced,
                                                                              bool textured,
                                                                              bool propagatesDataDown,
+                                                                             bool needsNeighbors,
                                                                              ISMPointIndexMesher<POINT, EXTENT>* mesher2_5d,
                                                                              ISMPointIndexMesher<POINT, EXTENT>* mesher3d)
                                                                              : SMPointIndex<POINT, EXTENT>(smDataStore, SplitTreshold, filter, balanced, propagatesDataDown, false), 
                                                                              m_smDataStore(smDataStore),
                                                                              m_smMemoryPool(smMemoryPool)
     {
+    m_loadNeighbors = needsNeighbors;
     m_mesher2_5d = mesher2_5d;
     m_mesher3d = mesher3d;    
     m_isInsertingClips = false;
@@ -4444,7 +4808,14 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
 
     if (m_mesher3d != NULL)
         delete m_mesher3d;
-    Store();
+
+    try {
+        Store();
+        }
+    catch (...)
+        {
+        assert(!"Cannot store mesh index");
+        }
 
     m_createdNodeMap.clear();
 
@@ -4457,7 +4828,7 @@ template <class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>::~SMMeshIndex()
 
 template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(EXTENT extent, bool isRootNode)
     {
-    SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured(), PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
+    SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured() != IndexTexture::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = dynamic_cast<SMPointIndexNode<POINT, EXTENT>*>(meshNode);
     pNewNode->m_isGenerating = m_isGenerating;
 
@@ -4473,7 +4844,7 @@ template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
 
 template <class POINT, class EXTENT> HFCPtr<SMPointIndexNode<POINT, EXTENT> > SMMeshIndex<POINT, EXTENT>::CreateNewNode(uint64_t nodeId, EXTENT extent, bool isRootNode)
     {
-    SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(nodeId, m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured(), PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
+    SMMeshIndexNode<POINT, EXTENT> * meshNode = new SMMeshIndexNode<POINT, EXTENT>(nodeId, m_indexHeader.m_SplitTreshold, extent, this, m_filter, m_needsBalancing, IsTextured() != IndexTexture::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = dynamic_cast<SMPointIndexNode<POINT, EXTENT>*>(meshNode);
     pNewNode->m_isGenerating = m_isGenerating;
 
@@ -4490,9 +4861,10 @@ template<class POINT, class EXTENT>  HFCPtr<SMPointIndexNode<POINT, EXTENT> > SM
     {
     HFCPtr<SMMeshIndexNode<POINT, EXTENT>> parent;
 
-    auto meshNode = new SMMeshIndexNode<POINT, EXTENT>(blockID, parent, this, m_filter, m_needsBalancing, IsTextured(), PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
+    auto meshNode = new SMMeshIndexNode<POINT, EXTENT>(blockID, parent, this, m_filter, m_needsBalancing, IsTextured() != IndexTexture::None, PropagatesDataDown(), m_mesher2_5d, m_mesher3d, &m_createdNodeMap);
     HFCPtr<SMPointIndexNode<POINT, EXTENT> > pNewNode = static_cast<SMPointIndexNode<POINT, EXTENT> *>(meshNode);
     pNewNode->m_isGenerating = m_isGenerating;
+    pNewNode->m_loadNeighbors = m_loadNeighbors;
 
     if (isRootNode)
         {
@@ -4642,7 +5014,7 @@ template<class POINT, class EXTENT>  void  SMMeshIndex<POINT, EXTENT>::AddFeatur
 
         // The root node contains the spatial object ... add it
         nAddedPoints = dynamic_pcast<SMMeshIndexNode<POINT, EXTENT>, SMPointIndexNode<POINT, EXTENT>>(m_pRootNode)->AddFeatureDefinition(type, points, extent, m_indexHeader.m_HasMaxExtent);
-        assert(nAddedPoints >= points.size());
+        //assert(nAddedPoints >= points.size());
         }
     }
 
@@ -4699,6 +5071,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
     result = m_mesher3d->Init(*this);
     assert(result == true);
 
+
     // Check if root node is present
     if (m_pRootNode != NULL)
         {
@@ -4710,14 +5083,131 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Mesh()
     }
 
 /**----------------------------------------------------------------------------
+Publish Cesium ready format
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publish3DTiles(const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS)
+    {
+    if (m_progress != nullptr)
+        {
+        m_progress->ProgressStep() = ScalableMeshStep::STEP_GENERATE_3DTILES_HEADERS;
+        m_progress->ProgressStepIndex() = 1;
+        m_progress->Progress() = 0.0f;
+        }
+
+    // Create store for 3DTiles output
+    typedef SMStreamingStore<EXTENT>::SMStreamingSettings StreamingSettingsType;
+    SMStreamingStore<EXTENT>::SMStreamingSettingsPtr settings = new StreamingSettingsType();
+    settings->m_url = Utf8String(path.c_str());
+    settings->m_location = StreamingSettingsType::ServerLocation::LOCAL;
+    settings->m_dataType = StreamingSettingsType::DataType::CESIUM3DTILES;
+    settings->m_commMethod = StreamingSettingsType::CommMethod::CURL;
+    settings->m_isPublishing = true;
+    ISMDataStoreTypePtr<EXTENT>     pDataStore(
+#ifndef VANCOUVER_API
+        new SMStreamingStore<EXTENT>(settings)
+#else
+        SMStreamingStore<EXTENT>::Create(settings)
+#endif
+    );
+
+    // Register 3DTiles index to the store
+    pDataStore->Register(m_smID);
+
+    // Destination coordinates will be ECEF
+    static GeoCoordinates::BaseGCSPtr destinationGCS = GeoCoordinates::BaseGCS::CreateGCS(L"ll84");
+
+
+    SMIndexMasterHeader<EXTENT> oldMasterHeader;
+    this->GetDataStore()->LoadMasterHeader(&oldMasterHeader, sizeof(oldMasterHeader));
+
+    // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
+    oldMasterHeader.m_singleFile = false;
+
+#ifdef VANCOUVER_API
+    SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount());
+    SMGroupCache::Ptr groupCache = nullptr;
+    SMNodeGroupPtr group = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
+
+    group->SetMaxGroupDepth(this->GetDepth() % s_max_group_depth + 1);
+
+    auto strategy = group->GetStrategy<EXTENT>();
+
+    strategy->SetOldMasterHeader(oldMasterHeader);
+    strategy->SetSourceAndDestinationGCS(sourceGCS, destinationGCS);
+
+    // Saving groups isn't parallelized therefore we run it in a single separate thread so that we can properly update the listener with the progress
+    std::thread saveGroupsThread([this, strategy, group]()
+        {
+        GetRootNode()->SaveGroupedNodeHeaders(group, m_progress);
+
+        // Handle all open groups 
+        strategy->SaveAllOpenGroups();
+        if (m_progress != nullptr) m_progress->Progress() = 1.0f;
+        });
+
+    while (m_progress != nullptr && !m_progress->IsCanceled() && m_progress->Progress() != 1.0)
+        {
+        m_progress->UpdateListeners();
+        }
+
+    saveGroupsThread.join();
+#else
+	assert(!"Not yet available on dgndb, missing SMNodeGroup::Create overload");
+#endif
+
+    if (m_progress != nullptr && m_progress->IsCanceled()) return SUCCESS;
+
+    if (m_progress != nullptr)
+        {
+        m_progress->ProgressStep() = ScalableMeshStep::STEP_CONVERT_3DTILES_DATA;
+        m_progress->ProgressStepIndex() = 2;
+        m_progress->Progress() = 0.0f;
+        }
+    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->Publish3DTile(pDataStore, sourceGCS, destinationGCS, m_progress);
+
+    if (m_progress != nullptr) m_progress->Progress() = 1.0f;
+    
+    return SUCCESS;
+    }
+
+/**----------------------------------------------------------------------------
+Publish Cesium ready format
+-----------------------------------------------------------------------------*/
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::ChangeGeometricError(const WString& path, const bool& pi_pCompress, const double& newGeometricErrorValue)
+    {
+#ifndef VANCOUVER_API
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(path, pi_pCompress, false, false, L"data", SMStreamingStore<EXTENT>::FormatType::Cesium3DTiles);
+
+    //this->SaveMasterHeaderToCloud(pDataStore);
+    // NEEDS_WORK_SM : publish Cesium 3D tiles tileset
+
+    static_cast<SMMeshIndexNode<POINT, EXTENT>*>(GetRootNode().GetPtr())->ChangeGeometricError(pDataStore, newGeometricErrorValue);
+
+    Json::Value         rootJson;
+
+    rootJson["refine"] = "replace";
+    rootJson["geometricError"] = 1.E+06; // What should this value be?
+    TilePublisher::WriteBoundingVolume(rootJson, GetRootNode()->GetNodeExtent());
+
+    rootJson["content"]["url"] = Utf8String((BeFileName(path) + L"quebeccity.json").c_str());
+
+
+    return SUCCESS;
+#else
+    assert(!"Not implemented");
+    return ERROR;
+#endif
+    }
+
+/**----------------------------------------------------------------------------
 Save cloud ready format
 -----------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(DataSourceManager *dataSourceManager, const WString& path, const bool& pi_pCompress)
+template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::SaveMeshToCloud(const WString& path, const bool& pi_pCompress)
     {
     assert(false && "Please correct topaz build");
     //NEEDS_WORK_STREAMING: can't use new IRefCounted on vancouver
   #if 0
-    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(*dataSourceManager, path, pi_pCompress);
+    ISMDataStoreTypePtr<EXTENT>     pDataStore = new SMStreamingStore<EXTENT>(path, SMStreamingStore<EXTENT>::FormatType::Binary, pi_pCompress);
 
     this->SaveMasterHeaderToCloud(pDataStore);
 
@@ -4826,12 +5316,12 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     }
                 set<SMMeshIndexNode<POINT, EXTENT>*> stitchedNodes;
                 std::recursive_mutex stitchedMutex;
-                for (auto& node : nodesToStitch) s_nodeMap.insert(std::make_pair((void*)node, (unsigned int)-1));
-                for (size_t i =0; i < 8; ++i)
+                for (auto& node : nodesToStitch) LightThreadPool::GetInstance()->m_nodeMap.insert(std::make_pair((void*)node, (unsigned int)-1));
+                for (size_t i =0; i < LightThreadPool::GetInstance()->m_nbThreads; ++i)
                     RunOnNextAvailableThread(std::bind([] (SMMeshIndexNode<POINT, EXTENT>** vec, set<SMMeshIndexNode<POINT,EXTENT>*>* stitchedNodes, std::recursive_mutex* stitchedMutex, size_t nNodes, size_t threadId) ->void
                     {
                     vector<SMMeshIndexNode<POINT, EXTENT>*> myNodes;
-                    size_t firstIdx = nNodes / 8 * threadId;
+                    size_t firstIdx = nNodes / LightThreadPool::GetInstance()->m_nbThreads * threadId;
                     myNodes.push_back(vec[firstIdx]);
                     while (myNodes.size() > 0)
                         {
@@ -4842,7 +5332,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                         neighbors.push_back(current);
                         bool reservedNode = false;
 
-                        reservedNode = TryReserveNodes(s_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
+                        reservedNode = TryReserveNodes(LightThreadPool::GetInstance()->m_nodeMap, (void**)&neighbors[0], neighbors.size(),(unsigned int)threadId);
 
                         if (reservedNode == true)
                             {
@@ -4860,10 +5350,10 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                             if(needsStitching) current->Stitch((int)current->m_nodeHeader.m_level, 0);
                             unsigned int val = (unsigned int)-1;
                             unsigned int id = (unsigned int)threadId;
-                            s_nodeMap[current].compare_exchange_strong(id, val);
+                            LightThreadPool::GetInstance()->m_nodeMap[current].compare_exchange_strong(id, val);
                             }
                         myNodes.erase(myNodes.begin());
-                        if (myNodes.size() == 0 && firstIdx + 1 < nNodes / 8 * (threadId+1))
+                        if (myNodes.size() == 0 && firstIdx + 1 < nNodes / LightThreadPool::GetInstance()->m_nbThreads * (threadId+1))
                             {
                             firstIdx += 1;
                             myNodes.push_back(vec[firstIdx]);
@@ -4873,7 +5363,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     }, &nodesToStitch[0], &stitchedNodes, &stitchedMutex, nodesToStitch.size(), std::placeholders::_1));
 
                 WaitForThreadStop();
-                s_nodeMap.clear();
+                LightThreadPool::GetInstance()->m_nodeMap.clear();
                 for (auto& node : nodesToStitch)
                     {
                     if (stitchedNodes.count(node) == 0)
@@ -4904,7 +5394,7 @@ template<class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>* SMMeshIndex<POIN
     {
     SMMeshIndex<POINT, EXTENT>* index = new SMMeshIndex<POINT, EXTENT>(associatedStore, m_smMemoryPool, m_indexHeader.m_SplitTreshold, m_filter->Clone(),
                                                                        m_indexHeader.m_balanced, m_indexHeader.m_textured != IndexTexture::None,
-                                                                       m_propagatesDataDown, m_mesher2_5d, m_mesher3d);
+                                                                       m_propagatesDataDown, m_loadNeighbors, m_mesher2_5d, m_mesher3d);
     auto node = GetRootNode();
     if (node == nullptr) return index;
     auto rootClone = index->GetRootNode();
@@ -4921,7 +5411,7 @@ template<class POINT, class EXTENT> SMMeshIndex<POINT, EXTENT>* SMMeshIndex<POIN
     return index;
     }
 
-
+#if 0
 template<class POINT, class EXTENT> void  SMMeshIndex<POINT, EXTENT>::SetSMTerrain(SMMeshIndex<POINT, EXTENT>* terrainP)
     {
     m_smTerrain = terrainP;
@@ -4942,3 +5432,5 @@ template<class POINT, class EXTENT> IScalableMesh*  SMMeshIndex<POINT, EXTENT>::
     return m_smTerrainMesh;
 
     }
+#endif
+

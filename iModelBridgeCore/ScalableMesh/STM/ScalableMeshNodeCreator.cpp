@@ -6,7 +6,7 @@
 |       $Date: 2015/07/15 21:55:29 $
 |     $Author: Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -120,7 +120,7 @@ void IScalableMeshNodeCreator::SetDataResolution(float resolution)
     dynamic_cast<IScalableMeshNodeCreator::Impl*>(m_implP.get())->SetDataResolution(resolution);
     }
 
-int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
+int IScalableMeshNodeCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {
     int status = BSISUCCESS;
 

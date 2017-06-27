@@ -6,7 +6,7 @@
 |       $Date: 2012/06/27 14:07:12 $
 |     $Author: Chantal.Poulin $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -107,6 +107,8 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
 
         virtual void          _SetActiveClips(const bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
 
+        virtual void          _GetActiveClips(bset<uint64_t>& activeClips, const IScalableMeshPtr& scalableMeshPtr);
+
         virtual BentleyStatus _StartQuery(int                                                                      queryId, 
                                           IScalableMeshViewDependentMeshQueryParamsPtr                             queryParam, 
                                           const bvector<BENTLEY_NAMESPACE_NAME::ScalableMesh::IScalableMeshCachedDisplayNodePtr>& startingNodes,                                           
@@ -130,6 +132,8 @@ class ScalableMeshProgressiveQueryEngine : public virtual IScalableMeshProgressi
         
 
     public : 
+
+        static void PreloadData(ScalableMesh<DPoint3d>* smP, bvector<HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>>& toLoadNodes, bool cancelLastPreload);
 
         ScalableMeshProgressiveQueryEngine(IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr);
 

@@ -201,17 +201,10 @@ IScalableMeshCreator::~IScalableMeshCreator ()
     }
   
 
-StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation)
+StatusInt IScalableMeshCreator::Create (bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {
-    return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation);
+    return m_implP->CreateScalableMesh(isSingleFile, restrictLevelForPropagation, doPartialUpdate);
     }
-
-void IScalableMeshCreator::SetBaseExtraFilesPath(const WString& path)
-    {
-    return m_implP->SetBaseExtraFilesPath(path);
-    }
-
-
 
 const BENTLEY_NAMESPACE_NAME::GeoCoordinates::BaseGCSCPtr& IScalableMeshCreator::GetBaseGCS () const
     {
@@ -298,20 +291,20 @@ StatusInt IScalableMeshCreator::SetCompression(ScalableMeshCompressionType compr
     return SUCCESS;
     }
 
-StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
+StatusInt   IScalableMeshCreator::SetTextureMosaic(HIMMosaic* mosaicP)
     {
-    return m_implP->SetTextureMosaic(mosaicP, unitTransform);
+    return m_implP->SetTextureMosaic(mosaicP);
     }
 
 
-StatusInt   IScalableMeshCreator::SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform)
+StatusInt   IScalableMeshCreator::SetTextureProvider(ITextureProviderPtr provider)
     {
-    return m_implP->SetTextureProvider(provider, unitTransform);
+    return m_implP->SetTextureProvider(provider);
     }
 
-StatusInt IScalableMeshCreator::SetTextureStreamFromUrl(WString url, Transform unitTransform)
+StatusInt IScalableMeshCreator::SetTextureStreamFromUrl(WString url)
     {
-    return m_implP->SetTextureStreamFromUrl(url, unitTransform);
+    return m_implP->SetTextureStreamFromUrl(url);
     }
 
 
@@ -332,6 +325,7 @@ StatusInt IScalableMeshCreator::SetGCS(const GeoCoords::GCS& gcs)
     return 0;
     }
 
+#if 0
 bool IScalableMeshCreator::IsCanceled()
     {
     return m_implP->IsCanceled();
@@ -340,6 +334,12 @@ bool IScalableMeshCreator::IsCanceled()
 void IScalableMeshCreator::Cancel()
     {
     return m_implP->Cancel();
+    }
+#endif
+
+IScalableMeshProgress* IScalableMeshCreator::GetProgress()
+    {
+    return &*m_implP->GetProgress();
     }
 
 /*----------------------------------------------------------------------------+
@@ -353,7 +353,8 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     //   m_sourceEnv(CreateSourceEnvFrom(scmFileName)),
     m_compressionType(SCM_COMPRESSION_DEFLATE),
     m_workingLayer(DEFAULT_WORKING_LAYER),
-    m_isCanceled(false)
+    m_isCanceled(false),
+    m_progress(new ScalableMeshProgress())
     {
 
 
@@ -363,6 +364,11 @@ IScalableMeshCreator::Impl::Impl(const WChar* scmFileName)
     s_useThreadsInMeshing = true;
     s_useThreadsInStitching = true;
     s_useThreadsInFiltering = true;
+    m_progress->ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
+    m_progress->ProgressStepIndex() = 0;
+    m_progress->Progress() = 0;
+    m_progress->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
+    m_progress->SetTotalNumberOfSteps(0);
     }
 
 IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
@@ -372,12 +378,21 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
         m_gcsDirty(false),     
         m_compressionType(SCM_COMPRESSION_DEFLATE),
         m_workingLayer(DEFAULT_WORKING_LAYER),
-        m_isCanceled(false)
+        m_isCanceled(false),
+	m_progress(new ScalableMeshProgress())
     {
   
 
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
+	s_useThreadsInMeshing = true;
+	s_useThreadsInStitching = true;
+	s_useThreadsInFiltering = true;
+	m_progress->ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
+	m_progress->ProgressStepIndex() = 0;
+	m_progress->Progress() = 0;
+	m_progress->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
+	m_progress->SetTotalNumberOfSteps(0);
 
 
     }
@@ -391,15 +406,25 @@ IScalableMeshCreator::Impl::~Impl()
     m_scmPtr = 0;
     }
 
-StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP, Transform unitTransform)
+StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
+
+    GetProgress()->ProgressStep() = ScalableMeshStep::STEP_TEXTURE;
+    GetProgress()->SetTotalNumberOfSteps(1);
+    GetProgress()->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_TEXTURING;
+    GetProgress()->ProgressStepIndex() = 1;
+    GetProgress()->Progress() = 0.0;
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
     ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(mosaicP);
-    m_scmPtr->TextureFromRaster(mosaicPtr, unitTransform);
+    ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Embedded);
+    m_scmPtr->TextureFromRaster(mosaicPtr);
+    GetProgress()->Progress() = 1.0;
     return SUCCESS;
     }
 
-StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url, Transform unitTransform)
+StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
     DRange3d range;
@@ -407,14 +432,14 @@ StatusInt IScalableMeshCreator::Impl::SetTextureStreamFromUrl(WString url, Trans
     BaseGCSCPtr cs = GetGCS().GetGeoRef().GetBasePtr();
     ITextureProviderPtr mapboxPtr = new MapBoxTextureProvider(url, range, cs);
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Streaming);
-    m_scmPtr->TextureFromRaster(mapboxPtr, unitTransform);
+    m_scmPtr->TextureFromRaster(mapboxPtr);
     return SUCCESS;
     }
 
-StatusInt IScalableMeshCreator::Impl::SetTextureProvider(ITextureProviderPtr provider, Transform unitTransform)
+StatusInt IScalableMeshCreator::Impl::SetTextureProvider(ITextureProviderPtr provider)
     {
     if (m_scmPtr.get() == nullptr) return ERROR;
-    m_scmPtr->TextureFromRaster(provider, unitTransform);
+    m_scmPtr->TextureFromRaster(provider);
     return SUCCESS;
     }
 
@@ -542,7 +567,7 @@ bool DgnDbFilename(BENTLEY_NAMESPACE_NAME::WString& stmFilename)
     }
 
 
-int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation)
+int IScalableMeshCreator::Impl::CreateScalableMesh(bool isSingleFile, bool restrictLevelForPropagation, bool doPartialUpdate)
     {    
     int status = BSIERROR;
     return status;
@@ -588,19 +613,30 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
             return ERROR;
             }
 
-        // Pip ToDo: Create manager?
-			DataSourceManager *manager = DataSourceManager::Get(); // &s_dataSourceManager;
-        
-            ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(*manager, streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
+       
+        ISMDataStoreTypePtr<Extent3dType> dataStore(new SMStreamingStore<Extent3dType>(streamingFilePath, (SCM_COMPRESSION_DEFLATE == m_compressionType), true));
         
         pDataIndex = new MeshIndexType(dataStore, 
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),                                                                                                                                                                                         
                                        10000,
                                        pFilter,
-                                       needBalancing, false, false,
+                                       needBalancing, false, false, true,
                                        pMesher2_5d,
                                        pMesher3d);
 
+        Utf8String fileNameStr;
+        m_smSQLitePtr->GetFileName(fileNameStr);
+        BeFileName fileNameDir(fileNameStr.c_str());
+
+#ifdef VANCOUVER_API
+        BeFileName newFileNameDir(BeFileName::GetDirectoryName(fileNameDir).GetWCharCP());
+        newFileNameDir.append(BeFileName::GetFileNameWithoutExtension(fileNameDir));
+#else
+        BeFileName newFileNameDir = fileNameDir.GetDirectoryName();
+        newFileNameDir.append(fileNameDir.GetFileNameWithoutExtension());
+#endif
+
+        dataStore->SetProjectFilesPath(newFileNameDir);
         pDataIndex->SetSingleFile(false);
         pDataIndex->SetGenerating(true);
 
@@ -614,15 +650,24 @@ StatusInt IScalableMeshCreator::Impl::CreateDataIndex (HFCPtr<MeshIndexType>&   
                                        ScalableMeshMemoryPools<PointType>::Get()->GetGenericPool(),
                                        10000,
                                        pFilter,
-                                       needBalancing, false, false,
+                                       needBalancing, false, false, true,
                                        pMesher2_5d,
                                        pMesher3d);
 
-        BeFileName projectFilesPath(m_baseExtraFilesPath.c_str());
-        dataStore->SetProjectFilesPath(projectFilesPath, true);
-
+        Utf8String fileNameStr;
+        m_smSQLitePtr->GetFileName(fileNameStr);
+        BeFileName fileNameDir(fileNameStr.c_str());
+#ifdef VANCOUVER_API
+        BeFileName newFileNameDir(BeFileName::GetDirectoryName(fileNameDir).GetWCharCP());
+        newFileNameDir.append(BeFileName::GetFileNameWithoutExtension(fileNameDir));
+#else
+        BeFileName newFileNameDir = fileNameDir.GetDirectoryName();
+        newFileNameDir.append(fileNameDir.GetFileNameWithoutExtension());
+#endif
+        dataStore->SetProjectFilesPath(newFileNameDir);
         pDataIndex->SetGenerating(true);        
         }           
+    if (pDataIndex != nullptr) pDataIndex->SetProgressCallback(GetProgress());
 
     return SUCCESS;
     }
@@ -783,13 +828,6 @@ bool IScalableMeshCreator::Impl::IsFileDirty()
     return m_gcsDirty;
     }
 
-
-void IScalableMeshCreator::Impl::SetBaseExtraFilesPath(const WString& path)
-    {
-    m_baseExtraFilesPath = path;
-    }
-
-
 StatusInt IScalableMeshCreator::Impl::Load()
 {
     return BSISUCCESS == LoadGCS();
@@ -809,6 +847,11 @@ void IScalableMeshCreator::Impl::Cancel()
     {
     m_isCanceled = true;
     if (m_dataIndex) m_dataIndex->SetCanceled(true);
+    }
+
+IScalableMeshProgressPtr IScalableMeshCreator::Impl::GetProgress()
+    {
+    return m_progress;
     }
 
 /*---------------------------------------------------------------------------------**//**

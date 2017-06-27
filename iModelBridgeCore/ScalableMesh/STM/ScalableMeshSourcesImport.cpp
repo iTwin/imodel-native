@@ -6,7 +6,7 @@
 |       $Date: 2011/10/20 18:47:55 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -531,6 +531,7 @@ SMStatus SourcesImporter::Impl::Import()
     {
     SourcesImporter attachmentsImporter(m_sinkSourceRef, m_sinkPtr);
 
+    m_sinkPtr->SetTotalNumberOfExpectedSources(m_sources.size());
     for (SourceList::iterator sourceIt = m_sources.begin(), sourcesEnd = m_sources.end(); sourceIt != sourcesEnd; ++sourceIt)
         {
         SMStatus status = ImportSource(*sourceIt, attachmentsImporter);
