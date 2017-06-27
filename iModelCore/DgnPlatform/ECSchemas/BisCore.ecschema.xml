@@ -1109,11 +1109,11 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="TextAnnotationData" displayLabel="Text Annotation Data" description="The aspect used to store text annotation data for 2D and 3D text annotation elements.">
+    <ECEntityClass typeName="TextAnnotationData" modifier="Sealed" displayLabel="Text Annotation Data" description="The aspect used to store text annotation data for 2D and 3D text annotation elements.">
+        <BaseClass>ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TextAnnotation" typeName="binary" displayLabel="Text Annotation">
             <ECCustomAttributes>
                 <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
@@ -1160,7 +1160,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="AnnotationTableHeader" displayLabel="Annotation Table Header">
+    <ECEntityClass typeName="AnnotationTableHeader" modifier="Sealed" displayLabel="Annotation Table Header">
         <!-- The aspect that holds the header properties for an AnnotationTable -->
         <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="RowCount" typeName="int" displayLabel="Row Count"/>
@@ -1265,7 +1265,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="AnnotationTableRow" displayLabel="Annotation Table Row">
+    <ECEntityClass typeName="AnnotationTableRow" modifier="Sealed" displayLabel="Annotation Table Row">
         <!-- The aspect that holds properties of a row of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECProperty propertyName="RowIndex" typeName="int" displayLabel="Row Index"/>
@@ -1282,7 +1282,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="AnnotationTableColumn" displayLabel="Annotation Table Column">
+    <ECEntityClass typeName="AnnotationTableColumn" modifier="Sealed" displayLabel="Annotation Table Column">
         <!-- The aspect that holds properties of a column of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECProperty propertyName="ColumnIndex" typeName="int" displayLabel="Column Index"/>
@@ -1304,7 +1304,7 @@
         <ECProperty propertyName="ColumnIndex" typeName="int" displayLabel="Column Index"/>
     </ECStructClass>
 
-    <ECEntityClass typeName="AnnotationTableCell" displayLabel="Annotation Table Cell">
+    <ECEntityClass typeName="AnnotationTableCell" modifier="Sealed" displayLabel="Annotation Table Cell">
         <!-- The aspect that holds properties of a cell of an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex" displayLabel="Cell Index"/>
@@ -1331,7 +1331,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="AnnotationTableMerge" displayLabel="Annotation Table Merge">
+    <ECEntityClass typeName="AnnotationTableMerge" modifier="Sealed" displayLabel="Annotation Table Merge">
         <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECStructProperty propertyName="RootCell" typeName="AnnotationTableCellIndex" displayLabel="Root Cell"/>
@@ -1348,7 +1348,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="AnnotationTableSymbology" displayLabel="Annotation Table Symbology">
+    <ECEntityClass typeName="AnnotationTableSymbology" modifier="Sealed" displayLabel="Annotation Table Symbology">
         <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECProperty propertyName="SymbologyKey" typeName="int" displayLabel="Symbology Key"/>
@@ -1378,7 +1378,7 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="AnnotationTableEdgeRun" displayLabel="Annotation Table Edge Run">
+    <ECEntityClass typeName="AnnotationTableEdgeRun" modifier="Sealed" displayLabel="Annotation Table Edge Run">
         <!-- The aspect that holds properties describing edges in an AnnotationTable -->
         <BaseClass>ElementMultiAspect</BaseClass>
         <ECProperty propertyName="HostType" typeName="int" displayLabel="Host Type"/>
