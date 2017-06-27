@@ -1063,13 +1063,7 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
         return true;
         }
 
-    if (createTimeMillis < static_cast<uint64_t>(lastModMillis))
-        {
-        DEBUG_PRINTF("Discarding expired tile from cache...");
-        return true;
-        }
-
-    return false;
+    return createTimeMillis < static_cast<uint64_t>(lastModMillis);
     }
 
 /*---------------------------------------------------------------------------------**//**
