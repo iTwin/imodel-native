@@ -57,7 +57,7 @@
     <NMakeBuildCommandLine>bb -v4 -ax64 -p MobileUtilsIntegrationTests re MobileUtilsIntegrationTests MobileUtils MobileUtilsNativeLib MobileUtilsXliff</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -v4 -ax64 -p MobileUtilsIntegrationTests b</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -v4 -ax64 -p MobileUtilsIntegrationTests re MobileUtilsIntegrationTests MobileUtils MobileUtilsNativeLib MobileUtilsXliff -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath);$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)util\gtest\include;$(SrcRoot)FieldApps\Shared\Native;$(SrcRoot)FieldApps\MobileUtils\Native\PublicAPI;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>

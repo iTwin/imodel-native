@@ -39,7 +39,7 @@ bool Sha1Calc(const bvector<Byte>& input, unsigned char *binaryHash, unsigned in
     if (!EVP_DigestFinal_ex(mdctx, binaryHash, hashLen))
         return false;
 
-    EVP_MD_CTX_cleanup(mdctx);
+    EVP_MD_CTX_free(mdctx);
     EVP_MD_CTX_destroy(mdctx);
     return true;
     }
@@ -106,7 +106,8 @@ m_schemasDir(schemasDir)
             continue;
 
         SchemaKey key;
-        if (SUCCESS != SchemaKey::ParseSchemaFullName(key, path.GetFileNameWithoutExtension().c_str()))
+        Utf8String fName (path.GetFileNameWithoutExtension ());
+        if (ECN::ECObjectsStatus::Success != SchemaKey::ParseSchemaFullName(key, fName.c_str()))
             continue;
 
         m_schemaPaths[key] = path;
@@ -121,12 +122,12 @@ AsyncTaskPtr<WSFileResult> DiskRepositoryClient::SendGetFileRequest
 ObjectIdCR objectId,
 BeFileNameCR filePath,
 Utf8StringCR suppliedETag,
-HttpRequest::ProgressCallbackCR downloadProgressCallback,
+Request::ProgressCallbackCR downloadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
     SchemaKey key;
-    SchemaKey::ParseSchemaFullName(key, WString(objectId.remoteId.c_str(), true).c_str());
+    SchemaKey::ParseSchemaFullName(key, Utf8String (objectId.remoteId.c_str(), true).c_str());
 
     auto it = m_schemaPaths.find(key);
     if (it == m_schemaPaths.end())
@@ -178,10 +179,10 @@ ICancellationTokenPtr ct
         {
         auto key = pair.first;
         Utf8String name(key.m_schemaName);
-        Utf8PrintfString fullName("%s.%d.%d", name.c_str(), key.m_versionMajor, key.m_versionMinor);
+        Utf8PrintfString fullName("%s.%d.%d", name.c_str(), key.m_versionRead, key.m_versionMinor);
         instances.Add({"MetaSchema", "ECSchemaDef", fullName}, {
                 {"Name", name},
-                {"VersionMajor", key.m_versionMajor},
+                {"VersionRead", key.m_versionRead},
                 {"VersionMinor", key.m_versionMinor}});
         }
 
