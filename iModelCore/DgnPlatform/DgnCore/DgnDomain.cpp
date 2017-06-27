@@ -517,9 +517,18 @@ ECSchemaReadContextPtr DgnDomains::PrepareSchemaReadContext() const
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(false/*=acceptLegacyImperfectLatestCompatibleMatch*/, true/*=includeFilesWithNoVerExt*/);
 
-    BeFileName standardSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    standardSchemaPath.AppendToPath(L"ECSchemas/Standard");
-    context->AddSchemaPath(standardSchemaPath);
+    BeFileName schemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemaPath.AppendToPath(L"ECSchemas");
+
+    BeFileName standardSchemasPath(schemaPath);
+    standardSchemasPath.AppendToPath(L"Standard");
+    context->AddSchemaPath(standardSchemasPath);
+
+    //Not all ECDb schemas are always included in the ECDb file, e.g. ECDbSchemaPolicies. Therefore make those locatable
+    //from the assets dir
+    BeFileName ecdbSchemasPath(schemaPath);
+    ecdbSchemasPath.AppendToPath(L"ECDb");
+    context->AddSchemaPath(ecdbSchemasPath);
 
     context->SetFinalSchemaLocater(GetDgnDb().GetSchemaLocater()); // Schemas must first be located in disk (i.e., domain schemas) before finding them in the Db.
     return context;
