@@ -311,9 +311,9 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeGroup()
 
 void SyncLocalChangesTask::SetSyncActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active)
     {
-    auto objectKey = m_currentChangeGroup->GetObjectChange().GetInstanceKey();
-    auto relationshipKey = m_currentChangeGroup->GetRelationshipChange().GetInstanceKey();
-    auto fileKey = m_currentChangeGroup->GetFileChange().GetInstanceKey();
+    auto objectKey = changeGroup.GetObjectChange().GetInstanceKey();
+    auto relationshipKey = changeGroup.GetRelationshipChange().GetInstanceKey();
+    auto fileKey = changeGroup.GetFileChange().GetInstanceKey();
 
     if (objectKey.IsValid())
         {
