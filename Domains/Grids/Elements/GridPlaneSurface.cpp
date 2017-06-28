@@ -47,7 +47,7 @@ ISolidPrimitivePtr surface
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridPlaneSurfacePtr             GridPlaneSurface::Create 
 (
-Dgn::DgnModelCR model,
+Dgn::SpatialLocationModelCR model,
 CurveVectorPtr  surfaceVector
 )
     {
@@ -59,7 +59,7 @@ CurveVectorPtr  surfaceVector
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridPlaneSurfacePtr             GridPlaneSurface::Create 
 (
-Dgn::DgnModelCR model,
+Dgn::SpatialLocationModelCR model,
 ISolidPrimitivePtr surface
 )
     {
@@ -138,6 +138,14 @@ bool                            GridPlaneSurface::StretchGeomIdToPlane
     {
     BeAssert(!"Not yet implemented");
     return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+GridPlaneSurfacePtr GridPlaneSurface::Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail)
+    {
+    return GridPlaneSurface::Create(model, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 
 END_GRIDS_NAMESPACE

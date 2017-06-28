@@ -34,8 +34,9 @@ protected:
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (GridArcSurface, GRIDELEMENTS_EXPORT)
 
-    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::DgnModelCR model, CurveVectorPtr surfaceVector);
-    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::DgnModelCR model, ISolidPrimitivePtr surface);
+    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, CurveVectorPtr surfaceVector);
+    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, ISolidPrimitivePtr surface);
+    GRIDELEMENTS_EXPORT static GridArcSurfacePtr Create (Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail);
 };
 
 END_GRIDS_NAMESPACE

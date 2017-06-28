@@ -32,7 +32,8 @@ CurveVectorPtr  surfaceVector
     {
     Dgn::GeometrySourceP geomElem = ToGeometrySourceP ();
 
-    Placement3d newPlacement ((*(*surfaceVector->begin ())->GetLineStringCP ())[0], GetPlacement ().GetAngles ());
+    //Placement3d newPlacement ((*(*surfaceVector->begin ())->GetLineStringCP ())[0], GetPlacement ().GetAngles ());
+    Placement3d newPlacement(DPoint3d::FromZero(), GetPlacement().GetAngles());
     SetPlacement (newPlacement);
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
@@ -77,7 +78,8 @@ ISolidPrimitivePtr  surface
         BeAssert(!"Unrecognized DrivingSurface Base Curve");
 
 
-    Placement3d newPlacement (originPoint, GetPlacement ().GetAngles ());
+    //Placement3d newPlacement (originPoint, GetPlacement ().GetAngles ());
+    Placement3d newPlacement(DPoint3d::FromZero(), GetPlacement().GetAngles());
     SetPlacement (newPlacement);
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);

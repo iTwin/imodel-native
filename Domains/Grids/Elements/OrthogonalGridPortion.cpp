@@ -14,6 +14,7 @@
 #include "PublicApi\GridPlaneSurface.h"
 #include <DimensionHandler.h>
 #include <BuildingUtils.h>
+#include <GeometryUtils.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
@@ -38,7 +39,7 @@ T_Super::CreateParams const& params
 +---------------+---------------+---------------+---------------+---------------+------*/
 OrthogonalGridPortionPtr        OrthogonalGridPortion::Create
 (
-Dgn::DgnModelCR model
+Dgn::SpatialLocationModelCR model
 )
     {
     return new OrthogonalGridPortion (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())));
@@ -101,37 +102,38 @@ GridElementVector OrthogonalGridPortion::CreateGridElements(CreateParams params,
     {
     GridElementVector orthogonalGrid;
 
-    DgnExtrusionDetail extDetail = CreatePlaneGridExtrusionDetail(params.m_length, params.m_height);
-    GridPlaneSurfacePtr baseGridPlane = dynamic_cast<GridPlaneSurface *>(CreateGridSurface(*params.m_model, extDetail, GridType::GRID_TYPE_Orthogonal).get());
-    if (!baseGridPlane.IsValid())
-        return GridElementVector();
-
-    baseGridPlane->MoveToPoint(params.m_origin);
-    baseGridPlane->RotateXY(params.m_rotationAngle);
+    DVec3d extendTranslation;
+    double interval;
+    int count;
+    double rotAngle = 0;
 
     if (isHorizontal)
-        for (int i = 0; i < params.m_horizontalCount; ++i)
-            {
-            GridPlaneSurfacePtr orthogonalGridPlane = dynamic_cast<GridPlaneSurface *>(baseGridPlane->Clone().get());
-            if (!orthogonalGridPlane.IsValid())
-                return GridElementVector();
-
-            orthogonalGridPlane->TranslateXY(params.m_horizontalExtendTranslation);
-            orthogonalGridPlane->TranslateXY(FindOrthogonalFormTranslation(i, params.m_horizontalInterval, params.m_rotationAngle, true));
-            orthogonalGrid.push_back(orthogonalGridPlane);
-            }
+        {
+        extendTranslation = params.m_horizontalExtendTranslation;
+        interval = params.m_horizontalInterval;
+        count = params.m_horizontalCount;
+        }
     else
-        for (int i = 0; i < params.m_verticalCount; ++i)
-            {
-            GridPlaneSurfacePtr orthogonalGridPlane = dynamic_cast<GridPlaneSurface *>(baseGridPlane->Clone().get());
-            if (!orthogonalGridPlane.IsValid())
-                return GridElementVector();
+        {
+        extendTranslation = params.m_verticalExtendTranslation;
+        interval = params.m_verticalInterval;
+        count = params.m_verticalCount;
+        rotAngle += msGeomConst_pi / 2;
+        }
 
-            orthogonalGridPlane->RotateXY(msGeomConst_pi / 2);
-            orthogonalGridPlane->TranslateXY(params.m_verticalExtendTranslation);
-            orthogonalGridPlane->TranslateXY(FindOrthogonalFormTranslation(i, params.m_verticalInterval, params.m_rotationAngle + msGeomConst_pi / 2, false));
-            orthogonalGrid.push_back(orthogonalGridPlane);
-            }
+    for (int i = 0; i < count; ++i)
+        {
+        DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length, params.m_height);
+        extDetail.m_baseCurve->TransformInPlace(Transform::From(RotMatrix::FromAxisAndRotationAngle(2, rotAngle)));
+        extDetail.m_baseCurve->TransformInPlace(Transform::From(extendTranslation));
+
+        GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*params.m_model, extDetail);
+        if (!baseGridPlane.IsValid())
+            return GridElementVector();
+
+        baseGridPlane->Translate(FindOrthogonalFormTranslation(i, interval, rotAngle, isHorizontal));
+        orthogonalGrid.push_back(baseGridPlane);
+        }
 
     return orthogonalGrid;
     }
@@ -175,6 +177,172 @@ BentleyStatus OrthogonalGridPortion::CreateAndInsert(CreateParams params)
             AddDimensionsToOrthogonalGrid(lastElement, gridSurface, distance);
             lastElement = gridSurface;
             }
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+double getIntervalBetweenElements(GridElementVector elements)
+    {
+    if (elements.size() >= 2)
+        {
+        GridSurfacePtr plane1 = elements[0];
+        GridSurfacePtr plane2 = elements[1];
+
+        return plane1->GetPlacement().GetOrigin().DistanceXY(plane2->GetPlacement().GetOrigin());
+        }
+    else
+        return 0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+void OrthogonalGridPortion::RotateToAngleXY(GridAxisMap& grid, double theta)
+    {
+    double horizontalInterval = getIntervalBetweenElements(grid[HORIZONTAL_AXIS]);
+    double verticalInterval = getIntervalBetweenElements(grid[VERTICAL_AXIS]);
+
+    if (grid[HORIZONTAL_AXIS].size() > 0)
+        {
+        double existingRotation = GeometryUtils::PlacementToAngleXY(grid[HORIZONTAL_AXIS].front()->GetPlacement());
+        DVec3d horizontalTranslation = DVec3d::From(0.0, 0.0, 0.0);
+        if (grid[HORIZONTAL_AXIS].size() > 1)
+            {
+            horizontalTranslation = DVec3d::FromStartEnd(grid[HORIZONTAL_AXIS][0]->GetPlacement().GetOrigin(), grid[HORIZONTAL_AXIS][1]->GetPlacement().GetOrigin());
+            horizontalTranslation.RotateXY(theta);
+            }
+
+        grid[HORIZONTAL_AXIS][0]->RotateXY(theta);
+        
+        for (int i = 1; i < grid[HORIZONTAL_AXIS].size(); ++i)
+            {
+            grid[HORIZONTAL_AXIS][i]->SetPlacement(grid[HORIZONTAL_AXIS][0]->GetPlacement());
+
+            horizontalTranslation.ScaleToLength(i * horizontalInterval);
+            DPoint3d newOrigin = grid[HORIZONTAL_AXIS][0]->GetPlacement().GetOrigin();
+            newOrigin.Add(horizontalTranslation);
+            grid[HORIZONTAL_AXIS][i]->MoveToPoint(newOrigin);
+            }
+        }
+
+    if (grid[VERTICAL_AXIS].size() > 0)
+        {
+        double existingRotation = GeometryUtils::PlacementToAngleXY(grid[VERTICAL_AXIS].front()->GetPlacement());
+        DVec3d verticalTranslation = DVec3d::From(0.0, 0.0, 0.0);
+        if (grid[VERTICAL_AXIS].size() > 1)
+            {
+            verticalTranslation = DVec3d::FromStartEnd(grid[VERTICAL_AXIS][0]->GetPlacement().GetOrigin(), grid[VERTICAL_AXIS][1]->GetPlacement().GetOrigin());
+            verticalTranslation.RotateXY(theta);
+            }
+
+        grid[VERTICAL_AXIS][0]->RotateXY(theta);
+
+        for (int i = 1; i < grid[VERTICAL_AXIS].size(); ++i)
+            {
+            grid[VERTICAL_AXIS][i]->SetPlacement(grid[VERTICAL_AXIS][0]->GetPlacement());
+
+            verticalTranslation.ScaleToLength(i * verticalInterval);
+            DPoint3d newOrigin = grid[VERTICAL_AXIS][0]->GetPlacement().GetOrigin();
+            newOrigin.Add(verticalTranslation);
+            grid[VERTICAL_AXIS][i]->MoveToPoint(newOrigin);
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+void OrthogonalGridPortion::RotateToAngleXY(GridElementVector& grid, double theta)
+    {
+    GridAxisMap axisMap;
+    if (BentleyStatus::ERROR == ElementVectorToAxisMap(axisMap, grid))
+        return;
+
+    RotateToAngleXY(axisMap, theta);
+
+    grid = axisMap[HORIZONTAL_AXIS];
+    grid.insert(grid.end(), axisMap[VERTICAL_AXIS].begin(), axisMap[VERTICAL_AXIS].end());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+BentleyStatus OrthogonalGridPortion::ElementVectorToAxisMap(GridAxisMap& axisMap, GridElementVector elements)
+    {
+    axisMap = GridAxisMap();
+
+    DVec3d horizontalNormal = DVec3d::From(0, 0, 0);
+    DVec3d verticalNormal = DVec3d::From(0, 0, 0);
+
+    // Cast all elements to grid planes
+    bvector<GridPlaneSurfacePtr> planes;
+    for (GridSurfacePtr surface : elements)
+        {
+        GridPlaneSurfacePtr plane = dynamic_cast<GridPlaneSurface *>(surface.get());
+        if (!plane.IsValid())
+            return BentleyStatus::ERROR;
+
+        planes.push_back(plane);
+        }
+
+    // Find such normals that if you rotate horizontal normal by msGeomConst_pi / 2 you get vertical normal
+    for (GridPlaneSurfacePtr plane : planes)
+        {
+        DVec3d normal = plane->GetPlane().normal;
+
+        if (normal.IsZero()) // no plane normal can be zero
+            return BentleyStatus::ERROR;
+
+        if (horizontalNormal.IsZero()) // assign first normal as horizontal
+            horizontalNormal = normal;
+        else
+            {
+            if (normal.IsPositiveParallelTo(horizontalNormal))
+                continue;
+            
+            if (!normal.IsPerpendicularTo(horizontalNormal)) // all normals must be either perpendicular or parallel to each other
+                return BentleyStatus::ERROR;
+
+            verticalNormal = normal;
+            break;
+            }
+        }
+
+    if (!verticalNormal.IsZero()) // If no normal perpendicular to horizontal normal has been found all planes will be under horizontal axis
+        {
+        // Check if horizontal and vertical normals are correct
+        DVec3d testHorizontalNormal = horizontalNormal;
+        testHorizontalNormal.RotateXY(msGeomConst_pi / 2);
+        if (!testHorizontalNormal.IsPositiveParallelTo(verticalNormal)) // If rotated horizontal normal is not positive parallel to vertical normal, they probably need to be swapped
+            {
+            DVec3d testVerticalNormal = verticalNormal; // Check rotating current vertical normal by msGeomConst_pi / 2 we get horizontal normal
+            testVerticalNormal.RotateXY(msGeomConst_pi / 2);
+
+            if (!testVerticalNormal.IsPositiveParallelTo(horizontalNormal))
+                return BentleyStatus::ERROR;
+
+            // Swap normals
+            DVec3d temp = horizontalNormal;
+            horizontalNormal = verticalNormal;
+            verticalNormal = temp;
+            }
+        }
+
+    // Check every plane normal and put it under corresponding axis
+    for (GridPlaneSurfacePtr plane : planes)
+        {
+        DVec3d normal = plane->GetPlane().normal;
+
+        if (normal.IsPositiveParallelTo(horizontalNormal))
+            axisMap[HORIZONTAL_AXIS].push_back(plane);
+        else if (normal.IsPositiveParallelTo(verticalNormal))
+            axisMap[VERTICAL_AXIS].push_back(plane);
+        else
+            return BentleyStatus::ERROR;
         }
 
     return BentleyStatus::SUCCESS;

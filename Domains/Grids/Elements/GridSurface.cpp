@@ -60,7 +60,7 @@ CurveVectorPtr  surfaceVector
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::GeometricElement3d::CreateParams           GridSurface::CreateParamsFromModel
 (
-Dgn::DgnModelCR model,
+Dgn::SpatialLocationModelCR model,
 DgnClassId classId
 )
     {
@@ -76,7 +76,7 @@ DgnClassId classId
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridSurfacePtr                 GridSurface::Create 
 (
-Dgn::DgnModelCR model,
+Dgn::SpatialLocationModelCR model,
 CurveVectorPtr  surfaceVector
 )
     {
@@ -88,7 +88,7 @@ CurveVectorPtr  surfaceVector
 //---------------------------------------------------------------------------------------
 GridSurfacePtr                 GridSurface::Create 
 (
-Dgn::DgnModelCR model,
+Dgn::SpatialLocationModelCR model,
 ISolidPrimitivePtr surface
 )
     {
@@ -133,6 +133,14 @@ void GridSurface::Translate(DVec3d translation)
     Placement3d placement = GetPlacement();
     GeometryUtils::TranslatePlacement(placement, translation);
     SetPlacement(placement);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+GridSurfacePtr GridSurface::Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail)
+    {
+    return GridSurface::Create(model, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 
 END_GRIDS_NAMESPACE

@@ -42,8 +42,9 @@ public:
     GRIDELEMENTS_EXPORT virtual bool GetGeomIdPlane(int geomId, DPlane3dR planeOut) const override;
     GRIDELEMENTS_EXPORT virtual bool StretchGeomIdToPlane(int geomId, DPlane3dR targetPlane) override;
 
-    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::DgnModelCR model, CurveVectorPtr surfaceVector);
-    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::DgnModelCR model, ISolidPrimitivePtr  surface);
+    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, CurveVectorPtr surfaceVector);
+    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, ISolidPrimitivePtr  surface);
+    GRIDELEMENTS_EXPORT static  GridPlaneSurfacePtr Create (Dgn::SpatialLocationModelCR model, DgnExtrusionDetail  extDetail);
 
     GRIDELEMENTS_EXPORT         DPlane3d            GetPlane () const;
 };

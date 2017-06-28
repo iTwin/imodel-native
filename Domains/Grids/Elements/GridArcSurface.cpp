@@ -48,7 +48,7 @@ ISolidPrimitivePtr  surface
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridArcSurfacePtr                 GridArcSurface::Create 
 (
-Dgn::DgnModelCR model,
+Dgn::SpatialLocationModelCR model,
 CurveVectorPtr  surfaceVector
 )
     {
@@ -60,10 +60,18 @@ CurveVectorPtr  surfaceVector
 +---------------+---------------+---------------+---------------+---------------+------*/
 GridArcSurfacePtr                 GridArcSurface::Create 
 (
-Dgn::DgnModelCR model,
+Dgn::SpatialLocationModelCR model,
 ISolidPrimitivePtr  surface
 )
     {
     return new GridArcSurface (CreateParamsFromModel(model, QueryClassId(model.GetDgnDb())), surface);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+GridArcSurfacePtr GridArcSurface::Create(Dgn::SpatialLocationModelCR model, DgnExtrusionDetail extDetail)
+    {
+    return GridArcSurface::Create(model, ISolidPrimitive::CreateDgnExtrusion(extDetail));
     }
 END_GRIDS_NAMESPACE

@@ -29,15 +29,13 @@ public:
         {
         DEFINE_T_SUPER(OrthogonalGridPortion::T_Super::CreateParams);
 
-        Dgn::DgnModelCP m_model;
+        Dgn::SpatialLocationModelCP m_model;
         int m_horizontalCount;
         int m_verticalCount;
         double m_horizontalInterval;
         double m_verticalInterval;
         double m_length;
         double m_height;
-        DPoint3d m_origin;
-        double m_rotationAngle;
         DVec3d m_horizontalExtendTranslation;
         DVec3d m_verticalExtendTranslation;
 
@@ -49,13 +47,10 @@ public:
         //! @param[in] verticalInterval             distance between vertical lines
         //! @param[in] length                       length of grid lines
         //! @param[in] height                       height of grid lines
-        //! @param[in] origin                       point where grid begins
-        //! @param[in] rotationAngle                angle that grid is rotated by
         //! @param[in] horizontalExtendTranslation  translation of horizontal lines to be extended
         //! @param[in] verticalExtendTranslation    translation of vertical lines to be extended
-        CreateParams(Dgn::DgnModelCP model, int horizontalCount, int verticalCount, double horizontalInterval, double verticalInterval, 
-                     double length, double height, DPoint3d origin, double rotationAngle, 
-                     DVec3d horizontalExtendTranslation, DVec3d verticalExtendTranslation) :
+        CreateParams(Dgn::SpatialLocationModelCP model, int horizontalCount, int verticalCount, double horizontalInterval, double verticalInterval,
+                     double length, double height, DVec3d horizontalExtendTranslation, DVec3d verticalExtendTranslation) :
             T_Super(DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()))),
             m_model(model),
             m_horizontalCount(horizontalCount),
@@ -64,8 +59,6 @@ public:
             m_verticalInterval(verticalInterval),
             m_length(length),
             m_height(height),
-            m_origin(origin),
-            m_rotationAngle(rotationAngle),
             m_horizontalExtendTranslation(horizontalExtendTranslation),
             m_verticalExtendTranslation(verticalExtendTranslation)
             {
@@ -102,10 +95,16 @@ protected:
     //! @param[in] distance distance between elements
     GRIDELEMENTS_EXPORT static void AddDimensionsToOrthogonalGrid(Grids::GridSurfacePtr element1, Grids::GridSurfacePtr element2, double distance);
 
+    //! Creates orthogonal grid axis map from grid element vector
+    //! @param[out] axisMap GridAxisMap containing grid surfaces HORIZONTAL_AXIS and VERTICAL_AXIS
+    //! @param[in] elements grid element vector containing perpendicular grid surfaces
+    //! @return             BentleyStatus::SUCCESS if no error occured while sorting elements
+    GRIDELEMENTS_EXPORT static BentleyStatus ElementVectorToAxisMap(GridAxisMap& axisMap, GridElementVector elements);
+
+
+    GRIDELEMENTS_EXPORT static OrthogonalGridPortionPtr Create(Dgn::SpatialLocationModelCR model);
 public:
     DECLARE_GRIDS_ELEMENT_BASE_METHODS (OrthogonalGridPortion, GRIDELEMENTS_EXPORT)
-
-    GRIDELEMENTS_EXPORT static OrthogonalGridPortionPtr Create (Dgn::DgnModelCR model);
 
     //! Creates orthogonal grid and returns it as a map where HORIZONTAL_AXIS maps to horizontal grid planes and VERTICAL_AXIS maps to vertical grid planes
     //! @param[in] params    grid parameters containing information about the grid. For more info look up CreateParams
@@ -116,6 +115,16 @@ public:
     //! @param[in] params   grid parameters containing information about the grid. For more info look up CreateParams
     //! @return             BentleyStatus::SUCCESS if no error has occured while inserting elements/dimensions
     GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert(CreateParams params);
+
+    //! Rotates orthogonal grid by given angle in radians on XY plane
+    //! @param[in] grid     orthogonal grid to rotate
+    //! @param[in] theta    angle to rotate on XY plane
+    GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridAxisMap& grid, double theta);
+
+    //! Rotates orthogonal grid by given angle in radians on XY plane
+    //! @param[in] grid     orthogonal grid to rotate
+    //! @param[in] theta    angle to rotate on XY plane
+    GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridElementVector& grid, double theta);
 };
 
 END_GRIDS_NAMESPACE

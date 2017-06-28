@@ -25,7 +25,7 @@ struct EXPORT_VTABLE_ATTRIBUTE SketchGridPortion : GridPortion
     DGNELEMENT_DECLARE_MEMBERS (GRIDS_CLASS_SketchGridPortion, GridPortion);
 
 protected:
-    explicit GRIDELEMENTS_EXPORT SketchGridPortion (CreateParams const& params);
+    explicit GRIDELEMENTS_EXPORT SketchGridPortion (T_Super::CreateParams const& params);
     friend struct SketchGridPortionHandler;
 
 public:
