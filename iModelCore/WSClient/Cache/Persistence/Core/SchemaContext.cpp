@@ -2,23 +2,22 @@
 |
 |     $Source: Cache/Persistence/Core/SchemaContext.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "SchemaContext.h"
+#include <WebServices/Cache/CachingDataSource.h>
 
-#include <DgnClientFx/DgnClientFxCommon.h>
-
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_WEBSERVICES
+
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    07/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName SchemaContext::GetCacheSchemasDir()
     {
-    BeFileName path = DgnClientFxCommon::GetApplicationPaths().GetDgnPlatformAssetsDirectory();
+    BeFileName path = CachingDataSource::GetHostAssetsDirectory ();
     path.AppendToPath(L"ECSchemas");
     path.AppendToPath(L"WSClient");
     path.AppendToPath(L"Cache");
@@ -52,7 +51,7 @@ BeFileName SchemaContext::GetSupportMappingDir()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName SchemaContext::GetECDbSchemasDir()
     {
-    BeFileName path = DgnClientFxCommon::GetApplicationPaths().GetDgnPlatformAssetsDirectory();
+    BeFileName path = CachingDataSource::GetHostAssetsDirectory ();
     path.AppendToPath(L"ECSchemas");
     path.AppendToPath(L"ECDb");
     return path;

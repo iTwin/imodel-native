@@ -9,7 +9,7 @@
 #include "RepositoryCompatibilityTests.h"
 
 #include <WebServices/Cache/CachingDataSource.h>
-#include <BeHttp/ProxyHttpHandler.h>>
+#include <BeHttp/ProxyHttpHandler.h>
 
 #include "../UnitTests/Published/WebServices/Connect/StubLocalState.h"
 

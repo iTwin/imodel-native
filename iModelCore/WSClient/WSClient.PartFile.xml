@@ -58,7 +58,7 @@
 
     <Part Name="WSClient-PublishedAPI" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke"
      BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml +dPUBLISHAPI_VENDORAPI4=folly">
-        <SubPart PartName="PublishedApi" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="WSClientLibrarySubParts"/>
         <SubPart PartName="WebServicesClient-PublicAPI"/>
         <SubPart PartName="WebServicesCache-PublicAPI"/>
         <SubPart PartName="iModelHubClient-PublicAPI"/>
@@ -128,8 +128,7 @@
 
     <Part Name="WebServicesCache-Library" BentleyBuildMakeFile="CacheLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
-        <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="WSClientLibrarySubParts"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
@@ -138,7 +137,7 @@
 
     <Part Name="WebServicesCache-Library-Android" BentleyBuildMakeFile="CacheLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary"    PartFile="DgnClientFx" Repository="DgnClientFx" />
+        <SubPart PartName="WSClientLibrarySubParts" LibType="Static"/>
         <Bindings>
             <Libs>Delivery/$(libprefix)WebServicesCache$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)WebServicesCache$(ApiNumber)$(shlibext)</Assemblies>
@@ -437,7 +436,7 @@
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
         <SubPart PartName="WSClientTestAssets" />
-        <SubPart PartName="DgnClientFxLibrary-JNI" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="WSClientTestsL10N" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
                 Delivery/UnitTests/ignore_list.txt
@@ -448,6 +447,18 @@
 
     <Part Name="WSClientTestAssets" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/AssetsDelivery.mke" />
 
+    <!-- Tests need translatable strings, so sqlang file has to be build -->
+    <Part
+        Name="WSClientTestsL10N"
+        BentleyBuildMakeFile="../bsicommon/sqlang/mki/XliffsToDb.mke"
+        BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/WSClient/UnitTests/sqlang/WSClient_test.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="WebServicesClient"/>
+        <Bindings>
+            <Files ProductDirectoryName="sqlang" Required="true">Delivery/sqlang/WSClient_test.sqlang.db3</Files>
+        </Bindings>
+    </Part>
+    
     <Part Name="UnitTests-Published" DeferType="BuildUnitTests" 
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
         BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS"
@@ -467,19 +478,25 @@
         <SubPart PartName="UnitTests-Published"/>
 
         <!-- Ensure that builds, run manually if needed -->
-      <!-- 
         <SubPart PartName="WSClientIntegrationTests" />
         <SubPart PartName="WSClientCompatibilityTestTool" />
-      -->
-      </Part>
+    </Part>
 
     <!-- Define a gtest program to run the tests. 
         The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts -->
     <Product Name="WSClient-Tests">
-    <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
+        <SubPart Repository="BeGTest" PartFile="BeGTest" PartName="Base" />
         <SubPart PartName="Tests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest"  PartFile="BeGTest"/>
+        
+        <!-- WIP to silence build warnings. -->
+        <Directories DirectoryListName="WSClient-Tests-Dirs"/>
     </Product>
+
+    <!-- WIP to silence build warnings. -->
+    <ProductDirectoryList ListName="WSClient-Tests-Dirs">
+        <ProductDirectory Name="Gtest-NativeAssemblies" Deliver="false"/>
+    </ProductDirectoryList>
 
     <Part Name="Gtest" DeferType="BuildUnitTests" 
         BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke" 
@@ -612,6 +629,8 @@
         <ProductDirectory Name="Assemblies" Path=""/>
         <ProductDirectory Name="Assets" Path="Assets"/>
         <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets"/>
+        <ProductDirectory Name="sqlang"  Path="sqlang" RelativeTo="Assets" LibType="static"/>
         <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
         <ProductDirectory Name="VendorNotices" Deliver="false" />
         <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
@@ -619,6 +638,7 @@
   
     <Part Name="WSClientIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
         <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>        
+        <SubPart PartName="WSClientTestsL10N"/>
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="ConnectWebServicesClientC" />
@@ -626,6 +646,7 @@
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="PrewireForUnitTests" />
         <Bindings>
           <Files ProductDirectoryName="Gtest-NativeAssemblies">
                 Delivery/WSClientIntegrationTests.exe
@@ -638,30 +659,29 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
     <Part Name="WSClientCompatibilityTestTool" OnlyPlatforms="x64" >
+        <SubPart PartName="WSClientLibrarySubParts" />
         <SubProduct ProductName="WSClientCompatibilityTestTool" />
     </Part>
     
     <Product Name="WSClientCompatibilityTestTool" SaveProduct="true">
+        <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WSClientCompatibilityTests" />
         <Directories DirectoryListName="WSClientCompatibilityTestToolDirList" />
     </Product>
-
+    
     <ProductDirectoryList ListName="WSClientCompatibilityTestToolDirList" >
-        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
-        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
-        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
-        <ProductDirectory Name="Libs"                               Deliver="false"/>
-        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
-        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
-        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
-        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
-        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
-        <ProductDirectory Name="MergeModules"                       Deliver="false"/>
-
-        <ProductDirectory Name="VendorNotices"                      Path="Notices"/>
-        <ProductDirectory Name="VendorNotices"                      Path="Notices" LibType="static"/>
-
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
+        <ProductDirectory Name="Assemblies" Path=""/>
+        <ProductDirectory Name="Assets" Path="Assets"/>
+        <ProductDirectory Name="Assets" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Gtest-Assets" Path="Assets"/>
+        <ProductDirectory Name="VendorNotices" Deliver="false" />
+        <ProductDirectory Name="VendorNotices" Deliver="false" LibType="static" />
+        
+        <ProductDirectory Name="sqlang"                             Path="Assets/sqlang"/>
+        <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
+        <ProductDirectory Name="ecschemas"                          Path=""/>
         <ProductDirectory Name="loggingnativeassemblies"            Path=""/>
         <ProductDirectory Name="bentleynativeassemblies"            Path=""/>
         <ProductDirectory Name="geomnativeassemblies"               Path=""/>
@@ -669,38 +689,34 @@
         <ProductDirectory Name="BeCurlAssemblies"                   Path=""/>
         <ProductDirectory Name="BeOpenSSLAssemblies"                Path=""/>
         <ProductDirectory Name="http"                               Path="http"/>
-
-        <ProductDirectory Name="ecobjectsnativeassemblies"          Path=""/>
-        <ProductDirectory Name="ecschemas"                          Path=""/>
-
+        <ProductDirectory Name="Libs"                               Deliver="false"/>
+        <ProductDirectory Name="Libs"                               Deliver="false" LibType="static"/>
+        <ProductDirectory Name="BentleyLibs"                        Deliver="false"/>
+        <ProductDirectory Name="LoggingManagedAssemblies"           Deliver="false"/>
+        <ProductDirectory Name="LoggingOptionalManagedAssemblies"   Deliver="false"/>
+        <ProductDirectory Name="LoggingWorkspaceData"               Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false"/>
+        <ProductDirectory Name="PublicAPI"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false"/>
+        <ProductDirectory Name="VendorAPI"                          Deliver="false" LibType="static"/>
         <ProductDirectory Name="WSClientAssemblies"                 Path=""/>
         <ProductDirectory Name="WSClientCompatibilityTests"         Path=""/>
-
-        <ProductDirectory Name="sqlang"                             Path="sqlang/platform"/>
-
-        <!-- TODO: Remove dependency on SDK -->
-        <ProductDirectory Name="CordovaLibs"                        Path=""/>
-        <ProductDirectory Name="DgnPlatformNativeAssemblies"        Path=""/>
-        <ProductDirectory Name="MobileDgnNativeAssemblies"          Path=""/>
-        <ProductDirectory Name="PPNativeAssemblies"                 Path=""/>
-        <ProductDirectory Name="RmgrToolsNativeAssemblies"          Path=""/>
-        <ProductDirectory Name="BePortableUiAssemblies"             Deliver="false"/>
-        <ProductDirectory Name="DgnPlatformFont"                    Deliver="false"/>
-        <ProductDirectory Name="DgnPlatformLastResortFonts"         Deliver="false"/>
-        <ProductDirectory Name="DgnViewDecorators"                  Deliver="false"/>
-        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false"/>
-        <ProductDirectory Name="MdlsysAsneededSmartsolid"           Deliver="false"/>
-        <ProductDirectory Name="MobileDgnJavaScript"                Deliver="false"/>
-        <ProductDirectory Name="MobileDgnJavaScriptIcons"           Deliver="false"/>
-        <ProductDirectory Name="SmartSolidAssemblies"               Deliver="false"/>
-        <ProductDirectory Name="StdThemes"                          Deliver="false"/>
+        
+        <!-- WIP to silence build warnings. -->
+        <ProductDirectory Name="WSClientTestAssets" Deliver="false"/>
+        <ProductDirectory Name="UnitTests-IgnoreList" Deliver="false"/>
     </ProductDirectoryList>
 
-    <Part Name="WSClientCompatibilityTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x64" >
+    <Part Name="WSClientCompatibilityTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/CompatibilityTests/CompatibilityTests.mke" OnlyPlatforms="x64" >
+        <SubPart PartName="WSClientLibrarySubParts" />
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="ConnectWebServicesClientC" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="google_gtest_lib" PartFile="gtest" Repository="util-gtest" />
         <SubPart PartName="google_gmock_lib" PartFile="gmock" Repository="util-gmock" />
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <Bindings>
             <Files ProductDirectoryName="WSClientCompatibilityTests">
                 Delivery/WSClientCompatibilityTests$(exeext)
@@ -767,5 +783,40 @@
         </Bindings>
     </Part>
 
+    <!-- Not all libraries might be actuall required, TODO: remove not needed libraries -->
+    <Part Name="WSClientLibrarySubParts">
+        <!-- Make sure that the environment-specific source/tools for DgnClientFx are current for syncpull workflows -->
+        <!-- Some of these are just so that when we pull in Firebug for winx86 we also get the repos for Android -->
+        <RequiredRepository>Bsitools-WinX86</RequiredRepository>
+        <RequiredRepository>Bsitools-MacX64</RequiredRepository>
+        <RequiredRepository>Bsitools-LinuxX86</RequiredRepository>
+        <RequiredRepository>Bsitools-LinuxX64</RequiredRepository>
+        <RequiredRepository>Bsitools-Doclava</RequiredRepository>
+        <RequiredRepository>Bsitools-JsonTinyValidator</RequiredRepository>
+        <RequiredRepository>Libsrc-duktapejs</RequiredRepository>
+        <RequiredRepository>Libsrc-OpenSSL-UWP</RequiredRepository>
+        <!-- Also make sure that the testing frameworks are current for syncpull workflows -->
+        <RequiredRepository>BeGTest</RequiredRepository>
+        <RequiredRepository>BeTestAndroid</RequiredRepository>
+        <RequiredRepository>BeTestiOS</RequiredRepository>
+        <RequiredRepository>BeTestWinRT</RequiredRepository>
+        <RequiredRepository>Bsitools-Jasmine</RequiredRepository>
+
+        <SubPart PartName="BentleyDll"                  PartFile="Bentley"          Repository="Bentley" />
+        <SubPart PartName="BeHttp"                      PartFile="BeHttp"           Repository="BeHttp"/>
+        <SubPart PartName="BeSecurity"                  PartFile="BeSecurity"       Repository="BeSecurity" />
+        <SubPart PartName="libxml2"                     PartFile="BeLibxml2"        Repository="libsrc-libxml2" />
+        <SubPart PartName="GeomDlls"                    PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="GeomLibsSerialization"       PartFile="geomlibs"         Repository="GeomLibs" />
+        <SubPart PartName="csmapStatic"                 PartFile="csmap"            Repository="libsrc-csmap" />
+        <SubPart PartName="BeSQLite"                    PartFile="BeSQLite"         Repository="BeSQLite" />
+        <SubPart PartName="ECDb"                        PartFile="ECDb"             Repository="ECDb" />
+        <SubPart PartName="ECObjectsNative"             PartFile="ECObjects"        Repository="ECObjects" />
+        <SubPart PartName="UnitsNative"                 PartFile="Units"            Repository="Units" />
+        <SubPart PartName="BeJsonCpp"                   PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
+        <SubPart PartName="BeCurl"                      PartFile="BeCurl"           Repository="Libsrc-Curl"/>
+        <SubPart PartName="BeJavaScript"                PartFile="BePortableUi"     Repository="BePortableUi"/>
+        <SubPart PartName="LoggingManagedInterop"       PartFile="LoggingSdk"       Repository="LoggingSdk"/>
+    </Part>
 
 </BuildContext>

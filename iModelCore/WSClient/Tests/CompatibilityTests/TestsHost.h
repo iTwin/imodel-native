@@ -17,7 +17,6 @@ class TestsHost : public RefCounted<BeTest::Host>
         BeFileName m_outputDir;
 
     private:
-        void InitLibs();
         void SetupTestEnvironment();
         void InitLibraries();
         void InitLogging(int logLevel);
@@ -25,12 +24,14 @@ class TestsHost : public RefCounted<BeTest::Host>
     protected:
         TestsHost(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel);
 
-        virtual void* _InvokeP(const char* function_and_args) override;
+        virtual void* _InvokeP(char const* function, void* args) override;
 
         virtual void _GetDocumentsRoot(BeFileName& path) override;
         virtual void _GetDgnPlatformAssetsDirectory(BeFileName& path) override;
         virtual void _GetOutputRoot(BeFileName& path) override;
         virtual void _GetTempDir(BeFileName& path) override;
+
+        virtual void _GetFrameworkSqlangFiles (BeFileName& path) override;
 
     public:
         static RefCountedPtr<TestsHost> Create(BeFileNameCR programPath, BeFileNameCR workDir, int logLevel);

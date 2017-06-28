@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Configuration/BuddiError.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -14,6 +14,7 @@
 #include <BeHttp/HttpResponse.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
+USING_NAMESPACE_BENTLEY_TASKS
 
 struct BuddiError;
 typedef BuddiError& BuddiErrorR;
