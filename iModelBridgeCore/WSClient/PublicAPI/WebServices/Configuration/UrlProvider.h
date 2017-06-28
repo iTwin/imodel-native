@@ -11,6 +11,7 @@
 #include <Bentley/WString.h>
 #include <WebServices/Client/WebServicesClient.h>
 #include <WebServices/Configuration/BuddiClient.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 

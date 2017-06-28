@@ -135,7 +135,7 @@ SEVERITY    severity
     {
     BeAssert(NULL != nameSpace);
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeSharedMutexHolder lock(m_lock);
 
     bmap<WString, SEVERITY>::iterator it = m_severity.find(nameSpace);
 
@@ -162,7 +162,7 @@ SEVERITY    sev
     {
     BeAssert(NULL != nameSpace);
 
-    BeCriticalSectionHolder lock(m_lock);
+    BeSharedMutexHolder lock(m_lock);
 
     SEVERITY    severity = m_defaultSeverity;
 

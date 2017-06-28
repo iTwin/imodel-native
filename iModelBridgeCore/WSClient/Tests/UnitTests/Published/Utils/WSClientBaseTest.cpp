@@ -6,12 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "WSClientBaseTest.h"
-#include <DgnClientFx/DgnClientFxCommon.h>
-#include <DgnClientFx/DgnClientFxL10N.h>
+#include <BeSQLite/L10N.h>
+#include <ECObjects/ECObjects.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_WSCLIENT_UNITTESTS
 
 std::shared_ptr<TestAppPathProvider>  WSClientBaseTest::s_pathProvider;
@@ -31,13 +30,11 @@ void WSClientBaseTest::SetUpTestCase()
     {
     s_pathProvider = std::make_shared<TestAppPathProvider>();
     InitLogging();
-    DgnClientFxCommon::SetApplicationPathsProvider(s_pathProvider.get());
     InitLibraries();
     }
 
 void WSClientBaseTest::TearDownTestCase()
     {
-    DgnClientFxCommon::SetApplicationPathsProvider(nullptr);
     s_pathProvider = nullptr;
     }
 
@@ -45,20 +42,14 @@ void WSClientBaseTest::TearDownTestCase()
 // ***              However, these tests do not initialize DgnClientUi properly and so they cannot call DgnClientFxL10N::GetDefaultFrameworkSqlangFiles.
 // ***              This function is an attempt to replicate what DgnClientFxL10N::GetDefaultFrameworkSqlangFiles does. Use this until
 // ***              we can figure out the right way to fix this.
-static BeFileName getDgnClientFxSqlangFile()
+static BeFileName getSqlangFile()
     {
     BeFileName frameworkSqlangFile;
     BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlangFile);
 
-    BeFileName dgnClientFxSqlangFile = frameworkSqlangFile.GetDirectoryName();
-    //dgnClientFxSqlangFile.AppendToPath(L"platform");
-#if defined (NDEBUG)
-    dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_en.sqlang.db3");
-#else
-    dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_pseudo.sqlang.db3");
-#endif
-    
-    return dgnClientFxSqlangFile;
+    BeFileName testsSqlangFile = frameworkSqlangFile.GetDirectoryName();
+    testsSqlangFile.AppendToPath(L"WSClient_test.sqlang.db3");
+    return testsSqlangFile;
     }
 
 void WSClientBaseTest::InitLibraries()
@@ -68,10 +59,12 @@ void WSClientBaseTest::InitLibraries()
     BeSQLiteLib::Initialize(s_pathProvider->GetTemporaryDirectory());
     BeSQLite::EC::ECDb::Initialize(s_pathProvider->GetTemporaryDirectory(), &s_pathProvider->GetAssetsRootDirectory());
 
-    L10N::SqlangFiles sqlangFiles(getDgnClientFxSqlangFile());
-    DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles);
+    L10N::SqlangFiles sqlangFiles(getSqlangFile());
+    BeSQLite::L10N::Initialize (sqlangFiles);
 
     HttpClient::Initialize(s_pathProvider->GetAssetsRootDirectory());
+
+    CachingDataSource::Initialize (s_pathProvider->GetAssetsRootDirectory ());
     }
 
 #if defined(BENTLEY_WIN32)

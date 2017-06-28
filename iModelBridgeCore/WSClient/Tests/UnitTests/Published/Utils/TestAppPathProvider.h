@@ -8,14 +8,13 @@
 #pragma once
 
 #include "WebServicesUnitTests.h"
-#include <DgnClientFx/DgnClientFxCommon.h>
 
 BEGIN_WSCLIENT_UNITTESTS_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
+struct TestAppPathProvider
     {
     private:
         BeFileName m_documentsDirectory;
@@ -24,9 +23,9 @@ struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
         BeFileName m_localStateDirectory;
 
     private:
-        void InitPaths(BeFileNameCR programDir, BeFileNameCR outputDir)
+        void InitPaths(BeFileNameCR assetsDir, BeFileNameCR outputDir)
             {
-            m_platformAssetsDirectory = programDir;
+            m_platformAssetsDirectory = assetsDir;
 
             m_temporaryDirectory = outputDir;
             m_temporaryDirectory.AppendToPath(L"AppTemp").AppendSeparator();
@@ -38,29 +37,28 @@ struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
             m_localStateDirectory.AppendToPath(L"AppLocalState").AppendSeparator();
             }
 
-    protected:
-        virtual BeFileNameCR _GetDocumentsDirectory() const  override
+    public:
+        BeFileNameCR GetDocumentsDirectory()
             {
             return m_documentsDirectory;
             }
-        virtual BeFileNameCR _GetTemporaryDirectory() const override
+        BeFileNameCR GetTemporaryDirectory()
             {
             return m_temporaryDirectory;
             }
-        virtual BeFileNameCR _GetCachesDirectory() const override
+        BeFileNameCR GetCachesDirectory()
             {
             return m_temporaryDirectory;
             }
-        virtual BeFileNameCR _GetLocalStateDirectory() const override
+        BeFileNameCR GetLocalStateDirectory()
             {
             return m_localStateDirectory;
             }
-        virtual BeFileNameCR _GetAssetsRootDirectory() const override
+        BeFileNameCR GetAssetsRootDirectory()
             {
             return m_platformAssetsDirectory;
             }
 
-    public:
         TestAppPathProvider()
             {
             BeFileName programDir;
@@ -73,7 +71,9 @@ struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
 
         TestAppPathProvider(BeFileNameCR programDir, BeFileNameCR outputDir)
             {
-            InitPaths(programDir, outputDir);
+            BeFileName assetsDir = programDir;
+            assetsDir.AppendToPath(L"Assets").AppendSeparator();
+            InitPaths(assetsDir, outputDir);
             }
     };
 

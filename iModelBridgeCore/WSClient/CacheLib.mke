@@ -65,7 +65,6 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 # DgnClientFx library name
 _dgnclientfxLibraryName = $(libprefix)DgnClientFx$(stlibext)
 
-LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(_dgnclientfxLibraryName)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeJsonCpp$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLite$(stlibext)
 LINKER_LIBRARIES + $(BuildContextLibsDirectory)$(libprefix)BeSQLiteEC$(stlibext)

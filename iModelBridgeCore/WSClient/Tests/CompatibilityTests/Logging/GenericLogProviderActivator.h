@@ -7,8 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 
 #pragma once
+#include <Logging/bentleylogging.h>
 
-typedef std::function<void(Bentley::NativeLogging::SEVERITY sev, WCharCP msg)> GenericLogWriter;
+typedef std::function<void(NativeLogging::SEVERITY sev, WCharCP msg)> GenericLogWriter;
 
 struct GenericLogProviderActivator
     {

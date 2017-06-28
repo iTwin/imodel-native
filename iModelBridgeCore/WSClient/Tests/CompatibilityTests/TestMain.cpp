@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+
+#include <WebServices/Client/WSError.h>
 #include "Parser/ArgumentParser.h"
 #include "RepositoryCompatibilityTests.h"
 #include "TestsHost.h"
@@ -29,6 +31,7 @@ int main(int argc, char** argv)
 
     auto host = TestsHost::Create(GetProgramPath(), workDir, logLevel);
     BeTest::Initialize(*host);
+
 
     ::testing::InitGoogleMock(&argc, argv);
 
