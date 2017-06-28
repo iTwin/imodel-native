@@ -476,7 +476,7 @@
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="RoadDesignSpeed" modifier="Sealed"  displayLabel="Design Speed" description="Linearly located property of a Roadway specifying design-speeds along it." >
-        <BaseClass>bis:InformationContentElement</BaseClass>
+        <BaseClass>bis:InformationRecordElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -531,7 +531,7 @@
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="RoadClass" modifier="Sealed"  displayLabel="Classification" description="Linearly located property of a Roadway specifying road-class along it." >
-        <BaseClass>bis:InformationContentElement</BaseClass>
+        <BaseClass>bis:InformationRecordElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>

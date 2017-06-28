@@ -155,9 +155,9 @@ public:
 //! Linearly-located attribution on a Roadway whose value is its design-speed.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadDesignSpeed : Dgn::InformationContentElement, LinearReferencing::ILinearlyLocatedAttribution, LinearReferencing::ILinearlyLocatedSingleFromTo
+struct EXPORT_VTABLE_ATTRIBUTE RoadDesignSpeed : Dgn::InformationRecordElement, LinearReferencing::ILinearlyLocatedAttribution, LinearReferencing::ILinearlyLocatedSingleFromTo
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadDesignSpeed, Dgn::InformationContentElement);
+    DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadDesignSpeed, Dgn::InformationRecordElement);
     friend struct RoadDesignSpeedHandler;
 
 protected:
@@ -229,9 +229,9 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadDesignSpeedDefinition, RoadDesignS
 //! ElementHandler for RoadDesignSpeed Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadDesignSpeedHandler : Dgn::dgn_ElementHandler::InformationContent
+struct EXPORT_VTABLE_ATTRIBUTE RoadDesignSpeedHandler : Dgn::dgn_ElementHandler::InformationRecord
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadDesignSpeed, RoadDesignSpeed, RoadDesignSpeedHandler, Dgn::dgn_ElementHandler::InformationContent, ROADRAILPHYSICAL_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadDesignSpeed, RoadDesignSpeed, RoadDesignSpeedHandler, Dgn::dgn_ElementHandler::InformationRecord, ROADRAILPHYSICAL_EXPORT)
 }; // RoadDesignSpeedHandler
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
