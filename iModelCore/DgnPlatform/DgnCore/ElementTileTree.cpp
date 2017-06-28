@@ -933,6 +933,7 @@ void    Update(double readTime, bool empty)
         }
     }
 };
+static TileCacheStatistics       s_statistics;
 #endif
 
 
@@ -958,7 +959,6 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
     }
 
 
-static TileCacheStatistics       s_statistics;
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -984,7 +984,9 @@ BentleyStatus Loader::_LoadTile()
             return ERROR;
             }
         }
+#ifdef TILECACHE_DEBUG
     s_statistics.Update(stopWatch.GetCurrentSeconds(), geometry.IsEmpty());
+#endif
 
     tile.SetContentRange(contentRange);
 
