@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/DataSourceCacheOpenState.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -37,7 +37,7 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
     private:
         struct Core
             {
-            Core(ObservableECDb& db, CacheEnvironmentCR environment);
+            Core(ObservableECDb& db, CacheEnvironmentCR environment, bset<ECInstanceKey>& syncKeys);
 
             ECDbAdapter                 m_dbAdapter;
             ECSqlStatementCache         m_statementCache;
@@ -53,6 +53,7 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
             ChangeInfoManager           m_changeInfoManager;
             ChangeManager               m_changeManager;
             FileStorage                 m_fileStorage;
+            bset<ECInstanceKey>         m_activeSyncKeys;
 
             ECSchemaCP                  m_cacheSchema;
 
@@ -63,8 +64,8 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
         ObservableECDb& m_db;
         CacheEnvironment m_environment;
 
-        bool m_isSyncActive;
         std::shared_ptr<Core> m_core;
+        bset<ECInstanceKey> m_activeSyncKeys;
 
     private:
         Core& GetCore();
