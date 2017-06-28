@@ -1778,7 +1778,22 @@ Utf8String AddMeshIndices(Utf8StringCR name, uint32_t const* indices, size_t num
     Utf8String          nameId           = name + idStr,
                         accIndexId       = "acc" + nameId,
                         bvIndexId        = "bv"  + nameId;
-    bool                useShortIndices  = maxIndex < 0xffff;
+    bool                useShortIndices;
+
+    if (0 == maxIndex)
+        {
+        size_t      i;
+
+        for (i=0; i<numIndices; i++)
+            if (indices[i] > 0xffff)
+                break;
+
+        useShortIndices = (i == numIndices);
+        }
+    else
+        {
+        useShortIndices  = maxIndex < 0xffff;
+        }
 
  
     if (useShortIndices)
@@ -2257,7 +2272,7 @@ void AddFeatures (MeshCR mesh, Json::Value& primitiveJson, Utf8StringCR idStr)
     else if (featureIndex.IsUniform())
         primitiveJson["featureID"]  = featureIndex.m_featureID;
     else
-        primitiveJson["featureIDs"] = AddMeshIndices("featureIDs", featureIndex.m_featureIDs, mesh.Points().size(), idStr, mesh.Points().size());
+        primitiveJson["featureIDs"] = AddMeshIndices("featureIDs", featureIndex.m_featureIDs, mesh.Points().size(), idStr, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2322,7 +2337,13 @@ void WriteFeatureTable(FeatureTableCR featureTable)
 BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid)
     {
     uint32_t    startPosition = m_buffer.GetSize();
-    uint32_t    flags = geometry.ContainsCurves() ? TileIO::ContainsCurves : TileIO::None;
+    uint32_t    flags = TileIO::None;
+
+    if (geometry.ContainsCurves())
+        flags |=  TileIO::Flags::ContainsCurves;
+
+    if (!geometry.IsComplete())
+        flags |= TileIO::Flags::Incomplete;
 
     m_buffer.Append((const uint8_t *) s_dgnTileMagic, 4);
     m_buffer.Append(s_dgnTileVersion);

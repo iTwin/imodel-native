@@ -342,6 +342,4 @@ TileGenerator::FutureStatus TileGenerator::GenerateTilesFromTileTree(ITileCollec
 
 
 
-
-
                                                         

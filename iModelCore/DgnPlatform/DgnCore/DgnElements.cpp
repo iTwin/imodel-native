@@ -997,15 +997,47 @@ CachedStatementPtr DgnElements::GetStatement(Utf8CP sql) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DateTime DgnElements::GetLastModifiedTime() const
+void DgnElements::InitLastModifiedTime()
     {
+    // The Db has just been opened. Query time of most recent change to element table.
+    // This is used for determining whether tiles cached in reality data cache are still usable, or need to be regenerated.
+    BeAssert(0 == m_lastModifiedTime.load());
+    DgnDb::VerifyClientThread();
+
+    // NB: We're using ECSql because ECDb persists datetime as floating-point julian day value...
     constexpr Utf8CP ecsql = "SELECT MAX(LastMod) FROM " BIS_SCHEMA(BIS_CLASS_Element);
     auto stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql);
     if (BE_SQLITE_ROW == stmt->Step())
-        return stmt->GetValueDateTime(0);
+        {
+        DateTime dt = stmt->GetValueDateTime(0);
+        int64_t unixMillis;
+        if (SUCCESS != dt.ToUnixMilliseconds(unixMillis))
+            {
+            BeAssert(false);
+            UpdateLastModifiedTime();
+            }
+        else
+            {
+            m_lastModifiedTime.store(static_cast<uint64_t>(unixMillis));
+            }
+        }
+    }
 
-    BeAssert(false && "Empty element table?!");
-    return DateTime();
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::UpdateLastModifiedTime()
+    {
+    // An element has just been updated/deleted/added/undone/redone.
+    m_lastModifiedTime.store(BeTimeUtilities::GetCurrentTimeAsUnixMillis());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t DgnElements::GetLastModifiedTime() const
+    {
+    return m_lastModifiedTime.load();
     }
 
 /*---------------------------------------------------------------------------------**//**

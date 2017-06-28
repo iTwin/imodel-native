@@ -1782,11 +1782,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 
     leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
 
-#ifdef WIP_RBB
     return GenerateTilesFromTileTree (&collector, leafTolerance, surfacesOnly, geometricModel);
-#else
-    return folly::makeFuture(TileGeneratorStatus::NoGeometry);
-#endif
     }
 
 

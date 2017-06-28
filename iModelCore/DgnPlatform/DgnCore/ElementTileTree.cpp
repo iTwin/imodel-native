@@ -902,6 +902,41 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
 
 static bool s_useRealityCache = true;      // Still WIP.
 
+#ifdef TILECACHE_DEBUG
+static double s_displayTime = 5.0;   // Every 5 second.
+
+struct TileCacheStatistics
+{
+    size_t      m_emptyTileCount = 0;
+    double      m_emptyTileTime = 0.0;
+    size_t      m_totalTileCount = 0;
+    double      m_totalTime = 0.0;
+    double      m_lastDisplayTime = 0.0;
+    StopWatch   m_stopWatch;
+    BeMutex     m_mutex;
+
+void    Update(double readTime, bool empty)
+    {
+    BeMutexHolder lock(m_mutex);
+
+    m_totalTileCount++;
+    m_totalTime += readTime;
+    if (empty)
+        {
+        m_emptyTileCount++;
+        m_emptyTileTime += readTime;
+        }
+    if (m_stopWatch.GetCurrentSeconds() - m_lastDisplayTime > s_displayTime)
+        {
+        TILECACHE_PRINTF("Total Tiles: %d, Empty Tiles %d: (%f %%) Empty Tile Read: %f (%f), Total Time: %f, Non Empty Time: %f", m_totalTileCount, m_emptyTileCount, 100.0 * (double) m_emptyTileCount / (double) m_totalTileCount, m_emptyTileTime, m_emptyTileTime / m_totalTime, m_totalTime, m_totalTime - m_emptyTileTime);
+        m_lastDisplayTime = m_stopWatch.GetCurrentSeconds();
+        }
+    }
+};
+static TileCacheStatistics       s_statistics;
+#endif
+
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -917,22 +952,12 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
     auto& tile = static_cast<TileR>(*m_tile);
     RootR root = tile.GetElementRoot();
 
-    auto  system = GetRenderSystem();
-    if (nullptr == system)
-        {
-        // This is checked in _CreateTileTree()...
-        BeAssert(false && "ElementTileTree requires a Render::System");
-        return ERROR;
-        }
-
-    StopWatch   stopWatch(true);
-    TILECACHE_PRINTF("Loading %s From Model...", tile.GetDebugId().c_str());
     LoadContext loadContext(this);
     geometry = tile.GenerateGeometry(loadContext);
-    TILECACHE_PRINTF(" Loaded %d Meshes to %s in %f seconds", geometry.Meshes().size(), tile.GetDebugId().c_str(), m_loadTime = stopWatch.GetCurrentSeconds());
 
     return loadContext.WasAborted() ? ERROR : SUCCESS;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -943,10 +968,8 @@ BentleyStatus Loader::_LoadTile()
     RootR                                   root = tile.GetElementRoot();
     Render::Primitives::GeometryCollection  geometry;
     ElementAlignedBox3d                     contentRange;
-#ifdef TILECACHE_DEBUG
     StopWatch                               stopWatch(true);
-    double                                  cacheReadSeconds = 0.0;
-#endif
+
     if (!s_useRealityCache)
         {
         if (SUCCESS != LoadGeometryFromModel(geometry))
@@ -954,19 +977,20 @@ BentleyStatus Loader::_LoadTile()
         }
     else
         {
-        if (TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem()))
+        if (!m_tileBytes.empty() &&
+            TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem()))
             {
             BeAssert(false);
             return ERROR;
             }
-#ifdef TILECACHE_DEBUG
-        cacheReadSeconds = stopWatch.GetCurrentSeconds();
-#endif
         }
+#ifdef TILECACHE_DEBUG
+    s_statistics.Update(stopWatch.GetCurrentSeconds(), geometry.IsEmpty());
+#endif
 
     tile.SetContentRange(contentRange);
 
-    // No point subdividing empty nodes - improves performance if we don't
+    // No point subdividing empty Tiles - improves performance if we don't
     // Also not much point subdividing nodes containing no curved geometry
     // NB: We cannot detect either of the above if any elements or geometry were skipped during tile generation.
     if (geometry.IsComplete())
@@ -976,7 +1000,7 @@ BentleyStatus Loader::_LoadTile()
         }
 
     auto  system = GetRenderSystem();
-    if (nullptr == system)
+    if (nullptr == GetRenderSystem())
         {
         // This is checked in _CreateTileTree()...
         BeAssert(false && "ElementTileTree requires a Render::System");
@@ -1006,8 +1030,8 @@ BentleyStatus Loader::_LoadTile()
 
         if (graphic.IsValid())
             tile.SetGraphic(*system->_CreateBatch(*graphic, std::move(geometry.Meshes().m_features)));
+
         }
-    TILECACHE_PRINTF(" Loaded: %d Meshes from %s. Read: %f, Graphic: %f, Creation: %f. Create/Read Ratio: %f", geometry.Meshes().size(), tile.GetDebugId().c_str(), cacheReadSeconds, stopWatch.GetCurrentSeconds() - cacheReadSeconds, m_loadTime, m_loadTime / cacheReadSeconds);
 
     tile.SetIsReady();
     return SUCCESS;
@@ -1028,14 +1052,11 @@ BentleyStatus Loader::DoGetFromSource()
     if (SUCCESS != LoadGeometryFromModel(geometry))
         return ERROR;
 
-
-    ByteStream      uncompressed;
-    if (SUCCESS != TileTree::TileIO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter()))    // TBD -- Avoid round trip through m_tileBytes when loading from elements.
+    if (geometry.IsEmpty() && geometry.IsComplete())
+        m_tileBytes.clear();
+    else if (SUCCESS != TileTree::TileIO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter()))    // TBD -- Avoid round trip through m_tileBytes when loading from elements.
         return ERROR;
-
     
-    SnappyToBlob    toBlob;
-
     m_saveToCache = true;
 
     return SUCCESS;
@@ -1049,20 +1070,7 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
     auto& tile = static_cast<TileR>(*m_tile);
     DgnDbR db = tile.GetRoot().GetDgnDb();
 
-#if defined(NOT_NOW)
-    // ###TODO_ELEMENT_TILE? This is not necessarily reliable...
-    if (db.IsReadonly())
-        return false;
-#endif
-
-    DateTime lastMod = db.Elements().GetLastModifiedTime();
-    int64_t lastModMillis;
-    if (SUCCESS != lastMod.ToUnixMilliseconds(lastModMillis))
-        {
-        BeAssert(false);
-        return true;
-        }
-
+    uint64_t lastModMillis = db.Elements().GetLastModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
     }
 

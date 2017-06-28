@@ -214,6 +214,7 @@ private:
     template<class T> void CallAppData(T const& caller) const;
 
     void UnloadRangeIndex();
+    DGNPLATFORM_EXPORT void UpdateLastModified();
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus Read(DgnModelId modelId);
     BE_JSON_NAME(UserProps)
@@ -310,39 +311,39 @@ protected:
     //! @param[in] element The element that was just inserted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnInsertedElement(DgnElementCR element) {}
+    virtual void _OnInsertedElement(DgnElementCR element) {UpdateLastModified();}
 
     //! Called after a change representing addition of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
     //! @param[in] element The element that was just added.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnAppliedAddElement(DgnElementCR element) {}
+    virtual void _OnAppliedAddElement(DgnElementCR element) {UpdateLastModified();}
 
     //! Called after a change representing update of a DgnElement (belonging to this DgnModel) was aplied to the DgnDb.
     //! @param[in] modified The element in its changed state. This state was saved to the DgnDb
     //! @param[in] original The element in its pre-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) {}
+    virtual void _OnUpdatedElement(DgnElementCR modified, DgnElementCR original) {UpdateLastModified();}
 
     //! Called after a change representing DgnElement in this model was updated by applying a change set.
     //! @param[in] original The element in its original state. This is the state before the original change (the current state)
     //! @param[in] modified The element in its post-changed state.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnAppliedUpdateElement(DgnElementCR original, DgnElementCR modified) {}
+    virtual void _OnAppliedUpdateElement(DgnElementCR original, DgnElementCR modified) {UpdateLastModified();}
 
     //! Called after a DgnElement in this DgnModel has been deleted from the DgnDb
     //! @param[in] element The element that was just deleted.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnDeletedElement(DgnElementCR element) {}
+    virtual void _OnDeletedElement(DgnElementCR element) {UpdateLastModified();}
 
     //! Called after a change representing deletion of a DgnElement (belonging to this DgnModel) was applied to the DgnDb.
     //! @param[in] element The element that was just deleted by applying a change set.
     //! @note If you override this method, you @em must call the T_Super implementation.
     //! DgnModels maintain an id->element lookup table, and possibly a DgnRangeTree. The DgnModel implementation of this method maintains them.
-    virtual void _OnAppliedDeleteElement(DgnElementCR element) {}
+    virtual void _OnAppliedDeleteElement(DgnElementCR element) {UpdateLastModified();}
 
     /** @} */
 

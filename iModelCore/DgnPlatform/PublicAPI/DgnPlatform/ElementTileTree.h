@@ -44,10 +44,6 @@ struct Loader : TileTree::TileLoader
 {
     DEFINE_T_SUPER(TileTree::TileLoader);
 
-#ifdef TILECACHE_DEBUG
-    double  m_loadTime = 0.0;
-#endif
-
 private:
     Loader(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
 
