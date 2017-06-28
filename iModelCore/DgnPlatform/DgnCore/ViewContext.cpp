@@ -355,8 +355,6 @@ void ViewContext::_AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPar
             return; // Part range doesn't overlap pick...
         }
 
-    BeAssert(nullptr != m_viewport);
-
     GeometryStreamIO::Collection collection(partGeometry->GetGeometryStream().GetData(), partGeometry->GetGeometryStream().GetSize());
 
     auto partBuilder = graphic.CreateSubGraphic(subToGraphic);

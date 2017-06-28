@@ -158,9 +158,13 @@ BentleyStatus TileLoader::DoReadFromDb()
         {
         RealityData::Cache::AccessLock lock(*cache); // block writes to cache Db while we're reading
 
-        enum Column : int {Data=0,DataSize=1,ContentType=2,Expires=3,Rowid=4};
+        enum Column : int {Data=0,DataSize=1,ContentType=2,Expires=3,Rowid=4,Created=5};
         CachedStatementPtr stmt;    
-        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, "SELECT Data,DataSize,ContentType,Expires,ROWID FROM " TABLE_NAME_TileTree " WHERE Filename=?"))
+        constexpr Utf8CP selectSql = "SELECT Data,DataSize,ContentType,Expires," TABLE_NAME_TileTree ".ROWID as TileRowId,"
+            "Created," TABLE_NAME_TileTreeCreateTime ".ROWID as CreatedRowId FROM " TABLE_NAME_TileTree
+            " JOIN " TABLE_NAME_TileTreeCreateTime " ON TileRowId=CreatedRowId WHERE Filename=?";
+
+        if (BE_SQLITE_OK != cache->GetDb().GetCachedStatement(stmt, selectSql))
             {
             BeAssert(false);
             return ERROR;
@@ -170,6 +174,28 @@ BentleyStatus TileLoader::DoReadFromDb()
         stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
         if (BE_SQLITE_ROW != stmt->Step())
             return ERROR;
+
+        uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
+        uint64_t createTime = stmt->GetValueInt64(Column::Created);
+        if (_IsExpired(createTime))
+            {
+            cache->GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTree " WHERE ROWID=?");
+            stmt->BindInt64(1, rowId);
+            if (BE_SQLITE_DONE != stmt->Step())
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            cache->GetDb().GetCachedStatement(stmt, "DELETE FROM " TABLE_NAME_TileTreeCreateTime " WHERE ROWID=?");
+            stmt->BindInt64(1, rowId);
+            if (BE_SQLITE_DONE != stmt->Step())
+                {
+                BeAssert(false);
+                }
+
+            return ERROR;
+            }
 
         if (ZIP_SUCCESS != m_snappyFrom.Init(cache->GetDb(), TABLE_NAME_TileTree, "Data", stmt->GetValueInt64(Column::Rowid)))
             {
@@ -200,7 +226,6 @@ BentleyStatus TileLoader::DoReadFromDb()
         
         m_saveToCache = false;  // We just load the data from cache don't save it and update timestamp only.
 
-        uint64_t rowId = stmt->GetValueInt64(Column::Rowid);
         if (BE_SQLITE_OK == cache->GetDb().GetCachedStatement(stmt, "UPDATE " TABLE_NAME_TileTreeCreateTime " SET Created=? WHERE ROWID=?"))
             {
             stmt->BindInt64(1, BeTimeUtilities::GetCurrentTimeAsUnixMillis());
@@ -462,7 +487,9 @@ BentleyStatus TileCache::_Cleanup() const
     uint64_t garbageSize = sum - (m_allowedSize * .95); // 5% slack to avoid purging often
 
     CachedStatementPtr selectStatement;
-    constexpr Utf8CP selectSql = "SELECT DataSize,Created FROM " TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON ROWID ORDER BY Created ASC";
+    constexpr Utf8CP selectSql = "SELECT DataSize,Created," TABLE_NAME_TileTree ".ROWID as TileRowId," TABLE_NAME_TileTreeCreateTime ".ROWID as CreatedRowId "
+        " FROM " TABLE_NAME_TileTree " JOIN " TABLE_NAME_TileTreeCreateTime " ON TileRowId=CreatedRowId ORDER BY Created ASC";
+
     m_db.GetCachedStatement(selectStatement, selectSql);
     BeAssert(selectStatement.IsValid());
 
