@@ -1049,20 +1049,7 @@ bool Loader::_IsExpired(uint64_t createTimeMillis)
     auto& tile = static_cast<TileR>(*m_tile);
     DgnDbR db = tile.GetRoot().GetDgnDb();
 
-#if defined(NOT_NOW)
-    // ###TODO_ELEMENT_TILE? This is not necessarily reliable...
-    if (db.IsReadonly())
-        return false;
-#endif
-
-    DateTime lastMod = db.Elements().GetLastModifiedTime();
-    int64_t lastModMillis;
-    if (SUCCESS != lastMod.ToUnixMilliseconds(lastModMillis))
-        {
-        BeAssert(false);
-        return true;
-        }
-
+    uint64_t lastModMillis = db.Elements().GetLastModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
     }
 

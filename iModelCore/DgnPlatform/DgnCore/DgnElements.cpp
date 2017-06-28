@@ -1004,12 +1004,22 @@ void DgnElements::InitLastModifiedTime()
     BeAssert(0 == m_lastModifiedTime.load());
     DgnDb::VerifyClientThread();
 
-    constexpr Utf8CP sql = "SELECT MAX(LastMod) FROM " BIS_TABLE(BIS_CLASS_Element);
-    CachedStatementPtr stmt = GetStatement(sql);
+    // NB: We're using ECSql because ECDb persists datetime as floating-point julian day value...
+    constexpr Utf8CP ecsql = "SELECT MAX(LastMod) FROM " BIS_SCHEMA(BIS_CLASS_Element);
+    auto stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql);
     if (BE_SQLITE_ROW == stmt->Step())
         {
-        m_lastModifiedTime.store(stmt->GetValueUInt64(0));
-        BeAssert(0 != m_lastModifiedTime.load());
+        DateTime dt = stmt->GetValueDateTime(0);
+        int64_t unixMillis;
+        if (SUCCESS != dt.ToUnixMilliseconds(unixMillis))
+            {
+            BeAssert(false);
+            UpdateLastModifiedTime();
+            }
+        else
+            {
+            m_lastModifiedTime.store(static_cast<uint64_t>(unixMillis));
+            }
         }
     }
 
