@@ -55,6 +55,9 @@ private:
 
     BentleyStatus LoadGeometryFromModel(Render::Primitives::GeometryCollection& geometry);
     BentleyStatus DoGetFromSource();
+    bool IsCacheable() const;
+    TileCR GetElementTile() const;
+    TileR GetElementTile();
 public:
     static LoaderPtr Create(TileR tile, TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) { return new Loader(tile, loads, renderSys); }
 };

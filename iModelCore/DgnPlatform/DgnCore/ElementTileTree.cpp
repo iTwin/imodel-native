@@ -900,10 +900,6 @@ folly::Future<BentleyStatus> Loader::_GetFromSource()
     return folly::via(&BeFolly::ThreadPool::GetCpuPool(), [me]() { return me->DoGetFromSource(); });
     }
 
-
-
-static bool s_useRealityCache = true;      // Still WIP.
-
 #ifdef TILECACHE_DEBUG
 static double s_displayTime = 5.0;   // Every 5 second.
 
@@ -966,7 +962,7 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
     ThreadedParasolidErrorHandlerInnerMarkPtr  innerMark = ThreadedParasolidErrorHandlerInnerMark::Create(); 
 #endif
 
-    auto& tile = static_cast<TileR>(*m_tile);
+    auto& tile = GetElementTile();
     RootR root = tile.GetElementRoot();
 
     LoadContext loadContext(this);
@@ -975,6 +971,23 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
     return loadContext.WasAborted() ? ERROR : SUCCESS;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Loader::IsCacheable() const
+    {
+    static bool s_useRealityCache = true;   // Still WIP.
+
+    if (!s_useRealityCache)
+        return false;
+
+    // Don't cache tiles refined for zoom...
+    auto const& tile = GetElementTile();
+    if (tile.HasZoomFactor() && tile.GetZoomFactor())
+        return false;
+
+    return true;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -996,13 +1009,13 @@ folly::Future<BentleyStatus> Loader::_ReadFromDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::_LoadTile() 
     { 
-    TileR                                   tile = static_cast<TileR> (*m_tile);
+    TileR                                   tile = GetElementTile();
     RootR                                   root = tile.GetElementRoot();
     Render::Primitives::GeometryCollection  geometry;
     ElementAlignedBox3d                     contentRange;
     StopWatch                               stopWatch(true);
 
-    if (!s_useRealityCache)
+    if (!IsCacheable())
         {
         if (SUCCESS != LoadGeometryFromModel(geometry))
             return ERROR;                                            
@@ -1074,10 +1087,10 @@ BentleyStatus Loader::_LoadTile()
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus Loader::DoGetFromSource()
     {
-    if (!s_useRealityCache)
+    if (!IsCacheable())
         return IsCanceledOrAbandoned() ? ERROR : SUCCESS;
       
-    TileR   tile = static_cast<TileR> (*m_tile);
+    TileR   tile = GetElementTile();
     RootR   root = tile.GetElementRoot();
     Render::Primitives::GeometryCollection geometry;
 
@@ -1099,12 +1112,18 @@ BentleyStatus Loader::DoGetFromSource()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::_IsExpired(uint64_t createTimeMillis)
     {
-    auto& tile = static_cast<TileR>(*m_tile);
+    auto& tile = GetElementTile();
     DgnDbR db = tile.GetRoot().GetDgnDb();
 
     uint64_t lastModMillis = db.Elements().GetLastModifiedTime();
     return createTimeMillis < static_cast<uint64_t>(lastModMillis);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileCR Loader::GetElementTile() const { return static_cast<TileCR>(*m_tile); }
+TileR Loader::GetElementTile() { return static_cast<TileR>(*m_tile); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
