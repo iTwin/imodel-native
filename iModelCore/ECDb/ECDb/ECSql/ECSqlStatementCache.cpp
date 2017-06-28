@@ -91,17 +91,29 @@ ECSqlStatementCache::ECSqlStatementCache(uint32_t maxSize, Utf8CP name)
 //---------------------------------------------------------------------------------------
 CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) const
     {
-    CachedECSqlStatement* existingStmt = FindEntry(ecsql);
-    if (existingStmt != nullptr)
-        return existingStmt;
+    CachedECSqlStatementPtr stmt;
+    GetPreparedStatement(stmt, ecdb, ecsql, token);
+    return stmt;
+    }
 
-    CachedECSqlStatementPtr newStmt = nullptr;
-    AddStatement(newStmt, ecdb, ecsql);
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, ECDbCR ecdb, Utf8CP ecsql, ECCrudWriteToken const* token) const
+    {
+    if (true)
+        {
+        BeDbMutexHolder _v_v(m_mutex);
 
-    if (ECSqlStatus::Success != newStmt->Prepare(ecdb, ecsql, token))
-        return nullptr;
+        stmt = FindEntry(ecsql);
+        if (stmt.IsValid())
+            return;
 
-    return newStmt;
+        AddStatement(stmt, ecdb, ecsql);
+        }
+
+    if (ECSqlStatus::Success != stmt->Prepare(ecdb, ecsql, token))
+        stmt = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -109,8 +121,6 @@ CachedECSqlStatementPtr ECSqlStatementCache::GetPreparedStatement(ECDbCR ecdb, U
 //---------------------------------------------------------------------------------------
 CachedECSqlStatement* ECSqlStatementCache::FindEntry(Utf8CP ecsql) const
     {
-    BeDbMutexHolder _v_v(m_mutex);
-
     std::list<CachedECSqlStatementPtr>::iterator foundIt = m_entries.end();
     for (auto it = m_entries.begin(), end = m_entries.end(); it != end; ++it)
         {
@@ -140,8 +150,6 @@ CachedECSqlStatement* ECSqlStatementCache::FindEntry(Utf8CP ecsql) const
 //---------------------------------------------------------------------------------------
 void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR ecdb, Utf8CP ecsql) const
     {
-    BeDbMutexHolder _v_v(m_mutex);
-
     if (((uint32_t) m_entries.size()) >= m_maxSize) // if cache is full, remove oldest entry
         {
         CachedECSqlStatementPtr& last = m_entries.back();
