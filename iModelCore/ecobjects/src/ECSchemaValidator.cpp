@@ -241,11 +241,11 @@ ECObjectsStatus MixinValidator::Validate(ECClassCR mixin) const
 
 ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8CP derivedRelationshipClassName, bool &entityDerivesFromSpecifiedClass)
     {
-    if (entity.GetName().Equals(derivedClassName) || !entity.Is("BisCore", derivedClassName))
+    if (entity.GetClassModifier() == ECClassModifier::Abstract || entity.GetName().Equals(derivedClassName) || !entity.Is("BisCore", derivedClassName))
         return ECObjectsStatus::Success;
-       
+
     bool foundValidRelationshipConstraint = false;
-    
+
     // There must be a relationship that derives from derivedClassName with this class as its constraint
     for (ECClassCP classInCurrentSchema : entity.GetSchema().GetClasses())
         {
@@ -253,8 +253,8 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
         if (nullptr == relClass)
             continue;
 
-        if (ECClass::ClassesAreEqualByName(&entity, relClass->GetTarget().GetConstraintClasses()[0]) && !relClass->GetTarget().GetIsPolymorphic() &&
-            !relClass->GetName().Equals(derivedRelationshipClassName) && relClass->Is("BisCore", derivedRelationshipClassName))
+        if (!relClass->GetName().Equals(derivedRelationshipClassName) && relClass->Is("BisCore", derivedRelationshipClassName) &&
+            (relClass->GetTarget().SupportsClass(entity)) && !relClass->GetTarget().GetConstraintClasses()[0]->GetName().Equals(derivedClassName))
             {
             foundValidRelationshipConstraint = true;
             break;
@@ -264,7 +264,7 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
     entityDerivesFromSpecifiedClass = true;
     if (!foundValidRelationshipConstraint)
         {
-        LOG.errorv("Entity class '%s' derives from '%s' so it must be in a non-polymorphic relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
+        LOG.errorv("Entity class '%s' derives from '%s' so it must be a supported target constraint in a relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
         return ECObjectsStatus::Error;
         }
 
