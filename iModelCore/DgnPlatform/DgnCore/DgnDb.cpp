@@ -146,6 +146,7 @@ DbResult DgnDb::_OnDbOpened(Db::OpenParams const& params)
 
     Fonts().Update(); // ensure the font Id cache is loaded; if you wait for on-demand, it may need to query during an update, which we'd like to avoid
     m_geoLocation.Load();
+    Elements().InitLastModifiedTime();
 
     return BE_SQLITE_OK;
     }

@@ -1932,3 +1932,10 @@ ElementIterator DgnModel::MakeIterator(Utf8CP whereClause, Utf8CP orderByClause)
 
     return iterator;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::UpdateLastModified() { GetDgnDb().Elements().UpdateLastModifiedTime(); }
+
+
