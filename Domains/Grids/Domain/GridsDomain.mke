@@ -24,6 +24,9 @@ dirToSearch = $(GridElementsPublicApi)
 dirToSearch = $(GridHandlersPublicApi)
 %include cincapnd.mki
 
+dirToSearch = $(BuildingSpacePlanningPublicApi)
+%include cincapnd.mki
+
 dirToSearch = $(ConstraintModelPublicApi)
 %include cincapnd.mki
 

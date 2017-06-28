@@ -19,6 +19,9 @@ dirToSearch = $(GridsPublicApi)
 dirToSearch = $(ConstraintModelPublicApi)
 %include cincapnd.mki
 
+dirToSearch = $(BuildingSpacePlanningPublicApi)
+%include cincapnd.mki
+
 dirToSearch = $(BuildingUtilsPublicApi)
 %include cincapnd.mki
 
