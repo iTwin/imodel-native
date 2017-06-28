@@ -2012,10 +2012,9 @@ TEST_F(SchemaManagerTests, TestGetClassResolver)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-// A primary schema should be supplemented with the latest available supplemental schema
-TEST_F(SchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
+TEST_F(SchemaManagerTests, Supplementation_DifferentPrecedences)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalSchematest.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -2026,7 +2025,7 @@ TEST_F(SchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
             </ECSchema>)xml")));
 
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-            <ECSchema schemaName="TestSchema_Supplemental1" alias="BSS1" version="01.60" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchema schemaName="TestSchema_Supplemental" alias="BSS" version="01.60" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
                   <ECCustomAttributes>
                     <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
@@ -2052,7 +2051,7 @@ TEST_F(SchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
             </ECSchema>)xml")));
 
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-            <ECSchema schemaName="TestSchema_Supplemental2" alias="BSS2" version="01.90" displayLabel="Test Schema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchema schemaName="TestSchema_Supplemental" alias="BSS" version="01.90" displayLabel="Test Schema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
                   <ECCustomAttributes>
                     <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
@@ -2082,13 +2081,15 @@ TEST_F(SchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "Base");
     ASSERT_TRUE(testClass != nullptr);
+    ECPropertyCP testProperty = testClass->GetPropertyP("lastmod");
+    ASSERT_TRUE(testProperty != nullptr);
 
-    IECInstancePtr ca = testClass->GetCustomAttribute("CoreCustomAttributes", "DateTimeInfo");
+    IECInstancePtr ca = testProperty->GetCustomAttribute("CoreCustomAttributes", "DateTimeInfo");
     ASSERT_TRUE(ca != nullptr);
     ECValue v;
     ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeKind"));
-    ASSERT_FALSE(v.IsNull()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with higher version";
-    ASSERT_STREQ("Utc",v.GetUtf8CP()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with higher version";
+    ASSERT_FALSE(v.IsNull()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with higher precedence";
+    ASSERT_STREQ("Utc",v.GetUtf8CP()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with higher precedence";
     v.Clear();
     ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeComponent"));
     ASSERT_TRUE(v.IsNull()) << "DateTimeInfo::DateTimeComponent";
@@ -2097,10 +2098,9 @@ TEST_F(SchemaManagerTests, SupplementWithLatestCompatibleSupplementalSchema)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-//supplemental schema whose targeted primary schema's major version is greater then the major version of of Schema to supplement.
-TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVersion)
+TEST_F(SchemaManagerTests, Supplementation_SuppSchemaTargetsNewerPrimaryMajorVersion)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalSchematest.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -2110,7 +2110,7 @@ TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVe
                 </ECEntityClass>
             </ECSchema>)xml")));
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-            <ECSchema schemaName="TestSchema_Supplemental1" alias="BSS1" version="01.90" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchema schemaName="TestSchema_Supplemental" alias="BSS" version="01.90" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
                   <ECCustomAttributes>
                     <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
@@ -2135,7 +2135,7 @@ TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVe
                 </ECEntityClass>
             </ECSchema>)xml")));
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-            <ECSchema schemaName="TestSchema_Supplemental2" alias="BSS2" version="02.10" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchema schemaName="TestSchema_Supplemental" alias="BSS" version="02.10" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
                   <ECCustomAttributes>
                     <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
@@ -2145,7 +2145,7 @@ TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVe
                             <WriteVersion>0</WriteVersion>
                             <MinorVersion>70</MinorVersion>
                         </PrimarySchemaReference>
-                        <Precedence>50</Precedence>
+                        <Precedence>53</Precedence>
                         <Purpose>Test</Purpose>
                     </SupplementalSchema>
                 </ECCustomAttributes>
@@ -2164,25 +2164,26 @@ TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMajorVe
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema","Base");
     ASSERT_TRUE(testClass != nullptr);
-    //get custom attributes from base class (false)
-    IECInstancePtr ca = testClass->GetCustomAttribute("CoreCustomAttributes", "DateTimeInfo");
+    ECPropertyCP testProperty = testClass->GetPropertyP("lastmod");
+    ASSERT_TRUE(testProperty != nullptr);
+
+    IECInstancePtr ca = testProperty->GetCustomAttribute("CoreCustomAttributes", "DateTimeInfo");
     ASSERT_TRUE(ca != nullptr);
     ECValue v;
-    ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeKind")) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with matching major version";
+    ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeKind"));
     ASSERT_FALSE(v.IsNull()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with matching major version";
     ASSERT_STREQ("Utc", v.GetUtf8CP()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with matching major version";
-    ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeComponent"));
     v.Clear();
+    ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeComponent"));
     ASSERT_TRUE(v.IsNull()) << "DateTimeInfo::DateTimeComponent";
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Muhammad Hassan                  11/14
 //+---------------+---------------+---------------+---------------+---------------+------
-//supplemental schema whose Targeted primary schema's minor version is greater then minor Version of schema to supplement.
-TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVersion)
+TEST_F(SchemaManagerTests, Supplementation_SuppSchemaTargetsNewerPrimaryMinorVersion)
     {
-    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalSchematest.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("supplementalschematest.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -2192,7 +2193,7 @@ TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVe
                 </ECEntityClass>
             </ECSchema>)xml")));
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-            <ECSchema schemaName="TestSchema_Supplemental1" alias="BSS1" version="01.69" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchema schemaName="TestSchema_Supplemental" alias="BSS" version="01.69" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
                   <ECCustomAttributes>
                     <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
@@ -2217,7 +2218,7 @@ TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVe
                 </ECEntityClass>
             </ECSchema>)xml")));
     ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
-            <ECSchema schemaName="TestSchema_Supplemental2" alias="BSS2" version="01.90" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchema schemaName="TestSchema_Supplemental" alias="BSS" version="01.90" displayLabel="TestSchema Supplemental" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
                   <ECCustomAttributes>
                     <SupplementalSchema xmlns="CoreCustomAttributes.01.00">
@@ -2245,16 +2246,18 @@ TEST_F(SchemaManagerTests, SupplementSchemaWhoseTargetedPrimaryHasGreaterMinorVe
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
     ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "Base");
     ASSERT_TRUE(testClass != nullptr);
+    ECPropertyCP testProperty = testClass->GetPropertyP("lastmod");
+    ASSERT_TRUE(testProperty != nullptr);
 
-    IECInstancePtr ca = testClass->GetCustomAttribute("CoreCustomAttributes", "DateTimeInfo");
+    IECInstancePtr ca = testProperty->GetCustomAttribute("CoreCustomAttributes", "DateTimeInfo");
     ASSERT_TRUE(ca != nullptr);
     ECValue v;
     ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeKind")) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with matching major version";
-    ASSERT_FALSE(v.IsNull()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with matching major version";
-    ASSERT_STREQ("Utc", v.GetUtf8CP()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with matching major version";
-    ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeComponent"));
+    ASSERT_TRUE(v.IsNull()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with matching major version";
     v.Clear();
-    ASSERT_TRUE(v.IsNull()) << "DateTimeInfo::DateTimeComponent";
+    ASSERT_EQ(ECObjectsStatus::Success, ca->GetValue(v, "DateTimeComponent"));
+    ASSERT_FALSE(v.IsNull()) << "DateTimeInfo::DateTimeComponent";
+    ASSERT_STREQ("Date", v.GetUtf8CP()) << "DateTimeInfo::DateTimeKind. Expected to get CA from schema with matching major version";
     }
 
 //---------------------------------------------------------------------------------------
