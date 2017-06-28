@@ -10,7 +10,6 @@
         <NoAdditionalForeignKeyConstraints xmlns="ECDbSchemaPolicies.1.0">
             <Exceptions>
                 <string>Functional:FunctionalElement.TypeDefinition</string>
-                <string>Planning:ActivityAffectsElements.ElementAppearanceProfile</string>
             </Exceptions>
         </NoAdditionalForeignKeyConstraints>
         <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.1.0"/>
