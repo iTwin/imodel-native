@@ -437,6 +437,7 @@
         <SubPart PartName="WebServicesClient"/>
         <SubPart PartName="WSClientTestAssets" />
         <SubPart PartName="WSClientTestsL10N" />
+        <SubPart PartName="DgnClientFxLibrary-JNI" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
                 Delivery/UnitTests/ignore_list.txt
@@ -496,6 +497,7 @@
     <!-- WIP to silence build warnings. -->
     <ProductDirectoryList ListName="WSClient-Tests-Dirs">
         <ProductDirectory Name="Gtest-NativeAssemblies" Deliver="false"/>
+        <ProductDirectory Name="sqlang" LibType="static" Deliver="false"/>
     </ProductDirectoryList>
 
     <Part Name="Gtest" DeferType="BuildUnitTests" 
