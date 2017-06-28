@@ -493,9 +493,9 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final : NonCopyableClass
         mutable std::list<CachedECSqlStatementPtr> m_entries;
         uint32_t m_maxSize;
 
-        CachedECSqlStatement* FindEntry(Utf8CP ecsql) const;
-        void AddStatement(CachedECSqlStatementPtr&, ECDbCR, Utf8CP ecsql) const;
-
+        CachedECSqlStatement* FindEntry(Utf8CP ecsql) const; // Requires m_mutex locked
+        void AddStatement(CachedECSqlStatementPtr&, ECDbCR, Utf8CP ecsql) const; // Requires m_mutex locked
+        void GetPreparedStatement(CachedECSqlStatementPtr&, ECDbCR, Utf8CP, ECCrudWriteToken const*) const;
     public:
         //! Initializes a new ECSqlStatementCache of the specified size.
         //! @param [in] maxSize Maximum number of statements the cache can hold. If a new statement is added
