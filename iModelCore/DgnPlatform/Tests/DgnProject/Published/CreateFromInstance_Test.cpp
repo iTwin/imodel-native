@@ -337,3 +337,68 @@ TEST_F(CreateFromInstanceTests, FullyCreateBim)
     newDb->Schemas().CreateClassViewsInDb();
     newDb->SaveChanges();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    06/2017
+//---------------------------------------------------------------------------------------
+TEST_F(CreateFromInstanceTests, ElementWithStructProperty)
+    {
+    USING_NAMESPACE_BENTLEY_EC;
+    SetupSeedProject();
+    m_db->Schemas().CreateClassViewsInDb();
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "MyModel");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "MyCategory");
+    DgnCode emptyCode = DgnCode::CreateEmpty();
+
+    Utf8CP str_StocktonDrive = "Stockton Drive";
+    Utf8CP str_Exton = "Exton";
+    Utf8CP str_Pennsylvania = "Pennsylvania";
+    Utf8CP str_USA = "USA";
+    const int32_t zipCode = 19341;
+
+    ECClassCP testElementClass = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME);
+    ASSERT_NE(testElementClass, nullptr);
+
+    StandaloneECEnablerPtr testElementEnabler = testElementClass->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(testElementEnabler.IsValid());
+
+    StandaloneECInstancePtr testElementInstance = testElementEnabler->CreateInstance();
+    ASSERT_TRUE(testElementInstance.IsValid());
+
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Model", ECValue(model->GetModelId())));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Category", ECValue(categoryId)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("CodeSpec", ECValue(emptyCode.GetCodeSpecId())));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("CodeScope", ECValue(emptyCode.GetScopeElementId())));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.Street", ECValue(str_StocktonDrive)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.Name", ECValue(str_Exton)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.State", ECValue(str_Pennsylvania)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.Country", ECValue(str_USA)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.Zip", ECValue(zipCode)));
+
+    DgnElementId testElementId;
+
+    // Create and Insert element from ECInstance
+        {
+        DgnElementPtr testElement = m_db->Elements().CreateElement(*testElementInstance);
+        ASSERT_TRUE(testElement.IsValid());
+        ASSERT_TRUE(testElement->Insert().IsValid());
+        testElementId = testElement->GetElementId();
+        }
+
+    // Re-load element to make sure it was inserted properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        PhysicalElementCPtr testElement = m_db->Elements().Get<PhysicalElement>(testElementId);
+        ASSERT_TRUE(testElement.IsValid());
+        ASSERT_EQ(testElement->GetModelId(), model->GetModelId());
+        ASSERT_EQ(testElement->GetCategoryId(), categoryId);
+        ASSERT_EQ(testElement->GetCode().GetCodeSpecId(), emptyCode.GetCodeSpecId());
+        ASSERT_EQ(testElement->GetCode().GetScopeElementId(), emptyCode.GetScopeElementId());
+        ASSERT_TRUE(testElement->GetCode().GetValue().empty());
+        ASSERT_STREQ(testElement->GetPropertyValueString("Location.Street").c_str(), str_StocktonDrive);
+        ASSERT_STREQ(testElement->GetPropertyValueString("Location.City.Name").c_str(), str_Exton);
+        ASSERT_STREQ(testElement->GetPropertyValueString("Location.City.State").c_str(), str_Pennsylvania);
+        ASSERT_STREQ(testElement->GetPropertyValueString("Location.City.Country").c_str(), str_USA);
+        ASSERT_EQ(testElement->GetPropertyValueInt32("Location.City.Zip"), zipCode);
+        }
+    }
