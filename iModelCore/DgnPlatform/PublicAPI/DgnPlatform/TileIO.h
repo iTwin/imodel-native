@@ -38,6 +38,7 @@ struct TileIO
         {
         None            = 0,
         ContainsCurves  = 0x0001,
+        Incomplete      = 0x0001 << 1,
         };
 
     // 3D tiles per the published specification...

@@ -830,6 +830,9 @@ TileIO::ReadStatus  ReadTile(ElementAlignedBox3dR contentRange, Render::Primitiv
     if (0 != (flags & TileIO::Flags::ContainsCurves))
         geometry.MarkCurved();
 
+    if (0 != (flags & TileIO::Flags::Incomplete))
+        geometry.MarkIncomplete();
+
     return ReadGltf (geometry);
     }
 };  // BatchedModelReader

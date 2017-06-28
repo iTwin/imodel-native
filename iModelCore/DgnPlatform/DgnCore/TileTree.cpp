@@ -108,6 +108,7 @@ folly::Future<BentleyStatus> TileLoader::_GetFromSource()
             });
         }                                           
 
+
     auto query = std::make_shared<FileDataQuery>(m_resourceName, m_loads);
  
     TileLoaderPtr me(this);
@@ -196,29 +197,35 @@ BentleyStatus TileLoader::DoReadFromDb()
 
             return ERROR;
             }
-
-        if (ZIP_SUCCESS != m_snappyFrom.Init(cache->GetDb(), TABLE_NAME_TileTree, "Data", stmt->GetValueInt64(Column::Rowid)))
+        if (0 == stmt->GetValueInt64(Column::DataSize))
             {
-            BeAssert(false);
-            return ERROR;
+            m_tileBytes.clear();
             }
-
-        CacheBlobHeader     header(m_snappyFrom);
-        uint32_t            sizeRead;
-
-        if ((CacheBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size)
+        else
             {
-            BeAssert(false);
-            return ERROR;
-            }
+            if (ZIP_SUCCESS != m_snappyFrom.Init(cache->GetDb(), TABLE_NAME_TileTree, "Data", stmt->GetValueInt64(Column::Rowid)))
+                {
+                BeAssert(false);
+                return ERROR;
+                }
 
-        m_tileBytes.Resize(header.m_size);
-        m_snappyFrom.ReadAndFinish(m_tileBytes.GetDataP(), header.m_size, sizeRead);
+            CacheBlobHeader     header(m_snappyFrom);
+            uint32_t            sizeRead;
 
-        if (sizeRead != header.m_size)
-            {
-            BeAssert(false);
-            return ERROR;
+            if ((CacheBlobHeader::DB_Signature06 != header.m_signature) || 0 == header.m_size)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
+
+            m_tileBytes.Resize(header.m_size);
+            m_snappyFrom.ReadAndFinish(m_tileBytes.GetDataP(), header.m_size, sizeRead);
+
+            if (sizeRead != header.m_size)
+                {
+                BeAssert(false);
+                return ERROR;
+                }
             }
         m_tileBytes.SetPos(0);
         m_contentType = stmt->GetValueText(Column::ContentType);
@@ -277,7 +284,6 @@ BentleyStatus TileLoader::DoSaveToDb()
         return ERROR; 
 
     BeAssert(!m_cacheKey.empty());
-    BeAssert(m_tileBytes.HasData());
 
     RealityData::Cache::AccessLock lock(*cache);
 
@@ -290,14 +296,21 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     stmt->ClearBindings();
     stmt->BindText(1, m_cacheKey, Statement::MakeCopy::No);
-    m_snappyTo.Init();
-    CacheBlobHeader header(m_tileBytes.GetSize());
-    m_snappyTo.Write((Byte const*) &header, sizeof(header));
-    m_snappyTo.Write(m_tileBytes.GetData(), (int) m_tileBytes.GetSize());
-    uint32_t zipSize = m_snappyTo.GetCompressedSize();
-
-    stmt->BindZeroBlob(2, zipSize); // more than one chunk in geom stream
-    stmt->BindInt64(3, (int64_t) zipSize);
+    if (m_tileBytes.empty())
+        {
+        stmt->BindZeroBlob(2, 0);
+        stmt->BindInt64(3, 0);
+        }
+    else
+        {
+        m_snappyTo.Init();
+        CacheBlobHeader header(m_tileBytes.GetSize());
+        m_snappyTo.Write((Byte const*) &header, sizeof(header));
+        m_snappyTo.Write(m_tileBytes.GetData(), (int) m_tileBytes.GetSize());
+        uint32_t zipSize = m_snappyTo.GetCompressedSize();
+        stmt->BindZeroBlob(2, zipSize); 
+        stmt->BindInt64(3, (int64_t) zipSize);
+        }
     stmt->BindText(4, m_contentType, Statement::MakeCopy::No);
     stmt->BindInt64(5, m_expirationDate);
 
@@ -322,12 +335,14 @@ BentleyStatus TileLoader::DoSaveToDb()
 
     uint64_t rowId = stmt->GetValueInt64(0);
 
-    // Compress and write blob.
-    StatusInt status = m_snappyTo.SaveToRow( cache->GetDb(), TABLE_NAME_TileTree, "Data", rowId);
-    if (SUCCESS != status)
+    if (!m_tileBytes.empty())
         {
-        BeAssert(false);
-        return ERROR;
+        StatusInt status = m_snappyTo.SaveToRow( cache->GetDb(), TABLE_NAME_TileTree, "Data", rowId);
+        if (SUCCESS != status)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
         }
 
     // Try update existing row...
@@ -979,7 +994,8 @@ void Root::DrawInView(SceneContextR context)
         selectedTile->_DrawGraphics(args);
         }
 
-    DEBUG_PRINTF("Selected %u tiles", static_cast<uint32_t>(selectedTiles.size()));
+    if (!selectedTiles.empty())
+        THREADLOG.debugv("Selected %u tiles", static_cast<uint32_t>(selectedTiles.size()));
 
     args.DrawGraphics();
     }
@@ -1118,7 +1134,6 @@ void DrawArgs::DrawBranch(ViewFlagsOverridesCR flags, Render::GraphicBranch& bra
     if (branch.m_entries.empty())
         return;
 
-    //DEBUG_PRINTF("drawing %d Tiles", branch.m_entries.size());
     branch.SetViewFlagsOverrides(flags);
     auto drawBranch = m_context.CreateBranch(branch, m_context.GetDgnDb(), GetLocation(), m_clip);
     BeAssert(branch.m_entries.empty()); // CreateBranch should have moved them
