@@ -936,9 +936,8 @@ Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
     double radius = args.GetTileRadius(*this); // use a sphere to test pixel size. We don't know the orientation of the image within the bounding box.
     DPoint3d center = args.GetTileCenter(*this);
 
-#define LIMIT_MIN_PIXEL_SIZE    
 #if defined(LIMIT_MIN_PIXEL_SIZE)
-    constexpr double s_minPixelSizeAtPoint = 1.0E-3;
+    constexpr double s_minPixelSizeAtPoint = 1.0E-7;
     double pixelSize = radius / std::max(s_minPixelSizeAtPoint, args.m_context.GetPixelSizeAtPoint(&center));
 #else
     double pixelSizeAtPt = args.m_context.GetPixelSizeAtPoint(&center);
