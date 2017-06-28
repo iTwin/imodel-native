@@ -1421,10 +1421,6 @@ SyncOptions options
     // Ensure that only single SyncLocalChangesTask is running at the time
     m_cacheAccessThread->ExecuteAsync([=]
         {
-        auto txn = StartCacheTransaction();
-        txn.GetCache().GetChangeManager().SetSyncActive(true);
-        txn.Commit();
-
         m_syncLocalChangesQueue.push_back(syncTask);
         if (m_syncLocalChangesQueue.size() == 1)
             {
@@ -1439,14 +1435,6 @@ SyncOptions options
             {
             m_cacheAccessThread->Push(m_syncLocalChangesQueue.front());
             }
-
-        if (m_syncLocalChangesQueue.empty())
-            {
-            auto txn = StartCacheTransaction();
-            txn.GetCache().GetChangeManager().SetSyncActive(false);
-            txn.Commit();
-            }
-
         return syncTask->GetResult();
         });
     }

@@ -41,7 +41,8 @@ RelationshipInfoManager& relationshipInfoManager,
 FileInfoManager& fileInfoManager,
 ChangeInfoManager& changeInfoManager,
 FileStorage& fileStorage,
-RootManager& rootManager
+RootManager& rootManager,
+bset<ECInstanceKey>& activeSyncKeys
 ) :
 m_dbAdapter(&dbAdapter),
 m_instanceHelper(&instanceHelper),
@@ -53,7 +54,7 @@ m_fileInfoManager(&fileInfoManager),
 m_changeInfoManager(&changeInfoManager),
 m_fileStorage(&fileStorage),
 m_rootManager(&rootManager),
-m_isSyncActive(false)
+m_activeSyncKeys(&activeSyncKeys)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -67,17 +68,25 @@ Utf8String ChangeManager::CreateRemoteId()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool ChangeManager::IsSyncActive() const
+bool ChangeManager::IsSyncActive(ECInstanceKeyCR instanceKey) const
     {
-    return m_isSyncActive;
+    if (!instanceKey.IsValid())
+        return false;
+    return m_activeSyncKeys->find(instanceKey) != m_activeSyncKeys->end();
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void ChangeManager::SetSyncActive(bool active)
+void ChangeManager::SetSyncActive(ECInstanceKeyCR instanceKey, bool active)
     {
-    m_isSyncActive = active;
+    if (!instanceKey.IsValid())
+        return;
+
+    if (active)
+        m_activeSyncKeys->insert(instanceKey);
+    else
+        m_activeSyncKeys->erase(instanceKey);
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -220,7 +229,7 @@ BentleyStatus ChangeManager::RevertModifiedObject(ECInstanceKeyCR instance)
         return ERROR;
         }
 
-    if (IsSyncActive())
+    if (IsSyncActive(instance))
         {
         BeAssert(false && "Change reverting while syncing is not implemented");
         return ERROR;
@@ -250,7 +259,7 @@ BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatu
         return ERROR;
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
+    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive(instanceKey))
         {
         BeAssert(false && "Cannot delete changed object while syncing");
         return ERROR;
@@ -334,7 +343,7 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
         return ERROR;
 
     FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
-    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
+    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive(instanceKey))
         {
         BeAssert(false && "Cannot change modified file while syncing");
         return ERROR;
@@ -364,7 +373,7 @@ BentleyStatus ChangeManager::ModifyFileName(ECInstanceKeyCR instanceKey, Utf8Str
     {
     FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
 
-    if (IsSyncActive())
+    if (IsSyncActive(instanceKey))
         {
         BeAssert(false && "Cannot rename file while syncing");
         return ERROR;
@@ -472,7 +481,7 @@ SyncStatus syncStatus
         return ERROR;
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
+    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive(relationshipKey))
         {
         BeAssert(false && "Cannot delete relationship while syncing");
         return ERROR;

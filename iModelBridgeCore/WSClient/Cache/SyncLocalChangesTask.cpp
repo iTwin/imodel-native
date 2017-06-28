@@ -51,9 +51,23 @@ void SyncLocalChangesTask::_OnExecute()
         }
 
     m_serverInfo = m_ds->GetServerInfo(txn);
+
+    m_instancesStillInSync.clear();
+
+    for (auto changeGroup : m_changeGroups)
+        SetSyncActiveForChangeGroup(txn, *changeGroup, true);
+
     txn.Commit();
 
-    SyncNext();
+    SyncNext()->Then(m_ds->GetCacheAccessThread(), [=]
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        for (auto instance : m_instancesStillInSync)
+            txn.GetCache().GetChangeManager().SetSyncActive(instance, false);
+        m_instancesStillInSync.clear();
+
+        txn.Commit();
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -130,19 +144,18 @@ void SyncLocalChangesTask::OnSyncDone()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::SyncNext()
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncNext()
     {
-    if (IsTaskCanceled()) return;
+    if (IsTaskCanceled()) return CreateCompletedAsyncTask();
 
     if (m_changeGroupIndexToSyncNext >= m_changeGroups.size())
         {
         ReportFinalProgress();
         OnSyncDone();
-        return;
+        return CreateCompletedAsyncTask();
         }
 
     m_currentChangeGroup = m_changeGroups[m_changeGroupIndexToSyncNext];
-
     AsyncTaskPtr<void> task;
     if (CanSyncChangeset(*m_currentChangeGroup))
         {
@@ -150,11 +163,10 @@ void SyncLocalChangesTask::SyncNext()
         }
     else
         {
-        m_changeGroupIndexToSyncNext++;
-        task = SyncChangeGroup(m_currentChangeGroup);
+        task = SyncNextChangeGroup();
         }
 
-    task->Then(m_ds->GetCacheAccessThread(), [=]
+    return task->Then(m_ds->GetCacheAccessThread(), [=]
         {
         SyncNext();
         });
@@ -181,10 +193,15 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
 
         auto changesetBody = HttpStringBody::Create(std::make_shared<Utf8String>(changeset->ToRequestString()));
         ResponseGuardPtr guard = CreateResponseGuard(nullptr, false); // TODO: label
+        txn.Commit();
 
         m_ds->GetClient()->SendChangesetRequest(changesetBody, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSChangesetResult result)
             {
+            auto txn = m_ds->StartCacheTransaction();
+            for (auto changeGroup : *changesetChangeGroups)
+                SetSyncActiveForChangeGroup(txn, *changeGroup, false);
+
             if (!result.IsSuccess())
                 {
                 SetError(result.GetError());
@@ -206,7 +223,6 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
                 return;
                 };
 
-            auto txn = m_ds->StartCacheTransaction();
             for (auto& pair : *revisions)
                 {
                 if (SUCCESS != txn.GetCache().GetChangeManager().CommitInstanceRevision(*pair.second))
@@ -279,6 +295,41 @@ AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperate
         m_ds->m_sessionInfo->repositorySupportsFileAccessUrl.reset(new bool(supportsFileAccessUrl));
         return supportsFileAccessUrl;
         });
+    }
+
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeGroup()
+    {
+
+    m_changeGroupIndexToSyncNext++;
+    return SyncChangeGroup(m_currentChangeGroup)->Then(m_ds->GetCacheAccessThread(), [=]
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        SetSyncActiveForChangeGroup(txn, *m_currentChangeGroup, false);
+        txn.Commit();
+        });
+    }
+
+void SyncLocalChangesTask::SetSyncActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active)
+    {
+    auto objectKey = m_currentChangeGroup->GetObjectChange().GetInstanceKey();
+    auto relationshipKey = m_currentChangeGroup->GetRelationshipChange().GetInstanceKey();
+    auto fileKey = m_currentChangeGroup->GetFileChange().GetInstanceKey();
+
+    if (objectKey.IsValid())
+        {
+        m_instancesStillInSync.erase(objectKey);
+        txn.GetCache().GetChangeManager().SetSyncActive(objectKey, active);
+        }
+    if (relationshipKey.IsValid())
+        {
+        m_instancesStillInSync.erase(relationshipKey);
+        txn.GetCache().GetChangeManager().SetSyncActive(relationshipKey, active);
+        }
+    if (fileKey.IsValid())
+        {
+        m_instancesStillInSync.erase(fileKey);
+        txn.GetCache().GetChangeManager().SetSyncActive(fileKey, active);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -864,11 +915,11 @@ void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8S
 
     double synced = (double) (m_changeGroupIndexToSyncNext - 1) / m_changeGroups.size();
     synced = trunc(synced * 100) / 100;
-	
-	ECInstanceKey currentFileKey;
+
+    ECInstanceKey currentFileKey;
     if (nullptr != m_currentChangeGroup)
         currentFileKey = m_currentChangeGroup->GetFileChange().GetInstanceKey();
-		
+
     m_onProgressCallback({
         {m_uploadBytesProgress.current + currentFileBytesUploaded, m_uploadBytesProgress.total},
         label,

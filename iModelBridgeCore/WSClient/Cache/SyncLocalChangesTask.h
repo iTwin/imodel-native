@@ -41,6 +41,8 @@ struct SyncLocalChangesTask : public CachingTaskBase
         size_t m_changeGroupIndexToSyncNext;
         ChangeGroupPtr m_currentChangeGroup;
 
+        bset<ECInstanceKey> m_instancesStillInSync;
+
         CachingDataSource::Progress::State m_uploadBytesProgress;
 
         bvector<ObjectId> m_objectsToRefreshAfterSync;
@@ -51,14 +53,17 @@ struct SyncLocalChangesTask : public CachingTaskBase
         void OnSyncDone();
 
         BentleyStatus PrepareChangeGroups(IDataSourceCache& cache);
-        void SyncNext();
+        AsyncTaskPtr<void> SyncNext();
 
         bool CanSyncChangeset(ChangeGroupCR changeGroup) const;
         AsyncTaskPtr<bool> ShouldSyncObjectAndFileCreationSeperately(ChangeGroupPtr changeGroup);
 
         AsyncTaskPtr<void> SyncNextChangeset();
 
+        void SetSyncActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active);
+
         AsyncTaskPtr<void> SyncChangeGroup(ChangeGroupPtr changeGroup);
+        AsyncTaskPtr<void> SyncNextChangeGroup();
         AsyncTaskPtr<void> SyncCreation(ChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncObjectWithFileCreation(ChangeGroupPtr changeGroup, bool includeFile);
         AsyncTaskPtr<void> SyncObjectModification(ChangeGroupPtr changeGroup);

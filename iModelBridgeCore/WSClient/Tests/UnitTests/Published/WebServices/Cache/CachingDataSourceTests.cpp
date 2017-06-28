@@ -2587,7 +2587,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue).IsValid());
+    auto instance = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_TRUE(instance.IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -2597,7 +2598,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
         {
         ds->GetCacheAccessThread()->ExecuteAsync([&]
             {
-            EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive());
+            EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
             });
         return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Created"}));
         }));
@@ -2608,9 +2609,66 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
         .Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(instances.ToWSObjectsResponse()))));
 
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive());
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
     ds->SyncLocalChanges(nullptr, nullptr)->Wait();
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive());
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedRelationship_SetsSyncActiveFlagAndResetsItAfterSuccessfulSync)
+    {
+    // Arrange
+    auto ds = GetTestDataSource({2, 1});
+
+    auto txn = ds->StartCacheTransaction();
+    auto relationship = StubCreatedRelationshipInCache(txn.GetCache(),
+                                   "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
+    txn.Commit();
+
+    // Act & Assert
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
+        {
+        EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
+        return CreateCompletedAsyncTask(WSChangesetResult::Error(StubWSConnectionError()));
+        }));
+
+    SyncOptions options;
+    options.SetUseChangesets(true);
+
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
+    ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
+    }
+
+TEST_F(CachingDataSourceTests, SyncLocalChanges_CancelSync_IsActiveSyncResets)
+    {
+    // Arrange
+    auto ds = GetTestDataSource({2, 1});
+
+    auto txn = ds->StartCacheTransaction();
+    auto relationship = StubCreatedRelationshipInCache(txn.GetCache(),
+                                                       "TestSchema.TestRelationshipClass", {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"});
+    auto instance = StubCreatedObjectInCache(txn.GetCache());
+    txn.Commit();
+
+    // Act & Assert
+    EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
+        .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
+        {
+        EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
+        EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+        ds->CancelAllTasks();
+        return CreateCompletedAsyncTask(WSChangesetResult::Error(StubWSConnectionError()));
+        }));
+
+    SyncOptions options;
+    options.SetUseChangesets(true);
+
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+    ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlagAndResetsItAfterFailedSync)
@@ -2620,7 +2678,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
 
     auto txn = ds->StartCacheTransaction();
     auto testClass = txn.GetCache().GetAdapter().GetECClass("TestSchema.TestClass");
-    ASSERT_TRUE(txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue).IsValid());
+    auto instance = txn.GetCache().GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    ASSERT_TRUE(instance.IsValid());
     txn.Commit();
 
     // Act & Assert
@@ -2630,14 +2689,14 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
         {
         ds->GetCacheAccessThread()->ExecuteAsync([=]
             {
-            EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive());
+            EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
             });
         return CreateCompletedAsyncTask(StubWSCreateObjectResult());
         }));
 
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive());
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
     ds->SyncLocalChanges(nullptr, nullptr)->Wait();
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive());
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SendsCreateObjectRequestWithCorrectParameters)

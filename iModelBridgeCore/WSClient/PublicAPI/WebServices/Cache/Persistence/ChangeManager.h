@@ -43,7 +43,7 @@ struct ChangeManager : public IChangeManager
         ChangeInfoManager*          m_changeInfoManager;
         FileStorage*                m_fileStorage;
         RootManager*                m_rootManager;
-        bool                        m_isSyncActive;
+        bset<ECInstanceKey>*        m_activeSyncKeys;
 
         static Utf8CP LocalInstanceIdPrefix;
 
@@ -89,13 +89,14 @@ struct ChangeManager : public IChangeManager
             FileInfoManager& fileInfoManager,
             ChangeInfoManager& changeInfoManager,
             FileStorage& fileStorage,
-            RootManager& rootManager
+            RootManager& rootManager,
+            bset<ECInstanceKey>& activeSyncKeys
             );
 
         // -- Making local changes to existing data --
 
-        WSCACHE_EXPORT bool IsSyncActive() const override;
-        WSCACHE_EXPORT void SetSyncActive(bool active) override;
+        WSCACHE_EXPORT bool IsSyncActive(ECInstanceKeyCR instance) const override;
+        WSCACHE_EXPORT void SetSyncActive(ECInstanceKeyCR instance, bool active) override;
 
         WSCACHE_EXPORT ECInstanceKey LegacyCreateObject(ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus = SyncStatus::Ready) override;
         WSCACHE_EXPORT ECRelationshipClassCP GetLegacyParentRelationshipClass() override;
