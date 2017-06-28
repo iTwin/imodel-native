@@ -1059,7 +1059,7 @@ public:
     double GetFillTransparency() const {return m_fillTransparency;}
 
     //! Get render material.
-    DgnMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId;}
+    DgnMaterialId GetMaterialId() const {/* BeAssert(m_appearanceOverrides.m_material || m_resolved); */ return m_materialId;}
 
     //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}

@@ -243,7 +243,9 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
             // This vertex is outside the tile (or perhaps decimated?)
             if (!indices.empty())
                 {
-                edges.m_polylines.push_back(MeshPolyline(startDistance, rangeCenter, std::move(indices)));
+                if (indices.size() > 1)
+                    edges.m_polylines.push_back(MeshPolyline(startDistance, rangeCenter, std::move(indices)));
+
                 indices.clear();
                 }
            }

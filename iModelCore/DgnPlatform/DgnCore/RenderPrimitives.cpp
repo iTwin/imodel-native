@@ -901,6 +901,22 @@ void MeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureCR feature
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void Mesh::AddPolyline(MeshPolylineCR polyline) 
+    { 
+    BeAssert(PrimitiveType::Polyline == GetType() || PrimitiveType::Point == GetType()); 
+    
+    if (PrimitiveType::Polyline == GetType() && polyline.GetIndices().size() < 2)
+        {
+        BeAssert(false);
+        return;
+        }
+        
+
+    m_polylines.push_back(polyline); }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t MeshBuilder::AddVertex(VertexMap& verts, VertexKey const& vertex)

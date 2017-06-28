@@ -27,6 +27,8 @@ BEGIN_UNNAMED_NAMESPACE
 
 struct TileContext;
 
+#define TILECACHE_DEBUG
+
 #ifdef TILECACHE_DEBUG
 #define TILECACHE_PRINTF THREADLOG.debugv
 #else
@@ -912,23 +914,38 @@ struct TileCacheStatistics
     size_t      m_totalTileCount = 0;
     double      m_totalTime = 0.0;
     double      m_lastDisplayTime = 0.0;
+    double      m_totalReadTime = 0.0;
     StopWatch   m_stopWatch;
     BeMutex     m_mutex;
 
-void    Update(double readTime, bool empty)
+void    Update(double time, bool empty)
     {
     BeMutexHolder lock(m_mutex);
 
     m_totalTileCount++;
-    m_totalTime += readTime;
+    m_totalTime += time;
     if (empty)
         {
         m_emptyTileCount++;
-        m_emptyTileTime += readTime;
+        m_emptyTileTime += time;
         }
+    Display();
+    }
+
+void    UpdateRead(double time)
+    {
+    BeMutexHolder lock(m_mutex);
+
+    m_totalReadTime  += time;
+    Display();
+    }
+
+    
+void Display()
+    {
     if (m_stopWatch.GetCurrentSeconds() - m_lastDisplayTime > s_displayTime)
         {
-        TILECACHE_PRINTF("Total Tiles: %d, Empty Tiles %d: (%f %%) Empty Tile Read: %f (%f), Total Time: %f, Non Empty Time: %f", m_totalTileCount, m_emptyTileCount, 100.0 * (double) m_emptyTileCount / (double) m_totalTileCount, m_emptyTileTime, m_emptyTileTime / m_totalTime, m_totalTime, m_totalTime - m_emptyTileTime);
+        TILECACHE_PRINTF("Total: %d, Empty: %d: (%f %%) Empty Tile: %f (%f), Total: %f, Non Empty: %f, Read: %f", m_totalTileCount, m_emptyTileCount, 100.0 * (double) m_emptyTileCount / (double) m_totalTileCount, m_emptyTileTime, m_emptyTileTime / m_totalTime, m_totalTime, m_totalTime - m_emptyTileTime, m_totalReadTime);
         m_lastDisplayTime = m_stopWatch.GetCurrentSeconds();
         }
     }
@@ -958,6 +975,21 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
     return loadContext.WasAborted() ? ERROR : SUCCESS;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley    02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+folly::Future<BentleyStatus> Loader::_ReadFromDb()
+    {
+    StopWatch   stopWatch(true);
+
+    folly::Future<BentleyStatus> status = T_Super::_ReadFromDb();
+
+#ifdef TILECACHE_DEBUG    
+    s_statistics.UpdateRead(stopWatch.GetCurrent());
+#endif
+    return status;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
@@ -1945,8 +1977,11 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR
     DgnElementId elemId = GetElementId(geom);
     for (auto& stroke : strokes.m_strokes)
         {
-        m_contentRange.Extend(stroke.m_points);
-        builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor, stroke.m_startDistance, stroke.m_rangeCenter);
+        if (stroke.m_points.size() > 1)
+            {
+            m_contentRange.Extend(stroke.m_points);
+            builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor, stroke.m_startDistance, stroke.m_rangeCenter);
+            }
         }
     }
 

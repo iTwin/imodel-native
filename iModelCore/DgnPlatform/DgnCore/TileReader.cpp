@@ -490,6 +490,11 @@ BentleyStatus ReadPolylines(bvector<MeshPolyline>& polylines, Json::Value value,
             {
             CopyAndIncrement(indices.data(), pData, nIndices * sizeof(uint32_t));
             }
+        if (indices.size() < 2)
+            {
+            BeAssert(false);
+            continue;
+            }
 
         polylines.push_back(MeshPolyline(startDistance, rangeCenter, std::move(indices)));
         }
