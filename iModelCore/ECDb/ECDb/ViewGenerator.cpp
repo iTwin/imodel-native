@@ -940,7 +940,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
                 {
                 DbColumn const* idColumn = refClassId.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
                 if (isSelf)
-                    view.Append(" INNER JOIN ").Append(refClassId.GetTable()).AppendSpace().Append(otherEndAlias).Append(" ON ").Append(*idColumn).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(otherEndAlias, referenceIdColumn.GetName().c_str());
+                    view.Append(" INNER JOIN ").Append(refClassId.GetTable()).AppendSpace().Append(otherEndAlias).Append(" ON ").Append(otherEndAlias, idColumn->GetName().c_str()).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
                 else
                     view.Append(" INNER JOIN ").Append(refClassId.GetTable()).Append(" ON ").Append(*idColumn).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
                 }
