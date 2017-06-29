@@ -117,14 +117,15 @@ public:
     GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert(CreateParams params);
 
     //! Rotates orthogonal grid by given angle in radians on XY plane
-    //! @param[in] grid     orthogonal grid to rotate
-    //! @param[in] theta    angle to rotate on XY plane
-    GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridAxisMap& grid, double theta);
+    //! @param[in] grid             orthogonal grid to rotate
+    //! @param[in] theta            angle to rotate on XY plane
+    //! @param[in] updateDimensions true if dimensions are to be updated. Expensive in dynamics because dimensions need are updated in db
+    GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridAxisMap& grid, double theta, bool updateDimensions = false);
 
     //! Rotates orthogonal grid by given angle in radians on XY plane
     //! @param[in] grid     orthogonal grid to rotate
     //! @param[in] theta    angle to rotate on XY plane
-    GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridElementVector& grid, double theta);
+    GRIDELEMENTS_EXPORT static void RotateToAngleXY(GridElementVector& grid, double theta, bool updateDimensions = false);
 };
 
 END_GRIDS_NAMESPACE

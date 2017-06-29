@@ -201,54 +201,32 @@ double getIntervalBetweenElements(GridElementVector elements)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-void OrthogonalGridPortion::RotateToAngleXY(GridAxisMap& grid, double theta)
+void rotateAxisToAngleXY(GridElementVector& axis, double theta)
     {
-    double horizontalInterval = getIntervalBetweenElements(grid[HORIZONTAL_AXIS]);
-    double verticalInterval = getIntervalBetweenElements(grid[VERTICAL_AXIS]);
+    double axisInterval = getIntervalBetweenElements(axis);
 
-    if (grid[HORIZONTAL_AXIS].size() > 0)
+    if (axis.size() > 0)
         {
-        double existingRotation = GeometryUtils::PlacementToAngleXY(grid[HORIZONTAL_AXIS].front()->GetPlacement());
-        DVec3d horizontalTranslation = DVec3d::From(0.0, 0.0, 0.0);
-        if (grid[HORIZONTAL_AXIS].size() > 1)
+        double existingRotation = GeometryUtils::PlacementToAngleXY(axis.front()->GetPlacement());
+        DVec3d axisTranslation = DVec3d::From(0.0, 0.0, 0.0);
+
+        if (axis.size() > 1)
             {
-            horizontalTranslation = DVec3d::FromStartEnd(grid[HORIZONTAL_AXIS][0]->GetPlacement().GetOrigin(), grid[HORIZONTAL_AXIS][1]->GetPlacement().GetOrigin());
-            horizontalTranslation.RotateXY(theta);
+            axisTranslation = DVec3d::FromStartEnd(axis[0]->GetPlacement().GetOrigin(), axis[1]->GetPlacement().GetOrigin());
+            axisTranslation.RotateXY(theta);
             }
 
-        grid[HORIZONTAL_AXIS][0]->RotateXY(theta);
-        
-        for (int i = 1; i < grid[HORIZONTAL_AXIS].size(); ++i)
+        axis[0]->RotateXY(theta);
+        Placement3d basePlacement = axis[0]->GetPlacement();
+
+        for (int i = 1; i < axis.size(); ++i)
             {
-            grid[HORIZONTAL_AXIS][i]->SetPlacement(grid[HORIZONTAL_AXIS][0]->GetPlacement());
+            axis[i]->SetPlacement(basePlacement);
 
-            horizontalTranslation.ScaleToLength(i * horizontalInterval);
-            DPoint3d newOrigin = grid[HORIZONTAL_AXIS][0]->GetPlacement().GetOrigin();
-            newOrigin.Add(horizontalTranslation);
-            grid[HORIZONTAL_AXIS][i]->MoveToPoint(newOrigin);
-            }
-        }
-
-    if (grid[VERTICAL_AXIS].size() > 0)
-        {
-        double existingRotation = GeometryUtils::PlacementToAngleXY(grid[VERTICAL_AXIS].front()->GetPlacement());
-        DVec3d verticalTranslation = DVec3d::From(0.0, 0.0, 0.0);
-        if (grid[VERTICAL_AXIS].size() > 1)
-            {
-            verticalTranslation = DVec3d::FromStartEnd(grid[VERTICAL_AXIS][0]->GetPlacement().GetOrigin(), grid[VERTICAL_AXIS][1]->GetPlacement().GetOrigin());
-            verticalTranslation.RotateXY(theta);
-            }
-
-        grid[VERTICAL_AXIS][0]->RotateXY(theta);
-
-        for (int i = 1; i < grid[VERTICAL_AXIS].size(); ++i)
-            {
-            grid[VERTICAL_AXIS][i]->SetPlacement(grid[VERTICAL_AXIS][0]->GetPlacement());
-
-            verticalTranslation.ScaleToLength(i * verticalInterval);
-            DPoint3d newOrigin = grid[VERTICAL_AXIS][0]->GetPlacement().GetOrigin();
-            newOrigin.Add(verticalTranslation);
-            grid[VERTICAL_AXIS][i]->MoveToPoint(newOrigin);
+            axisTranslation.ScaleToLength(i * axisInterval);
+            DPoint3d newOrigin = basePlacement.GetOrigin();
+            newOrigin.Add(axisTranslation);
+            axis[i]->MoveToPoint(newOrigin);
             }
         }
     }
@@ -256,16 +234,50 @@ void OrthogonalGridPortion::RotateToAngleXY(GridAxisMap& grid, double theta)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-void OrthogonalGridPortion::RotateToAngleXY(GridElementVector& grid, double theta)
+void OrthogonalGridPortion::RotateToAngleXY(GridAxisMap& grid, double theta, bool updateDimensions)
+    {
+    GridElementVector newHorizontalAxis = grid[HORIZONTAL_AXIS];
+    rotateAxisToAngleXY(newHorizontalAxis, theta);
+    grid[HORIZONTAL_AXIS] = newHorizontalAxis;
+
+    GridElementVector newVerticalAxis = grid[VERTICAL_AXIS];
+    rotateAxisToAngleXY(newVerticalAxis, theta);
+    grid[VERTICAL_AXIS] = newVerticalAxis;
+
+    RotMatrix rotMatrix = RotMatrix::FromAxisAndRotationAngle(2, theta);
+
+    if (updateDimensions)
+        for (bpair<Utf8String, GridElementVector> axis : grid)
+            {
+            if (grid[axis.first].empty())
+                continue;
+
+            DgnDbR db = axis.second.front()->GetDgnDb();
+
+            for (GridSurfacePtr gridSurface : axis.second)
+                {
+                bvector<BeSQLite::EC::ECInstanceId> relationships = DimensionHandler::GetDimensioningRelationshipInstances(db, gridSurface->GetElementId());
+                for (BeSQLite::EC::ECInstanceId instance : relationships)
+                    DimensionHandler::RotateDirection(db, instance, rotMatrix);
+                }
+            }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Haroldas.Vitunskas                  06/17
+//---------------------------------------------------------------------------------------
+void OrthogonalGridPortion::RotateToAngleXY(GridElementVector& grid, double theta, bool updateDimensions)
     {
     GridAxisMap axisMap;
     if (BentleyStatus::ERROR == ElementVectorToAxisMap(axisMap, grid))
         return;
 
-    RotateToAngleXY(axisMap, theta);
+    RotateToAngleXY(axisMap, theta, updateDimensions);
 
     grid = axisMap[HORIZONTAL_AXIS];
     grid.insert(grid.end(), axisMap[VERTICAL_AXIS].begin(), axisMap[VERTICAL_AXIS].end());
+
+
     }
 
 //---------------------------------------------------------------------------------------
