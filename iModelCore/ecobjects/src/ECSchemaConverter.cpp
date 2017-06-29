@@ -174,6 +174,9 @@ bool ECSchemaConverter::Convert(ECSchemaR schema)
 
     schema.RemoveUnusedSchemaReferences();
 
+    if (ecSchemaConverter->m_convertedOK)
+        schema.Validate(true);
+
     return ecSchemaConverter->m_convertedOK;
     }
 
