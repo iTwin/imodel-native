@@ -9,6 +9,8 @@
 #include "DgnPlatformInternal.h"
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/TileIO.h>
+#include <folly/BeFolly.h>
+
 
 #include <TilePublisher/Lib/Constants.h>
 
@@ -2053,6 +2055,22 @@ void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
     m_json["nodes"]  = nodes;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus AddTile(TileTree::TileP tile)
+    {
+    folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
+        {                                
+        TileTree::TileLoadStatePtr          loadState;
+
+        return tile->GetRootR()._RequestTile(*tile, loadState, &m_renderSystem);
+        })
+    .then([=](BentleyStatus status)
+        {
+        });
+    }
+
 };  // Writer
 
            
@@ -2068,11 +2086,10 @@ public:
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WriteGltf(Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid)
+BentleyStatus WriteGltf(DPoint3dCR centroid)
     {
     AddExtensions(centroid);
     AddDefaultScene();
-    AddMeshes (geometry);
 
     Utf8String  sceneStr = Json::FastWriter().write(m_json);
     uint32_t    sceneStrLength = static_cast<uint32_t>(sceneStr.size());
@@ -2096,50 +2113,7 @@ BentleyStatus WriteGltf(Render::Primitives::GeometryCollectionCR geometry, DPoin
 
 };  // GltfWriter
 
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     06/2017
-//=======================================================================================
-struct BatchedModelWriter : GltfWriter
-{
 
-public:
-    BatchedModelWriter(StreamBufferR streamBuffer, DgnModelR model) : GltfWriter(streamBuffer, model) { }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WriteTile(Render::Primitives::GeometryCollectionCR geometry, DPoint3dCR centroid)
-    {
-    Utf8String          batchTableStr = BatchTableBuilder (geometry.Meshes().FeatureTable(), m_model.GetDgnDb(), m_model.Is3d()).ToString();
-    uint32_t            batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-    uint32_t            b3dmNumBatches = geometry.Meshes().FeatureTable().size();
-    uint32_t            zero;
-
-    uint32_t    startPosition = m_buffer.GetSize();
-    m_buffer.Append((const uint8_t *) s_b3dmMagic, 4);
-    m_buffer.Append(s_b3dmVersion);
-    uint32_t    lengthDataPosition = m_buffer.GetSize();
-    m_buffer.Append((uint32_t) 0);              // Filled in below.
-    m_buffer.Append(batchTableStrLen);
-    m_buffer.Append((uint32_t) 0); // length of binary portion of batch table - we have no binary batch table data
-    m_buffer.Append(b3dmNumBatches);
-    m_buffer.Append((const uint8_t *) batchTableStr.data(), batchTableStrLen);
-
-    PadToBoundary();
-    if (SUCCESS != WriteGltf (geometry, centroid))
-        return ERROR;
-
-    PadToBoundary ();
-    WriteLength(startPosition, lengthDataPosition);
-
-#ifdef DEBUG_TO_BATCHED_MODEL
-    std::FILE* outputFile = fopen("d:\\tmp\\test.b3dm","wb");
-    fwrite(m_buffer.GetDataP(), 1, m_buffer.GetSize(), outputFile);
-    fclose(outputFile);
-#endif
-    return SUCCESS;
-    }
-};  // BatchedModelWriter
 
 
 //=======================================================================================
@@ -2352,7 +2326,9 @@ BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::
     m_buffer.Append((uint32_t) 0);              // Filled in below.
     WriteFeatureTable(geometry.Meshes().FeatureTable());
     PadToBoundary ();
-    if (SUCCESS != WriteGltf (geometry, centroid))
+
+    AddMeshes(geometry);
+    if (SUCCESS != WriteGltf (centroid))
         return ERROR;
 
     PadToBoundary ();
@@ -2362,15 +2338,64 @@ BentleyStatus WriteTile(ElementAlignedBox3dCR contentRange, Render::Primitives::
     }
 };  // DgnCacheTileWriter
 
-END_TILEWRITER_NAMESPACE
-   
+
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     06/2017
+//=======================================================================================
+struct CesiumTileWriter : GltfWriter
+{
+    StreamBuffer        m_streamBuffer;
+public:
+    CesiumTileWriter(DgnModelR model) : GltfWriter(m_streamBuffer, model) { }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileIO::Write3dTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid)
+BentleyStatus BeginBatchedTable(uint32_t& startPosition, uint32_t& lengthDataPosition, Render::FeatureTableCR featureTable)
     {
-    return TileWriter::BatchedModelWriter(streamBuffer, model).WriteTile(geometry, centroid);
+    Utf8String          batchTableStr = BatchTableBuilder (featureTable, m_model.GetDgnDb(), m_model.Is3d()).ToString();
+    uint32_t            batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
+    uint32_t            b3dmNumBatches = featureTable.size();
+    uint32_t            zero;
+
+    startPosition = m_buffer.GetSize();
+    m_buffer.Append((const uint8_t *) s_b3dmMagic, 4);
+    m_buffer.Append(s_b3dmVersion);
+    lengthDataPosition = m_buffer.GetSize();
+    m_buffer.Append((uint32_t) 0);              // Filled in below.
+    m_buffer.Append(batchTableStrLen);
+    m_buffer.Append((uint32_t) 0); // length of binary portion of batch table - we have no binary batch table data
+    m_buffer.Append(b3dmNumBatches);
+    m_buffer.Append((const uint8_t *) batchTableStr.data(), batchTableStrLen);
+
+    PadToBoundary();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus EndBatchedTable(uint32_t startPosition, uint32_t lengthDataPosition, Render::FeatureTableCR featureTable)
+    {
+    PadToBoundary ();
+    WriteLength(startPosition, lengthDataPosition);
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileIO::WriteStatus WriteTile(TileTree::TileCR tile)
+    {
+    uint32_t    startPosition = 0, lengthDataPosition = 0;
+
+    return TileIO::WriteStatus::Success;
+    }
+
+};  // CesiumTileWriter
+
+END_TILEWRITER_NAMESPACE
+   
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -2381,4 +2406,17 @@ BentleyStatus TileIO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox
     }
 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileIO::WriteStatus TileIO::WriteCesiumTile(BeFileNameCR fileName, TileTree::TileCR tile, DgnModelR model)
+    {
+    TileWriter::CesiumTileWriter    writer(model);
+    TileIO::WriteStatus             status = writer.WriteTile(tile);    
+
+    if (TileIO::WriteStatus::Success != status)
+        return status;
+
+    return TileIO::WriteStatus::Success;
+    }
 

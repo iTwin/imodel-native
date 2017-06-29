@@ -34,6 +34,12 @@ struct TileIO
         FeatureTableError,
         };
 
+    enum class WriteStatus
+        {
+        Success = 0,
+        UnableToOpenFile,
+        };
+
     enum Flags
         {
         None            = 0,
@@ -41,14 +47,13 @@ struct TileIO
         Incomplete      = 0x0001 << 1,
         };
 
-    // 3D tiles per the published specification...
-    static BentleyStatus Write3dTile(StreamBufferR streamBuffer, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid);
-    static ReadStatus Read3dTile(Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem);
-
-
-    // DgnTiles are tiles with GLTF meshes - but optimized for caching RenderPrimitives (storing feature table directly etc.)
+    // DgnTiles are tiles with GLTF like structure (JSon with binary data) - but optimized for caching tiles (storing feature table directly etc.)
     static BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid);
     static ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem);
+
+    // Write cesium tile from TileTree tile.
+    static WriteStatus TileIO::WriteCesiumTile(BeFileNameCR fileName, TileTree::TileCR tile, DgnModelR model);
+
 };  
 
 
