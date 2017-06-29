@@ -20,7 +20,7 @@ baseDir         = $(_MakeFilePath)
 
 DgnPlatformV8LibDir = ${BuildContext}/SubParts/DgnV8Libs/
 
-dirToSearch=$(BuildContext)VendorAPI/Boost
+dirToSearch=$(BuildContext)VendorAPI/Boost_1_5_7_0
 %include cincapnd.mki
 
 #----------------------------------------------------------------------
@@ -35,8 +35,8 @@ always:
 always:
    @CreateSymLinks.py -d"$(BuildContext)PublicAPI/ScalableMesh=$(SCMPublicAPISrc)/ScalableMesh"
 
-always:
-   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnV8Api=$(BuildContext)SdkSources/ScalableMeshSDK/PublicAPI"
+#always:
+#   @CreateSymLinks.py -d"$(BuildContext)PublicAPI/DgnV8Api=$(BuildContext)SdkSources/V8_InternalSDK/PublicAPI"
 
 always:
    @CreateSymLinks.py -f"$(BuildContext)VendorAPI/TilePublisher/TilePublisher.h=$(tilePublisherDir)TilePublisher.h"

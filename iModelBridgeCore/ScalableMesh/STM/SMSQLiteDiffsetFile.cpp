@@ -14,9 +14,9 @@
 
 #define AUTO_COMMIT_FREQUENCY 20
 
-const SchemaVersion SMSQLiteDiffsetFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 2);
+const BESQL_VERSION_STRUCT SMSQLiteDiffsetFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 2);
 
-const SchemaVersion s_listOfReleasedSchemasDiffset[3] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2) };
+const BESQL_VERSION_STRUCT s_listOfReleasedSchemasDiffset[3] = { BESQL_VERSION_STRUCT(1, 1, 0, 0), BESQL_VERSION_STRUCT(1, 1, 0, 1), BESQL_VERSION_STRUCT(1, 1, 0, 2) };
 const size_t s_numberOfReleasedSchemasDiffset = 3;
 double s_expectedTimeUpdateDiffset[2] = { 1.2*1e-5, 1.2*1e-5 };
 std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsDiffset[2] = {
@@ -103,7 +103,7 @@ SMSQLiteDiffsetFile::~SMSQLiteDiffsetFile()
 
 
 size_t SMSQLiteDiffsetFile::GetNumberOfReleasedSchemas() { return s_numberOfReleasedSchemasDiffset; }
-const SchemaVersion* SMSQLiteDiffsetFile::GetListOfReleasedVersions() { return s_listOfReleasedSchemasDiffset; }
+const BESQL_VERSION_STRUCT* SMSQLiteDiffsetFile::GetListOfReleasedVersions() { return s_listOfReleasedSchemasDiffset; }
 double* SMSQLiteDiffsetFile::GetExpectedTimesForUpdateFunctions() { return s_expectedTimeUpdateDiffset; }
 std::function<void(BeSQLite::Db*)>* SMSQLiteDiffsetFile::GetFunctionsForAutomaticUpdate() { return s_databaseUpdateFunctionsDiffset; }
 

@@ -10,9 +10,9 @@
 #define READONLY Db::OpenMode::Readonly
 #define READWRITE Db::OpenMode::ReadWrite
 
-const SchemaVersion SMSQLiteClipDefinitionsFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 4);
+const BESQL_VERSION_STRUCT SMSQLiteClipDefinitionsFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 4);
 
-const SchemaVersion s_listOfReleasedSchemasClip[5] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2), SchemaVersion(1, 1, 0, 3), SchemaVersion(1, 1, 0, 4) };
+const BESQL_VERSION_STRUCT s_listOfReleasedSchemasClip[5] = { BESQL_VERSION_STRUCT(1, 1, 0, 0), BESQL_VERSION_STRUCT(1, 1, 0, 1), BESQL_VERSION_STRUCT(1, 1, 0, 2), BESQL_VERSION_STRUCT(1, 1, 0, 3), BESQL_VERSION_STRUCT(1, 1, 0, 4) };
 const size_t s_numberOfReleasedSchemasClip = 5;
 double s_expectedTimeUpdateClip[4] = { 1.2*1e-5, 1e-6,1e-6,1e-6 };
 std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsClip[4] = {
@@ -51,7 +51,7 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctionsClip[4] = {
     };
 
 size_t SMSQLiteClipDefinitionsFile::GetNumberOfReleasedSchemas() { return s_numberOfReleasedSchemasClip; }
-const SchemaVersion* SMSQLiteClipDefinitionsFile::GetListOfReleasedVersions() { return s_listOfReleasedSchemasClip; }
+const BESQL_VERSION_STRUCT* SMSQLiteClipDefinitionsFile::GetListOfReleasedVersions() { return s_listOfReleasedSchemasClip; }
 double* SMSQLiteClipDefinitionsFile::GetExpectedTimesForUpdateFunctions() { return s_expectedTimeUpdateClip; }
 std::function<void(BeSQLite::Db*)>* SMSQLiteClipDefinitionsFile::GetFunctionsForAutomaticUpdate() { return s_databaseUpdateFunctionsClip; }
 

@@ -24,16 +24,16 @@
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>
         <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
         <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
+        <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
         <SubPart PartName="Core"            PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
         <SubPart PartName="Formats"         PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
-        <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
-        <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
+          <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
         <SubPart PartName="CloudDataSource" PartFile="CloudDataSource" Repository="ScalableMesh" />
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
        <SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
         <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
-	   <SubPart PartName="ThreeMxReader" PartFile="RealityModeling" Repository="DgnDomains-RealityModeling" />
-        <SdkSource>ScalableMeshSDK</SdkSource>
+	    <SubPart PartName="ThreeMxReaderLegacy" PartFile="RealityModeling" Repository="DgnDomains-RealityModeling" />
+        <SdkSource>V8_InternalSDK</SdkSource>        
         <!-- For Importer-->
         <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
@@ -192,7 +192,7 @@
   
     <Product Name="ScalableMeshSDK"  PrgOutputDir="ScalableMesh" SaveProduct="true" >    
         <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
-        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />     
+        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModelDgnDb" Repository="TerrainModel" />     
         <SubPart PartName="ScalableMeshElement" PartFile="DgnDisplay" Repository="DgnDisplay"/>		
         <SubPart PartName="PublishedApi"   PartFile="geomlibs"    Repository="GeomLibs"/>
         <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>

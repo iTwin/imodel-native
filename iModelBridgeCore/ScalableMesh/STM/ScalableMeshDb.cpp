@@ -12,10 +12,10 @@ On platforms that support version checks, we also refuse to open too-recent file
 This is consistent with other BeSQLite profiles.
 */
 
-const SchemaVersion ScalableMeshDb::CURRENT_VERSION = SchemaVersion(1, 1, 0, 1);
+const BESQL_VERSION_STRUCT ScalableMeshDb::CURRENT_VERSION = BESQL_VERSION_STRUCT(1, 1, 0, 1);
 static bool s_checkShemaVersion = true;
 
-SchemaVersion ScalableMeshDb::GetCurrentVersion()
+BESQL_VERSION_STRUCT ScalableMeshDb::GetCurrentVersion()
     {
     switch (m_type)
         {
@@ -48,10 +48,10 @@ DbResult ScalableMeshDb::_VerifySchemaVersion(OpenParams const& params)
        
     Utf8String schemaVs(stmtTest->GetValueText(0));
 
-    SchemaVersion databaseSchema(schemaVs.c_str());
+    BESQL_VERSION_STRUCT databaseSchema(schemaVs.c_str());
    
-    SchemaVersion currentVersion = GetCurrentVersion();
-    if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_MajorMinor) != 0))
+    BESQL_VERSION_STRUCT currentVersion = GetCurrentVersion();
+    if (s_checkShemaVersion && (databaseSchema.CompareTo(currentVersion, BESQL_VERSION_STRUCT::VERSION_All) < 0 || databaseSchema.CompareTo(currentVersion, SchemaVersion::VERSION_MajorMinor) != 0))
         return BE_SQLITE_SCHEMA;
 
     return BE_SQLITE_OK;
@@ -70,7 +70,7 @@ DbResult ScalableMeshDb::_OnDbCreated(CreateParams const& params)
 
     CachedStatementPtr stmt;
     GetCachedStatement(stmt, "INSERT INTO SMFileMetadata (Version, Properties) VALUES(?,?)");
-    SchemaVersion currentVersion = GetCurrentVersion();
+    BESQL_VERSION_STRUCT currentVersion = GetCurrentVersion();
     Utf8String versonJson(currentVersion.ToJson());
     stmt->BindText(1, versonJson.c_str(), Statement::MakeCopy::Yes);
     stmt->BindText(2, "", Statement::MakeCopy::Yes);

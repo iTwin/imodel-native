@@ -6,9 +6,7 @@
 |       $Date: 2012/07/25 14:13:37 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ScalableMeshPCH.h" 
-
-    
+#include "ScalableMeshPCH.h"

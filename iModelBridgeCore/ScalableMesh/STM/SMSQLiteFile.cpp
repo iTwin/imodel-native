@@ -13,7 +13,7 @@
 #define READONLY Db::OpenMode::Readonly
 #define READWRITE Db::OpenMode::ReadWrite
 
-const SchemaVersion SMSQLiteFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 3);
+const BESQL_VERSION_STRUCT SMSQLiteFile::CURRENT_VERSION = BESQL_VERSION_STRUCT(1, 1, 0, 3);
 
 SMSQLiteFile::SMSQLiteFile()
 {
@@ -48,7 +48,7 @@ bool SMSQLiteFile::Close()
     }
 
 
-const SchemaVersion s_listOfReleasedSchemas[4] = { SchemaVersion(1, 1, 0, 0), SchemaVersion(1, 1, 0, 1), SchemaVersion(1, 1, 0, 2), SchemaVersion(1, 1, 0, 3) };
+const BESQL_VERSION_STRUCT s_listOfReleasedSchemas[4] = { BESQL_VERSION_STRUCT(1, 1, 0, 0), BESQL_VERSION_STRUCT(1, 1, 0, 1), BESQL_VERSION_STRUCT(1, 1, 0, 2), BESQL_VERSION_STRUCT(1, 1, 0, 3) };
 const size_t s_numberOfReleasedSchemas = 4;
 double s_expectedTimeUpdate[3] = { 1.2*1e-5, 1e-6,1e-6};
 //all the functions for each schema transition. 
@@ -143,7 +143,7 @@ std::function<void(BeSQLite::Db*)> s_databaseUpdateFunctions[3] = {
     };
 
 size_t SMSQLiteFile::GetNumberOfReleasedSchemas() { return s_numberOfReleasedSchemas; }
-const SchemaVersion* SMSQLiteFile::GetListOfReleasedVersions() { return s_listOfReleasedSchemas; }
+const BESQL_VERSION_STRUCT* SMSQLiteFile::GetListOfReleasedVersions() { return s_listOfReleasedSchemas; }
 double* SMSQLiteFile::GetExpectedTimesForUpdateFunctions() { return s_expectedTimeUpdate; }
 std::function<void(BeSQLite::Db*)>* SMSQLiteFile::GetFunctionsForAutomaticUpdate() { return s_databaseUpdateFunctions; }
 
@@ -154,11 +154,11 @@ bool SMSQLiteFile::UpdateDatabase()
     assert(stmtTest != nullptr);
     stmtTest->Step();
 #ifndef VANCOUVER_API
-    SchemaVersion databaseSchema(GET_VALUE_STR(stmtTest,0));    
+    BESQL_VERSION_STRUCT databaseSchema(GET_VALUE_STR(stmtTest,0));
     stmtTest->Finalize();
     for (size_t i = 0; i < GetNumberOfReleasedSchemas()- 1; ++i)
         {
-        SchemaVersion databaseSchemaOld = GetListOfReleasedVersions()[i];
+        BESQL_VERSION_STRUCT databaseSchemaOld = GetListOfReleasedVersions()[i];
 
         if (databaseSchema.CompareTo(databaseSchemaOld) == 0)
             {

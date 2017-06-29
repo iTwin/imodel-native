@@ -12,9 +12,8 @@
 
 /*__PUBLISH_SECTION_START__*/       
 #pragma once
-#ifndef BENTLEY_NAMESPACE_NAME
-#define BENTLEY_NAMESPACE_NAME Bentley
-#endif
+
+#include <Bentley/Bentley.h>
 
 #define BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE    BEGIN_BENTLEY_NAMESPACE namespace ScalableMesh {
 #define END_BENTLEY_SCALABLEMESH_NAMESPACE     }}
