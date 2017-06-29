@@ -10,7 +10,6 @@
 #include "InternalUtilityFunctions.h"
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HIMMosaic.h>
-#include <ImagePP/all/h/HPMPooledVector.h>
 #include <ImagePP/all/h/HRAClearOptions.h>
 #include <ImagePP/all/h/HRACopyFromOptions.h>
 #include <TerrainModel/Core/DTMIterators.h>

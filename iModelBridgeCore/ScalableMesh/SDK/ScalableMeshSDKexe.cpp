@@ -982,7 +982,16 @@ void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
         if (status != BEXML_Success)
             {
             BeFileName name;
-            assert(BeFileNameStatus::Success == BeFileName::BeGetTempPath(name));
+            
+#ifdef VANCOUVER_API       
+            BeFileNameStatus beStatus = BeFileName::BeGetTempPath(name);
+            assert(BeFileNameStatus::Success == beStatus);
+#else        
+            IKnownLocationsAdmin locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
+            name = locationAdmin.GetLocalTempDirectoryBaseName();
+            assert(!name.IsEmpty());
+#endif
+
             params.tempPath = name;
             }
         params.pRootNode = pTestNode;

@@ -643,8 +643,16 @@ void InitializeSDK(BeFileName& systemDtyPath, BeFileName& customDtyPath)
         DependencyManager::SetProcessingDisabled(true);
         DgnFileStatus status;
         BeFileName name;
+
+#ifdef VANCOUVER_API       
         BeFileNameStatus beStatus = BeFileName::BeGetTempPath(name);
         assert(BeFileNameStatus::Success == beStatus);
+#else        
+        IKnownLocationsAdmin locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
+        name = locationAdmin.GetLocalTempDirectoryBaseName();
+        assert(!name.IsEmpty());
+#endif
+
         name.AppendToPath(L"temp.dgn");
         
         docPtr = DgnDocument::CreateForNewFile(status, name.GetName(), NULL, DEFDGNFILE_ID, NULL, DgnDocument::OverwriteMode::Always, DgnDocument::CreateOptions::SupressFailureNotification);

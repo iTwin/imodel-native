@@ -41,12 +41,18 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 static int s_xyzId = 0;
 
 BeFileName GetTempXyzFilePath()
-    {
-    
+    {    
     BeFileName tempPath;
+
+#ifdef VANCOUVER_API
     BeFileNameStatus status = BeFileName::BeGetTempPath(tempPath);
     assert(status == BeFileNameStatus::Success);
-
+#else
+    IKnownLocationsAdmin locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
+    tempPath = locationAdmin.GetLocalTempDirectoryBaseName();
+    assert(!tempPath.IsEmpty());
+#endif
+    
     wchar_t bufferId[10];
     _swprintf(bufferId, L"%i", s_xyzId);
     tempPath.AppendToPath(L"detectGround");

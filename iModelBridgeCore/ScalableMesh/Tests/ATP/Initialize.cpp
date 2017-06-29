@@ -203,8 +203,16 @@ void InitializeATP(DgnPlatformLib::Host& host)
     appHost.Startup();
 
     BeFileName name;
+
+#ifdef VANCOUVER_API       
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(name);
     assert(BeFileNameStatus::Success == beStatus);
+#else        
+    IKnownLocationsAdmin locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
+    name = locationAdmin.GetLocalTempDirectoryBaseName();
+    assert(!name.IsEmpty());
+#endif
+    
     name.AppendToPath(L"temp.dgn");
 
     static ExeHost smHost;

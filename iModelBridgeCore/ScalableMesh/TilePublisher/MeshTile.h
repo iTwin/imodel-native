@@ -13,96 +13,7 @@
 //#include "SolidKernel.h"
 #include <map> // NB: Because bmap doesn't support move semantics...
 #include <ScalableMesh\GeoCoords\GCS.h>
-
-namespace BENTLEY_NAMESPACE_NAME
-    {
-    //=======================================================================================
-    // Base class for 64 bit Ids.
-    // @bsiclass                                                    Keith.Bentley   02/11
-    //=======================================================================================
-    struct BeInt64Id
-        {
-        public:
-            //! @see BeInt64Id::ToString(Utf8Char*)
-            static const size_t ID_STRINGBUFFER_LENGTH = std::numeric_limits<uint64_t>::digits + 1; //+1 for the trailing 0 character
-
-        protected:
-            uint64_t m_id;
-
-        public:
-            //! Construct an invalid BeInt64Id
-            BeInt64Id() { Invalidate(); }
-
-            //! Construct a BeInt64Id from a 64 bit value.
-            explicit BeInt64Id(uint64_t u) : m_id(u) {}
-
-            //! Move constructor.
-            BeInt64Id(BeInt64Id&& rhs) { m_id = rhs.m_id; }
-
-            //! Construct a copy.
-            BeInt64Id(BeInt64Id const& rhs) { m_id = rhs.m_id; }
-
-            BeInt64Id& operator=(BeInt64Id const& rhs) { m_id = rhs.m_id; return *this; }
-
-            bool IsValid() const { return Validate(); }
-
-            //! Compare two BeInt64Id for equality
-            bool operator==(BeInt64Id const& rhs) const { return rhs.m_id == m_id; }
-
-            //! Compare two BeInt64Id for inequality
-            bool operator!=(BeInt64Id const& rhs) const { return !(*this == rhs); }
-
-            //! Compare two BeInt64Id
-            bool operator<(BeInt64Id const& rhs) const { return m_id < rhs.m_id; }
-            bool operator<=(BeInt64Id const& rhs) const { return m_id <= rhs.m_id; }
-            bool operator>(BeInt64Id const& rhs) const { return m_id > rhs.m_id; }
-            bool operator>=(BeInt64Id const& rhs) const { return m_id >= rhs.m_id; }
-
-            //! Get the 64 bit value of this BeInt64Id
-            uint64_t GetValue() const { BeAssert(IsValid()); return m_id; }
-
-            //! Get the 64 bit value of this BeGuid. Does not check for valid value in debug builds.
-            uint64_t GetValueUnchecked() const { return m_id; }
-
-            //! Test to see whether this BeInt64Id is valid. 0 is not a valid id.
-            bool Validate() const { return m_id != 0; }
-
-            //! Set this BeInt64Id to an invalid value (0).
-            void Invalidate() { m_id = 0; }
-
-            //! Converts this BeInt64Id to its string representation.
-            //! 
-            //! Typical example:
-            //!
-            //!     Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-            //!     myId.ToString(idStrBuffer);
-            //!
-            //! @remarks The method does not have any checks that the buffer is large enough. Callers
-            //! must ensure this to avoid unexpected behavior. 
-            //!
-            //! @param[in,out] stringBuffer The output buffer for the id string. Must be large enough
-            //! to hold the maximal number of decimal digits of UInt64 plus the trailing 0 character.
-            //! You can use BeInt64Id::ID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
-            void ToString(Utf8P stringBuffer) const
-                {
-#ifndef VANCOUVER_API
-                BeStringUtilities::FormatUInt64(stringBuffer, m_id); //BeStringUtilities::FormatUInt64 is faster than sprintf.
-#else
-                sprintf(stringBuffer, "%lld", m_id);
-#endif
-                }
-
-                                                                                                             //! Converts this BeInt64Id to its string representation.
-                                                                                                             //! @remarks Consider the overload BeInt64Id::ToString(Utf8Char*) if you want
-                                                                                                             //! to avoid allocating Utf8Strings.
-            Utf8String ToString() const
-                {
-                Utf8Char idStrBuffer[ID_STRINGBUFFER_LENGTH];
-                ToString(idStrBuffer);
-                return Utf8String(idStrBuffer);
-                }
-        };
-    }
+    
 
 BEGIN_BENTLEY_GEOMETRY_NAMESPACE
 class XYZRangeTreeRoot;
@@ -641,8 +552,7 @@ public:
 #ifndef VANCOUVER_API
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved, DgnDbR db);
-    //! Create a TileGeometry for an ISolidKernelEntity
-    static TileGeometryPtr Create(ISolidKernelEntityR solid, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, DgnDbR db);
+    
 #else
     //! Create a TileGeometry for an IGeometry
     static TileGeometryPtr Create(IGeometryR geometry, TransformCR tf, DRange3dCR tileRange, BeInt64Id entityId, /*TileDisplayParamsPtr& params,*/ IFacetOptionsR facetOptions, bool isCurved);

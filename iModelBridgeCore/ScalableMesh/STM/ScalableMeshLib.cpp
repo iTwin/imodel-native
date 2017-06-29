@@ -192,15 +192,20 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     static const RegisterMeshConverter<DPoint3d, DPoint3d>                        s_ptMeshConv0;
 
     
-    // Register Moniker
-
-    
-
+    // Register Moniker        
     t_scalableTerrainModelHost = &host;
     t_scalableTerrainModelHost->Initialize();
     BeFileName tempDir;
+    
+#ifdef VANCOUVER_API       
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
+#else
+    IKnownLocationsAdmin locationAdmin(host.GetIKnownLocationsAdmin());
+    tempDir = locationAdmin.GetLocalTempDirectoryBaseName();
+    assert(!tempDir.IsEmpty());
+#endif
+
     BeSQLiteLib::Initialize(tempDir);
     }
 
