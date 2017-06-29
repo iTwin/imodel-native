@@ -1334,6 +1334,37 @@ ECObjectsStatus PropertyPriorityConverter::Convert(ECSchemaR schema, IECCustomAt
     return status;
     }
 
+PropertyCategoryP getExistingCategory(ECSchemaR schema, ECPropertyP prop, IECInstanceR categoryCA, Utf8CP existingName)
+    {
+    PropertyCategoryP existingCategory = schema.GetPropertyCategoryP(existingName);
+    if (nullptr != existingCategory)
+        {
+        ECValue value;
+        if (ECObjectsStatus::Success == categoryCA.GetValue(value, "DisplayLabel") && !value.IsNull() && value.IsString() &&
+            !existingCategory->GetDisplayLabel().Equals(value.GetUtf8CP()))
+            LOG.warningv("Found a Category custom attribute on '%s.%s' with a name that matches an existing category '%s' but the attributes of the existing category and the custom attribute done match, using the existing category anyway.",
+                         prop->GetClass().GetFullName(), prop->GetName().c_str(), existingName);
+        // TODO: Do we need to handle this better?
+        }
+    return existingCategory;
+    }
+
+ECObjectsStatus createPropertyCategory(ECSchemaR schema, PropertyCategoryP newCategory, Utf8CP newName, IECInstanceR categoryCA)
+    {
+    ECObjectsStatus status = schema.CreatePropertyCategory(newCategory, newName);
+    if (ECObjectsStatus::Success == status)
+        {
+        ECValue value;
+        if (ECObjectsStatus::Success == categoryCA.GetValue(value, "DisplayLabel") && !value.IsNull() && value.IsString())
+            status = newCategory->SetDisplayLabel(value.GetUtf8CP());
+        if (ECObjectsStatus::Success == categoryCA.GetValue(value, "Description") && !value.IsNull() && value.IsString())
+            status = newCategory->SetDescription(value.GetUtf8CP());
+        if (ECObjectsStatus::Success == categoryCA.GetValue(value, "Priority") && !value.IsNull() && value.IsInteger())
+            status = newCategory->SetPriority((uint32_t)value.GetInteger());
+        }
+    return status;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -1361,32 +1392,25 @@ ECObjectsStatus CategoryConverter::Convert(ECSchemaR schema, IECCustomAttributeC
         }
 
     Utf8String newName = existingName.GetUtf8CP();
-    PropertyCategoryP newPropCategory = schema.GetPropertyCategoryP(newName.c_str());
-    if (nullptr != newPropCategory)
+    PropertyCategoryP newPropCategory = getExistingCategory(schema, prop, instance, newName.c_str());
+    if (nullptr == newPropCategory)
         {
-        ECValue value;
-        if (ECObjectsStatus::Success == instance.GetValue(value, "DisplayLabel") && !value.IsNull() && value.IsString() &&
-            !newPropCategory->GetDisplayLabel().Equals(value.GetUtf8CP()))
-            LOG.warningv("Found a Category custom attribute on '%s.%s' with a name that matches an existing category '%s' but the attributes of the existing category and the custom attribute done match, using the existing category anyway.",
-                         prop->GetClass().GetFullName(), prop->GetName().c_str(), newName.c_str());
-        // TODO: Do we need to handle this better?
-        }
-    else
-        {
-        if (ECObjectsStatus::Success != (status = schema.CreatePropertyCategory(newPropCategory, newName.c_str())))
+        if (ECObjectsStatus::Success != (status = createPropertyCategory(schema, newPropCategory, newName.c_str(), instance)))
             {
-            LOG.errorv("Failed to create PropertyCategory, %s, from the category defined on property %s.%s because it conflicts with an existing type name within the schema '%s'.",
-                       newName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetClass().GetSchema().GetFullSchemaName().c_str());
-            return status;
-            }
+            if (ECObjectsStatus::NamedItemAlreadyExists == status)
+                {
+                newName += "_Category";
+                newPropCategory = getExistingCategory(schema, prop, instance, newName.c_str());
+                status = nullptr == newPropCategory ? createPropertyCategory(schema, newPropCategory, newName.c_str(), instance) : ECObjectsStatus::Success;
+                }
 
-        ECValue value;
-        if (ECObjectsStatus::Success == instance.GetValue(value, "DisplayLabel") && !value.IsNull() && value.IsString())
-            status = newPropCategory->SetDisplayLabel(value.GetUtf8CP());
-        if (ECObjectsStatus::Success == instance.GetValue(value, "Description") && !value.IsNull() && value.IsString())
-            status = newPropCategory->SetDescription(value.GetUtf8CP());
-        if (ECObjectsStatus::Success == instance.GetValue(value, "Priority") && !value.IsNull() && value.IsInteger())
-            status = newPropCategory->SetPriority((uint32_t)value.GetInteger());
+            if (ECObjectsStatus::Success != status)
+                {
+                LOG.errorv("Failed to create PropertyCategory, %s, from the category defined on property %s.%s because it conflicts with an existing type name within the schema '%s'.",
+                           newName.c_str(), prop->GetClass().GetFullName(), prop->GetName().c_str(), prop->GetClass().GetSchema().GetFullSchemaName().c_str());
+                return status;
+                }
+            }
         }
 
     status = prop->SetCategory(newPropCategory);
