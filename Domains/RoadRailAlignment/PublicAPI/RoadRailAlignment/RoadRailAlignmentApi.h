@@ -92,6 +92,8 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 // Category names
 //-----------------------------------------------------------------------------------------
 #define BRRA_CATEGORY_Alignment                                     "Alignment"
+#define BRRA_CATEGORY_HorizontalAlignment                           "Horizontal Alignment"
+#define BRRA_CATEGORY_VerticalAlignment                             "Vertical Alignment"
 
 
 //-----------------------------------------------------------------------------------------
