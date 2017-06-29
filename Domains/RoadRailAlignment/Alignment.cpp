@@ -352,7 +352,7 @@ HorizontalAlignmentPtr HorizontalAlignment::Create(AlignmentCR alignment, CurveV
     auto breakDownModelCPtr = HorizontalAlignmentModel::Get(alignment.GetDgnDb(), horizontalModelId);
 
     CreateParams createParams(alignment.GetDgnDb(), breakDownModelCPtr->GetModelId(),
-        QueryClassId(alignment.GetDgnDb()), AlignmentCategory::Get(alignment.GetDgnDb()));
+        QueryClassId(alignment.GetDgnDb()), AlignmentCategory::GetHorizontal(alignment.GetDgnDb()));
     return new HorizontalAlignment(createParams, alignment, horizontalGeometry);
     }
 
@@ -425,7 +425,7 @@ HorizontalAlignmentCPtr HorizontalAlignment::Insert(DgnDbStatus* stat)
 VerticalAlignmentPtr VerticalAlignment::Create(VerticalAlignmentModelCR breakDownModel, CurveVectorR verticalGeometry)
     {
     CreateParams createParams(breakDownModel.GetDgnDb(), breakDownModel.GetModelId(), 
-        QueryClassId(breakDownModel.GetDgnDb()), AlignmentCategory::Get(breakDownModel.GetDgnDb()));
+        QueryClassId(breakDownModel.GetDgnDb()), AlignmentCategory::GetVertical(breakDownModel.GetDgnDb()));
     return new VerticalAlignment(createParams, verticalGeometry);
     }
 
