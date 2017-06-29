@@ -13,7 +13,14 @@
 +--------------------------------------------------------------------------------------*/
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
+
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/

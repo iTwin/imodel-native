@@ -21,7 +21,6 @@ using namespace std;
 #ifdef SCALABLE_MESH_ATP
 #include <ScalableMesh/IScalableMeshATP.h>
 #include <DgnPlatform\Tools\ConfigurationManager.h>
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #endif
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 #ifdef DHDEBUG

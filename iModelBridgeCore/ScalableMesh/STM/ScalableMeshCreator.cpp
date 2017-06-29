@@ -84,7 +84,6 @@ extern bool s_inEditing = false;
 //extern DataSourceManager s_dataSourceManager;
 
 using namespace ISMStore;
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 
 /*----------------------------------------------+

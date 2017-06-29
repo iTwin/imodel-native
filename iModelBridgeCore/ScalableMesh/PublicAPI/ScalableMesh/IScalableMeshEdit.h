@@ -4,7 +4,7 @@
 |       $Date: 2016/08/23 10:24:32 $
 |     $Author:Elenie.Godzaridis $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -17,7 +17,12 @@
 #include <DgnPlatform/ClipVector.h>
 #include <ScalableMesh/IScalableMeshQuery.h>
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 /*__PUBLISH_SECTION_END__*/
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

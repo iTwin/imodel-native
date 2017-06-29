@@ -8,7 +8,6 @@
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 #include <ScalableMesh\ScalableMeshLib.h>
 //#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>

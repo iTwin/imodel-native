@@ -17,7 +17,13 @@
 #include <DgnPlatform\DgnPlatformBaseType.r.h>
 
 
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
+
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_IMPORT
 
 void ParseDTMFeatureType(WString& name, DTMFeatureType& type)

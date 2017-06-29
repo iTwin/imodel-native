@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/TileLoaderQueue.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ScalableMeshPCH.h"
@@ -11,7 +11,6 @@
 
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

@@ -13,7 +13,13 @@ class SMNodeGroupMasterHeader;
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 #include <TerrainModel/Core/bcdtmClass.h>
 #include <ScalableMesh\IScalableMesh.h>
 #undef static_assert

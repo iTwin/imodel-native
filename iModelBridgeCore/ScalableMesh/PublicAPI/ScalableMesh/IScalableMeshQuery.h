@@ -26,7 +26,13 @@
 #include <DgnPlatform/DgnPlatform.h>
 #include <DgnPlatform/ClipVector.h>
 #include <Bentley\bset.h>
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 //#include <Bentley/RefCounted.h>
 template<class POINT, class EXTENT> class ISMPointIndexQuery;
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE

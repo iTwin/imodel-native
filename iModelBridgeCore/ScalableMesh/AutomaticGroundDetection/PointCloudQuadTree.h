@@ -2,7 +2,7 @@
 |
 |     $Source: AutomaticGroundDetection/PointCloudQuadTree.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma  once
@@ -25,7 +25,7 @@ USING_NAMESPACE_BENTLEY_POINTCLOUD
 
 
 USING_NAMESPACE_BENTLEY
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

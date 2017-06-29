@@ -28,7 +28,13 @@ USING_NAMESPACE_BENTLEY_TERRAINMODEL
 #undef static_assert
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/MeshTile.h>
 #include <ScalableMeshSchema/ScalableMeshHandler.h>

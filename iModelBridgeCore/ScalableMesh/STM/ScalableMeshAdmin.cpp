@@ -2,11 +2,17 @@
 |
 |     $Source: STM/ScalableMeshAdmin.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <HIEStdcpp.h>
-USING_NAMESPACE_BENTLEY_DGNPLATFORM
+
+#ifdef VANCOUVER_API
+    USING_NAMESPACE_BENTLEY_DGNPLATFORM
+#else
+    USING_NAMESPACE_BENTLEY_DGN
+#endif
+
 USING_NAMESPACE_RASTER
 USING_NAMESPACE_DGNPLATFORM_DGNHISTORY
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
