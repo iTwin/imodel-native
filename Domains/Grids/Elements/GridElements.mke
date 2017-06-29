@@ -25,6 +25,9 @@ dirToSearch = $(BuildingUtilsPublicApi)
 dirToSearch = $(BuildingUnitsPublicApi)
 %include cincapnd.mki
 
+dirToSearch = $(BuildingSpacePlanningPublicApi)
+%include cincapnd.mki
+
 nameToDefine = __GRIDELEMENTS_BUILD__
 %include cdefapnd.mki
 
