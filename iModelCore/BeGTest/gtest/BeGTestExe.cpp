@@ -398,11 +398,11 @@ int main(int argc, char **argv)
     Utf8String umdhPathJoin;
     Utf8String symbolPath;
     Utf8String gflagsPathJoin;
-    
+
     if (umdh_Use(argc, argv))
         {
         RUN_ALL_TESTS();
-        
+
         check = 1;
         //set _NT_SYMBOL_PATH
         BeFileName outdirName;
@@ -419,7 +419,7 @@ int main(int argc, char **argv)
         bvector<Utf8CP> gflagsPath2 = {winSdkDir,"Debuggers\\", defArch,"\\gflags.exe" };
         umdhPathJoin =  BeStringUtilities::Join(umdhPath2);
         gflagsPathJoin =  BeStringUtilities::Join(gflagsPath2);
-        
+
         WString currentDirectoryExe = currentDirectory ;
         currentDirectoryExe.AppendUtf8("\\");
         currentDirectoryExe.AppendUtf8(argv[0]);
@@ -429,11 +429,11 @@ int main(int argc, char **argv)
 
         sprintf_s(strCommand, sizeof(strCommand), setGflags.c_str());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-        
+
         //first snapshot
         CharP log1Name = "\\FirstSnapshot.log";
         currentDirectory.AppendUtf8(log1Name);
-        
+
         BeStringUtilities::WCharToUtf8(pathSnapshot1, currentDirectory.c_str());
 
         bvector<Utf8CP> snapshot1 = {umdhPathJoin.c_str(), " -p:%ld -f:", pathSnapshot1.c_str()  };
@@ -442,8 +442,6 @@ int main(int argc, char **argv)
         // For debugging purposes, take initial snapshot of memory
         sprintf_s(strCommand, sizeof(strCommand), generateSnapshot1.c_str(), GetCurrentProcessId());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-        //printf(strCommand, "\n");
-        ///assert (spawnRet);
         }
 #endif
     int errors = 0;
@@ -482,7 +480,7 @@ int main(int argc, char **argv)
             }
 
         currentDirectory2.AppendUtf8(log2Name);
-        
+
         BeStringUtilities::WCharToUtf8(pathSnapshot2, currentDirectory2.c_str());
         BeStringUtilities::WCharToUtf8(pathComparison, currentDirectory3.c_str());
 
@@ -492,15 +490,13 @@ int main(int argc, char **argv)
         // For debugging purposes, take terminal snapshot of memory
         sprintf_s(strCommand, sizeof(strCommand), generateSnapshot2.c_str(), GetCurrentProcessId());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-        
-        //printf(strCommand, "\n");
 
         bvector<Utf8CP> snapshotDiff = { umdhPathJoin.c_str(), " -d ",pathSnapshot1.c_str()," ", pathSnapshot2.c_str()," -f:",pathComparison.c_str() };
         Utf8String generateComparisonLog =  BeStringUtilities::Join(snapshotDiff);
         // Now take a diff of the two dumps
         sprintf_s(strCommand, sizeof(strCommand), generateComparisonLog.c_str());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
-        
+
         printf(strCommand, "\n");
 
 
@@ -510,7 +506,7 @@ int main(int argc, char **argv)
         sprintf_s(strCommand, sizeof(strCommand), disGflags.c_str());
         spawnRet = SpawnProcessWin32(strCommand, retCode);
 
-        }
+    }
 #endif
     return errors;
     }
