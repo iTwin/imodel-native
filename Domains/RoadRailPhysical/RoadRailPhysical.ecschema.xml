@@ -318,8 +318,20 @@
     <ECEntityClass typeName="LinearlyLocatedStatus" modifier="Sealed" description="Attribution element enabling linearly-referenced Status assignment.">
         <BaseClass>bis:InformationRecordElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="Status" typeName="PhysicalElement_Status" displayLabel="Status" />
     </ECEntityClass>
+    <ECRelationshipClass typeName="PhysicalElementOwnsLinearlyLocatedStatus" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="are about 1 physical element">
+            <Class class="bis:PhysicalElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N linearly-located status">
+            <Class class="LinearlyLocatedStatus"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="PhysicalElementDataCache" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements to hold general cached-data.">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TerrainClippingMask" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="LENGTH" />

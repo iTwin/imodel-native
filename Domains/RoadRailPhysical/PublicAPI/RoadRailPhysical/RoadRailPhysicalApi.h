@@ -79,6 +79,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Elements
 #define BRRP_CLASS_AlignmentIntersectionElement                     "AlignmentIntersectionElement"
 #define BRRP_CLASS_EndConditionDefinition                           "EndConditionDefinition"
+#define BRRP_CLASS_LinearlyLocatedStatus                            "LinearlyLocatedStatus"
 #define BRRP_CLASS_PathwayElement                                   "PathwayElement"
 #define BRRP_CLASS_Railway                                          "Railway"
 #define BRRP_CLASS_RegularTravelwaySegment                          "RegularTravelwaySegment"
@@ -111,6 +112,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 // Relationships
 #define BRRP_REL_PathwayAssemblesElements                           "PathwayAssemblesElements"
 #define BRRP_REL_PathwayRefersToMainAlignment                       "PathwayRefersToMainAlignment"
+#define BRRP_REL_PhysicalElementOwnsLinearlyLocatedStatus           "PhysicalElementOwnsLinearlyLocatedStatus"
 #define BRRP_REL_RegularSegmentRefersToTravelwayDefinition          "RegularSegmentRefersToTravelwayDefinition"
 #define BRRP_REL_RoadClassRefersToDefinition                        "RoadClassRefersToDefinition"
 #define BRRP_REL_RoadDesignSpeedRefersToDefinition                  "RoadDesignSpeedRefersToDefinition"
@@ -195,6 +197,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(AlignmentIntersectionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(EndConditionDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(EndConditionDefinitionModel)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(LinearlyLocatedStatus)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RegularTravelwaySegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailCategoryModel)

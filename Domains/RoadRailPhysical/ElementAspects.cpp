@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
 
+HANDLER_DEFINE_MEMBERS(LinearlyLocatedStatusHandler)
 HANDLER_DEFINE_MEMBERS(StatusAspectHandler)
 
 /*---------------------------------------------------------------------------------**//**
@@ -76,4 +77,35 @@ DgnDbStatus StatusAspect::_UpdateProperties(DgnElementCR el, ECCrudWriteToken co
         return DgnDbStatus::WriteError;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyLocatedStatus::LinearlyLocatedStatus(CreateParams const& params):
+    T_Super(params)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyLocatedStatus::LinearlyLocatedStatus(CreateParams const& params, StatusAspect::Status status):
+    T_Super(params)
+    {
+    SetStatus(status);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+LinearlyLocatedStatusPtr LinearlyLocatedStatus::Create(PhysicalElementCR ownerElement, StatusAspect::Status status, double fromDistanceAlong, double toDistanceAlong)
+    {
+    CreateParams params(ownerElement.GetDgnDb(), ownerElement.GetModelId(), QueryClassId(ownerElement.GetDgnDb()));
+    params.SetParentId(ownerElement.GetElementId(),
+        DgnClassId(ownerElement.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PhysicalElementOwnsLinearlyLocatedStatus)));
+
+    LinearlyLocatedStatusPtr retVal(new LinearlyLocatedStatus(params, status));
+    retVal->_AddLinearlyReferencedLocation(*LinearlyReferencedFromToLocation::Create(DistanceExpression(fromDistanceAlong), DistanceExpression(toDistanceAlong)));
+    return retVal;
     }

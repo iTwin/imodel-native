@@ -55,6 +55,7 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(RoadwayHandler::GetHandler());    
     RegisterHandler(RoadIntersectionLegElementHandler::GetHandler());    
 
+    RegisterHandler(LinearlyLocatedStatusHandler::GetHandler());
     RegisterHandler(StatusAspectHandler::GetHandler());
     }
 
