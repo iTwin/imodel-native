@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/ATP/TiledTriangulation/TiledTriangulatorUtil.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -21,7 +21,6 @@
 
 #include <ImagePP/all/h/HFCPtr.h>*/
 //#include <ImagePP/all/h/HVEDTMLinearFeature.h>
-//#include <ImagePP/all/h/HPMPooledVector.h>
 #include <ImagePP/all/h/HGF2DCoordSys.h>
 #include <ImagePP/all/h/HGF2DLocation.h>
 #include <ScalableMesh/IScalableMesh.h>

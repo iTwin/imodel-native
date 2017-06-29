@@ -9,6 +9,7 @@
 #include "ImagePPHeaders.h"
 
 
+#include <DgnPlatform\DgnPlatformLib.h>
 #include <ScalableMesh\ScalableMeshLib.h>
 //#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 #include "Plugins\ScalableMeshTypeConversionFilterPlugins.h"

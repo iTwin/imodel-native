@@ -14,7 +14,7 @@
 
 #define AUTO_COMMIT_FREQUENCY 20
 
-const BESQL_VERSION_STRUCT SMSQLiteDiffsetFile::CURRENT_VERSION = SchemaVersion(1, 1, 0, 2);
+const BESQL_VERSION_STRUCT SMSQLiteDiffsetFile::CURRENT_VERSION = BESQL_VERSION_STRUCT(1, 1, 0, 2);
 
 const BESQL_VERSION_STRUCT s_listOfReleasedSchemasDiffset[3] = { BESQL_VERSION_STRUCT(1, 1, 0, 0), BESQL_VERSION_STRUCT(1, 1, 0, 1), BESQL_VERSION_STRUCT(1, 1, 0, 2) };
 const size_t s_numberOfReleasedSchemasDiffset = 3;

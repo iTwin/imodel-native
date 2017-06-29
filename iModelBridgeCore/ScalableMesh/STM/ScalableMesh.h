@@ -571,7 +571,7 @@ template <class POINT> class ScalableMeshSingleResolutionPointIndexView : public
         virtual IScalableMeshNodePtr               _GetRootNode() override
             {
             assert(false);
-            auto ptr = HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>(nullptr);
+            auto ptr = HFCPtr<SMPointIndexNode<POINT, Extent3dType>>(nullptr);
            #ifndef VANCOUVER_API
             return new ScalableMeshNode<POINT>(ptr);
             #else

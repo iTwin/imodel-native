@@ -205,10 +205,6 @@ bool SMSQLiteFile::Open(BENTLEY_NAMESPACE_NAME::Utf8CP filename, bool openReadOn
         {
         Db::OpenParams openParamUpdate(READWRITE);
 
-        #ifndef VANCOUVER_API
-        openParamUpdate.m_skipSchemaCheck = true;
-        #endif
-
         result = m_database->OpenBeSQLiteDb(filename, openParamUpdate);
 
         assert(result == BE_SQLITE_OK);

@@ -38,22 +38,24 @@ class ReprojectionModel : public TRANSFOMODEL
         GeoCoordinates::BaseGCSCR GetSourceGCS() const;
         GeoCoordinates::BaseGCSCR                  GetDestinationGCS() const;
 
-        virtual bool IsConvertDirectThreadSafe() const  { return false; }
-        virtual bool IsConvertInverseThreadSafe() const  { return false; }
-
+        
         // HGF2DTransfoModel interface
 
         // Conversion interface
 #ifndef VANCOUVER_API
-        virtual StatusInt ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const override;
-        virtual StatusInt ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const override;
-        virtual StatusInt ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const override;
-        virtual StatusInt ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const override;
+        virtual StatusInt _ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const override;
+        virtual StatusInt _ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const override;
+        virtual StatusInt _ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const override;
+        virtual StatusInt _ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const override;
 		
-		virtual StatusInt ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const ;
-        virtual StatusInt ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const ;
-        virtual StatusInt ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const ;
-        virtual StatusInt ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const ;
+		virtual StatusInt _ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const ;
+        virtual StatusInt _ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const ;
+        virtual StatusInt _ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const ;
+        virtual StatusInt _ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const ;
+
+        virtual bool _IsConvertDirectThreadSafe() const override { return false; }
+        virtual bool _IsConvertInverseThreadSafe() const override { return false; }
+
 #else
         virtual void ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const override;
         virtual void ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const override;

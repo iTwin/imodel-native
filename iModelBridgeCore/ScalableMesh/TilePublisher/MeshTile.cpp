@@ -575,10 +575,12 @@ ImageSource::ImageSource(ImageCR image, Format format, int quality, Image::Botto
         BeJpegCompressor writer;
 #ifndef VANCOUVER_API
         bvector<Byte> stream;
+#if 0 //NEEDS_WORK_SM_CESIUM_B0200
         if (SUCCESS == writer.Compress(stream, image.GetByteStream().GetData(), image.GetWidth(), image.GetHeight(),
                                        image.GetFormat() == Image::Format::Rgb ? BE_JPEG_PIXELTYPE_Rgb : BE_JPEG_PIXELTYPE_RgbA,
                                        quality/*,
                                        Image::BottomUp::Yes==bottomUp ? BeJpegBottomUp::Yes : BeJpegBottomUp::No*/))
+#endif
 #else
         ByteStream stream;
         if (SUCCESS == writer.Compress(stream, image.GetByteStream().GetData(), image.GetWidth(), image.GetHeight(),

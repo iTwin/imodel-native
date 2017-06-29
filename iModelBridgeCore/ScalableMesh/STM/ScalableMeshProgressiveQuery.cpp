@@ -538,8 +538,12 @@ private:
         }
 
     void QueryThread(DgnPlatformLib::Host* hostToAdopt, int threadId)
-        {
+        {        
+#ifdef VANCOUVER_API
         DgnPlatformLib::AdoptHost(*hostToAdopt);
+#else
+        assert(!"No AdoptHost on BIM0200 - Untested behavior");
+#endif
 
         ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr;
 
@@ -1282,9 +1286,13 @@ class NewQueryStartingNodeProcessor
             }
 
         void QueryThread(DgnPlatformLib::Host* hostToAdopt, size_t threadId, IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)
-            {       
+            {  
+#ifdef VANCOUVER_API
             DgnPlatformLib::AdoptHost(*hostToAdopt);
-            
+#else
+            assert(!"No AdoptHost on BIM0200 - Untested behavior");
+#endif     
+                  
             m_lowerResOverviewNodes[threadId].clear();
             m_toLoadNodes[threadId].clear();
             m_requiredMeshNodes[threadId].clear();

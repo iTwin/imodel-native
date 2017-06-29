@@ -103,6 +103,7 @@ struct  ScalableMeshTileNode : ModelTileNode
             if (child->IsTextured())
                 {
                 auto textureP = child->GetTextureCompressed();
+#if 0 //NEEDS_WORK_SM_CESIUM_B0200
                 ImageSource jpgTex(ImageSource::Format::Jpeg, ByteStream(textureP->GetData(), (uint32_t)textureP->GetSize()));
                 //memcpy(myImage.GetDataP(), textureP->GetData(), textureP->GetDimension().x* textureP->GetDimension().y * 3);
                 //Image image(textureP->GetDimension().x, textureP->GetDimension().y, std::move(myImage), Image::Format::Rgb);
@@ -115,6 +116,7 @@ struct  ScalableMeshTileNode : ModelTileNode
                 //}
                 TileTextureImagePtr     tileTexture = TileTextureImage::Create(jpgTex);
                 displayParams = TileDisplayParams::Create(0xffffff, tileTexture, true);
+#endif
                 }
             else
                 {

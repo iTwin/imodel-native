@@ -7,7 +7,6 @@
 #include <ImagePP/all/h/HRARaster.h>
 #include <ImagePP/all/h/HRSObjectStore.h>
 #include <ImagePP/all/h/HIMMosaic.h>
-#include <ImagePP/all/h/HPMPooledVector.h>
 #include <ImagePP/all/h/HGF2DCoordSys.h>
 #include <ImagePP\all\h\HRFiTiffCacheFileCreator.h>
 #include <ImagePP\all\h\HRFUtility.h>
@@ -55,15 +54,15 @@ StatusInt GeneratorTextureProvider::_GetTextureForArea(bvector<uint8_t>& texData
         {
         if (0 == currentTextureName.GetExtension().CompareToI(L"jpg"))
             {
-            WString path = WString(L"file://") + currentTextureName;
-
-
+            WString path = WString(L"file://") + currentTextureName;            
+            
             HFCPtr<HGF2DCoordSys>  pLogicalCoordSys;
             HFCPtr<HRSObjectStore> pObjectStore;
             HFCPtr<HRFRasterFile>  pRasterFile;
             HFCPtr<HRARaster>      pRaster;
 
-            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+            Utf8String pathUtf8(path);
+            pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(pathUtf8), TRUE);
 
             pRasterFile = GenericImprove(pRasterFile,/* HRFiTiffCacheFileCreator::GetInstance()*/NULL, true, true);
 

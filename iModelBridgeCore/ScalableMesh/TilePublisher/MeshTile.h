@@ -76,6 +76,7 @@ enum class TileSource
 //! This class is more efficient than bvector<byte> since it does not initialize the memory to zeros.
 // @bsiclass                                                    Keith.Bentley   11/15
 //=======================================================================================
+#if 0 //NEEDS_WORK_SM_CESIUM_B0200
 struct ByteStream
     {
     private:
@@ -150,6 +151,7 @@ struct ByteStream
         uint8_t const& operator[](size_t i) const { return data()[i]; }
         uint8_t& operator[](size_t i) { return data()[i]; }
     };
+#endif
 #endif
 
 //=======================================================================================

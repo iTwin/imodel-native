@@ -10,111 +10,7 @@
 //:>
 //:>+--------------------------------------------------------------------------------------
 
-#if 0
-template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQuery<POINT, EXTENT>::GlobalPreQuery(SMPointIndex<POINT, EXTENT>& index,
-                                                                                                             HPMMemoryManagedVector<POINT>&                  points) 
-    {                        
-    return HGFViewDependentPointIndexQuery<POINT, EXTENT>::GlobalPreQuery(index, points);         
-    }
 
-
-template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
-                                                                                                    HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
-                                                                                                    size_t                                   numSubNodes,
-                                                                                                    HPMMemoryManagedVector<POINT>&                             resultPoints)
-    {            
-    bool queryResult;
-   
-    // Check if extent overlap         
-    EXTENT visibleExtent;
-    EXTENT nodeExtent;
-
-    if (node->IsEmpty())
-        {
-        nodeExtent = node->GetNodeExtent();
-        ExtentOp<EXTENT>::SetZMin(nodeExtent, ExtentOp<EXTENT>::GetZMin(m_extent));
-        ExtentOp<EXTENT>::SetZMax(nodeExtent, ExtentOp<EXTENT>::GetZMax(m_extent));                        
-        }
-    else
-        {            
-        nodeExtent = node->GetContentExtent();                     
-        }
-                         
-    if (GetVisibleExtent<EXTENT>(visibleExtent, nodeExtent, m_viewBox) == FALSE)
-        return false;
-
-    bool finalNode = false;
-
-    // Check if coordinate falls inside node extent
-    finalNode = !IsCorrectForCurrentView(node, visibleExtent, m_rootToViewMatrix);
-
-    // The point is located inside the node ...
-    // Obtain objects from subnodes (if any)                               
-    if (finalNode == false && !node->IsLeaf())
-        {                   
-        if (node->GetFilter()->IsProgressiveFilter())
-            {                 
-            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
-            for (size_t currentIndex = 0 ; currentIndex < pointsPtr->size(); currentIndex++)
-                {                    
-                if ((node->GetLevel() == 0) ||                        
-                    ExtentPointOp<EXTENT, POINT>::IsPointOutterIn3D(visibleExtent, (pointsPtr->operator[](currentIndex))))
-                    {
-                    // The point falls inside extent of object .. we add a reference to the list
-                    if (resultPoints.size() == resultPoints.capacity())
-                        resultPoints.reserve(resultPoints.size() + (resultPoints.size()/10) + 1);
-                    resultPoints.push_back(pointsPtr->operator[](currentIndex));
-                    }
-                }                
-            }                          
-        else
-        if (node->GetLevel() == 0) 
-            {
-            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
-            for (size_t currentIndex = 0 ; currentIndex < pointsPtr->size(); currentIndex++)
-                {                                                            
-                // The point falls inside extent of object .. we add a reference to the list
-                if (resultPoints.size() == resultPoints.capacity())
-                    resultPoints.reserve(resultPoints.size() + (resultPoints.size()/10) + 1);
-                resultPoints.push_back(pointsPtr->operator[](currentIndex));
-                }                                 
-            }
-        }
-    else
-        {                                       
-        if (/*(node->GetParentNode() != 0) && */
-            (node->GetFilter()->IsProgressiveFilter() == false))
-            {
-            //NEEDS_WORK_SM : Can lead to duplicate points being returned. 
-            //HFCPtr<SMPointIndexNode<POINT, EXTENT>> parentNode = node->GetParentNode();
-            RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-            
-            for (size_t currentIndex = 0 ; currentIndex < pointsPtr->size(); currentIndex++)
-                {                   
-                // Check if point is in extent of object
-                if (ExtentPointOp<EXTENT, POINT>::IsPointOutterIn3D(visibleExtent, pointsPtr->operator[](currentIndex)))
-                    {
-                    // The point falls inside extent of object .. we add a reference to the list
-                    if (resultPoints.size() == resultPoints.capacity())
-                        resultPoints.reserve(resultPoints.size() + (resultPoints.size()/10) + 1);
-                    resultPoints.push_back(pointsPtr->operator[](currentIndex));
-                    }
-                }    
-            }
-        }        
-    
-    if (finalNode && m_gatherTileBreaklines && node->GetNbPoints() > 0)
-        {            
-        AddBreaklinesForExtent(node->GetNodeExtent());
-        }
-    
-        queryResult = !finalNode;
-      
-    return queryResult; 
-    }
-#endif
 /**----------------------------------------------------------------------------
  Indicates if the provided node is adequate for obtaining result.
  The visible extent is of course provided in the STM GCS and units.
@@ -341,109 +237,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentPointQ
 
     return IsCorrect;    
     }
-
-#if 0
-template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPointIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
-                                                                                                 HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                                                                                 size_t numSubNodes,
-                                                                                                 HPMMemoryManagedVector<POINT>& resultPoints)
-    {      
-    //MST : This function does not currently return all the points at level 0 if the progressive filtering is false, 
-    //      which could lead to missing data at the border. 
-    //NEEDS_WORK_SM : The comment above is not important for now.
-    //assert(node->GetFilter()->IsProgressiveFilter() == true);
-
-    // Before we make sure requested level is appropriate
-    if (m_requestedLevel < 0)
-        m_requestedLevel = 0;
-           
-    // Check if extent overlap         
-    EXTENT visibleExtent;
-    EXTENT nodeExtent;
-
-    if (node->IsEmpty())
-        {
-        nodeExtent = node->GetNodeExtent();
-        ExtentOp<EXTENT>::SetZMin(nodeExtent, ExtentOp<EXTENT>::GetZMin(m_extent));
-        ExtentOp<EXTENT>::SetZMax(nodeExtent, ExtentOp<EXTENT>::GetZMax(m_extent));                        
-        }
-    else
-        {            
-        nodeExtent = node->GetContentExtent();                         
-        }
-    
-
-    bool isVisible = GetVisibleExtent<EXTENT>(visibleExtent, nodeExtent, m_viewBox);
-                                                                      
-    if ((isVisible == true) && (node->GetLevel() <= m_requestedLevel))
-        {            
-        // If this is the appropriate level or it is a higher level and progressive is set.
-        if (node->IsLeaf() || 
-            m_requestedLevel == node->GetLevel() || 
-            (node->GetFilter()->IsProgressiveFilter() && m_requestedLevel > node->GetLevel()))
-            {
-            // Copy content
-            
-            POINT nodeExtentOrigin = PointOp<POINT>::Create (ExtentOp<EXTENT>::GetXMin(nodeExtent), ExtentOp<EXTENT>::GetYMin(nodeExtent), ExtentOp<EXTENT>::GetZMin(nodeExtent));
-            POINT nodeExtentCorner = PointOp<POINT>::Create (ExtentOp<EXTENT>::GetXMax(nodeExtent), ExtentOp<EXTENT>::GetYMax(nodeExtent), ExtentOp<EXTENT>::GetZMax(nodeExtent));
-            
-            // If the whole node is located within extent ... copy it all
-            if ((ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, nodeExtentOrigin) && 
-                 ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, nodeExtentCorner)) || 
-                ((node->GetLevel() == 0) && //Always return all the points in the lowest level. 
-                 (node->GetFilter()->IsProgressiveFilter() == true)))  
-                {
-                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
-                for (size_t currentIndex = 0 ; currentIndex < pointsPtr->size(); currentIndex++)
-                    {
-                    // The point falls inside extent of object .. we add a reference to the list
-                    if (resultPoints.size() == resultPoints.capacity())
-                        resultPoints.reserve(resultPoints.size() + (resultPoints.size()/10) + 1);
-                    resultPoints.push_back(pointsPtr->operator[](currentIndex));
-                    }
-                }
-            else
-                {
-                RefCountedPtr<SMMemoryPoolVectorItem<POINT>> pointsPtr(node->GetPointsPtr());
-
-                // Search in present list of objects for current node
-                for (size_t currentIndex = 0 ; currentIndex < pointsPtr->size(); currentIndex++)
-                    {                    
-                    // Check if point is in extent of object                            
-                    //if (ExtentPointOp<EXTENT, POINT>::IsPointOutterIn2D(m_extent, node->operator[](currentIndex)))
-                    if (ExtentPointOp<EXTENT, POINT>::IsPointOutterIn3D(visibleExtent, pointsPtr->operator[](currentIndex)))      
-                        {
-                        // The point falls inside extent of object .. we add a reference to the list
-                        if (resultPoints.size() == resultPoints.capacity())
-                            resultPoints.reserve(resultPoints.size() + (resultPoints.size()/10) + 1);
-                        resultPoints.push_back(pointsPtr->operator[](currentIndex));
-                        }
-                    }
-                }  
-            }
-        return true;
-        }
-    else
-        {
-        // No need to dig deeper in subnodes ... either extents do not overlap or 
-        // level reached
-        return false;
-        }
-    }
-
-
-
-//Level mesh query
-template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node, 
-                                                                                                 HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                                                                                 size_t numSubNodes,
-                                                                                                 HPMMemoryManagedVector<POINT>& resultPoints)
-    {      
-    assert(!"Incorrect call");
-    return false;
-    }
-#endif
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelMeshIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node,
                                                                                                    HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
@@ -687,19 +480,6 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentPointQ
 #endif
 
 ////////////Scalable Mesh
-
-#if 0
-/**----------------------------------------------------------------------------
- ScalableMeshQuadTreeViewDependentMeshQuery
------------------------------------------------------------------------------*/
-template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::GlobalPreQuery(SMPointIndex<POINT, EXTENT>& index,
-                                                                                                             HPMMemoryManagedVector<POINT>&                  points) 
-    {            
-    assert(!"Must not be called");
-   
-    return false;
-    }
-#endif
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::GlobalPreQuery(SMPointIndex<POINT, EXTENT>& index,
                                                                                                             BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh) 
     {                                       
@@ -711,17 +491,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQu
     {        
     return HGFViewDependentPointIndexQuery<POINT, EXTENT>::GlobalPreQuery(index, meshNodes);    
     }
-
-#if 0
-template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
-                                                                                                    HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
-                                                                                                    size_t                                   numSubNodes,
-                                                                                                    HPMMemoryManagedVector<POINT>&                             resultPoints)
-    {
-    assert(!"Must not be called");
-    return false;
-    }
-#endif
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeViewDependentMeshQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT>> node, 
                                                                                                     HFCPtr<SMPointIndexNode<POINT, EXTENT>> subNodes[],
@@ -1599,17 +1368,6 @@ template<class POINT, class EXTENT> void ScalableMeshQuadTreeViewDependentMeshQu
        
 #endif
 
-#if 0
-template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
-                                                                                                HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                                                                                size_t numSubNodes,
-                                                                                                HPMMemoryManagedVector<POINT>& resultPoints)
-    {
-    assert(!"Incorrect call");
-    return false;
-    }
-#endif
-
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                                                                                      HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                                                                                      size_t numSubNodes,
@@ -1686,17 +1444,6 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelIntersectIndex
     else return false; //don't do subnodes, this is not the right extent
     return true;
     }
-
-#if 0
-template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
-                                                                                                            HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                                                                                                            size_t numSubNodes,
-                                                                                                            HPMMemoryManagedVector<POINT>& resultPoints)
-    {
-    assert(!"Incorrect call");
-    return false;
-    }
-#endif
 
 template<class POINT, class EXTENT> bool ScalableMeshQuadTreeLevelPlaneIntersectIndexQuery<POINT, EXTENT>::Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                                                                                                             HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],

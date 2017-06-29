@@ -22,7 +22,6 @@
 
 #include "ScalableMeshQuery.h"
 //#include "InternalUtilityFunctions.h"
-//#include <ImagePP/all/h/HPMPooledVector.h>
 #include "Edits\\ClipUtilities.h"
 #include <json/json.h>
 //#include <QuickVision\qvision.h>
@@ -75,18 +74,7 @@ template<class EXTENT> EXTENT ScalableMeshPointQuery::GetExtentFromClipShape(con
     return ExtentOp<EXTENT>::Create(extent.GetXMin(), extent.GetYMin(), zMin, 
                                     extent.GetXMax(), extent.GetYMax(), zMax);
     }
-#if 0
-template <class POINT> int ScalableMeshPointQuery::AddPoints(bvector<DPoint3d>&                   points, 
-                                                             const HPMMemoryManagedVector<POINT>& pointList) /*const*/
-    {        
-    for (auto& pt : pointList)
-        {
-        points.push_back(pt);
-        }    
-        
-    return SUCCESS;
-    }
-#endif
+
 /*----------------------------------------------------------------------------+
 |ScalableMeshFullResolutionPointQuery Method Definition Section - Begin
 +----------------------------------------------------------------------------*/

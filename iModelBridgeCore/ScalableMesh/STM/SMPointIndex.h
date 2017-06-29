@@ -15,8 +15,6 @@
 //#include <ImagePP/all/h/IDTMTypes.h>
 //#include <ImagePP/all/h/ISMStore.h>
 
-//#include <ImagePP/all/h/HPMPooledVector.h>
-
 #include <ImagePP/all/h/HGF3DCoord.h>
 #include <ImagePP/all/h/HGF2DTemplateExtent.h>
 #include <ImagePP/all/h/HVE2DSegment.h>
@@ -1020,8 +1018,7 @@ protected:
 
      @return true if the process should dig down into sub-nodes and false otherwise.
      TBD Something wrong with query return value.
-    -----------------------------------------------------------------------------*/    
-  //  bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, HPMMemoryManagedVector<POINT>& points);
+    -----------------------------------------------------------------------------*/      
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* mesh);
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, ProducedNodeContainer<POINT, EXTENT>& foundNodes, IStopQuery* stopQueryP);
     bool              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject, vector<QueriedNode>& meshNodes);
@@ -1368,9 +1365,7 @@ public:
      recursively calling global pre-query, pre-query of nodes, query proper,
      node post-query then global post-filtering.
 
-    -----------------------------------------------------------------------------*/    
-   /* size_t              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
-                               HPMMemoryManagedVector<POINT>& resultPoints);*/
+    -----------------------------------------------------------------------------*/       
     size_t              Query (ISMPointIndexQuery<POINT, EXTENT>* queryObject,
                                BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* resultMesh);
     size_t              Query(ISMPointIndexQuery<POINT, EXTENT>* queryObject,
@@ -1905,11 +1900,7 @@ public:
     ** @return true if the query must continue and false to cancle it all together. If false neither
     ** pre-query, query or post-query will be called, but the global post-query will still be callsed
     **====================================================================================================*/   
-  /*  virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
-                                        HPMMemoryManagedVector<POINT>& points) {
-        return true;
-        };*/
-
+  
     virtual bool        GlobalPreQuery (SMPointIndex<POINT, EXTENT>& index,
                                         BENTLEY_NAMESPACE_NAME::ScalableMesh::ScalableMeshMesh* resultMesh)
         {
@@ -1951,11 +1942,7 @@ public:
     ** process will complete promptly in just a few calls.
     **
     ** Even if the query is stopped, the post-query process will be called
-    **====================================================================================================*/    
-  /*  virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
-                              HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
-                               size_t numSubNodes,
-                               HPMMemoryManagedVector<POINT>& points) = 0;*/
+    **====================================================================================================*/      
     virtual bool        Query(HFCPtr<SMPointIndexNode<POINT, EXTENT> > node,
                               HFCPtr<SMPointIndexNode<POINT, EXTENT> > subNodes[],
                                size_t numSubNodes,
