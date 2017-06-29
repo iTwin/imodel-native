@@ -15,7 +15,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================
 // @bsistruct                                                   Mike.Embick     12/15
 //=======================================================================================
-struct ECDbMetaSchemaECSqlTestFixture : SchemaImportTestFixture
+struct ECDbMetaSchemaECSqlTestFixture : ECDbTestFixture
     {
 private:
     void AssertSchemaDef(ECSchemaCR expectedSchema, ECSqlStatement const& actualSchemaDefRow);

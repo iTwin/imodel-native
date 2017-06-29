@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "SchemaImportTestFixture.h"
 #include <set>
 
 USING_NAMESPACE_BENTLEY_EC
@@ -17,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct SchemaUpgradeTestFixture : public SchemaImportTestFixture
+struct SchemaUpgradeTestFixture : public ECDbTestFixture
     {
     std::vector<Utf8String> m_updatedDbs;
     protected:
@@ -57,9 +56,9 @@ struct SchemaUpgradeTestFixture : public SchemaImportTestFixture
             assertMessageFull.append(assertMessage);
             SchemaItem schemaItem(schemaXml);
             if (expectedToSucceed)
-                ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(ecdb, schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, TestHelper(ecdb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
             else
-                ASSERT_EQ(ERROR, TestHelper::ImportSchema(ecdb, schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(ERROR, TestHelper(ecdb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
 
             if (expectedToSucceed)
                 m_updatedDbs.push_back((Utf8String) ecdb.GetDbFileName());
@@ -74,9 +73,9 @@ struct SchemaUpgradeTestFixture : public SchemaImportTestFixture
             assertMessageFull.assign("[Changeset-merging compatible schema import] ").append(assertMessage);
 
             if (expectedToSucceed)
-                ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(restrictedECDb, schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(SUCCESS, TestHelper(restrictedECDb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
             else
-                ASSERT_EQ(ERROR, TestHelper::ImportSchema(restrictedECDb, schemaItem)) << assertMessageFull.c_str();
+                ASSERT_EQ(ERROR, TestHelper(restrictedECDb).ImportSchema(schemaItem)) << assertMessageFull.c_str();
 
             if (expectedToSucceed)
                 m_updatedDbs.push_back((Utf8String) restrictedECDb.GetDbFileName());
@@ -1154,7 +1153,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewSubClassForBaseWithTPH)
 
     RestrictedSchemaImportECDb restrictedECDb(false, false);
     ASSERT_EQ(BE_SQLITE_OK, restrictedECDb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
-
+    TestHelper restrictedECDbTest(restrictedECDb);
     SchemaItem schemaWithNewSubClass(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
@@ -1172,7 +1171,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewSubClassForBaseWithTPH)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(restrictedECDb, schemaWithNewSubClass)) << "Adding new Class to TPH is expected to succeed";
+    ASSERT_EQ(SUCCESS, restrictedECDbTest.ImportSchema(schemaWithNewSubClass)) << "Adding new Class to TPH is expected to succeed";
 
     SchemaItem schemaWithNewSubClassWithNewProperty(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -1192,7 +1191,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewSubClassForBaseWithTPH)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(restrictedECDb, schemaWithNewSubClassWithNewProperty)) << "Adding new column to TPH is expected to succeed until strict mode is enforced";
+    ASSERT_EQ(SUCCESS, restrictedECDbTest.ImportSchema(schemaWithNewSubClassWithNewProperty)) << "Adding new column to TPH is expected to succeed until strict mode is enforced";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1255,7 +1254,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewClass_NewProperty_TPH_ShareColumns)
         "   </ECEntityClass>"
         "</ECSchema>");
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(restrictedECDb, schemaWithNewSubClassWithProperty)) << "Adding new Class with new property to TPH+ShareColumns is expected to fail";
+    ASSERT_EQ(SUCCESS, TestHelper(restrictedECDb).ImportSchema(schemaWithNewSubClassWithProperty)) << "Adding new Class with new property to TPH+ShareColumns is expected to fail";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1995,9 +1994,7 @@ TEST_F(SchemaUpgradeTestFixture, Add_Delete_ECProperty_ShareColumns)
 
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 4));
-    AssertColumnCount(m_ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
+    ASSERT_EQ(4, GetHelper().GetColumnCount("ts_Parent"));
 
     ASSERT_PROPERTIES_STRICT(m_ecdb, "TestSchema:Parent -> P1, P2");
 
@@ -2031,9 +2028,7 @@ TEST_F(SchemaUpgradeTestFixture, Add_Delete_ECProperty_ShareColumns)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        testItems.clear();
-        testItems.push_back(std::make_pair("ts_Parent", 6));
-        AssertColumnCount(m_ecdb, testItems, "MaxSharedColumnsBeforeOverflow");
+        ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Parent"));
 
         ASSERT_PROPERTIES_STRICT(m_ecdb, "TestSchema:Parent -> P1, -P2, +P3, +P4, +P5");
 
@@ -2322,10 +2317,7 @@ TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_Add
 
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 4));
-    AssertColumnCount(m_ecdb, testItems, "MaxSharedColumnsBeforeOverflowForSubClasses");
+    ASSERT_EQ(4, GetHelper().GetColumnCount("ts_Parent"));
 
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
@@ -2362,12 +2354,7 @@ TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowForSubClasses_Add
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-
-        //Verify number of columns after upgrade
-        testItems.clear();
-        testItems.push_back(std::make_pair("ts_Parent", 8));
-        AssertColumnCount(m_ecdb, testItems, "MaxSharedColumnsBeforeOverflowForSubClasses");
-
+        ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Parent"));
         m_ecdb.CloseDb();
         }
     }
@@ -2402,11 +2389,8 @@ TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_A
 
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Sub1", 3));
-    AssertColumnCount(m_ecdb, testItems, "MaxSharedColumnsBeforeOverflowWithJoinedTable");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
+    ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Sub1"));
 
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();
@@ -2444,13 +2428,8 @@ TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_A
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-
-        //Verify number of columns after upgrade
-        testItems.clear();
-        testItems.push_back(std::make_pair("ts_Parent", 3));
-        testItems.push_back(std::make_pair("ts_Sub1", 7));
-        AssertColumnCount(m_ecdb, testItems, "MaxSharedColumnsBeforeOverflowWithJoinedTable");
-
+        ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
+        ASSERT_EQ(7, GetHelper().GetColumnCount("ts_Sub1"));
         m_ecdb.CloseDb();
         }
     }
@@ -2840,10 +2819,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
 
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Goo", 8));
-    AssertColumnCount(m_ecdb, testItems, "SharedTable_AppliedToSubClasses");
+    ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Goo"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test1', 1.3, 334)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL) VALUES ('test2', 23.3, 234)");
@@ -2878,9 +2854,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Verify number of columns should not change as we don't delete columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 8));
-    AssertColumnCount(m_ecdb, testItems, "SharedTable_AppliedToSubClasses");
+    ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Goo"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -2923,10 +2897,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    //Verify Number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 5));
-    AssertColumnCount(m_ecdb, testItems, "SharedTable_AppliedToSubClasses");
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -2963,10 +2934,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    //Verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 8));
-    AssertColumnCount(m_ecdb, testItems, "SharedTable_AppliedToSubClasses");
+    ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Goo"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3016,11 +2984,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
 
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
-    AssertColumnCount(m_ecdb, testItems, "schema import");
+    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo"));
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo_Overflow"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
@@ -3057,10 +3022,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
     m_ecdb.SaveChanges();
-    //verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    AssertColumnCount(m_ecdb, testItems, "After deleting subclass Foo");
+
+    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo")) << "After deleting subclass Foo";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3109,10 +3072,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    //Verify Column count
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 5));
-    AssertColumnCount(m_ecdb, testItems, "After deleting all classes and readding base class");
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo")) << "After deleting all classes and readding base class";
     
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -3155,12 +3115,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    //Verify column count
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
-
-    AssertColumnCount(m_ecdb, testItems, "After readding subclass");
+    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo")) << "After readding subclass";
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo_Overflow")) << "After readding subclass";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3210,10 +3166,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
 
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(m_ecdb, testItems, "schema import");
+    ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
@@ -3250,10 +3203,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
     ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    //verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(m_ecdb, testItems, "after deleting subclass Foo");
+    ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo")) << "after deleting subclass Foo";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3302,10 +3252,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
     ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    //Verify Column count
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 5));
-    AssertColumnCount(m_ecdb, testItems, "after deleting base class and readding it");
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo")) << "after deleting base class and readding it";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -3349,12 +3296,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
     ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    //Verify column count
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    testItems.push_back(std::make_pair("ts_Goo_Overflow", 3));
-
-    AssertColumnCount(m_ecdb, testItems, "after readding subclass Foo");
+    ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo")) << "after readding subclass Foo";
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Goo_Overflow")) << "after readding subclass Foo";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3410,11 +3353,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
 
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(m_ecdb, testItems, "JoinedTablePerDirectSubclass");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
+    ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
@@ -3456,8 +3396,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //Verify Number of columns
-    AssertColumnCount(m_ecdb, testItems, "JoinedTablePerDirectSubclass");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
+    ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3487,10 +3427,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //Verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(m_ecdb, testItems, "JoinedTablePerDirectSubclass");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
 
     //Delete Parent ===================================================================================================
     //Deleting Class with CA  JoinedTablePerDirectSubClass is expected to be supported
@@ -3525,10 +3462,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //Verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(m_ecdb, testItems, "JoinedTablePerDirectSubclass");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
 
     //Add Goo Again===================================================================================================
     //Added Derived class with CA JoinecTablePerDirectSubClass on base class is expected to be supported
@@ -3562,9 +3496,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    //verify number of columns
-    testItems.push_back(std::make_pair("ts_Goo", 5));
-    AssertColumnCount(m_ecdb, testItems, "JoinedTablePerDirectSubclass");
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -3611,11 +3543,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(m_ecdb, testItems, "JoinedTablePerDirectSubclass");
+    ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo"));
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3675,12 +3604,9 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
 
     //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
-
-    AssertColumnCount(m_ecdb, testItems, "schema import");
+    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo"));
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo_Overflow"));
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
@@ -3726,13 +3652,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    //testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
-
-    //Verify Number of columns
-    AssertColumnCount(m_ecdb, testItems, "after deleting subclass Foo");
+    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo")) << "after deleting subclass Foo";
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after deleting subclass Foo";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3766,10 +3687,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //Verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(m_ecdb, testItems, "after deleting subclass Goo");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after deleting subclass Goo";
 
     //Delete Parent ===================================================================================================
     //Deleting Class with CA JoinedTablePerDirectSubClass,SharedColumnForSubClasses is expected to be supported
@@ -3805,13 +3723,9 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
         "</ECSchema>"))) << "Adding New class with ECDbMap CA JoinedTablePerDirectSubClass,SharedColumnForSubClasses should be successful";
 
     //Parent should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //Verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(m_ecdb, testItems, "after deleting and readding base class Parent");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after deleting and readding base class Parent";
 
     //Add Goo Again===================================================================================================
     //Added Derived class with CA JoinedTablePerDirectSubClass,SharedColumnForSubClasses on base class is expected to be supported
@@ -3843,15 +3757,11 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with JoinedTablePerDirectSubClass,SharedColumnForSubClasses on Parent is expected to be successful";
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
-
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    //verify number of columns
-    testItems.push_back(std::make_pair("ts_Goo", 5));
-    AssertColumnCount(m_ecdb, testItems, "after readding subclass Goo");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after readding subclass Goo";
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo")) << "after readding subclass Goo";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -3902,13 +3812,9 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 6));
-    testItems.push_back(std::make_pair("ts_Goo_Overflow", 5));
-
-    AssertColumnCount(m_ecdb, testItems, "after readding subclass Foo");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after readding subclass Foo";
+    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo")) << "after readding subclass Foo";
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo_Overflow")) << "after readding subclass Foo";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -3967,11 +3873,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
     ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
 
-    //Verify number of columns
-    std::vector<std::pair<Utf8String, int>> testItems;
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    AssertColumnCount(m_ecdb, testItems, "schema import");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
+    ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo"));
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
@@ -4017,8 +3920,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //Verify Number of columns
-    AssertColumnCount(m_ecdb, testItems, "after deleting subclass Foo");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after deleting subclass Foo";
+    ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo")) << "after deleting subclass Foo";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL, FI FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -4049,13 +3952,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
 
     //Parent should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
-
-    //Verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(m_ecdb, testItems, "after deleting subclass Goo");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after deleting subclass Goo";
 
     //Delete Parent ===================================================================================================
     //Deleting Class with CA  JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow is expected to be supported
@@ -4094,10 +3992,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //Verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    AssertColumnCount(m_ecdb, testItems, "after deleting and readding base class Parent");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after deleting and readding base class Parent";
 
     //Add Goo Again===================================================================================================
     //Added Derived class with CA JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow on base class is expected to be supported
@@ -4129,15 +4024,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow on Parent is expected to be successful";
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
-
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
-
-    //verify number of columns
-    testItems.push_back(std::make_pair("ts_Goo", 5));
-    AssertColumnCount(m_ecdb, testItems, "after readding subclass Goo");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after readding subclass Goo";
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo")) << "after readding subclass Goo";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
@@ -4189,13 +4079,9 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    //verify number of columns
-    testItems.clear();
-    testItems.push_back(std::make_pair("ts_Parent", 3));
-    testItems.push_back(std::make_pair("ts_Goo", 9));
-    testItems.push_back(std::make_pair("ts_Goo_Overflow", 3));
-
-    AssertColumnCount(m_ecdb, testItems, "after readding subclass Foo");
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after readding subclass Foo";
+    ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo")) << "after readding subclass Foo";
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Goo_Overflow")) << "after readding subclass Foo";
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL, FI, FI1 FROM ts.Foo");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
@@ -6937,12 +6823,8 @@ TEST_F(SchemaUpgradeTestFixture, AddNewRelationship)
     for (Utf8StringCR dbPath : m_updatedDbs)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
-
-        std::vector<std::pair<Utf8String, int>> testItems;
-        testItems.push_back(std::make_pair("ts_A", 3));
-        testItems.push_back(std::make_pair("ts_B", 2));
-        AssertColumnCount(m_ecdb, testItems, "");
-
+        ASSERT_EQ(3, GetHelper().GetColumnCount("ts_A"));
+        ASSERT_EQ(2, GetHelper().GetColumnCount("ts_B"));
         m_ecdb.CloseDb();
         }
 

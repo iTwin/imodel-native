@@ -30,7 +30,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  11/15
 //+---------------+---------------+---------------+---------------+---------------+------
-struct FileInfoTestFixture : DbMappingTestFixture {};
+struct FileInfoTestFixture : ECDbTestFixture {};
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  09/14
@@ -122,10 +122,10 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
     ASSERT_FALSE(m_ecdb.TableExists("ts_YourExternalFileInfo"));
     ASSERT_FALSE(m_ecdb.TableExists("ts_YourSpecialExternalFileInfo"));
 
-    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "MyExternalFileInfo", "MyExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo", "ps1"));
-    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "YourExternalFileInfo", "YourExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo","ps1"));
-    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "YourSpecialExternalFileInfo", "YourExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo","ps1"));
-    ASSERT_PROPERTYMAPPING(m_ecdb, PropertyAccessString("ts", "YourSpecialExternalFileInfo", "YourSpecialExtraInformation"), ColumnInfo("ecdbf_ExternalFileInfo","ps2"));
+    ASSERT_EQ(ExpectedColumn("ecdbf_ExternalFileInfo", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "MyExternalFileInfo", "MyExtraInformation")));
+    ASSERT_EQ(ExpectedColumn("ecdbf_ExternalFileInfo", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "YourExternalFileInfo", "YourExtraInformation")));
+    ASSERT_EQ(ExpectedColumn("ecdbf_ExternalFileInfo", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "YourSpecialExternalFileInfo", "YourExtraInformation")));
+    ASSERT_EQ(ExpectedColumn("ecdbf_ExternalFileInfo", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "YourSpecialExternalFileInfo", "YourSpecialExtraInformation")));
 
     ECInstanceKey extFileKey, myExtFileKey, yourExtFileKey, yourSpecialExtFileKey;
     ECSqlStatement stmt;

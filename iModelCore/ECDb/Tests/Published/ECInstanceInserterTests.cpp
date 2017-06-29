@@ -669,11 +669,11 @@ TEST_F(ECInstanceInserterTests, InsertInstanceWithOutProvidingSourceTargetClassI
         "</ECSchema>")));
 
     ECInstanceKey key1, key2, key3, key4, key5;
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteInsertECSql(key1, m_ecdb, "INSERT INTO rc.ClassA (P1) VALUES('classA')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteInsertECSql(key2, m_ecdb, "INSERT INTO rc.ClassAB (P1, P2) VALUES('ClassA', 1001.01)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteInsertECSql(key3, m_ecdb, "INSERT INTO rc.ClassC (P3) VALUES(1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteInsertECSql(key4, m_ecdb, "INSERT INTO rc.ClassC (P3) VALUES(2)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteInsertECSql(key5, m_ecdb, "INSERT INTO rc.ClassD (P4) VALUES(4)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key1, "INSERT INTO rc.ClassA (P1) VALUES('classA')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key2, "INSERT INTO rc.ClassAB (P1, P2) VALUES('ClassA', 1001.01)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key3, "INSERT INTO rc.ClassC (P3) VALUES(1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key4, "INSERT INTO rc.ClassC (P3) VALUES(2)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key5, "INSERT INTO rc.ClassD (P4) VALUES(4)"));
 
     ECSqlStatement stmt;
     ASSERT_EQ(stmt.Prepare(m_ecdb, "UPDATE rc.ClassC SET A1.Id=? WHERE ECInstanceId = ?"), ECSqlStatus::Success);

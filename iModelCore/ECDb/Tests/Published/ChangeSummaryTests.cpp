@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "SchemaImportTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 
 // #define DUMP_CHANGE_SUMMARY 1
@@ -17,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   12/16
 //=======================================================================================
-struct ChangeSummaryTestFixture : public SchemaImportTestFixture
+struct ChangeSummaryTestFixture : public ECDbTestFixture
     {
     protected:
         void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);

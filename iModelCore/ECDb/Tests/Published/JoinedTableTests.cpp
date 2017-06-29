@@ -6,9 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "SchemaImportTestFixture.h"
 #include "NestedStructArrayTestSchemaHelper.h"
-#include <initializer_list>
 #include <cmath>
 USING_NAMESPACE_BENTLEY_EC
 
@@ -17,7 +15,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         10/15
 //---------------+---------------+---------------+---------------+---------------+-------
-struct JoinedTableTestFixture : DbMappingTestFixture
+struct JoinedTableTestFixture : ECDbTestFixture
     {
     protected:
         void AssertTableLayouts(ECDbCR, bmap<Utf8String, Utf8String> const& tableLayouts) const;
@@ -982,21 +980,17 @@ TEST_F(JoinedTableTestFixture, AcrossMultipleSchemaImports)
 
     //verify that joined table option was resolved correctly. Need to look at the ec_ClassMap table directly to check that.
     std::map<ECClassId, MapStrategyInfo> expectedResults {
-            {m_ecdb.Schemas().GetClassId("ReferredSchema","Base"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::ParentOfJoinedTable)},
-            {m_ecdb.Schemas().GetClassId("ReferredSchema","Sub1"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)},
-            {m_ecdb.Schemas().GetClassId("TestSchema","Sub2"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)},
-            {m_ecdb.Schemas().GetClassId("TestSchema","Sub11"), MapStrategyInfo(MapStrategyInfo::Strategy::TablePerHierarchy, MapStrategyInfo::JoinedTableInfo::JoinedTable)}
+            {m_ecdb.Schemas().GetClassId("ReferredSchema","Base"), MapStrategyInfo(MapStrategy::TablePerHierarchy, MapStrategyInfo::TablePerHierarchyInfo(MapStrategyInfo::JoinedTableInfo::ParentOfJoinedTable))},
+            {m_ecdb.Schemas().GetClassId("ReferredSchema","Sub1"), MapStrategyInfo(MapStrategy::TablePerHierarchy, MapStrategyInfo::TablePerHierarchyInfo(MapStrategyInfo::JoinedTableInfo::JoinedTable))},
+            {m_ecdb.Schemas().GetClassId("TestSchema","Sub2"), MapStrategyInfo(MapStrategy::TablePerHierarchy, MapStrategyInfo::TablePerHierarchyInfo(MapStrategyInfo::JoinedTableInfo::JoinedTable))},
+            {m_ecdb.Schemas().GetClassId("TestSchema","Sub11"), MapStrategyInfo(MapStrategy::TablePerHierarchy, MapStrategyInfo::TablePerHierarchyInfo(MapStrategyInfo::JoinedTableInfo::JoinedTable))}
         };
 
     for (std::pair<ECClassId, MapStrategyInfo> const& kvPair : expectedResults)
         {
         ECClassId classId = kvPair.first;
         MapStrategyInfo const& expectedMapStrategy = kvPair.second;
-        MapStrategyInfo actualMapStrategy;
-
-        ASSERT_TRUE(TryGetMapStrategyInfo(actualMapStrategy, m_ecdb, classId));
-        ASSERT_EQ(expectedMapStrategy.m_strategy, actualMapStrategy.m_strategy);
-        ASSERT_EQ(expectedMapStrategy.m_tphInfo, actualMapStrategy.m_tphInfo);
+        ASSERT_EQ(expectedMapStrategy, GetHelper().GetMapStrategy(classId));
         }
     }
 //---------------------------------------------------------------------------------------
@@ -2518,7 +2512,7 @@ TEST_F(JoinedTableTestFixture, DropFKConstraintForSharedColumnForSubClasses)
     ASSERT_EQ(SUCCESS, SetupECDb("fkconstraintsonsharedcolumnsforsubclasses.ecdb", testItem));
     ECDbR ecdb = m_ecdb;
     m_ecdb.Schemas().CreateClassViewsInDb();
-    AssertForeignKey(false, ecdb, "ts_B1Sub", "sc_02");
+    ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_B1Sub", "sc_02"));
 
     ECInstanceKey sourceKey;
     ECInstanceKey targetKey;
@@ -2643,7 +2637,7 @@ TEST_F(JoinedTableTestFixture, VerifyONDeleteRestrictWithJoinedTable)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Muhammad Hassan                  01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct JoinedTableECSqlStatementsTests : DbMappingTestFixture
+struct JoinedTableECSqlStatementsTests : ECDbTestFixture
     {
 protected:
     void SetUpECSqlStatementTestsDb();

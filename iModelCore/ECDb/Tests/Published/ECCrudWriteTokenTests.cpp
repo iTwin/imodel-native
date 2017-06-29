@@ -33,7 +33,7 @@ protected:
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                  11/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECCrudWriteTokenTestFixture, Test)
+TEST_F(ECCrudWriteTokenTestFixture, TestHelper)
 {
     enum class ExpectedResult
         {

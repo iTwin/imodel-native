@@ -40,9 +40,6 @@
     <ClCompile Include="Published\ECSqlUpdateTestDataset.cpp">
       <Filter>Published\ECSqlPrepareTestFramework\Datasets</Filter>
     </ClCompile>
-    <ClCompile Include="BackDoor\SchemaImportTestFixture.cpp">
-      <Filter>BackDoor</Filter>
-    </ClCompile>
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
@@ -205,9 +202,6 @@
     <ClCompile Include="Published\DataTable.cpp">
       <Filter>Published</Filter>
     </ClCompile>
-    <ClCompile Include="Published\MapContext.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\SchemaPolicyTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -215,6 +209,9 @@
       <Filter>Published</Filter>
     </ClCompile>
     <ClCompile Include="BackDoor\TestHelper.cpp">
+      <Filter>BackDoor</Filter>
+    </ClCompile>
+    <ClCompile Include="BackDoor\TestInfoHolders.cpp">
       <Filter>BackDoor</Filter>
     </ClCompile>
   </ItemGroup>
@@ -258,9 +255,6 @@
     <ClInclude Include="Published\ECSqlUpdateTestDataset.h">
       <Filter>Published\ECSqlPrepareTestFramework\Datasets</Filter>
     </ClInclude>
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\SchemaImportTestFixture.h">
-      <Filter>BackDoor</Filter>
-    </ClInclude>
     <ClInclude Include="Performance\PerformanceCRUDTestsHelper.h">
       <Filter>Performance</Filter>
     </ClInclude>
@@ -291,10 +285,10 @@
     <ClInclude Include="Published\DataTable.h">
       <Filter>Published</Filter>
     </ClInclude>
-    <ClInclude Include="Published\MapContext.h">
-      <Filter>Published</Filter>
-    </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\TestHelper.h">
+      <Filter>BackDoor</Filter>
+    </ClInclude>
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\TestInfoHolders.h">
       <Filter>BackDoor</Filter>
     </ClInclude>
   </ItemGroup>

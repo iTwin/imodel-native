@@ -1,166 +1,408 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/Published/MapContext.h $
+|     $Source: Tests/BackDoor/PublicAPI/BackDoor/ECDb/TestInfoHolders.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include "ECDbPublishedTests.h"
+#include "ECDbTests.h"
 #include <ostream>
-#include "DataTable.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
+
+//=======================================================================================    
+// @bsiclass                                   Krischan.Eberle                  07/15
+//=======================================================================================    
+struct SchemaItem final
+    {
+    public:
+        enum class Type
+            {
+            String,
+            File
+            };
+
+    private:
+        Type m_type;
+        Utf8String m_xmlStringOrFileName;
+
+        SchemaItem(Type type, Utf8StringCR xmlStringOrFileName) : m_type(type), m_xmlStringOrFileName(xmlStringOrFileName) {}
+
+    public:
+        explicit SchemaItem(Utf8StringCR xmlString) : SchemaItem(Type::String, xmlString) {}
+        static SchemaItem CreateForFile(Utf8StringCR schemaFileName) { return SchemaItem(Type::File, schemaFileName); }
+
+        Type GetType() const { return m_type; }
+        Utf8StringCR GetXmlString() const { BeAssert(m_type == Type::String);  return m_xmlStringOrFileName; }
+        BeFileName GetFileName() const { BeAssert(m_type == Type::File); return BeFileName(m_xmlStringOrFileName.c_str(), true); }
+        Utf8StringCR ToString() const { return m_xmlStringOrFileName; }
+    };
+
+
+//=======================================================================================    
+// @bsiclass                                   Krischan.Eberle                  05/17
+//=======================================================================================    
+struct AccessString final
+    {
+    Utf8String m_schemaNameOrAlias;
+    Utf8String m_className;
+    Utf8String m_propAccessString;
+
+    AccessString(Utf8CP schemaNameOrAlias, Utf8CP className, Utf8CP propAccessString) : m_schemaNameOrAlias(schemaNameOrAlias), m_className(className), m_propAccessString(propAccessString) {}
+    Utf8String ToString() const { Utf8String str; str.Sprintf("%s:%s.%s", m_schemaNameOrAlias.c_str(), m_className.c_str(), m_propAccessString.c_str()); return str; }
+    };
+
+
+struct Column;
+
+struct Table final
+    {
+    enum class Type
+        {
+        Primary = 0,
+        Joined = 1,
+        Existing = 2,
+        Overflow = 3,
+        Virtual = 4
+        };
+
+    private:
+        Utf8String m_name;
+        Type m_type;
+        Utf8String m_parentTableName;
+        ECN::ECClassId m_exclusiveRootClassId;
+        std::map<Utf8String, std::unique_ptr<Column>> m_columns;
+        std::vector<Column const*> m_columnsOrdered;
+
+    public:
+        Table(Utf8CP name, Type type, Utf8CP parentTableName, ECN::ECClassId exclusiveRootClassId) : m_name(name), m_type(type), m_parentTableName(parentTableName), m_exclusiveRootClassId(exclusiveRootClassId) {}
+        void AddColumn(std::unique_ptr<Column> column);
+
+        Utf8StringCR GetName() const { return m_name; }
+        Type GetType() const { return m_type; }
+        Utf8StringCR GetParentTable() const { return m_parentTableName; }
+        ECN::ECClassId GetExclusiveRootClassId() const { return m_exclusiveRootClassId; }
+
+        std::vector<Column const*> const& GetColumns() const { return m_columnsOrdered; }
+        Column const* GetColumn(Utf8StringCR name) const { auto itor = m_columns.find(name); return itor != m_columns.end() ? itor->second.get() : nullptr; }
+    };
+
+// GTest Format customizations for types not handled by GTest
+void PrintTo(Table::Type, std::ostream*);
+
+
+
+enum class Virtual { Yes, No };
+
+// GTest Format customizations for types not handled by GTest
+void PrintTo(Virtual, std::ostream*);
 
 //=======================================================================================
 // @bsiclass                                      Affan.Khan                       05/17
 //+===============+===============+===============+===============+===============+======
-struct MapContext final
+struct Column final
     {
-    public:
-        struct Table;
-        struct ClassMap;
+    enum class Type
+        {
+        Any = 0,
+        Boolean = 1,
+        Blob = 2,
+        TimeStamp = 3,
+        Real = 4,
+        Integer = 5,
+        Text = 6
+        };
 
-        struct Column final
-            {
-            enum class Type
-                {
-                Any = 0,
-                Boolean = 1,
-                Blob = 2,
-                TimeStamp = 3,
-                Real = 4,
-                Integer = 5,
-                Text = 6
-                };
+    enum class Collation
+        {
+        Unset = 0,
+        Binary = 1, // Compares string data using memcmp, regardless of text encoding
+        NoCase = 2, // The same as binary, except the 26 upper case characters of ASCII are folded to their lower case equivalents before the comparison is performed. Note that only ASCII characters are case folded. SQLite does not attempt to do full UTF case folding due to the size of the tables required.
+        RTrim = 3  // The same as binary, except that trailing space characters are ignored.
+        };
 
-            friend MapContext;
-            private:
-                Table const& m_table;
-                Utf8String m_name;
-                Type m_type;
-                bool m_isVirtual;
-                int m_ordinal;
-                bool m_notNullConstraint;
-                bool m_uniqueConstraint;
-                Utf8String m_checkConstraint;
-                Utf8String m_defaultConstraint;
-                Utf8String m_collationConstraint;
-                int m_ordinalInPrimaryKey;
-                Utf8String m_kind;
-
-            public:
-                Column(Table const& table, Utf8StringCR name) :m_table(table), m_name(name) {}
-                Table const& GetTable() const { return m_table; }
-                Utf8StringCR GetName() const { return m_name; }
-                Utf8StringCR GetKind() const { return m_kind; }
-                Type GetType() const { return m_type; }
-                bool IsVirtual() const { return m_isVirtual; }
-                int GetOrdinal() const { return m_ordinal; }
-                bool GetNotNullConstraint() const { return m_notNullConstraint; }
-                bool GetUniqueConstraint() const { return m_uniqueConstraint; }
-                Utf8StringCR GetCheckConstraint() const { return m_checkConstraint; }
-                Utf8StringCR GetDefaultConstraint() const { return m_defaultConstraint; }
-                Utf8StringCR GetCollationConstraint() const { return m_collationConstraint; }
-                int GetOrdinalInPrimaryKey() const { return m_ordinalInPrimaryKey; }
-            };
-
-        struct Table final
-            {
-            enum class Type
-                {
-                Primary = 0,
-                Joined = 1,
-                Existing = 2,
-                Overflow = 3,
-                Virtual = 4
-                };
-
-            private:
-                Utf8String m_name;
-                Type m_type;
-                Utf8String m_parentTableName;
-                Utf8String m_exclusiveRootSchemaName;
-                Utf8String m_exclusiveRootClassName;
-                std::map<Utf8String, std::unique_ptr<Column>> m_columns;
-                std::vector<Column const*> m_columnsOrdered;
-
-            public:
-                Table(Utf8CP name, Type type, Utf8CP parentTableName, Utf8CP exclusiveRootSchemaName, Utf8CP exclusiveRootClassName) : m_name(name), m_type(type), m_parentTableName(parentTableName), m_exclusiveRootSchemaName(exclusiveRootSchemaName), m_exclusiveRootClassName(exclusiveRootClassName) {}
-                Utf8StringCR GetName() const { return m_name; }
-                Type GetType() const { return m_type; }
-                Utf8StringCR GetParentTable() const { return m_parentTableName; }
-                Utf8StringCR GetExclusiveRootSchema() const { return m_exclusiveRootSchemaName; }
-                Utf8StringCR GetExclusiveRootClass() const { return m_exclusiveRootClassName; }
-
-                void AddColumn(std::unique_ptr<Column> column) 
-                    {
-                    Column* columnP = column.get();
-                    m_columns[columnP->GetName()] = std::move(column);
-                    m_columnsOrdered.push_back(columnP);
-                    }
-
-                std::vector<Column const*> const& GetColumns() const { return m_columnsOrdered; }
-                Column const* FindColumn(Utf8CP name) const { auto itor = m_columns.find(Utf8String(name)); return itor != m_columns.end() ? itor->second.get() : nullptr; }
-            };
-
-        struct PropertyMap final
-            {
-            private:
-                ClassMap const& m_classMap;
-                Utf8String m_accessString;
-                bset<Column const*> m_columns;
-
-            public:
-                PropertyMap(ClassMap const& classMap, Column const& column, Utf8StringCR accessString) :m_classMap(classMap), m_accessString(accessString) { m_columns.insert(&column); }
-                ClassMap const& GetClassMap() const { return m_classMap; }
-                bset<Column const*> const& GetColumns() const { return m_columns; }
-                Utf8StringCR GetAccessString() const { return m_accessString; }
-                void AddColumn(Column const& column) { m_columns.insert(&column); }
-            };
-
-        struct ClassMap final
-            {
-            private:
-                std::map <Utf8String, std::unique_ptr<PropertyMap>> m_propertyMaps;
-                std::vector<PropertyMap const*> m_propertyMapsOrdered;
-                Utf8String m_name;
-                Utf8String m_schema;
-            public:
-                Utf8String GetFullName() const { return m_schema + ":" + m_name; }
-                Utf8StringCR GetName() const { return m_name; }
-                Utf8StringCR GetSchemaName() const { return m_schema; }
-                std::vector<PropertyMap const*> const& GetPropertyMaps() const { return m_propertyMapsOrdered; }
-                PropertyMap const* FindPropertyMap(Utf8CP accessString) const { auto itor = m_propertyMaps.find(Utf8String(accessString)); return itor != m_propertyMaps.end() ? itor->second.get() : nullptr; }
-                void AddPropertyMap(std::unique_ptr<PropertyMap> pm)
-                    {
-                    m_propertyMapsOrdered.push_back(pm.get());
-                    m_propertyMaps[pm->GetAccessString()] = std::move(pm);
-                    }
-            };
-    private:
-        ECDbCR m_ecdb;
-        std::map<Utf8String, std::unique_ptr<ClassMap>> m_classMaps;
-        std::map<Utf8String, std::unique_ptr<Table>> m_tables;
+    enum class Kind
+        {
+        //NOTE: do not assign other ints to the values as they get persisted as is in the ECDb file
+        Unknown = 0, //! Not known to ECDb or user define columns
+        ECInstanceId = 1, //! ECInstanceId system column, i.e.the primary key of the table
+        ECClassId = 2, //! ECClassId system column. Use if more then on classes is mapped to this table
+        SourceECInstanceId = 4,
+        SourceECClassId = 8,
+        TargetECInstanceId = 16,
+        TargetECClassId = 32,
+        DataColumn = 64, //! unshared data column
+        SharedDataColumn = 128, //! shared data column
+        RelECClassId = 256
+        };
 
     private:
-        void LoadTables();
-        ClassMap const* LoadClassMap(Utf8CP schemaName, Utf8CP className);
-
-        BentleyStatus LoadColumns(Table& table) const;
+        Table const& m_table;
+        Utf8String m_name;
+        Type m_type;
+        Virtual m_virtual = Virtual::No;
+        bool m_notNullConstraint = false;
+        bool m_uniqueConstraint = false;
+        Utf8String m_checkConstraint;
+        Utf8String m_defaultConstraint;
+        Collation m_collationConstraint = Collation::Unset;
+        Kind m_kind = Kind::Unknown;
+        Nullable<uint32_t> m_ordinalInPrimaryKey;
 
     public:
-        explicit MapContext(ECDbCR ecdb):m_ecdb(ecdb){}
-        PropertyMap const* FindPropertyMap(PropertyAccessString const&);
-        PropertyMap const* FindPropertyMap(PropertyAccessString const&, Utf8CP table);
-        PropertyMap const* FindPropertyMap(PropertyAccessString const&, Utf8CP table, Utf8CP column);
-        ClassMap const* FindClassMap(Utf8CP schemaName, Utf8CP className);
-        Column const* FindColumn(Utf8CP tableName, Utf8CP columnName);
-        Table const* FindTable(Utf8CP tableName);
-        
-        void Clear();
+        Column(Table const& table, Utf8CP name, Type type, Virtual isVirtual, bool notNull, bool unique, Utf8CP checkConstraint, Utf8CP defaultConstraint, Collation collation, Kind kind, Nullable<uint32_t> ordinalInPk)
+            :m_table(table), m_name(name), m_type(type), m_virtual(isVirtual), m_notNullConstraint(notNull), m_uniqueConstraint(unique), m_checkConstraint(checkConstraint), m_defaultConstraint(defaultConstraint), m_collationConstraint(collation), m_kind(kind), m_ordinalInPrimaryKey(ordinalInPk) {}
+
+        Table const& GetTable() const { return m_table; }
+        Utf8StringCR GetName() const { return m_name; }
+        Type GetType() const { return m_type; }
+        Virtual IsVirtual() const { return m_virtual; }
+        bool GetNotNullConstraint() const { return m_notNullConstraint; }
+        bool GetUniqueConstraint() const { return m_uniqueConstraint; }
+        Utf8StringCR GetCheckConstraint() const { return m_checkConstraint; }
+        Utf8StringCR GetDefaultConstraint() const { return m_defaultConstraint; }
+        Collation GetCollationConstraint() const { return m_collationConstraint; }
+        Kind GetKind() const { return m_kind; }
+        Nullable<uint32_t> GetOrdinalInPrimaryKey() const { return m_ordinalInPrimaryKey; }
     };
 
+// GTest Format customizations for types not handled by GTest
+void PrintTo(Column const&, std::ostream*);
+void PrintTo(Column const*, std::ostream*);
+void PrintTo(Column::Type, std::ostream*);
+void PrintTo(Column::Kind, std::ostream*);
+void PrintTo(Column::Collation, std::ostream*);
+void PrintTo(std::vector<Column const*> const&, std::ostream*);
+
+//=======================================================================================
+// Use to compare a projection of a Column only, e.g. if a test only wants to assert
+// on column name and virtuality.
+// @bsiclass                                      Krischan.Eberle                   06/17
+//+===============+===============+===============+===============+===============+======
+struct ExpectedColumn final
+    {
+    Utf8String m_name;
+    Nullable<Utf8String> m_tableName;
+    Nullable<Virtual> m_virtual;
+    Nullable<Column::Kind> m_kind;
+
+    Nullable<Column::Type> m_type;
+    Nullable<bool> m_notNullConstraint;
+    Nullable<bool> m_uniqueConstraint;
+    Nullable<Utf8String> m_checkConstraint;
+    Nullable<Utf8String> m_defaultConstraint;
+    Nullable<Column::Collation> m_collationConstraint;
+    Nullable<uint32_t> m_ordinalInPrimaryKey;
+
+    ExpectedColumn() {}
+    ExpectedColumn(Utf8StringCR tableName, Utf8StringCR columnName, Virtual isVirtual = Virtual::No) : m_tableName(tableName), m_name(columnName), m_virtual(isVirtual) {}
+
+    bool operator==(Column const* actual) const;
+    bool operator!=(Column const* actual) const { return !(*this == actual); }
+    };
+
+typedef std::vector<ExpectedColumn> ExpectedColumns;
+
+// GTest Format customizations for types not handled by GTest
+void PrintTo(ExpectedColumn const&, std::ostream*);
+void PrintTo(ExpectedColumns const&, std::ostream*);
+
+template<typename TExpected, typename TActual>
+static bool operator==(std::vector<TExpected> const& expected, std::vector<TActual> const& actual)
+    {
+    const size_t expectedSize = expected.size();
+    if (expectedSize != actual.size())
+        return false;
+
+    for (size_t i = 0; i < expectedSize; i++)
+        {
+        //use equality operator instead of inequality in case some types don't implement inequality along with equality
+        if (expected[i] == actual[i])
+            continue;
+        else
+            return false;
+        }
+
+    return true;
+    }
+
+//=======================================================================================    
+// @bsiclass                                   Krischan.Eberle                  06/17
+//=======================================================================================    
+struct IndexInfo final
+    {
+    struct WhereClause final
+        {
+        private:
+            Utf8String m_whereClause;
+
+        public:
+            WhereClause() {}
+            WhereClause(ECN::ECClassId classIdFilter, bool negateClassIdFilter = false) { AppendClassIdFilter(std::vector<ECN::ECClassId>{classIdFilter}, negateClassIdFilter); }
+            WhereClause(std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter = false) { AppendClassIdFilter(classIdFilter, negateClassIdFilter); }
+            WhereClause(bool addNotNullFilter, std::vector<Utf8String> const& indexColumns)
+                {
+                if (addNotNullFilter)
+                    AppendNotNullFilter(indexColumns);
+                }
+
+            //! If negateClassIdFilter is false creates an expression like this: ECClassId=classid1 OR ECClassId=classid2 ...
+            //! If negateClassIdFilter is true creates an expression like this: ECClassId<>classid1 AND ECClassId<>classid2 ...
+            WhereClause& AppendClassIdFilter(std::vector<ECN::ECClassId> const& classIdFilter, bool negateClassIdFilter = false);
+            WhereClause& AppendNotNullFilter(std::vector<Utf8String> const& indexColumns);
+
+            bool IsDefined() const { return !m_whereClause.empty(); }
+            Utf8StringCR ToDdl() const { return m_whereClause; }
+
+            void Clear() { m_whereClause.clear(); }
+        };
+
+    private:
+        Utf8String m_name;
+        bool m_isUnique;
+        Utf8String m_table;
+        std::vector<Utf8String> m_indexColumns;
+        WhereClause m_whereClause;
+
+    public:
+        IndexInfo(Utf8StringCR name, bool isUnique, Utf8StringCR table, Utf8StringCR indexColumn, WhereClause const& whereClause = WhereClause())
+            : m_name(name), m_isUnique(isUnique), m_table(table), m_indexColumns(std::vector<Utf8String>{indexColumn}), m_whereClause(whereClause)
+            {}
+
+        IndexInfo(Utf8StringCR name, bool isUnique, Utf8StringCR table, std::vector<Utf8String> const& indexColumns, WhereClause const& whereClause = WhereClause())
+            : m_name(name), m_isUnique(isUnique), m_table(table), m_indexColumns(indexColumns), m_whereClause(whereClause)
+            {}
+
+        Utf8StringCR GetName() const { return m_name; }
+        Utf8String ToDdl() const;
+    };
+
+
+
+//=======================================================================================    
+//This is a mirror of the internal MapStrategy used by ECDb and persisted in the DB.
+//The values can change, so in that case this enum needs to be updated accordingly.
+// @bsiclass                                   Krischan.Eberle                  05/17
+//=======================================================================================    
+enum class MapStrategy
+    {
+    NotMapped,
+    OwnTable,
+    TablePerHierarchy,
+    ExistingTable,
+    ForeignKeyRelationshipInTargetTable = 10,
+    ForeignKeyRelationshipInSourceTable = 11
+    };
+
+//=======================================================================================    
+//This is a mirror of the internal MapStrategy information used by ECDb and persisted in the DB.
+//The values can change, so in that case this struct needs to be updated accordingly.
+// @bsiclass                                   Krischan.Eberle                  05/17
+//=======================================================================================    
+struct MapStrategyInfo
+    {
+    enum class JoinedTableInfo
+        {
+        None = 0,
+        JoinedTable = 1,
+        ParentOfJoinedTable = 2
+        };
+
+    struct TablePerHierarchyInfo
+        {
+        enum class ShareColumnsMode
+            {
+            No = 0,
+            Yes = 1,
+            ApplyToSubclassesOnly = 2
+            };
+
+        ShareColumnsMode m_sharedColumnsMode = ShareColumnsMode::No;
+        int m_maxSharedColumnsBeforeOverflow = -1;
+        JoinedTableInfo m_joinedTableInfo = JoinedTableInfo::None;
+
+        TablePerHierarchyInfo() {}
+        explicit TablePerHierarchyInfo(JoinedTableInfo jti) : m_joinedTableInfo(jti) {}
+        TablePerHierarchyInfo(ShareColumnsMode sharedColumnsMode, int maxSharedColumnsBeforeOverflow, JoinedTableInfo jti) : m_sharedColumnsMode(sharedColumnsMode), m_maxSharedColumnsBeforeOverflow(maxSharedColumnsBeforeOverflow), m_joinedTableInfo(jti) {}
+
+        bool IsUnset() const { return m_sharedColumnsMode == ShareColumnsMode::No && m_joinedTableInfo == JoinedTableInfo::None; }
+        bool operator==(TablePerHierarchyInfo const& rhs) const { return m_sharedColumnsMode == rhs.m_sharedColumnsMode && m_maxSharedColumnsBeforeOverflow == rhs.m_maxSharedColumnsBeforeOverflow && m_joinedTableInfo == rhs.m_joinedTableInfo; }
+        bool operator!=(TablePerHierarchyInfo const& rhs) const { return !(*this == rhs); }
+        };
+
+    private:
+        MapStrategy m_strategy = MapStrategy::NotMapped;
+        TablePerHierarchyInfo m_tphInfo;
+        bool m_isValid = false;
+    public:
+
+        MapStrategyInfo() {}
+        explicit MapStrategyInfo(MapStrategy strat) : m_isValid(true), m_strategy(strat) {}
+        MapStrategyInfo(MapStrategy strat, TablePerHierarchyInfo const& tphInfo) : m_isValid(true), m_strategy(strat), m_tphInfo(tphInfo) {}
+
+        bool operator==(MapStrategyInfo const& rhs) const { return m_isValid == rhs.m_isValid && m_strategy == rhs.m_strategy && m_tphInfo == rhs.m_tphInfo; }
+        bool operator!=(MapStrategyInfo const& rhs) const { return !(*this == rhs); }
+
+        bool IsValid() const { return m_isValid; }
+        MapStrategy GetStrategy() const { return m_strategy; }
+        TablePerHierarchyInfo const& GetTphInfo() const { return m_tphInfo; }
+    };
+
+void PrintTo(MapStrategy, std::ostream*);
+void PrintTo(MapStrategyInfo const&, std::ostream*);
+void PrintTo(MapStrategyInfo::TablePerHierarchyInfo const&, std::ostream*);
+
+
+struct PropertyMap;
+
+//=======================================================================================
+// @bsiclass                                      Affan.Khan                       05/17
+//+===============+===============+===============+===============+===============+======
+struct ClassMap final
+    {
+    private:
+        ECN::ECClassId m_classId;
+        std::map<Utf8String, std::unique_ptr<PropertyMap>> m_propertyMaps;
+        std::vector<PropertyMap const*> m_propertyMapsOrdered;
+
+    public:
+        explicit ClassMap(ECN::ECClassId classId) : m_classId(classId) {}
+        PropertyMap* AddPropertyMap(std::unique_ptr<PropertyMap> pm);
+
+        ECN::ECClassId GetClassId() const { return m_classId; }
+
+        std::vector<PropertyMap const*> const& GetPropertyMaps() const { return m_propertyMapsOrdered; }
+        PropertyMap const* GetPropertyMap(Utf8StringCR accessString) const { auto itor = m_propertyMaps.find(accessString); return itor != m_propertyMaps.end() ? itor->second.get() : nullptr; }
+        PropertyMap* GetPropertyMapR(Utf8StringCR accessString) const { auto itor = m_propertyMaps.find(accessString); return itor != m_propertyMaps.end() ? itor->second.get() : nullptr; }
+    };
+
+//=======================================================================================
+// @bsiclass                                      Affan.Khan                       05/17
+//+===============+===============+===============+===============+===============+======
+struct PropertyMap final
+    {
+    public:
+        //avoid triggering destructor for static non-POD members -> hold as pointer and never free it
+        static std::vector<Column const*> const* s_emptyColumnList;
+
+    private:
+        ClassMap const& m_classMap;
+        Utf8String m_accessString;
+        std::vector<Column const*> m_columns;
+
+    public:
+        PropertyMap(ClassMap const& classMap, Utf8StringCR accessString) :m_classMap(classMap), m_accessString(accessString) {}
+        void AddColumn(Column const& column) { m_columns.push_back(&column); }
+
+        ClassMap const& GetClassMap() const { return m_classMap; }
+        Utf8StringCR GetAccessString() const { return m_accessString; }
+        std::vector<Column const*> const& GetColumns() const { return m_columns; }
+
+        static std::vector<Column const*> const& EmptyColumnList();
+    };
+
+/*
 #define ASSERT_EXISTS_CLASSMAP(context, schemaName, className)    ASSERT_TRUE(nullptr != context.FindClassMap(schemaName,className))
 #define ASSERT_NOTEXISTS_CLASSMAP(context, schemaName, className)   ASSERT_TRUE(nullptr == context.FindClassMap(schemaName,className))
 
@@ -197,11 +439,6 @@ struct MapContext final
 
 #define ASSERT_PROPERTYMAP_COUNT(ctx, expectedCount, schemaName, className)  ASSERT_EXISTS_CLASSMAP(ctx, schemaName, className);\
                                                             ASSERT_EQ(expectedCount, ctx.FindClassMap( schemaName, className)->GetPropertyMaps().size())
-
-
-// GTest Format customizations for types not handled by GTest
-void PrintTo(MapContext::Table::Type, std::ostream*);
-void PrintTo(MapContext::Column::Type, std::ostream*);
 
 
 struct DataFacetComparer
@@ -523,4 +760,6 @@ struct ComparerContext
                 v->Assert();
             }
     };
+
+    */
 END_ECDBUNITTESTS_NAMESPACE

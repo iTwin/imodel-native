@@ -40,9 +40,7 @@ ECDbTestFixture::SeedECDbManager& ECDbTestFixture::SeedECDbs()
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
     {
-    if (m_ecdb.IsDbOpen())
-        m_ecdb.CloseDb();
-
+    CloseECDb();
     return CreateECDb(m_ecdb, ecdbFileName);
     }
 
@@ -51,9 +49,7 @@ DbResult ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& schema, ECDb::OpenParams openParams)
     {
-    if (m_ecdb.IsDbOpen())
-        m_ecdb.CloseDb();
-
+    CloseECDb();
     if (schema.GetType() == SchemaItem::Type::File)
         {
         BeFileName schemaFileName = schema.GetFileName();
@@ -70,7 +66,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
             if (SUCCESS != CreateECDb(seedECDb, seedFileName.c_str()))
                 return ERROR;
 
-            if (SUCCESS != TestHelper::ImportSchema(seedECDb, schema))
+            if (SUCCESS != TestHelper(seedECDb).ImportSchema(schema))
                 {
                 EXPECT_TRUE(false) << "Importing schema " << schema.ToString().c_str() << " failed";
                 return ERROR;
@@ -92,7 +88,7 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
         return ERROR;
         }
 
-    if (SUCCESS != TestHelper::ImportSchema(ecdb, schema))
+    if (SUCCESS != TestHelper(ecdb).ImportSchema(schema))
         {
         EXPECT_TRUE(false) << "Importing schema failed.";
         return ERROR;
@@ -106,6 +102,16 @@ BentleyStatus ECDbTestFixture::SetupECDb(Utf8CP ecdbFileName, SchemaItem const& 
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle     06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbTestFixture::CloseECDb()
+    {
+    if (m_ecdb.IsDbOpen()) 
+        m_ecdb.CloseDb();
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan     02/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 DbResult ECDbTestFixture::ReopenECDb()
@@ -115,7 +121,8 @@ DbResult ECDbTestFixture::ReopenECDb()
 
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
     const bool isReadonly = m_ecdb.IsReadonly();
-    m_ecdb.CloseDb();
+    CloseECDb();
+
     return m_ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
     }
 
@@ -193,7 +200,7 @@ BentleyStatus ECDbTestFixture::PopulateECDb(int instanceCountPerClass)
     BeFileName filePath(m_ecdb.GetDbFileName());
     if (isReadonly)
         {
-        m_ecdb.CloseDb();
+        CloseECDb();
 
         if (BE_SQLITE_OK != m_ecdb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(ECDb::OpenMode::ReadWrite)))
             {
@@ -224,7 +231,7 @@ BentleyStatus ECDbTestFixture::PopulateECDb(int instanceCountPerClass)
 
     if (isReadonly)
         {
-        m_ecdb.CloseDb();
+        CloseECDb();
 
         if (BE_SQLITE_OK != m_ecdb.OpenBeSQLiteDb(filePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)))
             {
@@ -267,25 +274,6 @@ BentleyStatus ECDbTestFixture::PopulateECDb(ECSchemaCR schema, int instanceCount
     return SUCCESS;
     }
 
-
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                     02/17
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbTestFixture::ImportSchema(SchemaItem const& schema)
-    {
-    EXPECT_TRUE(m_ecdb.IsDbOpen()); 
-    return TestHelper::ImportSchema(m_ecdb, schema);
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                     02/17
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDbTestFixture::ImportSchemas(std::vector<SchemaItem> const& schemas)
-    {
-    EXPECT_TRUE(m_ecdb.IsDbOpen()); 
-    return TestHelper::ImportSchemas(m_ecdb, schemas);
-    }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     02/17
@@ -413,6 +401,5 @@ BeFileName ECDbTestFixture::BuildECDbPath(Utf8CP ecdbFileName)
     ecdbPath.AppendToPath(WString(ecdbFileName, BentleyCharEncoding::Utf8).c_str());
     return ecdbPath;
     }
-
 
 END_ECDBUNITTESTS_NAMESPACE

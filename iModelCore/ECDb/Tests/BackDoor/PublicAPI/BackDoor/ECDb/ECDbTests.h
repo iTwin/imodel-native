@@ -13,12 +13,82 @@
 #include <Logging/bentleylogging.h>
 #include <json/json.h>
 #include <ostream>
+#include <initializer_list>
 
 #define BEGIN_ECDBUNITTESTS_NAMESPACE BEGIN_BENTLEY_SQLITE_EC_NAMESPACE namespace Tests {
 #define END_ECDBUNITTESTS_NAMESPACE } END_BENTLEY_SQLITE_EC_NAMESPACE
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//=======================================================================================
+//! A class that represents a Nullable value. It is intended to be used with value types.
+// @bsiclass                                                         Affan.Khan   03/16
+//=======================================================================================
+template<typename T>
+struct Nullable final
+    {
+    private:
+        T m_value;
+        bool m_isNull = true;
+
+    public:
+        Nullable() : m_value(T()) {}
+        Nullable(std::nullptr_t) : m_value(T()) {}
+        Nullable(T const& value) : m_value(value), m_isNull(false) {}
+        Nullable(Nullable<T> const& rhs) : m_value(rhs.m_value), m_isNull(rhs.m_isNull) {}
+        Nullable(Nullable<T>&& rhs) : m_value(std::move(rhs.m_value)), m_isNull(std::move(rhs.m_isNull)) {}
+
+        Nullable<T>& operator=(Nullable<T> const& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_value = rhs.m_value;
+                m_isNull = rhs.m_isNull;
+                }
+            return *this;
+            }
+
+        Nullable<T>& operator=(Nullable<T>&& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_value = std::move(rhs.m_value);
+                m_isNull = std::move(rhs.m_isNull);
+                }
+
+            return *this;
+            }
+
+        Nullable<T>& operator=(T const& rhs)
+            {
+            m_value = rhs;
+            m_isNull = false;
+            return *this;
+            }
+
+        Nullable<T>& operator=(T&& rhs)
+            {
+            m_value = std::move(rhs);
+            m_isNull = false;
+            return *this;
+            }
+
+        Nullable<T>& operator=(std::nullptr_t rhs)
+            {
+            m_isNull = true;
+            return *this;
+            }
+
+        bool operator==(Nullable<T> const& rhs) const { return m_isNull == rhs.m_isNull && (m_isNull || m_value == rhs.m_value); }
+        bool operator!=(Nullable<T> const& rhs) const { return !(*this == rhs); }
+        bool operator==(std::nullptr_t) const { return m_isNull; }
+        bool operator!=(std::nullptr_t rhs) const { return !(*this == rhs); }
+
+        bool IsNull() const { return m_isNull; }
+        bool IsValid() const { return !m_isNull; }
+        T const& Value() const { BeAssert(IsValid()); return m_value; }
+        T& ValueR() { BeAssert(IsValid()); return m_value; }
+    };
 //=======================================================================================
 // @bsiclass                                                 Krischan.Eberle      09/2015
 //+===============+===============+===============+===============+===============+======

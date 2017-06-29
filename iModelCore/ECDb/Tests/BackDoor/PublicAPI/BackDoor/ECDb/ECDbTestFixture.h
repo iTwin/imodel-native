@@ -8,37 +8,27 @@
 #pragma once
 
 #include "ECDbTests.h"
+#include "TestHelper.h"
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+//=======================================================================================
+//! ECDb that requires a schema import token. For testing the schema import token feature
+// @bsiclass                                               Krischan.Eberle     04/2017
 //=======================================================================================    
-// @bsiclass                                   Krischan.Eberle                  07/15
-//=======================================================================================    
-struct SchemaItem final
+struct RestrictedSchemaImportECDb : ECDb
     {
     public:
-        enum class Type
+        RestrictedSchemaImportECDb(bool requiresSchemaImportToken, bool allowChangesetMergingIncompatibleECSchemaImport) : ECDb()
             {
-            String,
-            File
-            };
+            ApplyECDbSettings(false, requiresSchemaImportToken, allowChangesetMergingIncompatibleECSchemaImport);
+            }
 
-    private:
-        Type m_type;
-        Utf8String m_xmlStringOrFileName;
+        ~RestrictedSchemaImportECDb() {}
 
-        SchemaItem(Type type, Utf8StringCR xmlStringOrFileName) : m_type(type), m_xmlStringOrFileName(xmlStringOrFileName) {}
-
-    public:
-        explicit SchemaItem(Utf8StringCR xmlString) : SchemaItem(Type::String, xmlString) {}
-        static SchemaItem CreateForFile(Utf8StringCR schemaFileName) { return SchemaItem(Type::File, schemaFileName); }
-
-        Type GetType() const { return m_type; }
-        Utf8StringCR GetXmlString() const { BeAssert(m_type == Type::String);  return m_xmlStringOrFileName; }
-        BeFileName GetFileName() const { BeAssert(m_type == Type::File); return BeFileName(m_xmlStringOrFileName.c_str(), true); }
-        Utf8StringCR ToString() const { return m_xmlStringOrFileName; }
+        SchemaImportToken const* GetSchemaImportToken() const { return GetECDbSettings().GetSchemaImportToken(); }
+        bool AllowChangesetMergingIncompatibleSchemaImport() const { return GetECDbSettings().AllowChangesetMergingIncompatibleSchemaImport(); }
     };
-
 
 //=======================================================================================
 //! All non-static methods operate on ECDb held by the test fixture. The test fixture's ECDb
@@ -48,6 +38,23 @@ struct SchemaItem final
 struct ECDbTestFixture : public ::testing::Test
     {
 private:
+    struct FixtureECDb final : ECDb
+        {
+        private:
+            //! The test fixture's ECDb file's test helper. Any test assertions that operate on m_ecdb can be executed
+            //! using this object
+            TestHelper m_testHelper;
+
+            void _OnDbClose() override { ECDb::_OnDbClose(); m_testHelper.ClearCache(); }
+            void _OnAfterSchemaImport() const override { ECDb::_OnAfterSchemaImport(); m_testHelper.ClearCache(); }
+
+        public:
+            FixtureECDb() : ECDb(), m_testHelper(*this) {}
+            ~FixtureECDb() {}
+
+            TestHelper const& GetTestHelper() const { return m_testHelper; }
+        };
+
     struct SeedECDbManager final : NonCopyableClass
         {
     private:
@@ -77,11 +84,12 @@ private:
     static bool s_isInitialized;
     static SeedECDbManager* s_seedECDbManager;
 
+    void CloseECDb();
     static SeedECDbManager& SeedECDbs();
 
 protected:
-    ECDb m_ecdb;
-
+    //! The test's ECDb file. Any non-static methods of the ECDbTestFixture operate on it.
+    FixtureECDb m_ecdb;
     DbResult SetupECDb(Utf8CP ecdbFileName);
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const&, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
     DbResult ReopenECDb();
@@ -90,10 +98,12 @@ protected:
     BentleyStatus PopulateECDb(ECN::ECSchemaCR, int instanceCountPerClass);
     BentleyStatus PopulateECDb(int instanceCountPerClass);
 
-    BentleyStatus ImportSchema(SchemaItem const&);
-    BentleyStatus ImportSchemas(std::vector<SchemaItem> const&);
+    BentleyStatus ImportSchema(SchemaItem const& schema) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchema(schema); }
+    BentleyStatus ImportSchemas(std::vector<SchemaItem> const& schemas) { EXPECT_TRUE(m_ecdb.IsDbOpen());  return GetHelper().ImportSchemas(schemas); }
 
     BentleyStatus GetInstances(bvector<ECN::IECInstancePtr>& instances, Utf8CP schemaName, Utf8CP className);
+
+    TestHelper const& GetHelper() const { return m_ecdb.GetTestHelper(); }
 
 public:
     ECDbTestFixture() : ::testing::Test() {}

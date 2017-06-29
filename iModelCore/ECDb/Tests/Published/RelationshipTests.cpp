@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
-struct RelationshipMappingTestFixture : DbMappingTestFixture
+struct RelationshipMappingTestFixture : ECDbTestFixture
     {};
 
 //---------------------------------------------------------------------------------------
@@ -19,7 +19,7 @@ struct RelationshipMappingTestFixture : DbMappingTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
     {
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
             "  <ECEntityClass typeName='Model' >"
@@ -42,7 +42,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECRelationshipClass>"
             "</ECSchema>"))) << "Cannot define a nav prop for a link table relationship class";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
             "  <ECEntityClass typeName='Model' >"
@@ -69,7 +69,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECRelationshipClass>"
             "</ECSchema>"))) << "Cannot define a nav prop (with a ForeignKeyConstraint) for a link table relationship";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
             "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
             "  <ECEntityClass typeName='Parent' >"
@@ -94,7 +94,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECRelationshipClass>"
             "</ECSchema>"))) << "Cannot define a nav prop when a link table (implied by cardinality) is required.";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
             "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
             "  <ECEntityClass typeName='Parent' >"
@@ -123,7 +123,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECRelationshipClass>"
             "</ECSchema>"))) << "Cannot define a nav prop (with ForeignKeyConstraint) when a link table (implied by cardinality) is required";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
             "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
             "  <ECEntityClass typeName='Parent' >"
@@ -149,7 +149,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECRelationshipClass>"
             "</ECSchema>"))) << "Cannot define a nav prop when a link table (implied by additional prop.) is required.";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
             "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
             "  <ECEntityClass typeName='Parent' >"
@@ -179,7 +179,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipMapping_FailingScenarios)
             "  </ECRelationshipClass>"
             "</ECSchema>"))) << "Cannot define a nav prop (with ForeignKeyConstraint) when a link table (implied by additional prop.) is required.";
     
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
             "  <ECEntityClass typeName='Model' >"
@@ -279,13 +279,29 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                   </ECRelationshipClass>
                 </ECSchema>)xml")));
 
-    AssertIndex(m_ecdb, "ix_ts1_B_fk_ts1_Rel_target", false, "ts1_B", {"AId"});
-    AssertIndex(m_ecdb, "uix_ts1_B_fk_ts1_Rel11_target", true, "ts1_B", {"PartnerAId"});
-    AssertIndex(m_ecdb, "uix_ts1_A_fk_ts1_Rel11Backwards_source", true, "ts1_A", {"PartnerBId"});
+    Utf8CP indexName = "ix_ts1_B_fk_ts1_Rel_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts1_B", "AId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
 
-    AssertIndex(m_ecdb, "ix_ts1_RelNN_source", false, "ts1_RelNN", {"SourceId"});
-    AssertIndex(m_ecdb, "ix_ts1_RelNN_target", false, "ts1_RelNN", {"TargetId"});
-    AssertIndex(m_ecdb, "uix_ts1_RelNN_sourcetarget", true, "ts1_RelNN", {"SourceId", "TargetId"});
+    indexName = "uix_ts1_B_fk_ts1_Rel11_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_B", "PartnerAId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+    indexName = "uix_ts1_A_fk_ts1_Rel11Backwards_source";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_A", "PartnerBId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+    indexName = "ix_ts1_RelNN_source";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_RelNN", "SourceId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+    indexName = "ix_ts1_RelNN_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_RelNN", "TargetId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+    indexName = "uix_ts1_RelNN_sourcetarget";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_RelNN", std::vector<Utf8String>{"SourceId", "TargetId"}).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships2.ecdb", SchemaItem(
@@ -324,11 +340,14 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                   </ECRelationshipClass>
                 </ECSchema>)xml")));
 
-    AssertIndex(m_ecdb, "ix_ts2_B_fk_ts2_Rel_target", false, "ts2_B", {"AId"}, "([AId] IS NOT NULL)");
+    indexName = "ix_ts2_B_fk_ts2_Rel_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts2_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
 
-    ASSERT_PROPERTYMAPPING_MULTICOL(m_ecdb, PropertyAccessString("TestSchema", "B", "A"),
-                                    ColumnInfo::List({{"A.Id", "ts2_b","AId"}, {"A.RelECClassId", "ts2_b","ARelECClassId", true}}));
-
+    
+    ASSERT_EQ(ExpectedColumns({ExpectedColumn("ts2_b","AId"),
+                              ExpectedColumn("ts2_b","ARelECClassId", Virtual::Yes)}),
+              GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships3.ecdb", SchemaItem(
@@ -366,7 +385,10 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>")));
 
-    AssertIndex(m_ecdb, "ix_ts3_B_fk_ts3_Rel_target", false, "ts3_B", {"AId"}, "([AId] IS NOT NULL)");
+    indexName = "ix_ts3_B_fk_ts3_Rel_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts3_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships4.ecdb", SchemaItem(
@@ -404,7 +426,9 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>")));
 
-    AssertIndex(m_ecdb, "uix_ts4_B_fk_ts4_Rel11_target", true, "ts4_B", {"AId"}, "([AId] IS NOT NULL)");
+    indexName = "uix_ts4_B_fk_ts4_Rel11_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts4_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships50.ecdb", SchemaItem(
@@ -449,11 +473,17 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                   </ECRelationshipClass>
                 </ECSchema>)xml")));
 
-    ASSERT_EQ(3, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts50_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+    ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts50_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
-    AssertIndex(m_ecdb, "ix_ts50_B_fk_ts50_RelBase_target", false, "ts50_B", {"AId"}, "([AId] IS NOT NULL)");
-    AssertIndex(m_ecdb, "ix_ts50_B_ARelECClassId", false, "ts50_B", {"ARelECClassId"}, "([ARelECClassId] IS NOT NULL)");
-    AssertIndexExists(m_ecdb, "uix_ts50_B_fk_ts50_RelSub1_target", false);
+    indexName = "ix_ts50_B_fk_ts50_RelBase_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts50_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    indexName = "ix_ts50_B_ARelECClassId";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts50_B", "ARelECClassId", IndexInfo::WhereClause(true, {"[ARelECClassId]"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    ASSERT_FALSE(GetHelper().IndexExists("uix_ts50_B_fk_ts50_RelSub1_target"));
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships5.ecdb", SchemaItem(
@@ -498,12 +528,17 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>")));
 
-    ASSERT_EQ(3, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts5_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+    ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts5_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
-    AssertIndex(m_ecdb, "ix_ts5_B_fk_ts5_RelBase_target", false, "ts5_B", {"AId"}, "([AId] IS NOT NULL)");
-    AssertIndex(m_ecdb, "ix_ts5_B_ARelECClassId", false, "ts5_B", {"ARelECClassId"}, "([ARelECClassId] IS NOT NULL)");
-    AssertIndexExists(m_ecdb, "uix_ts5_B_fk_ts5_RelSub1_target", false);
+    indexName = "ix_ts5_B_fk_ts5_RelBase_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts5_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
+    indexName = "ix_ts5_B_ARelECClassId";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts5_B", "ARelECClassId", IndexInfo::WhereClause(true, {"[ARelECClassId]"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    ASSERT_FALSE(GetHelper().IndexExists("uix_ts5_B_fk_ts5_RelSub1_target"));
 
 
 
@@ -549,11 +584,17 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>")));
 
-    ASSERT_EQ(3, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts6_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+    ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts6_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
-    AssertIndex(m_ecdb, "ix_ts6_B_AInstanceRelECClassId", false, "ts6_B", {"AInstanceRelECClassId"});
-    AssertIndex(m_ecdb, "ix_ts6_B_fk_ts6_RelBase_target", false, "ts6_B", {"AInstanceId"});
-    AssertIndexExists(m_ecdb, "uix_ts6_B_fk_ts6_RelSub1_target", false);
+    indexName = "ix_ts6_B_AInstanceRelECClassId";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts6_B", "AInstanceRelECClassId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    indexName = "ix_ts6_B_fk_ts6_RelBase_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts6_B", "AInstanceId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    ASSERT_FALSE(GetHelper().IndexExists("uix_ts6_B_fk_ts6_RelSub1_target"));
 
 
 
@@ -608,7 +649,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "  </ECRelationshipClass>"
         "</ECSchema>")));
 
-    ASSERT_EQ(9, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts7_RelBase").size());
+    ASSERT_EQ(9, (int) GetHelper().GetIndexNamesForTable("ts7_RelBase").size());
 
 
 
@@ -667,20 +708,26 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                   </ECRelationshipClass>
                 </ECSchema>)xml")));
 
-    ASSERT_EQ(3, (int) TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts8_B").size());
+    ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts8_B").size());
 
     ECClassId b1ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "B1");
     ECClassId b11ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "B11");
 
-    //RelNonPoly must exclude index on B11 as the constraint is non-polymorphic
-    Utf8String indexWhereClause;
-    indexWhereClause.Sprintf("([A2Id] IS NOT NULL) AND (ECClassId=%s)", b1ClassId.ToString().c_str());
+    
+    indexName = "uix_ts8_B_fk_ts8_RelNonPoly_target";
+    IndexInfo::WhereClause indexWhereClause;
+    indexWhereClause.AppendNotNullFilter({"[A2Id]"});
+    indexWhereClause.AppendClassIdFilter({b1ClassId});
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts8_B", "A2Id", indexWhereClause).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << "RelNonPoly must exclude index on B11 as the constraint is non-polymorphic";
 
-    AssertIndex(m_ecdb, "uix_ts8_B_fk_ts8_RelNonPoly_target", true, "ts8_B", {"A2Id"}, indexWhereClause.c_str());
-
+    indexWhereClause.Clear();
     //RelPoly must include index on B11 as the constraint is polymorphic
-    indexWhereClause.Sprintf("([A1Id] IS NOT NULL) AND (ECClassId=%s OR ECClassId=%s)", b1ClassId.ToString().c_str(), b11ClassId.ToString().c_str());
-    AssertIndex(m_ecdb, "uix_ts8_B_fk_ts8_RelPoly_target", true, "ts8_B", {"A1Id"}, indexWhereClause.c_str());
+
+    indexName = "uix_ts8_B_fk_ts8_RelPoly_target";
+    indexWhereClause.AppendNotNullFilter({"[A1Id]"}).AppendClassIdFilter({b1ClassId, b11ClassId});
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts8_B", "A1Id", indexWhereClause).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
 
@@ -734,7 +781,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
 
     //ARelB must not have a unique index on source and target as it as AllowDuplicateRelationship set to true.
     //ARelC must not have the unique index either, as AllowDuplicateRelationship is applied to subclasses
-    std::vector<Utf8String> indexNames = TestHelper::RetrieveIndexNamesForTable(m_ecdb, "ts9_ARelB");
+    std::vector<Utf8String> indexNames = GetHelper().GetIndexNamesForTable("ts9_ARelB");
     ASSERT_EQ(3, (int) indexNames.size()) << "Indexes on ts9_ARelB";
     ASSERT_STREQ("ix_ts9_ARelB_ecclassid", indexNames[0].c_str());
     ASSERT_STREQ("ix_ts9_ARelB_source", indexNames[1].c_str());
@@ -1037,17 +1084,17 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationship)
     ECClassId primaryClassAHasSecondaryClassAId = m_ecdb.Schemas().GetClassId("TestSchema", "PrimaryClassAHasSecondaryClassA");
     ECClassId primaryClassAHasSecondaryClassBId = m_ecdb.Schemas().GetClassId("TestSchema", "PrimaryClassAHasSecondaryClassB");
 
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(103, 30000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(104, 40000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(101, 10000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(102, 20000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(103, 30000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.PrimaryClassA(ECInstanceId, P1) VALUES(104, 40000)"));
 
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, Utf8PrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id) VALUES(202, 20000, 102)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, Utf8PrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, TestHelper::PrepareECSql(m_ecdb, "INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(Utf8PrintfString("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id, PrimaryClassA.RelECClassId) VALUES(201, 10000, 101, %ld)", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1, PrimaryClassA.Id) VALUES(202, 20000, 102)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(203, 30000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SecondaryClassA(ECInstanceId, T1) VALUES(204, 40000)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(Utf8PrintfString("UPDATE ts.SecondaryClassA SET PrimaryClassA.Id = 103, T1=300002, PrimaryClassA.RelECClassId = %ld  WHERE ECInstanceId = 203", primaryClassAHasSecondaryClassBId.GetValue()).c_str()));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("INSERT INTO ts.PrimaryClassAHasSecondaryClassB(SourceECInstanceId, TargetECInstanceId) VALUES(104, 204)"));
     m_ecdb.SaveChanges();
     }
 
@@ -1131,10 +1178,10 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToShar
     ECClassId engineId = m_ecdb.Schemas().GetClassId("TestSchema", "Engine");
     ECClassId sterringId = m_ecdb.Schemas().GetClassId("TestSchema", "Sterring");
 
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Car            (Name                                      ) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, SqlPrintfString("INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%d )", relId.GetValue())));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, SqlPrintfString("INSERT INTO ts.Sterring       (Code, www, Type,Car.Id,Car.RelECClassId   ) VALUES ('CODE-2','www2', 'S-Type',1,%d)", relId.GetValue())));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Tire           (Code, Diameter                            ) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Car            (Name                                      ) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%d )", relId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts.Sterring       (Code, www, Type,Car.Id,Car.RelECClassId   ) VALUES ('CODE-2','www2', 'S-Type',1,%d)", relId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Tire           (Code, Diameter                            ) VALUES ('CODE-3', 15.0)"));
 
 
     m_ecdb.Schemas().CreateClassViewsInDb();
@@ -1235,10 +1282,10 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToShar
     ECClassId engineId = m_ecdb.Schemas().GetClassId("TestSchema", "Engine");
     ECClassId sterringId = m_ecdb.Schemas().GetClassId("TestSchema", "Sterring");
 
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb,                 "INSERT INTO ts.Car            (Name                                      ) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, SqlPrintfString("INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%d )", relId.GetValue())));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, SqlPrintfString("INSERT INTO ts.Sterring       (Code, www, Type,Car.Id,Car.RelECClassId   ) VALUES ('CODE-2','www2', 'S-Type',1,%d)", relId.GetValue())));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb,                 "INSERT INTO ts.Tire           (Code, Diameter                            ) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(                "INSERT INTO ts.Car            (Name                                      ) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts.Engine         (Code, www, Volumn,Car.Id,Car.RelECClassId ) VALUES ('CODE-1','www1', 2000.0,1,%d )", relId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(SqlPrintfString("INSERT INTO ts.Sterring       (Code, www, Type,Car.Id,Car.RelECClassId   ) VALUES ('CODE-2','www2', 'S-Type',1,%d)", relId.GetValue())));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(                "INSERT INTO ts.Tire           (Code, Diameter                            ) VALUES ('CODE-3', 15.0)"));
 
 
     m_ecdb.Schemas().CreateClassViewsInDb();
@@ -1263,8 +1310,8 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToShar
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, TestHelper::PrepareECSql(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
-    ASSERT_EQ(ECSqlStatus::Success, TestHelper::PrepareECSql(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT Car.Id,Car.RelECClassId FROM ts.Sterring"));
     }
 
 
@@ -1305,8 +1352,8 @@ TEST_F(RelationshipMappingTestFixture, LogicalForeignKeyRelationshipMappedToUnsh
     ECClassCP elementClass = m_ecdb.Schemas().GetClass("TestSchema", "Element");
     ASSERT_TRUE(elementClass != nullptr);
 
-    AssertForeignKey(false, m_ecdb, "ts_Element", "ModelId");
-    AssertIndexExists(m_ecdb, "x_ts_Element_fk_ts_Rel_target", false);
+    ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_Element", "ModelId"));
+    ASSERT_FALSE(GetHelper().IndexExists("x_ts_Element_fk_ts_Rel_target"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1372,10 +1419,10 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd)
                          "  </ECEntityClass>"
                          "</ECSchema>")));
 
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Car(Name) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Engine(Code, www, Volumn,Car.Id) VALUES ('CODE-1','www1', 2000.0,1 )"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Sterring(Code, www, Type,Car.Id) VALUES ('CODE-2','www2', 'S-Type',1)"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Tire(Code, Diameter) VALUES ('CODE-3', 15.0)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Car(Name) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Engine(Code, www, Volumn,Car.Id) VALUES ('CODE-1','www1', 2000.0,1 )"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Sterring(Code, www, Type,Car.Id) VALUES ('CODE-2','www2', 'S-Type',1)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Tire(Code, Diameter) VALUES ('CODE-3', 15.0)"));
 
 
     m_ecdb.Schemas().CreateClassViewsInDb();
@@ -1555,10 +1602,11 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd3)
 
     ReopenECDb();
 
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)"));
+    TestHelper test(m_ecdb);
+    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteNonSelectECSql("INSERT INTO ts.Car            (Name              ) VALUES ('BMW-S')"));
+    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteNonSelectECSql("INSERT INTO ts.Engine         (Code, www, Volumn ) VALUES ('CODE-1','www1', 2000.0 )"));
+    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteNonSelectECSql("INSERT INTO ts.Sterring       (Code, www, Type   ) VALUES ('CODE-2','www2', 'S-Type')"));
+    ASSERT_EQ(BE_SQLITE_DONE, test.ExecuteNonSelectECSql("INSERT INTO ts.Tire           (Code, Diameter    ) VALUES ('CODE-3', 15.0)"));
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0.1' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
@@ -1625,9 +1673,9 @@ TEST_F(RelationshipMappingTestFixture, MixinAsRelationshipEnd3)
     m_ecdb.Schemas().CreateClassViewsInDb();
     m_ecdb.SaveChanges();
 
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,2,54,'tag1','Rule1')"));
     m_ecdb.SaveChanges();
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.CarHasEndPoint2 (SourceECInstanceId, TargetECInstanceId, TargetECClassId, Tag, Rule) VALUES (1,3,56,'tag2','Rule2')"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -2001,13 +2049,13 @@ TEST_F(RelationshipMappingTestFixture, FKConstraintsOnLinkTables)
                        </ECRelationshipClass>
                  </ECSchema>)xml")));
 
-    AssertForeignKey(true, m_ecdb, "ts_LinkTableWithFk1", "SourceId");
-    AssertForeignKey(true, m_ecdb, "ts_LinkTableWithFk1", "TargetId");
-    AssertForeignKey(true, m_ecdb, "ts_LinkTableWithFk2", "SourceId");
-    AssertForeignKey(true, m_ecdb, "ts_LinkTableWithFk2", "TargetId");
-    AssertForeignKey(true, m_ecdb, "ts_LinkTableWithFk3", "SourceId");
-    AssertForeignKey(true, m_ecdb, "ts_LinkTableWithFk3", "TargetId");
-    AssertForeignKey(false, m_ecdb, "ts_LinkTableWithoutFk");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk1", "SourceId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk1", "TargetId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk2", "SourceId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk2", "TargetId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk3", "SourceId"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_LinkTableWithFk3", "TargetId"));
+    ASSERT_FALSE(GetHelper().GetDdl("ts_LinkTableWithoutFk").ContainsI("foreign key"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -2159,7 +2207,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                                                                   "  </ECRelationshipClass>"
                                                                                   "</ECSchema>"))) << "relationship classes with nav props";
 
-    Utf8String ddl = TestHelper::RetrieveDdl(m_ecdb, "ts_B");
+    Utf8String ddl = GetHelper().GetDdl("ts_B");
     ASSERT_FALSE(ddl.empty());
 
     ASSERT_TRUE(ddl.ContainsI("[AId_Rel0NId] INTEGER,")) << "relationship classes with nav props> Actual DDL: " << ddl.c_str();
@@ -2232,7 +2280,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
         "  </ECRelationshipClass>"
         "</ECSchema>"))) << "relationship classes with custom fk names";
 
-    ddl = TestHelper::RetrieveDdl(m_ecdb, "ts_B");
+    ddl = GetHelper().GetDdl("ts_B");
     ASSERT_FALSE(ddl.empty());
 
     ASSERT_TRUE(ddl.ContainsI("[A1Id] INTEGER NOT NULL,")) << "relationship classes with custom fk names> Actual DDL: " << ddl.c_str();
@@ -2275,7 +2323,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                                                                   "  </ECRelationshipClass>"
                                                                                   "</ECSchema>"))) << "(1,1) rel with dropped NOT NULL constraint";
 
-    ddl = TestHelper::RetrieveDdl(m_ecdb, "ts_B");
+    ddl = GetHelper().GetDdl("ts_B");
     ASSERT_FALSE(ddl.empty());
 
     ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "(1,1) rel with dropped NOT NULL constraint> Actual DDL: " << ddl.c_str();
@@ -2314,7 +2362,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                                                                   "  </ECRelationshipClass>"
                                                                                   "</ECSchema>"))) << "Logical FK";
 
-    ddl = TestHelper::RetrieveDdl(m_ecdb, "ts_Base");
+    ddl = GetHelper().GetDdl("ts_Base");
     ASSERT_FALSE(ddl.empty());
     ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER NOT NULL,")) << "Logical FK> Actual DDL: " << ddl.c_str();
 
@@ -2352,7 +2400,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
                                                                                  "  </ECRelationshipClass>"
                                                                                  "</ECSchema>")));
 
-    ddl = TestHelper::RetrieveDdl(m_ecdb, "ts_Base");
+    ddl = GetHelper().GetDdl("ts_Base");
     ASSERT_FALSE(ddl.empty());
     ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Logical FK with dropped not null constraint> Actual DDL: " << ddl.c_str();
     }
@@ -2431,7 +2479,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Nav Prop as first prop";
 
-    AssertForeignKey(true, m_ecdb, "ts_Base", "ParentId");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId"));
     //Subsubclasses come before sibling classes, therefore parent id is after AAProp1
     assertColumnPosition(m_ecdb, "ts_Base", "ParentId", 4, "Nav Prop as first prop");
 
@@ -2480,7 +2528,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Nav prop as last property";
 
-    AssertForeignKey(true, m_ecdb, "ts_Base", "ParentId");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId"));
     assertColumnPosition(m_ecdb, "ts_Base", "ParentId", 5, "Nav prop as last property");
 
 
@@ -2541,8 +2589,8 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Two Nav props in a row";
 
-    AssertForeignKey(true, m_ecdb, "ts_Base", "Parent1Id");
-    AssertForeignKey(true, m_ecdb, "ts_Base", "Parent2Id");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "Parent1Id"));
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "Parent2Id"));
     //WIP: Column order for two nav props in a row is not correct yet. Once fixed, flip positions in the below calls.
     assertColumnPosition(m_ecdb, "ts_Base", "Parent1Id", 5, "Two Nav props in a row");
     assertColumnPosition(m_ecdb, "ts_Base", "Parent2Id", 6, "Two Nav props in a row");
@@ -2591,7 +2639,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Nav prop is only prop";
 
-    AssertForeignKey(true, m_ecdb, "ts_Base", "ParentId");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId"));
     assertColumnPosition(m_ecdb, "ts_Base", "ParentId", 4, "Nav prop is only prop");
 
 
@@ -2641,7 +2689,7 @@ TEST_F(RelationshipMappingTestFixture, ForeignKeyColumnPosition)
                                                                      "  </ECRelationshipClass>"
                                                                      "</ECSchema>"))) << "Nav Prop in class with shared columns";
 
-    AssertForeignKey(true, m_ecdb, "ts_Base", "ParentId");
+    ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_Base", "ParentId"));
     assertColumnPosition(m_ecdb, "ts_Base", "ParentId", -1, "Nav Prop in class with shared columns");
     }
 
@@ -3000,23 +3048,25 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
         {
         ASSERT_EQ(SUCCESS, SetupECDb("onetoonerelationshipmappings.ecdb", testSchema));
 
-        AssertForeignKey(true, m_ecdb, "ts_b", "A1Id");
-        AssertForeignKey(true, m_ecdb, "ts_b", "A2Id");
-        AssertForeignKey(true, m_ecdb, "ts_b", "A3Id");
-        AssertForeignKey(true, m_ecdb, "ts_b", "A4Id");
-        AssertForeignKey(true, m_ecdb, "ts_a", "B1Id");
-        AssertForeignKey(true, m_ecdb, "ts_a", "B2Id");
-        AssertForeignKey(true, m_ecdb, "ts_a", "B3Id");
-        AssertForeignKey(true, m_ecdb, "ts_a", "B4Id");
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A1Id"));
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A2Id"));
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A3Id"));
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_b", "A4Id"));
 
-        AssertForeignKey(false, m_ecdb, "ts_a", "A1Id");
-        AssertForeignKey(false, m_ecdb, "ts_a", "A2Id");
-        AssertForeignKey(false, m_ecdb, "ts_a", "A3Id");
-        AssertForeignKey(false, m_ecdb, "ts_a", "A4Id");
-        AssertForeignKey(false, m_ecdb, "ts_b", "B1Id");
-        AssertForeignKey(false, m_ecdb, "ts_b", "B2Id");
-        AssertForeignKey(false, m_ecdb, "ts_b", "B3Id");
-        AssertForeignKey(false, m_ecdb, "ts_b", "B4Id");
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B1Id"));
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B2Id"));
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B3Id"));
+        ASSERT_TRUE(GetHelper().IsForeignKeyColumn("ts_a", "B4Id"));
+
+        ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_a", "A1Id"));
+        ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_a", "A2Id"));
+        ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_a", "A3Id"));
+        ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_a", "A4Id"));
+
+        ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_b", "B1Id"));
+        ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_b", "B2Id"));
+        ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_b", "B3Id"));
+        ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_b", "B4Id"));
         }
     }
 
@@ -3025,7 +3075,7 @@ TEST_F(RelationshipMappingTestFixture, OneToOneRelationshipMapping)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
     {
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
@@ -3089,7 +3139,7 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "  </ECRelationshipClass>"
                                      "  </ECSchema>"))) << "Supported cases";
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
@@ -3124,7 +3174,7 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "  </ECSchema>"))) << "Logical Foreign key supports embedding relationship against subclass (joined table)";
 
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
@@ -3162,7 +3212,7 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
                                      "  </ECRelationshipClass>"
                                      "  </ECSchema>"))) << "Embedding relationship against subclass (joined table)";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                      "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
                                      "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
                                      "    <ECEntityClass typeName='A'>"
@@ -3208,7 +3258,7 @@ TEST_F(RelationshipMappingTestFixture, DisallowCascadingDeleteOnJoinedTable)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClassAndNoSubclasses)
     {
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
           <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
           <ECEntityClass typeName="Element" modifier="Abstract">
@@ -3241,7 +3291,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClassAn
           </ECRelationshipClass>
         </ECSchema>)xml")));
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" nameSpacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
           <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
           <ECEntityClass typeName="Element" modifier="Abstract">
@@ -3285,7 +3335,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClassAn
 TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractConstraintClass)
     {
     
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "  <ECEntityClass typeName='Element' modifier='Abstract'>"
@@ -3504,7 +3554,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithAbstractClassAsConstraint
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, RelationshipWithNotMappedClassAsConstraint)
     {
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                   <ECEntityClass typeName="Element" modifier="Sealed">
@@ -3534,7 +3584,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithNotMappedClassAsConstrain
                   </ECRelationshipClass>
                 </ECSchema>)xml"))) << "1:N Relationship having NotMapped constraint class on both sides of relationship are not supported";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "  <ECEntityClass typeName='Element' modifier='None'>"
@@ -3564,7 +3614,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithNotMappedClassAsConstrain
         "  </ECRelationshipClass>"
         "</ECSchema>"))) << "N:N Relationship having not mapped constraint class on both sides of relationship are not supported";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "  <ECEntityClass typeName='Element' modifier='None'>"
@@ -3602,7 +3652,7 @@ TEST_F(RelationshipMappingTestFixture, RelationshipWithNotMappedClassAsConstrain
         "  </ECRelationshipClass>"
         "</ECSchema>"))) << "N:N Relationship having at least one NotMapped constraint class on both sides of relationship are not supported";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "  <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "  <ECEntityClass typeName='Element' modifier='None'>"
@@ -3669,31 +3719,31 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRel
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //Select statements
     {
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId=%s", item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //Delete Statements
     {
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %s", item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId=%s", item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
     sp.Cancel();
 
@@ -3715,47 +3765,47 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOnNsideOf1NRel
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(401, 201, %llu, 101, %llu)", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
 
     //relationship between UNIT and ITEM_3D(new derived Class)
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(202, 'unitString2')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString1', 'item3dString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(202, 'unitString2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString1', 'item3dString1')"));
 
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES(402, 202, %llu, 301, %llu)", unit->GetId().GetValue(), item_3D->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //Select statements
     {
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
 
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item_3D->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //Delete Statements
     {
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
 
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE ECInstanceId = 402 AND TargetECClassId = %llu", item_3D->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     //verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE TargetECClassId = %llu", item_3D->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
     }
 
@@ -3792,26 +3842,26 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRel
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(101, 'itemString1',201)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(101, 'itemString1',201)"));
     }
 
     //Select Statements
     {
     Utf8String ecsql;
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //Delete Statements
     {
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "UPDATE op.ITEM SET UNIT.Id = NULL WHERE ECInstanceId = 101"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE op.ITEM SET UNIT.Id = NULL WHERE ECInstanceId = 101"));
     //Verify Deletion
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
     sp.Cancel();
 
@@ -3832,39 +3882,39 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintOn1sideOf1NRel
     {
     Utf8String ecsql;
     //relationship between UNIT and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(101, 'itemString1',201)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(101, 'itemString1',201)"));
 
     //relationship between UNIT_3D(new derived Class) and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(301, 'unitString2', 'unit3dString2')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(102, 'itemString2',301)"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(301, 'unitString2', 'unit3dString2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop,UNIT.Id) VALUES(102, 'itemString2',301)"));
     }
 
     //Select Statements
     {
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
 
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //Delete Statements
     {
     Utf8String ecsql = "UPDATE op.ITEM SET UNIT.Id = NULL WHERE ECInstanceId = 101";
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
 
     ecsql = "UPDATE op.ITEM SET UNIT.Id = NULL WHERE ECInstanceId = 102";
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu", unit_3D->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
     }
 
@@ -3901,26 +3951,26 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintsForNNRelation
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(401, 201, %llu, 101, %llu, 'relPropString1')", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //Select statements
     {
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //update Statement
     {
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=401"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=401"));
     }
 
     //Delete Statements
@@ -3928,10 +3978,10 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintsForNNRelation
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(),
                   item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     //verify Deltion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
     sp.Cancel();
 
@@ -3958,55 +4008,55 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintsForNNRelation
     //Insert Statements
     {
     //relationship between UNIT and ITEM
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.UNIT(ECInstanceId, op_UNIT_prop) VALUES(201, 'unitString1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op.ITEM(ECInstanceId, op_ITEM_prop) VALUES(101, 'itemString1')"));
 
     Utf8String ecsql;
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(501, 201, %llu, 101, %llu, 'relPropString1')", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
 
     //relationship between UNIT_3D and ITEM_3D newly added derived classes
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(401, 'unitString2', 'unit3dString2')"));
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString2', 'item3dString2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op3d.UNIT_3D(ECInstanceId, op_UNIT_prop, op3d_UNIT_prop) VALUES(401, 'unitString2', 'unit3dString2')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO op3d.ITEM_3D(ECInstanceId, op_ITEM_prop, op3d_ITEM_prop) VALUES(301, 'itemString2', 'item3dString2')"));
 
     ecsql.Sprintf("INSERT INTO op.UNIT_HAS_ITEM(ECInstanceId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId, relProp) VALUES(502, 401, %llu, 301, %llu, 'relPropString2')", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //Select statements
     {
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, "SELECT * FROM op.UNIT_HAS_ITEM"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM op.UNIT_HAS_ITEM"));
 
     Utf8String ecsql;
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit->GetId().GetValue(), item->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
 
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %llu AND TargetECClassId = %llu", unit_3D->GetId().GetValue(), item_3D->GetId().GetValue());
-    ASSERT_EQ(BE_SQLITE_ROW, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
 
     //update Statement
     {
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=501"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString1' WHERE ECInstanceId=501"));
 
     //update relationship between newly added derived classes
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, "UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString2' WHERE ECInstanceId=502"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("UPDATE op.UNIT_HAS_ITEM SET relProp='relPropUpdatedString2' WHERE ECInstanceId=502"));
     }
 
     //Delete Statements
     {
     Utf8String ecsql;
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
 
     ecsql.Sprintf("DELETE FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit_3D->GetId().ToString().c_str(), item_3D->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     //Verify Deletion
     ecsql.Sprintf("SELECT * FROM op.UNIT_HAS_ITEM WHERE SourceECClassId = %s AND TargetECClassId = %s", unit->GetId().ToString().c_str(), item->GetId().ToString().c_str());
-    ASSERT_EQ(BE_SQLITE_DONE, TestHelper::ExecuteNonSelectECSql(m_ecdb, ecsql.c_str()));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql(ecsql.c_str()));
     }
     }
 
@@ -4015,7 +4065,7 @@ TEST_F(RelationshipMappingTestFixture, AddDerivedClassOfConstraintsForNNRelation
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelationship)
     {
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
               <ECEntityClass typeName="Model" >
@@ -4035,7 +4085,7 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
               </ECRelationshipClass>
             </ECSchema>)xml"))) << "For a FKRelationship class with strength 'embedding', the cardinality 1-N requires the direction to be 'forward'.";
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
               <ECEntityClass typeName="Model" >
@@ -4055,7 +4105,7 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
               </ECRelationshipClass>
             </ECSchema>)xml"))) << "Mapping of FKRelationshipClass with strength 'embedding' and direction 'forward' for a 1-N cardinality, is expected to succeed.";
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
             R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
               <ECEntityClass typeName="Model" >
@@ -4075,7 +4125,7 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
               </ECRelationshipClass>
             </ECSchema>)xml"))) << "Mapping of FKRelationshipClass with strength 'embedding' and direction 'Backward' for a N-1 cardinality, is expected to succeed.";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
             "  <ECEntityClass typeName='Model' >"
@@ -4095,7 +4145,7 @@ TEST_F(RelationshipMappingTestFixture, StrengthDirectionValidityOnEndTableRelati
             "  </ECRelationshipClass>"
             "</ECSchema>"))) << "For a FKRelationship class with strength 'embedding', the cardinality N-1 requires the direction to be 'Backward'.";
 
-    ASSERT_EQ(SUCCESS, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
             "  <ECEntityClass typeName='Model' >"
@@ -4184,10 +4234,157 @@ TEST_F(RelationshipMappingTestFixture, DiegoRelationshipTest)
     ASSERT_EQ(BE_SQLITE_OK, geometricModelInserter.Insert(*geometricModel));
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, PhysicalForeignKey)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleFK.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+                <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />
+                <ECEntityClass typeName='A'>
+                    <ECProperty propertyName='Price' typeName='double' />
+                </ECEntityClass>
+                <ECEntityClass typeName='B'>
+                    <ECProperty propertyName='Cost' typeName='double' />
+                    <ECNavigationProperty propertyName='A' relationshipName='AHasB' direction='Backward'>
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+               <ECRelationshipClass typeName='AHasB' strength='Referencing' modifier='Sealed' strengthDirection='Backward'>
+                  <Source multiplicity='(0..1)' polymorphic='False' roleLabel='A'>
+                      <Class class ='A' />
+                  </Source>
+                  <Target multiplicity='(0..*)' polymorphic='False' roleLabel='B'>
+                      <Class class ='B' />
+                  </Target>
+               </ECRelationshipClass>
+            </ECSchema>)xml")));
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
+
+
+    /*
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A", "ECInstanceId"), "ts_A", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A", "ECClassId"), "ts_A", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A", "Price"), "ts_A", "Price");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "ECInstanceId"), "ts_AHasB", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "ECClassId"), "ts_AHasB", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "SourceECInstanceId"), "ts_AHasB", "SourceECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "SourceECClassId"), "ts_AHasB", "SourceECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "TargetECInstanceId"), "ts_AHasB", "TargetECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "TargetECClassId"), "ts_AHasB", "TargetECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "ECInstanceId"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "ECClassId"), "ts_B", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "Cost"), "ts_B", "Cost");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "A.Id"), "ts_B", "AId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "A.RelECClassId"), "ts_B", "ARelECClassId");
+    */
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, PhysicalForeignWithRelSubclasses)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleFK.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="A">
+                    <ECCustomAttributes>
+                        <ClassMap xlmns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Price" typeName="double" />
+                </ECEntityClass>
+                <ECEntityClass typeName="A1">
+                    <BaseClass>A</BaseClass>
+                    <ECProperty propertyName="Tag" typeName="double" />
+                </ECEntityClass>
+                <ECEntityClass typeName="B">
+                    <ECProperty propertyName="Cost" typeName="double" />
+                    <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward">
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+                <ECEntityClass typeName="B1">
+                    <BaseClass>B</BaseClass>
+                    <ECProperty propertyName="Tag" typeName="double" />
+                </ECEntityClass>
+               <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="Abstract" strengthDirection="Backward">
+                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
+                      <Class class ="A" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                      <Class class ="B" />
+                  </Target>
+               </ECRelationshipClass>
+               <ECRelationshipClass typeName="A1HasB1" strength="Referencing" modifier="Sealed" strengthDirection="Backward">
+                  <BaseClass>AHasB</BaseClass>
+                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A1">
+                      <Class class ="A1" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B1">
+                      <Class class ="B1" />
+                  </Target>
+               </ECRelationshipClass>
+            </ECSchema>)xml")));
+    m_ecdb.SaveChanges();
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.A1HasB1")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
+
+    ASSERT_EQ(ExpectedColumn("ts_A", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
+
+    ASSERT_EQ(ExpectedColumn("ts_A", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "Price")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "Tag"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "Tag")));
+
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetTable("ts_AHasB")->GetType());
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECClassId")));
+    /*
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "ECInstanceId"), "ts_AHasB", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "ECClassId"), "ts_AHasB", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "SourceECInstanceId"), "ts_AHasB", "SourceECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "SourceECClassId"), "ts_AHasB", "SourceECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "TargetECInstanceId"), "ts_AHasB", "TargetECInstanceId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "TargetECClassId"), "ts_AHasB", "TargetECClassId");
+
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "ECInstanceId"), "ts_B", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "ECClassId"), "ts_B", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "Cost"), "ts_B", "Cost");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "A.Id"), "ts_B", "AId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "A.RelECClassId"), "ts_B", "ARelECClassId");
+
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "ECInstanceId"), "ts_B1", "Id");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "ECClassId"), "ts_B1", "ECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "Cost"), "ts_B1", "Cost");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "A.Id"), "ts_B1", "AId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "A.RelECClassId"), "ts_B1", "ARelECClassId");
+    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "Tag"), "ts_B1", "Tag");
+    */
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Zaighum                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECDbHoldingRelationshipStrengthTestFixture : DbMappingTestFixture
+struct ECDbHoldingRelationshipStrengthTestFixture : ECDbTestFixture
     {
     protected:
         bool InstanceExists(Utf8CP classExp, ECInstanceKey const& key) const
@@ -4759,7 +4956,7 @@ TEST_F(ECDbHoldingRelationshipStrengthTestFixture, ManyToManyBackward)
 //=======================================================================================    
 // @bsiclass                                   Muhammad Hassan                     05/15
 //=======================================================================================    
-struct RelationshipsAndSharedTablesTestFixture : DbMappingTestFixture
+struct RelationshipsAndSharedTablesTestFixture : ECDbTestFixture
     {
     protected:
         static Utf8CP const SCHEMA_XML;

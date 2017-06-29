@@ -6,12 +6,11 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct JsonUpdaterTests : SchemaImportTestFixture
+struct JsonUpdaterTests : ECDbTestFixture
     {
     //---------------------------------------------------------------------------------------
     // @bsimethod                              Ramanujam.Raman                   10/15

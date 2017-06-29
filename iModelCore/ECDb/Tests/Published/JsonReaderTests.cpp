@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "SchemaImportTestFixture.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -15,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Muhammad Hassan                     03/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct JsonReaderTests : public SchemaImportTestFixture
+struct JsonReaderTests : public ECDbTestFixture
     {
     //---------------------------------------------------------------------------------------
     // @bsimethod                                      Muhammad Hassan                  05/16

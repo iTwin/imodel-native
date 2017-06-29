@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "SchemaImportTestFixture.h"
+#include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -14,7 +14,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  06/16
 //=======================================================================================    
-struct ECRelationshipInheritanceTestFixture : DbMappingTestFixture
+struct ECRelationshipInheritanceTestFixture : ECDbTestFixture
     {};
 
 
@@ -396,15 +396,9 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                                                         "  </ECRelationshipClass>"
                                                                         "</ECSchema>"))) << "Subclass can have ClassMap CA for FK mapping if MapStrategy is set to NotMapped";
 
-    MapStrategyInfo mapStrategy;
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, m_ecdb.Schemas().GetClass("Test", "ModelHasElements")->GetId()));
-    ASSERT_EQ(MapStrategyInfo::Strategy::ForeignKeyRelationshipInTargetTable, mapStrategy.m_strategy);
-
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, m_ecdb.Schemas().GetClass("Test", "ModelHasPhysicalElements")->GetId()));
-    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
-
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, m_ecdb.Schemas().GetClass("Test", "ModelHasPhysicalElements2")->GetId()));
-    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
+    ASSERT_EQ(MapStrategyInfo(MapStrategy::ForeignKeyRelationshipInTargetTable), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasElements")));
+    ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasPhysicalElements")));
+    ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasPhysicalElements2")));
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("validrelinheritance.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -455,16 +449,10 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                                                         "  </ECRelationshipClass>"
                                                                         "</ECSchema>")));
 
-    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
-
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, m_ecdb.Schemas().GetClass("Test", "ModelHasPhysicalElements")->GetId()));
-    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
-
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, m_ecdb.Schemas().GetClass("Test", "ModelHasPhysicalElements2")->GetId()));
-    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
-
-    ASSERT_TRUE(TryGetMapStrategyInfo(mapStrategy, m_ecdb, m_ecdb.Schemas().GetClass("Test", "Element")->GetId()));
-    ASSERT_EQ(MapStrategyInfo::Strategy::NotMapped, mapStrategy.m_strategy);
+    ASSERT_EQ(MapStrategyInfo(MapStrategy::ForeignKeyRelationshipInTargetTable), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasElements")));
+    ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasPhysicalElements")));
+    ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasPhysicalElements2")));
+    ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "Element")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -472,7 +460,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     {
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
@@ -509,7 +497,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "  </ECRelationshipClass>"
     "</ECSchema>"))) << "Subclass must not imply link table if base class has logical FK mapping";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
         "  <ECEntityClass typeName='Model' >"
@@ -551,7 +539,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
         "  </ECRelationshipClass>"
         "</ECSchema>"))) << "Subclass must not imply link table if base class has physical FK mapping";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -589,7 +577,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not imply link table (because of additional ECProperty) if base class has logical FK mapping";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -629,7 +617,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not have LinkTableRelationshipMap CA if base class has logical FK mapping";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -666,7 +654,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not have navigation property if base class maps to link table";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -703,7 +691,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not have FK on other end as base class";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -740,7 +728,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not have FK on other end as base class (here implied from strength direction)";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -777,7 +765,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not have another strength as base class";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
     "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
     "  <ECEntityClass typeName='Model' >"
     "    <ECProperty propertyName='Name' typeName='string' />"
@@ -816,7 +804,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
     "  </ECRelationshipClass>"
     "</ECSchema>"))) << "Subclasses must not have LinkTableRelationshipMap even if it doesn't violate the base class mapping";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
@@ -860,7 +848,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Subclass must not have LinkTableRelationshipMap CA if base class has physical FK mapping";
     
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -903,7 +891,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "</ECSchema>"))) << "Subclass must not have ClassMap CA if base class has FK mapping";
 
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -950,7 +938,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, InvalidCases)
                    "</ECSchema>"))) << "Subclass must not have define NotMapped if base class did already";
 
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                    "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                    "  <ECEntityClass typeName='Model' >"
                    "    <ECProperty propertyName='Name' typeName='string' />"
@@ -990,7 +978,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
     auto assertRelECClassId = [this] (ECDbCR ecdb, Utf8CP tableName, Utf8CP relClassIdColumnName, RelClassIdExistenceMode expectedExistenceMode, bool expectedNotNull, bool expectedHasIndex)
         {
         const int relClassIdColumnKind = 320;
-        Utf8String ddl = TestHelper::RetrieveDdl(ecdb, tableName);
+        Utf8String ddl = TestHelper(ecdb).GetDdl(tableName);
         ASSERT_FALSE(ddl.empty());
 
         CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT c.ColumnKind, c.IsVirtual, c.NotNullConstraint FROM ec_Column c, ec_Table t WHERE c.TableId=t.Id AND t.Name=? and c.Name=?");
@@ -1032,19 +1020,21 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
         if (expectedExistenceMode == RelClassIdExistenceMode::Virtual)
             {
-            AssertIndexExists(ecdb, indexName.c_str(), false);
+            ASSERT_FALSE(TestHelper(ecdb).IndexExists(indexName));
             return;
             }
 
         if (expectedHasIndex)
             {
             if (expectedNotNull)
-                AssertIndex(ecdb, indexName.c_str(), false, tableName, {relClassIdColumnName});
+                {
+                ASSERT_STRCASEEQ(IndexInfo(indexName, false, tableName, relClassIdColumnName).ToDdl().c_str(),
+                                TestHelper(ecdb).GetIndexDdl(indexName).c_str()) << indexName;
+                }
             else
                 {
-                Utf8String whereClause;
-                whereClause.Sprintf("([%s] IS NOT NULL)", relClassIdColumnName);
-                AssertIndex(ecdb, indexName.c_str(), false, tableName, {relClassIdColumnName}, whereClause.c_str());
+                ASSERT_STRCASEEQ(IndexInfo(indexName, false, tableName, relClassIdColumnName, IndexInfo::WhereClause(true, {relClassIdColumnName})).ToDdl().c_str(),
+                                 TestHelper(ecdb).GetIndexDdl(indexName).c_str()) << indexName;
                 }
             }
         };
@@ -1831,22 +1821,22 @@ TEST_F(ECRelationshipInheritanceTestFixture, AddingPropertyToLinkTableSubclass)
 
     ASSERT_FALSE(m_ecdb.TableExists("LinkTableRelSub")) << "Link table subclassing always amounts to TablePerHierarachy";
 
-    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","Id"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","ECClassId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","SourceId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "SourceECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_A","ECClassId", true}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "SourceECClassId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","TargetId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "TargetECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_B","ECClassId", true}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRel", "TargetECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","SourceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "SourceECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_A","ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "SourceECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","TargetId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "TargetECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_B","ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "TargetECClassId")));
 
 
-    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","Id"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","ECClassId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","SourceId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "SourceECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_A","ECClassId", true}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "SourceECClassId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","TargetId"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "TargetECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_B","ECClassId", true}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "TargetECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","SourceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "SourceECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_A","ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "SourceECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","TargetId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "TargetECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_B","ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "TargetECClassId")));
 
-    ASSERT_EQ(ColumnInfo::List({{"ts_LinkTableRel","Priority"}}), GetColumnInfos(m_ecdb, PropertyAccessString("TestSchema", "LinkTableRelSub", "Priority")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","Priority"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRelSub", "Priority")));
     }
 
 //---------------------------------------------------------------------------------------

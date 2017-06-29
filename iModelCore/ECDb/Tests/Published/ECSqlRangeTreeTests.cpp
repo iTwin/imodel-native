@@ -5,12 +5,12 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "SchemaImportTestFixture.h"
+#include "ECDbPublishedTests.h"
 #include <BeSQLite/RTreeMatch.h>
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct ECSqlRangeTreeTests : SchemaImportTestFixture
+struct ECSqlRangeTreeTests : ECDbTestFixture
     {
     //---------------------------------------------------------------------------------------
     // @bsimethod                                     Krischan.Eberle                  05/15

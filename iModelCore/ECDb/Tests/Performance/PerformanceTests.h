@@ -10,4 +10,3 @@
 #include <Bentley/BeTimeUtilities.h>
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/ECDbTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/TestHelper.h"
-#include "../BackDoor/PublicAPI/BackDoor/ECDb/SchemaImportTestFixture.h"

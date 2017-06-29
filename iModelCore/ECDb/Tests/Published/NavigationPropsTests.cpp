@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "SchemaImportTestFixture.h"
+#include "ECDbPublishedTests.h"
 
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
@@ -13,7 +13,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 01/16
 //+---------------+---------------+---------------+---------------+---------------+------
-struct ECSqlNavigationPropertyTestFixture : DbMappingTestFixture
+struct ECSqlNavigationPropertyTestFixture : ECDbTestFixture
     {
     protected:
         void AssertPrepare(Utf8CP ecsql, bool expectedToSucceed, Utf8CP assertMessage) const
@@ -139,8 +139,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
 
             ASSERT_FALSE(m_ecdb.ColumnExists("ts_Element", "ModelRelECClassId"));
             ASSERT_TRUE(m_ecdb.ColumnExists("ts_Element", "ParentRelECClassId"));
-            AssertIndexExists(m_ecdb, "ix_ts_Element_ModelRelECClassId", false); // rel class id is virtual -> no index
-            AssertIndexExists(m_ecdb, "ix_ts_Element_ParentRelECClassId", false); // logical FK -> no index
+            ASSERT_FALSE(GetHelper().IndexExists("ix_ts_Element_ModelRelECClassId")) << "rel class id is virtual -> no index";
+            ASSERT_FALSE(GetHelper().IndexExists("ix_ts_Element_ParentRelECClassId")) << "logical FK -> no index";
             }
 
             {//Physical FK
@@ -203,8 +203,10 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
 
             ASSERT_FALSE(m_ecdb.ColumnExists("ts_Element", "ModelRelECClassId"));
             ASSERT_TRUE(m_ecdb.ColumnExists("ts_Element", "ParentRelECClassId"));
-            AssertIndexExists(m_ecdb, "ix_ts_Element_ModelRelECClassId", false);
-            AssertIndex(m_ecdb, "ix_ts_Element_ParentRelECClassId", false, "ts_Element", {"ParentRelECClassId"}, "([ParentRelECClassId] IS NOT NULL)");
+            ASSERT_FALSE(GetHelper().IndexExists("ix_ts_Element_ModelRelECClassId"));
+            Utf8CP indexName = "ix_ts_Element_ParentRelECClassId";
+            ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts_Element", "ParentRelECClassId", IndexInfo::WhereClause(true, {"[ParentRelECClassId]"})).ToDdl().c_str(),
+                             GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
             }
 
             {
@@ -259,8 +261,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
                     </ECRelationshipClass>
                 </ECSchema>)xml")));
 
-            ASSERT_EQ(ColumnInfo::List({{"Repository.Id", "WS_View","RepositoryId"}, {"Repository.RelECClassId", "WS_View","RepositoryRelECClassId", true}}),
-                                       GetColumnInfos(m_ecdb, PropertyAccessString("WS", "View", "Repository")));
+            ASSERT_EQ(ExpectedColumns({ExpectedColumn("WS_View","RepositoryId"), ExpectedColumn("WS_View","RepositoryRelECClassId", Virtual::Yes)}),
+                                       GetHelper().GetPropertyMapColumns(AccessString("WS", "View", "Repository")));
             }
     }
 
@@ -340,11 +342,13 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooElementKey)) << stmt.GetECSql();
     }
 
-    ASSERT_PROPERTYMAPPING_MULTICOL(m_ecdb, PropertyAccessString("ts", "Element", "Model"),
-                     ColumnInfo::List({ {"Model.Id", "ts_Element", "ps2"}, {"Model.RelECClassId", "ts_Element","ModelRelECClassId",true}}));
+    ASSERT_EQ(ExpectedColumns({ExpectedColumn("ts_Element", "ps2"), 
+                              ExpectedColumn("ts_Element","ModelRelECClassId", Virtual::Yes)}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "Element", "Model")));
 
-    ASSERT_PROPERTYMAPPING_MULTICOL(m_ecdb, PropertyAccessString("ts", "Element", "Parent"),
-                    ColumnInfo::List({ {"Parent.Id", "ts_Element", "ps3"}, {"Parent.RelECClassId", "ts_Element","ps4"}}));
+    ASSERT_EQ(ExpectedColumns({ExpectedColumn("ts_Element", "ps3"), 
+                              ExpectedColumn("ts_Element","ps4")}),
+            GetHelper().GetPropertyMapColumns(AccessString("ts", "Element", "Parent")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -352,7 +356,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlNavigationPropertyTestFixture, Overriding)
     {
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="Sealed">
                    <ECProperty propertyName="Name" typeName="string" />
@@ -385,7 +389,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Overriding)
              </ECRelationshipClass>
             </ECSchema>)xml"))) << "Overriding nav prop adds ForeignKeyConstraint CA causes duplicate nav prop error";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="Sealed">
                    <ECProperty propertyName="Name" typeName="string" />
@@ -423,7 +427,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, Overriding)
              </ECRelationshipClass>
             </ECSchema>)xml"))) << "Overriding nav prop changes relationship which is not supported";
 
-    ASSERT_EQ(ERROR, TestHelper::ImportSchema(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Element" modifier="Abstract">
                  <ECCustomAttributes>
@@ -535,9 +539,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
                 </Target>
              </ECRelationshipClass>
               </ECSchema>)xml")));
-
-    AssertColumnNames(m_ecdb, "ts_HasNavPropsWithRelECClassId", {"Id","ECClassId","Name","CodeSpecId","CodeSpecRelECClassId","CodeScopeId","CodeScopeRelECClassId","LastMod"});
-    AssertColumnNames(m_ecdb, "ts_HasNavPropsWithoutRelECClassId", {"Id","ECClassId","Name","CodeSpecId","CodeScopeId","LastMod"});
+    FAIL() << "Need work.";
     }
 
 //---------------------------------------------------------------------------------------

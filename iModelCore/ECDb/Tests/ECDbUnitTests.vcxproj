@@ -17,8 +17,8 @@
     <ClCompile Include="BackDoor\BackDoor.cpp" />
     <ClCompile Include="BackDoor\ECDbTestFixture.cpp" />
     <ClCompile Include="BackDoor\ECDbTests.cpp" />
-    <ClCompile Include="BackDoor\SchemaImportTestFixture.cpp" />
     <ClCompile Include="BackDoor\TestHelper.cpp" />
+    <ClCompile Include="BackDoor\TestInfoHolders.cpp" />
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp" />
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp" />
@@ -76,7 +76,6 @@
     <ClCompile Include="Published\JsonLibraryTests.cpp" />
     <ClCompile Include="Published\JsonReaderTests.cpp" />
     <ClCompile Include="Published\JsonUpdaterTests.cpp" />
-    <ClCompile Include="Published\MapContext.cpp" />
     <ClCompile Include="Published\NavigationPropsTests.cpp" />
     <ClCompile Include="Published\NestedStructArrayTestSchemaHelper.cpp" />
     <ClCompile Include="Published\ProfileTests.cpp" />
@@ -91,8 +90,8 @@
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\BackDoor.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTestFixture.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h" />
-    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\SchemaImportTestFixture.h" />
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\TestHelper.h" />
+    <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\TestInfoHolders.h" />
     <ClInclude Include="Performance\PerformanceCRUDTestsHelper.h" />
     <ClInclude Include="Performance\PerformanceOverflowTablesResearchTestFixture.h" />
     <ClInclude Include="Performance\PerformanceTests.h" />
@@ -112,7 +111,6 @@
     <ClInclude Include="Published\ECSqlTestFrameworkFixture.h" />
     <ClInclude Include="Published\ECSqlTestFrameworkHelper.h" />
     <ClInclude Include="Published\ECSqlUpdateTestDataset.h" />
-    <ClInclude Include="Published\MapContext.h" />
     <ClInclude Include="Published\NestedStructArrayTestSchemaHelper.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
