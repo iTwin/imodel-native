@@ -976,7 +976,7 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::IsCacheable() const
     {
-    static bool s_useRealityCache = true;   // Still WIP.
+    static bool s_useRealityCache = false;   // Still WIP.
 
     if (!s_useRealityCache)
         return false;
@@ -1996,7 +1996,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR
     DgnElementId elemId = GetElementId(geom);
     for (auto& stroke : strokes.m_strokes)
         {
-        if (stroke.m_points.size() > 1)
+        if (stroke.m_points.size() > (strokes.m_disjoint ?  0 : 1))
             {
             m_contentRange.Extend(stroke.m_points);
             builder.AddPolyline(stroke.m_points, featureFromParams(elemId, displayParams), rangePixels < GetVertexClusterThresholdPixels(), fillColor, stroke.m_startDistance, stroke.m_rangeCenter);

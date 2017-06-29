@@ -1110,7 +1110,7 @@ void DgnViewport::_CallDecorators(DecorateContextR context)
     m_viewController->_DrawDecorations(context);
     m_viewController->_DrawGrid(context);
 
-    if (context.GetViewFlags().ShowAcsTriad())
+    if (false && context.GetViewFlags().ShowAcsTriad())
         m_viewController->GetAuxCoordinateSystem().Display(context, (ACSDisplayOptions::CheckVisible | ACSDisplayOptions::Active));
     }
 

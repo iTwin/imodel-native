@@ -568,25 +568,9 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
     if (displayParams.IsNull())
         return nullptr;
 
-    Mesh::PrimitiveType primitiveType;
-
-    switch (primitiveValue["mode"].asUInt())
-        {
-        case GLTF_TRIANGLES:
-            primitiveType = Mesh::PrimitiveType::Mesh;
-            break;
-
-        case GLTF_LINES:
-            primitiveType = Mesh::PrimitiveType::Polyline;
-            break;
-
-        default:
-            BeAssert(false);
-            return nullptr;
-        }
-
-    MeshPtr         mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d());
-    MeshEdgesPtr    meshEdges;
+    Mesh::PrimitiveType     primitiveType = (Mesh::PrimitiveType) primitiveValue["type"].asUInt();
+    MeshPtr                 mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d());
+    MeshEdgesPtr            meshEdges;
 
     if(SUCCESS != ReadVertices(mesh->VertsR(), primitiveValue))
         return nullptr;
@@ -612,6 +596,7 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
             }
 
         case Mesh::PrimitiveType::Polyline:
+        case Mesh::PrimitiveType::Point:
             {
             if (SUCCESS != ReadPolylines(mesh->PolylinesR(), primitiveValue, "indices"))
                 {

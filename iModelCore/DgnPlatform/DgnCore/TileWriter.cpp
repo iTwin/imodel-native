@@ -2195,8 +2195,6 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
     {
     DisplayParamsCR     displayParams = mesh.GetDisplayParams();
 
-    primitiveJson["mode"] = GLTF_TRIANGLES;
-
     if (!mesh.Params().empty() && displayParams.IsTextured())
         primitiveJson["attributes"]["TEXCOORD_0"] = AddParamAttribute (mesh.Params().data(), mesh.Params().size(), "Param", idStr.c_str());
 
@@ -2218,7 +2216,6 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, Utf8StringC
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus CreatePolylines(Json::Value& primitiveJson, MeshCR mesh, Utf8StringCR idStr)
     {
-    primitiveJson["mode"] = GLTF_LINES;
     primitiveJson["indices"] = AddPolylines(mesh.Polylines(), mesh.Points().size(), "polyline", idStr);
 
     return SUCCESS;
@@ -2296,6 +2293,7 @@ virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
     AddMeshPointRange(m_json["accessors"][accPositionId], mesh.Verts().GetParams().GetRange());
  
     primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());
+    primitiveJson["type"] = (uint32_t) mesh.GetType();
 
     if ((!mesh.Triangles().Empty() && SUCCESS == CreateTriMesh(primitiveJson, mesh, idStr)) ||
         (!mesh.Polylines().empty() && SUCCESS == CreatePolylines(primitiveJson, mesh, idStr)))
