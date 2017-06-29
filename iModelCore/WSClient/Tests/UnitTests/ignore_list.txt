@@ -343,3 +343,59 @@ ChunkedUploadRequestTests.PerformAsync_FirtResponseNotResumeIncomplete_StopsRequ
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
+
+ WSClientTests.GetServerInfo_CalledTwiceWithSuccessfullConnection_QueriesServerOnce
+    # bim0200dev, x64, DEBUG, random hang
+    #
+    # Main thread:
+    #   ntdll.dll!NtWaitForAlertByThreadId()   Unknown
+    #   ntdll.dll!RtlSleepConditionVariableSRW()    Unknown
+    #   KernelBase.dll!SleepConditionVariableSRW() Unknown
+    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   C++
+    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77   C++
+    #   BentleyB02.dll!std::_Cnd_waitX(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *) Line 95    C++
+    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 59 C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::InfiniteWait(BentleyB0200::BeMutexHolder &) Line 178  C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 197   C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::WaitOnCondition(BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 182   C++
+    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTask::Wait() Line 345  C++
+    #   WSClientTest.exe!BentleyB0200::Tasks::PackagedAsyncTask<BentleyB0200::Tasks::AsyncResult<BentleyB0200::WebServices::WSInfo,BentleyB0200::WebServices::WSError> >::GetResult() Line 186  C++
+    #   WSClientTest.exe!WSClientTests_GetServerInfo_CalledTwiceWithSuccessfullConnection_QueriesServerOnce_Test::TestBody() Line 169   C++
+    #   WSClientTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2446   C++
+    #   WSClientTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::Test,void>(testing::Test *, void(testing::Test::*)(), const char *) Line 2497  C++
+    #   WSClientTest.exe!testing::Test::Run() Line 2540 C++
+    #   WSClientTest.exe!testing::TestInfo::Run() Line 2719 C++
+    #   WSClientTest.exe!testing::TestCase::Run() Line 2834 C++
+    #   WSClientTest.exe!testing::internal::UnitTestImpl::RunAllTests() Line 4709   C++
+    #   WSClientTest.exe!testing::internal::HandleSehExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool>(testing::internal::UnitTestImpl *, bool(testing::internal::UnitTestImpl::*)(), const char *) Line 2446 C++
+    #   WSClientTest.exe!testing::internal::HandleExceptionsInMethodIfSupported<testing::internal::UnitTestImpl,bool>(testing::internal::UnitTestImpl *, bool(testing::internal::UnitTestImpl::*)(), const char *) Line 2497    C++
+    #   WSClientTest.exe!testing::UnitTest::Run() Line 4316 C++
+    #   WSClientTest.exe!RUN_ALL_TESTS() Line 2234  C++
+    #   WSClientTest.exe!main(int, char * *) Line 450   C++
+    #   WSClientTest.exe!__scrt_common_main_seh() Line 253  C++
+    #   kernel32.dll!BaseThreadInitThunk() Unknown
+    #   ntdll.dll!RtlUserThreadStart() Unknown
+    #
+    # 3 other work threads have identical stacks:
+    #   ntdll.dll!NtWaitForAlertByThreadId()   Unknown
+    #   ntdll.dll!RtlSleepConditionVariableSRW()    Unknown
+    #   KernelBase.dll!SleepConditionVariableSRW() Unknown
+    #   msvcp140.dll!Concurrency::details::stl_condition_variable_win7::wait(Concurrency::details::stl_critical_section_interface *) Line 210   C++
+    #   msvcp140.dll!do_wait(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *, const xtime *) Line 77   C++
+    #   BentleyB02.dll!std::_Cnd_waitX(_Cnd_internal_imp_t *, _Mtx_internal_imp_t *) Line 95    C++
+    #   BentleyB02.dll!std::condition_variable_any::wait<std::unique_lock<std::recursive_mutex> >(std::unique_lock<std::recursive_mutex> &) Line 59 C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::InfiniteWait(BentleyB0200::BeMutexHolder &) Line 178  C++
+    #   BentleyB02.dll!BentleyB0200::BeConditionVariable::ProtectedWaitOnCondition(BentleyB0200::BeMutexHolder &, BentleyB0200::IConditionVariablePredicate *, unsigned int) Line 197   C++
+    #   BentleyB02.dll!BentleyB0200::Tasks::ConcurrentQueue<std::shared_ptr<BentleyB0200::Tasks::AsyncTask> >::ProtectedWaitAndPop(std::shared_ptr<BentleyB0200::Tasks::AsyncTask> &, BentleyB0200::BeMutexHolder &) Line 143   C++
+    #   BentleyB02.dll!BentleyB0200::Tasks::TaskScheduler::WaitAndPop() Line 84 C++
+    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTaskRunner::_RunAsyncTasksLoop() Line 110  C++
+    #   BentleyB02.dll!BentleyB0200::Tasks::AsyncTaskRunner::_Run() Line 95 C++
+    #   BentleyB02.dll!std::_Invoker_pmf_pointer::_Call<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>(void(BentleyB0200::Tasks::AsyncTaskRunner::*)(), BentleyB0200::Tasks::AsyncTaskRunner * &&) Line 1342  C++
+    #   BentleyB02.dll!std::invoke<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>(void(BentleyB0200::Tasks::AsyncTaskRunner::*)() &&, BentleyB0200::Tasks::AsyncTaskRunner * &&) Line 1445    C++
+    #   BentleyB02.dll!std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64> > > >::_Execute<0,1>(std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *> &, std::integer_sequence<unsigned __int64,0,1>) Line 241    C++
+    #   BentleyB02.dll!std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64> > > >::_Run(std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void),BentleyB0200::Tasks::AsyncTaskRunner *> > > > *) Line 247    C++
+    #   BentleyB02.dll!std::_LaunchPad<std::unique_ptr<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64>,std::default_delete<std::tuple<void (__cdecl BentleyB0200::Tasks::AsyncTaskRunner::*)(void) __ptr64,BentleyB0200::Tasks::AsyncTaskRunner * __ptr64> > > >::_Go() Line 233    C++
+    #   BentleyB02.dll!std::_Pad::_Call_func(void *) Line 210   C++
+    #   ucrtbase.dll!_o__strtoui64()   Unknown
+    #   kernel32.dll!BaseThreadInitThunk() Unknown
+    #   ntdll.dll!RtlUserThreadStart() Unknown
