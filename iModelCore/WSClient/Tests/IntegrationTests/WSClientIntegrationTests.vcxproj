@@ -52,12 +52,12 @@
     <IntDir>$(OutDir)</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
-    <NMakeOutput>$(OutRoot)Winx64\build\MobileUtilsIntegrationTests\MobileUtilsIntegrationTests.exe</NMakeOutput>
+    <NMakeOutput>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</NMakeOutput>
     <NMakePreprocessorDefinitions>USE_GTEST;BENTLEY_WIN32</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -v4 -ax64 -p MobileUtilsIntegrationTests re MobileUtilsIntegrationTests MobileUtils MobileUtilsNativeLib MobileUtilsXliff</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -v4 -ax64 -p MobileUtilsIntegrationTests b</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>bb -v4 -ax64 -p MobileUtilsIntegrationTests re MobileUtilsIntegrationTests MobileUtils MobileUtilsNativeLib MobileUtilsXliff -c</NMakeCleanCommandLine>
-    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath);$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI\</NMakeIncludeSearchPath>
+    <NMakeBuildCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest re  WSClientIntegrationTests *WebServices* *google*</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb $(XXXXX) -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest b</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>bb $(BB2N0) -v4 -ax64 -r WSClient -f WSClient -p WSClient-IntegrationGTest re  WSClientIntegrationTests WebServices* *google* -c</NMakeCleanCommandLine>
+    <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath);$(SrcRoot)WSClient\Tests\UnitTests\Published\Utils;$(OutRoot)Winx64\BuildContexts\WSClient\VendorAPI;$(OutRoot)Winx64\BuildContexts\WSClient\PublicAPI;$(OutRoot)Winx64\build\WSClientIntegrationTests\gensrc\;$(IncludePath)</NMakeIncludeSearchPath>
     <IncludePath>$(SrcRoot)util\gtest\include;$(SrcRoot)FieldApps\Shared\Native;$(SrcRoot)FieldApps\MobileUtils\Native\PublicAPI;$(OutRoot)Winx64\Product\MobileDgnSdk-Winx64\include;$(IncludePath)</IncludePath>
     <OutDir>$(OutRoot)VSOut\$(MSBuildProjectName)\$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(OutDir)</IntDir>

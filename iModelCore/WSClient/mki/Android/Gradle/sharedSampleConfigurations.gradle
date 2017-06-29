@@ -46,7 +46,7 @@ android {
 }
 
 dependencies {
-    compile 'com.bentley.android:DgnClientFx:+'
+    // compile 'com.bentley.android:DgnClientFx:+'
 }
 
 import org.apache.tools.ant.taskdefs.condition.Os

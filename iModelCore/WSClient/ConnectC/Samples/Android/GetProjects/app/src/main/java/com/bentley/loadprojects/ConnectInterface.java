@@ -57,7 +57,7 @@ public final class ConnectInterface {
                 {
                 }
 
-                System.loadLibrary ("DgnClientFx");
+                // System.loadLibrary ("DgnClientFx");
                 System.loadLibrary ("WebServicesClient");
                 System.loadLibrary ("ConnectWebServicesClientC");
                 System.loadLibrary ("native-lib");

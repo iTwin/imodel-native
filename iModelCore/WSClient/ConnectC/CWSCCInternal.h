@@ -15,6 +15,9 @@
 #include "ConnectWsgGlobal/GlobalSchemaBufferGen.h"
 #include "IMSSearch/IMSSearchBuffer.h"
 #include "ConnectWsgProjectShare/ProjectShareBufferGen.h"
+#include <BeSQLite/BeSQLite.h>
+#include <BeSQLite/L10N.h>
+#include <ECDb/ECDb.h>
 #include <WebServices/ConnectC/CWSCCPublic.h>
 #include <WebServices/ConnectC/CWSCCBufferPublic.h>
 #include <WebServices/ConnectC/ConnectWsgGlobal/GlobalSchemaBufferGenPublic.h>
