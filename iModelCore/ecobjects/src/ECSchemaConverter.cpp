@@ -1349,7 +1349,7 @@ PropertyCategoryP getExistingCategory(ECSchemaR schema, ECPropertyP prop, IECIns
     return existingCategory;
     }
 
-ECObjectsStatus createPropertyCategory(ECSchemaR schema, PropertyCategoryP newCategory, Utf8CP newName, IECInstanceR categoryCA)
+ECObjectsStatus createPropertyCategory(ECSchemaR schema, PropertyCategoryP& newCategory, Utf8CP newName, IECInstanceR categoryCA)
     {
     ECObjectsStatus status = schema.CreatePropertyCategory(newCategory, newName);
     if (ECObjectsStatus::Success == status)
@@ -1392,6 +1392,9 @@ ECObjectsStatus CategoryConverter::Convert(ECSchemaR schema, IECCustomAttributeC
         }
 
     Utf8String newName = existingName.GetUtf8CP();
+    if (!ECNameValidation::IsValidName(newName.c_str()))
+        newName = ECNameValidation::EncodeToValidName(newName);
+
     PropertyCategoryP newPropCategory = getExistingCategory(schema, prop, instance, newName.c_str());
     if (nullptr == newPropCategory)
         {
@@ -1399,6 +1402,7 @@ ECObjectsStatus CategoryConverter::Convert(ECSchemaR schema, IECCustomAttributeC
             {
             if (ECObjectsStatus::NamedItemAlreadyExists == status)
                 {
+                LOG.warningv("Renaming PropertyCategory '%s' to '%s_Category' due to naming conflict", newName.c_str(), newName.c_str());
                 newName += "_Category";
                 newPropCategory = getExistingCategory(schema, prop, instance, newName.c_str());
                 status = nullptr == newPropCategory ? createPropertyCategory(schema, newPropCategory, newName.c_str(), instance) : ECObjectsStatus::Success;

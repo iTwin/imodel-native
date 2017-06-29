@@ -1245,7 +1245,10 @@ bool ECSchema::NamedElementExists(Utf8CP name)
     if (m_enumerationMap.find(name) != m_enumerationMap.end())
         return true;
 
-    return m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end();
+    if (m_kindOfQuantityMap.find(name) != m_kindOfQuantityMap.end())
+        return true;
+
+    return m_propertyCategoryMap.find(name) != m_propertyCategoryMap.end();
     }
 
 /*---------------------------------------------------------------------------------**//**

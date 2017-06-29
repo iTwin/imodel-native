@@ -2385,6 +2385,56 @@ TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_CategoryN
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_NameNotValid)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="A" isDomainClass="true">
+                    <ECProperty propertyName="A1" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana Space</Name>
+                                <DisplayLabel>Banana Info</DisplayLabel>
+                                <Description>Banana Properties</Description>
+                                <Priority>1</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    ECClassCP aClass = schema->GetClassCP("A");
+    ASSERT_TRUE(nullptr != aClass);
+    ECPropertyCP a1Prop = aClass->GetPropertyP("A1");
+    ASSERT_TRUE(nullptr != a1Prop);
+    IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+    ECClassCP aConvClass = schema->GetClassCP("A");
+    EXPECT_TRUE(nullptr != aConvClass);
+
+    EXPECT_EQ(1, schema->GetPropertyCategoryCount()) << "Expected categories to be merged because their names were the same";
+
+    Utf8String encodedName = ECNameValidation::EncodeToValidName("Banana Space");
+    PropertyCategoryCP bCat = schema->GetPropertyCategoryCP(encodedName.c_str());
+    ASSERT_NE(nullptr, bCat);
+
+    ECValue nameValue(encodedName.c_str());
+    bananaCatCA->SetValue("Name", nameValue);
+    propertyCategoryHasSameValuesAsCategoryCA(bananaCatCA.get(), bCat);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                 06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PropertyPriorityCustomAttributeConversionTest, LocallyDefinedPropertyPriority)
