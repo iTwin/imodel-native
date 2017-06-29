@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_DPTEST
@@ -317,6 +316,35 @@ TEST_F (CategoryTests, IterateCategories)
     ASSERT_TRUE(foundCategory1);
     ASSERT_TRUE(foundCategory2);
     ASSERT_TRUE(foundCategory3);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CategoryTests, ValidateCategoryClass)
+    {
+    SetupSeedProject();
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "MyPhysicalModel");
+    DgnCategoryId spatialCategoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "MySpatialCategory");
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(GetDgnDb(), "MyDrawingListModel");
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "MyDrawing");
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+    DgnCategoryId drawingCategoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "MyDrawingCategory");
+
+    GenericPhysicalObjectPtr physicalElement = GenericPhysicalObject::Create(*physicalModel, drawingCategoryId);
+    EXPECT_TRUE(physicalElement.IsValid());
+    DgnDbStatus insertStatus;
+    EXPECT_FALSE(physicalElement->Insert(&insertStatus).IsValid()) << "Should not be able to insert a PhysicalElement with a DrawingCategory";
+    EXPECT_EQ(DgnDbStatus::InvalidCategory, insertStatus);
+    EXPECT_EQ(DgnDbStatus::Success, physicalElement->SetCategoryId(spatialCategoryId));
+    EXPECT_TRUE(physicalElement->Insert().IsValid());
+
+    DrawingGraphicPtr drawingGraphic = DrawingGraphic::Create(*drawingModel, spatialCategoryId);
+    EXPECT_TRUE(drawingGraphic.IsValid());
+    EXPECT_FALSE(drawingGraphic->Insert(&insertStatus).IsValid()) << "Should not be able to insert a DrawingGraphic with a SpatialCategory";
+    EXPECT_EQ(DgnDbStatus::InvalidCategory, insertStatus);
+    EXPECT_EQ(DgnDbStatus::Success, drawingGraphic->SetCategoryId(drawingCategoryId));
+    EXPECT_TRUE(drawingGraphic->Insert().IsValid());
     }
 
 //=======================================================================================

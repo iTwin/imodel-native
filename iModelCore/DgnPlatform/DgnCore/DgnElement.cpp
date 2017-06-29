@@ -3679,8 +3679,13 @@ void GeometricElement2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement2d::_OnInsert()
     {
-    // GeometricElement2ds can only reside in 2D models
-    return GetModel()->Is2dModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    if (!GetModel()->Is2dModel())
+        return DgnDbStatus::WrongModel; // A GeometricElement2d can only reside in a 2D model
+        
+    if (!DrawingCategory::Get(GetDgnDb(), GetCategoryId()).IsValid())
+        return DgnDbStatus::InvalidCategory; // A GeometricElement2d requires an existing DrawingCategory
+
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3718,8 +3723,13 @@ void GeometricElement3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement3d::_OnInsert()
     {
-    // GeometricElement3ds can only reside in 3D models
-    return GetModel()->Is3dModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    if (!GetModel()->Is3dModel())
+        return DgnDbStatus::WrongModel; // A GeometricElement3d can only reside in a 3D model
+        
+    if (!SpatialCategory::Get(GetDgnDb(), GetCategoryId()).IsValid())
+        return DgnDbStatus::InvalidCategory; // A GeometricElement3d requires an existing SpatialCategory
+
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
