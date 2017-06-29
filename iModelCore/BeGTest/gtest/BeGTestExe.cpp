@@ -411,7 +411,6 @@ int main(int argc, char **argv)
         WString currentDirectory(outdirName.GetName());
 
         BeStringUtilities::WCharToUtf8(symbolPath, currentDirectory.c_str());
-        printf("%d\n", WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
 
         CharCP winSdkDir = WinGetEnv("Win10SdkDir");
         CharCP  defArch = "x64";
@@ -473,7 +472,7 @@ int main(int argc, char **argv)
 
         if (utf8Str.Equals(""))
             {
-            logComparisonName = "run\\Comparison.log";
+            logComparisonName = "\\Comparison.log";
             currentDirectory3.AppendUtf8(logComparisonName);
             }
         else
