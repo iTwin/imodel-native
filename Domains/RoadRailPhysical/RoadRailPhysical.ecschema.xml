@@ -315,9 +315,10 @@
         </ECCustomAttributes>
         <ECProperty propertyName="Status" typeName="PhysicalElement_Status" displayLabel="Status" />
     </ECEntityClass>
-    <ECEntityClass typeName="LinearlyLocatedStatusAspect" modifier="Sealed" description="Attribution element enabling linearly-referenced Status assignment.">
+    <ECEntityClass typeName="LinearlyLocatedStatus" modifier="Sealed" description="Attribution element enabling linearly-referenced Status assignment.">
         <BaseClass>bis:InformationRecordElement</BaseClass>
         <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
+        <ECProperty propertyName="Status" typeName="PhysicalElement_Status" displayLabel="Status" />
     </ECEntityClass>
     <ECEntityClass typeName="PhysicalElementDataCache" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements to hold general cached-data.">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
