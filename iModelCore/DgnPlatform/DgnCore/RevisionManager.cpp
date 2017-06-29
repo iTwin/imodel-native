@@ -1144,12 +1144,6 @@ RevisionStatus RevisionManager::DoMergeRevision(DgnRevisionCR revision)
     {
     TxnManagerR txnMgr = m_dgndb.Txns();
 
-    if (!txnMgr.IsTracking())
-        {
-        BeAssert(false && "Revision API mandates that change tracking is enabled");
-        return RevisionStatus::ChangeTrackingNotEnabled;
-        }
-
     if (txnMgr.HasChanges())
         {
         BeAssert(false && "There are unsaved changes in the current transaction. Call db.SaveChanges() or db.AbandonChanges() first");
