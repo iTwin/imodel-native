@@ -70,5 +70,5 @@ void WSClientIntegrationTestsHost::_GetFrameworkSqlangFiles(BeFileName& path)
     {
     _GetDgnPlatformAssetsDirectory(path);
     path.AppendToPath(L"sqlang");
-    path.AppendToPath(L"DgnClientFx_en.sqlang.db3");
+    path.AppendToPath(L"WSClient_en.sqlang.db3");
     }

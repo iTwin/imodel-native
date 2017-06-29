@@ -58,7 +58,7 @@ BuildAssetsDir=$(BuildGradleAppDir)src/main/assets/
 $(BuildAssetsDir)http/cabundle.pem : $(OutBuildContexts)BeHttp/Delivery/http/cabundle.pem
     $(LinkFirstDepToFirstTarget)
 
-$(BuildAssetsDir)sqlang/DgnClientFx_en.sqlang.db3 : $(OutBuildContexts)DgnClientFx/Delivery/sqlang/DgnClientFx_en.sqlang.db3
+$(BuildAssetsDir)sqlang/WSClient_en.sqlang.db3 : $(OutBuildContexts)WSClient/Delivery/sqlang/WSClient_en.sqlang.db3
     $(LinkFirstDepToFirstTarget)
 
 #security jar

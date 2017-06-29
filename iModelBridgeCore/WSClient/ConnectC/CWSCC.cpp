@@ -488,17 +488,18 @@ void* securityStoreInitializer
     {
     m_lastStatusMessage = Utf8String("");
     m_lastStatusDescription = Utf8String("");
-    DgnClientFxCommon::SetApplicationPathsProvider(&m_pathProvider);
+
+    m_pathProvider = WSPathProvider (temporaryDirectory, assetsRootDirectory);
 
     BeFileName::CreateNewDirectory(m_pathProvider.GetTemporaryDirectory());
     BeSQLite::BeSQLiteLib::Initialize(m_pathProvider.GetTemporaryDirectory());
     BeSQLite::EC::ECDb::Initialize(m_pathProvider.GetTemporaryDirectory(), &m_pathProvider.GetAssetsRootDirectory());
-
-    BeFileName dgnClientFxSqlangFile = m_pathProvider.GetAssetsRootDirectory();
-    dgnClientFxSqlangFile.AppendToPath(L"sqlang");
-    dgnClientFxSqlangFile.AppendToPath(L"DgnClientFx_en.sqlang.db3");
-    BeSQLite::L10N::SqlangFiles sqlangFiles(dgnClientFxSqlangFile);
-    DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles);
+    
+    BeFileName wsClientSqlangFile = m_pathProvider.GetAssetsRootDirectory();
+    wsClientSqlangFile.AppendToPath(L"sqlang");
+    wsClientSqlangFile.AppendToPath(L"WSClient_en.sqlang.db3");
+    BeSQLite::L10N::SqlangFiles sqlangFiles(wsClientSqlangFile);
+    BeSQLite::L10N::Initialize (sqlangFiles);
 
     HttpClient::Initialize(m_pathProvider.GetAssetsRootDirectory());
 

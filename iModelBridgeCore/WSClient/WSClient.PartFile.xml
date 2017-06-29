@@ -81,9 +81,6 @@
 
     <Part Name="WebServicesClient-Library-Android" BentleyBuildMakeFile="ClientLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient-PublicAPI" />
-      <!--  Dependency was moved to DgnClientFx:DgnClientFxJar
-        <SubPart PartName="BeSecurityMavenArchive" PartFile="BeSecurity" Repository="BeSecurity"/>
-      -->
         <SubPart PartName="ECObjectsNative"               PartFile="ECObjects"   Repository="ECObjects" />
         <SubPart PartName="ECDbLibrary"                   PartFile="ECDb"        Repository="ECDb" />
         <SubPart PartName="BeHttpLibrary"                 PartFile="BeHttp"      Repository="BeHttp" />
@@ -219,6 +216,7 @@
     <!-- //////////////////////////////////////////////////////////////////////////// -->
 
     <Part Name="ConnectWebServicesClientC">
+        <SubPart PartName="WSClient_en_L10N" />
         <SubPart PartName="ConnectWebServicesClientC-PC" />
         <SubPart PartName="ConnectWebServicesClientC-iOS" LibType="Static"/>
         <SubPart PartName="ConnectWebServicesClientC-Android" LibType="Static"/>
@@ -248,8 +246,6 @@
     <Part Name="ConnectWebServicesClientC-Library" BentleyBuildMakeFile="CWSClientCLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="BeSecurity"                    PartFile="BeSecurity"       Repository="BeSecurity" />
-        <SubPart PartName="DgnClientFxLibrary"            PartFile="DgnClientFx" Repository="DgnClientFx" />
-        <SubPart PartName="DgnClientFxLibrary-WinRT"      PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
@@ -257,7 +253,6 @@
     </Part>
     <Part Name="ConnectWebServicesClientC-Library-Android" BentleyBuildMakeFile="CWSClientCLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
-        <SubPart PartName="DgnClientFxLibrary"    PartFile="DgnClientFx" Repository="DgnClientFx" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
@@ -436,8 +431,7 @@
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
         <SubPart PartName="WSClientTestAssets" />
-        <SubPart PartName="WSClientTestsL10N" />
-        <SubPart PartName="DgnClientFxLibrary-JNI" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="WSClient_en_L10N" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
                 Delivery/UnitTests/ignore_list.txt
@@ -448,15 +442,14 @@
 
     <Part Name="WSClientTestAssets" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/UnitTests/AssetsDelivery.mke" />
 
-    <!-- Tests need translatable strings, so sqlang file has to be build -->
     <Part
-        Name="WSClientTestsL10N"
+        Name="WSClient_en_L10N"
         BentleyBuildMakeFile="../bsicommon/sqlang/mki/XliffsToDb.mke"
-        BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/WSClient/UnitTests/sqlang/WSClient_test.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
+        BentleyBuildMakeOptions="-dSQLANG_OutputDb=$(OutputRootDir)Build/WSClient/sqlang/WSClient_en.sqlang.db3 -dSQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff">
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
         <Bindings>
-            <Files ProductDirectoryName="sqlang" Required="true">Delivery/sqlang/WSClient_test.sqlang.db3</Files>
+            <Files ProductDirectoryName="sqlang" Required="true">Delivery/sqlang/WSClient_en.sqlang.db3</Files>
         </Bindings>
     </Part>
     
@@ -645,8 +638,7 @@
     </ProductDirectoryList>
   
     <Part Name="WSClientIntegrationTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/IntegrationTests/IntegrationTests.mke" OnlyPlatforms="x64">
-        <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>        
-        <SubPart PartName="WSClientTestsL10N"/>
+        <SubPart PartName="WSClient_en_L10N"/>
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="WebServicesCache" />   
         <SubPart PartName="ConnectWebServicesClientC" />      

@@ -8,7 +8,6 @@
 #pragma once
 
 #include <Bentley/Bentley.h>
-#include <DgnClientFx/DgnClientFxL10N.h>
 #include <BeHttp/ProxyHttpHandler.h>
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Configuration/UrlProvider.h>
@@ -18,7 +17,6 @@
 #include <WebServices/ConnectC/CWSCC.h>
 #include "WSLocalState.h"
 
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 //Common code to verify API reference
@@ -27,20 +25,16 @@ if(NULL == apiHandle) \
     return INVALID_PARAMETER; \
 LPCWSCC api = (LPCWSCC) apiHandle;
 
-class WSPathProvider : public IApplicationPathsProvider
+class WSPathProvider
     {
     private:
         BeFileName m_tempDirectory;
         BeFileName m_assetDirectory;
-
-    protected:
-        virtual BeFileNameCR _GetDocumentsDirectory() const { return m_nullPath; }
-        virtual BeFileNameCR _GetTemporaryDirectory()  const { return m_tempDirectory; }
-        virtual BeFileNameCR _GetCachesDirectory() const { return m_nullPath; }
-        virtual BeFileNameCR _GetLocalStateDirectory() const { return m_nullPath; }
-        virtual BeFileNameCR _GetAssetsRootDirectory() const { return m_assetDirectory; }
                 
     public:
+        virtual BeFileNameCR GetTemporaryDirectory()  const { return m_tempDirectory; }
+        virtual BeFileNameCR GetAssetsRootDirectory() const { return m_assetDirectory; }
+
         WSPathProvider(BeFileName tempDir, BeFileName assetDir)
             {
             m_tempDirectory = tempDir;

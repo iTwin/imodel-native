@@ -48,7 +48,7 @@ static BeFileName getSqlangFile()
     BeTest::GetHost().GetFrameworkSqlangFiles(frameworkSqlangFile);
 
     BeFileName testsSqlangFile = frameworkSqlangFile.GetDirectoryName();
-    testsSqlangFile.AppendToPath(L"WSClient_test.sqlang.db3");
+    testsSqlangFile.AppendToPath(L"WSClient_en.sqlang.db3");
     return testsSqlangFile;
     }
 
