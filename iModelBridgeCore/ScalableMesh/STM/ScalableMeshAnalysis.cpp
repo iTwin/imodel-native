@@ -48,6 +48,7 @@ bool SMProgressReport::_CheckContinueOnProgress(ISMProgressReport const& report)
 ScalableMeshAnalysis::ScalableMeshAnalysis(IScalableMesh* scMesh) : m_scmPtr(scMesh)
     {
     m_ThreadNumber = omp_get_num_procs();
+    m_unit2meter = 1.0;
     }
 
 //=======================================================================================
@@ -455,7 +456,7 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
 
 #pragma omp parallel num_threads(numProcs) 
     {
-#pragma omp parallel for
+#pragma omp for
     for (int i = 0; i < m_xSize; i++)
         {
         std::thread::id t_id = std::this_thread::get_id(); // Get the id of the current Thread
@@ -510,6 +511,13 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
         }
     }
 
+    if (userAborted)
+        {
+        delete[] intersected;
+        delete[] interPoints;
+        return DTMStatusInt::DTM_ERROR; //User abort
+        }
+
     // Fill the grid values - non parallel
     for (int i = 0; i < m_xSize; i++)
         {
@@ -523,16 +531,8 @@ DTMStatusInt ScalableMeshAnalysis::_ComputeDiscreteVolume(const bvector<DPoint3d
             }
         }
 
-
-    if (userAborted)
-        {
-        delete[] intersected;
-        delete[] interPoints;
-        return DTMStatusInt::DTM_ERROR; //User abort
-        }
-
     // Sum the discrete volumes
-    double AreaCell = m_xStep*m_yStep;
+    double AreaCell = m_xStep*m_yStep*m_unit2meter; // z are expressed in UOR
     double _cutVolume = 0, _fillVolume = 0;
 #pragma omp parallel for num_threads(numProcs) reduction(+:_fillVolume,_cutVolume)
     for (int i = 0; i < m_xSize; i++) // need to parallelize
