@@ -253,7 +253,7 @@ SourceRef STMElemSourceRef::CreateFrom(const ElementRefP& elemRef, const DGNMode
 
     WString fileName; 
         
-    StatusInt status = ScalableMeshLib::GetHost().GetScalableMeshAdmin()._ResolveMrDtmFileName(fileName, elHandle);
+    StatusInt status = ScalableMeshLib::GetHost().GetSTMAdmin()._ResolveMrDtmFileName(fileName, elHandle);
                
     assert(status == SUCCESS);
    

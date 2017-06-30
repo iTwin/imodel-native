@@ -40,6 +40,8 @@ struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
 
         virtual StatusInt _SetExtractionArea(const bvector<DPoint3d>& area) = 0;
 
+		virtual StatusInt _SetLimitTextureResolution(bool limitTextureResolution) = 0;
+
         virtual StatusInt _SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer) = 0;       
         
           
@@ -50,6 +52,8 @@ struct IScalableMeshGroundExtractor abstract: virtual public RefCountedBase
         BENTLEY_SM_EXPORT StatusInt SetDestinationGcs(GeoCoordinates::BaseGCSPtr& destinationGcs);
         
         BENTLEY_SM_EXPORT StatusInt SetExtractionArea(const bvector<DPoint3d>& area);
+
+		BENTLEY_SM_EXPORT StatusInt SetLimitTextureResolution(bool limitTextureResolution);
 
         BENTLEY_SM_EXPORT StatusInt SetGroundPreviewer(IScalableMeshGroundPreviewerPtr& groundPreviewer);
         
