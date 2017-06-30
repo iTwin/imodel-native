@@ -29,29 +29,12 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct TestHelper
     {
     private:
-        struct DbSchemaCache final
-            {
-            private:
-                ECDbCR m_ecdb;
-                mutable std::map<ECN::ECClassId, std::unique_ptr<ClassMap>> m_classMaps;
-                mutable std::map<Utf8String, std::unique_ptr<Table>> m_tables;
-
-            public:
-                explicit DbSchemaCache(ECDbCR ecdb) : m_ecdb(ecdb) {}
-
-                ClassMap const* GetClassMap(ECN::ECClassId) const;
-                Table const* GetTable(Utf8StringCR tableName) const;
-
-                void Clear() const { m_classMaps.clear(); m_tables.clear(); }
-            };
-
         ECDbCR m_ecdb;
-        DbSchemaCache m_dbSchemaCache;
+
+        Column GetColumnFromCurrentRow(Utf8StringCR tableName, Statement&, int columnFieldsStartIndex) const;
 
     public:
-        explicit TestHelper(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchemaCache(ecdb) {}
-
-        void ClearCache()const { m_dbSchemaCache.Clear(); }
+        explicit TestHelper(ECDbCR ecdb) : m_ecdb(ecdb) {}
 
         //! Runs an isolated schema import. It first creates an ECDb and then imports the specified schema.
         //! @param[in] fileName ECDb file name. If omitted, a file name will be generated
@@ -73,19 +56,17 @@ struct TestHelper
 
         MapStrategyInfo GetMapStrategy(ECN::ECClassId) const;
 
-        ClassMap const* GetClassMap(Utf8CP schemaNameOrAlias, Utf8CP className) const;
-        ClassMap const* GetClassMap(ECN::ECClassId classId) const { return m_dbSchemaCache.GetClassMap(classId); }
-        PropertyMap const* GetPropertyMap(AccessString const&) const;
+        PropertyMap GetPropertyMap(AccessString const&) const;
 
         //! Gets the column for a single column property map.
         //! @return Column for this single column property map. Returns nullptr
         //! if property map couldn't be found or if it maps to more than one column
-        Column const* GetPropertyMapColumn(AccessString const&) const;
-        std::vector<Column const*> const& GetPropertyMapColumns(AccessString const& propAccessString) const;
+        Column GetPropertyMapColumn(AccessString const&) const;
+        std::vector<Column> GetPropertyMapColumns(AccessString const& propAccessString) const { return GetPropertyMap(propAccessString).GetColumns(); }
 
-        Table const* GetTable(Utf8CP tableName) const { return m_dbSchemaCache.GetTable(tableName); }
-        Column const* GetColumn(Utf8CP tableName, Utf8CP columnName) const;
+        Table GetTable(Utf8StringCR tableName) const;
 
+        std::vector<Utf8String> GetColumnNames(Utf8CP tableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, tableName); return std::vector<Utf8String>(cols.begin(), cols.end()); }
         int GetColumnCount(Utf8CP tableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, tableName); return (int) cols.size(); }
         bool IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumn) const;
         

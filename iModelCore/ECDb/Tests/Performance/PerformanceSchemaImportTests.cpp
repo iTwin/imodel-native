@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct PerformanceSchemaImportTests : public SchemaImportTestFixture
+struct PerformanceSchemaImportTests : public ECDbTestFixture
     {
     static ECN::ECSchemaPtr CreateTestSchema(size_t noOfClass, size_t propertiesPerClass, bool customAttributeOnSchema, bool customAttributesOnClasses, bool customAttributesOnProperties, size_t NumberOfCustomAttributes);
     static void SetStruct1Val(StandaloneECInstancePtr instance, int intVal, Utf8CP stringVal, bool boolVal);

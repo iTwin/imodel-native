@@ -2377,7 +2377,7 @@ TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_A
         "              <MaxSharedColumnsBeforeOverflow>5</MaxSharedColumnsBeforeOverflow>"
         "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
         "         </ShareColumns>"
-        "            <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
         "        </ECCustomAttributes>"
         "       <ECProperty propertyName='P1' typeName='int' />"
         "   </ECEntityClass>"
@@ -2390,7 +2390,7 @@ TEST_F(SchemaUpgradeTestFixture, MaxSharedColumnsBeforeOverflowWithJoinedTable_A
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
-    ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Sub1"));
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Sub1"));
 
     BeFileName filePath(m_ecdb.GetDbFileName());
     m_ecdb.CloseDb();

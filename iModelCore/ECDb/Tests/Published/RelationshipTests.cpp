@@ -292,11 +292,11 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                      GetHelper().GetIndexDdl(indexName).c_str());
 
     indexName = "ix_ts1_RelNN_source";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_RelNN", "SourceId").ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts1_RelNN", "SourceId").ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str());
 
     indexName = "ix_ts1_RelNN_target";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_RelNN", "TargetId").ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts1_RelNN", "TargetId").ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str());
 
     indexName = "uix_ts1_RelNN_sourcetarget";
@@ -341,7 +341,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                 </ECSchema>)xml")));
 
     indexName = "ix_ts2_B_fk_ts2_Rel_target";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts2_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts2_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str());
 
     
@@ -386,7 +386,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "</ECSchema>")));
 
     indexName = "ix_ts3_B_fk_ts3_Rel_target";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts3_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts3_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str());
 
 
@@ -427,7 +427,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
         "</ECSchema>")));
 
     indexName = "uix_ts4_B_fk_ts4_Rel11_target";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts4_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts4_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str());
 
 
@@ -476,11 +476,11 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
     ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts50_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
     indexName = "ix_ts50_B_fk_ts50_RelBase_target";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts50_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts50_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
     indexName = "ix_ts50_B_ARelECClassId";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts50_B", "ARelECClassId", IndexInfo::WhereClause(true, {"[ARelECClassId]"})).ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts50_B", "ARelECClassId", IndexInfo::WhereClause(true, {"ARelECClassId"})).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
     ASSERT_FALSE(GetHelper().IndexExists("uix_ts50_B_fk_ts50_RelSub1_target"));
@@ -531,11 +531,11 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
     ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts5_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
     indexName = "ix_ts5_B_fk_ts5_RelBase_target";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts5_B", "AId", IndexInfo::WhereClause(true, {"[AId]"})).ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts5_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
     indexName = "ix_ts5_B_ARelECClassId";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts5_B", "ARelECClassId", IndexInfo::WhereClause(true, {"[ARelECClassId]"})).ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts5_B", "ARelECClassId", IndexInfo::WhereClause(true, {"ARelECClassId"})).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
     ASSERT_FALSE(GetHelper().IndexExists("uix_ts5_B_fk_ts5_RelSub1_target"));
@@ -716,7 +716,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
     
     indexName = "uix_ts8_B_fk_ts8_RelNonPoly_target";
     IndexInfo::WhereClause indexWhereClause;
-    indexWhereClause.AppendNotNullFilter({"[A2Id]"});
+    indexWhereClause.AppendNotNullFilter({"A2Id"});
     indexWhereClause.AppendClassIdFilter({b1ClassId});
     ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts8_B", "A2Id", indexWhereClause).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str()) << "RelNonPoly must exclude index on B11 as the constraint is non-polymorphic";
@@ -725,7 +725,7 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
     //RelPoly must include index on B11 as the constraint is polymorphic
 
     indexName = "uix_ts8_B_fk_ts8_RelPoly_target";
-    indexWhereClause.AppendNotNullFilter({"[A1Id]"}).AppendClassIdFilter({b1ClassId, b11ClassId});
+    indexWhereClause.AppendNotNullFilter({"A1Id"}).AppendClassIdFilter({b1ClassId, b11ClassId});
     ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts8_B", "A1Id", indexWhereClause).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
@@ -4352,7 +4352,7 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignWithRelSubclasses)
     ASSERT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "Price")));
     ASSERT_EQ(ExpectedColumn("ts_A", "Tag"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "Tag")));
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetTable("ts_AHasB")->GetType());
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetTable("ts_AHasB").GetType());
     ASSERT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
     ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
     ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));

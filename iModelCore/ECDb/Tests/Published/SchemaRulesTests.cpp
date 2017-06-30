@@ -2748,9 +2748,9 @@ TEST_F(SchemaRulesTestFixture, RelationshipMappingLimitations_SupportedCases)
     ASSERT_EQ(2, GetHelper().GetColumnCount("ts_Child"));
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_ParentHasChildren"));
 
-    ASSERT_EQ(ExpectedColumn("ts_ParentHasChildren","Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "ParentHasChildren", "ECInstanceId"))) << "Rel without nav prop -> link table";
-    ASSERT_EQ(ExpectedColumn("ts_ParentHasChildren","SourceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "ParentHasChildren", "SourceECInstanceId"))) << "Rel without nav prop -> link table";
-    ASSERT_EQ(ExpectedColumn("ts_ParentHasChildren","TargetId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "ParentHasChildren", "TargetECInstanceId"))) << "Rel without nav prop -> link table";
+    ASSERT_EQ(ExpectedColumn("ts_ParentHasChildren","Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema1", "ParentHasChildren", "ECInstanceId"))) << "Rel without nav prop -> link table";
+    ASSERT_EQ(ExpectedColumn("ts_ParentHasChildren","SourceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema1", "ParentHasChildren", "SourceECInstanceId"))) << "Rel without nav prop -> link table";
+    ASSERT_EQ(ExpectedColumn("ts_ParentHasChildren","TargetId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema1", "ParentHasChildren", "TargetECInstanceId"))) << "Rel without nav prop -> link table";
     }
 
     auto assertRelationship = [](ECDbCR ecdb, Utf8CP schemaName, Utf8CP relationshipClassName, ECInstanceKey const& sourceKey, ECInstanceKey const& targetKey)

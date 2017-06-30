@@ -205,7 +205,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
             ASSERT_TRUE(m_ecdb.ColumnExists("ts_Element", "ParentRelECClassId"));
             ASSERT_FALSE(GetHelper().IndexExists("ix_ts_Element_ModelRelECClassId"));
             Utf8CP indexName = "ix_ts_Element_ParentRelECClassId";
-            ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts_Element", "ParentRelECClassId", IndexInfo::WhereClause(true, {"[ParentRelECClassId]"})).ToDdl().c_str(),
+            ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts_Element", "ParentRelECClassId", IndexInfo::WhereClause(true, {"ParentRelECClassId"})).ToDdl().c_str(),
                              GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
             }
 
@@ -539,7 +539,11 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
                 </Target>
              </ECRelationshipClass>
               </ECSchema>)xml")));
-    FAIL() << "Need work.";
+
+    ASSERT_EQ(std::vector<Utf8String>({"Id","ECClassId","Name","CodeSpecId","CodeSpecRelECClassId","CodeScopeId","CodeScopeRelECClassId","LastMod"}), 
+              GetHelper().GetColumnNames("ts_HasNavPropsWithRelECClassId"));
+
+    ASSERT_EQ(std::vector<Utf8String>({"Id", "ECClassId", "Name", "CodeSpecId", "CodeScopeId", "LastMod"}), GetHelper().GetColumnNames("ts_HasNavPropsWithoutRelECClassId"));
     }
 
 //---------------------------------------------------------------------------------------

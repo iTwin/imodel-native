@@ -449,7 +449,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, ValidCases)
                                                                         "  </ECRelationshipClass>"
                                                                         "</ECSchema>")));
 
-    ASSERT_EQ(MapStrategyInfo(MapStrategy::ForeignKeyRelationshipInTargetTable), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasElements")));
+    ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasElements")));
     ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasPhysicalElements")));
     ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "ModelHasPhysicalElements2")));
     ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "Element")));

@@ -69,23 +69,47 @@ struct Table final
 
     private:
         Utf8String m_name;
-        Type m_type;
+        Type m_type = Type::Primary;
         Utf8String m_parentTableName;
         ECN::ECClassId m_exclusiveRootClassId;
-        std::map<Utf8String, std::unique_ptr<Column>> m_columns;
-        std::vector<Column const*> m_columnsOrdered;
+        std::vector<Column> m_columns;
+        std::map<Utf8String, size_t> m_columnLookupMap;
+
+        //avoid triggering destructor for static non-POD members -> hold as pointer and never free it
+        static Column const* s_nullColumn;
 
     public:
-        Table(Utf8CP name, Type type, Utf8CP parentTableName, ECN::ECClassId exclusiveRootClassId) : m_name(name), m_type(type), m_parentTableName(parentTableName), m_exclusiveRootClassId(exclusiveRootClassId) {}
-        void AddColumn(std::unique_ptr<Column> column);
+        Table() {}
+        Table(Utf8StringCR name, Type type, Utf8StringCR parentTableName, ECN::ECClassId exclusiveRootClassId) : m_name(name), m_type(type), m_parentTableName(parentTableName), m_exclusiveRootClassId(exclusiveRootClassId) {}
+        Table(Table&& rhs) : m_name(std::move(rhs.m_name)), m_type(std::move(rhs.m_type)), m_parentTableName(std::move(rhs.m_parentTableName)), m_exclusiveRootClassId(std::move(rhs.m_exclusiveRootClassId)),
+            m_columns(std::move(rhs.m_columns)), m_columnLookupMap(std::move(rhs.m_columnLookupMap)) {}
+
+        Table& operator=(Table&& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_name = std::move(rhs.m_name);
+                m_type = std::move(rhs.m_type);
+                m_parentTableName = std::move(rhs.m_parentTableName);
+                m_exclusiveRootClassId = std::move(rhs.m_exclusiveRootClassId);
+                m_columns = std::move(rhs.m_columns);
+                m_columnLookupMap = std::move(rhs.m_columnLookupMap);
+                }
+
+            return *this;
+            }
+
+        void AddColumn(Column&&);
+
+        bool IsValid() const { return !m_name.empty(); }
 
         Utf8StringCR GetName() const { return m_name; }
         Type GetType() const { return m_type; }
         Utf8StringCR GetParentTable() const { return m_parentTableName; }
         ECN::ECClassId GetExclusiveRootClassId() const { return m_exclusiveRootClassId; }
 
-        std::vector<Column const*> const& GetColumns() const { return m_columnsOrdered; }
-        Column const* GetColumn(Utf8StringCR name) const { auto itor = m_columns.find(name); return itor != m_columns.end() ? itor->second.get() : nullptr; }
+        std::vector<Column> const& GetColumns() const { return m_columns; }
+        Column const& GetColumn(Utf8StringCR name) const;
     };
 
 // GTest Format customizations for types not handled by GTest
@@ -138,9 +162,9 @@ struct Column final
         };
 
     private:
-        Table const& m_table;
+        Utf8String m_tableName;
         Utf8String m_name;
-        Type m_type;
+        Type m_type = Type::Any;
         Virtual m_virtual = Virtual::No;
         bool m_notNullConstraint = false;
         bool m_uniqueConstraint = false;
@@ -151,13 +175,64 @@ struct Column final
         Nullable<uint32_t> m_ordinalInPrimaryKey;
 
     public:
-        Column(Table const& table, Utf8CP name, Type type, Virtual isVirtual, bool notNull, bool unique, Utf8CP checkConstraint, Utf8CP defaultConstraint, Collation collation, Kind kind, Nullable<uint32_t> ordinalInPk)
-            :m_table(table), m_name(name), m_type(type), m_virtual(isVirtual), m_notNullConstraint(notNull), m_uniqueConstraint(unique), m_checkConstraint(checkConstraint), m_defaultConstraint(defaultConstraint), m_collationConstraint(collation), m_kind(kind), m_ordinalInPrimaryKey(ordinalInPk) {}
+        Column() {}
+        Column(Utf8StringCR tableName, Utf8StringCR name, Type type, Virtual isVirtual, bool notNull, bool unique, Utf8StringCR checkConstraint, Utf8StringCR defaultConstraint, Collation collation, Kind kind, Nullable<uint32_t> ordinalInPk)
+            :m_tableName(tableName), m_name(name), m_type(type), m_virtual(isVirtual), m_notNullConstraint(notNull), m_uniqueConstraint(unique), m_checkConstraint(checkConstraint), m_defaultConstraint(defaultConstraint), m_collationConstraint(collation), m_kind(kind), m_ordinalInPrimaryKey(ordinalInPk) {}
 
-        Table const& GetTable() const { return m_table; }
+        Column(Column const& rhs) : m_tableName(rhs.m_tableName), m_name(rhs.m_name), m_type(rhs.m_type), m_virtual(rhs.m_virtual),
+            m_notNullConstraint(rhs.m_notNullConstraint), m_uniqueConstraint(rhs.m_uniqueConstraint), m_checkConstraint(rhs.m_checkConstraint), m_defaultConstraint(rhs.m_defaultConstraint),
+            m_collationConstraint(rhs.m_collationConstraint), m_kind(rhs.m_kind), m_ordinalInPrimaryKey(rhs.m_ordinalInPrimaryKey)
+            {}
+
+        Column(Column&& rhs) : m_tableName(std::move(rhs.m_tableName)), m_name(std::move(rhs.m_name)), m_type(std::move(rhs.m_type)), m_virtual(std::move(rhs.m_virtual)),
+            m_notNullConstraint(std::move(rhs.m_notNullConstraint)), m_uniqueConstraint(std::move(rhs.m_uniqueConstraint)), m_checkConstraint(std::move(rhs.m_checkConstraint)), m_defaultConstraint(std::move(rhs.m_defaultConstraint)),
+            m_collationConstraint(std::move(rhs.m_collationConstraint)), m_kind(std::move(rhs.m_kind)), m_ordinalInPrimaryKey(std::move(rhs.m_ordinalInPrimaryKey)) {}
+
+        Column& operator=(Column const& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_tableName = rhs.m_tableName;
+                m_name = rhs.m_name;
+                m_type = rhs.m_type;
+                m_virtual = rhs.m_virtual;
+                m_notNullConstraint = rhs.m_notNullConstraint;
+                m_uniqueConstraint = rhs.m_uniqueConstraint;
+                m_checkConstraint = rhs.m_checkConstraint;
+                m_defaultConstraint = rhs.m_defaultConstraint;
+                m_collationConstraint = rhs.m_collationConstraint;
+                m_kind = rhs.m_kind;
+                m_ordinalInPrimaryKey = rhs.m_ordinalInPrimaryKey;
+                }
+
+            return *this;
+            }
+
+        Column& operator=(Column&& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_tableName = std::move(rhs.m_tableName);
+                m_name = std::move(rhs.m_name);
+                m_type = std::move(rhs.m_type);
+                m_virtual = std::move(rhs.m_virtual);
+                m_notNullConstraint = std::move(rhs.m_notNullConstraint);
+                m_uniqueConstraint = std::move(rhs.m_uniqueConstraint);
+                m_checkConstraint = std::move(rhs.m_checkConstraint);
+                m_defaultConstraint = std::move(rhs.m_defaultConstraint);
+                m_collationConstraint = std::move(rhs.m_collationConstraint);
+                m_kind = std::move(rhs.m_kind);
+                m_ordinalInPrimaryKey = std::move(rhs.m_ordinalInPrimaryKey);
+                }
+
+            return *this;
+            }
+
+        bool IsValid() const { return !m_name.empty(); }
+        Utf8StringCR GetTableName() const { return m_tableName; }
         Utf8StringCR GetName() const { return m_name; }
         Type GetType() const { return m_type; }
-        Virtual IsVirtual() const { return m_virtual; }
+        Virtual GetVirtual() const { return m_virtual; }
         bool GetNotNullConstraint() const { return m_notNullConstraint; }
         bool GetUniqueConstraint() const { return m_uniqueConstraint; }
         Utf8StringCR GetCheckConstraint() const { return m_checkConstraint; }
@@ -169,7 +244,6 @@ struct Column final
 
 // GTest Format customizations for types not handled by GTest
 void PrintTo(Column const&, std::ostream*);
-void PrintTo(Column const*, std::ostream*);
 void PrintTo(Column::Type, std::ostream*);
 void PrintTo(Column::Kind, std::ostream*);
 void PrintTo(Column::Collation, std::ostream*);
@@ -198,8 +272,8 @@ struct ExpectedColumn final
     ExpectedColumn() {}
     ExpectedColumn(Utf8StringCR tableName, Utf8StringCR columnName, Virtual isVirtual = Virtual::No) : m_tableName(tableName), m_name(columnName), m_virtual(isVirtual) {}
 
-    bool operator==(Column const* actual) const;
-    bool operator!=(Column const* actual) const { return !(*this == actual); }
+    bool operator==(Column const& actual) const;
+    bool operator!=(Column const& actual) const { return !(*this == actual); }
     };
 
 typedef std::vector<ExpectedColumn> ExpectedColumns;
@@ -207,25 +281,6 @@ typedef std::vector<ExpectedColumn> ExpectedColumns;
 // GTest Format customizations for types not handled by GTest
 void PrintTo(ExpectedColumn const&, std::ostream*);
 void PrintTo(ExpectedColumns const&, std::ostream*);
-
-template<typename TExpected, typename TActual>
-static bool operator==(std::vector<TExpected> const& expected, std::vector<TActual> const& actual)
-    {
-    const size_t expectedSize = expected.size();
-    if (expectedSize != actual.size())
-        return false;
-
-    for (size_t i = 0; i < expectedSize; i++)
-        {
-        //use equality operator instead of inequality in case some types don't implement inequality along with equality
-        if (expected[i] == actual[i])
-            continue;
-        else
-            return false;
-        }
-
-    return true;
-    }
 
 //=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  06/17
@@ -354,52 +409,54 @@ void PrintTo(MapStrategyInfo const&, std::ostream*);
 void PrintTo(MapStrategyInfo::TablePerHierarchyInfo const&, std::ostream*);
 
 
-struct PropertyMap;
-
-//=======================================================================================
-// @bsiclass                                      Affan.Khan                       05/17
-//+===============+===============+===============+===============+===============+======
-struct ClassMap final
-    {
-    private:
-        ECN::ECClassId m_classId;
-        std::map<Utf8String, std::unique_ptr<PropertyMap>> m_propertyMaps;
-        std::vector<PropertyMap const*> m_propertyMapsOrdered;
-
-    public:
-        explicit ClassMap(ECN::ECClassId classId) : m_classId(classId) {}
-        PropertyMap* AddPropertyMap(std::unique_ptr<PropertyMap> pm);
-
-        ECN::ECClassId GetClassId() const { return m_classId; }
-
-        std::vector<PropertyMap const*> const& GetPropertyMaps() const { return m_propertyMapsOrdered; }
-        PropertyMap const* GetPropertyMap(Utf8StringCR accessString) const { auto itor = m_propertyMaps.find(accessString); return itor != m_propertyMaps.end() ? itor->second.get() : nullptr; }
-        PropertyMap* GetPropertyMapR(Utf8StringCR accessString) const { auto itor = m_propertyMaps.find(accessString); return itor != m_propertyMaps.end() ? itor->second.get() : nullptr; }
-    };
-
 //=======================================================================================
 // @bsiclass                                      Affan.Khan                       05/17
 //+===============+===============+===============+===============+===============+======
 struct PropertyMap final
     {
-    public:
-        //avoid triggering destructor for static non-POD members -> hold as pointer and never free it
-        static std::vector<Column const*> const* s_emptyColumnList;
-
     private:
-        ClassMap const& m_classMap;
+        ECN::ECClassId m_classId;
         Utf8String m_accessString;
-        std::vector<Column const*> m_columns;
+        std::vector<Column> m_columns;
 
     public:
-        PropertyMap(ClassMap const& classMap, Utf8StringCR accessString) :m_classMap(classMap), m_accessString(accessString) {}
-        void AddColumn(Column const& column) { m_columns.push_back(&column); }
+        PropertyMap() {}
+        PropertyMap(ECN::ECClassId classId, Utf8StringCR accessString) :m_classId(classId), m_accessString(accessString) {}
 
-        ClassMap const& GetClassMap() const { return m_classMap; }
+        PropertyMap(PropertyMap const& rhs) : m_classId(rhs.m_classId), m_accessString(rhs.m_accessString), m_columns(rhs.m_columns) {}
+        PropertyMap(PropertyMap&& rhs) : m_classId(std::move(rhs.m_classId)), m_accessString(std::move(rhs.m_accessString)), m_columns(std::move(rhs.m_columns)) {}
+        
+        PropertyMap& operator=(PropertyMap const& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_classId = rhs.m_classId;
+                m_accessString = rhs.m_accessString;
+                m_columns = rhs.m_columns;
+                }
+
+            return *this;
+            }
+
+        PropertyMap& operator=(PropertyMap&& rhs)
+            {
+            if (this != &rhs)
+                {
+                m_classId = std::move(rhs.m_classId);
+                m_accessString = std::move(rhs.m_accessString);
+                m_columns = std::move(rhs.m_columns);
+                }
+
+            return *this;
+            }
+
+        void AddColumn(Column&& column) { m_columns.push_back(column); }
+
+        bool IsValid() const { return m_classId.IsValid(); }
+
+        ECN::ECClassId GetClassId() const { return m_classId; }
         Utf8StringCR GetAccessString() const { return m_accessString; }
-        std::vector<Column const*> const& GetColumns() const { return m_columns; }
-
-        static std::vector<Column const*> const& EmptyColumnList();
+        std::vector<Column> const& GetColumns() const { return m_columns; }
     };
 
 /*

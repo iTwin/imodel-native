@@ -10,8 +10,9 @@
 
 USING_NAMESPACE_BENTLEY_EC
 
-BEGIN_ECDBUNITTESTS_NAMESPACE
+#define SQL_SELECTCLAUSE_ecColumn "c.Name,c.Type,c.IsVirtual,c.NotNullConstraint,c.UniqueConstraint,c.CheckConstraint,c.DefaultConstraint,c.CollationConstraint,c.ColumnKind,c.OrdinalInPrimaryKey"
 
+BEGIN_ECDBUNITTESTS_NAMESPACE
 
 //************************************************************************************
 // TestHelper
@@ -101,68 +102,85 @@ BentleyStatus TestHelper::ImportSchema(SchemaItem const& testItem) const
     return ERROR;
     }
 
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult TestHelper::ExecuteNonSelectECSql(Utf8CP ecsql) const
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
+        return BE_SQLITE_ERROR;
+
+    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
+    return stmt.Step();
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                  Krischan.Eberle                     03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult TestHelper::ExecuteInsertECSql(ECInstanceKey& key, Utf8CP ecsql) const
+    {
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
+        return BE_SQLITE_ERROR;
+
+    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
+    return stmt.Step(key);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMap const* TestHelper::GetClassMap(Utf8CP schemaNameOrAlias, Utf8CP className) const
+PropertyMap TestHelper::GetPropertyMap(AccessString const& propAccessString) const
     {
-    ECClassId classId = m_ecdb.Schemas().GetClassId(schemaNameOrAlias, className, SchemaLookupMode::AutoDetect);
+    const ECClassId classId = m_ecdb.Schemas().GetClassId(propAccessString.m_schemaNameOrAlias, propAccessString.m_className, SchemaLookupMode::AutoDetect);
     if (!classId.IsValid())
-        return nullptr;
+        return PropertyMap();
 
-    return GetClassMap(classId);
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        //can return multiple rows for same prop and same column in case of inherited prop. Therefore using DISTINCT
+        //Need to wrap the pp.AccessString and the parameter in . so that we don't find cases like this:
+        //A -> should not match AId, but should match Foo.A or A.Id or Foo.A.Id
+        "SELECT t.Name," SQL_SELECTCLAUSE_ecColumn " FROM ec_Table t "
+        "  INNER JOIN ec_Column c ON t.Id=c.TableId "
+        "  INNER JOIN ec_PropertyMap pm ON pm.ColumnId=c.Id "
+        "  INNER JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId "
+        "WHERE pm.ClassId=?1 AND instr('.' || pp.AccessString || '.' ,'.' || ?2 || '.') = 1 ORDER BY pp.AccessString,t.Name,c.Name");
+
+    if (stmt == nullptr)
+        {
+        EXPECT_TRUE(false) << m_ecdb.GetLastError().c_str();
+        return PropertyMap();
+        }
+
+    EXPECT_EQ(BE_SQLITE_OK, stmt->BindId(1, classId));
+    EXPECT_EQ(BE_SQLITE_OK, stmt->BindText(2, propAccessString.m_propAccessString, Statement::MakeCopy::No));
+
+    PropertyMap propMap(classId, propAccessString.m_propAccessString);
+
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        propMap.AddColumn(GetColumnFromCurrentRow(stmt->GetValueText(0), *stmt, 1));
+        }
+
+    return propMap;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-PropertyMap const* TestHelper::GetPropertyMap(AccessString const& propAccessString) const
+Column TestHelper::GetPropertyMapColumn(AccessString const& propAccessString) const
     {
-    ClassMap const* classMap = GetClassMap(propAccessString.m_schemaNameOrAlias.c_str(), propAccessString.m_className.c_str());
-    if (classMap == nullptr)
-        return nullptr;
+    PropertyMap propMap = GetPropertyMap(propAccessString);
+    if (!propMap.IsValid())
+        return Column();
 
-    return classMap->GetPropertyMap(propAccessString.m_propAccessString);
+    if (propMap.GetColumns().size() == 1)
+        return propMap.GetColumns()[0];
+
+    return Column();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  06/17
-//+---------------+---------------+---------------+---------------+---------------+------
-Column const* TestHelper::GetPropertyMapColumn(AccessString const& propAccessString) const
-    {
-    PropertyMap const* propMap = GetPropertyMap(propAccessString);
-    if (propMap == nullptr)
-        return nullptr;
-
-    if (propMap->GetColumns().size() == 1)
-        return propMap->GetColumns()[0];
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  06/17
-//+---------------+---------------+---------------+---------------+---------------+------
-std::vector<Column const*> const& TestHelper::GetPropertyMapColumns(AccessString const& propAccessString) const
-    {
-    PropertyMap const* propMap = GetPropertyMap(propAccessString);
-    if (propMap == nullptr)
-        return PropertyMap::EmptyColumnList();
-
-    return propMap->GetColumns();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                  06/17
-//+---------------+---------------+---------------+---------------+---------------+------
-Column const* TestHelper::GetColumn(Utf8CP tableName, Utf8CP columnName) const
-    {
-    Table const* table = GetTable(tableName);
-    if (table == nullptr)
-        return nullptr;
-
-    return table->GetColumn(columnName);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  06/17
@@ -191,7 +209,88 @@ MapStrategyInfo TestHelper::GetMapStrategy(ECClassId classId) const
     return MapStrategyInfo();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Affan.Khan                       05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Table TestHelper::GetTable(Utf8StringCR tableName) const
+    {
+    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        R"sql(SELECT t.Id, t.Type, parent.Name, t.ExclusiveRootClassId
+                FROM ec_Table t LEFT JOIN ec_Table parent ON parent.Id = t.ParentTableId
+                WHERE t.Name=?)sql");
 
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return Table();
+        }
+
+    stmt->BindText(1, tableName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return Table();
+
+    BeInt64Id tableId = stmt->GetValueId<BeInt64Id>(0);
+
+    Table::Type type = (Table::Type) stmt->GetValueInt(1);
+    Utf8CP parentTableName = nullptr;
+    if (!stmt->IsColumnNull(2))
+        parentTableName = stmt->GetValueText(2);
+
+    ECClassId exclusiveRootClassId;
+    if (!stmt->IsColumnNull(3))
+        exclusiveRootClassId = stmt->GetValueId<ECClassId>(3);
+
+    Table table(tableName, type, parentTableName, exclusiveRootClassId);
+
+    //now load columns
+    stmt = m_ecdb.GetCachedStatement("SELECT " SQL_SELECTCLAUSE_ecColumn " FROM ec_Column c WHERE c.TableId=? ORDER BY c.Ordinal");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return Table();
+        }
+
+    stmt->BindId(1, tableId);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        table.AddColumn(GetColumnFromCurrentRow(tableName, *stmt, 0));
+        }
+
+    return table;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Column TestHelper::GetColumnFromCurrentRow(Utf8StringCR tableName, Statement& stmt, int columnFieldsStartIndex) const
+    {
+    Utf8CP columnName = stmt.GetValueText(columnFieldsStartIndex);
+    Column::Type colType = (Column::Type) stmt.GetValueInt(columnFieldsStartIndex + 1);
+    Virtual isVirtual = stmt.GetValueBoolean(columnFieldsStartIndex + 2) ? Virtual::Yes : Virtual::No;
+    bool notNull = stmt.GetValueBoolean(columnFieldsStartIndex + 3);
+    bool unique = stmt.GetValueBoolean(columnFieldsStartIndex + 4);
+    Utf8CP checkConstraint = nullptr;
+    if (!stmt.IsColumnNull(columnFieldsStartIndex + 5))
+        checkConstraint = stmt.GetValueText(columnFieldsStartIndex + 5);
+    Utf8CP defaultConstraint = nullptr;
+    if (!stmt.IsColumnNull(columnFieldsStartIndex + 6))
+        defaultConstraint = stmt.GetValueText(columnFieldsStartIndex + 6);
+    Column::Collation collation = Column::Collation::Unset;
+    if (!stmt.IsColumnNull(columnFieldsStartIndex + 7))
+        collation = (Column::Collation) stmt.GetValueInt(columnFieldsStartIndex + 7);
+
+    Column::Kind kind = Column::Kind::Unknown;
+    if (!stmt.IsColumnNull(columnFieldsStartIndex + 8))
+        kind = (Column::Kind) stmt.GetValueInt(columnFieldsStartIndex + 8);
+
+    Nullable<uint32_t> ordinalInPk;
+    if (!stmt.IsColumnNull(columnFieldsStartIndex + 9))
+        ordinalInPk = (uint32_t) stmt.GetValueInt64(columnFieldsStartIndex + 9);
+
+    return Column(tableName, columnName, colType, isVirtual, notNull, unique,
+                  checkConstraint, defaultConstraint, collation, kind, ordinalInPk);
+    }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                     12/16
@@ -214,31 +313,6 @@ Utf8String TestHelper::GetDdl(Utf8CP entityName, Utf8CP entityType) const
     return Utf8String(stmt->GetValueText(0));
     }
 
-//---------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                     03/17
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult TestHelper::ExecuteNonSelectECSql(Utf8CP ecsql) const
-    {
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
-        return BE_SQLITE_ERROR;
-
-    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
-    return stmt.Step();
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                  Krischan.Eberle                     03/17
-//+---------------+---------------+---------------+---------------+---------------+------
-DbResult TestHelper::ExecuteInsertECSql(ECInstanceKey& key, Utf8CP ecsql) const
-    {
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql))
-        return BE_SQLITE_ERROR;
-
-    LOG.debugv("ECSQL %s -> SQL %s", ecsql, stmt.GetNativeSql());
-    return stmt.Step(key);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                  08/15
@@ -280,167 +354,6 @@ bool TestHelper::IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumnNam
     fkSearchString.Sprintf("foreign key([%s]", foreignKeyColumnName);
 
     return ddl.ContainsI(fkSearchString);
-    }
-
-//*************************************************************************************
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassMap const* TestHelper::DbSchemaCache::GetClassMap(ECClassId classId) const
-    {
-    auto itor = m_classMaps.find(classId);
-    if (itor != m_classMaps.end())
-        return itor->second.get();
-
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-        R"sql(SELECT pp.AccessString, t.Name, col.Name
-                FROM ec_ClassMap cm
-                INNER JOIN ec_PropertyMap pm ON pm.ClassId = cm.ClassId
-                INNER JOIN ec_PropertyPath pp ON pp.Id = pm.PropertyPathId
-                INNER JOIN ec_Column col ON col.Id = pm.ColumnId
-                INNER JOIN ec_Table t ON t.Id = col.TableId
-                WHERE cm.ClassId=? ORDER BY pp.AccessString, t.Name, col.Ordinal)sql");
-    if (stmt == nullptr)
-        return nullptr;
-
-    stmt->BindId(1, classId);
-
-    std::unique_ptr<ClassMap> cm = std::make_unique<ClassMap>(classId);
-    bmap<Utf8CP, PropertyMap*> compoundPropMaps;
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        Utf8String propAccessString(stmt->GetValueText(0));
-        Utf8CP tableName = stmt->GetValueText(1);
-        Utf8CP colName = stmt->GetValueText(2);
-
-        Table const* table = GetTable(Utf8String(tableName));
-        if (table == nullptr)
-            {
-            BeAssert(false);
-            return nullptr;
-            }
-
-        Column const* column = table->GetColumn(colName);
-        if (column == nullptr)
-            {
-            BeAssert(false);
-            return nullptr;
-            }
-
-        PropertyMap* propMap = cm->GetPropertyMapR(propAccessString);
-        if (propMap == nullptr)
-            propMap = cm->AddPropertyMap(std::make_unique<PropertyMap>(*cm, propAccessString));
-
-        propMap->AddColumn(*column);
-
-        bvector<Utf8String> tokens;
-        BeStringUtilities::Split(propAccessString.c_str(), ".", tokens);
-        if (tokens.size() > 1)
-            {
-
-            }
-        }
-
-    if (cm->GetPropertyMaps().empty())
-        return nullptr;
-
-    ClassMap const* cmCP = cm.get();
-    m_classMaps[classId] = std::move(cm);
-    return cmCP;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-Table const* TestHelper::DbSchemaCache::GetTable(Utf8StringCR tableName) const
-    {
-    auto it = m_tables.find(tableName);
-    if (it != m_tables.end())
-        return it->second.get();
-
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-          R"sql(SELECT t.Id, t.Type, parent.Name, t.ExclusiveRootClassId
-                FROM ec_Table t LEFT JOIN ec_Table parent ON parent.Id = t.ParentTableId
-                WHERE t.Name=?)sql");
-    
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    stmt->BindText(1, tableName, Statement::MakeCopy::No);
-
-    if (BE_SQLITE_ROW != stmt->Step())
-        return nullptr;
-
-    BeInt64Id tableId = stmt->GetValueId<BeInt64Id>(0);
-
-    Table::Type type = (Table::Type) stmt->GetValueInt(1);
-    Utf8CP parentTableName = nullptr;
-    if (!stmt->IsColumnNull(2))
-        parentTableName = stmt->GetValueText(2);
-
-    ECClassId exclusiveRootClassId;
-    if (!stmt->IsColumnNull(3))
-        exclusiveRootClassId = stmt->GetValueId<ECClassId>(3);
-
-    std::unique_ptr<Table> table = std::make_unique<Table>(tableName.c_str(), type, parentTableName, exclusiveRootClassId);
-
-    //now load columns
-    stmt = m_ecdb.GetCachedStatement(
-        R"sql(SELECT Name, Type, IsVirtual, NotNullConstraint, UniqueConstraint, CheckConstraint, DefaultConstraint, 
-                     CollationConstraint, ColumnKind, OrdinalInPrimaryKey
-              FROM ec_Column WHERE TableId=? ORDER BY Ordinal;)sql");
-
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    stmt->BindId(1, tableId);
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        Utf8CP columnName = stmt->GetValueText(0);
-        Column::Type colType = (Column::Type) stmt->GetValueInt(1);
-        Virtual isVirtual = stmt->GetValueBoolean(2) ? Virtual::Yes : Virtual::No;
-        bool notNull = stmt->GetValueBoolean(3);
-        bool unique = stmt->GetValueBoolean(4);
-        Utf8CP checkConstraint = nullptr;
-        if (!stmt->IsColumnNull(5))
-            checkConstraint = stmt->GetValueText(5);
-        Utf8CP defaultConstraint = nullptr;
-        if (!stmt->IsColumnNull(6))
-            defaultConstraint = stmt->GetValueText(6);
-        Column::Collation collation = Column::Collation::Unset;
-        if (!stmt->IsColumnNull(7))
-            collation = (Column::Collation) stmt->GetValueInt(7);
-
-        Column::Kind kind = Column::Kind::Unknown;
-        if (!stmt->IsColumnNull(8))
-            kind = (Column::Kind) stmt->GetValueInt(8);
-
-        Nullable<uint32_t> ordinalInPk;
-        if (!stmt->IsColumnNull(9))
-            ordinalInPk = (uint32_t) stmt->GetValueInt64(9);
-
-        table->AddColumn(std::make_unique<Column>(*table, columnName, colType, isVirtual, notNull, unique,
-                                                  checkConstraint, defaultConstraint, collation, kind, ordinalInPk));
-        }
-
-    if (table->GetColumns().empty())
-        {
-        BeAssert(false && "Failed to read columns of table");
-        return nullptr;
-        }
-
-    Table const* tableCP = table.get();
-    m_tables[tableName] = std::move(table);
-    return tableCP;
     }
 
 END_ECDBUNITTESTS_NAMESPACE

@@ -8063,7 +8063,7 @@ TEST_F(DbMappingTestFixture, PropertyMapCAIsNullableAndIndexWhereClause)
         "</ECSchema>")));
 
     indexName = "ix_b_code_name";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts2_B", std::vector<Utf8String>{"Code","Name"}, IndexInfo::WhereClause(true, {"[Name]"})).ToDdl().c_str(),
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts2_B", std::vector<Utf8String>{"Code","Name"}, IndexInfo::WhereClause(true, {"Name"})).ToDdl().c_str(),
                      GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
@@ -9126,7 +9126,8 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                                 {"ts_GeometricElement","js4"},
                                 {"ts_GeometricElement","js5"},
                                 {"ts_GeometricElement","js6"},
-                                {"ts_GeometricElement","js7"}}), GetHelper().GetPropertyMapColumns(AccessString("ts", "GeometricElement", "Transform")));
+                                {"ts_GeometricElement","js7"}}), 
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "GeometricElement", "Transform")));
 
     ASSERT_FALSE(m_ecdb.TableExists("ts_GeometricElement_Overflow"));
     ASSERT_FALSE(m_ecdb.TableExists("ts_Element_Overflow"));

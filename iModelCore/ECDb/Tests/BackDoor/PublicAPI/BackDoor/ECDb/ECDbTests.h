@@ -189,7 +189,31 @@ struct ECDbTestLogger
 
 #define LOG (ECDbTestLogger::Get())
 
+// GTest Format customizations for types not handled by GTest
 
+//=======================================================================================
+//! Lets assert two std::vectors.
+//! Example: ASSERT_EQ(std::vector<Utf8String>({...}),std::vector<Utf8String>({...})); 
+// @bsimethod                                                Krischan.Eberle      06/2017
+//+===============+===============+===============+===============+===============+======
+template<typename TExpected, typename TActual>
+static bool operator==(std::vector<TExpected> const& expected, std::vector<TActual> const& actual)
+    {
+    const size_t expectedSize = expected.size();
+    if (expectedSize != actual.size())
+        return false;
+
+    for (size_t i = 0; i < expectedSize; i++)
+        {
+        //use equality operator instead of inequality in case some types don't implement inequality along with equality
+        if (expected[i] == actual[i])
+            continue;
+        else
+            return false;
+        }
+
+    return true;
+    }
 END_ECDBUNITTESTS_NAMESPACE
 
 // GTest Format customizations for types not handled by GTest

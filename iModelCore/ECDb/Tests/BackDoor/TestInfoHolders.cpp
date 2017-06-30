@@ -13,16 +13,30 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 // Table 
 //*****************************************************************
 
+//avoid triggering destructor for static non-POD members -> hold as pointer and never free it
+//static
+Column const* Table::s_nullColumn = new Column();
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                 06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void Table::AddColumn(std::unique_ptr<Column> column)
+void Table::AddColumn(Column&& column)
     {
-    Column* columnP = column.get();
-    m_columns[columnP->GetName()] = std::move(column);
-    m_columnsOrdered.push_back(columnP);
+    m_columns.push_back(column);
+    m_columnLookupMap[m_columns.back().GetName()] = m_columns.size() - 1;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                 06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+Column const& Table::GetColumn(Utf8StringCR name) const
+    {
+    auto it = m_columnLookupMap.find(name); 
+    if (it == m_columnLookupMap.end())
+        return *s_nullColumn;
+
+    return m_columns[it->second];
+    }
 
 // GTest Format customizations for types not handled by GTest
 
@@ -81,22 +95,17 @@ void PrintTo(Virtual virt, std::ostream* os)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void PrintTo(Column const* col, std::ostream* os)
-    {
-    if (col == nullptr)
-        *os << "nullptr";
-    else
-        PrintTo(*col, os);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle                  06/17
-//+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(Column const& col, std::ostream* os)
     {
-    *os << "{" << col.GetTable().GetName() << ":" << col.GetName() << ",";
+    if (!col.IsValid())
+        {
+        *os << "<invalid column>";
+        return;
+        }
 
-    PrintTo(col.IsVirtual(), os);
+    *os << "{" << col.GetTableName() << ":" << col.GetName() << ",";
+
+    PrintTo(col.GetVirtual(), os);
     *os << ",";
 
     PrintTo(col.GetKind(), os);
@@ -305,16 +314,14 @@ void PrintTo(std::vector<Column const*> const& cols, std::ostream* os)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Krischan.Eberle                  06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-bool ExpectedColumn::operator==(Column const* actualCP) const
+bool ExpectedColumn::operator==(Column const& actual) const
     {
-    if (actualCP == nullptr)
+    if (!actual.IsValid())
         return false;
 
-    Column const& actual = *actualCP;
-
     return m_name.EqualsIAscii(actual.GetName()) &&
-        (m_tableName.IsNull() || m_tableName.Value().EqualsIAscii(actual.GetTable().GetName())) &&
-        (m_virtual.IsNull() || m_virtual.Value() == actual.IsVirtual()) &&
+        (m_tableName.IsNull() || m_tableName.Value().EqualsIAscii(actual.GetTableName())) &&
+        (m_virtual.IsNull() || m_virtual.Value() == actual.GetVirtual()) &&
         (m_kind.IsNull() || m_kind.Value() == actual.GetKind()) &&
         (m_type.IsNull() || m_type.Value() == actual.GetType()) &&
         (m_notNullConstraint.IsNull() || m_notNullConstraint.Value() == actual.GetNotNullConstraint()) &&
@@ -437,10 +444,9 @@ IndexInfo::WhereClause& IndexInfo::WhereClause::AppendClassIdFilter(std::vector<
     if (classIdFilter.empty())
         return *this;
 
-    if (!m_whereClause.empty())
-        m_whereClause.append(" AND ");
-
-    m_whereClause.append("(");
+    const bool whereClauseWasEmpty = m_whereClause.empty();
+    if (!whereClauseWasEmpty)
+        m_whereClause.append(" AND (");
 
     bool isFirstClassId = true;
     for (ECN::ECClassId classId : classIdFilter)
@@ -452,7 +458,9 @@ IndexInfo::WhereClause& IndexInfo::WhereClause::AppendClassIdFilter(std::vector<
         isFirstClassId = false;
         }
 
-    m_whereClause.append(")");
+    if (!whereClauseWasEmpty)
+        m_whereClause.append(")");
+
     return *this;
     }
 
@@ -475,24 +483,12 @@ IndexInfo::WhereClause&  IndexInfo::WhereClause::AppendNotNullFilter(std::vector
         if (!isFirstCol)
             m_whereClause.append(" AND ");
 
-        m_whereClause.append(indexColumn).append(" IS NOT NULL");
+        m_whereClause.append("[").append(indexColumn).append("] IS NOT NULL");
         isFirstCol = false;
         }
 
     m_whereClause.append(")");
     return *this;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                   06/17
-//+---------------+---------------+---------------+---------------+---------------+------
-PropertyMap* ClassMap::AddPropertyMap(std::unique_ptr<PropertyMap> pm)
-    {
-    PropertyMap* pmP = pm.get();
-    m_propertyMapsOrdered.push_back(pmP);
-    m_propertyMaps[pm->GetAccessString()] = std::move(pm);
-    return pmP;
     }
 
 //--------------------------------------------------------------------------------------
@@ -595,26 +591,6 @@ void PrintTo(MapStrategyInfo::TablePerHierarchyInfo const& tphInfo, std::ostream
                 BeAssert(false && "JoinedTableInfo enum has changed. Adjust this method");
                 return;
         }
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle                  06/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-std::vector<Column const*> const* PropertyMap::s_emptyColumnList = nullptr;
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Krischan.Eberle                  06/17
-//+---------------+---------------+---------------+---------------+---------------+------
-//static 
-std::vector<Column const*> const& PropertyMap::EmptyColumnList()
-    {
-    //avoid triggering destructor for static non-POD members -> hold as pointer and never free it
-    if (s_emptyColumnList == nullptr)
-        s_emptyColumnList = new std::vector<Column const*>();
-
-    return *s_emptyColumnList;
     }
 
 /*

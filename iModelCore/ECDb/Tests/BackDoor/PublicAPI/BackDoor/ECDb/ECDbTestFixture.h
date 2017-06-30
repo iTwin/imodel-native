@@ -45,9 +45,6 @@ private:
             //! using this object
             TestHelper m_testHelper;
 
-            void _OnDbClose() override { ECDb::_OnDbClose(); m_testHelper.ClearCache(); }
-            void _OnAfterSchemaImport() const override { ECDb::_OnAfterSchemaImport(); m_testHelper.ClearCache(); }
-
         public:
             FixtureECDb() : ECDb(), m_testHelper(*this) {}
             ~FixtureECDb() {}
