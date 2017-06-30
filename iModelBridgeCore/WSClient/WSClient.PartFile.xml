@@ -246,6 +246,7 @@
     <Part Name="ConnectWebServicesClientC-Library" BentleyBuildMakeFile="CWSClientCLib.mke" ExcludePlatforms="Android*" ApiNumber="B02">
         <SubPart PartName="WebServicesClient" />
         <SubPart PartName="BeSecurity"                    PartFile="BeSecurity"       Repository="BeSecurity" />
+        <SubPart PartName="ECDb"                          PartFile="ECDb"             Repository="ECDb" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
@@ -253,6 +254,7 @@
     </Part>
     <Part Name="ConnectWebServicesClientC-Library-Android" BentleyBuildMakeFile="CWSClientCLib.mke" OnlyPlatforms="Android*">
         <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="ECDb"                          PartFile="ECDb"             Repository="ECDb" />
         <Bindings>
             <Libs>Delivery/$(libprefix)ConnectWebServicesClientC$(libext)</Libs>
             <Assemblies>Delivery/$(libprefix)ConnectWebServicesClientC$(ApiNumber)$(shlibext)</Assemblies>
