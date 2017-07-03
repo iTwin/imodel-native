@@ -776,8 +776,8 @@ TEST_F(RelationshipMappingTestFixture, IndexCreationForRelationships)
                                                                                     "  </ECRelationshipClass>"
                                                                                     "</ECSchema>")));
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts9_ARelB"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts9_ARelC")) << "ARelC is expected to be persisted in ts9_ARelB as well (SharedTable strategy)";
+    ASSERT_TRUE(GetHelper().TableExists("ts9_ARelB"));
+    ASSERT_FALSE(GetHelper().TableExists("ts9_ARelC")) << "ARelC is expected to be persisted in ts9_ARelB as well (SharedTable strategy)";
 
     //ARelB must not have a unique index on source and target as it as AllowDuplicateRelationship set to true.
     //ARelC must not have the unique index either, as AllowDuplicateRelationship is applied to subclasses
@@ -1972,7 +1972,7 @@ TEST_F(RelationshipMappingTestFixture, EnforceLinkTableMapping)
         "</ECSchema>")));
 
     //verify tables
-    ASSERT_TRUE(m_ecdb.TableExists("ts_AHasB"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_AHasB"));
     ASSERT_TRUE(m_ecdb.ColumnExists("ts_AHasB", "SourceId"));
     ASSERT_TRUE(m_ecdb.ColumnExists("ts_AHasB", "TargetId"));
     bvector<Utf8String> columns;
@@ -4268,24 +4268,28 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignKey)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
 
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_A").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_A", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
 
-    /*
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A", "ECInstanceId"), "ts_A", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A", "ECClassId"), "ts_A", "ECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A", "Price"), "ts_A", "Price");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "ECInstanceId"), "ts_AHasB", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "ECClassId"), "ts_AHasB", "ECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "SourceECInstanceId"), "ts_AHasB", "SourceECInstanceId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "SourceECClassId"), "ts_AHasB", "SourceECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "TargetECInstanceId"), "ts_AHasB", "TargetECInstanceId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "AHasB", "TargetECClassId"), "ts_AHasB", "TargetECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "ECInstanceId"), "ts_B", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "ECClassId"), "ts_B", "ECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "Cost"), "ts_B", "Cost");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "A.Id"), "ts_B", "AId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "A.RelECClassId"), "ts_B", "ARelECClassId");
-    */
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECClassId")));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_B", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "Cost"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "Cost")));
+    ASSERT_EQ(ExpectedColumns({{"ts_B", "AId"},{"ts_B","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.Id")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.RelECClassId")));
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -4352,33 +4356,28 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignWithRelSubclasses)
     ASSERT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "Price")));
     ASSERT_EQ(ExpectedColumn("ts_A", "Tag"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "Tag")));
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetTable("ts_AHasB").GetType());
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
     ASSERT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
     ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
     ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
     ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));
     ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECClassId")));
-    /*
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "ECInstanceId"), "ts_AHasB", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "ECClassId"), "ts_AHasB", "ECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "SourceECInstanceId"), "ts_AHasB", "SourceECInstanceId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "SourceECClassId"), "ts_AHasB", "SourceECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "TargetECInstanceId"), "ts_AHasB", "TargetECInstanceId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "A1HasB1", "TargetECClassId"), "ts_AHasB", "TargetECClassId");
 
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "ECInstanceId"), "ts_B", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "ECClassId"), "ts_B", "ECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "Cost"), "ts_B", "Cost");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "A.Id"), "ts_B", "AId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B", "A.RelECClassId"), "ts_B", "ARelECClassId");
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_B", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "Cost"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "Cost")));
+    ASSERT_EQ(ExpectedColumns({{"ts_B", "AId"}, {"ts_B","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.Id")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.RelECClassId")));
 
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "ECInstanceId"), "ts_B1", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "ECClassId"), "ts_B1", "ECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "Cost"), "ts_B1", "Cost");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "A.Id"), "ts_B1", "AId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "A.RelECClassId"), "ts_B1", "ARelECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "B1", "Tag"), "ts_B1", "Tag");
-    */
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B1").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_B1", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_B1", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_B1", "Cost"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "Cost")));
+    ASSERT_EQ(ExpectedColumns({{"ts_B1", "AId"}, {"ts_B1","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B1", "A")));
+    ASSERT_EQ(ExpectedColumn("ts_B1", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "A.Id")));
+    ASSERT_EQ(ExpectedColumn("ts_B1", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "A.RelECClassId")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -5066,9 +5065,9 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, InstanceDeletionFromPolymorphicR
     {
     ASSERT_EQ(SUCCESS, SetupECDb("RelationshipsAndTPH.ecdb", SchemaItem(SCHEMA_XML)));
 
-    ASSERT_TRUE(m_ecdb.TableExists("t_BaseOwnsBase"));
-    ASSERT_FALSE(m_ecdb.TableExists("t_BaseHasClassA"));
-    ASSERT_FALSE(m_ecdb.TableExists("t_BaseHasClassB"));
+    ASSERT_TRUE(GetHelper().TableExists("t_BaseOwnsBase"));
+    ASSERT_FALSE(GetHelper().TableExists("t_BaseHasClassA"));
+    ASSERT_FALSE(GetHelper().TableExists("t_BaseHasClassB"));
 
     ECSchemaCP schema = m_ecdb.Schemas().GetSchema("test", true);
     ASSERT_TRUE(schema != nullptr) << "Couldn't locate test schema";
@@ -5211,9 +5210,9 @@ TEST_F(RelationshipsAndSharedTablesTestFixture, RetrieveConstraintClassInstanceB
     {
     ASSERT_EQ(SUCCESS, SetupECDb("RelationshipsAndTPH.ecdb", SchemaItem(SCHEMA_XML)));
 
-    ASSERT_TRUE(m_ecdb.TableExists("t_BaseOwnsBase"));
-    ASSERT_FALSE(m_ecdb.TableExists("t_BaseHasClassA"));
-    ASSERT_FALSE(m_ecdb.TableExists("t_BaseHasClassB"));
+    ASSERT_TRUE(GetHelper().TableExists("t_BaseOwnsBase"));
+    ASSERT_FALSE(GetHelper().TableExists("t_BaseHasClassA"));
+    ASSERT_FALSE(GetHelper().TableExists("t_BaseHasClassB"));
 
     ECSqlStatement insertStatement;
     ECInstanceKey TPHKey1;

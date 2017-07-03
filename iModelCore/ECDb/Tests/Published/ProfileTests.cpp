@@ -52,7 +52,7 @@ TEST_F(ECDbTestFixture, Profile)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest.ecdb"));
 
-    EXPECT_TRUE(m_ecdb.TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
+    EXPECT_TRUE(GetHelper().TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
 
     Utf8String actualProfileVersionStr;
     EXPECT_EQ(BE_SQLITE_ROW, m_ecdb.QueryProperty(actualProfileVersionStr, PROFILEVERSION_PROPSPEC)) << L"ECDb file is expected to contain an entry for the ECDb profile version in be_prop.";
@@ -94,7 +94,7 @@ TEST_F(ECDbTestFixture, CreateProfileFailsIfAlreadyCreated)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ecdbprofiletest2.ecdb"));
 
-    EXPECT_TRUE(m_ecdb.TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
+    EXPECT_TRUE(GetHelper().TableExists(PROFILE_TABLE)) << "ECDb profile table not found in ECDb file which was newly created.";
 
     //Drop a few tables
     EXPECT_EQ(BE_SQLITE_OK, m_ecdb.DropTable("ec_ClassMap"));

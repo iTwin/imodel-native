@@ -64,17 +64,25 @@ struct TestHelper
         Column GetPropertyMapColumn(AccessString const&) const;
         std::vector<Column> GetPropertyMapColumns(AccessString const& propAccessString) const { return GetPropertyMap(propAccessString).GetColumns(); }
 
-        Table GetTable(Utf8StringCR tableName) const;
+        //! Retrieves a mapped table. This is not equivalent to the physical tables in the ECDb file.
+        Table GetMappedTable(Utf8StringCR tableName) const;
 
-        std::vector<Utf8String> GetColumnNames(Utf8CP tableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, tableName); return std::vector<Utf8String>(cols.begin(), cols.end()); }
-        int GetColumnCount(Utf8CP tableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, tableName); return (int) cols.size(); }
-        bool IsForeignKeyColumn(Utf8CP tableName, Utf8CP foreignKeyColumn) const;
+        //! Checks whether a physical table with the specified name exists in the ECDb file
+        bool TableExists(Utf8CP dbTableName) const { return m_ecdb.TableExists(dbTableName); }
+        //! Checks whether a physical column with the specified name exists in the ECDb file
+        bool ColumnExists(Utf8CP dbTableName, Utf8CP dbColumnName) const { return m_ecdb.ColumnExists(dbTableName, dbColumnName); }
+        //! Retrieves the physical columns for the specified table from the ECDb file
+        std::vector<Utf8String> GetColumnNames(Utf8CP dbTableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, dbTableName); return std::vector<Utf8String>(cols.begin(), cols.end()); }
+        //! Retrieves the physical column count for the specified table from the ECDb file
+        int GetColumnCount(Utf8CP dbTableName) const { bvector<Utf8String> cols; m_ecdb.GetColumns(cols, dbTableName); return (int) cols.size(); }
+        //! Checks whether the specified physical column is part of a foreign key constraint in the specified physical table
+        bool IsForeignKeyColumn(Utf8CP dbTableName, Utf8CP foreignKeyColumn) const;
         
         //!logs the issues if there are any
         Utf8String GetDdl(Utf8CP entityName, Utf8CP entityType = "table") const;
         Utf8String GetIndexDdl(Utf8StringCR indexName) const { return GetDdl(indexName.c_str(), "index"); }
         bool IndexExists(Utf8StringCR indexName) const { return !GetDdl(indexName.c_str(), "index").empty(); }
-        std::vector<Utf8String> GetIndexNamesForTable(Utf8StringCR tableName) const;
+        std::vector<Utf8String> GetIndexNamesForTable(Utf8StringCR dbTableName) const;
     };
 
 END_ECDBUNITTESTS_NAMESPACE

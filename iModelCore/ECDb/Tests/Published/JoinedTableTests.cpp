@@ -3055,10 +3055,10 @@ TEST_F(JoinedTableECSqlStatementsTests, PolymorphicDelete)
     {
     SetUpNestedStructArrayDb();
 
-    ASSERT_TRUE(m_ecdb.TableExists("nsat_DerivedA"));
-    ASSERT_TRUE(m_ecdb.TableExists("nsat_DerivedB"));
-    ASSERT_FALSE(m_ecdb.TableExists("nsat_DoubleDerivedA"));
-    ASSERT_FALSE(m_ecdb.TableExists("nsat_DoubleDerivedC"));
+    ASSERT_TRUE(GetHelper().TableExists("nsat_DerivedA"));
+    ASSERT_TRUE(GetHelper().TableExists("nsat_DerivedB"));
+    ASSERT_FALSE(GetHelper().TableExists("nsat_DoubleDerivedA"));
+    ASSERT_FALSE(GetHelper().TableExists("nsat_DoubleDerivedC"));
 
     //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
     ECSqlStatement statement;

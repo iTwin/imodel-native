@@ -1380,7 +1380,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
 
-    ASSERT_TRUE(m_ecdb.TableExists(SCHEMAALIAS "_AHasB"));
+    ASSERT_TRUE(GetHelper().TableExists(SCHEMAALIAS "_AHasB"));
     ASSERT_FALSE(m_ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
    }
 
@@ -1421,7 +1421,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
-    ASSERT_TRUE(m_ecdb.TableExists(SCHEMAALIAS "_AHasB"));
+    ASSERT_TRUE(GetHelper().TableExists(SCHEMAALIAS "_AHasB"));
     ASSERT_TRUE(m_ecdb.ColumnExists(SCHEMAALIAS "_AHasB", "ECClassId"));
     }
 
@@ -1819,7 +1819,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, AddingPropertyToLinkTableSubclass)
                      </ECRelationshipClass>
                    </ECSchema>)xml")));
 
-    ASSERT_FALSE(m_ecdb.TableExists("LinkTableRelSub")) << "Link table subclassing always amounts to TablePerHierarachy";
+    ASSERT_FALSE(GetHelper().TableExists("LinkTableRelSub")) << "Link table subclassing always amounts to TablePerHierarachy";
 
     ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "ECInstanceId")));
     ASSERT_EQ(ExpectedColumn("ts_LinkTableRel","ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "LinkTableRel", "ECClassId")));

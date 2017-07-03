@@ -1543,9 +1543,9 @@ TEST_F(ECSqlStatementTestFixture, PolymorphicDelete_SharedTable)
     ASSERT_EQ(SUCCESS, SetupECDb("PolymorphicDeleteSharedTable.ecdb", SchemaItem::CreateForFile("NestedStructArrayTest.01.00.ecschema.xml")));
     NestedStructArrayTestSchemaHelper::PopulateNestedStructArrayDb(m_ecdb, true);
 
-    ASSERT_FALSE(m_ecdb.TableExists("nsat_DerivedA"));
-    ASSERT_FALSE(m_ecdb.TableExists("nsat_DoubleDerivedA"));
-    ASSERT_FALSE(m_ecdb.TableExists("nsat_DoubleDerivedC"));
+    ASSERT_FALSE(GetHelper().TableExists("nsat_DerivedA"));
+    ASSERT_FALSE(GetHelper().TableExists("nsat_DoubleDerivedA"));
+    ASSERT_FALSE(GetHelper().TableExists("nsat_DoubleDerivedC"));
 
     //Delete all Instances of the base class, all the structArrays and relationships should also be deleted.
     ECSqlStatement statement;

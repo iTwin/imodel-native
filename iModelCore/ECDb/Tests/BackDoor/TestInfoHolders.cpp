@@ -97,9 +97,9 @@ void PrintTo(Virtual virt, std::ostream* os)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(Column const& col, std::ostream* os)
     {
-    if (!col.IsValid())
+    if (!col.Exists())
         {
-        *os << "<invalid column>";
+        *os << "<column does not exist>";
         return;
         }
 
@@ -316,7 +316,7 @@ void PrintTo(std::vector<Column const*> const& cols, std::ostream* os)
 //+---------------+---------------+---------------+---------------+---------------+------
 bool ExpectedColumn::operator==(Column const& actual) const
     {
-    if (!actual.IsValid())
+    if (!actual.Exists())
         return false;
 
     return m_name.EqualsIAscii(actual.GetName()) &&
@@ -330,6 +330,24 @@ bool ExpectedColumn::operator==(Column const& actual) const
         (m_defaultConstraint.IsNull() || m_defaultConstraint.Value().EqualsIAscii(actual.GetDefaultConstraint())) &&
         (m_collationConstraint.IsNull() || m_collationConstraint.Value() == actual.GetCollationConstraint()) &&
         (m_ordinalInPrimaryKey.IsNull() || m_ordinalInPrimaryKey == actual.GetOrdinalInPrimaryKey());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+bool operator==(ExpectedColumns const& lhs, std::vector<Column> const& rhs)
+    {
+    const size_t lhsSize = lhs.size();
+    if (lhsSize != rhs.size())
+        return false;
+
+    for (size_t i = 0; i < lhsSize; i++)
+        {
+        if (lhs[i] != rhs[i])
+            return false;
+        }
+
+    return true;
     }
 
 //---------------------------------------------------------------------------------------
@@ -404,6 +422,7 @@ void PrintTo(ExpectedColumns const& expectedCols, std::ostream* os)
 
     *os << "}";
     }
+
 
 
 //*****************************************************************
@@ -533,9 +552,9 @@ void PrintTo(MapStrategy mapStrategy, std::ostream* os)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(MapStrategyInfo const& mapStrategy, std::ostream* os)
     {
-    if (!mapStrategy.IsValid())
+    if (!mapStrategy.Exists())
         {
-        *os << "Invalid MapStrategy";
+        *os << "Invalid MapStrategy (class map does not exist)";
         return;
         }
 
@@ -592,244 +611,6 @@ void PrintTo(MapStrategyInfo::TablePerHierarchyInfo const& tphInfo, std::ostream
                 return;
         }
     }
-
-/*
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-void MapContext::LoadTables()
-    {
-    if (!m_tables.empty())
-        return;
-
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(R"sql(
-                SELECT t.Name, 
-                       t.Type, 
-                       tp.Name ParentTable, 
-                       s.Name ExclusiveRootSchema, 
-                       c.Name ExclusiveRootClass
-                FROM   ec_Table t
-                       LEFT JOIN ec_Table tp ON tp.Id = t.ParentTableId
-                       LEFT JOIN ec_Class c ON c.Id = t.ExclusiveRootClassId
-                       LEFT JOIN ec_Schema s ON s.Id = c.SchemaId
-                ORDER  BY t.Name)sql");
-    ASSERT_TRUE(stmt != nullptr);
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        ASSERT_FALSE(stmt->IsColumnNull(0)) << stmt->GetSql();
-        Utf8CP tableName = stmt->GetValueText(0);
-        Table::Type type = (Table::Type) stmt->GetValueInt(1);
-        Utf8CP parentTableName = !stmt->IsColumnNull(2) ? stmt->GetValueText(2) : nullptr;
-        Utf8CP exclusiveRootSchemaName = !stmt->IsColumnNull(3) ? stmt->GetValueText(3) : nullptr;
-        Utf8CP exclusiveRootClassName = !stmt->IsColumnNull(4) ? stmt->GetValueText(4) : nullptr;
-
-        std::unique_ptr<Table> table = std::make_unique<Table>(tableName, type, parentTableName, exclusiveRootSchemaName, exclusiveRootClassName);
-        ASSERT_EQ(SUCCESS, LoadColumns(*table));
-        m_tables[tableName] = std::move(table);
-        }
-
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus MapContext::LoadColumns(Table& table) const
-    {
-    if (!table.GetColumns().empty())
-        return ERROR;
-
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(R"sql(
-                        SELECT c.Name, c.Type, c.IsVirtual, c.Ordinal, 
-                               c.NotNullConstraint, c.UniqueConstraint, c.CheckConstraint, c.DefaultConstraint, 
-                               CASE c.CollationConstraint WHEN 0 THEN 'Unset' WHEN 1 THEN 'Binary' WHEN 2 THEN 'NoCase' WHEN 3 THEN 'RTrim' ELSE '<err>' END, 
-                               c.OrdinalInPrimaryKey, c.ColumnKind
-                        FROM ec_Column c
-                        INNER JOIN ec_Table t ON t.Id = c.TableId AND t.Name=? 
-                        ORDER BY c.TableId, c.Id;)sql");
-
-    if (stmt == nullptr)
-        return ERROR;
-
-    stmt->BindText(1, table.GetName(), Statement::MakeCopy::No);
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        EXPECT_FALSE(stmt->IsColumnNull(0)) << stmt->GetSql();
-        std::unique_ptr<Column> c = std::unique_ptr<Column>(new Column(table, stmt->GetValueText(0)));
-
-        if (!stmt->IsColumnNull(1)) 
-            c->m_type = (Column::Type) stmt->GetValueInt(1);
-
-        if (!stmt->IsColumnNull(2)) 
-            c->m_isVirtual = stmt->GetValueBoolean(2);
-
-        if (!stmt->IsColumnNull(3)) 
-            c->m_ordinal = stmt->GetValueInt(3);
-
-        if (!stmt->IsColumnNull(4)) 
-            c->m_notNullConstraint = stmt->GetValueBoolean(4);
-
-        if (!stmt->IsColumnNull(5)) 
-            c->m_uniqueConstraint = stmt->GetValueBoolean(5);
-
-        if (!stmt->IsColumnNull(6)) 
-            c->m_checkConstraint = stmt->GetValueText(6);
-
-        if (!stmt->IsColumnNull(7)) 
-            c->m_defaultConstraint = stmt->GetValueText(7);
-
-        if (!stmt->IsColumnNull(8)) 
-            c->m_collationConstraint = stmt->GetValueText(8);
-
-        if (!stmt->IsColumnNull(9)) 
-            c->m_ordinalInPrimaryKey = stmt->GetValueInt(9);
-
-        table.AddColumn(std::move(c));
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-MapContext::ClassMap const* MapContext::LoadClassMap(Utf8CP schemaName, Utf8CP className)
-    {
-    Utf8String qualifiedName(schemaName);
-    qualifiedName.append(":").append(className);
-    auto itor = m_classMaps.find(qualifiedName);
-    if (itor != m_classMaps.end())
-        return itor->second.get();
-
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(R"sql(
-                SELECT  [PP].[AccessString], 
-                        [T].[Name] [Table], 
-                        [C].[Name] [Column]
-                FROM   [ec_ClassMap] [CM]
-                        INNER JOIN [ec_PropertyMap] [PM] ON [PM].[ClassId] = [CM].[ClassId]
-                        INNER JOIN [ec_PropertyPath] [PP] ON [PP].[Id] = [PM].[PropertyPathId]
-                        INNER JOIN [ec_Class] [CL] ON [CL].[Id] = [PM].[ClassId]
-                        INNER JOIN [ec_Schema] [S] ON [S].[Id] = [CL].[SchemaId]
-                        INNER JOIN [ec_Column] [C] ON [C].[Id] = [PM].[ColumnId]
-                        INNER JOIN [ec_Table] [T] ON [T].[Id] = [C].[TableId]
-                WHERE  S.Name = ? AND CL.Name=?
-                ORDER  BY [PM].[Id];)sql");
-    if (stmt == nullptr)
-        {
-        EXPECT_TRUE(stmt != nullptr);
-        return nullptr;
-        }
-
-    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
-    stmt->BindText(2, className, Statement::MakeCopy::No);
-
-    std::unique_ptr<ClassMap> cm = std::unique_ptr<ClassMap>(new ClassMap());
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        Utf8CP accessString = stmt->GetValueText(0);;
-        Column const* column = FindColumn(stmt->GetValueText(1), stmt->GetValueText(2));
-        if (auto pm = cm->FindPropertyMap(accessString))
-            const_cast<PropertyMap*>(pm)->AddColumn(*column);
-        else
-            cm->AddPropertyMap(std::make_unique<PropertyMap>(*cm, *column, Utf8String(accessString)));
-        }
-
-    if (cm->GetPropertyMaps().empty())
-        return nullptr;
-
-    ClassMap* p = cm.get();
-    m_classMaps[p->GetFullName()] = std::move(cm);
-    return p;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-MapContext::PropertyMap const* MapContext::FindPropertyMap(AccessString const& accessString)
-    {
-    ClassMap const* cm = FindClassMap(accessString.m_schemaNameOrAlias.c_str(), accessString.m_className.c_str());
-    if (cm == nullptr)
-        return nullptr;
-
-    return cm->FindPropertyMap(accessString.m_propAccessString.c_str());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-MapContext::PropertyMap const* MapContext::FindPropertyMap(AccessString const& accessString, Utf8CP table)
-    {
-    PropertyMap const* p = FindPropertyMap(accessString);
-    if (p == nullptr)
-        return nullptr;
-
-    for (Column const* column : p->GetColumns())
-        if (column->GetTable().GetName().EqualsI(table))
-            return p;
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-MapContext::PropertyMap const* MapContext::FindPropertyMap(AccessString const& accessString, Utf8CP table, Utf8CP column)
-    {
-    PropertyMap const* p = FindPropertyMap(accessString, table);
-    if (p == nullptr)
-        return nullptr;
-
-    for (Column const* col : p->GetColumns())
-        if (col->GetTable().GetName().EqualsI(table) && col->GetName().EqualsI(column))
-            return p;
-
-    return p;
-    }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-MapContext::ClassMap const* MapContext::FindClassMap(Utf8CP schemaName, Utf8CP className)
-    {
-    return LoadClassMap(schemaName, className);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-MapContext::Column const* MapContext::FindColumn(Utf8CP tableName, Utf8CP columnName)
-    {
-    Table const* table = FindTable(tableName);
-    if (table == nullptr)
-        return nullptr;
-
-    return table->FindColumn(columnName);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-MapContext::Table const* MapContext::FindTable(Utf8CP tableName)
-    {
-    if (m_tables.empty())
-        LoadTables();
-
-    auto itor = m_tables.find(tableName);
-    if (itor != m_tables.end())
-        return itor->second.get();
-
-    return nullptr;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                      Affan.Khan                       05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-void MapContext::Clear()
-    {
-    m_classMaps.clear();
-    m_tables.clear();
-    }
-
-*/
 
 END_ECDBUNITTESTS_NAMESPACE
 

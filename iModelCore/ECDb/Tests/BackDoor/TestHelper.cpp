@@ -212,7 +212,7 @@ MapStrategyInfo TestHelper::GetMapStrategy(ECClassId classId) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                      Affan.Khan                       05/17
 //+---------------+---------------+---------------+---------------+---------------+------
-Table TestHelper::GetTable(Utf8StringCR tableName) const
+Table TestHelper::GetMappedTable(Utf8StringCR tableName) const
     {
     CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
         R"sql(SELECT t.Id, t.Type, parent.Name, t.ExclusiveRootClassId

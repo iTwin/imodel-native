@@ -100,8 +100,8 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalRootEntityClasses)
                 <ECProperty propertyName="P2" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml")}));
-    ASSERT_TRUE(m_ecdb.TableExists("master_ClassA"));
-    ASSERT_TRUE(m_ecdb.TableExists("s1_ClassB"));
+    ASSERT_TRUE(GetHelper().TableExists("master_ClassA"));
+    ASSERT_TRUE(GetHelper().TableExists("s1_ClassB"));
     }
 
     {
@@ -185,12 +185,12 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalRootEntityClasses)
 
         </ECSchema>)xml")}));
 
-    ASSERT_TRUE(m_ecdb.TableExists("master_MasterA"));
-    ASSERT_TRUE(m_ecdb.TableExists("s1_ClassB"));
-    ASSERT_TRUE(m_ecdb.TableExists("s1_MyLinkTableRel"));
-    ASSERT_FALSE(m_ecdb.TableExists("s1_MyCA"));
-    ASSERT_FALSE(m_ecdb.TableExists("s1_MyStruct"));
-    ASSERT_FALSE(m_ecdb.TableExists("s1_MyMixin"));
+    ASSERT_TRUE(GetHelper().TableExists("master_MasterA"));
+    ASSERT_TRUE(GetHelper().TableExists("s1_ClassB"));
+    ASSERT_TRUE(GetHelper().TableExists("s1_MyLinkTableRel"));
+    ASSERT_FALSE(GetHelper().TableExists("s1_MyCA"));
+    ASSERT_FALSE(GetHelper().TableExists("s1_MyStruct"));
+    ASSERT_FALSE(GetHelper().TableExists("s1_MyMixin"));
 
     ASSERT_EQ(ExpectedColumns({ExpectedColumn("s1_ClassB", "B1Id"),
                               ExpectedColumn("s1_ClassB","B1RelECClassId", Virtual::Yes)}),
@@ -419,9 +419,9 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalLinkTables)
            </ECRelationshipClass>
           </ECSchema>)xml")}));
 
-    ASSERT_TRUE(m_ecdb.TableExists("core_CoreA"));
-    ASSERT_TRUE(m_ecdb.TableExists("core_CoreB"));
-    ASSERT_TRUE(m_ecdb.TableExists("s1_MyLinkTableRel"));
+    ASSERT_TRUE(GetHelper().TableExists("core_CoreA"));
+    ASSERT_TRUE(GetHelper().TableExists("core_CoreB"));
+    ASSERT_TRUE(GetHelper().TableExists("s1_MyLinkTableRel"));
     }
 
     {
@@ -519,11 +519,11 @@ TEST_F(SchemaPolicyTestFixture, NoAdditionalLinkTables)
            </ECRelationshipClass>
         </ECSchema>)xml")));
 
-    ASSERT_TRUE(m_ecdb.TableExists("core_CoreA"));
-    ASSERT_TRUE(m_ecdb.TableExists("core_CoreB"));
-    ASSERT_TRUE(m_ecdb.TableExists("core_MyLinkTableRel"));
-    ASSERT_TRUE(m_ecdb.TableExists("s1_MyEntity"));
-    ASSERT_FALSE(m_ecdb.TableExists("s1_MyLinkTableSubRel"));
+    ASSERT_TRUE(GetHelper().TableExists("core_CoreA"));
+    ASSERT_TRUE(GetHelper().TableExists("core_CoreB"));
+    ASSERT_TRUE(GetHelper().TableExists("core_MyLinkTableRel"));
+    ASSERT_TRUE(GetHelper().TableExists("s1_MyEntity"));
+    ASSERT_FALSE(GetHelper().TableExists("s1_MyLinkTableSubRel"));
     }
 
         {

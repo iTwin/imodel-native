@@ -13,6 +13,9 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct DbMappingTestFixture : ECDbTestFixture {};
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MultiSessionImportWithMixin)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("MultiSessionImportWithMixin.ecdb", SchemaItem(
@@ -205,44 +208,6 @@ TEST_F(DbMappingTestFixture, Simple_MixIn)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT M1, M2, M3 FROM ts.MyMixin")); stmt.Finalize();
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                  Affan.Khan                          05/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, SimpleTest)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECClassIdColumnVirtuality.ecdb", SchemaItem(
-        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECEntityClass typeName="SimpleTable" modifier="Abstract">
-                <ECProperty propertyName="Prop1" typeName="string" />
-            </ECEntityClass>
-          </ECSchema>)xml")));
-
-    /*ASSERT_EXISTS_CLASSMAP(ctx, "TestSchema", "SimpleTable");
-    ASSERT_NOTEXISTS_CLASSMAP(ctx, "TestSchemaBoo", "SimpleTableBoo");
-    ASSERT_EXISTS_PROPERTYMAP(ctx, AccessString("TestSchema", "SimpleTable", "Prop1"));
-    ASSERT_NOTEXISTS_PROPERTYMAP(ctx, AccessString("TestSchemaBoo", "SimpleTableBoo", "Prop1Boo"));
-    ASSERT_EXISTS_PROPERTYMAP_TABLE(ctx, AccessString("TestSchema", "SimpleTable", "Prop1"), "ts_SimpleTable");
-    ASSERT_NOTEXISTS_PROPERTYMAP_TABLE(ctx, AccessString("TestSchemaBoo", "SimpleTableBoo", "Prop1Boo"), "ts_SimpleTableBoo");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "SimpleTable", "Prop1"), "ts_SimpleTable", "Prop1");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "SimpleTable", "ECInstanceId"), "ts_SimpleTable", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "SimpleTable", "ECClassId"), "ts_SimpleTable", "ECClassId");
-
-    ASSERT_PROPERTYMAP_COUNT(ctx, 3, "TestSchema", "SimpleTable");
-
-    ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_SimpleTable");
-    ASSERT_COLUMN_COUNT(ctx, 3, "ts_SimpleTable");
-
-    ASSERT_COLUMN_IS_NOT_VIRTUAL(ctx, "ts_SimpleTable", "Prop1");
-    ASSERT_COLUMN_TYPE(ctx, MapContext::Column::Type::Text, "ts_SimpleTable", "Prop1");
-
-    ASSERT_COLUMN_TYPE(ctx, MapContext::Column::Type::Integer, "ts_SimpleTable", "Id");
-    ASSERT_COLUMN_IS_NOT_VIRTUAL(ctx, "ts_SimpleTable", "Id");
-
-    ASSERT_COLUMN_IS_VIRTUAL(ctx, "ts_SimpleTable", "ECClassId");
-    ASSERT_COLUMN_TYPE(ctx, MapContext::Column::Type::Integer, "ts_SimpleTable", "ECClassId");*/
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -322,56 +287,50 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Max_15)
                 </ECEntityClass>
             </ECSchema>)xml")));
 
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IA");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IP");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_BaseClass");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Overflow, "ts_BaseClass_Overflow");
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IA").GetType());
+    ASSERT_EQ(11 + 2, GetHelper().GetColumnCount("ts_IA"));
 
-    //ASSERT_COLUMN_COUNT(ctx, 11 + 2, "ts_IA");
-    //ASSERT_COLUMN_COUNT(ctx, 25 + 2, "ts_IP");
-    //ASSERT_COLUMN_COUNT(ctx, 15 + 2 + 1, "ts_BaseClass");
-    //ASSERT_COLUMN_COUNT(ctx, 21 + 2, "ts_BaseClass_Overflow");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "M_S"), "ts_BaseClass", "M_S");
-    ////SharedColumn
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "I"), "ts_BaseClass", "ps1");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "L"), "ts_BaseClass", "ps2");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "B"), "ts_BaseClass", "ps3");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "BOOL"), "ts_BaseClass", "ps4");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P2D.X"), "ts_BaseClass", "ps5");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P2D.Y"), "ts_BaseClass", "ps6");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P3D.X"), "ts_BaseClass", "ps7");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P3D.Y"), "ts_BaseClass", "ps8");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P3D.Z"), "ts_BaseClass", "ps9");
-    ////Struct is pused into overflow
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Alpha"), "ts_BaseClass_Overflow", "os1");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Beta"), "ts_BaseClass_Overflow", "os2");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Gamma"), "ts_BaseClass_Overflow", "os3");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Delta"), "ts_BaseClass_Overflow", "os4");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Epsilon"), "ts_BaseClass_Overflow", "os5");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Zeta"), "ts_BaseClass_Overflow", "os6");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Eta"), "ts_BaseClass_Overflow", "os7");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Theta"), "ts_BaseClass_Overflow", "os8");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Iota"), "ts_BaseClass_Overflow", "os9");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Kappa"), "ts_BaseClass_Overflow", "os10");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Lamda"), "ts_BaseClass_Overflow", "os11");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Mu"), "ts_BaseClass_Overflow", "os12");
-    ////Back to primary table
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "G"), "ts_BaseClass", "ps10");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "S"), "ts_BaseClass", "ps11");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "DT"), "ts_BaseClass", "ps12");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "D"), "ts_BaseClass", "ps13");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArS"), "ts_BaseClass", "ps14");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArI"), "ts_BaseClass", "ps15");
-    ////back to overflow
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArL"), "ts_BaseClass_Overflow", "os13");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArD"), "ts_BaseClass_Overflow", "os14");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArDT"), "ts_BaseClass_Overflow", "os15");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArB"), "ts_BaseClass_Overflow", "os16");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArBOOL"), "ts_BaseClass_Overflow", "os17");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArP2D"), "ts_BaseClass_Overflow", "os18");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArP3D"), "ts_BaseClass_Overflow", "os19");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArG"), "ts_BaseClass_Overflow", "os20");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArST"), "ts_BaseClass_Overflow", "os21");
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IP").GetType());
+    ASSERT_EQ(25 + 2, GetHelper().GetColumnCount("ts_IP"));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_BaseClass").GetType());
+    ASSERT_EQ(15 + 2 + 1, GetHelper().GetColumnCount("ts_BaseClass"));
+
+    ASSERT_EQ(Table::Type::Overflow, GetHelper().GetMappedTable("ts_BaseClass_Overflow").GetType());
+    ASSERT_EQ(21 + 2, GetHelper().GetColumnCount("ts_BaseClass_Overflow"));
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "I")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "L")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "B")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps4"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "BOOL")));
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass", "ps5"}, {"ts_BaseClass", "ps6"}}), GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "P2D")));
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass", "ps7"}, {"ts_BaseClass", "ps8"}, {"ts_BaseClass", "ps9"}}), GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "P3D")));
+
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass_Overflow", "os1"}, {"ts_BaseClass_Overflow", "os2"}, {"ts_BaseClass_Overflow", "os3"},
+                                {"ts_BaseClass_Overflow", "os4"}, {"ts_BaseClass_Overflow", "os5"}, {"ts_BaseClass_Overflow", "os6"},
+                                {"ts_BaseClass_Overflow", "os7"}, {"ts_BaseClass_Overflow", "os8"}, {"ts_BaseClass_Overflow", "os9"},
+                                {"ts_BaseClass_Overflow", "os10"}, {"ts_BaseClass_Overflow", "os11"}, {"ts_BaseClass_Overflow", "os12"}}), 
+                        GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "ST")));
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os8"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ST.Theta")));
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps10"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "G")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps11"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "S")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps12"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "DT")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps13"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "D")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps14"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArS")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps15"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArI")));
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os13"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArL")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os14"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArD")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os15"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArDT")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os16"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArB")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os17"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArBOOL")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os18"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArP2D")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os19"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArP3D")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os20"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArG")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os21"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArST")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -452,52 +411,50 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Default)
             </ECEntityClass>
         </ECSchema>)xml")));
 
-   /* ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IA");
-    ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IP");
-    ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_BaseClass");
-    ASSERT_NOTEXISTS_TABLE(ctx, "ts_BaseClass_Overflow");
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IA").GetType());
+    ASSERT_EQ(11 + 2, GetHelper().GetColumnCount("ts_IA"));
 
-    ASSERT_COLUMN_COUNT(ctx, 11 + 2, "ts_IA");
-    ASSERT_COLUMN_COUNT(ctx, 25 + 2, "ts_IP");
-    ASSERT_COLUMN_COUNT(ctx, 39, "ts_BaseClass");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ECInstanceId"), "ts_BaseClass", "Id");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ECClassId"), "ts_BaseClass", "ECClassId");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "M_S"), "ts_BaseClass", "M_S");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "I"), "ts_BaseClass", "ps1");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "L"), "ts_BaseClass", "ps2");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "B"), "ts_BaseClass", "ps3");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "BOOL"), "ts_BaseClass", "ps4");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P2D.X"), "ts_BaseClass", "ps5");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P2D.Y"), "ts_BaseClass", "ps6");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P3D.X"), "ts_BaseClass", "ps7");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P3D.Y"), "ts_BaseClass", "ps8");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P3D.Z"), "ts_BaseClass", "ps9");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Alpha"), "ts_BaseClass", "ps10");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Beta"), "ts_BaseClass", "ps11");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Gamma"), "ts_BaseClass", "ps12");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Delta"), "ts_BaseClass", "ps13");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Epsilon"), "ts_BaseClass", "ps14");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Zeta"), "ts_BaseClass", "ps15");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Eta"), "ts_BaseClass", "ps16");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Theta"), "ts_BaseClass", "ps17");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Iota"), "ts_BaseClass", "ps18");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Kappa"), "ts_BaseClass", "ps19");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Lamda"), "ts_BaseClass", "ps20");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Mu"), "ts_BaseClass", "ps21");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "G"), "ts_BaseClass", "ps22");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "S"), "ts_BaseClass", "ps23");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "DT"), "ts_BaseClass", "ps24");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "D"), "ts_BaseClass", "ps25");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArS"), "ts_BaseClass", "ps26");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArI"), "ts_BaseClass", "ps27");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArL"), "ts_BaseClass", "ps28");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArD"), "ts_BaseClass", "ps29");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArDT"), "ts_BaseClass", "ps30");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArB"), "ts_BaseClass", "ps31");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArBOOL"), "ts_BaseClass", "ps32");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArP2D"), "ts_BaseClass", "ps33");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArP3D"), "ts_BaseClass", "ps34");
-    ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArG"), "ts_BaseClass", "ps35");*/
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IP").GetType());
+    ASSERT_EQ(25 + 2, GetHelper().GetColumnCount("ts_IP"));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_BaseClass").GetType());
+    ASSERT_EQ(39, GetHelper().GetColumnCount("ts_BaseClass"));
+
+    ASSERT_FALSE(GetHelper().GetMappedTable("ts_BaseClass_Overflow").Exists());
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "I")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "L")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "B")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps4"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "BOOL")));
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass", "ps5"}, {"ts_BaseClass", "ps6"}}), GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "P2D")));
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass", "ps7"}, {"ts_BaseClass", "ps8"}, {"ts_BaseClass", "ps9"}}), GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "P3D")));
+
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass", "ps10"}, {"ts_BaseClass", "ps11"}, {"ts_BaseClass", "ps12"},
+    {"ts_BaseClass", "ps13"}, {"ts_BaseClass", "ps14"}, {"ts_BaseClass", "ps15"},
+    {"ts_BaseClass", "ps16"}, {"ts_BaseClass", "ps17"}, {"ts_BaseClass", "ps18"},
+    {"ts_BaseClass", "ps19"}, {"ts_BaseClass", "ps20"}, {"ts_BaseClass", "ps21"}}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "ST")));
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps17"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ST.Theta")));
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps22"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "G")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps23"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "S")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps24"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "DT")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps25"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "D")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps26"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArS")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps27"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArI")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps28"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArL")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps29"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArD")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps30"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArDT")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps31"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArB")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps32"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArBOOL")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps33"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArP2D")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps34"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArP3D")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps35"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArG")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ps36"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArST")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -579,52 +536,52 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_0)
         </ECEntityClass>
     </ECSchema>)xml")));
 
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IA");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_IP");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_BaseClass");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Overflow, "ts_BaseClass_Overflow");
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IA").GetType());
+    ASSERT_EQ(11 + 2, GetHelper().GetColumnCount("ts_IA"));
 
-    //ASSERT_COLUMN_COUNT(ctx, 11 + 2, "ts_IA");
-    //ASSERT_COLUMN_COUNT(ctx, 25 + 2, "ts_IP");
-    //ASSERT_COLUMN_COUNT(ctx, 3, "ts_BaseClass");
-    //ASSERT_COLUMN_COUNT(ctx, 38, "ts_BaseClass_Overflow");
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IP").GetType());
+    ASSERT_EQ(25 + 2, GetHelper().GetColumnCount("ts_IP"));
 
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "M_S"), "ts_BaseClass", "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "I"), "ts_BaseClass_Overflow", "os1");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "L"), "ts_BaseClass_Overflow", "os2");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "B"), "ts_BaseClass_Overflow", "os3");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "BOOL"), "ts_BaseClass_Overflow", "os4");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P2D.X"), "ts_BaseClass_Overflow", "os5");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P2D.Y"), "ts_BaseClass_Overflow", "os6");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P3D.X"), "ts_BaseClass_Overflow", "os7");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P3D.Y"), "ts_BaseClass_Overflow", "os8");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "P3D.Z"), "ts_BaseClass_Overflow", "os9");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Alpha"), "ts_BaseClass_Overflow", "os10");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Beta"), "ts_BaseClass_Overflow", "os11");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Gamma"), "ts_BaseClass_Overflow", "os12");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Delta"), "ts_BaseClass_Overflow", "os13");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Epsilon"), "ts_BaseClass_Overflow", "os14");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Zeta"), "ts_BaseClass_Overflow", "os15");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Eta"), "ts_BaseClass_Overflow", "os16");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Theta"), "ts_BaseClass_Overflow", "os17");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Iota"), "ts_BaseClass_Overflow", "os18");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Kappa"), "ts_BaseClass_Overflow", "os19");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Lamda"), "ts_BaseClass_Overflow", "os20");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ST.Mu"), "ts_BaseClass_Overflow", "os21");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "G"), "ts_BaseClass_Overflow", "os22");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "S"), "ts_BaseClass_Overflow", "os23");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "DT"), "ts_BaseClass_Overflow", "os24");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "D"), "ts_BaseClass_Overflow", "os25");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArS"), "ts_BaseClass_Overflow", "os26");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArI"), "ts_BaseClass_Overflow", "os27");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArL"), "ts_BaseClass_Overflow", "os28");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArD"), "ts_BaseClass_Overflow", "os29");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArDT"), "ts_BaseClass_Overflow", "os30");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArB"), "ts_BaseClass_Overflow", "os31");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArBOOL"), "ts_BaseClass_Overflow", "os32");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArP2D"), "ts_BaseClass_Overflow", "os33");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArP3D"), "ts_BaseClass_Overflow", "os34");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString("TestSchema", "ChildClass", "ArG"), "ts_BaseClass_Overflow", "os35");
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_BaseClass").GetType());
+    ASSERT_EQ(3, GetHelper().GetColumnCount("ts_BaseClass"));
+
+    ASSERT_EQ(Table::Type::Overflow, GetHelper().GetMappedTable("ts_BaseClass_Overflow").GetType());
+    ASSERT_EQ(38, GetHelper().GetColumnCount("ts_BaseClass_Overflow"));
+
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "I")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "L")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os3"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "B")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os4"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "BOOL")));
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass_Overflow", "os5"}, {"ts_BaseClass_Overflow", "os6"}}), GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "P2D")));
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass_Overflow", "os7"}, {"ts_BaseClass_Overflow", "os8"}, {"ts_BaseClass_Overflow", "os9"}}), GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "P3D")));
+
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass_Overflow", "os10"}, {"ts_BaseClass_Overflow", "os11"}, {"ts_BaseClass_Overflow", "os12"},
+    {"ts_BaseClass_Overflow", "os13"}, {"ts_BaseClass_Overflow", "os14"}, {"ts_BaseClass_Overflow", "os15"},
+    {"ts_BaseClass_Overflow", "os16"}, {"ts_BaseClass_Overflow", "os17"}, {"ts_BaseClass_Overflow", "os18"},
+    {"ts_BaseClass_Overflow", "os19"}, {"ts_BaseClass_Overflow", "os20"}, {"ts_BaseClass_Overflow", "os21"}}),
+              GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "ST")));
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os17"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ST.Theta")));
+
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os22"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "G")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os23"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "S")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os24"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "DT")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os25"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "D")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os26"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArS")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os27"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArI")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os28"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArL")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os29"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArD")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os30"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArDT")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os31"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArB")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os32"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArBOOL")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os33"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArP2D")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os34"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArP3D")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os35"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArG")));
+    ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os36"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ArST")));
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
@@ -678,35 +635,38 @@ TEST_F(DbMappingTestFixture, SimpleTree_TPH_JT)
                 </ECEntityClass>
             </ECSchema>)xml")));
 
-    //Utf8CP testSchema = "TestSchema";
-    ////==================================================================================
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_M");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "M", "ECInstanceId"), "ts_M", "Id");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "M", "ECClassId"), "ts_M", "ECClassId");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "M", "M_S"), "ts_M", "M_S");
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_M").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_M", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "M", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "M", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "M", "M_S")));
 
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Joined, "ts_ML");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "ML", "ML_S"), "ts_ML", "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "L", "ML_S"), "ts_ML", "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "L", "L_S"), "ts_ML", "L_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "ML_S"), "ts_ML", "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "L_S"), "ts_ML", "L_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "LL_S"), "ts_ML", "LL_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "ML_S"), "ts_ML", "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "L_S"), "ts_ML", "L_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "LR_S"), "ts_ML", "LR_S");
 
-    ////==================================================================================
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Joined, "ts_MR");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "MR", "MR_S"), "ts_MR", "MR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "R", "MR_S"), "ts_MR", "MR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "R", "R_S"), "ts_MR", "R_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "MR_S"), "ts_MR", "MR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "R_S"), "ts_MR", "R_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "RL_S"), "ts_MR", "RL_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "MR_S"), "ts_MR", "MR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "R_S"), "ts_MR", "R_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "RR_S"), "ts_MR", "RR_S");
+    ASSERT_EQ(Table::Type::Joined, GetHelper().GetMappedTable("ts_ML").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_ML", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ML", "ML_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_ML", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "L", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_ML", "L_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "L", "L_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_ML", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_ML", "L_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "L_S")));
+    ASSERT_EQ(ExpectedColumn("ts_ML", "LL_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "LL_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_ML", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_ML", "L_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "L_S")));
+    ASSERT_EQ(ExpectedColumn("ts_ML", "LR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "LR_S")));
+
+    ASSERT_EQ(Table::Type::Joined, GetHelper().GetMappedTable("ts_MR").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_MR", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "MR", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_MR", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "R", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_MR", "R_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "R", "R_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_MR", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_MR", "R_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "R_S")));
+    ASSERT_EQ(ExpectedColumn("ts_MR", "RL_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "RL_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_MR", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_MR", "R_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "R_S")));
+    ASSERT_EQ(ExpectedColumn("ts_MR", "RR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "RR_S")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -760,40 +720,41 @@ TEST_F(DbMappingTestFixture, SimpleTree_TPH)
                 </ECEntityClass>
             </ECSchema>)xml")));
 
-    //Utf8CP testSchema = "TestSchema";
-    //Utf8CP tableName = "ts_M";
-    ////==================================================================================
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, tableName);
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "M", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "ML", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "ML", "ML_S"), tableName, "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "L", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "L", "ML_S"), tableName, "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "L", "L_S"), tableName, "L_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "ML_S"), tableName, "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "L_S"), tableName, "L_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "LL_S"), tableName, "LL_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "ML_S"), tableName, "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "L_S"), tableName, "L_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "LR_S"), tableName, "LR_S");
-    ////==================================================================================
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "M", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "MR", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "MR", "MR_S"), tableName, "MR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "R", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "R", "MR_S"), tableName, "MR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "R", "R_S"), tableName, "R_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "MR_S"), tableName, "MR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "R_S"), tableName, "R_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "RL_S"), tableName, "RL_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "M_S"), tableName, "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "MR_S"), tableName, "mR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "R_S"), tableName, "R_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "RR_S"), tableName, "RR_S");
-    ////==================================================================================
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_M").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "M", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ML", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ML", "ML_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "L", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "L", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "L_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "L", "L_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "L_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "L_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "LL_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "LL_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "L_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "L_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "LR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "LR_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "MR", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "MR", "MR_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "R", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "R", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "R_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "R", "R_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "R_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "R_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "RL_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "RL_S")));
+
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "R_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "R_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "RR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "RR_S")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -840,47 +801,51 @@ TEST_F(DbMappingTestFixture, SimpleTree)
                     <ECProperty propertyName="RR_S" typeName="string" />
                 </ECEntityClass>
             </ECSchema>)xml")));
-    //const Utf8CP testSchema = "TestSchema";
-    ////==================================================================================
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_M");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "M", "M_S"), "ts_M", "M_S");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_ML");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "ML", "M_S"), "ts_ML", "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "ML", "ML_S"), "ts_ML", "ML_S");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_L");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "L", "M_S"), "ts_L", "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "L", "ML_S"), "ts_L", "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "L", "L_S"), "ts_L", "L_S");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_LL");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "M_S"), "ts_LL", "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "ML_S"), "ts_LL", "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "L_S"), "ts_LL", "L_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LL", "LL_S"), "ts_LL", "LL_S");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_LR");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "M_S"), "ts_LR", "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "ML_S"), "ts_LR", "ML_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "L_S"), "ts_LR", "L_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "LR", "LR_S"), "ts_LR", "LR_S");
-    ////==================================================================================
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "M", "M_S"), "ts_M", "M_S");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Virtual, "ts_MR");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "MR", "M_S"), "ts_MR", "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "MR", "MR_S"), "ts_MR", "MR_S");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_R");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "R", "M_S"), "ts_R", "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "R", "MR_S"), "ts_R", "MR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "R", "R_S"), "ts_R", "R_S");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_RL");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "M_S"), "ts_RL", "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "MR_S"), "ts_RL", "MR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "R_S"), "ts_RL", "R_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RL", "RL_S"), "ts_RL", "RL_S");
-    //ASSERT_TABLE_TYPE(ctx, MapContext::Table::Type::Primary, "ts_RR");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "M_S"), "ts_RR", "M_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "MR_S"), "ts_RR", "mR_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "R_S"), "ts_RR", "R_S");
-    //ASSERT_EXISTS_PROPERTYMAP_COLUMN(ctx, AccessString(testSchema, "RR", "RR_S"), "ts_RR", "RR_S");
-    ////==================================================================================
+
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_M").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "M", "M_S")));
+
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_ML").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_ML", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ML", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_ML", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ML", "ML_S")));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_L").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_L", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "L", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_L", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "L", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_L", "L_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "L", "L_S")));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_LL").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_LL", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_LL", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_LL", "L_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "L_S")));
+    ASSERT_EQ(ExpectedColumn("ts_LL", "LL_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LL", "LL_S")));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_LR").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_LR", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_LR", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_LR", "L_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "L_S")));
+    ASSERT_EQ(ExpectedColumn("ts_LR", "LR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "LR_S")));
+
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_MR").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_MR", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "MR", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_MR", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "MR", "MR_S")));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_R").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_R", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "R", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_R", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "R", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_R", "R_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "R", "R_S")));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_RL").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_RL", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_RL", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_RL", "R_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "R_S")));
+    ASSERT_EQ(ExpectedColumn("ts_RL", "RL_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RL", "RL_S")));
+
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_RR").GetType());
+    ASSERT_EQ(ExpectedColumn("ts_RR", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_RR", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_RR", "R_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "R_S")));
+    ASSERT_EQ(ExpectedColumn("ts_RR", "RR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "RR", "RR_S")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -1031,19 +996,21 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                 </ECEntityClass>
                 </ECSchema>)xml")));
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts1_Base")) << "abstract class";
-    ASSERT_TRUE(m_ecdb.TableExists("_ts1_Base")) << "expects updatable view as it has at least one concrete subclass";
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts1_Base").GetType()) << "abstract class";
+    ASSERT_FALSE(GetHelper().TableExists("ts1_Base")) << "Mapped virtual table is expected to not exist in the file";
+    ASSERT_TRUE(GetHelper().TableExists("_ts1_Base")) << "expects updatable view as it has at least one concrete subclass";
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts1_Sub1")) << "abstract class";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts1_Sub1")) << "no updatable view expected as it doesn't have concrete subclasses";
+    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts1_Sub1").GetType()) << "abstract class";
+    ASSERT_FALSE(GetHelper().TableExists("ts1_Sub1")) << "Mapped virtual table is expected to not exist in the file";
+    ASSERT_FALSE(GetHelper().TableExists("_ts1_Sub1")) << "no updatable view expected as it doesn't have concrete subclasses";
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts1_Sub2")) << "concrete class";
-    ASSERT_TRUE(m_ecdb.TableExists("_ts1_Sub2")) << "expects updatable view as it has at least one concrete subclass";
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts1_Sub2").GetType()) << "concrete class";
+    ASSERT_TRUE(GetHelper().TableExists("ts1_Sub2")) << "concrete class";
+    ASSERT_TRUE(GetHelper().TableExists("_ts1_Sub2")) << "expects updatable view as it has at least one concrete subclass";
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts1_Sub21")) << "concrete class";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts1_Sub21")) << "no updatable view expected as it is leaf class";
-
-
+    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts1_Sub21").GetType()) << "concrete class";
+    ASSERT_TRUE(GetHelper().TableExists("ts1_Sub21")) << "concrete class";
+    ASSERT_FALSE(GetHelper().TableExists("_ts1_Sub21")) << "no updatable view expected as it is leaf class";
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("updatableviews2.ecdb", SchemaItem(
@@ -1074,20 +1041,20 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                         </ECEntityClass>
                 </ECSchema>)xml")));
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts2_Base")) << "abstract class";
-    ASSERT_TRUE(m_ecdb.TableExists("_ts2_Base")) << "expects updatable view as it has at least one concrete subclass";
+    ASSERT_FALSE(GetHelper().TableExists("ts2_Base")) << "abstract class";
+    ASSERT_TRUE(GetHelper().TableExists("_ts2_Base")) << "expects updatable view as it has at least one concrete subclass";
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts2_IMixin")) << "abstract class";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts2_IMixin")) << "mixins never have updatable views as they are not updatable";
+    ASSERT_FALSE(GetHelper().TableExists("ts2_IMixin")) << "abstract class";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_IMixin")) << "mixins never have updatable views as they are not updatable";
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts2_Sub1")) << "abstract class";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts2_Sub1")) << "no updatable view expected as it doesn't have concrete subclasses";
+    ASSERT_FALSE(GetHelper().TableExists("ts2_Sub1")) << "abstract class";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub1")) << "no updatable view expected as it doesn't have concrete subclasses";
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts2_Sub2")) << "abstract class";
-    ASSERT_TRUE(m_ecdb.TableExists("_ts2_Sub2")) << "expects updatable view as it has at least one concrete subclass";
+    ASSERT_FALSE(GetHelper().TableExists("ts2_Sub2")) << "abstract class";
+    ASSERT_TRUE(GetHelper().TableExists("_ts2_Sub2")) << "expects updatable view as it has at least one concrete subclass";
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts2_Sub21")) << "concrete class";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts2_Sub21")) << "no updatable view expected as it is leaf class";
+    ASSERT_TRUE(GetHelper().TableExists("ts2_Sub21")) << "concrete class";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub21")) << "no updatable view expected as it is leaf class";
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("updatableviews3.ecdb", SchemaItem(
@@ -1109,17 +1076,17 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                 </ECEntityClass>
                 </ECSchema>)xml")));
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts3_Base")) << "No tables expected as all classes are abstract";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts3_Base")) << "No updatable view expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("ts3_Base")) << "No tables expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("_ts3_Base")) << "No updatable view expected as all classes are abstract";
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts3_Sub1")) << "No tables expected as all classes are abstract";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts3_Sub1")) << "No updatable view expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("ts3_Sub1")) << "No tables expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("_ts3_Sub1")) << "No updatable view expected as all classes are abstract";
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts3_Sub2")) << "No tables expected as all classes are abstract";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts3_Sub2")) << "No updatable view expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("ts3_Sub2")) << "No tables expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("_ts3_Sub2")) << "No updatable view expected as all classes are abstract";
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts3_Sub21")) << "No tables expected as all classes are abstract";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts3_Sub21")) << "No updatable view expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("ts3_Sub21")) << "No tables expected as all classes are abstract";
+    ASSERT_FALSE(GetHelper().TableExists("_ts3_Sub21")) << "No updatable view expected as all classes are abstract";
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("updatableviews4.ecdb", SchemaItem(
@@ -1129,8 +1096,8 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                 </ECEntityClass>
                 </ECSchema>)xml")));
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts4_Base")) << "abstract class";
-    ASSERT_FALSE(m_ecdb.TableExists("_ts4_Base")) << "No updatable view expected as abstract class doesn't have subclasses";
+    ASSERT_FALSE(GetHelper().TableExists("ts4_Base")) << "abstract class";
+    ASSERT_FALSE(GetHelper().TableExists("_ts4_Base")) << "No updatable view expected as abstract class doesn't have subclasses";
     }
 
 //---------------------------------------------------------------------------------------
@@ -1208,68 +1175,65 @@ TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
 
     </ECSchema>)xml")));
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Base_Abstract_OwnTable")) << "is expected to be virtual";
+    ASSERT_FALSE(GetHelper().TableExists("ts_Base_Abstract_OwnTable")) << "is expected to be virtual";
        
     ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable","Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId")));
 
-  /*  ASSERT_EQ(ColumnList(Column::CreateVirtual("ts_Base_Abstract_OwnTable", "ECClassId", Virtual::Yes)), GetHelper()->GetPropertyMap(AccessString("ts", "Base_Abstract_OwnTable", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "Prop1")));
 
-    ASSERT_EQ(ColumnInfo::List({{"ts_Base_Abstract_OwnTable", "ECClassId", true}}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_OwnTable", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_OwnTable", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_OwnTable", "Prop1")));
-
-    ASSERT_EQ(ColumnInfo::List({"ts_Sub_Of_Base_Abstract_OwnTable", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({{"ts_Sub_Of_Base_Abstract_OwnTable", "ECClassId", true}}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Sub_Of_Base_Abstract_OwnTable", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop1")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Sub_Of_Base_Abstract_OwnTable", "Prop2"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop2")));
+    ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_Abstract_OwnTable", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_Abstract_OwnTable", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_Abstract_OwnTable", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_Abstract_OwnTable", "Prop2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "Prop2")));
 
 
 
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_OwnTable", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_OwnTable", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_OwnTable", "ECClassId", true}), GetHelper().GetColumnInfos(AccessString("ts", "Base_OwnTable", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_OwnTable", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_OwnTable", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_OwnTable", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_OwnTable", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_OwnTable", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_OwnTable", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_OwnTable", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_OwnTable", "Prop1")));
 
-    ASSERT_EQ(ColumnInfo::List({"ts_Sub_Of_Base_OwnTable", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_OwnTable", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Sub_Of_Base_OwnTable", "ECClassId", true}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_OwnTable", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Sub_Of_Base_OwnTable", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_OwnTable", "Prop1")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Sub_Of_Base_OwnTable", "Prop2"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_OwnTable", "Prop2")));
-
-
-
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Base_Abstract_NoSubclass_OwnTable")) << "is expected to be virtual";
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_NoSubclass_OwnTable", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_NoSubclass_OwnTable", "ECClassId", true}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_NoSubclass_OwnTable", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_OwnTable", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_OwnTable", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_OwnTable", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_OwnTable", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_OwnTable", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_OwnTable", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_OwnTable", "Prop2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_OwnTable", "Prop2")));
 
 
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_NoSubclass_TPH", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_NoSubclass_TPH", "ECClassId"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_NoSubclass_TPH", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_NoSubclass_TPH", "Prop1")));
+
+    ASSERT_FALSE(GetHelper().TableExists("ts_Base_Abstract_NoSubclass_OwnTable")) << "is expected to be virtual";
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_OwnTable", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_OwnTable", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_OwnTable", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1")));
 
 
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_TPH", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_TPH", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_TPH", "ECClassId"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_TPH", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_TPH", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_Abstract_TPH", "Prop1")));
-
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_TPH", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_TPH", "ECClassId"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_TPH", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop1")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_Abstract_TPH", "Prop2"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop2")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_TPH", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_TPH", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_TPH", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_TPH", "Prop1")));
 
 
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_NoSubclass_TPH", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_NoSubclass_TPH", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_NoSubclass_TPH", "ECClassId"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_NoSubclass_TPH", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_NoSubclass_TPH", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_NoSubclass_TPH", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_TPH", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_TPH", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_TPH", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_TPH", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_TPH", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_TPH", "Prop1")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_TPH", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_TPH", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_TPH", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_TPH", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_TPH", "Prop2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_TPH", "Prop2")));
 
 
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_TPH", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_TPH", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_TPH", "ECClassId"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_TPH", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_TPH", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Base_TPH", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_NoSubclass_TPH", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_NoSubclass_TPH", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_NoSubclass_TPH", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_NoSubclass_TPH", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_NoSubclass_TPH", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_NoSubclass_TPH", "Prop1")));
 
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_TPH", "Id"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_TPH", "ECInstanceId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_TPH", "ECClassId"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_TPH", "ECClassId")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_TPH", "Prop1"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_TPH", "Prop1")));
-    ASSERT_EQ(ColumnInfo::List({"ts_Base_TPH", "Prop2"}), GetHelper().GetColumnInfos(AccessString("ts", "Sub_Of_Base_TPH", "Prop2")));
-    */
+
+    ASSERT_EQ(ExpectedColumn("ts_Base_TPH", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_TPH", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_TPH", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_TPH", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_TPH", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_TPH", "Prop1")));
+
+    ASSERT_EQ(ExpectedColumn("ts_Base_TPH", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_TPH", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_TPH", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_TPH", "ECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_TPH", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_TPH", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_TPH", "Prop2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_TPH", "Prop2")));
     }
 
 
@@ -4721,11 +4685,11 @@ TEST_F(DbMappingTestFixture, ShareColumnsCA_TableLayout)
                                                                    "</ECSchema>")));
 
     //verify tables
-    ASSERT_TRUE(m_ecdb.TableExists("rc_BaseClass"));
-    ASSERT_FALSE(m_ecdb.TableExists("rc_ChildDomainClassA"));
-    ASSERT_FALSE(m_ecdb.TableExists("rc_ChildDomainClassB"));
-    ASSERT_FALSE(m_ecdb.TableExists("rc_DerivedA"));
-    ASSERT_FALSE(m_ecdb.TableExists("rc_DerivedB"));
+    ASSERT_TRUE(GetHelper().TableExists("rc_BaseClass"));
+    ASSERT_FALSE(GetHelper().TableExists("rc_ChildDomainClassA"));
+    ASSERT_FALSE(GetHelper().TableExists("rc_ChildDomainClassB"));
+    ASSERT_FALSE(GetHelper().TableExists("rc_DerivedA"));
+    ASSERT_FALSE(GetHelper().TableExists("rc_DerivedB"));
 
     //verify ECSqlStatments
     ECSqlStatement s1, s2, s3, s4, s5;
@@ -4778,10 +4742,10 @@ TEST_F(DbMappingTestFixture, TablePrefix)
                                                                 "</ECSchema>")));
 
     //verify tables
-    ASSERT_TRUE(m_ecdb.TableExists("myownprefix_A"));
-    ASSERT_TRUE(m_ecdb.TableExists("myownprefix_B"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_A"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_B"));
+    ASSERT_TRUE(GetHelper().TableExists("myownprefix_A"));
+    ASSERT_TRUE(GetHelper().TableExists("myownprefix_B"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_A"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_B"));
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("tableprefix.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
@@ -4800,8 +4764,8 @@ TEST_F(DbMappingTestFixture, TablePrefix)
                                                                 "</ECSchema>")));
 
     //verify tables
-    ASSERT_TRUE(m_ecdb.TableExists("ts_A"));
-    ASSERT_TRUE(m_ecdb.TableExists("ts_B"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_A"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_B"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -4962,9 +4926,9 @@ TEST_F(DbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("VerifyInstanceInsertionForClassMappedToExistingTable.ecdb"));
 
-    ASSERT_FALSE(m_ecdb.TableExists("TestTable"));
+    ASSERT_FALSE(GetHelper().TableExists("TestTable"));
     m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
-    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    ASSERT_TRUE(GetHelper().TableExists("TestTable"));
     m_ecdb.SaveChanges();
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
@@ -4984,7 +4948,7 @@ TEST_F(DbMappingTestFixture, InstanceInsertionForClassMappedToExistingTable)
         "</ECSchema>")));
 
     //Verifying that the class is not mapped to any table other than the Existing Table.
-    ASSERT_FALSE(m_ecdb.TableExists("t_Class"));
+    ASSERT_FALSE(GetHelper().TableExists("t_Class"));
 
     ECClassCP testClass = m_ecdb.Schemas().GetClass("TestSchema", "TestClass");
     ASSERT_TRUE(testClass != nullptr);
@@ -5011,7 +4975,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
             ASSERT_EQ(BE_SQLITE_OK, SetupECDb("linktablerelationshipmappedtoexistinglinktable.ecdb"));
 
             m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, relProp INTEGER, SourceId INTEGER, TargetId INTEGER");
-            ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+            ASSERT_TRUE(GetHelper().TableExists("TestTable"));
             m_ecdb.SaveChanges();
 
             ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
@@ -5076,7 +5040,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
             ASSERT_EQ(BE_SQLITE_OK, SetupECDb("linktablerelationshipmappedtoexistinglinktable.ecdb"));
 
             m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, relProp INTEGER, MySourceId INTEGER, MyTargetId INTEGER");
-            ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+            ASSERT_TRUE(GetHelper().TableExists("TestTable"));
             m_ecdb.SaveChanges();
 
             ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
@@ -5114,7 +5078,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
             ASSERT_EQ(BE_SQLITE_OK, SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb"));
 
             m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, ForeignKeyId INTEGER");
-            ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+            ASSERT_TRUE(GetHelper().TableExists("TestTable"));
             m_ecdb.SaveChanges();
 
             ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
@@ -5184,7 +5148,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
             {
             ASSERT_EQ(BE_SQLITE_OK, SetupECDb("fkrelationshipclassmappedtoexistingtable.ecdb"));
             m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, ForeignKeyId INTEGER");
-            ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+            ASSERT_TRUE(GetHelper().TableExists("TestTable"));
             m_ecdb.SaveChanges();
 
             ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
@@ -5222,7 +5186,7 @@ TEST_F(DbMappingTestFixture, MapRelationshipsToExistingTable)
             ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingtablenavproperty.ecdb"));
 
             m_ecdb.CreateTable("TestTable", "Id INTEGER PRIMARY KEY, GooProp INTEGER, navProp INTEGER");
-            ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+            ASSERT_TRUE(GetHelper().TableExists("TestTable"));
             m_ecdb.SaveChanges();
 
             ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
@@ -5767,9 +5731,9 @@ TEST_F(DbMappingTestFixture, MismatchDataTypesInExistingTable)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("DataTypeMismatchInExistingTableTest.ecdb"));
 
-    ASSERT_FALSE(m_ecdb.TableExists("TestTable"));
+    ASSERT_FALSE(GetHelper().TableExists("TestTable"));
     m_ecdb.CreateTable("TestTable", "ECInstanceId INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
-    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    ASSERT_TRUE(GetHelper().TableExists("TestTable"));
     m_ecdb.SaveChanges();
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
@@ -5797,10 +5761,10 @@ TEST_F(DbMappingTestFixture, ExistingTableWithOutECInstanceIdColumn)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("InvalidPrimaryKeyInExistingTable.ecdb"));
 
-    ASSERT_FALSE(m_ecdb.TableExists("TestTable"));
+    ASSERT_FALSE(GetHelper().TableExists("TestTable"));
 
     m_ecdb.CreateTable("TestTable", "MyId INTEGER PRIMARY KEY, Name TEXT, Date INTEGER");
-    ASSERT_TRUE(m_ecdb.TableExists("TestTable"));
+    ASSERT_TRUE(GetHelper().TableExists("TestTable"));
 
     ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
@@ -5916,9 +5880,9 @@ TEST_F(DbMappingTestFixture, NotMappedWithinClassHierarchy)
         "</ECSchema>")));
 
     //verify tables
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Base"));
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Sub"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_SubSub"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Base"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Sub"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_SubSub"));
 
     //verify ECSQL
     {
@@ -9129,8 +9093,8 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                                 {"ts_GeometricElement","js7"}}), 
               GetHelper().GetPropertyMapColumns(AccessString("ts", "GeometricElement", "Transform")));
 
-    ASSERT_FALSE(m_ecdb.TableExists("ts_GeometricElement_Overflow"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Element_Overflow"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_GeometricElement_Overflow"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Element_Overflow"));
     }
 
     {
@@ -9253,7 +9217,7 @@ TEST_F(DbMappingTestFixture, ShareColumnsJoinedTableCACombinations)
                    </ECSchema>)xml")));
 
     ASSERT_EQ(ExpectedColumn("ts_Element", "Name"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Name")));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Element_Overflow"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Element_Overflow"));
     }
     }
 
@@ -9491,7 +9455,7 @@ TEST_F(DbMappingTestFixture, OrderOfPropertyIsPreservedInTableColumns)
         }
 
     ASSERT_STREQ("Id x h i d_X d_Y d_Z u_X u_Y f sarray e p o_a o_g o_c o_z_X o_z_Y o_z_Z o_y_X o_y_Y o_t o_u o_k o_r z ", order_PropertyOrderTest.c_str());
-    ASSERT_FALSE(m_ecdb.TableExists("os_OrderedStruct"));
+    ASSERT_FALSE(GetHelper().TableExists("os_OrderedStruct"));
     }
 
 //--------------------------------------------------------------------------------------

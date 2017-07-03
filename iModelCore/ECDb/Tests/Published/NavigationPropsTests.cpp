@@ -540,7 +540,8 @@ TEST_F(ECSqlNavigationPropertyTestFixture, ColumnOrder)
              </ECRelationshipClass>
               </ECSchema>)xml")));
 
-    ASSERT_EQ(std::vector<Utf8String>({"Id","ECClassId","Name","CodeSpecId","CodeSpecRelECClassId","CodeScopeId","CodeScopeRelECClassId","LastMod"}), 
+    std::vector<Utf8String> v({"Id","ECClassId","Name","CodeSpecId","CodeSpecRelECClassId","CodeScopeId","CodeScopeRelECClassId","LastMod"});
+    ASSERT_EQ(v,
               GetHelper().GetColumnNames("ts_HasNavPropsWithRelECClassId"));
 
     ASSERT_EQ(std::vector<Utf8String>({"Id", "ECClassId", "Name", "CodeSpecId", "CodeScopeId", "LastMod"}), GetHelper().GetColumnNames("ts_HasNavPropsWithoutRelECClassId"));

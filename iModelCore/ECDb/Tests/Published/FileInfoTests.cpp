@@ -60,7 +60,7 @@ TEST_F(FileInfoTestFixture, EmptyECDbHasFileInfoSchema)
     ecClass = schemaManager.GetClass(ECDB_FILEINFO_SCHEMA_NAME, "FileInfoOwnership");
     ASSERT_TRUE(ecClass != nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("be_EmbedFile")) << "Empty ECDb file is expected to contain the table 'be_EmbedFile'.";
+    ASSERT_TRUE(GetHelper().TableExists("be_EmbedFile")) << "Empty ECDb file is expected to contain the table 'be_EmbedFile'.";
 
     ECSqlStatement insertStmt;
     ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ecdbf.ExternalFileInfo (Name, Size, LastModified) VALUES ('myexternalfile.pdf', 1024, DATE '2014-09-25')"));
@@ -116,11 +116,11 @@ TEST_F(FileInfoTestFixture, SubclassingExternalFileInfo)
                 </ECEntityClass>
             </ECSchema>)xml")));
 
-    ASSERT_FALSE(m_ecdb.TableExists("_ecdbf_FileInfo")) << "FileInfo is abstract but as subclass with strategy existing and therefore is not updatable and therefore should not have an updatable view";
-    ASSERT_TRUE(m_ecdb.TableExists("ecdbf_ExternalFileInfo"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_MyExternalFileInfo"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_YourExternalFileInfo"));
-    ASSERT_FALSE(m_ecdb.TableExists("ts_YourSpecialExternalFileInfo"));
+    ASSERT_FALSE(GetHelper().TableExists("_ecdbf_FileInfo")) << "FileInfo is abstract but as subclass with strategy existing and therefore is not updatable and therefore should not have an updatable view";
+    ASSERT_TRUE(GetHelper().TableExists("ecdbf_ExternalFileInfo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_MyExternalFileInfo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_YourExternalFileInfo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_YourSpecialExternalFileInfo"));
 
     ASSERT_EQ(ExpectedColumn("ecdbf_ExternalFileInfo", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "MyExternalFileInfo", "MyExtraInformation")));
     ASSERT_EQ(ExpectedColumn("ecdbf_ExternalFileInfo", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "YourExternalFileInfo", "YourExtraInformation")));

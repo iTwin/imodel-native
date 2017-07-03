@@ -1100,7 +1100,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewEntityClass)
 
         //verify tables
         //new class should be added with new namespace prefix
-        ASSERT_TRUE(m_ecdb.TableExists("ts_modified_TestClass"));
+        ASSERT_TRUE(GetHelper().TableExists("ts_modified_TestClass"));
 
         //Verify Schema attributes upgraded successfully
         ECSchemaCP testSchema = m_ecdb.Schemas().GetSchema("TestSchema");
@@ -1449,14 +1449,14 @@ TEST_F(SchemaUpgradeTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTabl
         ASSERT_TRUE(testSchema->GetClassCP("C32") != nullptr);
 
         //Tables for C1,C2,C3 should exist.
-        ASSERT_TRUE(m_ecdb.TableExists("ts_C1"));
-        ASSERT_TRUE(m_ecdb.TableExists("ts_C2"));
-        ASSERT_TRUE(m_ecdb.TableExists("ts_C3"));
-        ASSERT_TRUE(m_ecdb.TableExists("ts_C3_Overflow"));
+        ASSERT_TRUE(GetHelper().TableExists("ts_C1"));
+        ASSERT_TRUE(GetHelper().TableExists("ts_C2"));
+        ASSERT_TRUE(GetHelper().TableExists("ts_C3"));
+        ASSERT_TRUE(GetHelper().TableExists("ts_C3_Overflow"));
 
         //C31 and C32 should not exist.
-        ASSERT_FALSE(m_ecdb.TableExists("ts_C31"));
-        ASSERT_FALSE(m_ecdb.TableExists("ts_C32"));
+        ASSERT_FALSE(GetHelper().TableExists("ts_C31"));
+        ASSERT_FALSE(GetHelper().TableExists("ts_C32"));
 
         //Verifying that the properties are mapped to the overflow columns
         std::vector<Utf8Char> Props = { 'C','D','E','F','G','H','I','J' };
@@ -1703,7 +1703,7 @@ TEST_F(SchemaUpgradeTestFixture, AppendNewCA)
         ASSERT_TRUE(testClass->GetDescription() == "modified test class");
 
         //verify tables
-        ASSERT_TRUE(m_ecdb.TableExists("ts_TestClass"));
+        ASSERT_TRUE(GetHelper().TableExists("ts_TestClass"));
 
         //Verify attributes via ECSql using MataSchema
         ECSqlStatement statement;
@@ -1787,7 +1787,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewCA)
         ASSERT_TRUE(testClass->GetDescription() == "modified test class");
 
         //verify tables
-        ASSERT_TRUE(m_ecdb.TableExists("ts_TestClass"));
+        ASSERT_TRUE(GetHelper().TableExists("ts_TestClass"));
 
         //Verify attributes via ECSql using MataSchema
         ECSqlStatement statement;
@@ -2716,10 +2716,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_ECEntityClass_OwnTable)
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(S,D,L) VALUES ('test3', 44.32, 3344)");
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(S,D,L) VALUES ('test4', 13.3, 2345)");
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Delete Foo ===================================================================================================
@@ -2735,10 +2735,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_ECEntityClass_OwnTable)
     ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete class should be successful";
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT S, D, L FROM ts.Foo");
@@ -2761,10 +2761,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_ECEntityClass_OwnTable)
         "</ECSchema>");
     ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Add class should be successful";
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT S, D, L FROM ts.Foo");
@@ -2813,11 +2813,11 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
         "</ECSchema>");
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Goo"));
 
@@ -2847,10 +2847,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Verify number of columns should not change as we don't delete columns
@@ -2868,7 +2868,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
         "</ECSchema>");
     ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Deleting Class with ECDbMap CA is expected to be supported";
     //Following should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Goo"));
 
     //Add Goo Again===================================================================================================
     //Adding new class with ECDbMapCA applied on it is expected to be supported
@@ -2891,10 +2891,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo"));
@@ -2927,11 +2927,11 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH)
     ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived class should be successful";
 
     //should exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //following should not exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_EQ(8, GetHelper().GetColumnCount("ts_Goo"));
@@ -2977,12 +2977,12 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     //following table should exist.
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Following table should not exist
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo"));
     ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo_Overflow"));
@@ -3016,10 +3016,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
     m_ecdb.SaveChanges();
 
@@ -3039,7 +3039,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete class containing ECDbMap CA should be successful";
 
     //Following should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Goo"));
 
     //Add Goo Again===================================================================================================
     //Add Class with SharedTable:SharedColumns is expected to be supported
@@ -3066,10 +3066,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo")) << "After deleting all classes and readding base class";
@@ -3108,11 +3108,11 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "New derived entity class is expected to be supported";
 
     //Table should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //Table should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo")) << "After readding subclass";
@@ -3159,12 +3159,12 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     //following table should exist.
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     //Following table should not exist
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo"));
 
@@ -3197,10 +3197,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo")) << "after deleting subclass Foo";
@@ -3219,7 +3219,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
     ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete class containing ECDbMap CA should be successful";
 
     //Following should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Goo"));
 
     //Add Goo Again===================================================================================================
     //Add Class  is expected to be supported
@@ -3246,10 +3246,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo")) << "after deleting base class and readding it";
@@ -3289,11 +3289,11 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_MaxSharedColumnsBe
     ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "New derived entity class is expected to be supported";
 
     //Table should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //Table should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo")) << "after readding subclass Foo";
@@ -3343,15 +3343,15 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     //Following Table should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Following should not exist
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
     ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo"));
@@ -3387,13 +3387,13 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
@@ -3421,10 +3421,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete Derived ECClass is supported";
 
     //Following should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Goo"));
 
     //Parent should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
@@ -3440,7 +3440,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_EQ(SUCCESS, ImportSchema(deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubClass is expected to be supported";
 
     //Parent should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Parent"));
 
     //Add Parent ===================================================================================================
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
@@ -3459,7 +3459,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
         "</ECSchema>"))) << "Adding New class containing ECDbMap CA JoinedTablePerDirectSubClass should be successful";
 
     //Parent should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
@@ -3490,10 +3490,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with JoinedTablePerDirectSubClass on Parent is expected to be successful";
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
     ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo"));
@@ -3533,14 +3533,14 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable)
     ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived Entity class is supported now";
 
     //Table should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //following tables should exist.
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo"));
@@ -3593,15 +3593,15 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     //Following Table should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Following should not exist
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Verify number of columns
     ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo"));
@@ -3642,14 +3642,14 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete a class should be successful";
 
     //Following should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo")) << "after deleting subclass Foo";
@@ -3681,10 +3681,10 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete Derived ECClass is supported";
 
     //Following should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Goo"));
 
     //Parent should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after deleting subclass Goo";
@@ -3700,7 +3700,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_EQ(SUCCESS, ImportSchema(deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubClass,SharedColumnForSubClasses is expected to be supported";
 
     //Parent should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Parent"));
 
     //Add Parent ===================================================================================================
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
@@ -3802,14 +3802,14 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_ShareColum
     ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived Entity class is supported now";
 
     //Table should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //following tables should exist.
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after readding subclass Foo";
@@ -3863,15 +3863,15 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     //Following Table should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     //Following should not exist
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent"));
     ASSERT_EQ(9, GetHelper().GetColumnCount("ts_Goo"));
@@ -3911,13 +3911,13 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
 
     //Following should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after deleting subclass Foo";
@@ -3949,7 +3949,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete Derived ECClass is supported";
 
     //Following should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Goo"));
 
     //Parent should exist
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
@@ -3966,7 +3966,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_EQ(SUCCESS, ImportSchema(deleteParent)) << "Deleting Class with CA  JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow is expected to be supported";
 
     //Parent should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Parent"));
 
     //Add Parent ===================================================================================================
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
@@ -3989,7 +3989,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
         "</ECSchema>"))) << "Adding New class containing ECDbMap CA JoinedTablePerDirectSubclass_MaxSharedColumnsBeforeOverflow should be successful";
 
     //Parent should exist
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after deleting and readding base class Parent";
@@ -4069,14 +4069,14 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_JoinedTable_MaxSharedC
     ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "Adding new derived Entity class is supported";
 
     //Table should not exist
-    ASSERT_FALSE(m_ecdb.TableExists("ts_Foo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
 
     //following tables should exist.
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Goo"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
 
-    ASSERT_TRUE(m_ecdb.TableExists("ts_Parent"));
+    ASSERT_TRUE(GetHelper().TableExists("ts_Parent"));
     ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Parent"), nullptr);
 
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_Parent")) << "after readding subclass Foo";
@@ -6855,7 +6855,7 @@ TEST_F(SchemaUpgradeTestFixture, AddNewRelationship)
         {
         ASSERT_EQ(BE_SQLITE_OK, OpenBesqliteDb(dbPath.c_str()));
 
-        ASSERT_EQ(true, m_ecdb.TableExists("ts_RelClass"));
+        ASSERT_EQ(true, GetHelper().TableExists("ts_RelClass"));
 
         m_ecdb.CloseDb();
         }
