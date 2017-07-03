@@ -254,24 +254,34 @@ TEST_F(SchemaVersionConversionTests, SchemaWithOldUnitSpecifications)
     ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
     }
 
-//TEST_F(SchemaVersionConversionTests, OpenPlantSchema)
-//    {
-//    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-//
-//    WString testSchemaPath = L"C:\\Users\\Colin.Kerr.BENTLEY\\Documents\\Schemas\\OPPID 107 4-5-2016\\OP Schemas";
-//    schemaContext->AddSchemaPath(testSchemaPath.c_str());
-//
-//    SchemaKey key("OpenPlant", 1, 0, 7);
-//    ECSchemaPtr schema = schemaContext->LocateSchema(key, SchemaMatchType::Exact);
-//    ASSERT_TRUE(schema.IsValid());
-//
-//    ASSERT_TRUE(ECSchemaConverter::Convert(*schema.get())) << "Failed to convert schema";
-//
-//    ECSchemaReadContextPtr context2 = ECSchemaReadContext::CreateContext();
-//    context2->AddSchemaPath(testSchemaPath.c_str());
-//    ECSchemaPtr originalSchema = context2->LocateSchema(key, SchemaMatchType::Exact);
-//    ASSERT_TRUE(originalSchema.IsValid());
-//    schema->WriteToXmlFile(L"C:\\diff\\OpenPlant.01.00.07.ecschema.xml", 3);
-//    ValidateUnitsInConvertedSchema(*schema, *originalSchema);
-//    }
+TEST_F(SchemaVersionConversionTests, OldUnitsWithKoqNameConflicts)
+    {
+    Utf8String schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="OldUnits" version="01.00" nameSpacePrefix="outs" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        <ECSchemaReference name="Unit_Attributes" version="01.00" prefix="units_attribs" />
+        <ECClass typeName="TestClass" isDomainClass="True">
+            <ECProperty propertyName="Length" typeName="double">
+                <ECCustomAttributes>
+                    <UnitSpecification xmlns="Unit_Attributes.01.00">
+                        <KindOfQuantityName>LENGTH</KindOfQuantityName>
+                        <DimensionName>L</DimensionName>
+                        <UnitName>FOOT</UnitName>
+                        <AllowableUnits />
+                    </UnitSpecification>
+                </ECCustomAttributes>
+            </ECProperty>
+        </ECClass>
+        <ECClass typeName="LENGTH" isDomainClass="True" />
+    </ECSchema>)xml";
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml.c_str(), *schemaContext)) << "Failed to load schema with old unit";
+    ECSchemaPtr originalSchema;
+    ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
+
+    ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
+    validateUnitsInConvertedSchema(*schema, *originalSchema);
+    ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
+    }
 END_BENTLEY_ECN_TEST_NAMESPACE
