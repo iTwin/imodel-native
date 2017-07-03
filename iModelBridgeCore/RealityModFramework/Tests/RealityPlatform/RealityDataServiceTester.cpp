@@ -384,7 +384,7 @@ TEST_F(RealityDataServiceFixture, AllRealityDataByRootIdFilter)
     // In our case, we need to manually call it before GetHttpRequestString()
     requestUT.GetAzureRedirectionRequestUrl();
 
-	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z&restype=container&comp=list&prefix=SomeStuffs/OtherStuffs");
+	EXPECT_STREQ(requestUT.GetHttpRequestString().c_str(), "https://redirected.server.com/?myToken&se=2013-03-01T16%3A20%3A00Z&restype=container&comp=list&prefix=SomeStuffs%2FOtherStuffs");
     
 	}
 
