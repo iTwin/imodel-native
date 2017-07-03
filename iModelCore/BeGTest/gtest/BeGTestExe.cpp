@@ -413,13 +413,16 @@ int main(int argc, char **argv)
         RUN_ALL_TESTS();
 
         check = 1;
-        //set _NT_SYMBOL_PATH
+        
         BeFileName outdirName;
         hostPtr->GetOutputRoot(outdirName);
         outdirName.PopDir();
         WString currentDirectory(outdirName.GetName());
+        //set _NT_SYMBOL_PATH
         BeStringUtilities::WCharToUtf8(symbolPath, currentDirectory.c_str());
-
+        printf("%d\n",WinSetEnv("_NT_SYMBOL_PATH", symbolPath.c_str()));
+        printf("Symbols path is   :   %s\n", WinGetEnv("_NT_SYMBOL_PATH"));
+		
         CharCP winSdkDir = WinGetEnv("Win10SdkDir");
         CharCP  defArch = "x64";
 
