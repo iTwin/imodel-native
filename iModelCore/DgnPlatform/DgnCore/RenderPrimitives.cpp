@@ -1154,8 +1154,13 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
         {
         if (!GetTransform().IsIdentity())
             polyface->Transform(GetTransform());
-                                                                                               // If there is a region outline it will be displayed seperately as a polyline.. 
-        polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, !curveVector.IsValid() || !GetDisplayParams().HasRegionOutline()));
+
+        // If there is a region outline, we will generate it separately as a polyline in _GetStrokes().
+        // If there is no region outline, and never should be one, don't generate edges
+        // See: text background (or anything else with blanking fill)
+        DisplayParamsCR params = GetDisplayParams();
+        bool wantEdges = curveVector.IsValid() && !params.HasBlankingFill() && !params.HasRegionOutline();
+        polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, wantEdges));
         }
 
     return polyfaces;
