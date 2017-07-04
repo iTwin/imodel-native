@@ -181,6 +181,7 @@ LINKER_LIBRARIES  = \
 LINKER_LIBRARIES_DELAYLOADED  = \
                                 $(ContextSubpartsLibs)$(libprefix)Imagepp$(libext)
 
+
 DLM_CONTEXT_LOCATION        = $(ContextDeliveryDir)/
 DLM_LIB_CONTEXT_LOCATION    = $(ContextDeliveryDir)/
 DLM_CREATE_LIB_CONTEXT_LINK = 1

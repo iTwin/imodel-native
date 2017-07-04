@@ -27,7 +27,7 @@
         <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
         <SubPart PartName="Core" />
 		<SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
-        <SubPart PartName="BeXmlDll"         PartFile="BeLibxml2"  Repository="libsrc-libxml2" />
+        <SubPart PartName="BeXml"    PartFile="BeLibxml2"            Repository="libsrc-libxml2" />                
         <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
         <SubPart PartName="ImagePPDll"  PartFile="ImagePP" Repository="ImagePP" />
         <Bindings>
@@ -42,7 +42,7 @@
       <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />
       <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
       <Bindings>
-        <Assemblies ProductDirectoryName="AutomaticGroundDetection" >Delivery\$(shlibprefix)AutomaticGroundDetection$(ApiNumber)$(shlibext)</Assemblies>
+        <Assemblies ProductDirectoryName="AutomaticGroundDetection" >Delivery/$(shlibprefix)AutomaticGroundDetection$(ApiNumber)$(shlibext)</Assemblies>
         <Libs>Delivery\$(libprefix)AutomaticGroundDetection$(libext)</Libs>
       </Bindings>
     </Part>
