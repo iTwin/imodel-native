@@ -112,9 +112,10 @@ public:
     GRIDELEMENTS_EXPORT static GridElementVector CreateGridPreview(CreateParams params);
 
     //! Creates orthogonal grid and inserts its elements and dimensions to db
-    //! @param[in] params   grid parameters containing information about the grid. For more info look up CreateParams
+    //! @param[out] grid    created grid elements
+    //! @param[in]  params  grid parameters containing information about the grid. For more info look up CreateParams
     //! @return             BentleyStatus::SUCCESS if no error has occured while inserting elements/dimensions
-    GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert(CreateParams params);
+    GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert(GridAxisMap& grid, CreateParams params);
 
     //! Rotates orthogonal grid by given angle in radians on XY plane
     //! @param[in] grid             orthogonal grid to rotate

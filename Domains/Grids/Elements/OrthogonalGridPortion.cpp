@@ -155,9 +155,8 @@ GridElementVector OrthogonalGridPortion::CreateGridPreview(CreateParams params)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus OrthogonalGridPortion::CreateAndInsert(CreateParams params)
+BentleyStatus OrthogonalGridPortion::CreateAndInsert(GridAxisMap& grid, CreateParams params)
     {
-    GridAxisMap grid;
     GridElementVector horizontalElements = CreateGridElements(params, true);
     GridElementVector verticalElements = CreateGridElements(params, false);
 

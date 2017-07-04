@@ -80,9 +80,10 @@ public:
     GRIDELEMENTS_EXPORT static GridElementVector CreateGridPreview(CreateParams params);
 
     //! Creates radial grid and inserts its elements to db
-    //! @param[in] params   grid parameters containing information about the grid. For more info look up CreateParams
+    //! @param[out] grid    created grid elements
+    //! @param[in]  params  grid parameters containing information about the grid. For more info look up CreateParams
     //! @return             BentleyStatus::SUCCESS if no error has occured while inserting elements.
-    GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert(CreateParams params);
+    GRIDELEMENTS_EXPORT static BentleyStatus CreateAndInsert(GridAxisMap& grid, CreateParams params);
 };
 
 END_GRIDS_NAMESPACE

@@ -85,10 +85,9 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Haroldas.Vitunskas                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus RadialGridPortion::CreateAndInsert(CreateParams params)
+BentleyStatus RadialGridPortion::CreateAndInsert(GridAxisMap& grid, CreateParams params)
     {
     GridElementVector radialGrid = CreateGridPreview(params);
-    GridAxisMap grid;
     grid[DEFAULT_AXIS] = radialGrid;
 
     return InsertGridMapElements(grid);
