@@ -1899,6 +1899,7 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
                 </ECEntityClass>
                 </ECSchema>)xml"),
 
+            //Nav props must be declared as string properties in supplemental schemas
             SchemaItem(R"xml(<ECSchema schemaName="SchoolSchema_Supplemental_2" alias="SSS2" version="01.00" displayLabel="School Supplemental2" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="CoreCustomAttributes" version="01.00" alias="CoreCA"/>
                 <ECCustomAttributes>
@@ -1920,13 +1921,13 @@ TEST_F(SchemaManagerTests, ImportMultipleSupplementalSchemas)
                             <PropertyName>LastMod2</PropertyName>
                         </ClassHasCurrentTimeStampProperty>
                     </ECCustomAttributes>
-                    <ECNavigationProperty propertyName="School" relationshipName="SchoolHasCourses" direction="Backward">
+                    <ECProperty propertyName="School" typeName="string">
                         <ECCustomAttributes>
                         <ForeignKeyConstraint xmlns="ECDbMap.02.00">
                             <OnDeleteAction>Cascade</OnDeleteAction>
                         </ForeignKeyConstraint>
                         </ECCustomAttributes>
-                    </ECNavigationProperty>
+                    </ECProperty>
                 </ECEntityClass>
                 <ECRelationshipClass typeName="SchoolHasCourses" modifier="Sealed" strength="embedding">
                     <Source multiplicity="(0..1)" polymorphic="true" roleLabel="has">

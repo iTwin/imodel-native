@@ -287,11 +287,15 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Max_15)
                 </ECEntityClass>
             </ECSchema>)xml")));
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IA").GetType());
-    ASSERT_EQ(11 + 2, GetHelper().GetColumnCount("ts_IA"));
+    Table iaMappedTable = GetHelper().GetMappedTable("ts_IA");
+    ASSERT_TRUE(iaMappedTable.Exists()) << "Mapped table ts_IA";
+    ASSERT_EQ(Table::Type::Virtual, iaMappedTable.GetType()) << "Mapped table ts_Ia";
+    ASSERT_EQ(11 + 2, iaMappedTable.GetColumns().size()) << "Mapped table ts_Ia";
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IP").GetType());
-    ASSERT_EQ(25 + 2, GetHelper().GetColumnCount("ts_IP"));
+    Table ipMappedTable = GetHelper().GetMappedTable("ts_IP");
+    ASSERT_TRUE(ipMappedTable.Exists()) << "Mapped table ts_IP";
+    ASSERT_EQ(Table::Type::Virtual, ipMappedTable.GetType());
+    ASSERT_EQ(25 + 2, ipMappedTable.GetColumns().size());
 
     ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_BaseClass").GetType());
     ASSERT_EQ(15 + 2 + 1, GetHelper().GetColumnCount("ts_BaseClass"));
@@ -411,11 +415,15 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Default)
             </ECEntityClass>
         </ECSchema>)xml")));
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IA").GetType());
-    ASSERT_EQ(11 + 2, GetHelper().GetColumnCount("ts_IA"));
+    Table iaMappedTable = GetHelper().GetMappedTable("ts_IA");
+    ASSERT_TRUE(iaMappedTable.Exists()) << "Mapped table ts_IA";
+    ASSERT_EQ(Table::Type::Virtual, iaMappedTable.GetType()) << "Mapped table ts_Ia";
+    ASSERT_EQ(11 + 2, iaMappedTable.GetColumns().size()) << "Mapped table ts_Ia";
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IP").GetType());
-    ASSERT_EQ(25 + 2, GetHelper().GetColumnCount("ts_IP"));
+    Table ipMappedTable = GetHelper().GetMappedTable("ts_IP");
+    ASSERT_TRUE(ipMappedTable.Exists()) << "Mapped table ts_IP";
+    ASSERT_EQ(Table::Type::Virtual, ipMappedTable.GetType());
+    ASSERT_EQ(25 + 2, ipMappedTable.GetColumns().size());
 
     ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_BaseClass").GetType());
     ASSERT_EQ(39, GetHelper().GetColumnCount("ts_BaseClass"));
@@ -462,7 +470,7 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_Default)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_0)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("SimpleTreeWithTablePerHierarchySharedTable.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("OverflowComplex_TPH_Overflow_0.ecdb", SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name='CoreCustomAttributes' version='01.00' alias='CoreCA' />
@@ -536,11 +544,15 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_0)
         </ECEntityClass>
     </ECSchema>)xml")));
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IA").GetType());
-    ASSERT_EQ(11 + 2, GetHelper().GetColumnCount("ts_IA"));
+    Table iaMappedTable = GetHelper().GetMappedTable("ts_IA");
+    ASSERT_TRUE(iaMappedTable.Exists()) << "Mapped table ts_IA";
+    ASSERT_EQ(Table::Type::Virtual, iaMappedTable.GetType()) << "Mapped table ts_Ia";
+    ASSERT_EQ(11 + 2, iaMappedTable.GetColumns().size()) << "Mapped table ts_Ia";
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_IP").GetType());
-    ASSERT_EQ(25 + 2, GetHelper().GetColumnCount("ts_IP"));
+    Table ipMappedTable = GetHelper().GetMappedTable("ts_IP");
+    ASSERT_TRUE(ipMappedTable.Exists()) << "Mapped table ts_IP";
+    ASSERT_EQ(Table::Type::Virtual, ipMappedTable.GetType());
+    ASSERT_EQ(25 + 2, ipMappedTable.GetColumns().size());
 
     ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_BaseClass").GetType());
     ASSERT_EQ(3, GetHelper().GetColumnCount("ts_BaseClass"));
@@ -549,8 +561,8 @@ TEST_F(DbMappingTestFixture, OverflowComplex_TPH_Overflow_0)
     ASSERT_EQ(38, GetHelper().GetColumnCount("ts_BaseClass_Overflow"));
 
 
-    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_BaseClass", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "ECClassId")));
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass", "Id"}, {"ts_BaseClass_Overflow", "Id"}}), GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumns({{"ts_BaseClass", "ECClassId"}, {"ts_BaseClass_Overflow", "ECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("ts", "ChildClass", "ECClassId")));
     ASSERT_EQ(ExpectedColumn("ts_BaseClass", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "M_S")));
     ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "I")));
     ASSERT_EQ(ExpectedColumn("ts_BaseClass_Overflow", "os2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ChildClass", "L")));

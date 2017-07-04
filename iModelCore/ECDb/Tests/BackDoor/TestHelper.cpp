@@ -145,7 +145,7 @@ PropertyMap TestHelper::GetPropertyMap(AccessString const& propAccessString) con
         "  INNER JOIN ec_Column c ON t.Id=c.TableId "
         "  INNER JOIN ec_PropertyMap pm ON pm.ColumnId=c.Id "
         "  INNER JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId "
-        "WHERE pm.ClassId=?1 AND instr('.' || pp.AccessString || '.' ,'.' || ?2 || '.') = 1 ORDER BY pp.AccessString,t.Name,c.Name");
+        "WHERE pm.ClassId=?1 AND instr('.' || pp.AccessString || '.' ,'.' || ?2 || '.') = 1 ORDER BY t.Name,c.Id");
 
     if (stmt == nullptr)
         {
@@ -175,9 +175,10 @@ Column TestHelper::GetPropertyMapColumn(AccessString const& propAccessString) co
     if (!propMap.IsValid())
         return Column();
 
+    EXPECT_EQ(1, propMap.GetColumns().size());
     if (propMap.GetColumns().size() == 1)
         return propMap.GetColumns()[0];
-
+     
     return Column();
     }
 

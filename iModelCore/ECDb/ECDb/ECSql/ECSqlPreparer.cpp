@@ -336,7 +336,13 @@ ECSqlStatus ECSqlExpPreparer::PrepareCastExp(NativeSqlBuilder::List& nativeSqlSn
         return ECSqlStatus::Error;
         }
 
-    BeAssert(exp.GetTypeInfo().IsPrimitive() && "For now only primitive types supported as CAST target type.");
+    if (!exp.GetTypeInfo().IsPrimitive())
+        {
+        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Invalid ECSQL expression '%s': Only primitive types are supported as CAST target type",
+                                                               exp.ToECSql().c_str());
+        return ECSqlStatus::InvalidECSql;
+        }
+
     const PrimitiveType targetType = exp.GetTypeInfo().GetPrimitiveType();
 
     for (size_t i = 0; i < operandNativeSqlSnippets.size(); i++)

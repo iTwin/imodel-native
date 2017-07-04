@@ -4263,54 +4263,50 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignKey)
                   </Target>
                </ECRelationshipClass>
             </ECSchema>)xml")));
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
 
-    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_A").GetType());
-    ASSERT_EQ(ExpectedColumn("ts_A", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_A").GetType());
+    EXPECT_EQ(ExpectedColumn("ts_A", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECClassId")));
+    EXPECT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "TargetECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECClassId")));
 
-    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B").GetType());
-    ASSERT_EQ(ExpectedColumn("ts_B", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "Cost"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "Cost")));
-    ASSERT_EQ(ExpectedColumns({{"ts_B", "AId"},{"ts_B","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.Id")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.RelECClassId")));
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B").GetType());
+    EXPECT_EQ(ExpectedColumn("ts_B", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "Cost"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "Cost")));
+    EXPECT_EQ(ExpectedColumns({{"ts_B", "AId"},{"ts_B","ARelECClassId", Virtual::Yes}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.Id")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ARelECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.RelECClassId")));
+
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, Price FROM ts.A"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B"));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(RelationshipMappingTestFixture, PhysicalForeignWithRelSubclasses)
+TEST_F(RelationshipMappingTestFixture, PhysicalForeignKeyWithRelSubclasses)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("SimpleFK.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECEntityClass typeName="A">
+                    <ECProperty propertyName="Price" typeName="double" />
+                </ECEntityClass>
+                <ECEntityClass typeName="B">
                     <ECCustomAttributes>
                         <ClassMap xlmns="ECDbMap.02.00">
                             <MapStrategy>TablePerHierarchy</MapStrategy>
                         </ClassMap>
                     </ECCustomAttributes>
-                    <ECProperty propertyName="Price" typeName="double" />
-                </ECEntityClass>
-                <ECEntityClass typeName="A1">
-                    <BaseClass>A</BaseClass>
-                    <ECProperty propertyName="Tag" typeName="double" />
-                </ECEntityClass>
-                <ECEntityClass typeName="B">
                     <ECProperty propertyName="Cost" typeName="double" />
                     <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward">
                         <ECCustomAttributes>
@@ -4322,7 +4318,7 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignWithRelSubclasses)
                     <BaseClass>B</BaseClass>
                     <ECProperty propertyName="Tag" typeName="double" />
                 </ECEntityClass>
-               <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="Abstract" strengthDirection="Backward">
+               <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="Abstract">
                   <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
                       <Class class ="A" />
                   </Source>
@@ -4330,54 +4326,260 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignWithRelSubclasses)
                       <Class class ="B" />
                   </Target>
                </ECRelationshipClass>
-               <ECRelationshipClass typeName="A1HasB1" strength="Referencing" modifier="Sealed" strengthDirection="Backward">
+               <ECRelationshipClass typeName="AHasB1" strength="Referencing" modifier="Sealed">
                   <BaseClass>AHasB</BaseClass>
                   <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A1">
-                      <Class class ="A1" />
+                      <Class class ="A" />
                   </Source>
                   <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B1">
                       <Class class ="B1" />
                   </Target>
                </ECRelationshipClass>
             </ECSchema>)xml")));
-    m_ecdb.SaveChanges();
+
+    EXPECT_EQ(ExpectedColumn("ts_A", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
+
+    EXPECT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "TargetECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECClassId")));
+
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B").GetType());
+    EXPECT_EQ(ExpectedColumn("ts_B", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "Cost"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "Cost")));
+    EXPECT_EQ(ExpectedColumns({{"ts_B", "AId"}, {"ts_B","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.Id")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.RelECClassId")));
+
+    EXPECT_EQ(ExpectedColumn("ts_B", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "ECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "Cost"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "Cost")));
+    EXPECT_EQ(ExpectedColumns({{"ts_B", "AId"}, {"ts_B","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B1", "A")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "A.Id")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "A.RelECClassId")));
+
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB1"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, Price FROM ts.A"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, Cost, A, Tag FROM ts.B1"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, PhysicalForeignKeyWithoutTph)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("SimpleFK.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="A">
+                    <ECProperty propertyName="Price" typeName="double" />
+                </ECEntityClass>
+                <ECEntityClass typeName="B">
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward">
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+                <ECEntityClass typeName="B1">
+                    <BaseClass>B</BaseClass>
+                    <ECProperty propertyName="Tag" typeName="double" />
+                </ECEntityClass>
+               <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="None">
+                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
+                      <Class class ="A" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                      <Class class ="B" />
+                  </Target>
+               </ECRelationshipClass>
+               <ECRelationshipClass typeName="AHasB1" strength="Referencing" modifier="Sealed">
+                  <BaseClass>AHasB</BaseClass>
+                  <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A1">
+                      <Class class ="A" />
+                  </Source>
+                  <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B1">
+                      <Class class ="B1" />
+                  </Target>
+               </ECRelationshipClass>
+            </ECSchema>)xml")));
+
+    EXPECT_EQ(ExpectedColumn("ts_A", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
+
+    EXPECT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "TargetECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECClassId")));
+
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B").GetType());
+    EXPECT_EQ(ExpectedColumn("ts_B", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "Name"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "Name")));
+    EXPECT_EQ(ExpectedColumns({{"ts_B", "AId"}, {"ts_B","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.Id")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.RelECClassId")));
+
+    EXPECT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B1").GetType());
+    EXPECT_EQ(ExpectedColumn("ts_B1", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_B1", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "ECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_B1", "Name"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "Name")));
+    EXPECT_EQ(ExpectedColumn("ts_B1", "Tag"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "Tag")));
+    EXPECT_EQ(ExpectedColumns({{"ts_B1", "AId"}, {"ts_B1","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B1", "A")));
+    EXPECT_EQ(ExpectedColumn("ts_B1", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "A.Id")));
+    EXPECT_EQ(ExpectedColumn("ts_B1", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "A.RelECClassId")));
+
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB1"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, Price FROM ts.A"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, Name, A FROM ts.B"));
+    EXPECT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT ECInstanceId, ECClassId, Name, A, Tag FROM ts.B1"));
+
+    ECInstanceKey aKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(aKey, "INSERT INTO ts.A(Price) VALUES(3.99)"));
+
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.AHasB")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.A1HasB1")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Price FROM ts.A")); stmt.Finalize();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, Cost, A FROM ts.B")); stmt.Finalize();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.B(Name, A) VALUES('B-1',?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, aKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "AHasB")));
+    ECInstanceKey bKey;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(bKey)) << stmt.GetECSql();
+    stmt.Finalize();
 
-    ASSERT_EQ(ExpectedColumn("ts_A", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.B1(Name, Tag, A) VALUES('B1-1', 2.99,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(1, aKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema","AHasB1")));
 
-    ASSERT_EQ(ExpectedColumn("ts_A", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "Price")));
-    ASSERT_EQ(ExpectedColumn("ts_A", "Tag"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A1", "Tag")));
+    ECInstanceKey b1Key;
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(b1Key)) << stmt.GetECSql();
+    stmt.Finalize();
+    m_ecdb.SaveChanges();
 
-    ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_AHasB", "TargetECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECClassId")));
+    // Verify data via nav prop selects
 
-    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B").GetType());
-    ASSERT_EQ(ExpectedColumn("ts_B", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "Cost"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "Cost")));
-    ASSERT_EQ(ExpectedColumns({{"ts_B", "AId"}, {"ts_B","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.Id")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B", "A.RelECClassId")));
+    //polymorphic query on base class
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, Name, A FROM ts.B"));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
 
-    ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_B1").GetType());
-    ASSERT_EQ(ExpectedColumn("ts_B1", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "ECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_B1", "ECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_B1", "Cost"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "Cost")));
-    ASSERT_EQ(ExpectedColumns({{"ts_B1", "AId"}, {"ts_B1","ARelECClassId"}}), GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B1", "A")));
-    ASSERT_EQ(ExpectedColumn("ts_B1", "AId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "A.Id")));
-    ASSERT_EQ(ExpectedColumn("ts_B1", "ARelECClassId"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "B1", "A.RelECClassId")));
+        ECInstanceId bId = stmt.GetValueId<ECInstanceId>(0);
+        if (bId == bKey.GetInstanceId())
+            {
+            ASSERT_STREQ("B-1", stmt.GetValueText(1)) << "B instance";
+            ECClassId relClassId;
+            ASSERT_EQ(aKey.GetInstanceId(), stmt.GetValueNavigation<ECInstanceId>(2, &relClassId)) << "B instance";
+            ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AHasB"), relClassId) << "B instance";
+            }
+        else if (bId == b1Key.GetInstanceId())
+            {
+            ASSERT_STREQ("B1-1", stmt.GetValueText(1)) << "B1 instance";
+            ECClassId relClassId;
+            ASSERT_EQ(aKey.GetInstanceId(), stmt.GetValueNavigation<ECInstanceId>(2, &relClassId)) << "B1 instance";
+            ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AHasB1"), relClassId) << "B1 instance";
+            }
+        else
+            FAIL() << "unexpected row from " << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(2, rowCount) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //non-polymorphic query on base class
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, Name, A FROM ONLY ts.B"));
+    rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        ASSERT_EQ(bKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+        ASSERT_STREQ("B-1", stmt.GetValueText(1)) << stmt.GetECSql();
+        ECClassId relClassId;
+        ASSERT_EQ(aKey.GetInstanceId(), stmt.GetValueNavigation<ECInstanceId>(2, &relClassId)) << stmt.GetECSql();
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AHasB"), relClassId) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(1, rowCount) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //query on sub class
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, Name, A FROM ONLY ts.B1"));
+    rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        ASSERT_EQ(b1Key.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0)) << stmt.GetECSql();
+        ASSERT_STREQ("B1-1", stmt.GetValueText(1)) << stmt.GetECSql();
+        ECClassId relClassId;
+        ASSERT_EQ(aKey.GetInstanceId(), stmt.GetValueNavigation<ECInstanceId>(2, &relClassId)) << stmt.GetECSql();
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AHasB1"), relClassId) << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(1, rowCount) << stmt.GetECSql();
+    stmt.Finalize();
+
+    // Verify data via relationship query
+
+    //polymorphic query on base class
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, ECClassId FROM ts.AHasB"));
+    rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        ASSERT_EQ(aKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+
+        ECInstanceId targetId = stmt.GetValueId<ECInstanceId>(1);
+        if (targetId == bKey.GetInstanceId())
+            {
+            ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AHasB"), stmt.GetValueId<ECClassId>(2));
+            }
+        else if (targetId == b1Key.GetInstanceId())
+            {
+            ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AHasB1"), stmt.GetValueId<ECClassId>(2));
+            }
+        else
+            FAIL() << "unexpected row from " << stmt.GetECSql();
+        }
+
+    ASSERT_EQ(2, rowCount) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //non-polymorphic query on base class
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, ECClassId FROM ONLY ts.AHasB"));
+    rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        ASSERT_EQ(aKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+        ASSERT_EQ(bKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(1));
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AHasB"), stmt.GetValueId<ECClassId>(2));
+        }
+
+    ASSERT_EQ(1, rowCount) << stmt.GetECSql();
+    stmt.Finalize();
+
+    //query on sub class
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, TargetECInstanceId, ECClassId FROM ONLY ts.AHasB1"));
+    rowCount = 0;
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        rowCount++;
+        ASSERT_EQ(aKey.GetInstanceId(), stmt.GetValueId<ECInstanceId>(0));
+        ASSERT_EQ(b1Key.GetInstanceId(), stmt.GetValueId<ECInstanceId>(1));
+        ASSERT_EQ(m_ecdb.Schemas().GetClassId("TestSchema", "AHasB1"), stmt.GetValueId<ECClassId>(2));
+        }
+
+    ASSERT_EQ(1, rowCount) << stmt.GetECSql();
+    stmt.Finalize();
     }
 
 //---------------------------------------------------------------------------------------
