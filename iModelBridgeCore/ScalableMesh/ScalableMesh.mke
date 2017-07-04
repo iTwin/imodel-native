@@ -512,7 +512,9 @@ LINKER_LIBRARIES            = \
     $(ContextSubpartsLibs)ECObjects.lib \
     $(ContextSubpartsLibs)BePointCloud.lib \
     $(ContextSubpartsLibs)AutomaticGroundDetection.lib \
-    $(ContextSubpartsLibs)ThreeMxReader.lib
+    $(ContextSubpartsLibs)ThreeMxReaderLegacy.lib \
+    $(ContextSubpartsLibs)freeimage.lib
+
 
 %include $(sharedMki)LinkLibrary.mki
 

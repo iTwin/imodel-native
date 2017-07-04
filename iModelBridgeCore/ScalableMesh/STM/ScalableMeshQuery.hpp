@@ -770,7 +770,10 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
         status = (int)SMQueryStatus::S_ERROR;
         }
 
-    return status;    
+    return status;
+#endif
+
+    return (int)SMQueryStatus::S_ERROR;
     }
 
 /*----------------------------------------------------------------------------+
@@ -837,8 +840,6 @@ template <class POINT> int ScalableMeshViewDependentMeshQuery<POINT>::_Query(bve
 
     meshPtr = returnMeshPtr;
     return status;
-#endif
-    return S_SUCCESS;
     }
 
 /*----------------------------------------------------------------------------+

@@ -8,8 +8,14 @@
 #include <ScalableMeshPCH.h>
 #include "ImagePPHeaders.h"
 
+/*
+#include <xtr1common>
+#include <type_traits>
 
-#include <DgnPlatform\DgnPlatformLib.h>
+#include <folly/BeFolly.h>
+#include <folly/LockTraits.h>
+*/
+//#include <DgnPlatform\DgnPlatformLib.h>
 #include <ScalableMesh\ScalableMeshLib.h>
 //#include <TerrainModel/ElementHandler/DTMElementHandlerManager.h>
 #include "Plugins\ScalableMeshTypeConversionFilterPlugins.h"
@@ -18,6 +24,8 @@
 #include "SMMemoryPool.h"
 #include <CloudDataSource/DataSourceManager.h>
 #include <ImagePP/all/h/ImageppLib.h>
+
+#include <DgnPlatform\DgnPlatformLib.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
@@ -80,7 +88,9 @@ void ScalableMeshLib::Host::Initialize()
     m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
     m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
-    RegisterPODImportPlugin();
+
+    //NEEDS_WORK_SM_POD_B0200
+    //RegisterPODImportPlugin();
     BeFileName geocoordinateDataPath(L".\\GeoCoordinateData\\");
     GeoCoordinates::BaseGCS::Initialize(geocoordinateDataPath.c_str());
     //BENTLEY_NAMESPACE_NAME::TerrainModel::Element::DTMElementHandlerManager::InitializeDgnPlatform();
@@ -202,9 +212,11 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
 #else
-    DgnPlatformLib::IKnownLocationsAdmin locationAdmin(host.GetIKnownLocationsAdmin());
+
+    DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
     tempDir = locationAdmin.GetLocalTempDirectoryBaseName();
     assert(!tempDir.IsEmpty());
+
 #endif
 
     BeSQLiteLib::Initialize(tempDir);
