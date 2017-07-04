@@ -402,6 +402,9 @@
     <ClInclude Include="DbMap.h">
       <Filter>DbMap</Filter>
     </ClInclude>
+    <ClInclude Include="DbMapValidator.h">
+      <Filter>DbMap</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="ECDb.mke">
@@ -734,6 +737,9 @@
       <Filter>Profile</Filter>
     </ClCompile>
     <ClCompile Include="DbMap.cpp">
+      <Filter>DbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="DbMapValidator.cpp">
       <Filter>DbMap</Filter>
     </ClCompile>
   </ItemGroup>

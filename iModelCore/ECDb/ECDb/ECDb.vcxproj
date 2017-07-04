@@ -18,6 +18,7 @@
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
     <ClCompile Include="DbMap.cpp" />
+    <ClCompile Include="DbMapValidator.cpp" />
     <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="DbSchemaPersistenceManager.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
@@ -137,6 +138,7 @@
     <ClInclude Include="ClassMapPersistenceManager.h" />
     <ClInclude Include="ClassMappingInfo.h" />
     <ClInclude Include="DbMap.h" />
+    <ClInclude Include="DbMapValidator.h" />
     <ClInclude Include="DbSchema.h" />
     <ClInclude Include="DbSchemaPersistenceManager.h" />
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />

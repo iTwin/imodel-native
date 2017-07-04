@@ -40,6 +40,7 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbImpl.h \
                 $(baseDir)ECDbSqlFunctions.h \
                 $(baseDir)DbMap.h \
+                $(baseDir)DbMapValidator.h \
                 $(baseDir)ClassMap.h \
                 $(baseDir)RelationshipClassMap.h \
                 $(baseDir)PropertyMap.h \
@@ -156,6 +157,8 @@ MultiCompileDepends=$(_MakeFileSpec)
 $(o)ECDbLogger$(oext):                                        $(baseDir)ECDbLogger.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)DbMap$(oext):                                             $(baseDir)DbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
+$(o)DbMapValidator$(oext):                                    $(baseDir)DbMapValidator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)LightweightCache$(oext):                                  $(baseDir)LightweightCache.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 

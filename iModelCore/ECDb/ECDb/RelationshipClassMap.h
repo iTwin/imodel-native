@@ -8,7 +8,9 @@
 #pragma once
 #include "ECDbInternalTypes.h"
 #include "ClassMap.h"
+#include "SystemPropertyMap.h"
 #include <string>
+
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //=======================================================================================
@@ -37,14 +39,6 @@ struct RelationshipConstraintMap : NonCopyableClass
 +===============+===============+===============+===============+===============+======*/
 struct RelationshipClassMap : ClassMap
     {
-    public:
-        enum class ReferentialIntegrityMethod
-            {
-            None,
-            ForeignKey,
-            Trigger
-            };
-
     protected:
         static Utf8CP const DEFAULT_SOURCEECINSTANCEID_COLUMNNAME;
         static Utf8CP const DEFAULT_SOURCEECCLASSID_COLUMNNAME;
@@ -127,12 +121,12 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             const std::vector<Partition const*> GetPartitions(bool skipVirtualPartition) const;
             const std::vector<Partition const*> GetPartitions(DbTable const& toEnd, bool skipVirtualPartition) const;
             static std::unique_ptr< PartitionView> Create(RelationshipClassEndTableMap const& relationMap);
-            std::vector<Partition const*>  GetPhysicalPartitions() const;
+            std::vector<Partition const*> GetPhysicalPartitions() const;
             static std::vector<DbTable const*> GetOtherEndTables(RelationshipClassEndTableMap const&);
         };
 
     private:
-        mutable std::unique_ptr< PartitionView> m_partitionCollection;
+        mutable std::unique_ptr<PartitionView> m_partitionCollection;
 
     private:
         RelationshipClassEndTableMap(ECDb const& ecdb, ECN::ECClassCR relClass, MapStrategyExtendedInfo const& mapStrategy) : RelationshipClassMap(ecdb, Type::RelationshipEndTable, relClass, mapStrategy) {}
@@ -146,7 +140,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ECN::ECRelationshipEnd GetReferencedEnd() const;
         PartitionView const& GetPartitionView() const;
         bool IsSubRelationship() const { return GetClass().HasBaseClasses(); }
-        void RestPartitionCache() const { m_partitionCollection = nullptr; }
+        void ResetPartitionCache() const { m_partitionCollection = nullptr; }
     };
 
 /*==========================================================================

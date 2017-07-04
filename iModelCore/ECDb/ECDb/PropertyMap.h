@@ -102,25 +102,28 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
     public:
         enum class Type
             {
-            Primitive = 1,
-            PrimitiveArray = 2,
-            Point3d = 4,
-            Point2d = 8,
-            Struct = 16,
-            StructArray = 32,
-            Navigation = 64,
-            NavigationRelECClassId = 128,
-            NavigationId = 256,
-            ECInstanceId = 512,
-            ECClassId = 1024,
-            ConstraintECInstanceId = 2048,
-            ConstraintECClassId = 4096,
-            SystemPerTableId = 8192,
-            SystemPerTableClassId = 16384,
+            ConstraintECClassId = 2^0,
+            ConstraintECInstanceId = 2^1,
+            ECClassId = 2^2,
+            ECInstanceId = 2^3,
+
+            Navigation = 2^4,
+            NavigationId = 2^5,
+            NavigationRelECClassId = 2^6,
+
+            Point2d = 2^7,
+            Point3d = 2^8,
+            Primitive = 2^9,
+            PrimitiveArray = 2^10,
+            Struct = 2^11,
+            StructArray = 2^12,
+            SystemPerTableClassId = 2^13,
+            SystemPerTableId = 2^14,
 
             System = ECInstanceId | ECClassId | ConstraintECClassId | ConstraintECInstanceId,
             SingleColumnData = Primitive | PrimitiveArray | StructArray | NavigationRelECClassId | NavigationId | SystemPerTableId | SystemPerTableClassId,
-            Data = SingleColumnData | Point3d | Point2d | Struct | Navigation,
+            CompoundData = Navigation | Point2d | Point3d | Struct,
+            Data = SingleColumnData | CompoundData,
             All = System | Data
             };
     private:
@@ -148,7 +151,15 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         Type GetType() const { return m_type; }
         
         template <typename TPropertyMap>
-        TPropertyMap const& GetAs() const { BeAssert(dynamic_cast<TPropertyMap const*> (this) != nullptr); return *static_cast<TPropertyMap const*> (this); }
+        TPropertyMap const& GetAs() const 
+            { 
+            if (dynamic_cast<TPropertyMap const*> (this) == nullptr)
+                {
+                printf("");
+                }
+
+            BeAssert(dynamic_cast<TPropertyMap const*> (this) != nullptr); 
+            return *static_cast<TPropertyMap const*> (this); }
         
         Utf8StringCR GetName() const { return GetProperty().GetName(); }
         ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }
@@ -213,7 +224,8 @@ struct CompoundDataPropertyMap : DataPropertyMap
         DbTable const& _GetTable() const override;
 
     protected:
-        bvector<DataPropertyMap const*> m_list;
+        bvector<DataPropertyMap const*> m_memberPropertyMaps;
+
         CompoundDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : DataPropertyMap(kind, classMap, ecProperty) {}
         CompoundDataPropertyMap(Type kind, CompoundDataPropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty)
@@ -227,10 +239,10 @@ struct CompoundDataPropertyMap : DataPropertyMap
         virtual ~CompoundDataPropertyMap() {}
 
         DataPropertyMap const* Find(Utf8CP accessString) const;
-        const_iterator begin() const { return m_list.begin(); }
-        const_iterator end() const { return m_list.end(); }
-        size_t Size() const { return m_list.size(); }
-        bool IsEmpty() const { return m_list.empty(); }
+        const_iterator begin() const { return m_memberPropertyMaps.begin(); }
+        const_iterator end() const { return m_memberPropertyMaps.end(); }
+        size_t Size() const { return m_memberPropertyMaps.size(); }
+        bool IsEmpty() const { return m_memberPropertyMaps.empty(); }
     };
 
 //=======================================================================================
@@ -470,10 +482,7 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         bool IsComplete() const { return m_isComplete; }
         IdPropertyMap const& GetIdPropertyMap() const;
         RelECClassIdPropertyMap const& GetRelECClassIdPropertyMap() const;
-        bool HasForeignKeyConstraint() const
-            {
-            return GetProperty().IsDefinedLocal("ECDbMap", "ForeignKeyConstraint");
-            }
+        bool HasForeignKeyConstraint() const { return GetProperty().IsDefinedLocal("ECDbMap", "ForeignKeyConstraint"); }
         BentleyStatus SetMembers(DbColumn const& idColumn, DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId);
 
     };

@@ -161,6 +161,9 @@ std::unique_ptr<RelationshipClassEndTableMap::Partition> RelationshipClassEndTab
     }
 
 //************************ RelationshipClassEndTableMap::PartitionView**********************************
+//--------------------------------------------------------------------------------------
+// @bsimethod                                   Affan.Khan                         06/17
+//+---------------+---------------+---------------+---------------+---------------+------
 std::vector<RelationshipClassEndTableMap::Partition const*>  RelationshipClassEndTableMap::PartitionView::GetPhysicalPartitions() const
     {
     std::vector<Partition const*> physcialPartitions;
@@ -173,9 +176,11 @@ std::vector<RelationshipClassEndTableMap::Partition const*>  RelationshipClassEn
 
     return physcialPartitions;
     }
+
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         06/17
 //+---------------+---------------+---------------+---------------+---------------+------
+//static
 std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOtherEndTables(RelationshipClassEndTableMap const& relationMap)
     {
     ECRelationshipEnd otherEnd = relationMap.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;

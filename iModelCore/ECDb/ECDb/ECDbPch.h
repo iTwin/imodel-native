@@ -32,6 +32,7 @@
 #include "ECDbSqlFunctions.h"
 
 #include "DbMap.h"
+#include "DbMapValidator.h"
 #include "MapStrategy.h"
 #include "DbSchema.h"
 #include "SqlNames.h"

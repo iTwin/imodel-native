@@ -148,8 +148,8 @@ PropertyMap const* PropertyMapContainer::Find(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 DbTable const& CompoundDataPropertyMap::_GetTable() const
     {
-    BeAssert(!m_list.empty());
-    return m_list[0]->GetTable();
+    BeAssert(!m_memberPropertyMaps.empty());
+    return m_memberPropertyMaps[0]->GetTable();
     }
 
 //---------------------------------------------------------------------------------------
@@ -181,7 +181,7 @@ BentleyStatus CompoundDataPropertyMap::InsertMember(RefCountedPtr<DataPropertyMa
     if (const_cast<ClassMap&>(GetClassMap()).GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
         return ERROR;
 
-    m_list.push_back(propertyMap.get());
+    m_memberPropertyMaps.push_back(propertyMap.get());
     return SUCCESS;
     }
 
