@@ -261,8 +261,8 @@
         <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="MdlsysAsneededLuxology" Path="Dlls" />
-        <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />        
-      
+        <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />
+        <ProductDirectory Name="Assets"          Path="Dlls\Assets" />      
   </ProductDirectoryList>
 
 <ProductDirectoryList ListName="ScalableMeshLumenSdk">
