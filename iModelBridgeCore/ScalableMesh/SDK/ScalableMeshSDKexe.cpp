@@ -991,7 +991,7 @@ void GetImportRange(DRange3d& importRange, BeXmlNodeP pRootNode)
             BeFileNameStatus beStatus = BeFileName::BeGetTempPath(name);
             assert(BeFileNameStatus::Success == beStatus);
 #else        
-            IKnownLocationsAdmin locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
+            DgnPlatformLib::IKnownLocationsAdmin locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
             name = locationAdmin.GetLocalTempDirectoryBaseName();
             assert(!name.IsEmpty());
 #endif

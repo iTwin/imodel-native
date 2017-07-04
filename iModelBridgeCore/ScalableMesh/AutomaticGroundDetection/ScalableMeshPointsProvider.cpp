@@ -210,7 +210,7 @@ void ScalableMeshPointsProvider::InternalQueryPoints() const
         //Use smallest resolution between expected from caller and what is set in MrMesh info
         double resolution(GetExportResolution()* meterToSRSFactor);
         
-        ClipVectorPtr clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromBlock(rangeNative.low, rangeNative.high, false, ClipMask::All, NULL));
+        ClipVectorPtr clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromBlock(rangeNative.low, rangeNative.high, false, ClipMask::All, NULL).get());
 
         GetPoints(m_prefetchedPoints, &resolution, clip.get());
 
@@ -439,7 +439,7 @@ struct      ScalableMeshAttachmentPointsIteratorImpl : IPointsProvider::IPointsP
                 {
                 */                
 
-                ClipVectorPtr clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromBlock(rangeNative.low, rangeNative.high, false, ClipMask::All, NULL));
+                ClipVectorPtr clip = ClipVector::CreateFromPrimitive(ClipPrimitive::CreateFromBlock(rangeNative.low, rangeNative.high, false, ClipMask::All, NULL).get());
                                             
                 BentleyStatus status = scalableMeshPointProvider.GetPoints(m_points, &resolution, clip.get());                
                 assert(status == SUCCESS);

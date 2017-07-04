@@ -71,6 +71,9 @@ CCompOpts + -wd4244
 
 #release builds: error in boost (named_function_params.hpp)
 CCompOpts + -wd4172
+
+CCompOpts + -wd4002
+
 #----------------------------------------------------------------------
 #   Build precompiled header
 #----------------------------------------------------------------------
@@ -387,7 +390,7 @@ $(o)LandXMLFileImporter$(oext) : $(importerPluginsDir)LandXMLFileImporter.cpp $(
 
 $(o)XYZAsciiFileImporter$(oext) : $(importerPluginsDir)XYZAsciiFileImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#$(o)DGNdbImporter$(oext) : $(importerPluginsDir)DGNdbImporter.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 
 #   Importer from DcStmCore
@@ -403,7 +406,8 @@ $(o)DEMRasterImporter_dgndb$(oext) : $(importerPluginsDir)DEMRasterImporter_dgnd
 
 #$(o)DGNModelGeoRef$(oext) : $(geocoordsDir)DGNModelGeoRef.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
-$(o)PODImporter_dgndb$(oext) : $(importerPluginsDir)PODImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
+#NEEDS_WORK_SM_POD_B0200 : Need to adapt to refactored Vortex API
+#$(o)PODImporter_dgndb$(oext) : $(importerPluginsDir)PODImporter_dgndb.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 
 #$(o)STMSource$(oext) : $(importerPluginsDir)STMSource.cpp $(PCHHeaderDepends)  ${MultiCompileDepends}
 

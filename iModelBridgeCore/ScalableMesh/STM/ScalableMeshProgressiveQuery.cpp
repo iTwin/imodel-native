@@ -1208,7 +1208,7 @@ void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNo
             CurveVectorPtr curvePtr = CurveVector::CreateRectangle(extentToCover.low.x, extentToCover.low.y, extentToCover.high.x, extentToCover.high.y, 0);
             ClipPrimitivePtr clipPrimitive = ClipPrimitive::CreateFromBoundaryCurveVector(*curvePtr, DBL_MAX, 0, 0, 0, 0, true);
             clipPrimitive->SetIsMask(false);
-            clipVector = ClipVector::CreateFromPrimitive(clipPrimitive);
+            clipVector = ClipVector::CreateFromPrimitive(clipPrimitive.get());
             }
         
         if (nodeIter == lowerResOverviewNodes.end())

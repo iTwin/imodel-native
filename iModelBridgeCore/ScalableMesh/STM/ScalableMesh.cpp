@@ -2633,7 +2633,7 @@ template <class POINT> void ScalableMesh<POINT>::_GetExtraFileNames(bvector<BeFi
 
 template <class POINT> IScalableMeshNodePtr ScalableMesh<POINT>::_GetRootNode()
     {
-    auto ptr = HFCPtr<SMPointIndexNode<POINT, YProtPtExtentType>>(nullptr);
+    auto ptr = HFCPtr<SMPointIndexNode<POINT, Extent3dType>>(nullptr);
     if (m_scmIndexPtr == nullptr) 
  #ifndef VANCOUVER_API
         return new ScalableMeshNode<POINT>(ptr);

@@ -202,7 +202,7 @@ void ScalableMeshLib::Initialize(ScalableMeshLib::Host& host)
     BeFileNameStatus beStatus = BeFileName::BeGetTempPath(tempDir);
     assert(BeFileNameStatus::Success == beStatus);
 #else
-    IKnownLocationsAdmin locationAdmin(host.GetIKnownLocationsAdmin());
+    DgnPlatformLib::IKnownLocationsAdmin locationAdmin(host.GetIKnownLocationsAdmin());
     tempDir = locationAdmin.GetLocalTempDirectoryBaseName();
     assert(!tempDir.IsEmpty());
 #endif

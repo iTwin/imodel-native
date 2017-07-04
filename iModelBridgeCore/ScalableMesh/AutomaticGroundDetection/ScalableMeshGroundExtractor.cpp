@@ -31,6 +31,8 @@
 #include <Bentley\BeDirectoryIterator.h>
 #include <Bentley\BeConsole.h>
 
+#include <DgnPlatform\DgnPlatformLib.h>
+
 USING_NAMESPACE_GROUND_DETECTION
 
 /*----------------------------------------------+
@@ -48,7 +50,7 @@ BeFileName GetTempXyzFilePath()
     BeFileNameStatus status = BeFileName::BeGetTempPath(tempPath);
     assert(status == BeFileNameStatus::Success);
 #else
-    IKnownLocationsAdmin locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
+    DgnPlatformLib::Host::IKnownLocationsAdmin& locationAdmin(DgnPlatformLib::QueryHost()->GetIKnownLocationsAdmin());
     tempPath = locationAdmin.GetLocalTempDirectoryBaseName();
     assert(!tempPath.IsEmpty());
 #endif

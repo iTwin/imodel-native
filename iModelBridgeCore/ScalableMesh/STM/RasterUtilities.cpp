@@ -29,7 +29,7 @@ static bool s_useMapBox = true;
 HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     {
     HFCPtr<HRFRasterFile> pRasterFile;
-    HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(path));
+    HFCPtr<HFCURL> pImageURL(HFCURL::Instanciate(Utf8String(path)));
 
 #ifndef VANCOUVER_API
     if (HRFMapBoxCreator::GetInstance()->IsKindOfFile(pImageURL))
@@ -42,7 +42,7 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
     else
 #endif
         {
-        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
+        pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(Utf8String(path)), TRUE);
         }
 
     pRasterFile = GenericImprove(pRasterFile, HRFiTiffCacheFileCreator::GetInstance(), true, true);

@@ -130,7 +130,7 @@ StatusInt ReprojectionModel::Reproject(double& pio_XInOut, double& pio_YInOut, b
 // @bsimethod                                                   Mathieu.Marchand  10/2015
 //----------------------------------------------------------------------------------------
 #ifndef VANCOUVER_API
-StatusInt ReprojectionModel::ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
+StatusInt ReprojectionModel::_ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
 #else
 void ReprojectionModel::ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) const
 #endif
@@ -145,7 +145,7 @@ void ReprojectionModel::ConvertDirect(double* pio_pXInOut, double* pio_pYInOut) 
 // @bsimethod                                                   Mathieu.Marchand  10/2015
 //----------------------------------------------------------------------------------------
 #ifndef VANCOUVER_API
-StatusInt ReprojectionModel::ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+StatusInt ReprojectionModel::_ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
 #else
 void ReprojectionModel::ConvertDirect(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
 #endif
@@ -166,7 +166,7 @@ void ReprojectionModel::ConvertDirect(double pi_XIn, double pi_YIn, double* po_p
 // @bsimethod                                                   Mathieu.Marchand  10/2015
 //----------------------------------------------------------------------------------------
 #ifndef VANCOUVER_API
-StatusInt ReprojectionModel::ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+StatusInt ReprojectionModel::_ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
 #else
 void ReprojectionModel::ConvertDirect(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
 #endif
@@ -206,7 +206,7 @@ void ReprojectionModel::ConvertDirect(double pi_YIn, double pi_XInStart, size_t 
 // @bsimethod                                                   Mathieu.Marchand  10/2015
 //----------------------------------------------------------------------------------------
 #ifndef VANCOUVER_API
-StatusInt ReprojectionModel::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+StatusInt ReprojectionModel::_ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
 #else
 void ReprojectionModel::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
 #endif
@@ -240,7 +240,7 @@ void ReprojectionModel::ConvertDirect(size_t pi_NumLoc, double* pio_aXInOut, dou
 // Converter (inverse)
 //-----------------------------------------------------------------------------
 #ifndef VANCOUVER_API
-StatusInt ReprojectionModel::ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
+StatusInt ReprojectionModel::_ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
 #else
 void ReprojectionModel::ConvertInverse(double* pio_pXInOut, double* pio_pYInOut) const
 #endif
@@ -255,7 +255,7 @@ void ReprojectionModel::ConvertInverse(double* pio_pXInOut, double* pio_pYInOut)
 // Converter (inverse)
 //-----------------------------------------------------------------------------
 #ifndef VANCOUVER_API
-StatusInt ReprojectionModel::ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
+StatusInt ReprojectionModel::_ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
 #else
 void ReprojectionModel::ConvertInverse(double pi_XIn, double pi_YIn, double* po_pXOut, double* po_pYOut) const
 #endif
@@ -277,7 +277,7 @@ void ReprojectionModel::ConvertInverse(double pi_XIn, double pi_YIn, double* po_
 // Converter (inverse)
 //-----------------------------------------------------------------------------
 #ifndef VANCOUVER_API
-StatusInt ReprojectionModel::ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
+StatusInt ReprojectionModel::_ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
 #else
 void ReprojectionModel::ConvertInverse(double pi_YIn, double pi_XInStart, size_t pi_NumLoc, double pi_XInStep, double* po_pXOut, double* po_pYOut) const
 #endif
@@ -317,7 +317,7 @@ void ReprojectionModel::ConvertInverse(double pi_YIn, double pi_XInStart, size_t
 // Converter (inverse)
 //-----------------------------------------------------------------------------
 #ifndef VANCOUVER_API
-StatusInt ReprojectionModel::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
+StatusInt ReprojectionModel::_ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
 #else
 void ReprojectionModel::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, double* pio_aYInOut) const
 #endif
@@ -351,7 +351,11 @@ void ReprojectionModel::ConvertInverse(size_t pi_NumLoc, double* pio_aXInOut, do
 //  GetStetchParams
 //  Returns the stretch parameters
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
+void ReprojectionModel::_GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, HGF2DDisplacement* po_pDisplacement) const
+#else
 void ReprojectionModel::GetStretchParams(double* po_pScaleFactorX, double* po_pScaleFactorY, HGF2DDisplacement* po_pDisplacement) const
+#endif
     {
     HPRECONDITION(po_pScaleFactorX != NULL);
     HPRECONDITION(po_pScaleFactorY != NULL);
@@ -371,7 +375,11 @@ void ReprojectionModel::GetStretchParams(double* po_pScaleFactorX, double* po_pS
 //  GetMatrix
 //  Gets the components of the projective by matrix
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
+HFCMatrix<3, 3> ReprojectionModel::_GetMatrix() const
+#else
 HFCMatrix<3, 3> ReprojectionModel::GetMatrix() const
+#endif
     {
 
     // Should not be called
@@ -386,7 +394,11 @@ HFCMatrix<3, 3> ReprojectionModel::GetMatrix() const
 // Reverse
 // This method reverses the transformation model
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
+void    ReprojectionModel::_Reverse()
+#else
 void    ReprojectionModel::Reverse()
+#endif
     {
     m_isReverse = !m_isReverse;
 
@@ -400,7 +412,11 @@ void    ReprojectionModel::Reverse()
 // ComposeInverseWithDirectOf
 // Composes a new transformation model as a combination of self and given
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
+HFCPtr<HGF2DTransfoModel>  ReprojectionModel::_ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
+#else
 HFCPtr<HGF2DTransfoModel>  ReprojectionModel::ComposeInverseWithDirectOf(const HGF2DTransfoModel& pi_rModel) const
+#endif
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
@@ -426,7 +442,11 @@ HFCPtr<HGF2DTransfoModel>  ReprojectionModel::ComposeInverseWithDirectOf(const H
 // This method allocates a copy of self. The caller is responsible for
 // the deletion of this object.
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
+HGF2DTransfoModel* ReprojectionModel::_Clone() const
+#else
 HGF2DTransfoModel* ReprojectionModel::Clone() const
+#endif
     {
     // Allocate object as copy and return
     return new ReprojectionModel(*this);
@@ -436,22 +456,35 @@ HGF2DTransfoModel* ReprojectionModel::Clone() const
 // ComposeYourself
 // PRIVATE
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
+HFCPtr<HGF2DTransfoModel>  ReprojectionModel::_ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
+#else
 HFCPtr<HGF2DTransfoModel>  ReprojectionModel::ComposeYourself(const HGF2DTransfoModel& pi_rModel) const
+#endif
     {
     // Recipient
     HFCPtr<HGF2DTransfoModel> pResultModel;
 
     // Type is not known ... build a complex
     // To do this we call the ancestor ComposeYourself
-    pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
 
+#ifndef VANCOUVER_API
+    pResultModel = HGF2DTransfoModel::_ComposeYourself(pi_rModel);
+#else
+    pResultModel = HGF2DTransfoModel::ComposeYourself(pi_rModel);
+#endif
+    
     return (pResultModel);
     }
 
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
+HFCPtr<HGF2DTransfoModel> ReprojectionModel::_CreateSimplifiedModel() const
+#else
 HFCPtr<HGF2DTransfoModel> ReprojectionModel::CreateSimplifiedModel() const
+#endif
     {
     if (m_pSrcGCS->IsEquivalent(*m_pDestGCS))
         return new HGF2DIdentity();
@@ -535,7 +568,11 @@ StatusInt ReprojectionModel::ComputeDomain() const
 //-----------------------------------------------------------------------------
 // 
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
+HFCPtr<HGF2DShape> ReprojectionModel::_GetDirectDomain() const
+#else
 HFCPtr<HGF2DShape> ReprojectionModel::GetDirectDomain() const
+#endif
     {
     ComputeDomain();
 
@@ -545,7 +582,11 @@ HFCPtr<HGF2DShape> ReprojectionModel::GetDirectDomain() const
 //-----------------------------------------------------------------------------
 // CreateSimplifiedModel
 //-----------------------------------------------------------------------------
+#ifndef VANCOUVER_API
+HFCPtr<HGF2DShape> ReprojectionModel::_GetInverseDomain() const
+#else
 HFCPtr<HGF2DShape> ReprojectionModel::GetInverseDomain() const
+#endif
     {
     ComputeDomain();
 
