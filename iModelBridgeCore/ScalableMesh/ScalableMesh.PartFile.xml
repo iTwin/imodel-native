@@ -41,7 +41,7 @@
         <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  -->
         <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>    -->
         <Bindings>
-          <Directory SourceName="SdkSources/ScalableMeshSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />
+          <Directory SourceName="SdkSources/V8_InternalSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />
           <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
             <Assemblies ProductDirectoryName="ScalableMeshAssemblies">delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies> 
             <Assemblies ProductDirectoryName="PPNativeAssemblies">delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies> 
@@ -65,9 +65,7 @@
     </Part>
 
     <Part Name="ScalableMeshATPexe" BentleyBuildMakeFile="Tests/ATP/ScalableMeshATPexe.mke" OnlyPlatforms="x64, x86" ExcludeLibType="Static">
-        <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />
-        <SubPart PartName="RasterSchema"            PartFile="RealityModeling"          Repository="DgnDomains-RealityModeling" />
-        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
+        <SubPart PartName="ScalableMesh"  PartFile="ScalableMesh" Repository="ScalableMesh" />        
         <Bindings>
           <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshATPexe.exe</Files>
         </Bindings>
@@ -262,8 +260,10 @@
         <ProductDirectory Name="BeIcu4cData"       Path="Dlls" LibType="static" />
         <ProductDirectory Name="PointCloudAssemblies" Path="Dlls" Deliver="true" />
         <ProductDirectory Name="LibV8Assemblies" Path="Dlls" Deliver="true" />
-        <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />
-    </ProductDirectoryList>
+        <ProductDirectory Name="MdlsysAsneededLuxology" Path="Dlls" />
+        <ProductDirectory Name="ScalableMeshV8SDK"          Path="Dlls\ScalableMeshV8SDK" />        
+      
+  </ProductDirectoryList>
 
 <ProductDirectoryList ListName="ScalableMeshLumenSdk">
         <ProductDirectory Name="TMSchemas"  Deliver="true" Path="Dlls"/>
@@ -326,8 +326,7 @@
     <Product Name="ScalableMeshATP" SaveProduct="true" >
         <SubPart PartName="ScalableMeshATPexe" />
         <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform"/>        
-        <SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
-        <Directories DirectoryListName="DgnPlatform" PartFile="DgnPlatform" Repository="DgnPlatform" />        
+        <Directories DirectoryListName="DgnPlatformDirList" PartFile="DgnPlatform" Repository="DgnPlatform" />        
         <Directories DirectoryListName="ScalableMeshATP" />        
     </Product>
 

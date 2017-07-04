@@ -119,6 +119,5 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\ScalableMeshATPexe.mke" />
-    <None Include="..\ScalableMeshATPexe.mki" />
   </ItemGroup>
 </Project>

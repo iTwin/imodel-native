@@ -13,11 +13,11 @@
 #include "ATPFileFinder.h"
 #include <ScalableMesh/IScalableMeshSourceImportConfig.h>
 #include <ScalableMesh\IScalableMeshPolicy.h>
-#include <DgnPlatform\DgnPlatformErrors.r.h>
-#include <DgnPlatform\DgnPlatformBaseType.r.h>
-
 
 #ifdef VANCOUVER_API
+    #include <DgnPlatform\DgnPlatformErrors.r.h>
+    #include <DgnPlatform\DgnPlatformBaseType.r.h>
+
     USING_NAMESPACE_BENTLEY_DGNPLATFORM
 #else
     USING_NAMESPACE_BENTLEY_DGN

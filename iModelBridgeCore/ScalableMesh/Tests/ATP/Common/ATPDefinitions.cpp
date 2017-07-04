@@ -9,6 +9,7 @@
 #include <random>
 #include <queue>
 #include <thread>
+#include <iomanip>
 
 #ifdef VANCOUVER_API
 #include <ImagePP\h\hstdcpp.h>

@@ -1,11 +1,6 @@
 //#include "ScalableMeshATPPch.h"
 #include "ScalableMeshATPexe.h"
 
-#ifndef VANCOUVER_API   
-#include <RasterSchema/RasterSchemaApi.h>
-#include <RasterSchema/RasterFileHandler.h>
-#include <RasterSchema/WmsHandler.h>
-#endif
 
 #include <ImagePP/all/h/HFCMacros.h>
 #include <ImagePP\all\h\HRFFileFormats.h>
@@ -50,9 +45,9 @@ struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
     DEFINE_T_SUPER(ImagePP::ImageppLibAdmin)
 
 #ifndef VANCOUVER_API
-    virtual BentleyStatus                           _GetDefaultTempDirectory(BeFileName& tempFileName) const override;
-    virtual BentleyStatus                           _GetGDalDataPath(WStringR gdalDataPath) const override;
-    virtual BentleyStatus                           _GetECWDataPath(WStringR ecwDataPath) const override;
+    virtual BentleyStatus                           _GetDefaultTempDirectory(BeFileName& tempFileName) const override;        
+    virtual BentleyStatus                           _GetGDalDataPath(BeFileNameR gdalDataPath) const override;
+    virtual BentleyStatus                           _GetECWDataPath(BeFileNameR ecwDataPath) const override;    
 #endif
     virtual BentleyStatus                           _GetLocalCacheDirPath(BeFileName& tempPath, bool checkForChange = false) const override;        
     virtual                                         ~MyImageppLibAdmin() {}
@@ -119,7 +114,7 @@ BentleyStatus MyImageppLibAdmin::_GetLocalCacheDirPath(BeFileName& tempPath, boo
 // @bsimethod                                                   Eric.Paquet         07/2015
 //-----------------------------------------------------------------------------------------
 #ifndef VANCOUVER_API
-BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(WStringR gdalDataPath) const
+BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(BeFileNameR gdalDataPath) const
     {
     BeFileName path = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
     path.AppendToPath(L"GDal_Data");
@@ -134,7 +129,7 @@ BentleyStatus MyImageppLibAdmin::_GetGDalDataPath(WStringR gdalDataPath) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                                   Eric.Paquet         07/2015
 //-----------------------------------------------------------------------------------------
-BentleyStatus MyImageppLibAdmin::_GetECWDataPath(WStringR ecwDataPath) const
+BentleyStatus MyImageppLibAdmin::_GetECWDataPath(BeFileNameR ecwDataPath) const
     {
     BeFileName path = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
 
@@ -159,7 +154,11 @@ BentleyStatus MyImageppLibAdmin::_GetECWDataPath(WStringR ecwDataPath) const
 
 BentleyStatus ScalableMeshATPexe::Initialize(int argc, WCharP argv[])
     {
+#ifdef VANCOUVER_API
     DgnViewLib::Initialize(*this, true); // this initializes the DgnDb libraries
+#else
+    DgnPlatformLib::Initialize(*this, true);    
+#endif	
 
     // Initialize RasterLib
     //DgnDomains::RegisterDomain(RasterSchema::RasterDomain::GetDomain());
