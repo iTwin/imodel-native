@@ -82,7 +82,7 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
     public:
         explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool recurseIntoCompoundPropertyMaps = true)
             {
-            SetCallbackPropertyMapFilter([filter](PropertyMap const& propertyMap) {return Enum::Contains(filter, propertyMap.GetType()); });
+            SetCallbackPropertyMapFilter([filter](PropertyMap const& propertyMap) { return Enum::Contains(filter, propertyMap.GetType()); });
             SetCallbackRecurseIntoCompoundPropertyMap([recurseIntoCompoundPropertyMaps](CompoundDataPropertyMap const&) { return recurseIntoCompoundPropertyMaps; });
             }
 

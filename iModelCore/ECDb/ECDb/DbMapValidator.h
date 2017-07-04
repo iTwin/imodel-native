@@ -15,7 +15,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+===============+===============+===============+===============+===============+======
 struct DbMapValidator final : NonCopyableClass
     {
-    enum class Filter
+    enum class Mode
         {
         InMemory,
         All
@@ -24,8 +24,9 @@ struct DbMapValidator final : NonCopyableClass
     private:
         DbMap const& m_dbMap;
         SchemaImportContext& m_schemaImportContext;
+        Mode m_mode = Mode::All;
 
-        BentleyStatus ValidateDbSchema(Filter) const;
+        BentleyStatus ValidateDbSchema() const;
         BentleyStatus ValidateDbTable(DbTable const&) const;
         BentleyStatus ValidateDbColumn(DbColumn const&, bset<Utf8String, CompareIUtf8Ascii> const& physicalColumns) const;
         BentleyStatus ValidateDbConstraint(DbConstraint const&) const;
@@ -34,7 +35,7 @@ struct DbMapValidator final : NonCopyableClass
         BentleyStatus ValidateDbIndex(DbIndex const&) const;
         BentleyStatus ValidateDbTrigger(DbTrigger const&) const { return SUCCESS; }
 
-        BentleyStatus ValidateDbMap(Filter) const;
+        BentleyStatus ValidateDbMap() const;
         BentleyStatus ValidateClassMap(ClassMap const&) const;
         BentleyStatus ValidateRelationshipClassMap(RelationshipClassMap const&) const;
         BentleyStatus ValidateRelationshipClassEndTableMap(RelationshipClassEndTableMap const&) const;
@@ -46,9 +47,9 @@ struct DbMapValidator final : NonCopyableClass
         IssueReporter const& Issues() const { return m_dbMap.Issues(); }
 
     public:
-        DbMapValidator(DbMap const& dbMap, SchemaImportContext& ctx) : m_dbMap(dbMap), m_schemaImportContext(ctx) {}
+        DbMapValidator(DbMap const& dbMap, SchemaImportContext& ctx, Mode validationMode = Mode::All) : m_dbMap(dbMap), m_schemaImportContext(ctx), m_mode(validationMode) {}
         ~DbMapValidator() {}
 
-        BentleyStatus Validate(Filter classMapFilter = Filter::All, Filter tableFilter = Filter::All) const;
+        BentleyStatus Validate() const;
     };
 END_BENTLEY_SQLITE_EC_NAMESPACE

@@ -102,23 +102,23 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
     public:
         enum class Type
             {
-            ConstraintECClassId = 2^0,
-            ConstraintECInstanceId = 2^1,
-            ECClassId = 2^2,
-            ECInstanceId = 2^3,
+            ConstraintECClassId = 1,
+            ConstraintECInstanceId = 2,
+            ECClassId = 4,
+            ECInstanceId = 8,
 
-            Navigation = 2^4,
-            NavigationId = 2^5,
-            NavigationRelECClassId = 2^6,
+            Navigation = 16,
+            NavigationId = 32,
+            NavigationRelECClassId = 64,
 
-            Point2d = 2^7,
-            Point3d = 2^8,
-            Primitive = 2^9,
-            PrimitiveArray = 2^10,
-            Struct = 2^11,
-            StructArray = 2^12,
-            SystemPerTableClassId = 2^13,
-            SystemPerTableId = 2^14,
+            Point2d = 128,
+            Point3d = 256,
+            Primitive = 512,
+            PrimitiveArray = 1024,
+            Struct = 2048,
+            StructArray = 4096,
+            SystemPerTableClassId = 8192,
+            SystemPerTableId = 16384,
 
             System = ECInstanceId | ECClassId | ConstraintECClassId | ConstraintECInstanceId,
             SingleColumnData = Primitive | PrimitiveArray | StructArray | NavigationRelECClassId | NavigationId | SystemPerTableId | SystemPerTableClassId,
@@ -151,15 +151,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         Type GetType() const { return m_type; }
         
         template <typename TPropertyMap>
-        TPropertyMap const& GetAs() const 
-            { 
-            if (dynamic_cast<TPropertyMap const*> (this) == nullptr)
-                {
-                printf("");
-                }
-
-            BeAssert(dynamic_cast<TPropertyMap const*> (this) != nullptr); 
-            return *static_cast<TPropertyMap const*> (this); }
+        TPropertyMap const& GetAs() const { BeAssert(dynamic_cast<TPropertyMap const*> (this) != nullptr); return *static_cast<TPropertyMap const*> (this); }
         
         Utf8StringCR GetName() const { return GetProperty().GetName(); }
         ECN::ECPropertyCR GetProperty() const { return m_ecProperty; }

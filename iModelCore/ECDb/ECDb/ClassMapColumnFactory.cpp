@@ -11,17 +11,14 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-bool ColumnMaps::IsColumnInUsed(DbColumn const& column) const
-    {
-    return n_columns.find(&column) != n_columns.end();
-    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-void ColumnMaps::Insert(SingleColumnDataPropertyMap const& propertyMap)
-    {
-    Insert(propertyMap.GetAccessString().c_str(), propertyMap.GetColumn());
-    }
+bool ColumnMaps::IsColumnInUsed(DbColumn const& column) const { return n_columns.find(&column) != n_columns.end(); }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+void ColumnMaps::Insert(SingleColumnDataPropertyMap const& propertyMap) { Insert(propertyMap.GetAccessString().c_str(), propertyMap.GetColumn()); }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017

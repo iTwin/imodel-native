@@ -15,20 +15,20 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                           06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::Validate(Filter classMapFilter, Filter tableFilter) const
+BentleyStatus DbMapValidator::Validate() const
     {
-    if (SUCCESS != ValidateDbSchema(tableFilter))
+    if (SUCCESS != ValidateDbSchema())
         return ERROR;
 
-    return ValidateDbMap(classMapFilter);
+    return ValidateDbMap();
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                           06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::ValidateDbSchema(Filter filter) const
+BentleyStatus DbMapValidator::ValidateDbSchema() const
     {
     std::vector<DbTable const*> tables;
-    if (filter == Filter::All)
+    if (m_mode == Mode::All)
         {
         CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT Id FROM ec_Table");
         if (stmt == nullptr)
@@ -403,7 +403,7 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                           06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::ValidateDbMap(Filter filter) const
+BentleyStatus DbMapValidator::ValidateDbMap() const
     {
     Statement stmt;
     if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT count(*) FROM " TABLE_Class))
@@ -439,7 +439,7 @@ BentleyStatus DbMapValidator::ValidateDbMap(Filter filter) const
         }
 
     std::vector<ClassMap const*> classMaps;
-    if (filter == Filter::All)
+    if (m_mode == Mode::All)
         {
         CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT Id FROM ec_Class");
         if (stmt == nullptr)
@@ -514,6 +514,17 @@ BentleyStatus DbMapValidator::ValidateDbMap(Filter filter) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
     {
+    if (classMap.GetType() == ClassMap::Type::NotMapped)
+        {
+        if (classMap.GetPropertyMaps().Size() != 0)
+            {
+            Issues().Report("Class '%s' is not mapped and therefore must not have property maps.", classMap.GetClass().GetFullName());
+            return ERROR;
+            }
+
+        return SUCCESS;
+        }
+
     int dataPropertyMapCount = 0;
     int systemPropertyMapCount = 0;
     for (PropertyMap const* propertyMap : classMap.GetPropertyMaps())
@@ -526,13 +537,6 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
             BeAssert(false);
         }
 
-    const size_t propertyCount = classMap.GetClass().GetPropertyCount(true);
-
-    if (dataPropertyMapCount != propertyCount)
-        {
-        Issues().Report("ECClass '%s' has at least one property for which no property map exists.", classMap.GetClass().GetFullName());
-        return ERROR;
-        }
 
     switch (classMap.GetType())
         {
@@ -543,6 +547,19 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 {
                 Issues().Report("The class map for '%s' must have %d system properties, but has %d.", classMap.GetClass().GetFullName(),
                                 expectedSystemPropertyMapCount, systemPropertyMapCount);
+                return ERROR;
+                }
+
+            //WIP: This seems to have a bug for multi inheritance
+            //const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
+            int propCount = 0;
+            ECPropertyIterable propIterable = classMap.GetClass().GetProperties(true);
+            for (auto it = propIterable.begin(); it != propIterable.end(); ++it) { propCount++; }
+
+            if (dataPropertyMapCount != propCount)
+                {
+                Issues().Report("The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(),
+                                dataPropertyMapCount, propCount);
                 return ERROR;
                 }
 
@@ -579,14 +596,9 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 return ERROR;
                 }
 
-            break;
-            }
-
-            case ClassMap::Type::NotMapped:
-            {
-            if (classMap.GetPropertyMaps().Size() != 0)
+            if (dataPropertyMapCount != classMap.GetClass().GetPropertyCount(true))
                 {
-                Issues().Report("Class '%s' is not mapped and therefore must not have property maps.", classMap.GetClass().GetFullName());
+                Issues().Report("ECClass '%s' has at least one property for which no property map exists.", classMap.GetClass().GetFullName());
                 return ERROR;
                 }
 
@@ -880,7 +892,8 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
                 return ERROR;
                 }
 
-            if (col.GetType() != DbColumn::Type::Integer)
+            //for existing tables, the DbColumn type cannot always be determined
+            if (col.GetTable().GetType() != DbTable::Type::Existing && col.GetType() != DbColumn::Type::Integer)
                 {
                 Issues().Report("The system property map '%s.%s' maps to a column which is not of type 'Integer'. Violating column '%s.%s'.",
                                 propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str(),

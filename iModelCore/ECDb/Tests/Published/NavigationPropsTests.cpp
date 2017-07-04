@@ -320,6 +320,10 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
     ECClassId elementOwnsElementRelClassId = m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement");
     ASSERT_TRUE(elementOwnsElementRelClassId.IsValid());
 
+    Column modelIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Model.Id"));
+    ASSERT_TRUE(modelIdCol.Exists()) << "PropertyMap column for Element.Model.Id";
+    ASSERT_FALSE(modelIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Model.Id";
+
     ECInstanceKey modelKey;
     {
     ECSqlStatement stmt;

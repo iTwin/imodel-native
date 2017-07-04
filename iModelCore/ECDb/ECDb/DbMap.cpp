@@ -176,7 +176,7 @@ BentleyStatus DbMap::MapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaC
 
     PERFLOG_START("ECDb", "Schema import> Validate mappings");
 
-    if (SUCCESS != DbMapValidator(*this, ctx).Validate(DbMapValidator::Filter::InMemory, DbMapValidator::Filter::InMemory))
+    if (SUCCESS != DbMapValidator(*this, ctx, DbMapValidator::Mode::InMemory).Validate())
         return ERROR;
 
     PERFLOG_FINISH("ECDb", "Schema import> Validate mappings");
