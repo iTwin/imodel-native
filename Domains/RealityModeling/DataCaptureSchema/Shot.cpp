@@ -21,6 +21,22 @@ void ShotHandler::_GetClassParams(Dgn::ECSqlClassParams& params)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Daniel.McKenzie                 03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+ColorDef Shot::GetDefaultColor()
+    {
+    return ColorDef(0xff, 0x7f, 0x27); //orange color
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Daniel.McKenzie                 03/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+int Shot::GetDefaultWeight()
+    {
+    return 2;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 ShotPtr Shot::Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevice, PoseElementId pose)
@@ -377,6 +393,22 @@ void Shot::_OnUpdated(DgnElementCR original) const
     if (GetPoseId() != other->GetPoseId())
         UpdateShotIsTakenAtPoseRelationship(GetDgnDb());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                   02/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus Shot::_OnDelete() const
+    {
+    //NEEDSWORK: not now    
+    // Verify if the associated Pose is use by another shot.  I no, delete the pose
+
+    // Remove the associated pose 
+    PoseCPtr posePtr = Pose::Get(GetDgnDb(), GetPoseId());
+    posePtr->Delete();
+    
+    return DgnDbStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/DataCaptureSchema/Shot.h $
+|     $Source: PublicApi/DataCaptureSchema/Gimbal.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,41 +9,50 @@
 
 //__PUBLISH_SECTION_START__
 #include "DataCaptureSchemaDefinitions.h"
-#include "Pose.h"
+
+USING_NAMESPACE_BENTLEY_DGNPLATFORM
 
 BEGIN_BENTLEY_DATACAPTURE_NAMESPACE
 
 
 //=======================================================================================
-//! Base class for Shot 
+//! Base class for Gimbal 
 //! @ingroup DataCaptureGroup
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE Shot : Dgn::SpatialLocationElement
+struct EXPORT_VTABLE_ATTRIBUTE Gimbal : Dgn::PhysicalElement
 {
-    friend struct ShotHandler;
-    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Shot, Dgn::SpatialLocationElement);
+    friend struct GimbalHandler;
+    DGNELEMENT_DECLARE_MEMBERS(BDCP_CLASS_Gimbal, Dgn::PhysicalElement);
+
+public:
+    //! Entry in GimbalAngleRange iterator
+    struct GimbalAngleRangeEntry : Dgn::ECSqlStatementEntry
+        {
+            friend struct Dgn::ECSqlStatementIterator < Gimbal::GimbalAngleRangeEntry >;
+            friend struct Gimbal;
+        private:
+            GimbalAngleRangeEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : Dgn::ECSqlStatementEntry(statement) {}
+        public:
+            GimbalAngleRangeElementId GetGimbalAngleRangeElementId() const { return m_statement->GetValueId<GimbalAngleRangeElementId>(0); }
+        };
+
+    //! Iterator over timelines
+    struct GimbalAngleRangeIterator : Dgn::ECSqlStatementIterator < Gimbal::GimbalAngleRangeEntry >
+        {
+        };
 
 private:
-    mutable CameraDeviceElementId m_cameraDevice;//Query and cached from DgnDb or given at creation time
-    mutable PoseElementId         m_pose;//Query and cached from DgnDb or given at creation time
+    mutable DgnElementIdSet m_gimbalAngleRangeIdSet;                    //Query and cached from DgnDb or given at creation time
+    mutable bool m_gimbalAngleRangeIdSetInit;
+    mutable DgnElementIdSet m_cameraIdSet;                    //Query and cached from DgnDb or given at creation time
+    mutable bool m_cameraIdSetInit;
 
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
 
-    Shot(CreateParams const& params, CameraDeviceElementId cameraDevice=CameraDeviceElementId(), PoseElementId pose=PoseElementId());
-
-    static BentleyStatus InsertShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb, ShotElementId shotElmId, CameraDeviceElementId cameraDeviceElmId);
-    static BentleyStatus InsertShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb, ShotElementId shotElmId, PoseElementId poseElmId);
-    static CameraDeviceElementId QueryShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb,  ShotElementId shotElmId);
-    static PoseElementId QueryShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb, ShotElementId shotElmId);
-
-    void InsertShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
-    void UpdateShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
-    void DeleteShotIsTakenByCameraDeviceRelationship(Dgn::DgnDbR dgndb) const;
-    void InsertShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb) const;
-    void UpdateShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb) const;
-    void DeleteShotIsTakenAtPoseRelationship(Dgn::DgnDbR dgndb) const;
+    explicit Gimbal(CreateParams const& params);
+    explicit Gimbal(CreateParams const& params, DgnElementIdSet cameraIdSet, DgnElementIdSet gimbalAngleRangeIdSet);
 
     //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
     //! @param[in] source The element from which to copy
@@ -53,10 +62,6 @@ protected:
     //! @a source is not necessarily the same type as this DgnElement. See notes at CopyFrom.
     //! @note If you hold any IDs, you must also override _RemapIds. Also see _AdjustPlacementForImport
     virtual void _CopyFrom(Dgn::DgnElementCR source) override;
-
-    //! Remap any IDs that might refer to elements or resources in the source DgnDb.
-    //! @param[in] importer Specifies source and destination DgnDbs and knows how to remap IDs
-    virtual void _RemapIds(Dgn::DgnImportContext&) override;
 
     //! Called to bind the parameters when inserting a new Shot into the DgnDb. Override to save subclass properties.
     //! @note If you override this method, you should bind your subclass properties
@@ -96,38 +101,53 @@ protected:
 
     virtual Dgn::DgnCode _GenerateDefaultCode() const override;
 
+    void InsertGimbalHasGimbalAngleRangesRelationship(Dgn::DgnDbR dgndb) const;
+    void UpdateGimbalHasGimbalAngleRangesRelationship(Dgn::DgnDbR dgndb) const;
+    void DeleteGimbalHasGimbalAngleRangesRelationship(Dgn::DgnDbR dgndb) const;
+   
+    void InsertGimbalHasCamerasRelationship(Dgn::DgnDbR dgndb) const;
+    void UpdateGimbalHasCamerasRelationship(Dgn::DgnDbR dgndb) const;
+    void DeleteGimbalHasCamerasRelationship(Dgn::DgnDbR dgndb) const;
+
+    static DgnElementIdSet QueryGimbalHasGimbalAngleRangesRelationship(DgnDbR dgndb, GimbalElementId gimbalElmId);
+    static BentleyStatus InsertGimbalHasGimbalAngleRangesRelationship(Dgn::DgnDbR dgndb, GimbalElementId gimbalElmId, DgnElementIdSet gimbalAngleRangeIdSet);
+
+    static DgnElementIdSet QueryGimbalHasCamerasRelationship(DgnDbR dgndb, GimbalElementId gimbalElmId);
+    static BentleyStatus InsertGimbalHasCamerasRelationship(Dgn::DgnDbR dgndb, GimbalElementId gimbalElmId, DgnElementIdSet cameraIdSet);
+
 public:
-    DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Shot)
-    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Shot)
+    DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Gimbal)
+    DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Gimbal)
 
-    //! Create a new Shot 
-    DATACAPTURE_EXPORT static ShotPtr Create(Dgn::SpatialModelR model, CameraDeviceElementId cameraDevice, PoseElementId pose);
+    //! Create a new Gimbal 
+    DATACAPTURE_EXPORT static GimbalPtr Create(Dgn::SpatialModelR model);
 
-    DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR CameraDeviceValue, Utf8StringCR value);
+    DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
 
-    //! Query for an Shot (Id) by label
-    //! @return Id of the Shot or invalid Id if an Shot was not found
-    DATACAPTURE_EXPORT static ShotElementId QueryForIdByLabel(Dgn::DgnDbR dgndb, Utf8CP label);
+    //! Get the id of this Gimbal element
+    DATACAPTURE_EXPORT GimbalElementId GetId() const;
 
-    DATACAPTURE_EXPORT static Dgn::ColorDef GetDefaultColor();
-    DATACAPTURE_EXPORT static int           GetDefaultWeight();
+    //! Make an iterator over all GimbalAngleRange-s relevant to a PhotoPlan
+    DATACAPTURE_EXPORT static Gimbal::GimbalAngleRangeIterator MakeGimbalAngleRangeIterator(Dgn::DgnDbCR dgndb, GimbalElementId gimbalZoneId);
 
-    //! Get the id of this Shot element
-    DATACAPTURE_EXPORT ShotElementId GetId() const;
+    DATACAPTURE_EXPORT void SetGimbalAngleRangeElementIdSet(DgnElementIdSet gimablAngleRangeIdSet);
 
-    DATACAPTURE_EXPORT CameraDeviceElementId  GetCameraDeviceId() const;
-    DATACAPTURE_EXPORT void             SetCameraDeviceId(CameraDeviceElementId val);
-    DATACAPTURE_EXPORT PoseElementId    GetPoseId() const;
-    DATACAPTURE_EXPORT void             SetPoseId(PoseElementId val);
+    DATACAPTURE_EXPORT DgnElementIdSet GetGimbalAngleRangeElementIdSet() const;
+
+    DATACAPTURE_EXPORT BentleyStatus RemoveAllGimbalAngleRanges();
+
+    DATACAPTURE_EXPORT void SetCameraElementIdSet(DgnElementIdSet cameraIdSet);
+
+    DATACAPTURE_EXPORT DgnElementIdSet GetCameraElementIdSet() const;
 };
 
 //=================================================================================
-//! ElementHandler for Shot-s
+//! ElementHandler for Gimbal-s
 //! @ingroup DataCaptureGroup
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ShotHandler : Dgn::dgn_ElementHandler::Geometric3d
+struct EXPORT_VTABLE_ATTRIBUTE GimbalHandler : Dgn::dgn_ElementHandler::Geometric3d
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_Shot, Shot, ShotHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BDCP_CLASS_Gimbal, Gimbal, GimbalHandler, Dgn::dgn_ElementHandler::Geometric3d, DATACAPTURE_EXPORT)
 protected: 
     virtual void _GetClassParams(Dgn::ECSqlClassParams& params) override;
 };

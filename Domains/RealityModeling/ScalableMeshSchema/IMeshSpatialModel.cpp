@@ -81,7 +81,7 @@ bool IMeshSpatialModel::UnregisterTilesChangedEventListener(ITerrainTileChangedH
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-AxisAlignedBox3dCR IMeshSpatialModel::GetRange() const
+AxisAlignedBox3d IMeshSpatialModel::GetRange() const
 {
 return _GetRange();
 }
@@ -123,7 +123,7 @@ return _GetMeshPartUnderClipMask(vertices,verticeIndexes,clippedConceptualElemen
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     1/2016
 //----------------------------------------------------------------------------------------
-BentleyStatus IMeshSpatialModel::ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew)
+BentleyStatus IMeshSpatialModel::ReloadClipMask(const BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew)
 {
 return _ReloadClipMask(clipMaskElementId, isNew);
 }

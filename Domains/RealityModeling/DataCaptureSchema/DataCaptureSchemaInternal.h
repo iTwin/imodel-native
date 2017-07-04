@@ -9,6 +9,7 @@
 
 #include <DataCaptureSchema/DataCaptureSchemaApi.h>
 #include <DgnPlatform/DgnCoreAPI.h>
+#include <GeoCoord/BaseGeoCoord.h>
 
 
 USING_NAMESPACE_BENTLEY_SQLITE

@@ -18,11 +18,11 @@
         <SubPart PartName="ScalableMeshSchemaPublicAPI"/>
         <SubPart PartName="ImagePP"         PartFile="ImagePP"      Repository="ImagePP" />
         <SubPart PartName="qvision"         PartFile="QuickVision"      Repository="qvision5" />
-        <SubPart PartName="Core"            PartFile="TerrainModel"      Repository="TerrainModel" />
+        <SubPart PartName="Core"         PartFile="TerrainModelDgnDb"      Repository="TerrainModel" />
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <SubPart PartName="ScalableMesh"    PartFile="ScalableMesh"          Repository="ScalableMesh" />
         <Bindings>
-            <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(shlibext)</Assemblies>
+            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)ScalableMeshSchema$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>
         </Bindings>
     </Part>  
@@ -97,6 +97,16 @@
             <Libs>Delivery/$(libprefix)ThreeMx$(libext)</Libs> 
         </Bindings>
     </Part>
+
+    <!-- ////////////////////////////   Use to convert 3MX to 3SM /////////////////////////////////// -->
+    <Part Name="ThreeMxReaderLegacy" BMakeFile="ThreeMxSchema/ThreeMxReaderLegacy.mke">
+        <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
+        <Bindings>
+	    <PublicAPI Domain="ThreeMxReader"/>
+          <Assemblies ProductDirectoryName="ThreeMxAssemblies">Delivery/ThreeMxReaderLegacy.dll</Assemblies>
+          <Libs>delivery/$(libprefix)ThreeMxReaderLegacy$(libext)</Libs>
+        </Bindings>
+      </Part>
 
     <!-- ///////////////////////////////////////////////////////////////////////////////////// -->
     <!-- ////////////////////////////   DataCapture        /////////////////////////////////// -->

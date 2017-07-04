@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/DataCaptureSchema/Pose.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -27,10 +27,16 @@ private:
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
-    DPoint3d m_center;
-    Angle m_omega;
-    Angle m_phi;
-    Angle m_kappa;
+    DPoint3d            m_center;
+    RotMatrix           m_rotation;
+    bool                m_isECEFSupported;
+
+    //Values below are computed from value above
+    DPoint3d            m_centerLocal;
+    RotMatrix           m_rotationLocal;
+    Angle               m_omega;
+    Angle               m_phi;
+    Angle               m_kappa;
 
     explicit Pose(CreateParams const& params);
 
@@ -79,8 +85,31 @@ public:
     DECLARE_DATACAPTURE_ELEMENT_BASE_METHODS(Pose)
     DECLARE_DATACAPTURE_QUERYCLASS_METHODS(Pose)
 
+    //! Yaw Pitch Roll angles can be define differently according to convention
+    enum class YPRConvention
+        {
+        // DgnDb convention
+        //  The coordinate system orientation has X forward, Y to the left, and Z up.
+        //  If only one is nonzero, the meanings are:
+        //  
+        //  YAW is rotation around Z (X towards Y) (turn left)
+        //  PITCH is rotation around negative Y (X towards Z)  (nose up)
+        //  ROLL is rotation around X (Y towards Z)    (tip right)
+        //
+        DgnDb = 0, //East Forward 
+          
+        // 0,0,0 = looking horizontally in y direction, z=top, x=right (If georeferenced XYZ=ENU, this means looking north horizontally)
+        // Order: 
+        // 1) turn right yaw radians (z-)
+        // 2) turn up pitch radians (x+)
+        // 3) tilt roll radians counter clockwise (y-) (NB: might be the opposite, waiting for a non zero roll to check!)
+        ENU_NorthForward,
+        };
+
     //! Create a new Shot 
-    DATACAPTURE_EXPORT static PosePtr Create(Dgn::SpatialModelR model);
+    //! @param[in] IsECEFSupported Set to true if you have a GCS and want to support storing data in 
+    //                             geocentric (Earth Centered Earth Fixed) coordinate system. 
+    DATACAPTURE_EXPORT static PosePtr Create(Dgn::SpatialModelR model, bool IsECEFSupported);
 
     DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
 
@@ -88,22 +117,33 @@ public:
     DATACAPTURE_EXPORT bool IsEqual(PoseCR rhs) const;
 
 
-    //Rotation can be express in omega/phi/kappa or by a rotation matrix 
-    //Use utility methods below to do your convertion 
-    DATACAPTURE_EXPORT static RotMatrix         GetRotMatrixFromRotation(AngleCR omega, AngleCR phi, AngleCR kappa);
-    DATACAPTURE_EXPORT static bool              GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation);
+    DATACAPTURE_EXPORT static bool          GetRotationFromRotMatrix(AngleR omega, AngleR phi, AngleR kappa, RotMatrixCR rotation);
+    DATACAPTURE_EXPORT static void          FrustumCornersFromCameraPose(DPoint3dP points, PoseCR pose, DPoint2dCR fieldofView, DPoint3dCR target, 
+                                            double scaleFactor=1.0, bool calculateAtOrigin=false);
 
-    DATACAPTURE_EXPORT DPoint3dCR               GetCenter() const;
-    DATACAPTURE_EXPORT void                     SetCenter(DPoint3dCR val);
-    DATACAPTURE_EXPORT AngleCR                  GetOmega() const;
-    DATACAPTURE_EXPORT AngleCR                  GetPhi() const;
-    DATACAPTURE_EXPORT AngleCR                  GetKappa() const;
-    DATACAPTURE_EXPORT void                     SetOmega(AngleCR omega);
-    DATACAPTURE_EXPORT void                     SetPhi(AngleCR phi);
-    DATACAPTURE_EXPORT void                     SetKappa(AngleCR kappa);
+    //Position and orientation in ECEF system OR local if ECEF is not supported (IsECEF is false)
+    DATACAPTURE_EXPORT bool                 IsECEF() const;
+    DATACAPTURE_EXPORT void                 SetIsECEF(bool isECEF);
+    DATACAPTURE_EXPORT DPoint3dCR           GetCenterECEF() const;
+    DATACAPTURE_EXPORT void                 SetCenterECEF(DPoint3dCR val);
+    DATACAPTURE_EXPORT RotMatrix            GetRotMatrixECEF() const;
+    DATACAPTURE_EXPORT void                 SetRotMatrixECEF(RotMatrixCR rotation);
 
-    DATACAPTURE_EXPORT YawPitchRollAngles       GetYawPitchRoll() const;
-    DATACAPTURE_EXPORT void                     SetYawPitchRoll(YawPitchRollAnglesCR angles);
+    //Position and orientation in current GCS system
+    DATACAPTURE_EXPORT DPoint3dCR           GetCenter() const;
+    DATACAPTURE_EXPORT void                 SetCenter(DPoint3dCR val);
+    DATACAPTURE_EXPORT AngleCR              GetOmega() const;
+    DATACAPTURE_EXPORT AngleCR              GetPhi() const;
+    DATACAPTURE_EXPORT AngleCR              GetKappa() const;
+    DATACAPTURE_EXPORT void                 SetOmega(AngleCR omega); 
+    DATACAPTURE_EXPORT void                 SetPhi(AngleCR phi);
+    DATACAPTURE_EXPORT void                 SetKappa(AngleCR kappa);
+    DATACAPTURE_EXPORT RotMatrix            GetRotMatrix() const;
+    DATACAPTURE_EXPORT void                 SetRotMatrix(RotMatrixCR rotation);
+    DATACAPTURE_EXPORT YawPitchRollAngles   GetYawPitchRoll(YPRConvention convention=YPRConvention::DgnDb) const;
+    DATACAPTURE_EXPORT void                 SetYawPitchRoll(YawPitchRollAnglesCR angles,YPRConvention convention=YPRConvention::DgnDb);
+    DATACAPTURE_EXPORT GeoPoint             GetCenterAsLatLongValue() const;
+    DATACAPTURE_EXPORT void                 SetCenterFromLatLongValue(GeoPointCR geoPoint);
 
 
     //! Get the id of this Shot element

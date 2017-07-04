@@ -2,7 +2,7 @@
 #
 #     $Source: ScalableMeshSchema/ScalableMeshSchema.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 
@@ -99,6 +99,7 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)ImagePP$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ScalableMesh$(libext) \
+                                $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)qvision$(libext)
 
 

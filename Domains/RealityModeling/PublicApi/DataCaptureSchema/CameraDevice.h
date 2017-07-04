@@ -142,21 +142,37 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
             {
             };
 
+        enum class ModelType
+            {
+            Perspective = 0,
+            Fisheye = 1,
+            };
 
     private:
-        double                  m_focalLength;
+        double                  m_focalLength; //Always in meters
         int                     m_imageWidth;
         int                     m_imageHeight;
-        DPoint2d                m_principalPoint;
+        DPoint2d                m_principalPoint;   //Always in meters
         double                  m_aspectRatio;
         double                  m_skew;
-
+        ModelType               m_modelType;
+        double                  m_sensorSize;
 
         Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
     protected:
 
-        explicit CameraDeviceModel(CreateParams const& params) : T_Super(params) {}
+        explicit CameraDeviceModel(CreateParams const& params) : T_Super(params) 
+            {
+            m_focalLength = 0.0;
+            m_imageWidth = 0;
+            m_imageHeight = 0;
+            m_principalPoint = {0.0, 0.0};
+            m_aspectRatio = 0.0;
+            m_skew = 0.0;
+            m_modelType = ModelType::Perspective;
+            m_sensorSize = 0.0;
+            }
 
 
         //! Virtual assignment method. If your subclass has member variables, it @b must override this method and copy those values from @a source.
@@ -205,7 +221,6 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
 
         DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
 
-
         //! Get the id of this CameraDevice
         DATACAPTURE_EXPORT CameraDeviceModelElementId GetId() const;
 
@@ -214,7 +229,9 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
         DATACAPTURE_EXPORT void                     SetImageWidth(int val);
         DATACAPTURE_EXPORT int                      GetImageHeight() const;
         DATACAPTURE_EXPORT void                     SetImageHeight(int val);
+        //Focal always set/get in meters
         DATACAPTURE_EXPORT double                   GetFocalLength() const;
+        //Focal always set/get in meters
         DATACAPTURE_EXPORT void                     SetFocalLength(double val);
         DATACAPTURE_EXPORT void                     SetPrincipalPoint(DPoint2dCR val);
         DATACAPTURE_EXPORT DPoint2d                 GetPrincipalPoint() const;
@@ -222,6 +239,10 @@ struct EXPORT_VTABLE_ATTRIBUTE CameraDeviceModel : Dgn::DefinitionElement
         DATACAPTURE_EXPORT void                     SetAspectRatio(double val);
         DATACAPTURE_EXPORT double                   GetSkew() const;
         DATACAPTURE_EXPORT void                     SetSkew(double val);
+        DATACAPTURE_EXPORT ModelType                GetModelType() const;
+        DATACAPTURE_EXPORT void                     SetModelType(ModelType val);
+        DATACAPTURE_EXPORT double                   GetSensorSize() const;
+        DATACAPTURE_EXPORT void                     SetSensorSize(double val);
     };
 
 //=======================================================================================
@@ -250,22 +271,32 @@ public:
     {
     };
 
-
 private:
     mutable CameraDeviceModelElementId m_cameraDeviceModel;//Query and cached from DgnDb or given at creation time
-    double                  m_focalLength;
-    DPoint2d                m_principalPoint;
+    double                  m_focalLength;    //Always in meters
+    DPoint2d                m_principalPoint; //Always in meters
     int                     m_imageWidth;
     int                     m_imageHeight;
     double                  m_aspectRatio;
     double                  m_skew;
-
+    //double                  m_pixelToMeterRatio;
+    double                  m_sensorSize;
 
     Dgn::DgnDbStatus BindParameters(BeSQLite::EC::ECSqlStatement& statement);
 
 protected:
 
-    explicit CameraDevice(CreateParams const& params, CameraDeviceModelElementId cameraDeviceModel=CameraDeviceModelElementId()) : T_Super(params), m_cameraDeviceModel(cameraDeviceModel) {}
+    explicit CameraDevice(CreateParams const& params, CameraDeviceModelElementId cameraDeviceModel=CameraDeviceModelElementId()) : T_Super(params), m_cameraDeviceModel(cameraDeviceModel) 
+        {
+        m_focalLength = 0.0;
+        m_imageWidth = 0;
+        m_imageHeight = 0;
+        m_principalPoint = { 0.0, 0.0 };
+        m_aspectRatio = 0.0;
+        m_skew = 0.0;
+        //m_pixelToMeterRatio = 0.0;
+        m_sensorSize = 0.0;
+        }
 
     static BentleyStatus InsertCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId, CameraDeviceModelElementId cameraDeviceModelElmId);
     static CameraDeviceModelElementId QueryCameraDeviceIsDefinedByCameraDeviceModelRelationship(Dgn::DgnDbR dgndb, CameraDeviceElementId cameraDeviceElmId);
@@ -338,6 +369,9 @@ public:
 
     DATACAPTURE_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR db, Utf8StringCR value);
 
+    //! Get the Field of view of a camera
+    DATACAPTURE_EXPORT static DPoint2d ComputeFieldOfView(CameraDeviceCR camDevice);
+
     //! Get the id of this CameraDevice
     DATACAPTURE_EXPORT CameraDeviceElementId GetId() const;
 
@@ -346,7 +380,9 @@ public:
     DATACAPTURE_EXPORT void                     SetImageWidth(int val);
     DATACAPTURE_EXPORT int                      GetImageHeight() const;
     DATACAPTURE_EXPORT void                     SetImageHeight(int val);
+    //Focal always set/get in meters
     DATACAPTURE_EXPORT double                   GetFocalLength() const;
+    //Focal always set/get in meters
     DATACAPTURE_EXPORT void                     SetFocalLength(double val);
     DATACAPTURE_EXPORT void                     SetPrincipalPoint(DPoint2dCR val);
     DATACAPTURE_EXPORT DPoint2d                 GetPrincipalPoint() const;
@@ -360,6 +396,12 @@ public:
     DATACAPTURE_EXPORT void                     SetAspectRatio(double val);
     DATACAPTURE_EXPORT double                   GetSkew() const;
     DATACAPTURE_EXPORT void                     SetSkew(double val);
+    DATACAPTURE_EXPORT double                   GetSensorSize() const;
+    DATACAPTURE_EXPORT void                     SetSensorSize(double val);
+
+    //Since everything returned by ContextCapture will be in pixel we need a way to convert that into Meters
+    //DATACAPTURE_EXPORT double                   GetPixelToMeterRatio() const;
+    //DATACAPTURE_EXPORT void                     SetPixelToMeterRatio(double val);
 
     DATACAPTURE_EXPORT CameraDeviceModelElementId  GetCameraDeviceModelId() const;
     DATACAPTURE_EXPORT void                 SetCameraDeviceModelId(CameraDeviceModelElementId val);
