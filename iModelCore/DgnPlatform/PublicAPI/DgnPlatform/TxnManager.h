@@ -304,7 +304,8 @@ private:
     BeSQLite::SnappyToBlob   m_snappyTo;
     bvector<ValidationError> m_validationErrors;
     TxnRelationshipLinkTables m_rlt;
-    
+    bool m_initTableHandlers;
+
     OnCommitStatus _OnCommit(bool isCommit, Utf8CP operation) override;
     TrackChangesForTable _FilterTable(Utf8CP tableName) override;
 

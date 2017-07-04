@@ -238,7 +238,7 @@ void TestDataManager::MustBeBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
 
     BeFileName name(db->GetFileName());
 
-    db->AssignBriefcaseId(BeBriefcaseId(BeBriefcaseId::Standalone()));
+    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
     db->SaveChanges();
     db->CloseDb();
 

@@ -1028,7 +1028,7 @@ public:
         if (bcId.GetValue() != db->GetBriefcaseId().GetValue())
             {
             BeFileName name(db->GetFileName());
-            db->AssignBriefcaseId(bcId);
+            db->SetAsBriefcase(bcId);
             db->SaveChanges();
             db->CloseDb();
             DbResult result = BE_SQLITE_OK;

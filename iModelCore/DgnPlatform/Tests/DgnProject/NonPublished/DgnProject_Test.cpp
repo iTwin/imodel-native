@@ -268,7 +268,7 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
     SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
     ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
 
-    dgndb->AssignBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    dgndb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     dgndb->Txns().EnableTracking(true);
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
@@ -291,6 +291,20 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
     ASSERT_TRUE(el.IsValid());
 
     dgndb->SaveChanges();
+
+    // Check that we can turn the Briefcase -> Master
+    BeGuid oldGuid = dgndb->QueryProjectGuid();
+    result = dgndb->SetAsMaster();
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    BeGuid newGuid = dgndb->QueryProjectGuid();
+    ASSERT_TRUE(oldGuid != newGuid && "A new GUID has to be assigned when turning a briefcase into a master copy");
+
+    // Check that we can turn the Master -> Briefcase again
+    result = dgndb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    oldGuid = newGuid;
+    newGuid = dgndb->QueryProjectGuid();
+    ASSERT_TRUE(oldGuid == newGuid);
     }
 
 /*---------------------------------------------------------------------------------**//**
