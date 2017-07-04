@@ -180,7 +180,7 @@ TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
     ASSERT_TRUE(id.IsValid());
     int32_t previousBriefcaseId = id.GetValue();
     BeBriefcaseId nextid = id.GetNextBriefcaseId();
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AssignBriefcaseId(nextid));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SetAsBriefcase(nextid));
     int32_t changedBriefcaseId = m_ecdb.GetBriefcaseId().GetValue();
     ASSERT_NE(previousBriefcaseId, changedBriefcaseId);
     }
