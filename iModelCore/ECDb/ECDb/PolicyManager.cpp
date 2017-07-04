@@ -170,7 +170,7 @@ Policy PolicyManager::DoGetPolicy(ECCrudPermissionPolicyAssertion const& asserti
     if (ecdb.IsReadonly())
         return Policy::CreateNotSupported(Utf8String("Cannot modify EC data in a file opened in read-only mode"));
 
-    ECCrudWriteToken const* expectedToken = ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken();
+    ECCrudWriteToken const* expectedToken = ecdb.GetImpl().GetSettings().GetCrudWriteToken();
     if (expectedToken != nullptr && expectedToken != assertion.GetToken())
         return Policy::CreateNotSupported(Utf8String("Cannot modify EC data without ECCrudWriteToken."));
 
@@ -183,7 +183,7 @@ Policy PolicyManager::DoGetPolicy(ECCrudPermissionPolicyAssertion const& asserti
 //static
 Policy PolicyManager::DoGetPolicy(SchemaImportPermissionPolicyAssertion const& assertion)
     {
-    SchemaImportToken const* expectedToken = assertion.GetECDb().GetECDbImplR().GetSettings().GetSchemaImportToken();
+    SchemaImportToken const* expectedToken = assertion.GetECDb().GetImpl().GetSettings().GetSchemaImportToken();
     if (expectedToken != nullptr && expectedToken != assertion.GetToken())
         return Policy::CreateNotSupported();
 

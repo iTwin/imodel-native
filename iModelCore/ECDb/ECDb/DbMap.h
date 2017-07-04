@@ -60,7 +60,7 @@ struct DbMap final : NonCopyableClass
         DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }
         LightweightCache const& GetLightweightCache() const { return m_lightweightCache; }
         ECDbCR GetECDb() const { return m_ecdb; }
-        IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
+        IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
     };
 
 //=======================================================================================

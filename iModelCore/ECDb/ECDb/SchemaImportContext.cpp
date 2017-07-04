@@ -256,7 +256,7 @@ BentleyStatus SchemaPolicies::ReadPolicy(ECDbCR ecdb, ECN::ECSchemaCR schema, Sc
     auto it = m_optedInPolicies.find(policyType);
     if (it != m_optedInPolicies.end())
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import schemas. Schema '%s' opts in policy '%s' although it is already opted in by schema '%s'. A schema policy can only be opted in by one schema.",
+        ecdb.GetImpl().Issues().Report("Failed to import schemas. Schema '%s' opts in policy '%s' although it is already opted in by schema '%s'. A schema policy can only be opted in by one schema.",
                                                       schema.GetName().c_str(), SchemaPolicy::TypeToString(policyType), ecdb.Schemas().GetReader().GetSchemaName(it->second->GetOptingInSchemaId()).c_str());
         return ERROR;
         }
@@ -388,7 +388,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
     bvector<bvector<Utf8String>> tokenedExceptions;
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+        ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
                                                       policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
         return nullptr;
         }
@@ -398,7 +398,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalRootEntityClassesPolicy::Create(ECDbCR
         const size_t tokenCount = tokenizedException.size();
         if (tokenCount == 0 || tokenCount > 2)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+            ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
                                                           policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
             return nullptr;
             }
@@ -431,7 +431,7 @@ BentleyStatus NoAdditionalRootEntityClassesPolicy::Evaluate(ECDbCR ecdb, ECN::EC
     if (ecClass.HasBaseClasses() || !ecClass.IsEntityClass() || ecClass.GetEntityClassCP()->IsMixin() || IsException(ecClass))
         return SUCCESS;
 
-    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECClass '%s'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema %s",
+    ecdb.GetImpl().Issues().Report("Failed to import ECClass '%s'. It violates against the 'No additional root entity classes' policy which means that all entity classes must subclass from classes defined in the ECSchema %s",
                                                   ecClass.GetFullName(), ecdb.Schemas().GetReader().GetSchemaName(GetOptingInSchemaId()).c_str());
 
     return ERROR;
@@ -452,7 +452,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalLinkTablesPolicy::Create(ECDbCR ecdb, 
     bvector<bvector<Utf8String>> tokenedExceptions;
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+        ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
                                                       policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
         return nullptr;
         }
@@ -462,7 +462,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalLinkTablesPolicy::Create(ECDbCR ecdb, 
         const size_t tokenCount = tokenizedException.size();
         if (tokenCount == 0 || tokenCount > 2)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+            ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
                                                           policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
             return nullptr;
             }
@@ -494,7 +494,7 @@ BentleyStatus NoAdditionalLinkTablesPolicy::Evaluate(ECDbCR ecdb, ECN::ECRelatio
     if (relClass.HasBaseClasses() || IsException(relClass))
         return SUCCESS;
 
-    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECRelationshipClass '%s'. It violates against the 'No additional link tables' policy which means that relationship classes with 'Link table' mapping must subclass from relationship classes defined in the ECSchema %s",
+    ecdb.GetImpl().Issues().Report("Failed to import ECRelationshipClass '%s'. It violates against the 'No additional link tables' policy which means that relationship classes with 'Link table' mapping must subclass from relationship classes defined in the ECSchema %s",
                     relClass.GetFullName(), ecdb.Schemas().GetReader().GetSchemaName(GetOptingInSchemaId()).c_str());
 
     return ERROR;
@@ -513,7 +513,7 @@ std::unique_ptr<SchemaPolicy> NoAdditionalForeignKeyConstraintsPolicy::Create(EC
 
     if (SUCCESS != policy->ReadExceptionsFromCA(ecdb, policyCA))
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+        ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
                                                       policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(optingInSchemaId).c_str());
         return nullptr;
         }
@@ -532,7 +532,7 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::ReadExceptionsFromCA(ECDb
     bvector<bvector<Utf8String>> tokenedExceptions;
     if (SUCCESS != RetrieveExceptions(tokenedExceptions, policyCA, "Exceptions"))
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+        ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
                                                       policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(m_optingInSchemaId).c_str());
         return ERROR;
         }
@@ -542,7 +542,7 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::ReadExceptionsFromCA(ECDb
         const size_t tokenCount = tokenizedException.size();
         if (tokenCount == 0 || tokenCount > 3)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
+            ecdb.GetImpl().Issues().Report("Failed to read the %s custom attribute from schema %s because it has invalid exceptions. Make sure they are formatted correctly.",
                                                           policyCA.GetClass().GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(m_optingInSchemaId).c_str());
             return ERROR;
             }
@@ -582,7 +582,7 @@ BentleyStatus NoAdditionalForeignKeyConstraintsPolicy::Evaluate(ECDbCR ecdb, ECN
     if (IsException(navPropWithFkConstraintCA))
         return SUCCESS;
 
-    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECClass '%s'. Its navigation property '%s' violates against the 'No additional foreign key constraints' policy which means that navigation properties may not define the 'ForeignKeyConstraint' custom attribute other than in the ECSchema %s",
+    ecdb.GetImpl().Issues().Report("Failed to import ECClass '%s'. Its navigation property '%s' violates against the 'No additional foreign key constraints' policy which means that navigation properties may not define the 'ForeignKeyConstraint' custom attribute other than in the ECSchema %s",
                                         navPropWithFkConstraintCA.GetClass().GetFullName(), navPropWithFkConstraintCA.GetName().c_str(), ecdb.Schemas().GetReader().GetSchemaName(GetOptingInSchemaId()).c_str());
 
     return ERROR;

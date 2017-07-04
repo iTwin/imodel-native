@@ -256,7 +256,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
 
     if (GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Synchronizing existing table to which classes are mapped failed.");
+        m_ecdb.GetImpl().Issues().Report("Synchronizing existing table to which classes are mapped failed.");
         return ERROR;
         }
 
@@ -591,7 +591,7 @@ BentleyStatus DbMap::PurgeOrphanTables() const
     if (tablesToDrop.empty())
         return SUCCESS;
 
-    if (!m_ecdb.GetECDbImplR().GetSettings().AllowChangesetMergingIncompatibleSchemaImport())
+    if (!m_ecdb.GetImpl().GetSettings().AllowChangesetMergingIncompatibleSchemaImport())
         {
         Utf8String tableNames;
         bool isFirstTable = true;
@@ -604,7 +604,7 @@ BentleyStatus DbMap::PurgeOrphanTables() const
             isFirstTable = false;
             }
 
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(
+        m_ecdb.GetImpl().Issues().Report(
             "Failed to import schemas: it would change the database schema in a changeset-merging incompatible way. ECDb would have to delete these tables: %s", tableNames.c_str());
         return ERROR;
         }

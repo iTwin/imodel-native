@@ -115,7 +115,7 @@ BentleyStatus ClassMapper::DetermineColumnInfoForPrimitiveProperty(DbColumn::Cre
     bool isUnique = false;
     DbColumn::Constraints::Collation collation = DbColumn::Constraints::Collation::Unset;
 
-    IssueReporter const& issues = classMap.GetDbMap().GetECDb().GetECDbImplR().GetIssueReporter();
+    IssueReporter const& issues = classMap.GetDbMap().GetECDb().GetImpl().Issues();
     PropertyMapCustomAttribute customPropMap;
     if (ECDbMapCustomAttributeHelper::TryGetPropertyMap(customPropMap, ecProp))
         {
@@ -510,14 +510,14 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
 
     if (relClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
         {
-        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass '%s'. Its NavigationECProperty '%s' refers to a relationship that has the 'NotMapped' strategy. Therefore its dependencies must have that strategy as well.",
+        ecdbMap.GetECDb().GetImpl().Issues().Report("Failed to map ECClass '%s'. Its NavigationECProperty '%s' refers to a relationship that has the 'NotMapped' strategy. Therefore its dependencies must have that strategy as well.",
                                                                    navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str());
         return ERROR;
         }
 
     if (relClassMap->GetType() == ClassMap::Type::RelationshipLinkTable)
         {
-        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",
+        ecdbMap.GetECDb().GetImpl().Issues().Report("Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",
                                                                    navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str());
         return ERROR;
         }
@@ -530,7 +530,7 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
         (foreignEnd == ECRelationshipEnd_Target && navDirection == ECRelatedInstanceDirection::Forward))
         {
         Utf8CP constraintEndName = foreignEnd == ECRelationshipEnd_Source ? "Source" : "Target";
-        ecdbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map Navigation property '%s.%s'. "
+        ecdbMap.GetECDb().GetImpl().Issues().Report("Failed to map Navigation property '%s.%s'. "
                                                                    "Navigation properties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: "
                                                                    "The Foreign Key is mapped to the %s end of this ECRelationshipClass.",
                                                                    navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str(), constraintEndName,
@@ -1151,7 +1151,7 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::FinishMapping()
 
         if (constraintClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
             {
-            GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. Its has constraint EClass '%s' which has the 'NotMapped' strategy.",
+            GetECDb().GetImpl().Issues().Report("Failed to map ECRelationship '%s'. Its has constraint EClass '%s' which has the 'NotMapped' strategy.",
                                                                m_relationshipMap.GetClass().GetFullName(), constraintClassMap->GetClass().GetFullName());
             return ClassMappingStatus::Error;
             }
@@ -1159,7 +1159,7 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::FinishMapping()
 
     if (tables.size() > 1)
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. Its referenced end maps to more then one table.",
+        GetECDb().GetImpl().Issues().Report("Failed to map ECRelationship '%s'. Its referenced end maps to more then one table.",
                                                            m_relationshipMap.GetClass().GetFullName());
         return ClassMappingStatus::Error;
         }
@@ -1171,7 +1171,7 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::FinishMapping()
             {
             if (tables.empty())
                 {
-                GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. The relationship specify PhysicalForeignKey constraint but one of its side does not have physical table.",
+                GetECDb().GetImpl().Issues().Report("Failed to map ECRelationship '%s'. The relationship specify PhysicalForeignKey constraint but one of its side does not have physical table.",
                                                                    m_relationshipMap.GetClass().GetFullName());
                 return ClassMappingStatus::Error;
                 }
@@ -1226,14 +1226,14 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(N
     NavigationECPropertyCP navigationProperty = navPropMap.GetProperty().GetAsNavigationProperty();
     if (m_relationshipMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass '%s'. Its NavigationECProperty '%s' refers to a relationship that has the 'NotMapped' strategy. Therefore its dependencies must have that strategy as well.",
+        GetECDb().GetImpl().Issues().Report("Failed to map ECClass '%s'. Its NavigationECProperty '%s' refers to a relationship that has the 'NotMapped' strategy. Therefore its dependencies must have that strategy as well.",
                                                            navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str());
         return ClassMappingStatus::Error;
         }
 
     if (navPropMap.GetClassMap().GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationship '%s'. Its NavigationECProperty '%s' come from a ECClass %s which has the 'NotMapped' strategy.",
+        GetECDb().GetImpl().Issues().Report("Failed to map ECRelationship '%s'. Its NavigationECProperty '%s' come from a ECClass %s which has the 'NotMapped' strategy.",
                                                            m_relationshipMap.GetClass().GetFullName(), navigationProperty->GetName().c_str(), navigationProperty->GetClass().GetFullName());
         return ClassMappingStatus::Error;
         }
@@ -1243,7 +1243,7 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(N
         (GetForeignEnd() == ECRelationshipEnd_Target && navDirection == ECRelatedInstanceDirection::Forward))
         {
         Utf8CP constraintEndName = GetForeignEnd() == ECRelationshipEnd_Source ? "Source" : "Target";
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map Navigation property '%s.%s'. "
+        GetECDb().GetImpl().Issues().Report("Failed to map Navigation property '%s.%s'. "
                                                            "Navigation properties can only be defined on the %s constraint ECClass of the respective ECRelationshipClass '%s'. Reason: "
                                                            "The Foreign Key is mapped to the %s end of this ECRelationshipClass.",
                                                            navigationProperty->GetClass().GetFullName(), navigationProperty->GetName().c_str(), constraintEndName,
@@ -1535,7 +1535,7 @@ ECDbCR RelationshipClassEndTableMappingContext::GetECDb() const { return m_relat
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-IssueReporter const& RelationshipClassEndTableMappingContext::Issues() const { return m_relationshipMap.GetDbMap().GetECDb().GetECDbImplR().GetIssueReporter(); }
+IssueReporter const& RelationshipClassEndTableMappingContext::Issues() const { return m_relationshipMap.GetDbMap().GetECDb().GetImpl().Issues(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
@@ -1607,7 +1607,7 @@ ClassMappingStatus EndTableMappingContextCollection::Map(NavigationPropertyMap& 
 
     if (relMap->GetType() != ClassMap::Type::RelationshipEndTable)
         {
-        dbMap.GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",
+        dbMap.GetECDb().GetImpl().Issues().Report("Failed to map NavigationECProperty '%s.%s'. NavigationECProperties for ECRelationship that map to a link table are not supported by ECDb.",
                                                                  navProp.GetClass().GetFullName(), navProp.GetName().c_str());
         return ClassMappingStatus::Error;
         }

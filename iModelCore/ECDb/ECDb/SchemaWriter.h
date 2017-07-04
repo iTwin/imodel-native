@@ -74,7 +74,7 @@ struct SchemaWriter final : NonCopyableClass
 
         BentleyStatus ValidateSchemasPreImport(bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies) const;
 
-        IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
+        IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
 
     public:
         explicit SchemaWriter(ECDbCR ecdb, SchemaImportContext& ctx) : m_ecdb(ecdb), m_ctx(ctx)

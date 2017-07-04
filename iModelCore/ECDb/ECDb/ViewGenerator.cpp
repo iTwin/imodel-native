@@ -278,7 +278,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb)
     PERFLOG_START("ECDb", "Create ECClass views");
     if (ecdb.IsReadonly())
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
+        ecdb.GetImpl().Issues().Report("Can only call ECDb::CreateClassViewsInDb() on an ECDb file with read-write access.");
         return ERROR;
         }
 
@@ -333,7 +333,7 @@ BentleyStatus ViewGenerator::CreateECClassViews(ECDbCR ecdb, bvector<ECClassId> 
 
         if (classMap->GetType() == ClassMap::Type::NotMapped || (!classMap->GetClass().IsEntityClass() && !classMap->GetClass().IsRelationshipClass()))
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityclass or ECRelationshipClass.",
+            ecdb.GetImpl().Issues().Report("Cannot create ECClassView for ECClass '%s' (Id: %s) because it is not mapped or not an ECEntityclass or ECRelationshipClass.",
                                                           classMap->GetClass().GetFullName(), classId.ToString().c_str());
             return ERROR;
             }

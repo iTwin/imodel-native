@@ -69,7 +69,7 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
         }
 
     BeInt64Id pmId;
-    if (GetMapSaveContext().GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::PropertyMapId).GetNextValue(pmId))
+    if (GetMapSaveContext().GetECDb().GetImpl().GetSequence(IdSequences::Key::PropertyMapId).GetNextValue(pmId))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, pmId) ||
@@ -152,7 +152,7 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
     if (!addIfDoesNotExist)
         return ERROR;
 
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::PropertyPathId).GetNextValue(id) != BE_SQLITE_OK)
+    if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::PropertyPathId).GetNextValue(id) != BE_SQLITE_OK)
         {
         BeAssert(false);
         return ERROR;

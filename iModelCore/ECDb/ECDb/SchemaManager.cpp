@@ -183,13 +183,13 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
 
     if (m_ecdb.IsReadonly())
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. ECDb file is read-only.");
+        m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. ECDb file is read-only.");
         return ERROR;
         }
 
     if (schemas.empty())
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. List of ECSchemas to import is empty.");
+        m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. List of ECSchemas to import is empty.");
         return ERROR;
         }
 
@@ -235,7 +235,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
         //Deserializing into older versions is not needed in ECDb and therefore not supported.
         if (schema->GetECVersion() != ECVersion::Latest)
             {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
+            m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. The in-memory version of the ECSchema '%s' must be %s, but is %s.", schema->GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest), ECSchema::GetECVersionString(schema->GetECVersion()));
             return ERROR;
             }
 
@@ -244,7 +244,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
             ECSchemaId id = GetReader().GetSchemaId(schema->GetName(), SchemaLookupMode::ByName);
             if (!id.IsValid() || id != schema->GetId())
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
+                m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. ECSchema %s is owned by some other ECDb file.", schema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
             }
@@ -283,7 +283,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
             SupplementedSchemaStatus status = builder.UpdateSchema(*primarySchemaP, suppSchemas, false /*dont create ca copy while supplementing*/);
             if (SupplementedSchemaStatus::Success != status)
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
+                m_ecdb.GetImpl().Issues().Report("Failed to import ECSchemas. Failed to supplement ECSchema %s. See log file for details.", primarySchema->GetFullSchemaName().c_str());
                 return ERROR;
                 }
 

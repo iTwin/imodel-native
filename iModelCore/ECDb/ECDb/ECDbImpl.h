@@ -200,7 +200,7 @@ public:
     //! an error from any of its methods.
     ClearCacheCounter const& GetClearCacheCounter() const { return m_clearCacheCounter; }
 
-    IssueReporter const& GetIssueReporter() const { return m_issueReporter; }
+    IssueReporter const& Issues() const { return m_issueReporter; }
 
     BeMutex& GetMutex() const { return m_mutex; }
     };

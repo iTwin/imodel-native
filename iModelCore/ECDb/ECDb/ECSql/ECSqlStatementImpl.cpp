@@ -35,7 +35,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWrite
         return ECSqlStatus::InvalidECSql;
         }
 
-    BeMutexHolder lock(ecdb.GetECDbImplR().GetMutex());
+    BeMutexHolder lock(ecdb.GetImpl().GetMutex());
     Diagnostics diag(ecsql, GetPrepareDiagnosticsLogger(), true);
 
     //Step 1: parse the ECSQL
@@ -53,7 +53,7 @@ ECSqlStatus ECSqlStatement::Impl::Prepare(ECDbCR ecdb, Utf8CP ecsql, ECCrudWrite
     Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(ecdb, preparedStatement.GetType() != ECSqlType::Select, writeToken));
     if (!policy.IsSupported())
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report(policy.GetNotSupportedMessage().c_str());
+        ecdb.GetImpl().Issues().Report(policy.GetNotSupportedMessage().c_str());
         Finalize();
         return ECSqlStatus::Error;
         }
@@ -248,7 +248,7 @@ ECSqlStatus ECSqlStatement::Impl::FailIfWrongType(ECSqlType expectedType, Utf8CP
 
     if (GetPreparedStatementP()->GetType() != expectedType)
         {
-        GetECDb()->GetECDbImplR().GetIssueReporter().Report(errorMessage);
+        GetECDb()->GetImpl().Issues().Report(errorMessage);
         return ECSqlStatus::Error;
         }
 

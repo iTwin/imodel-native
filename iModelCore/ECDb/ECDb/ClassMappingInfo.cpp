@@ -521,7 +521,7 @@ ClassMappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-IssueReporter const& ClassMappingInfo::Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
+IssueReporter const& ClassMappingInfo::Issues() const { return m_ecdb.GetImpl().Issues(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2014
@@ -628,7 +628,7 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
         BeAssert(!foreignKeyConstraintCA.IsValid() && "Should have been caught before because a nav prop cannot point to a rel subclass");
         if (linkTableRelationshipMapCA.IsValid())
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. It has a base class and therefore must not have the 'LinkTableRelationshipMap' custom attribute. Only the root relationship class of a hierarchy can have this custom attribute.",
+            ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. It has a base class and therefore must not have the 'LinkTableRelationshipMap' custom attribute. Only the root relationship class of a hierarchy can have this custom attribute.",
                                                           relClass.GetFullName());
             return ERROR;
             }
@@ -639,7 +639,7 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
         {
         if (foreignKeyConstraintCA.IsValid())
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. Its navigation property has the 'ForeignKeyConstraint' custom attribute. The relationship implies a link table mapping though (see API docs for rules when link table mapping is implied).",
+            ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. Its navigation property has the 'ForeignKeyConstraint' custom attribute. The relationship implies a link table mapping though (see API docs for rules when link table mapping is implied).",
                                                           relClass.GetFullName());
             return ERROR;
             }
@@ -650,7 +650,7 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
 
     //Now it would be a FK relationship, but this would require a nav prop. So check for nav prop now
     ECRelationshipEnd fkEnd;
-    if (SUCCESS != TryDetermineFkEnd(fkEnd, relClass, ecdb.GetECDbImplR().GetIssueReporter()))
+    if (SUCCESS != TryDetermineFkEnd(fkEnd, relClass, ecdb.GetImpl().Issues()))
         return ERROR;
 
     const ECRelatedInstanceDirection navPropDir = fkEnd == ECRelationshipEnd::ECRelationshipEnd_Target ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward;
@@ -673,7 +673,7 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
         {
         if (!isRootClass)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. A navigation property is defined on its %s constraint although it has a base class. Navigation properties may only be defined for root relationship classes.",
+            ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. A navigation property is defined on its %s constraint although it has a base class. Navigation properties may only be defined for root relationship classes.",
                                                           relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
             return ERROR;
             }
@@ -681,7 +681,7 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
         ECClassId constraintClassId = stmt->GetValueId<ECClassId>(0);
         if (!actualConstraintClassIds.empty() && actualConstraintClassIds.back() == constraintClassId)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. More than one navigation property for the same relationship is defined on %s constraint class %s.",
+            ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. More than one navigation property for the same relationship is defined on %s constraint class %s.",
                                                             relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target",
                                                             ecdb.Schemas().GetClass(constraintClassId)->GetFullName());
             return ERROR;
@@ -694,7 +694,7 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
             expectedNavPropName.assign(actualNavPropName);
         else if (!expectedNavPropName.EqualsIAscii(actualNavPropName))
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. The navigation properties must have the same name in all %s constraint classes. "
+            ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. The navigation properties must have the same name in all %s constraint classes. "
                                                             "Violating names: '%s' versus '%s'",
                                                             relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target",
                                                             expectedNavPropName.c_str(), actualNavPropName);
@@ -724,12 +724,12 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
             {
             if (actualConstraintClassIds.size() < expectedConstraintClassCount)
                 {
-                ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. Not all %s constraint classes define a navigation property for this relationship class.",
+                ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. Not all %s constraint classes define a navigation property for this relationship class.",
                                                               relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
                 }
             else
                 {
-                ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. More navigation properties found for this relationship class than expected: every %s constraint classes must define exactly one navigation property for this relationship class.",
+                ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. More navigation properties found for this relationship class than expected: every %s constraint classes must define exactly one navigation property for this relationship class.",
                                                               relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
                 }
 
@@ -743,13 +743,13 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
                 {
                 if (expectedConstraintClass->GetId() > actualConstraintClassIds[i])
                     {
-                    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. No navigation property found for %s constraint class %s.",
+                    ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. No navigation property found for %s constraint class %s.",
                                                                   relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target",
                                                                   expectedConstraintClass->GetFullName());
                     }
                 else
                     {
-                    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECRelationshipClass %s. Every %s constraint class must define exactly one navigation property for the relationship class.",
+                    ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. Every %s constraint class must define exactly one navigation property for the relationship class.",
                                                                   relClass.GetFullName(), fkEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? "source" : "target");
                     }
 
@@ -758,7 +758,7 @@ BentleyStatus RelationshipMappingInfo::TryDetermineMappingType(std::unique_ptr<R
             }
         }
 
-    mappingType = ForeignKeyMappingType::Create(relClass, fkEnd, foreignKeyConstraintCA, ecdb.GetECDbImplR().GetIssueReporter());
+    mappingType = ForeignKeyMappingType::Create(relClass, fkEnd, foreignKeyConstraintCA, ecdb.GetImpl().Issues());
     return mappingType != nullptr ? SUCCESS : ERROR;
     }
 
@@ -1134,7 +1134,7 @@ BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPt
         {
         if (ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin())
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map mixin ECClass %s. DbIndexes cannot be defined for mixins.", ecClass.GetFullName());
+            ecdb.GetImpl().Issues().Report("Failed to map mixin ECClass %s. DbIndexes cannot be defined for mixins.", ecClass.GetFullName());
             return ERROR;
             }
 
@@ -1152,7 +1152,7 @@ BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPt
                     addPropsAreNotNullWhereExp = true;
                 else
                     {
-                    ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to map ECClass %s. Invalid where clause in DbIndexList::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), index.GetWhereClause().Value().c_str());
+                    ecdb.GetImpl().Issues().Report("Failed to map ECClass %s. Invalid where clause in DbIndexList::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), index.GetWhereClause().Value().c_str());
                     return ERROR;
                     }
                 }

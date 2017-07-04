@@ -41,7 +41,7 @@ DbTable* DbSchema::CreateTable(Utf8StringCR name, DbTable::Type tableType, ECCla
         }
 
     DbTableId tableId;
-    m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::TableId).GetNextValue(tableId);
+    m_ecdb.GetImpl().GetSequence(IdSequences::Key::TableId).GetNextValue(tableId);
     return CreateTable(tableId, finalName, tableType, exclusiveRootClassId, parentTable, DbTable::UpdatableViewInfo());
     }
 
@@ -241,7 +241,7 @@ DbIndex* DbSchema::CreateIndex(DbTable& table, Nullable<Utf8String> const& index
         }
 
     DbIndexId id;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::IndexId).GetNextValue(id))
+    if (BE_SQLITE_OK != m_ecdb.GetImpl().GetSequence(IdSequences::Key::IndexId).GetNextValue(id))
         {
         BeAssert(false);
         return nullptr;
@@ -371,7 +371,7 @@ DbIndex* DbSchema::CreateIndex(DbIndexId id, DbTable& table, Utf8StringCR indexN
                     }
                 }
             }
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Index with name '%s' already defined in the ECDb file.", indexName.c_str());
+        m_ecdb.GetImpl().Issues().Report("Index with name '%s' already defined in the ECDb file.", indexName.c_str());
         return nullptr;
         }
 
@@ -801,7 +801,7 @@ BentleyStatus DbSchema::CreateOrUpdateIndexes() const
 
             if (BE_SQLITE_OK != m_ecdb.ExecuteSql(ddl.c_str()))
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
+                m_ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
                                                                 m_ecdb.GetLastError().c_str());
                 BeAssert(false && "Failed to create index");
                 return ERROR;
@@ -919,7 +919,7 @@ BentleyStatus DbSchema::InsertIndex(DbIndex const& index) const
     for (DbColumn const* col : index.GetColumns())
         {
         BeInt64Id id;
-        if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::IndexColumnId).GetNextValue(id))
+        if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::IndexColumnId).GetNextValue(id))
             return ERROR;
 
         if (BE_SQLITE_OK != indexColStmt->BindId(1, id) ||
@@ -1280,7 +1280,7 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
 
     if (!GetEditHandleR().CanEdit())
         {
-        IssueReporter const& issues = m_dbSchema.GetECDb().GetECDbImplR().GetIssueReporter();
+        IssueReporter const& issues = m_dbSchema.GetECDb().GetImpl().Issues();
         if (m_type == Type::Existing)
             issues.Report("Cannot add columns to the existing table '%s' not owned by ECDb.", m_name.c_str());
         else
@@ -1293,7 +1293,7 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         }
 
     if (!id.IsValid())
-        m_dbSchema.GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::ColumnId).GetNextValue(id);
+        m_dbSchema.GetECDb().GetImpl().GetSequence(IdSequences::Key::ColumnId).GetNextValue(id);
 
     std::shared_ptr<DbColumn> newColumn = std::make_shared<DbColumn>(id, *this, colName, type, kind, persistenceType);
     DbColumn* newColumnP = newColumn.get();

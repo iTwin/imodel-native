@@ -688,7 +688,7 @@ ECClassIdPropertyMap const* ClassMap::GetECClassIdPropertyMap() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  06/2016
 //---------------------------------------------------------------------------------------
-IssueReporter const& ClassMap::Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
+IssueReporter const& ClassMap::Issues() const { return m_ecdb.GetImpl().Issues(); }
 
 
 //------------------------------------------------------------------------------------------

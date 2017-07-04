@@ -48,7 +48,7 @@ BentleyStatus SchemaWriter::ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::ValidateSchemasPreImport(bvector<ECSchemaCP> const& primarySchemasOrderedByDependencies) const
     {
-    const bool isValid = SchemaValidator::ValidateSchemas(m_ctx, m_ecdb.GetECDbImplR().GetIssueReporter(), primarySchemasOrderedByDependencies);
+    const bool isValid = SchemaValidator::ValidateSchemas(m_ctx, m_ecdb.GetImpl().Issues(), primarySchemasOrderedByDependencies);
     return isValid ? SUCCESS : ERROR;
     }
 
@@ -94,7 +94,7 @@ BentleyStatus SchemaWriter::ImportSchema(SchemaCompareContext& compareCtx, ECN::
 
     // GenerateId
     ECSchemaId schemaId;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::SchemaId).GetNextValue(schemaId))
+    if (BE_SQLITE_OK != m_ecdb.GetImpl().GetSequence(IdSequences::Key::SchemaId).GetNextValue(schemaId))
         {
         BeAssert(false && "Could not generate new ECSchemaId");
         return ERROR;
@@ -202,7 +202,7 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(ECSchemaCR schema)
             }
 
         BeInt64Id id;
-        if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::SchemaReferenceId).GetNextValue(id) != BE_SQLITE_OK)
+        if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::SchemaReferenceId).GetNextValue(id) != BE_SQLITE_OK)
             {
             BeAssert(false);
             return ERROR;
@@ -244,7 +244,7 @@ BentleyStatus SchemaWriter::ImportClass(ECN::ECClassCR ecClass)
 
     // GenerateId
     ECClassId ecClassId;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::ClassId).GetNextValue(ecClassId))
+    if (BE_SQLITE_OK != m_ecdb.GetImpl().GetSequence(IdSequences::Key::ClassId).GetNextValue(ecClassId))
         return ERROR;
 
     const_cast<ECClassR>(ecClass).SetId(ecClassId);
@@ -356,7 +356,7 @@ BentleyStatus SchemaWriter::ImportEnumeration(ECEnumerationCR ecEnum)
         return ERROR;
 
     ECEnumerationId enumId;
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::EnumId).GetNextValue(enumId))
+    if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::EnumId).GetNextValue(enumId))
         return ERROR;
 
     const_cast<ECEnumerationR>(ecEnum).SetId(enumId);
@@ -420,7 +420,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
         return ERROR;
 
     KindOfQuantityId koqId;
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::KoqId).GetNextValue(koqId))
+    if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::KoqId).GetNextValue(koqId))
         return ERROR;
 
     const_cast<KindOfQuantityR>(koq).SetId(koqId);
@@ -496,7 +496,7 @@ BentleyStatus SchemaWriter::ImportPropertyCategory(PropertyCategoryCR cat)
         return ERROR;
 
     PropertyCategoryId catId;
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::PropertyCategoryId).GetNextValue(catId))
+    if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::PropertyCategoryId).GetNextValue(catId))
         return ERROR;
 
     const_cast<PropertyCategoryR>(cat).SetId(catId);
@@ -567,7 +567,7 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(ECClassId relClassId, E
         BeAssert(constraintClass->GetId().IsValid());
 
         BeInt64Id id;
-        if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::RelationshipConstraintClassId).GetNextValue(id))
+        if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::RelationshipConstraintClassId).GetNextValue(id))
             return ERROR;
 
         if (BE_SQLITE_OK != stmt->BindId(1, id))
@@ -600,7 +600,7 @@ BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(ECRelationshipCons
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint(Id,RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId) VALUES(?,?,?,?,?,?,?,?)"))
         return ERROR;
 
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::RelationshipConstraintId).GetNextValue(constraintId))
+    if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::RelationshipConstraintId).GetNextValue(constraintId))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, constraintId))
@@ -660,7 +660,7 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
 
     // GenerateId
     ECPropertyId ecPropertyId;
-    if (BE_SQLITE_OK != m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::PropertyId).GetNextValue(ecPropertyId))
+    if (BE_SQLITE_OK != m_ecdb.GetImpl().GetSequence(IdSequences::Key::PropertyId).GetNextValue(ecPropertyId))
         return ERROR;
 
     const_cast<ECPropertyR>(ecProperty).SetId(ecPropertyId);
@@ -940,7 +940,7 @@ BentleyStatus SchemaWriter::InsertBaseClassEntry(ECClassId ecClassId, ECClassCR 
         return ERROR;
 
     BeInt64Id id;
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::ClassHasBaseClassesId).GetNextValue(id))
+    if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::ClassHasBaseClassesId).GetNextValue(id))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, id))
@@ -1032,7 +1032,7 @@ BentleyStatus SchemaWriter::BindPropertyMinMaxValue(Statement& stmt, int paramIn
                 break;
         }
 
-    m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import schema. The ECProperty '%s.%s' has a minimum/maximum value of an unsupported type.",
+    m_ecdb.GetImpl().Issues().Report("Failed to import schema. The ECProperty '%s.%s' has a minimum/maximum value of an unsupported type.",
                                                     prop.GetClass().GetFullName(), prop.GetName().c_str());
     return ERROR;
     }
@@ -1152,7 +1152,7 @@ BentleyStatus SchemaWriter::InsertCAEntry(IECInstanceR customAttribute, ECClassI
         return ERROR;
 
     BeInt64Id id;
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::CustomAttributeId).GetNextValue(id))
+    if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::CustomAttributeId).GetNextValue(id))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, id))
@@ -2104,7 +2104,7 @@ BentleyStatus SchemaWriter::DeleteInstances(ECClassCR deletedClass)
     Utf8String ecsql("DELETE FROM ");
     ecsql.append(deletedClass.GetECSqlName());
     ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken()))
+    if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetImpl().GetSettings().GetCrudWriteToken()))
         {
         Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' failed. Failed to delete existing instances for the class.",
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
@@ -2231,7 +2231,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
         Utf8String ecsql;
         ecsql.Sprintf("UPDATE %s SET [%s]=NULL", ecClass.GetECSqlName().c_str(), deletedProperty.GetName().c_str());
         ECSqlStatement stmt;
-        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetECDbImplR().GetSettings().GetCrudWriteToken()) ||
+        if (ECSqlStatus::Success != stmt.Prepare(m_ecdb, ecsql.c_str(), m_ecdb.GetImpl().GetSettings().GetCrudWriteToken()) ||
             BE_SQLITE_DONE != stmt.Step())
             {
             Issues().Report("ECSchema Upgrade failed. ECClass %s: Deleting an ECProperty '%s' from an ECClass failed due error while setting property to null", ecClass.GetFullName(), deletedProperty.GetName().c_str());

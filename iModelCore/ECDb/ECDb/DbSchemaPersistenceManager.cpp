@@ -168,7 +168,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 
     if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to create table %s: %s", table.GetName().c_str(), ecdb.GetLastError().c_str());
+        ecdb.GetImpl().Issues().Report("Failed to create table %s: %s", table.GetName().c_str(), ecdb.GetLastError().c_str());
         return ERROR;
         }
 
@@ -203,7 +203,7 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
         auto r = ecdb.ExecuteSql(sql.c_str());
         if (r != BE_SQLITE_OK)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to drop view '%s'", tableName);
+            ecdb.GetImpl().Issues().Report("Failed to drop view '%s'", tableName);
             return ERROR;
             }
 
@@ -262,7 +262,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
         
         if (columnToAdd->IsOnlyColumnOfPrimaryKeyConstraint())
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to add column (%s) as primary column for an existing table.", columnToAdd->GetName().c_str());
+            ecdb.GetImpl().Issues().Report("Failed to add column (%s) as primary column for an existing table.", columnToAdd->GetName().c_str());
             return ERROR;
             }
 
@@ -275,7 +275,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
             {
             if (constraint->GetType() == DbConstraint::Type::PrimaryKey)
                 {
-                ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to add column (%s) as primary column for an existing table.", ddl.c_str());
+                ecdb.GetImpl().Issues().Report("Failed to add column (%s) as primary column for an existing table.", ddl.c_str());
                 return ERROR;
                 }
 
@@ -293,7 +293,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
 
         if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to add new column (%s). Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
+            ecdb.GetImpl().Issues().Report("Failed to add new column (%s). Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
             return ERROR;
             }
         }
@@ -458,7 +458,7 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
     StorageDescription const& storageDescription = classMap->GetStorageDescription();
     if (index.AppliesToSubclassesIfPartial() && storageDescription.HasMultipleNonVirtualHorizontalPartitions() && classMap->GetClass().GetRelationshipClassCP() == nullptr)
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Index %s cannot be created for ECClass '%s' because the ECClass has subclasses in other tables and the index is defined to apply to subclasses.",
+        ecdb.GetImpl().Issues().Report("Index %s cannot be created for ECClass '%s' because the ECClass has subclasses in other tables and the index is defined to apply to subclasses.",
                                                         index.GetName().c_str(), ecclass->GetFullName());
         return ERROR;
         }
@@ -502,7 +502,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
             {
             if (failIfExists)
                 {
-                ecdb.GetECDbImplR().GetIssueReporter().Report("Trigger %s already exists on table %s.", trigger->GetName(), trigger->GetTable().GetName().c_str());
+                ecdb.GetImpl().Issues().Report("Trigger %s already exists on table %s.", trigger->GetName(), trigger->GetTable().GetName().c_str());
                 return ERROR;
                 }
 
@@ -529,7 +529,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 
         if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to create trigger %s on table %s. Error: %s", trigger->GetName(), trigger->GetTable().GetName().c_str(),
+            ecdb.GetImpl().Issues().Report("Failed to create trigger %s on table %s. Error: %s", trigger->GetName(), trigger->GetTable().GetName().c_str(),
                                                           ecdb.GetLastError().c_str());
             return ERROR;
             }
