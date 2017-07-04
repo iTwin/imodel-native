@@ -5735,7 +5735,7 @@ TEST_F(SchemaUpgradeTestFixture, ModifyPropToReadOnlyOnClientBriefcase)
 
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
-    m_ecdb.AssignBriefcaseId(BeBriefcaseId(123));
+    m_ecdb.SetAsBriefcase(BeBriefcaseId(123));
 
     //Update schema 
     SchemaItem schemaItem2(
