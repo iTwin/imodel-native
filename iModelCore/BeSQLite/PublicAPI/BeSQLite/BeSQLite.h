@@ -1021,6 +1021,9 @@ struct DbDupValue : DbValue, NonCopyableClass
 //=======================================================================================
 //! A user-defined function that can be added to a Db connection and then used in SQL.
 //! See http://www.sqlite.org/capi3ref.html#sqlite3_create_function.
+//! WARNING: The implementation of a DbFunction is forbidden from creating or using
+//! a CachedStatement. Doing so can easily result in deadlock due to contention between
+//! the sqlite mutex and the StatementCache mutex.
 // @bsiclass                                                    Keith.Bentley   06/14
 //=======================================================================================
 struct DbFunction : NonCopyableClass
@@ -1078,6 +1081,9 @@ public:
 //=======================================================================================
 struct ScalarFunction : DbFunction
 {
+    //! WARNING: The implementation of _ComputeScalar is forbidden from creating or using
+    //! a CachedStatement. Doing so can easily result in deadlock due to contention between
+    //! the sqlite mutex and the StatementCache mutex.
     virtual void _ComputeScalar(Context&, int nArgs, DbValue* args) = 0;   //<! see "xFunc" in sqlite3_create_function
 
     //! Initializes a new ScalarFunction instance
@@ -1094,6 +1100,10 @@ struct ScalarFunction : DbFunction
 struct AggregateFunction : DbFunction
 {
     bool _IsAggregate() override {return true;}
+
+    //! WARNING: The implementations of _StepAggregate and _FinishAggregate are forbidden from creating or using
+    //! a CachedStatement. Doing so can easily result in deadlock due to contention between
+    //! the sqlite mutex and the StatementCache mutex.
     virtual void _StepAggregate(Context&, int nArgs, DbValue* args) = 0; //<! see "xStep" in sqlite3_create_function
     virtual void _FinishAggregate(Context&) = 0;                         //<! see "xFinal" in sqlite3_create_function
 
@@ -1144,6 +1154,9 @@ struct RTreeMatchFunction : DbFunction
 
     //! this method is called for every internal and leaf node in an sqlite rtree vtable.
     //! @see sqlite3_rtree_query_callback.
+    //! WARNING: The implementation of _TestRange is forbidden from creating or using
+    //! a CachedStatement. Doing so can easily result in deadlock due to contention between
+    //! the sqlite mutex and the StatementCache mutex.
     virtual int _TestRange(QueryInfo const&) = 0;
 
     RTreeMatchFunction(Utf8CP name, int nArgs) : DbFunction(name, nArgs, DbValueType::NullVal) {}
