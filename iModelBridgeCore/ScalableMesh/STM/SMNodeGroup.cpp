@@ -168,13 +168,7 @@ StatusInt SMNodeGroup::SaveTilesetToCache(Json::Value & tileset, const uint64_t&
 StatusInt SMNodeGroup::SaveTileToCacheWithNewTileIDs(Json::Value & tile, uint64_t tileID, uint64_t parentID, bool isRootNode, uint64_t level)
     {
     // Compute next tile ID
-    static std::atomic<uint32_t> s_currentNodeID = 0;
-    if (m_mustResetNodeIDGenerator)
-        {
-        s_currentNodeID = 0;
-        m_mustResetNodeIDGenerator = false;
-        }
-    tileID = isRootNode && tileID != uint64_t(-1) && parentID != uint64_t(-1) ? tileID : s_currentNodeID++;
+    tileID = isRootNode && tileID != uint64_t(-1) && parentID != uint64_t(-1) ? tileID : m_parametersPtr->GetNextNodeID();
 
     auto& smHeader = tile["SMHeader"];
     smHeader["parentID"] = parentID;
