@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/Geom/drange2d.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -269,6 +269,16 @@ void UnionOf  (DRange2dCR range1, DRange2dCR range2);
 //!
 void RestrictToMinMax  (DRange2dCR range0, DRange2dCR minMax);
 
+//!
+//! @description scale a range about its center point.
+//! @param [in] rangeIn  original range
+//! @param [in] scale  scale factor
+//!
+void ScaleAboutCenter
+(
+DRange2dCR      rangeIn,
+double          scale
+);
 
 //flex!! Queries
 //flex|| Exactly matches the null range    || bool range.IsNull () ||
