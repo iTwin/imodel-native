@@ -52,7 +52,6 @@ ECDbAllHeaders = \
                 $(baseDir)SchemaWriter.h \
                 $(baseDir)SchemaValidator.h \
                 $(baseDir)SchemaImportContext.h \
-                $(baseDir)SchemaComparer.h \
                 $(baseDir)ClassMappingInfo.h \
                 $(baseDir)ViewGenerator.h \
                 $(baseDir)ProfileManager.h \
@@ -125,8 +124,8 @@ always:
     !~@mkdir $(o)
 
 #--------------------------------------------------------------------------------
-#  Bring our precompiled header up-to-date.  
-#  Note: After including PreCompileHeader.mki $(UsePrecompiledHeaderOptions) 
+#  Bring our precompiled header up-to-date.
+#  Note: After including PreCompileHeader.mki $(UsePrecompiledHeaderOptions)
 #  will contain the /Yu and /Fp options that we need to consume the .pch.
 #----------------------------------------------------------------------
 PchCompiland = $(baseDir)ECDbPch.cpp
@@ -172,7 +171,7 @@ $(o)PropertyMapVisitor$(oext):                                $(baseDir)Property
 $(o)ClassMapper$(oext):                                       $(baseDir)ClassMapper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapPersistenceManager$(oext):                        $(baseDir)ClassMapPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
- 
+
 $(o)ECDbImpl$(oext):                                          $(baseDir)ECDbImpl.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ECDbSqlFunctions$(oext):                                  $(baseDir)ECDbSqlFunctions.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -192,8 +191,6 @@ $(o)SchemaManager$(oext):                                     $(baseDir)SchemaMa
 $(o)SchemaImportContext$(oext):                               $(baseDir)SchemaImportContext.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)SchemaValidator$(oext):                                   $(baseDir)SchemaValidator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)SchemaComparer$(oext):                                    $(baseDir)SchemaComparer.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PolicyManager$(oext):                                     $(baseDir)PolicyManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
@@ -339,7 +336,7 @@ $(o)ClassMapColumnFactory$(oext):                             $(baseDir)ClassMap
 
 
 %include MultiCppCompileGo.mki
-cppObjects=%$(MultiCompileObjectList) 
+cppObjects=%$(MultiCompileObjectList)
 CCPchOpts =
 CPchOpts =
 
@@ -357,7 +354,7 @@ MultiCompileDepends=$(_MakeFileSpec)
     LLVMCommonCompOpts + -Wno-error=unused-function
     LLVMCommonCompOpts + -Wno-error=unused-variable
     LLVMCommonCompOpts + -Wno-error=unknown-pragmas
-    
+
     # We need to ignore these warnings for Apple LLVM 5.1, but they don't even exist prior, so guard.
     GreaterThan5_1 = $[@readstdout "python $(SrcRoot)bsicommon/build/DetectClangVersion.py 503.0.38"]
     %if $(GreaterThan5_1) == "YES"
@@ -428,7 +425,7 @@ DLM_NOENTRY                 = 1
 DLM_NOINITFUNC              = 1
 DLM_OBJECT_DEST             = $(o)
 DLM_OBJECT_FILES            = $(cppObjects)
-DLM_OBJECT_PCH              = $(o)ECDbPch$(oext) 
+DLM_OBJECT_PCH              = $(o)ECDbPch$(oext)
 LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(BeSQLiteLib) \
                               $(ContextSubpartsLibs)$(ECNativeObjectsLib) \
                               $(ContextSubpartsLibs)$(UnitsLib) \
@@ -472,4 +469,4 @@ always:
     ~linkdir "$(BuildContext)Dox/Images/ECDb=$(baseDir)docs/images"
     @CreateSymLinks.py -m"$(BuildContext)Dox/Files/ECDb=$(baseDir)docs/files"
     @CreateSymLinks.py "$(BuildContext)Dox/Files/ECDb/ECDbMap.ecschema.xml=$(BuildContext)SubParts/ECSchemas/ECDb/ECDbMap.02.00.00.ecschema.xml"
-  
+

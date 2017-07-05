@@ -212,11 +212,11 @@ BentleyStatus SchemaWriter::InsertSchemaReferenceEntries(ECSchemaCR schema)
         if (!reference->HasId())
             {
             // We apparently have a second copy of an ECSchema that has already been imported. Ideally, we would have used the SchemaManager
-            // as an IECSchemaLocater when we loaded the ECSchemas that we are imported, but since we did not, we simply *hope* that 
+            // as an IECSchemaLocater when we loaded the ECSchemas that we are imported, but since we did not, we simply *hope* that
             // the duplicated loaded from disk matches the one stored in the db.
-            // The duplicate copy does not have its Ids set... and so we will have to look them up, here and elsewhere, and set them into 
+            // The duplicate copy does not have its Ids set... and so we will have to look them up, here and elsewhere, and set them into
             // the in-memory duplicate copy. In Graphite02, we might risk cleaning this up to force use of the already-persisted ECSchema
-            // or else to do a one-shot validation of the ECSchema and updating of its ids. 
+            // or else to do a one-shot validation of the ECSchema and updating of its ids.
             // Grep for GetClassIdForECClassFromDuplicateECSchema and GetPropertyIdForECPropertyFromDuplicateECSchema for other ramifications of this.
             const_cast<ECSchema*>(reference)->SetId(referenceId);
             }
@@ -452,13 +452,13 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
 
     if (BE_SQLITE_OK != stmt->BindText(3, koq.GetName(), Statement::MakeCopy::No))
         return ERROR;
-   
+
     if (koq.GetIsDisplayLabelDefined())
         {
         if (BE_SQLITE_OK != stmt->BindText(4, koq.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
             return ERROR;
         }
-   
+
     if (!koq.GetInvariantDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, koq.GetInvariantDescription(), Statement::MakeCopy::No))
@@ -668,7 +668,7 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
         if (BE_SQLITE_OK != stmt->BindText(4, ecProperty.GetInvariantDisplayLabel(), Statement::MakeCopy::No))
             return ERROR;
         }
-    
+
     if (!ecProperty.GetInvariantDescription().empty())
         {
         if (BE_SQLITE_OK != stmt->BindText(5, ecProperty.GetInvariantDescription(), Statement::MakeCopy::No))
@@ -829,7 +829,7 @@ BentleyStatus SchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR ecSchema)
     {
-    
+
     CachedStatementPtr stmt = nullptr;
     if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
         return ERROR;
@@ -1019,7 +1019,7 @@ BentleyStatus SchemaWriter::DeleteCAEntry(int& ordinal, ECClassId ecClassId, ECC
 
     if (stmt->Step() != BE_SQLITE_DONE)
         return ERROR;
-    
+
     BeAssert(m_ecdb.GetModifiedRowCount() > 0);
     return SUCCESS;
     }
@@ -1225,7 +1225,7 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
             }
 
         if (propertyChange.GetEnumeration().GetNew().IsNull())
-            { 
+            {
             sqlUpdateBuilder.AddSetExp("PrimitiveType", (int)newPrimitiveProperty->GetType()); //set to null;
             sqlUpdateBuilder.AddSetToNull("EnumerationId"); //set to null;
             }
@@ -1299,7 +1299,7 @@ BentleyStatus SchemaWriter::UpdateRelationshipConstraint(ECContainerId container
     {
     Utf8CP constraintEndStr = isSource ? "Source" : "Target";
     SqlUpdateBuilder updater("ec_RelationshipConstraint");
- 
+
     if (constraintChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
 
@@ -1395,7 +1395,7 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(SchemaPersistenceHelper::Gene
             }
 
         if (change.GetState() == ChangeState::New)
-            {           
+            {
             IECInstancePtr ca = newContainer.GetCustomAttribute(schemaName, className);
             BeAssert(ca.IsValid());
             if (ca.IsNull())
@@ -1461,7 +1461,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
 
     if (classChange.GetClassModifier().IsValid())
         {
-        Nullable<ECClassModifier> oldValue = classChange.GetClassModifier().GetOld();
+        BentleyApi::Nullable<ECClassModifier> oldValue = classChange.GetClassModifier().GetOld();
         ECClassModifier newValue = classChange.GetClassModifier().GetNew().Value();
         if (oldValue == ECClassModifier::Abstract)
             {
@@ -1803,7 +1803,7 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
                                   deletedClass.GetSchema().GetFullSchemaName().c_str(), deletedClass.GetName().c_str());
         return ERROR;
         }
-    
+
     if (!m_ecdb.Schemas().GetDerivedClasses(deletedClass).empty())
         {
         Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECClass '%s' is not supported because it has subclasses.",
@@ -1990,7 +1990,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
             //For shared column do not delete column itself.
             if (column->IsShared())
                 {
-                if (!sharedColumnFound) 
+                if (!sharedColumnFound)
                     sharedColumnFound = true;
 
                 continue;
@@ -2017,7 +2017,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
                 }
             }
         }
-    
+
     if (sharedColumnFound)
         {
         Utf8String ecsql;
@@ -2150,7 +2150,7 @@ BentleyStatus SchemaWriter::UpdateEnumeration(ECEnumerationChange& enumChange, E
 
     //CREATE TABLE ec_Enumeration(Id INTEGER PRIMARY KEY,SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,Name TEXT NOT NULL COLLATE NOCASE,DisplayLabel TEXT,Description TEXT,UnderlyingPrimitiveType INTEGER NOT NULL,IsStrict BOOLEAN NOT NULL CHECK(IsStrict IN (0,1)),EnumValues TEXT NOT NULL);
     SqlUpdateBuilder sqlUpdateBuilder("ec_Enumeration");
-    
+
     if (enumChange.GetName().IsValid())
         {
         if (enumChange.GetName().GetNew().IsNull())
@@ -2327,7 +2327,7 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
     {
     if (schemaChange.GetStatus() == ECChange::Status::Done)
         return SUCCESS;
-   
+
     ECSchemaId schemaId = m_ecdb.Schemas().GetReader().GetSchemaId(newSchema);
     if (!schemaId.IsValid())
         {
@@ -2347,7 +2347,7 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
 
         updateBuilder.AddSetExp("Name", schemaChange.GetName().GetNew().Value().c_str());
         }
-    
+
     if (schemaChange.GetDisplayLabel().IsValid())
         {
         if (schemaChange.GetDisplayLabel().GetNew().IsNull())
@@ -2409,7 +2409,7 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
                                       oldSchema.GetFullSchemaName().c_str());
             return ERROR;
             }
-        
+
         if (SchemaPersistenceHelper::ContainsSchemaWithAlias(m_ecdb, schemaChange.GetAlias().GetNew().Value().c_str()))
             {
             Issues().Report("ECSchema Upgrade failed. ECSchema %s: Alias is already used by another existing ECSchema.",
