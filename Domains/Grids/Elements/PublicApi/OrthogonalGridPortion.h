@@ -38,6 +38,7 @@ public:
         double m_height;
         DVec3d m_horizontalExtendTranslation;
         DVec3d m_verticalExtendTranslation;
+        bool m_extendHeight;
 
         //! Creates create parameters for orthogonal grid
         //! @param[in] model                        model to create the grid in
@@ -49,8 +50,9 @@ public:
         //! @param[in] height                       height of grid lines
         //! @param[in] horizontalExtendTranslation  translation of horizontal lines to be extended
         //! @param[in] verticalExtendTranslation    translation of vertical lines to be extended
+        //! @param[in] extendHeight                 true if grid should be extended to both ends in Z axis
         CreateParams(Dgn::SpatialLocationModelCP model, int horizontalCount, int verticalCount, double horizontalInterval, double verticalInterval,
-                     double length, double height, DVec3d horizontalExtendTranslation, DVec3d verticalExtendTranslation) :
+                     double length, double height, DVec3d horizontalExtendTranslation, DVec3d verticalExtendTranslation, bool extendHeight = false) :
             T_Super(DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()))),
             m_model(model),
             m_horizontalCount(horizontalCount),
@@ -60,7 +62,8 @@ public:
             m_length(length),
             m_height(height),
             m_horizontalExtendTranslation(horizontalExtendTranslation),
-            m_verticalExtendTranslation(verticalExtendTranslation)
+            m_verticalExtendTranslation(verticalExtendTranslation),
+            m_extendHeight(extendHeight)
             {
             }
 

@@ -36,6 +36,7 @@ public:
         double m_circularInterval;
         double m_length;
         double m_height;
+        bool m_extendHeight;
 
         //! Creates create parameters for radial grid
         //! @param[in] model                model to create the grid in
@@ -45,8 +46,9 @@ public:
         //! @param[in] circularInterval     distance between grid arcs
         //! @param[in] length               length of grid lines
         //! @param[in] height               height of grid lines
+        //! @param[in] extendHeight         true if grid should be extended to both ends in Z axis
         CreateParams(Dgn::SpatialLocationModelCP model, int planeCount, int circularCount, double planeIterationAngle,
-                               double circularInterval, double length, double height) :
+                               double circularInterval, double length, double height, bool extendHeight = false) :
             T_Super(Dgn::DgnElement::CreateParams(model->GetDgnDb(), model->GetModelId(), QueryClassId(model->GetDgnDb()))),
             m_model(model),
             m_planeCount(planeCount),
@@ -54,7 +56,8 @@ public:
             m_planeIterationAngle(planeIterationAngle),
             m_circularInterval(circularInterval),
             m_length(length),
-            m_height(height)
+            m_height(height),
+            m_extendHeight(extendHeight)
             {
             }
 

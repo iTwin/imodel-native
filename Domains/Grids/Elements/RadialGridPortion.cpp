@@ -53,7 +53,16 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params)
     {
     GridElementVector radialGrid;
 
-    DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length, params.m_height);
+    double height = params.m_height;
+
+    if (params.m_extendHeight)
+        height += 2 * BUILDING_TOLERANCE;
+
+    DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length, height);
+
+    if (params.m_extendHeight)
+        extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
+
     GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*params.m_model, extDetail);
     if (!baseGridPlane.IsValid())
         return GridElementVector();
@@ -71,7 +80,11 @@ GridElementVector RadialGridPortion::CreateGridPreview(CreateParams params)
 
     for (int i = 0; i < params.m_circularCount; ++i)
         {
-        DgnExtrusionDetail extDetail = GeometryUtils::CreateArcExtrusionDetail((i + 1) * params.m_circularInterval, params.m_planeIterationAngle * params.m_planeCount, params.m_height, UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH));
+        DgnExtrusionDetail extDetail = GeometryUtils::CreateArcExtrusionDetail((i + 1) * params.m_circularInterval, params.m_planeIterationAngle * params.m_planeCount, height, UnitConverter::FromFeet(CIRCULAR_GRID_EXTEND_LENGTH));
+        
+        if (params.m_extendHeight)
+            extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
+        
         GridArcSurfacePtr arcSurface = GridArcSurface::Create(*params.m_model, extDetail);
         if (!arcSurface.IsValid())
             return GridElementVector();

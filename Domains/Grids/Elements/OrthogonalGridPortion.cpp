@@ -106,6 +106,10 @@ GridElementVector OrthogonalGridPortion::CreateGridElements(CreateParams params,
     double interval;
     int count;
     double rotAngle = 0;
+    double height = params.m_height;
+
+    if (params.m_extendHeight)
+        height += 2 * BUILDING_TOLERANCE;
 
     if (isHorizontal)
         {
@@ -123,9 +127,12 @@ GridElementVector OrthogonalGridPortion::CreateGridElements(CreateParams params,
 
     for (int i = 0; i < count; ++i)
         {
-        DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length, params.m_height);
+        DgnExtrusionDetail extDetail = GeometryUtils::CreatePlaneExtrusionDetail(params.m_length, height);
         extDetail.m_baseCurve->TransformInPlace(Transform::From(RotMatrix::FromAxisAndRotationAngle(2, rotAngle)));
         extDetail.m_baseCurve->TransformInPlace(Transform::From(extendTranslation));
+
+        if (params.m_extendHeight)
+            extDetail.m_baseCurve->TransformInPlace(Transform::From(DVec3d::From(0.0, 0.0, -BUILDING_TOLERANCE)));
 
         GridPlaneSurfacePtr baseGridPlane = GridPlaneSurface::Create(*params.m_model, extDetail);
         if (!baseGridPlane.IsValid())
