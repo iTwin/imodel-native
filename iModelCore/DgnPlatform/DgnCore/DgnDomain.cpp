@@ -707,8 +707,15 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
 
     if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken()))
         {
-        DbResult result = dgndb.AbandonChanges();
-        BeAssert(result == BE_SQLITE_OK);
+        if (SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues == importOptions)
+            {
+            LOG.errorv("Failed to import legacy V8 schemas"); 
+            }
+        else
+            {
+            DbResult result = dgndb.AbandonChanges();
+            BeAssert(result == BE_SQLITE_OK);
+            }
 
         return SchemaStatus::SchemaImportFailed;
         }
