@@ -37,10 +37,10 @@ struct DbMapValidator final : NonCopyableClass
 
         BentleyStatus ValidateDbMap() const;
         BentleyStatus ValidateClassMap(ClassMap const&) const;
-        BentleyStatus ValidateRelationshipClassMap(RelationshipClassMap const&) const;
         BentleyStatus ValidateRelationshipClassEndTableMap(RelationshipClassEndTableMap const&) const;
         BentleyStatus ValidateRelationshipClassLinkTableMap(RelationshipClassLinkTableMap const&) const;
         BentleyStatus ValidatePropertyMap(PropertyMap const&, bmap<DbColumn const*, SingleColumnDataPropertyMap const*>& duplicateColumnMappings) const;
+        BentleyStatus ValidateNavigationPropertyMap(NavigationPropertyMap const&, bmap<DbColumn const*, SingleColumnDataPropertyMap const*>& duplicateColumnMappings) const;
 
         ECDbCR GetECDb() const { return m_dbMap.GetECDb(); }
         DbSchema const& GetDbSchema() const { return m_dbMap.GetDbSchema(); }

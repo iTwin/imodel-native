@@ -2364,7 +2364,7 @@ TEST_F(RelationshipMappingTestFixture, NotNullConstraintsOnFkColumns)
 
     ddl = GetHelper().GetDdl("ts_Base");
     ASSERT_FALSE(ddl.empty());
-    ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER NOT NULL,")) << "Logical FK> Actual DDL: " << ddl.c_str();
+    ASSERT_TRUE(ddl.ContainsI("[AId] INTEGER,")) << "Logical FK> Actual DDL: " << ddl.c_str();
 
 
     ASSERT_EQ(SUCCESS, SetupECDb("notnullconstraintsonfkcolumns.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"

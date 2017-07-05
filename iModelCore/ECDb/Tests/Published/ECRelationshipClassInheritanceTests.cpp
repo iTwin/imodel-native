@@ -1178,7 +1178,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
 
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Persisted, true, false);
+    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
     }
 
     {
@@ -1244,7 +1244,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     Utf8CP tableName = SCHEMAALIAS "_B";
     assertRelECClassId(m_ecdb, tableName, "A1RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
-    assertRelECClassId(m_ecdb, tableName, "A2RelECClassId", RelClassIdExistenceMode::Persisted, true, false);
+    assertRelECClassId(m_ecdb, tableName, "A2RelECClassId", RelClassIdExistenceMode::Persisted, false, false);
     }
 
     {
@@ -1296,7 +1296,75 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     {
 #undef SCHEMAALIAS
-#define SCHEMAALIAS "ts6"
+#define SCHEMAALIAS "ts6a"
+
+    SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                          "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                          "  <ECEntityClass typeName='A' >"
+                          "    <ECProperty propertyName='Name' typeName='string' />"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='B' modifier='Abstract' >"
+                          "    <ECCustomAttributes>"
+                          "         <ClassMap xmlns='ECDbMap.02.00'>"
+                          "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                          "        </ClassMap>"
+                          "    </ECCustomAttributes>"
+                          "    <ECProperty propertyName='Code' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='A1' relationshipName='AHasB1N' direction='Backward' >"
+                          "       <ECCustomAttributes>"
+                          "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                          "       </ECCustomAttributes>"
+                          "    </ECNavigationProperty>"
+                          "  </ECEntityClass>"
+                          "  <ECEntityClass typeName='BSub' modifier='Sealed' >"
+                          "    <BaseClass>B</BaseClass>"
+                          "    <ECProperty propertyName='Prop1' typeName='string' />"
+                          "    <ECNavigationProperty propertyName='A2' relationshipName='AHasBSub' direction='Backward' >"
+                          "       <ECCustomAttributes>"
+                          "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                          "       </ECCustomAttributes>"
+                          "    </ECNavigationProperty>"
+                          "    <ECNavigationProperty propertyName='A3' relationshipName='AHasBSub1N' direction='Backward' >"
+                          "       <ECCustomAttributes>"
+                          "         <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                          "       </ECCustomAttributes>"
+                          "    </ECNavigationProperty>"
+                          "  </ECEntityClass>"
+                          "  <ECRelationshipClass typeName='AHasBSub' modifier='Sealed' strength='embedding'>"
+                          "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='A Has B'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                          "      <Class class='BSub' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasB1N' modifier='Sealed' strength='embedding'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                          "      <Class class='B' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "  <ECRelationshipClass typeName='AHasBSub1N' modifier='Sealed' strength='embedding'>"
+                          "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='A Has B'>"
+                          "      <Class class='A' />"
+                          "    </Source>"
+                          "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='A Has B (Reversed)'>"
+                          "      <Class class='BSub' />"
+                          "    </Target>"
+                          "  </ECRelationshipClass>"
+                          "</ECSchema>");
+
+    ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
+    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, true, false);
+    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
+    //nullable because there are base classes of the end class mapped to the same table (for which the FK remains NULL)
+    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A3RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
+    }
+    {
+#undef SCHEMAALIAS
+#define SCHEMAALIAS "ts6b"
 
     SchemaItem testSchema("<ECSchema schemaName='TestSchema' alias='" SCHEMAALIAS "' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                           "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
@@ -1345,7 +1413,7 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
                           "</ECSchema>");
 
     ASSERT_EQ(SUCCESS, SetupECDb("relecclassid" SCHEMAALIAS ".ecdb", testSchema));
-    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, true, false);
+    assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A1RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A2RelECClassId", RelClassIdExistenceMode::Virtual, false, false);
     //nullable because there are base classes of the end class mapped to the same table (for which the FK remains NULL)
     assertRelECClassId(m_ecdb, SCHEMAALIAS "_B", "A3RelECClassId", RelClassIdExistenceMode::Virtual, false, false);

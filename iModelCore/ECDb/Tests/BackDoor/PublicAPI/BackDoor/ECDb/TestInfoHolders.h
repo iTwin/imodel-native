@@ -281,7 +281,7 @@ bool operator==(ExpectedColumns const& lhs, std::vector<Column> const& rhs);
     
 // GTest Format customizations for types not handled by GTest
 void PrintTo(ExpectedColumn const&, std::ostream*);
-void PrintTo(ExpectedColumns const&, std::ostream*);
+//void PrintTo(ExpectedColumns const&, std::ostream*);
 
 //=======================================================================================    
 // @bsiclass                                   Krischan.Eberle                  06/17

@@ -323,7 +323,7 @@ std::vector<Utf8String> TestHelper::GetIndexNamesForTable(Utf8StringCR tableName
     std::vector<Utf8String> indexNames;
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name"))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT name FROM sqlite_master WHERE type='index' AND tbl_name=? ORDER BY name COLLATE NOCASE"))
         {
         BeAssert(false && "Preparation failed");
         return indexNames;

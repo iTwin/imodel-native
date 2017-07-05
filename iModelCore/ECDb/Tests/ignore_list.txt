@@ -30,5 +30,4 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 #TFS 721630 
 ECSqlSelectPrepareTests.LikeOperator
 
-#TFS 722023
-ECSqlNavigationPropertyTestFixture.RelECClassIdAndSharedColumns
+DbMappingTestFixture.SchemaImportWithDoNotFailSchemaValidationForLegacyIssuesFlag

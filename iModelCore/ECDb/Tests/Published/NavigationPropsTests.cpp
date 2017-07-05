@@ -269,13 +269,16 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                 03/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
+TEST_F(ECSqlNavigationPropertyTestFixture, LogicalForeignKeyWithNotNullAndUniqueConstraintsAndSharedCols)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("relecclassidandsharedcolumns.ecdb",
-                            SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    ASSERT_EQ(SUCCESS, SetupECDb("ForeignKeyWithNotNullAndUniqueConstraintsAndSharedCols.ecdb",
+                                 SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
                         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                             <ECEntityClass typeName="Model">
+                                <ECProperty propertyName="Name" typeName="string" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Tag">
                                 <ECProperty propertyName="Name" typeName="string" />
                             </ECEntityClass>
                             <ECEntityClass typeName="Element" modifier="Abstract">
@@ -290,6 +293,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
                                 <ECProperty propertyName="Code" typeName="string" />
                                 <ECNavigationProperty propertyName="Model" relationshipName="ModelHasElement" direction="Backward" />
                                 <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElement" direction="Backward" />
+                                <ECNavigationProperty propertyName="Tag" relationshipName="ElementHasTag" direction="Backward" />
                             </ECEntityClass>
                             <ECEntityClass typeName="SubElement">
                                 <BaseClass>Element</BaseClass>
@@ -311,48 +315,384 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassIdAndSharedColumns)
                                   <Class class ="Element" />
                               </Target>
                            </ECRelationshipClass>
+                            <ECRelationshipClass typeName="ElementHasTag" strength="Embedding"  modifier="None">
+                                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Tag">
+                                    <Class class ="Tag" />
+                              </Source>
+                              <Target multiplicity="(0..1)" polymorphic="True" roleLabel="Element">
+                                  <Class class ="Element" />
+                              </Target>
+                           </ECRelationshipClass>
                           </ECSchema>)xml")));
 
     ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
 
-    ECClassId modelHasElementRelClassId = m_ecdb.Schemas().GetClassId("TestSchema", "ModelHasElement");
-    ASSERT_TRUE(modelHasElementRelClassId.IsValid());
-    ECClassId elementOwnsElementRelClassId = m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement");
-    ASSERT_TRUE(elementOwnsElementRelClassId.IsValid());
+    ASSERT_EQ(std::vector<Utf8String>({{"ix_ts_Element_ecclassid"}}), GetHelper().GetIndexNamesForTable("ts_Element")) << "Logical FK relationships never create indexes to enforce uniqueness";
 
     Column modelIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Model.Id"));
     ASSERT_TRUE(modelIdCol.Exists()) << "PropertyMap column for Element.Model.Id";
-    ASSERT_FALSE(modelIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Model.Id";
+    ASSERT_EQ(ExpectedColumn("ts_Element", "ps2"), modelIdCol) << "PropertyMap column for Element.Model.Id";
+    ASSERT_FALSE(modelIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Model.Id: Cardinality implies a NOT NULL, which is not enforced because of shared column";
+    ASSERT_FALSE(modelIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Model.Id: Cardinality is never enforced by a UNIQUE constraint. If needed, a unique index is created";
+    ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_Element", "ps2")) << "Logical FK must not create FK constraint";
+
+    ASSERT_EQ(ExpectedColumn("ts_Element", "ModelRelECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Model.RelECClassId")));
+
+    Column parentIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Parent.Id"));
+    ASSERT_TRUE(parentIdCol.Exists()) << "PropertyMap column for Element.Parent.Id";
+    ASSERT_EQ(ExpectedColumn("ts_Element", "ps3"), parentIdCol) << "PropertyMap column for Element.Parent.Id";
+    ASSERT_FALSE(parentIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Parent.Id: Cardinality does not imply NOT NULL";
+    ASSERT_FALSE(parentIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Parent.Id: Cardinality is never enforced by a UNIQUE constraint. If needed, a unique index is created";
+
+    ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_Element", "ps3")) << "Logical FK must not create FK constraint";
+
+    Column parentRelClassIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Parent.RelECClassId"));
+    ASSERT_TRUE(parentRelClassIdCol.Exists()) << "PropertyMap column for Element.Parent.RelECClassId";
+    ASSERT_EQ(ExpectedColumn("ts_Element", "ps4"), parentRelClassIdCol) << "PropertyMap column for Element.Parent.RelECClassId";
+    ASSERT_FALSE(parentRelClassIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Parent.RelECClassId. No constraints expected because of shared col";
+    ASSERT_FALSE(parentRelClassIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Parent.RelECClassId. No constraints expected because of shared col";
+
+    Column tagIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Tag.Id"));
+    ASSERT_TRUE(tagIdCol.Exists()) << "PropertyMap column for Element.Tag.Id";
+    ASSERT_EQ(ExpectedColumn("ts_Element", "ps5"), tagIdCol) << "PropertyMap column for Element.Tag.Id";
+    ASSERT_FALSE(tagIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Tag.Id: Cardinality implies a NOT NULL, which is not enforced because of shared column";
+    ASSERT_FALSE(tagIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Tag.Id: Cardinality is never enforced by a UNIQUE constraint. If needed, a unique index is created";
+    ASSERT_FALSE(GetHelper().IsForeignKeyColumn("ts_Element", "ps5")) << "Logical FK must not create FK constraint";
+
+    Column tagRelClassIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Tag.RelECClassId"));
+    ASSERT_TRUE(tagRelClassIdCol.Exists()) << "PropertyMap column for Element.Tag.RelECClassId";
+    ASSERT_EQ(ExpectedColumn("ts_Element", "ps6"), tagRelClassIdCol) << "PropertyMap column for Element.Tag.RelECClassId";
+    ASSERT_FALSE(tagRelClassIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Tag.RelECClassId. No constraints expected because of shared col";
+    ASSERT_FALSE(tagRelClassIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Tag.RelECClassId. No constraints expected because of shared col";
+
 
     ECInstanceKey modelKey;
-    {
-    ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Model(Name) VALUES('Main')"));
-    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(modelKey)) << stmt.GetECSql();
-    }
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(modelKey, "INSERT INTO ts.Model(Name) VALUES('Main')"));
+
+    ECInstanceKey tag1Key, tag2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(tag1Key, "INSERT INTO ts.Tag(Name) VALUES('Tag1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(tag2Key, "INSERT INTO ts.Tag(Name) VALUES('Tag2')"));
 
     ECInstanceKey rootElementKey, fooElementKey;
     {
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubElement(Code,Model,Parent) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubElement(Code,Model,Parent,Tag) VALUES(?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Root", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(4, tag1Key.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementHasTag"))) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(rootElementKey)) << stmt.GetECSql();
     stmt.Reset();
     stmt.ClearBindings();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
-    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), elementOwnsElementRelClassId)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement"))) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(4, tag2Key.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementHasTag"))) << stmt.GetECSql();
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooElementKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo3", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Tag is mandatory, but not enforced because of Logical FK" << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo2", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement"))) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(4, tag2Key.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementHasTag"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Two elements for tag1 violates the 1:1 cardinality of the 'element has tag' relationship. This is not enforced though because of the logical FK." << stmt.GetECSql();
+    }
     }
 
-    ASSERT_EQ(ExpectedColumns({ExpectedColumn("ts_Element", "ps2"), 
-                              ExpectedColumn("ts_Element","ModelRelECClassId", Virtual::Yes)}),
-              GetHelper().GetPropertyMapColumns(AccessString("ts", "Element", "Model")));
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 03/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, LogicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("LogicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols.ecdb",
+                                 SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                            <ECEntityClass typeName="Model">
+                                <ECProperty propertyName="Name" typeName="string" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Tag">
+                                <ECProperty propertyName="Name" typeName="string" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Element" modifier="Abstract">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="Code" typeName="string" />
+                                <ECNavigationProperty propertyName="Model" relationshipName="ModelHasElement" direction="Backward" />
+                                <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElement" direction="Backward" />
+                                <ECNavigationProperty propertyName="Tag" relationshipName="ElementHasTag" direction="Backward" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="SubElement">
+                                <BaseClass>Element</BaseClass>
+                                <ECProperty propertyName="SubProp1" typeName="int" />
+                            </ECEntityClass>
+                            <ECRelationshipClass typeName="ModelHasElement" strength="Embedding"  modifier="Sealed">
+                                <Source multiplicity="(1..1)" polymorphic="False" roleLabel="Model">
+                                    <Class class ="Model" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Element">
+                                    <Class class ="Element" />
+                                </Target>
+                            </ECRelationshipClass>
+                            <ECRelationshipClass typeName="ElementOwnsChildElement" strength="Embedding"  modifier="None">
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Parent Element">
+                                    <Class class ="Element" />
+                              </Source>
+                              <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Child Element">
+                                  <Class class ="Element" />
+                              </Target>
+                           </ECRelationshipClass>
+                            <ECRelationshipClass typeName="ElementHasTag" strength="Embedding"  modifier="None">
+                                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Tag">
+                                    <Class class ="Tag" />
+                              </Source>
+                              <Target multiplicity="(0..1)" polymorphic="True" roleLabel="Element">
+                                  <Class class ="Element" />
+                              </Target>
+                           </ECRelationshipClass>
+                          </ECSchema>)xml")));
 
-    ASSERT_EQ(ExpectedColumns({ExpectedColumn("ts_Element", "ps3"), 
-                              ExpectedColumn("ts_Element","ps4")}),
-            GetHelper().GetPropertyMapColumns(AccessString("ts", "Element", "Parent")));
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
+
+    EXPECT_EQ(std::vector<Utf8String>({{"ix_ts_Element_ecclassid"}}), GetHelper().GetIndexNamesForTable("ts_Element")) << "Logical FK relationships never create indexes to enforce uniqueness";
+
+    Column modelIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Model.Id"));
+    ASSERT_TRUE(modelIdCol.Exists()) << "PropertyMap column for Element.Model.Id";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "ModelId"), modelIdCol) << "PropertyMap column for Element.Model.Id";
+    EXPECT_FALSE(modelIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Model.Id: Cardinality implies a NOT NULL, which is not enforced for logical FKs";
+    EXPECT_FALSE(modelIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Model.Id: Cardinality is never enforced by a UNIQUE constraint, but with a unique index if necessary";
+    EXPECT_FALSE(GetHelper().IsForeignKeyColumn("ts_Element", "ModelId")) << "Logical FK must not create FK constraint";
+
+    EXPECT_EQ(ExpectedColumn("ts_Element", "ModelRelECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Model.RelECClassId")));
+
+    Column parentIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Parent.Id"));
+    ASSERT_TRUE(parentIdCol.Exists()) << "PropertyMap column for Element.Parent.Id";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "ParentId"), parentIdCol) << "PropertyMap column for Element.Parent.Id";
+    EXPECT_FALSE(parentIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Parent.Id: Cardinality does not imply NOT NULL";
+    EXPECT_FALSE(parentIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Parent.Id: Cardinality is never enforced by a UNIQUE constraint, but with a unique index if necessary";
+    EXPECT_FALSE(GetHelper().IsForeignKeyColumn("ts_Element", "ParentId")) << "Logical FK must not create FK constraint";
+
+    Column parentRelClassIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Parent.RelECClassId"));
+    ASSERT_TRUE(parentRelClassIdCol.Exists()) << "PropertyMap column for Element.Parent.RelECClassId";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "ParentRelECClassId"), parentRelClassIdCol) << "PropertyMap column for Element.Parent.RelECClassId";
+    EXPECT_FALSE(parentRelClassIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Parent.RelECClassId";
+    EXPECT_FALSE(parentRelClassIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Parent.RelECClassId";
+
+    Column tagIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Tag.Id"));
+    ASSERT_TRUE(tagIdCol.Exists()) << "PropertyMap column for Element.Tag.Id";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "TagId"), tagIdCol) << "PropertyMap column for Element.Tag.Id";
+    EXPECT_FALSE(tagIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Tag.Id: Cardinality implies a NOT NULL which is not enforced though for logical FKs";
+    EXPECT_FALSE(tagIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Tag.Id: Cardinality is never enforced by a UNIQUE constraint, but with a unique index if necessary";
+    EXPECT_FALSE(GetHelper().IsForeignKeyColumn("ts_Element", "TagId")) << "Logical FK must not create FK constraint";
+
+    Column tagRelClassIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Tag.RelECClassId"));
+    ASSERT_TRUE(tagRelClassIdCol.Exists()) << "PropertyMap column for Element.Tag.RelECClassId";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "TagRelECClassId"), tagRelClassIdCol) << "PropertyMap column for Element.Tag.RelECClassId";
+    EXPECT_FALSE(tagRelClassIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Tag.RelECClassId. Cardinality implies a NOT NULL which is not enforced for logical FKs though";
+    EXPECT_FALSE(tagRelClassIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Tag.RelECClassId";
+
+
+    ECInstanceKey modelKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(modelKey, "INSERT INTO ts.Model(Name) VALUES('Main')"));
+
+    ECInstanceKey tag1Key, tag2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(tag1Key, "INSERT INTO ts.Tag(Name) VALUES('Tag1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(tag2Key, "INSERT INTO ts.Tag(Name) VALUES('Tag2')"));
+
+    ECInstanceKey rootElementKey, fooElementKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubElement(Code,Model,Parent,Tag) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Root", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(4, tag1Key.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementHasTag"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(rootElementKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement"))) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(4, tag2Key.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementHasTag"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooElementKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo3", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Tag is mandatory, but not enforced because of Logical FK" << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo2", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement"))) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(4, tag2Key.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementHasTag"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Two elements for tag1 violates the 1:1 cardinality of the 'element has tag' relationship. This is not enforced though because of the logical FK." << stmt.GetECSql();
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                 07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlNavigationPropertyTestFixture, PhysicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("PhysicalForeignKeyWithNotNullAndUniqueConstraintsAndUnsharedCols.ecdb",
+                                 SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                            <ECEntityClass typeName="Model">
+                                <ECProperty propertyName="Name" typeName="string" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Tag">
+                                <ECProperty propertyName="Name" typeName="string" />
+                            </ECEntityClass>
+                            <ECEntityClass typeName="Element" modifier="Abstract">
+                                <ECCustomAttributes>
+                                    <ClassMap xmlns="ECDbMap.02.00">
+                                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                                    </ClassMap>
+                                </ECCustomAttributes>
+                                <ECProperty propertyName="Code" typeName="string" />
+                                <ECNavigationProperty propertyName="Model" relationshipName="ModelHasElement" direction="Backward">
+                                    <ECCustomAttributes>
+                                        <ForeignkeyConstraint xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                </ECNavigationProperty>
+                                <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElement" direction="Backward" >
+                                    <ECCustomAttributes>
+                                        <ForeignkeyConstraint xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                </ECNavigationProperty>
+                                <ECNavigationProperty propertyName="Tag" relationshipName="ElementHasTag" direction="Backward" >
+                                    <ECCustomAttributes>
+                                        <ForeignkeyConstraint xmlns="ECDbMap.02.00"/>
+                                    </ECCustomAttributes>
+                                </ECNavigationProperty>
+                            </ECEntityClass>
+                            <ECEntityClass typeName="SubElement">
+                                <BaseClass>Element</BaseClass>
+                                <ECProperty propertyName="SubProp1" typeName="int" />
+                            </ECEntityClass>
+                            <ECRelationshipClass typeName="ModelHasElement" strength="Embedding"  modifier="Sealed">
+                                <Source multiplicity="(1..1)" polymorphic="False" roleLabel="Model">
+                                    <Class class ="Model" />
+                                </Source>
+                                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Element">
+                                    <Class class ="Element" />
+                                </Target>
+                            </ECRelationshipClass>
+                            <ECRelationshipClass typeName="ElementOwnsChildElement" strength="Embedding"  modifier="None">
+                                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Parent Element">
+                                    <Class class ="Element" />
+                              </Source>
+                              <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Child Element">
+                                  <Class class ="Element" />
+                              </Target>
+                           </ECRelationshipClass>
+                            <ECRelationshipClass typeName="ElementHasTag" strength="Embedding"  modifier="None">
+                                <Source multiplicity="(1..1)" polymorphic="True" roleLabel="Tag">
+                                    <Class class ="Tag" />
+                              </Source>
+                              <Target multiplicity="(0..1)" polymorphic="True" roleLabel="Element">
+                                  <Class class ="Element" />
+                              </Target>
+                           </ECRelationshipClass>
+                          </ECSchema>)xml")));
+
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().CreateClassViewsInDb());
+
+    EXPECT_EQ(std::vector<Utf8String>({{"ix_ts_Element_ecclassid"},
+    {"ix_ts_Element_fk_ts_ElementOwnsChildElement_target"},
+    {"ix_ts_Element_fk_ts_ModelHasElement_target"},
+    {"ix_ts_Element_ParentRelECClassId"},
+    {"ix_ts_Element_TagRelECClassId"},
+    {"uix_ts_Element_fk_ts_ElementHasTag_target"}}), GetHelper().GetIndexNamesForTable("ts_Element")) << "Physical FK relationships create indexes on FK columns and to enforce uniqueness";
+
+    Column modelIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Model.Id"));
+    ASSERT_TRUE(modelIdCol.Exists()) << "PropertyMap column for Element.Model.Id";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "ModelId"), modelIdCol) << "PropertyMap column for Element.Model.Id";
+    EXPECT_TRUE(modelIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Model.Id: Cardinality implies a NOT NULL";
+    EXPECT_FALSE(modelIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Model.Id: Cardinality is never enforced by a UNIQUE constraint, but with a unique index if necessary";
+    EXPECT_TRUE(GetHelper().IsForeignKeyColumn("ts_Element", "ModelId")) << "Physical FK must create FK constraint";
+
+    EXPECT_EQ(ExpectedColumn("ts_Element", "ModelRelECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Model.RelECClassId")));
+
+    Column parentIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Parent.Id"));
+    ASSERT_TRUE(parentIdCol.Exists()) << "PropertyMap column for Element.Parent.Id";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "ParentId"), parentIdCol) << "PropertyMap column for Element.Parent.Id";
+    EXPECT_FALSE(parentIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Parent.Id: Cardinality does not imply NOT NULL";
+    EXPECT_FALSE(parentIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Parent.Id: Cardinality is never enforced by a UNIQUE constraint, but with a unique index if necessary";
+    EXPECT_TRUE(GetHelper().IsForeignKeyColumn("ts_Element", "ParentId")) << "Physical FK must create FK constraint";
+
+    Column parentRelClassIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Parent.RelECClassId"));
+    ASSERT_TRUE(parentRelClassIdCol.Exists()) << "PropertyMap column for Element.Parent.RelECClassId";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "ParentRelECClassId"), parentRelClassIdCol) << "PropertyMap column for Element.Parent.RelECClassId";
+    EXPECT_FALSE(parentRelClassIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Parent.RelECClassId";
+    EXPECT_FALSE(parentRelClassIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Parent.RelECClassId";
+
+    Column tagIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Tag.Id"));
+    ASSERT_TRUE(tagIdCol.Exists()) << "PropertyMap column for Element.Tag.Id";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "TagId"), tagIdCol) << "PropertyMap column for Element.Tag.Id";
+    EXPECT_TRUE(tagIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Tag.Id: Cardinality implies a NOT NULL";
+    EXPECT_FALSE(tagIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Tag.Id: Cardinality is never enforced by a UNIQUE constraint, but with a unique index if necessary";
+    EXPECT_TRUE(GetHelper().IsForeignKeyColumn("ts_Element", "TagId")) << "Physical FK must create FK constraint";
+
+    Column tagRelClassIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Element", "Tag.RelECClassId"));
+    ASSERT_TRUE(tagRelClassIdCol.Exists()) << "PropertyMap column for Element.Tag.RelECClassId";
+    EXPECT_EQ(ExpectedColumn("ts_Element", "TagRelECClassId"), tagRelClassIdCol) << "PropertyMap column for Element.Tag.RelECClassId";
+    EXPECT_TRUE(tagRelClassIdCol.GetNotNullConstraint()) << "PropertyMap column for Element.Tag.RelECClassId.";
+    EXPECT_FALSE(tagRelClassIdCol.GetUniqueConstraint()) << "PropertyMap column for Element.Tag.RelECClassId";
+
+
+    ECInstanceKey modelKey;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(modelKey, "INSERT INTO ts.Model(Name) VALUES('Main')"));
+
+    ECInstanceKey tag1Key, tag2Key;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(tag1Key, "INSERT INTO ts.Tag(Name) VALUES('Tag1')"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(tag2Key, "INSERT INTO ts.Tag(Name) VALUES('Tag2')"));
+
+    ECInstanceKey rootElementKey, fooElementKey;
+    {
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.SubElement(Code,Model,Parent,Tag) VALUES(?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Root", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(4, tag1Key.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementHasTag"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(rootElementKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement"))) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(4, tag2Key.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementHasTag"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(fooElementKey)) << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo3", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, stmt.Step()) << "Tag is mandatory" << stmt.GetECSql();
+    stmt.Reset();
+    stmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(1, "Foo2", IECSqlBinder::MakeCopy::No)) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(2, modelKey.GetInstanceId())) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(3, rootElementKey.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementOwnsChildElement"))) << stmt.GetECSql();
+    ASSERT_EQ(ECSqlStatus::Success, stmt.BindNavigationValue(4, tag2Key.GetInstanceId(), m_ecdb.Schemas().GetClassId("TestSchema", "ElementHasTag"))) << stmt.GetECSql();
+    ASSERT_EQ(BE_SQLITE_CONSTRAINT_UNIQUE, stmt.Step()) << "Two elements for tag1 violates the 1:1 cardinality of the element has tag relationship. " << stmt.GetECSql();
+    }
     }
 
 //---------------------------------------------------------------------------------------

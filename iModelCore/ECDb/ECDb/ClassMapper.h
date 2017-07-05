@@ -67,7 +67,6 @@ struct ClassMapper final
         RefCountedPtr<StructArrayPropertyMap> MapStructArrayProperty(ECN::StructArrayECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
         RefCountedPtr<NavigationPropertyMap> MapNavigationProperty(ECN::NavigationECPropertyCR);
         Utf8String ComputeAccessString(ECN::ECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
-        static ECN::ECRelationshipEnd GetConstraintEnd(ECN::NavigationECPropertyCR, NavigationPropertyMap::NavigationEnd);
         static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
 
         static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ClassMap const&, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
@@ -149,27 +148,27 @@ struct RelationshipClassEndTableMappingContext : NonCopyableClass
         std::map<DbTableId, std::vector<PartitionInfo>> m_partitions;
         SchemaImportContext& m_schemaContext;
 
-    private:
-        const std::vector<DbColumn const*> GetPartitionColumns(PartitionInfo::ColumnId id) const;
+        const std::vector<DbColumn const*> GetPartitionColumns(PartitionInfo::ColumnId) const;
         bool PersistedEndHasNonVirtualForeignKeyColumn() const;
-        bool TryGetPartition(ClassMapCR classMap, std::vector<PartitionInfo*>& partitions);
-        PartitionInfo* CreatePartition(DbTableId id);
-        BentleyStatus AddIndexToRelationshipEnd(PartitionInfo const& info);
+        bool TryGetPartition(ClassMapCR, std::vector<PartitionInfo*>&);
+        PartitionInfo* CreatePartition(DbTableId);
+        BentleyStatus AddIndexToRelationshipEnd(PartitionInfo const&);
         BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind);
-        DbColumn* CreateForeignKeyColumn( DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo &fkColInfo);
+        DbColumn* CreateForeignKeyColumn(DbTable& fkTable, NavigationPropertyMap const&, ForeignKeyColumnInfo&);
         ClassMappingStatus CreateForeignKeyConstraint(DbTable const& referencedTable);
-        static DbColumn* CreateRelECClassIdColumn(DbMap const& dbMap, ECN::ECClassCR ecClass, DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol, NavigationPropertyMap const& navPropMap);
+        DbColumn* CreateRelECClassIdColumn(DbMap const&, ECN::ECClassCR, DbTable& fkTable, ForeignKeyColumnInfo const&, DbColumn const& fkCol, NavigationPropertyMap const&);
         ECN::ECRelationshipEnd GetForeignEnd() const;
         ECN::ECRelationshipEnd GetReferencedEnd() const;
         IssueReporter const& Issues() const;
         ECDbCR GetECDb() const;
 
-        RelationshipClassEndTableMappingContext(SchemaImportContext& schemaContext, RelationshipClassEndTableMap const& relationshipMap, RelationshipMappingInfo const& relinfo);
+        RelationshipClassEndTableMappingContext(SchemaImportContext&, RelationshipClassEndTableMap const&, RelationshipMappingInfo const&);
 
     public:
-        ClassMappingStatus UpdatePersistedEnd(NavigationPropertyMap& navPropMap);
+        static std::unique_ptr<RelationshipClassEndTableMappingContext> Create(SchemaImportContext&, RelationshipClassEndTableMap const&, RelationshipMappingInfo const&);
+
+        ClassMappingStatus UpdatePersistedEnd(NavigationPropertyMap&);
         ClassMappingStatus FinishMapping();
-        static std::unique_ptr<RelationshipClassEndTableMappingContext> Create(SchemaImportContext& schemaContext, RelationshipClassEndTableMap const& relationshipMap, RelationshipMappingInfo const& relinfo);
     };
 
 //=======================================================================================

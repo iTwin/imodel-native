@@ -945,6 +945,41 @@ void PrintTo(BeInt64Id id, std::ostream* os) {  *os << id.GetValueUnchecked();  
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(DateTime const& dt, std::ostream* os) { *os << dt.ToString().c_str(); }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(std::vector<Utf8CP> const& vec, std::ostream* os)
+    {
+    *os << "{";
+    bool isFirstItem = true;
+    for (Utf8CP str : vec)
+        {
+        if (!isFirstItem)
+            *os << ",";
+
+        *os << str;
+        isFirstItem = false;
+        }
+    *os << "}";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(std::vector<Utf8String> const& vec, std::ostream* os)
+    {
+    *os << "{";
+    bool isFirstItem = true;
+    for (Utf8StringCR str : vec)
+        {
+        if (!isFirstItem)
+            *os << ",";
+
+        *os << str.c_str();
+        isFirstItem = false;
+        }
+    *os << "}";
+    }
 END_BENTLEY_NAMESPACE
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE

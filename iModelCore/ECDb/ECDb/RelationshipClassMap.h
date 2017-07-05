@@ -139,7 +139,7 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ECN::ECRelationshipEnd GetForeignEnd() const;
         ECN::ECRelationshipEnd GetReferencedEnd() const;
         PartitionView const& GetPartitionView() const;
-        bool IsSubRelationship() const { return GetClass().HasBaseClasses(); }
+        bool IsRelationshipSubclass() const { return GetClass().HasBaseClasses(); }
         void ResetPartitionCache() const { m_partitionCollection = nullptr; }
     };
 

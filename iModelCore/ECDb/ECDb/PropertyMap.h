@@ -477,6 +477,11 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         bool HasForeignKeyConstraint() const { return GetProperty().IsDefinedLocal("ECDbMap", "ForeignKeyConstraint"); }
         BentleyStatus SetMembers(DbColumn const& idColumn, DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId);
 
+        bool CardinalityImpliesNotNull() const { return GetRelationshipConstraint(NavigationPropertyMap::NavigationEnd::To).GetMultiplicity().GetLowerLimit() > 0; }
+        bool CardinalityImpliesUnique() const { return GetRelationshipConstraint(NavigationPropertyMap::NavigationEnd::From).GetMultiplicity().GetUpperLimit() <= 1; }
+
+        ECN::ECRelationshipConstraintCR GetRelationshipConstraint(NavigationPropertyMap::NavigationEnd navEnd) const;
+        static ECN::ECRelationshipEnd GetRelationshipEnd(ECN::NavigationECPropertyCR, NavigationPropertyMap::NavigationEnd);
     };
 
 //=======================================================================================

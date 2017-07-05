@@ -530,6 +530,31 @@ BentleyStatus NavigationPropertyMap::SetMembers(DbColumn const& idColumn, DbColu
     }
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+ECRelationshipConstraintCR NavigationPropertyMap::GetRelationshipConstraint(NavigationPropertyMap::NavigationEnd navEnd) const
+    {
+    BeAssert(GetProperty().GetIsNavigation());
+    NavigationECPropertyCR navProp = *GetProperty().GetAsNavigationProperty();
+    ECRelationshipEnd constraintEnd = GetRelationshipEnd(navProp, navEnd);
+    return constraintEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? navProp.GetRelationshipClass()->GetSource() : navProp.GetRelationshipClass()->GetTarget();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+//static
+ECN::ECRelationshipEnd NavigationPropertyMap::GetRelationshipEnd(ECN::NavigationECPropertyCR prop, NavigationPropertyMap::NavigationEnd end)
+    {
+    const ECRelatedInstanceDirection navPropDir = prop.GetDirection();
+    if (navPropDir == ECRelatedInstanceDirection::Forward && end == NavigationPropertyMap::NavigationEnd::From ||
+        navPropDir == ECRelatedInstanceDirection::Backward && end == NavigationPropertyMap::NavigationEnd::To)
+        return ECRelationshipEnd_Source;
+
+    return ECRelationshipEnd_Target;
+    }
+
 //************************************NavigationPropertyMap::RelECClassIdPropertyMap********************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16

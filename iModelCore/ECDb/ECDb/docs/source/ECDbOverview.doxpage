@@ -418,10 +418,14 @@
     Two flavors of Foreign Key mapping exist:
     If the ECRelationshipClass's @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" has 
     the @ref ForeignKeyConstraintCustomAttributeDescription "ForeignKeyConstraint custom attribute":
-    - <b>Physical Foreign Key</b> mapping: ECDb creates a Foreign Key constraint and respective indexes in the database.
+    - <b>Physical Foreign Key</b> mapping: ECDb creates these things in the database:
+        - a Foreign Key constraint
+        - indexes on the Foreign Key column
+        - if the multiplicity on the referenced end is (1..1), a NOT NULL constraint on the Foreign Key column and its RelECClassId column (if there)
+        - If the multiplicity on the foreign key end is (0..1) or (1..1), a unique index on the Foreign Key column
 
     If the ForeignKeyConstraint custom attribute is not present:
-    - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes in the database.
+    - <b>Logical Foreign Key</b> mapping: ECDb does neither create Foreign Key constraints nor respective indexes, nor NOT NULL constraints in the database.
 
     ## Foreign Key Mapping Requires Navigation Properties
     

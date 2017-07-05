@@ -1709,27 +1709,46 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
         "    </ECEntityClass>"
         "</ECSchema>"))) << "Cannot add new column to existing table";
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbFileInfo' version='02.00' prefix='ecdbf' />"
-        "    <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Parent' modifier='None'>"
-        "        <ECProperty propertyName='Price' typeName='double' />"
-        "    </ECEntityClass>"
-        "   <ECRelationshipClass typeName='ParentHasEmbeddedFile' strength='Referencing' modifier='Sealed'>"
-        "      <Source cardinality='(0,1)' polymorphic='False'>"
-        "          <Class class ='Parent' />"
-        "      </Source>"
-        "      <Target cardinality='(0,N)' polymorphic='False'>"
-        "          <Class class ='ecdb.EmbeddedFileInfo' />"
-        "      </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>"))) << "Cannot add FK column to existing table";
-
-
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingtablecatests.ecdb"));
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE TABLE ts_Parent(Id INTEGER PRIMARY KEY, Name TEXT); CREATE TABLE ts_Child(Id INTEGER PRIMARY KEY, ParentId INTEGER, Tag REAL)"));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Parent" modifier="None">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>ExistingTable</MapStrategy>
+                        <TableName>ts_Parent</TableName>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Child" modifier="None">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>ExistingTable</MapStrategy>
+                        <TableName>ts_Child</TableName>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+                <ECProperty propertyName="Tag" typeName="double" />
+            </ECEntityClass>
+           <ECRelationshipClass typeName="Rel" strength="Referencing" modifier="Sealed">
+              <Source multiplicity="(0..1)" polymorphic="False" roleLabel="has">
+                  <Class class ="Parent" />
+              </Source>
+              <Target multiplicity="(0..*)" polymorphic="False" roleLabel="is referenced by">
+                  <Class class="Child" />
+              </Target>
+           </ECRelationshipClass>
+        </ECSchema>)xml"))) << "ForeignKeyConstraint cannot be applied to existing table";
+    }
 
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingtablecatests.ecdb"));
@@ -10656,6 +10675,41 @@ TEST_F(DbMappingTestFixture, OverflowTableJoinedTest)
     b3.Prepare(m_ecdb, "SELECT * FROM diego.B3");  //Access B1, b2, b2_overflow
     b1.Prepare(m_ecdb, "SELECT * FROM diego.B1"); //Access B1
     b2.Prepare(m_ecdb, "SELECT * FROM diego.B2"); //Access B1, B2
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                 07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, SchemaImportWithDoNotFailSchemaValidationForLegacyIssuesFlag)
+    {
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("SchemaImportWithDoNotFailSchemaValidationForLegacyIssuesFlag.ecdb"));
+    
+    ECSchemaReadContextPtr ctx = nullptr;
+    ASSERT_EQ(SUCCESS, ReadECSchema(ctx, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="LegacySchema" alias="legacy" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1"  >
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+            <ECEntityClass typeName="Base1" modifier="Abstract" >
+                <ECProperty propertyName="B" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Base2" modifier="Abstract" >
+                <ECProperty propertyName="B" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub" modifier="Abstract" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+                <BaseClass>Base1</BaseClass>
+                <BaseClass>Base2</BaseClass>
+                <ECProperty propertyName="P1" typeName="string" />
+            </ECEntityClass>
+           </ECSchema>)xml")));
+
+    ASSERT_EQ(ERROR, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas())) << "Multi inheritance should make the schema import fail";
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.AbandonChanges());
+
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas(), SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)) << "Multi inheritance in legacy mode";
     }
 
 END_ECDBUNITTESTS_NAMESPACE

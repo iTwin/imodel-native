@@ -264,16 +264,19 @@ BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8
             }
         }
 
-    if (column.IsShared() && column.GetConstraints().HasNotNullConstraint())
+    if (column.IsShared())
         {
-        Issues().Report("Column '%s.%s' is a shared column and has the 'NOT NULL' constraint. This is not valid for shared columns.", column.GetTable().GetName().c_str(), column.GetName().c_str());
-        return ERROR;
-        }
+        if (column.GetConstraints().HasNotNullConstraint())
+            {
+            Issues().Report("Column '%s.%s' is a shared column and has the 'NOT NULL' constraint. This is not valid for shared columns.", column.GetTable().GetName().c_str(), column.GetName().c_str());
+            return ERROR;
+            }
 
-    if (column.IsShared() && column.GetConstraints().HasUniqueConstraint())
-        {
-        Issues().Report("Column '%s.%s' is a shared column and has the 'UNIQUE' constraint. This is not valid for shared columns.", column.GetTable().GetName().c_str(), column.GetName().c_str());
-        return ERROR;
+        if (column.GetConstraints().HasUniqueConstraint())
+            {
+            Issues().Report("Column '%s.%s' is a shared column and has the 'UNIQUE' constraint. This is not valid for shared columns.", column.GetTable().GetName().c_str(), column.GetName().c_str());
+            return ERROR;
+            }
         }
 
     if (column.GetType() != DbColumn::Type::Any &&
@@ -563,6 +566,17 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 return ERROR;
                 }
 
+            if (classMap.GetECInstanceIdPropertyMap() == nullptr)
+                {
+                Issues().Report("The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", classMap.GetClass().GetFullName());
+                return ERROR;
+                }
+
+            if (classMap.GetECClassIdPropertyMap() == nullptr)
+                {
+                Issues().Report("The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", classMap.GetClass().GetFullName());
+                return ERROR;
+                }
             break;
             }
             case ClassMap::Type::RelationshipEndTable:
@@ -583,6 +597,9 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 return ERROR;
                 }
 
+            if (SUCCESS != ValidateRelationshipClassEndTableMap(classMap.GetAs<RelationshipClassEndTableMap>()))
+                return ERROR;
+
             break;
             }
             case ClassMap::Type::RelationshipLinkTable:
@@ -602,30 +619,15 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 return ERROR;
                 }
 
+            if (SUCCESS != ValidateRelationshipClassLinkTableMap(classMap.GetAs<RelationshipClassLinkTableMap>()))
+                return ERROR;
+
             break;
             }
 
             default:
                 Issues().Report("The class map of '%s' has the unknown ClassMap::Type::%d.", classMap.GetClass().GetFullName(), Enum::ToInt(classMap.GetType()));
                 return ERROR;
-        }
-
-    if (classMap.GetECInstanceIdPropertyMap() == nullptr)
-        {
-        Issues().Report("The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", classMap.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    if (classMap.GetECClassIdPropertyMap() == nullptr)
-        {
-        Issues().Report("The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", classMap.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    if (classMap.IsRelationshipClassMap())
-        {
-        if (SUCCESS != ValidateRelationshipClassMap(classMap.GetAs<RelationshipClassMap>()))
-            return ERROR;
         }
 
     bmap<DbColumn const*, SingleColumnDataPropertyMap const*> duplicateColumnMappings;
@@ -641,43 +643,48 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                           06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::ValidateRelationshipClassMap(RelationshipClassMap const& rel) const
-    {
-    if (rel.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECInstanceId) == nullptr)
-        {
-        Issues().Report("The class map of the ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECInstanceId " property map.", rel.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    if (rel.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECClassId) == nullptr)
-        {
-        Issues().Report("The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECClassId " property map.", rel.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    if (rel.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECInstanceId) == nullptr)
-        {
-        Issues().Report("The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECInstanceId " property map.", rel.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    if (rel.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECClassId) == nullptr)
-        {
-        Issues().Report("The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECClassId " property map.", rel.GetClass().GetFullName());
-        return ERROR;
-        }
-
-    if (rel.GetType() == ClassMap::Type::RelationshipEndTable)
-        return ValidateRelationshipClassEndTableMap(rel.GetAs<RelationshipClassEndTableMap>());
-
-    return ValidateRelationshipClassLinkTableMap(rel.GetAs<RelationshipClassLinkTableMap>());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Affan.Khan                           06/2017
-//+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateRelationshipClassEndTableMap(RelationshipClassEndTableMap const& relMap) const
     {
+    if (relMap.GetECInstanceIdPropertyMap() == nullptr)
+        {
+        Issues().Report("The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (relMap.GetECClassIdPropertyMap() == nullptr)
+        {
+        Issues().Report("The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+
+    if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECInstanceId) == nullptr)
+        {
+        Issues().Report("The class map of the ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECInstanceId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECClassId) == nullptr)
+        {
+        Issues().Report("The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECClassId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECInstanceId) == nullptr)
+        {
+        Issues().Report("The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECInstanceId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECClassId) == nullptr)
+        {
+        Issues().Report("The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECClassId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+
+
+
     const std::vector<DbTable const*> otherEndTables = RelationshipClassEndTableMap::PartitionView::GetOtherEndTables(relMap);
     if (otherEndTables.size() > 1)
         {
@@ -712,6 +719,44 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassEndTableMap(RelationshipC
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateRelationshipClassLinkTableMap(RelationshipClassLinkTableMap const& relMap) const
     {
+    if (relMap.GetECInstanceIdPropertyMap() == nullptr)
+        {
+        Issues().Report("The class map of '%s' does not have an " ECDBSYS_PROP_ECInstanceId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (relMap.GetECClassIdPropertyMap() == nullptr)
+        {
+        Issues().Report("The class map of '%s' does not have an " ECDBSYS_PROP_ECClassId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+
+    if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECInstanceId) == nullptr)
+        {
+        Issues().Report("The class map of the ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECInstanceId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_SourceECClassId) == nullptr)
+        {
+        Issues().Report("The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_SourceECClassId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECInstanceId) == nullptr)
+        {
+        Issues().Report("The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECInstanceId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (relMap.GetPropertyMaps().Find(ECDBSYS_PROP_TargetECClassId) == nullptr)
+        {
+        Issues().Report("The class map of ECRelationshipClass '%s' does not have a " ECDBSYS_PROP_TargetECClassId " property map.", relMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+
     const std::set<DbTable const*> sourceTables = RelationshipMappingInfo::GetTablesFromRelationshipEnd(relMap.GetDbMap(), m_schemaImportContext, relMap.GetRelationshipClass().GetSource(), true);
     if (sourceTables.size() > 1)
         {
@@ -820,23 +865,8 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
 
             case PropertyMap::Type::Navigation:
             {
-            NavigationPropertyMap const& propMap = propertyMap.GetAs<NavigationPropertyMap>();
-            if (propMap.Find(ECDBSYS_PROP_NavPropId) == nullptr || propMap.Find(ECDBSYS_PROP_NavPropRelECClassId) == nullptr)
-                {
-                Issues().Report("The navigation property map '%s.%s' does not have 'Id' and 'RelECClassId' member property maps.", propertyMap.GetClassMap().GetClass().GetFullName(), propertyMap.GetAccessString().c_str());
+            if (SUCCESS != ValidateNavigationPropertyMap(propertyMap.GetAs<NavigationPropertyMap>(), duplicateColumnMappings))
                 return ERROR;
-                }
-
-            DbColumn const& relClassIdCol = propMap.GetRelECClassIdPropertyMap().GetColumn();
-            if (!relClassIdCol.IsShared())
-                {
-                if (!Enum::Contains(relClassIdCol.GetKind(), DbColumn::Kind::RelECClassId))
-                    {
-                    Issues().Report("The navigation property's RelECClassId property map '%s.%s' must map to a column of Kind 'DbColumn::Kind::RelECClassId' or it must be a shared column. Violating column: %s.%s ", propertyMap.GetClassMap().GetClass().GetFullName(),
-                                    propMap.GetRelECClassIdPropertyMap().GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
-                    return ERROR;
-                    }
-                }
 
             break;
             }
@@ -938,6 +968,110 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Krischan.Eberle                       07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMap const& propMap, bmap<DbColumn const*, SingleColumnDataPropertyMap const*>& duplicateColumnMappings) const
+    {
+    if (propMap.Find(ECDBSYS_PROP_NavPropId) == nullptr || propMap.Find(ECDBSYS_PROP_NavPropRelECClassId) == nullptr)
+        {
+        Issues().Report("The navigation property map '%s.%s' does not have 'Id' and 'RelECClassId' member property maps.", propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str());
+        return ERROR;
+        }
+
+    const bool isPhysicalFk = propMap.HasForeignKeyConstraint();
+    //const bool impliesNotNull = propMap.CardinalityImpliesNotNull();
+
+    NavigationPropertyMap::IdPropertyMap const& idPropMap = propMap.GetIdPropertyMap();
+    DbColumn const& idCol = idPropMap.GetColumn();
+
+    NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = propMap.GetRelECClassIdPropertyMap();
+    DbColumn const& relClassIdCol = relClassIdPropMap.GetColumn();
+
+    if (!relClassIdCol.IsShared())
+        {
+        if (!Enum::Contains(relClassIdCol.GetKind(), DbColumn::Kind::RelECClassId))
+            {
+            Issues().Report("The navigation property '%s.%s' maps to the RelECClassId column '%s.%s' which is not of Kind 'DbColumn::Kind::RelECClassId' although it is not a shared column.", 
+                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+            return ERROR;
+            }
+        }
+
+    //for existing tables we don't create constraints and such, so don't validate them in that case
+    if (propMap.GetTable().GetType() == DbTable::Type::Existing)
+        return SUCCESS;
+
+    if (idCol.IsUnique() || relClassIdCol.IsUnique())
+        {
+        Issues().Report("The navigation property '%s.%s' maps to the foreign key column '%s.%s' and the RelECClassId column '%s.%s'. At least one of them has a UNIQUE constraint. This should never be the case as uniqueness is enforced via a unique index where necessary.",
+                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                        idCol.GetTable().GetName().c_str(), idCol.GetName().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+        return ERROR;
+        }
+
+    if (isPhysicalFk)
+        {
+        if (idCol.IsShared() || relClassIdCol.IsShared())
+            {
+            Issues().Report("The navigation property '%s.%s' maps to a physical foreign key. But its foreign key column '%s.%s' or its RelECClassId column '%s.%s' is a shared column which is invalid.",
+                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                            idCol.GetTable().GetName().c_str(), idCol.GetName().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+            return ERROR;
+            }
+
+    /* The rules are more complicated as we cannot do NOT NULL if base classes are mapped to the same table
+        if (impliesNotNull)
+            {
+            if (!idCol.DoNotAllowDbNull())
+                {
+                Issues().Report("The multiplicity of the navigation property '%s.%s' implies a NOT NULL constraint on the foreign key column '%s.%s'. But the column doesn't have one.",
+                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                                idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
+                return ERROR;
+                }
+
+            if (!relClassIdCol.DoNotAllowDbNull())
+                {
+                Issues().Report("The multiplicity of the navigation property '%s.%s' implies a NOT NULL constraint on the RelECClassId column '%s.%s'. But the column doesn't have one.",
+                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                                relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+                return ERROR;
+                }
+            }
+        else
+            {
+            if (idCol.DoNotAllowDbNull())
+                {
+                Issues().Report("The multiplicity of the navigation property '%s.%s' implies that the foreign key column is nullable. But the column has a NOT NULL constraint.",
+                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                                idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
+                return ERROR;
+                }
+
+            if (relClassIdCol.DoNotAllowDbNull())
+                {
+                Issues().Report("The multiplicity of the navigation property '%s.%s' implies that the RelECClassId column is nullable. But the column has a NOT NULL constraint.",
+                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                                relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+                return ERROR;
+                }
+            }
+            */
+        return SUCCESS;
+        }
+
+    BeAssert(!isPhysicalFk);
+    if (idCol.DoNotAllowDbNull() || idCol.IsUnique())
+        {
+        Issues().Report("The navigation property '%s.%s' maps to a logical foreign key. But its foreign column '%s.%s' has a NOT NULL or UNIQUE constraint which is invalid for logical foreign keys.",
+                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                        idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
 

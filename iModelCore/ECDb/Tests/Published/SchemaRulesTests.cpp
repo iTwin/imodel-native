@@ -634,6 +634,25 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
+                       <ECNavigationProperty propertyName="MyChild" relationshipName="Rel" direction="Forward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="Child"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "A nav prop can only be defined from FK end to referenced end and not vice versa";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
                     <ECEntityClass typeName="Child" >
                        <ECProperty propertyName="Code" typeName="string" />
@@ -1503,7 +1522,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
 
             ECSqlStatement bStmt;
             ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(m_ecdb, "INSERT INTO ts.B(MyA.Id) VALUES (?)"));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) means that a B instance cannot be created without assigning it an A instance";
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key)) << "Multiplicity of (1,1) implies NOT NULL which is not enforced for logical FK though";
             bStmt.Reset();
             bStmt.ClearBindings();
             ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetInstanceId()));
@@ -1526,7 +1545,58 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
             }
 
             {
-            //(1,1):(1,N)
+            //(1,1):(1,N) (Physical FK)
+            ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
+                "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                "  <ECEntityClass typeName='A'>"
+                "    <ECProperty propertyName='Name' typeName='string' />"
+                "  </ECEntityClass>"
+                "  <ECEntityClass typeName='B'>"
+                "    <ECProperty propertyName='CodeId' typeName='string' />"
+                "    <ECNavigationProperty propertyName='MyA' relationshipName='Rel' direction='Backward' >"
+                "       <ECCustomAttributes>"
+                "          <ForeignKeyConstraint xmlns='ECDbMap.02.00'/>"
+                "       </ECCustomAttributes>"
+                "    </ECNavigationProperty>"
+                "  </ECEntityClass>"
+                "  <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='Referencing'>"
+                "    <Source multiplicity='(1..1)' polymorphic='True' roleLabel='Source'>"
+                "      <Class class='A'/>"
+                "    </Source>"
+                "    <Target multiplicity='(1..*)' polymorphic='True' roleLabel='Target'>"
+                "      <Class class='B'/>"
+                "    </Target>"
+                "  </ECRelationshipClass>"
+                "</ECSchema>")));
+            ECInstanceKey a1Key, a2Key;
+            ECInstanceKey b1Key, b2Key;
+
+            ECSqlStatement aStmt;
+            ASSERT_EQ(ECSqlStatus::Success, aStmt.Prepare(m_ecdb, "INSERT INTO ts.A(ECInstanceId) VALUES (NULL)"));
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a1Key));
+            aStmt.Reset();
+
+            ECSqlStatement bStmt;
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(m_ecdb, "INSERT INTO ts.B(MyA.Id) VALUES (?)"));
+            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) implies NOT NULL";
+            bStmt.Reset();
+            bStmt.ClearBindings();
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetInstanceId()));
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key));
+            bStmt.Reset();
+            bStmt.ClearBindings();
+
+            ASSERT_EQ(BE_SQLITE_DONE, aStmt.Step(a2Key));
+            aStmt.Reset();
+
+            ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetInstanceId()));
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b2Key)) << "[(1..1):(1..*)]> (1..*) multiplicity is not expected to be violated by a second child" << bStmt.GetNativeSql() << " Error:" << m_ecdb.GetLastError().c_str();
+            bStmt.Reset();
+            bStmt.ClearBindings();
+            }
+            {
+            //(1,1):(1,N) (logical FK)
             ASSERT_EQ(SUCCESS, SetupECDb("ecdbschemarules_cardinality.ecdb", SchemaItem(
                 "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                 "  <ECEntityClass typeName='A'>"
@@ -1555,7 +1625,7 @@ TEST_F(SchemaRulesTestFixture, RelationshipCardinality)
 
             ECSqlStatement bStmt;
             ASSERT_EQ(ECSqlStatus::Success, bStmt.Prepare(m_ecdb, "INSERT INTO ts.B(MyA.Id) VALUES (?)"));
-            ASSERT_EQ(BE_SQLITE_CONSTRAINT_NOTNULL, bStmt.Step(b1Key)) << "Multiplicity of (1,1) means that a B instance cannot be created without assigning it an A instance";
+            ASSERT_EQ(BE_SQLITE_DONE, bStmt.Step(b1Key)) << "Multiplicity of (1,1) implies NOT NULL which is not enforced for logical FK";
             bStmt.Reset();
             bStmt.ClearBindings();
             ASSERT_EQ(ECSqlStatus::Success, bStmt.BindId(1, a1Key.GetInstanceId()));
