@@ -851,7 +851,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
 BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder& viewSql, Context& ctx, RelationshipClassEndTableMap const& relationMap)
     {
     NativeSqlBuilder::List unionList;
-
+    constexpr Utf8CP otherEndAlias = "__OtherEnd";
     const bool isECClassView =ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames();
     if (isECClassView)
         {
@@ -865,7 +865,6 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
         }
 
     const DbColumn::Type castIntoType = isECClassView ? DbColumn::Type::Integer : DbColumn::Type::Any; //Any mean do not cast.
-
     const ECClassId classId = relationMap.GetClass().GetId();
     for (auto const& key : relationMap.GetPartitionView().GetPartitionMap())
         {
@@ -874,15 +873,13 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             if (!partition->CanQuery())
                 continue;
 
-            bool  appendAlias = unionList.empty();
+            const bool isSelf = partition->GetSourceECClassId().GetId() == partition->GetTargetECClassId().GetId();
+            const bool  appendAlias = unionList.empty();
             NativeSqlBuilder view;
             view.Append("SELECT ");
 
             //ECCInstance
-            if(isECClassView)
-                view.Append(partition->GetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECInstanceId).AppendComma();
-            else
-                view.Append(partition->GetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECInstanceId).AppendComma();
+            view.Append(partition->GetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECInstanceId).AppendComma();
 
             //ECClassId
             if (partition->GetECClassId().IsVirtual())
@@ -906,8 +903,12 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
                 view.Append(classIds.front()).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
                 }
             else
-                view.Append(partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
-
+                {
+                if (isSelf && relationMap.GetReferencedEnd() == ECRelationshipEnd_Source)
+                    view.Append(otherEndAlias, partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+                else
+                    view.Append(partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+                }
             //TargetECInstanceId
             view.Append(partition->GetTargetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECInstanceId).AppendComma();
 
@@ -924,17 +925,24 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
                 view.Append(classIds.front()).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
                 }
             else
-                view.Append(partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+                {
 
+                if (isSelf && relationMap.GetReferencedEnd() == ECRelationshipEnd_Target)
+                    view.Append(otherEndAlias, partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+                else
+                    view.Append(partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+                }
             //FROM
             view.Append(" FROM ").Append(partition->GetECInstanceId().GetTable());
-
             DbColumn const& refClassId = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECClassId() : partition->GetTargetECClassId();
             DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceId() : partition->GetTargetECInstanceId();
-            if (refClassId.GetPersistenceType() == PersistenceType::Physical && refClassId.GetTable().GetId() != partition->GetECInstanceId().GetTable().GetId())
+            if (refClassId.GetPersistenceType() == PersistenceType::Physical)
                 {
                 DbColumn const* idColumn = refClassId.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
-                view.Append(" INNER JOIN ").Append(refClassId.GetTable()).Append(" ON ").Append(*idColumn).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
+                if (isSelf)
+                    view.Append(" INNER JOIN ").Append(refClassId.GetTable()).AppendSpace().Append(otherEndAlias).Append(" ON ").Append(otherEndAlias, idColumn->GetName().c_str()).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
+                else
+                    view.Append(" INNER JOIN ").Append(refClassId.GetTable()).Append(" ON ").Append(*idColumn).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
                 }
 
             view.Append(" WHERE ").Append(referenceIdColumn).Append(" IS NOT NULL");

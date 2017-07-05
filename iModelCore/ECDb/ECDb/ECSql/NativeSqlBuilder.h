@@ -57,7 +57,13 @@ struct NativeSqlBuilder final
 
             return Append("CAST (").Append(column).Append(" AS ").Append(DbColumn::TypeToSql(castInto)).Append(")");
             }
+        NativeSqlBuilder& Append(Utf8CP tableAlias, DbColumn const& column, DbColumn::Type castInto)
+            {
+            if (column.GetType() == castInto || castInto == DbColumn::Type::Any)
+                return Append(tableAlias, column.GetName().c_str());
 
+            return Append("CAST (").Append(column).Append(" AS ").Append(DbColumn::TypeToSql(castInto)).Append(")");
+            }
         NativeSqlBuilder& Append(DbTable const& table) { return Append(table.GetName().c_str()); }
         NativeSqlBuilder& Append(Utf8CP identifier, bool escape) { return escape ? AppendEscaped(identifier) : Append(identifier); };
         NativeSqlBuilder& AppendQuoted(Utf8CP stringLiteral) { return Append("'").Append(stringLiteral).Append("'"); }
