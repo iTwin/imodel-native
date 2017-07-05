@@ -22,7 +22,7 @@ struct UnitInstanceConversionTest : ECTestFixture
         {
         explicit TestUnitResolver(){}
         ~TestUnitResolver() {}
-        Utf8CP _ResolveUnitName(ECPropertyCR ecProperty) const override;
+        Utf8String _ResolveUnitName(ECPropertyCR ecProperty) const override;
         };
 
     mutable TestUnitResolver m_testUnitResolver;
@@ -293,7 +293,7 @@ TEST_F(UnitSpecificationConversionTest, PersistenceUnitChange_WithPresentationUn
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    Caleb.Shafer                 06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-Utf8CP UnitInstanceConversionTest::TestUnitResolver::_ResolveUnitName(ECPropertyCR ecProperty) const
+Utf8String UnitInstanceConversionTest::TestUnitResolver::_ResolveUnitName(ECPropertyCR ecProperty) const
     {
     if (!ecProperty.IsDefinedLocal("ECv3ConversionAttributes", "OldPersistenceUnit"))
         return "";

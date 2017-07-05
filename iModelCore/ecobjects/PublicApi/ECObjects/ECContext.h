@@ -194,7 +194,7 @@ struct ECInstanceReadContext : RefCountedBase
 
     struct IUnitResolver
         {
-        virtual Utf8CP _ResolveUnitName(ECPropertyCR ecProperty) const = 0;
+        virtual Utf8String _ResolveUnitName(ECPropertyCR ecProperty) const = 0;
         };
 
 private:
@@ -219,7 +219,7 @@ protected:
 public:
     PrimitiveType           GetSerializedPrimitiveType (PrimitiveECPropertyCR ecprop) const  { return m_typeResolver != NULL ? m_typeResolver->_ResolvePrimitiveType (ecprop) : ecprop.GetType(); }
     PrimitiveType           GetSerializedPrimitiveArrayType (PrimitiveArrayECPropertyCR ecprop) const { return m_typeResolver != NULL ? m_typeResolver->_ResolvePrimitiveArrayType (ecprop) : ecprop.GetPrimitiveElementType(); }
-    Utf8CP                  GetOldUnitName(ECPropertyCR property) const { if (nullptr != m_unitResolver) return m_unitResolver->_ResolveUnitName(property); else return ""; }
+    Utf8String              GetOldUnitName(ECPropertyCR property) const { if (nullptr != m_unitResolver) return m_unitResolver->_ResolveUnitName(property); else return ""; }
 
     void                    SetSchemaRemapper (IECSchemaRemapperCP remapper) { m_schemaRemapper = remapper; }
     void                    SetUnitResolver(IUnitResolver const* resolver) {m_unitResolver = resolver;}
