@@ -12,15 +12,17 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define REVISION_LZMA_MARKER    "RevLzma"
-#define CURRENT_REV_END_TXN_ID  "CurrentChangeSetEndTxnId"
-#define INITIAL_PARENT_REV_ID   "InitialParentChangeSetId"
-#define PARENT_REV_ID           "ParentChangeSetId"
-#define REVERSED_REV_ID         "ReversedChangeSetId"
+#define CHANGESET_LZMA_MARKER   "ChangeSetLzma"
+#define CURRENT_CS_END_TXN_ID   "CurrentChangeSetEndTxnId"
+#define INITIAL_PARENT_CS_ID    "InitialParentChangeSetId"
+#define PARENT_CS_ID           "ParentChangeSetId"
+#define REVERSED_CS_ID         "ReversedChangeSetId"
 #define CONTAINS_SCHEMA_CHANGES "ContainsSchemaChanges"
 #define REVISION_FORMAT_VERSION  0x10
 #define JSON_PROP_DDL                   "DDL"
 #define JSON_PROP_ContainsSchemaChanges "ContainsSchemaChanges"
+#define CHANGESET_REL_DIR L"DgnDbChangeSets"
+#define CHANGESET_FILE_EXT L"cs"
 
 // #define DEBUG_REVISION_KEEP_FILES 1
 
@@ -55,7 +57,7 @@ struct RevisionLzmaHeader
 {
 private:
     uint16_t m_sizeOfHeader;
-    char    m_idString[10];
+    char    m_idString[15];
     uint16_t m_formatVersionNumber;
     uint16_t m_compressionType;
 
@@ -68,7 +70,7 @@ public:
 
     RevisionLzmaHeader()
         {
-        CharCP idString = REVISION_LZMA_MARKER;
+        CharCP idString = CHANGESET_LZMA_MARKER;
         BeAssert((strlen(idString) + 1) <= sizeof(m_idString));
         memset(this, 0, sizeof(*this));
         m_sizeOfHeader = (uint16_t)sizeof(RevisionLzmaHeader);
@@ -84,7 +86,7 @@ public:
         if (m_sizeOfHeader != sizeof(RevisionLzmaHeader))
             return false;
 
-        if (strcmp(m_idString, REVISION_LZMA_MARKER))
+        if (strcmp(m_idString, CHANGESET_LZMA_MARKER))
             return false;
 
         if (formatVersionNumber != m_formatVersionNumber)
@@ -630,10 +632,10 @@ DgnRevision::~DgnRevision()
 BeFileName DgnRevision::BuildRevisionChangesPathname(Utf8String revisionId)
     {
     BeFileName tempPathname;
-    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev");
+    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, CHANGESET_REL_DIR);
     BeAssert(SUCCESS == status && "Cannot get temporary directory");
     tempPathname.AppendToPath(WString(revisionId.c_str(), true).c_str());
-    tempPathname.AppendExtension(L"rev");
+    tempPathname.AppendExtension(CHANGESET_FILE_EXT);
     return tempPathname;
     }
 
@@ -925,7 +927,7 @@ RevisionStatus RevisionManager::SaveParentRevisionId(Utf8StringCR revisionId)
     {
     BeAssert(revisionId.length() == SHA1::HashBytes * 2);
 
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(PARENT_REV_ID, revisionId);
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(PARENT_CS_ID, revisionId);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -942,7 +944,7 @@ RevisionStatus RevisionManager::SaveReversedRevisionId(Utf8StringCR revisionId)
     {
     BeAssert(revisionId.length() == SHA1::HashBytes * 2);
 
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(REVERSED_REV_ID, revisionId);
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(REVERSED_CS_ID, revisionId);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -957,7 +959,7 @@ RevisionStatus RevisionManager::SaveReversedRevisionId(Utf8StringCR revisionId)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DeleteReversedRevisionId()
     {
-    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(REVERSED_REV_ID);
+    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(REVERSED_CS_ID);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -973,7 +975,7 @@ RevisionStatus RevisionManager::DeleteReversedRevisionId()
 bool RevisionManager::HasReversedRevisions() const
     {
     Utf8String reversedParentId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(reversedParentId, REVERSED_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(reversedParentId, REVERSED_CS_ID);
     return (result == BE_SQLITE_ROW);
     }
 
@@ -983,7 +985,7 @@ bool RevisionManager::HasReversedRevisions() const
 Utf8String RevisionManager::GetParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, PARENT_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, PARENT_CS_ID);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -993,7 +995,7 @@ Utf8String RevisionManager::GetParentRevisionId() const
 Utf8String RevisionManager::GetReversedRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, REVERSED_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, REVERSED_CS_ID);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -1002,7 +1004,7 @@ Utf8String RevisionManager::GetReversedRevisionId() const
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
     {
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(INITIAL_PARENT_REV_ID, GetParentRevisionId());
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(INITIAL_PARENT_CS_ID, GetParentRevisionId());
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1043,7 +1045,7 @@ bool RevisionManager::QueryContainsSchemaChanges() const
 Utf8String RevisionManager::QueryInitialParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, INITIAL_PARENT_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, INITIAL_PARENT_CS_ID);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -1052,7 +1054,7 @@ Utf8String RevisionManager::QueryInitialParentRevisionId() const
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId)
     {
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(CURRENT_REV_END_TXN_ID, txnId.GetValue());
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(CURRENT_CS_END_TXN_ID, txnId.GetValue());
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1074,7 +1076,7 @@ RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId tx
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
     {
-    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(CURRENT_REV_END_TXN_ID);
+    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1097,7 +1099,7 @@ RevisionStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
 TxnManager::TxnId RevisionManager::QueryCurrentRevisionEndTxnId() const
     {
     uint64_t val;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(val, CURRENT_REV_END_TXN_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(val, CURRENT_CS_END_TXN_ID);
     return (BE_SQLITE_ROW == result) ? TxnManager::TxnId(val) : TxnManager::TxnId();
     }
 
@@ -1271,7 +1273,7 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
 
     return pathname.DoesPathExist() ? RevisionStatus::Success : RevisionStatus::NoTransactions;
     }
-
+	
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
@@ -1279,10 +1281,10 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
 BeFileName RevisionManager::BuildTempRevisionPathname()
     {
     BeFileName tempPathname;
-    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev");
+    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, CHANGESET_REL_DIR);
     BeAssert(SUCCESS == status && "Cannot get temporary directory");
-    tempPathname.AppendToPath(L"CurrentRevision").c_str();
-    tempPathname.AppendExtension(L"rev");
+    tempPathname.AppendToPath(L"CurrentChangeSet").c_str();
+    tempPathname.AppendExtension(CHANGESET_FILE_EXT);
     return tempPathname;
     }
 
