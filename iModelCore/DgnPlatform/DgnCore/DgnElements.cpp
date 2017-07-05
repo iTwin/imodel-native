@@ -1001,7 +1001,9 @@ void DgnElements::InitLastModifiedTime()
     {
     // The Db has just been opened. Query time of most recent change to element table.
     // This is used for determining whether tiles cached in reality data cache are still usable, or need to be regenerated.
-    BeAssert(0 == m_lastModifiedTime.load());
+    if (0 != m_lastModifiedTime.load())
+        return; // this can occur when creating a brand-new dgndb as essential elements are inserted resulting in call to UpdateLastModifiedTime().
+
     DgnDb::VerifyClientThread();
 
     // NB: We're using ECSql because ECDb persists datetime as floating-point julian day value...
