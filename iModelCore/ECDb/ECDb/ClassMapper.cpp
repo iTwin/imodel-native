@@ -725,8 +725,8 @@ DbTable* ClassMapper::TableMapper::CreateTableForOtherStrategies(ClassMap const&
         }
 
     DbTable* table = classMap.GetDbMap().GetDbSchemaR().CreateTable(tableName.c_str(), tableType, exclusiveRootClassId, primaryTable);
-
-    DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, PersistenceType::Physical);
+    PersistenceType persistenceType = tableType == DbTable::Type::Virtual ? PersistenceType::Virtual : PersistenceType::Virtual;
+    DbColumn* pkColumn = table->CreateColumn(primaryKeyColumnName, DbColumn::Type::Integer, DbColumn::Kind::ECInstanceId, persistenceType);
     if (table->GetType() != DbTable::Type::Virtual)
         {
         std::vector<DbColumn*> pkColumns {pkColumn};
