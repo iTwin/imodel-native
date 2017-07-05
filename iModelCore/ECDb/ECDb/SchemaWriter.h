@@ -19,7 +19,7 @@ struct SchemaWriter final : NonCopyableClass
     private:
         ECDbCR m_ecdb;
         SchemaImportContext& m_ctx;
-        CustomAttributeValidator m_customAttributeValidator;
+        ECN::CustomAttributeValidator m_customAttributeValidator;
         std::set<ECN::ECSchemaId> m_majorChangesAllowedForSchemas;
 
         BentleyStatus ImportSchema(SchemaCompareContext&, ECN::ECSchemaCR);
@@ -43,22 +43,22 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus ReplaceCAEntry(ECN::IECInstanceP customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
         BentleyStatus DeleteCAEntry(int& ordinal, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
-        BentleyStatus UpdateRelationshipConstraint(ECContainerId, ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR oldConstraint, ECN::ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);
-        BentleyStatus UpdateCustomAttributes(SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, ECContainerId, ECInstanceChanges&, ECN::IECCustomAttributeContainerCR oldClass, ECN::IECCustomAttributeContainerCR newClass);
-        BentleyStatus UpdateClass(ClassChange&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
-        BentleyStatus UpdateProperty(ECPropertyChange&, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);
-        BentleyStatus UpdateSchema(SchemaChange&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        BentleyStatus UpdateSchemaReferences(ReferenceChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        BentleyStatus UpdateClasses(ClassChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        BentleyStatus UpdateEnumerations(ECEnumerationChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
-        BentleyStatus UpdateEnumeration(ECEnumerationChange& enumChanges, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
+        BentleyStatus UpdateRelationshipConstraint(ECContainerId, ECN::ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR oldConstraint, ECN::ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);
+        BentleyStatus UpdateCustomAttributes(SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, ECContainerId, ECN::ECInstanceChanges&, ECN::IECCustomAttributeContainerCR oldClass, ECN::IECCustomAttributeContainerCR newClass);
+        BentleyStatus UpdateClass(ECN::ClassChange&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
+        BentleyStatus UpdateProperty(ECN::ECPropertyChange&, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty);
+        BentleyStatus UpdateSchema(ECN::SchemaChange&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdateSchemaReferences(ECN::ReferenceChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdateClasses(ECN::ClassChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdateEnumerations(ECN::ECEnumerationChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdateEnumeration(ECN::ECEnumerationChange& enumChanges, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
 
-        BentleyStatus UpdateKindOfQuantities(KindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdateKindOfQuantities(ECN::KindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
 
-        BentleyStatus UpdateProperties(ECPropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
+        BentleyStatus UpdateProperties(ECN::ECPropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
 
-        BentleyStatus DeleteClass(ClassChange&, ECN::ECClassCR);
-        BentleyStatus DeleteProperty(ECPropertyChange&, ECN::ECPropertyCR);
+        BentleyStatus DeleteClass(ECN::ClassChange&, ECN::ECClassCR);
+        BentleyStatus DeleteProperty(ECN::ECPropertyChange&, ECN::ECPropertyCR);
         BentleyStatus DeleteCustomAttributes(ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
         BentleyStatus DeleteInstances(ECN::ECClassCR);
 
@@ -66,7 +66,7 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus TryParseId(Utf8StringR schemaName, Utf8StringR className, Utf8StringCR id) const;
 
         bool IsMajorChangeAllowedForSchema(ECN::ECSchemaId id) const { return m_majorChangesAllowedForSchemas.find(id) != m_majorChangesAllowedForSchemas.end(); }
-        bool IsPropertyTypeChangeSupported(Utf8StringR error, StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty) const;
+        bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty) const;
 
         BentleyStatus ValidateSchemasPreImport(bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies) const;
         BentleyStatus ValidateSchemasPostImport() const;

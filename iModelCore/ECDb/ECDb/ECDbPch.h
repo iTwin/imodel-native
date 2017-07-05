@@ -45,7 +45,7 @@
 #include "ClassMapPersistenceManager.h"
 #include "ClassMapPersistenceManager.h"
 #include "ClassMapper.h"
-#include "SchemaComparer.h"
+#include <ECObjects/SchemaComparer.h>
 #include "LightweightCache.h"
 #include "ClassMapColumnFactory.h"
 #include "ViewGenerator.h"

@@ -6,10 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
-#include <ECDb/SchemaManager.h>
 #include "ClassMap.h"
 #include "DbSchemaPersistenceManager.h"
-#include "SchemaComparer.h"
+#include <ECObjects/SchemaComparer.h>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -21,7 +20,7 @@ struct SchemaCompareContext final
 private:
     bvector<ECN::ECSchemaCP> m_existingSchemas;
     bvector<ECN::ECSchemaCP> m_schemasToImport;
-    SchemaChanges m_changes;
+    ECN::SchemaChanges m_changes;
 
 public:
     SchemaCompareContext() {}
@@ -29,7 +28,7 @@ public:
 
     BentleyStatus Prepare(SchemaManager const&, bvector<ECN::ECSchemaCP> const& dependencyOrderedPrimarySchemas);
     bvector<ECN::ECSchemaCP>  const& GetSchemasToImport() const { return m_schemasToImport; }
-    SchemaChanges& GetChanges() { return m_changes; }
+    ECN::SchemaChanges& GetChanges() { return m_changes; }
 
     ECN::ECSchemaCP FindExistingSchema(Utf8CP schemaName) const;
 

@@ -58,27 +58,18 @@ public:
 
     template<typename TEnum>
     static TEnum FromInt(int val) { return Convert<int,TEnum>(val); }
-    
+
     template<typename TEnum>
     static TEnum Or(TEnum lhs, TEnum rhs) { return FromUnderlyingType<TEnum>(ToUnderlyingType<TEnum>(lhs) | ToUnderlyingType<TEnum>(rhs)); }
-    
+
     template<typename TEnum>
     static TEnum And(TEnum lhs, TEnum rhs) { return FromUnderlyingType<TEnum>(ToUnderlyingType<TEnum>(lhs) & ToUnderlyingType<TEnum>(rhs)); }
-        
+
     template<typename TEnum>
     static bool Contains(TEnum test, TEnum candidate) { return Enum::And(test, candidate) == candidate; }
 
     template<typename TEnum>
     static bool Intersects(TEnum lhs, TEnum rhs) { return (ToInt<TEnum>(lhs) & ToInt<TEnum>(rhs)) != 0; }
-    };
-
-//=======================================================================================
-// For case-sensitive UTF-8 string comparisons in STL collections.
-// @bsistruct
-//+===============+===============+===============+===============+===============+======
-struct CompareUtf8
-    {
-    bool operator()(Utf8CP s1, Utf8CP s2) const { return strcmp(s1, s2) < 0;}
     };
 
 
@@ -93,5 +84,4 @@ struct CompareIUtf8Ascii
     bool operator()(Utf8StringCR s1, Utf8StringCR s2) const { return BeStringUtilities::StricmpAscii(s1.c_str(), s2.c_str()) < 0;  }
     bool operator()(Utf8StringCP s1, Utf8StringCP s2) const { BeAssert(s1 != nullptr && s2 != nullptr); return BeStringUtilities::StricmpAscii(s1->c_str(), s2->c_str()) < 0; }
     };
-
 END_BENTLEY_SQLITE_EC_NAMESPACE
