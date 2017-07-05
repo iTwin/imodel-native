@@ -94,22 +94,6 @@ public:
     void AddNormalIndex (double aData){m_data->NormalIndex ().Append ((int)aData);}
     void AddParamndex (double aData){m_data->ParamIndex ().Append ((int)aData);}
     void AddColorIndex (double aData){m_data->ColorIndex ().Append ((int)aData);}
- 
-    BeJsObject  InspectFaces ()
-        {
-        size_t numLoop, minPerLoop, maxPerLoop;
-        bool hasNonPlanarFacets, hasNonConvexFacets;
-        m_data->InspectFaces (numLoop, minPerLoop, maxPerLoop, hasNonPlanarFacets, hasNonConvexFacets);
-        auto &context = T_HOST. GetScriptAdmin().GetDgnScriptContext();
-
-        auto beJsObj = BeJsObject::New (context);
-        beJsObj.SetNumberProperty ("numLoop", (int32_t)numLoop);
-
-//        auto myPoint = new JsDPoint3d (1,2,3);
-//        beJsObj.SetProperty ("myPoint", context.ObtainProjectedClassInstancePointer (&myPoint));
-
-        return beJsObj;
-        }
 
     JsDRange3dP GetRange ()
         {

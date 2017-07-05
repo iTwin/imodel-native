@@ -26,15 +26,9 @@ struct ScopedDgnHost
 {
     ScopedDgnHostImpl* m_pimpl;
 
-    struct FetchScriptCallback
-        {
-        virtual DgnDbStatus _FetchScript(Utf8StringR, DgnScriptType&, DateTime& lmt, DgnDbR, Utf8CP, DgnScriptType) = 0;
-        };
-
     DGNPLATFORM_EXPORT explicit ScopedDgnHost();
     DGNPLATFORM_EXPORT ~ScopedDgnHost();
 
-    DGNPLATFORM_EXPORT void SetFetchScriptCallback(FetchScriptCallback* cb);
     DGNPLATFORM_EXPORT void SetCodeAdmin(DgnPlatformLib::Host::CodeAdmin*);
     DGNPLATFORM_EXPORT void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin);
     DGNPLATFORM_EXPORT DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin();

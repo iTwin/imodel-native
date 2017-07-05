@@ -2,11 +2,10 @@
 |
 |     $Source: DgnScript/DgnScriptStubbedOut.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
-#include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 
 //---------------------------------------------------------------------------------------
@@ -38,23 +37,6 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
     {
     BeAssert(false);
         return *(BeJsEnvironmentP)(nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
-    {
-    BeAssert(false);
-    return *(BeJsContextP)(nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   BentleySystems
-//---------------------------------------------------------------------------------------
-DgnDbStatus DgnPlatformLib::Host::ScriptAdmin::_FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred)
-    {
-    return DgnDbStatus::NotEnabled;
     }
 
 //---------------------------------------------------------------------------------------

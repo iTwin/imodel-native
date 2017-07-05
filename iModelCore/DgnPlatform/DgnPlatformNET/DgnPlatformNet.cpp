@@ -13,7 +13,6 @@
 #pragma unmanaged
 
 #include <DgnPlatform/DgnPlatformAPI.h>
-#include <DgnPlatform/DgnScript.h>
 #include <DgnPlatform/DgnJSApi.h>
 #include <DgnPlatform/ElementHandler.h>
 #include <ECDb/SchemaManager.h>
@@ -583,59 +582,6 @@ public:
         }
 
 };
-
-
-
-/*=================================================================================**//**
-* Script class
-* @bsiclass                                                     Barry.Bentley   10/16
-+===============+===============+===============+===============+===============+======*/
-public ref struct Script
-{
-public:
-    /**
-     * Make sure that the specified script is loaded.
-     * @param db         The name of the DgnDb to check for a local script library
-     * @param scriptName The name which was used to register the script in the script librray
-     * @param forceReload  If true, the script's contents will be re-evaluated even if this script was previously loaded. Otherwise, the script is loaded and evaluated only once per session.
-     * @return 0 (SUCCESS) if the script was loaded; otherwise, a non-zero error code.
-     */
-    static int LoadScript (DgnDb^ dgnDb, System::String^ scriptName, bool forceReload)
-        {
-        BDGN::DgnDbP dgnDbNative = Convert::DgnDbToNative (dgnDb);
-        pin_ptr<wchar_t const> scriptNamePinned = PtrToStringChars (scriptName);
-        Utf8String utf8ScriptName (scriptNamePinned);
-        return (int) BDGN::DgnScript::LoadScript (*dgnDbNative, utf8ScriptName.c_str(), forceReload);
-        }
-
-    /**
-     * Make sure that the specified builtin script library is loaded.
-     * @param libName Identifies the library that is to be loaded
-     * @note This function differs from LoadScript in that ImportLibrary is used to activate builtin libraries that are provided by apps or domains,
-     * where LoadScript is used to load external scripts that are found in the script library or are loaded from a URL.
-     */
-    static void ImportLibrary (System::String^ libName)
-        {
-        pin_ptr<wchar_t const> libNamePinned = PtrToStringChars (libName);
-        Utf8String utf8LibName (libNamePinned);
-        BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().ImportScriptLibrary (utf8LibName.c_str());
-        }
-
-
-    /**
-     * Report an error. An error is more than a message. The platform is will treat it as an error. For example, the platform may terminate the current command.
-     * @param description A description of the error
-     */
-    static void ReportError (System::String^ description)
-        {
-        pin_ptr<wchar_t const> descriptionPinned = PtrToStringChars (description);
-        Utf8String utf8Description (descriptionPinned);
-
-        BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError (BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::ReportedByScript, utf8Description.c_str(), "");
-        }
-
-};
-
 
 /*=================================================================================**//**
 * File class

@@ -145,17 +145,6 @@ public:
             //! All scripts to be evaluated on this thread must use this BeJsContext.
             DGNPLATFORM_EXPORT BeJsContextR GetDgnScriptContext();
 
-            //! Obtain the text of the specified script program.
-            //! This base class implementation looks for the program by name in the specified DgnDb.
-            //! @param[out] sText           The text of the script that was found in the library
-            //! @param[out] stypeFound      The type of script actually found in the library
-            //! @param[out] lastModifiedTime The last-modified-time of the script that was found.
-            //! @param[in] db               The current DgnDb file
-            //! @param[in] sName            Identifies the script in the library
-            //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
-            //! @return non-zero if the JS program is not available from the library.
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
-
             //! Generate an exception in JavaScript
             //! @param exname   The name of the exception to throw
             //! @param details  Information about the exception
@@ -173,18 +162,7 @@ public:
             //! Handle a notification sent from the script. Invokes the registered handler.
             DGNPLATFORM_EXPORT void HandleLogMessage (Utf8CP category, LoggingSeverity sev, Utf8CP msg);
 
-            //! Register to import a set of projections or other script classes into the DgnScript JsContext. @note Will be used for all threads. Must be thread-safe.
-            //! @param libName  the library's unique ID that will be requested by script client programs
-            //! @param importer the importer that can install the specified library
-            DGNPLATFORM_EXPORT void RegisterScriptLibraryImporter(Utf8CP libName, ScriptLibraryImporter& importer);
-
-            //! Make sure that the specified script library is loaded
-            //! @param libName  the library's unique ID that will be requested by script client programs
-            DGNPLATFORM_EXPORT BentleyStatus ImportScriptLibrary(Utf8CP libName); 
-
             DGNPLATFORM_EXPORT void/*Json::Value*/ EvaluateScript(Utf8CP script);
-
-            INativePointerMarshaller* GetINativePointerMarshaller(Utf8StringCR typeScriptTypeName);
 
             //! Clean up
             DGNPLATFORM_EXPORT void _OnHostTermination(bool px) override;

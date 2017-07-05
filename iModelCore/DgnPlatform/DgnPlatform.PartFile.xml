@@ -79,11 +79,6 @@
             <Files ProductDirectoryName="Assets">Delivery/lastresortfonts</Files>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="SkyBox" Feature="SkyBox" FeatureDefault="Yes">Delivery/SkyBox/SkyBox.jpg</Files>
             <Directory SourceName="Delivery/icons" ProductDirectoryName="Assets" ProductSubDirectory="decorators/dgncore" />
-
-            <Files Required="false" ProductDirectoryName="DgnJsApiTs" SubPartDirectory="Script/DgnJsApiTs">Delivery/DgnJsApi.d.ts</Files>
-            <Files Required="false" ProductDirectoryName="GeomJsApiTs" SubPartDirectory="Script/GeomJsApiTs">Delivery/GeomJsApi.d.ts</Files>
-            <Directory Required="false" SubPartDirectory="DgnJsApiDoc" SourceName="Delivery/internal-docs/DgnJsApi" />
-            <Directory Required="false" SubPartDirectory="GeomJsApiDoc" SourceName="Delivery/internal-docs/GeomJsApi" />
         </Bindings>
     </Part>
 
@@ -148,7 +143,6 @@
         <RequiredRepository>CompatibilityTestFiles-2-0-1-46</RequiredRepository>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
-            <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="Script" SourceName="Delivery/UnitTests/Script" />
             <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas"> Delivery/UnitTests/ECSchemas/*.xml</Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="CompatibilityTestFiles" SourceName="Delivery/UnitTests/CompatibilityTestFiles" />
         </Bindings>
