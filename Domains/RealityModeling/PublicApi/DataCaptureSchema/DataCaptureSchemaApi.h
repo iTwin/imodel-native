@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/DataCaptureSchema/DataCaptureSchemaApi.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -15,4 +15,7 @@
 #include "CameraDevice.h"
 #include "Pose.h"
 #include "Shot.h"
-
+#include "Geodesy.h"
+#include "GimbalAngleRange.h"
+#include "Gimbal.h"
+#include "Drone.h"

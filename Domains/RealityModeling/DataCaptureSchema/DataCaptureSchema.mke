@@ -46,10 +46,17 @@ $(o)Pose$(oext) : $(_MakeFilePath)Pose.cpp ${MultiCompileDepends} $(appPublicApi
 
 $(o)Shot$(oext) : $(_MakeFilePath)Shot.cpp ${MultiCompileDepends} $(appPublicApi)Shot.h
 
+$(o)Geodesy$(oext) : $(_MakeFilePath)Geodesy.cpp ${MultiCompileDepends} $(appPublicApi)Geodesy.h
+
 $(o)XmlWriter$(oext) : $(_MakeFilePath)XmlWriter.cpp ${MultiCompileDepends} $(appPublicApi)XmlWriter.h
 
 $(o)XmlReader$(oext) : $(_MakeFilePath)XmlReader.cpp ${MultiCompileDepends} $(appPublicApi)XmlReader.h
 
+$(o)GimbalAngleRange$(oext) : $(_MakeFilePath)GimbalAngleRange.cpp ${MultiCompileDepends} $(appPublicApi)GimbalAngleRange.h
+
+$(o)Gimbal$(oext) : $(_MakeFilePath)Gimbal.cpp ${MultiCompileDepends} $(appPublicApi)Gimbal.h
+
+$(o)Drone$(oext) : $(_MakeFilePath)Drone.cpp ${MultiCompileDepends} $(appPublicApi)Drone.h
 
 %include MultiCppCompileGo.mki
 
@@ -77,7 +84,7 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)ECObjects
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
-
+LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BaseGeoCoord$(libext)
 
 %include $(sharedMki)linkLibrary.mki
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ScalableMeshSchema/ScalableMeshDomain.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -42,11 +42,16 @@ public:
 
     ScalableMeshDomain();
 
+public:
+    enum SchemaOperation { None, Import, MinorSchemaUpdate, MajorSchemaUpgrade, UnsupportedSchema, Undetermined };
+
     SCALABLEMESH_SCHEMA_EXPORT Dgn::DgnDbStatus UpdateSchema(SchemaUpdateScalableMeshDgnDbParams& params) const;
 
     static uint32_t GetExpectedSchemaVersionDigit1() { return 1; }
     static uint32_t GetExpectedSchemaVersionDigit2() { return 0; }
     static uint32_t GetExpectedSchemaVersionDigit3() { return 0; } // "01.00"
+
+    SCALABLEMESH_SCHEMA_EXPORT SchemaOperation SchemaOperationNeeded(Dgn::DgnDbCR db) const;
 };
 
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE

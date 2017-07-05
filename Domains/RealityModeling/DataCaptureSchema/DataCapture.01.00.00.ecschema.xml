@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="DataCapture" nameSpacePrefix="datacapture" version="01.00.00" 
+<ECSchema schemaName="DataCapture" nameSpacePrefix="datacapture" version="01.00" 
 description="Base schema for Data Capture Physical domains." 
 xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0"
 xmlns:ecschema="http://www.bentley.com/schemas/Bentley.ECXML.3.0"
@@ -29,18 +29,24 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         <ECProperty propertyName="P2" typeName="double" />
     </ECEntityClass>
 
+    <ECEnumeration typeName="CameraDeviceModelType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Perspective"/>
+        <ECEnumerator value="1" displayLabel="Fisheye"/>
+    </ECEnumeration>
+  
     <ECEntityClass typeName="CameraDeviceModel" modifier="Sealed" description="The cameraDevice model type (catalogued).">
         <BaseClass>dgn:DefinitionElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <!--<ECProperty         propertyName="CameraDeviceModel"          typeName="string"               displayLabel="CameraDevice Model" />-->
+        <ECProperty         propertyName="ModelType"            typeName="CameraDeviceModelType" displayLabel="Model Type" />
         <ECProperty         propertyName="ImageWidth"           typeName="int"                  displayLabel="Image Width" />
         <ECProperty         propertyName="ImageHeight"          typeName="int"                  displayLabel="Image Height" />
         <ECProperty         propertyName="AspectRatio"          typeName="double"               displayLabel="Aspect Ratio" />
         <ECProperty         propertyName="Skew"                 typeName="double"               displayLabel="Skew" />
-        <ECProperty         propertyName="FocalLength"          typeName="double"               displayLabel="Focal Length"    />
+        <ECProperty         propertyName="FocalLength"          typeName="double"               displayLabel="Focal Length" />
         <ECProperty         propertyName="PrincipalPoint"       typeName="point2d"              displayLabel="Principal Point"/>
+        <ECProperty         propertyName="SensorSize"           typeName="double"               displayLabel="Sensor Size"/>    
     </ECEntityClass>
 
     <ECEntityClass typeName="CameraDevice" modifier="Sealed" description="The cameraDevice.">
@@ -55,6 +61,7 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         <ECProperty         propertyName="Skew"                 typeName="double"               displayLabel="Skew" />
         <ECProperty         propertyName="FocalLength"          typeName="double"               displayLabel="Focal Length"    />
         <ECProperty         propertyName="PrincipalPoint"       typeName="point2d"              displayLabel="Principal Point"/>
+        <ECProperty         propertyName="SensorSize"           typeName="double"               displayLabel="Sensor Size"/>        
     </ECEntityClass>
 
     <ECRelationshipClass typeName="CameraDeviceIsDefinedByCameraDeviceModel" displayLabel="CameraDevice is a type of cameraDevice model type" strength="referencing" strengthDirection="forward">
@@ -78,10 +85,19 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="dgn.02.00"/>
         </ECCustomAttributes>
-        <ECProperty propertyName="Center" typeName="point3d" />
-        <ECProperty propertyName="Omega" typeName="double" />
-        <ECProperty propertyName="Phi"   typeName="double" />
-        <ECProperty propertyName="Kappa"  typeName="double" />
+        <!--true if center and orientation are in Geocentric coordinate - Earth-Centered Earth-Fixed-->
+        <ECProperty propertyName="IsECEF"           typeName="boolean"/>
+        <!--Focal center point in ECEF when IsECEF is true - otherwise it is in local-->
+        <ECProperty propertyName="CenterECEF"       typeName="point3d"/>
+        <ECProperty propertyName="M_00"             typeName="double" />
+        <ECProperty propertyName="M_01"             typeName="double" />
+        <ECProperty propertyName="M_02"             typeName="double" />
+        <ECProperty propertyName="M_10"             typeName="double" />
+        <ECProperty propertyName="M_11"             typeName="double" />
+        <ECProperty propertyName="M_12"             typeName="double" />
+        <ECProperty propertyName="M_20"             typeName="double" />
+        <ECProperty propertyName="M_21"             typeName="double" />
+        <ECProperty propertyName="M_22"             typeName="double" />
     </ECEntityClass>
 
     <ECEntityClass typeName="Shot" description="Shot taken by a cameraDevice at a position and orientation.">
@@ -94,10 +110,10 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
     </ECEntityClass>
     <!-- END Shot element classes -->
 
-    <!-- BEGIN Photogroup element classes -->
+    <!-- BEGIN Shotgroup element classes -->
     <!--NOT NOW <ECEntityClass typeName="Photogroup" description="List of all photo for a cameraDevice.">
     </ECEntityClass> -->
-    <!-- END Photogroup element classes -->
+    <!-- END Shotgroup element classes -->
 
     <ECRelationshipClass typeName="ShotIsTakenByCameraDevice" displayLabel="Shot is taken by CameraDevice" strength="referencing" strengthDirection="forward">
         <ECCustomAttributes>
@@ -123,5 +139,58 @@ xsi:schemaLocation="ecschema ECSchema.xsd">
         </Target>
     </ECRelationshipClass>
 
+    <!-- BEGIN Drone element classes -->
+    <ECEntityClass typeName="Drone" modifier="Sealed" description="The drone.">
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="GimbalId" relationshipName="DroneHasGimbal" direction="Forward"/>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="DroneHasGimbal" displayLabel="A Drone has a Gimbal" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,N)" polymorphic="False">
+            <Class class="Drone" />
+        </Source>
+        <Target cardinality="(1,1)" polymorphic="False">
+            <Class class="Gimbal" />
+        </Target>
+    </ECRelationshipClass>
+  
+    <ECEntityClass typeName="Gimbal" modifier="Sealed" description="The Gimbal.">
+        <BaseClass>dgn:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECRelationshipClass typeName="GimbalHasGimbalAngleRanges" displayLabel="A Gimbale has a list of Gimbal Angle Range" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(1,1)" polymorphic="False">
+            <Class class="Gimbal" />
+        </Source>
+        <Target cardinality="(1,N)" polymorphic="False">
+          <Class class="GimbalAngleRange" />
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="GimbalHasCameras" displayLabel="A Gimbal has a list of Camera" strength="referencing" strengthDirection="forward">
+        <Source cardinality="(0,N)" polymorphic="False">
+            <Class class="Gimbal" />
+        </Source>
+        <Target cardinality="(1,N)" polymorphic="False">
+            <Class class="CameraDevice" />
+        </Target>
+    </ECRelationshipClass>
+  
+    <ECEntityClass typeName="GimbalAngleRange" description="The Gimbal angle range in radian.">
+        <BaseClass>dgn:SpatialLocationElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MinimumAngle" typeName="double" />
+        <ECProperty propertyName="MaximumAngle" typeName="double" />
+    </ECEntityClass>
+  
+  <!-- END Drone element classes -->   
 
 </ECSchema>

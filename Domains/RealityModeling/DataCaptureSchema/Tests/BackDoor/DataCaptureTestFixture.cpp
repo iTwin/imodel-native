@@ -183,18 +183,29 @@ void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDb
     DgnModelPtr spatialModelPtr = dgndb.Models().GetModel(spatialModelId);
     SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
 
+    DgnModelPtr definitonModelPtr = dgndb.Models().GetModel(definitionModelId);
+    DefinitionModelP definitonModelP = definitonModelPtr->ToDefinitionModelP();
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
+
+    // Create CameraDevice Model
+    auto cameraDeviceModelPtr = CameraDeviceModel::Create(*definitonModelP);
+    cameraDeviceModelPtr->Insert();
+    ASSERT_TRUE(cameraDeviceModelPtr.IsValid());
+
     // Create CameraDevice
-    auto cameraDevicePtr = CameraDevice::Create(*spatialModelP);
+    auto cameraDevicePtr = CameraDevice::Create(*spatialModelP, cameraDeviceModelPtr->GetId());
     cameraDevicePtr->SetLabel(cameraDeviceLable);
-    cameraDevicePtr->SetFocalLength(4798.35);
-    ImageDimensionType imgDimension(5456, 3632);
-    cameraDevicePtr->SetImageDimension(imgDimension);
+    cameraDevicePtr->SetFocalLength(0.00479835);
     DPoint2d principalPoint = { 2677.8,1772 };
     cameraDevicePtr->SetPrincipalPoint(principalPoint);
-    CameraDeviceDistortionType distortion(1, 2, 3, 4, 5);
-    cameraDevicePtr->SetDistortion(distortion);
+    RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(1, 2, 3);
+    TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(4, 5);
+    cameraDevicePtr->SetRadialDistortion(pRadialDistortion.get());
+    cameraDevicePtr->SetTangentialDistortion(pTangentialDistortion.get());
     cameraDevicePtr->SetAspectRatio(1.0);
     cameraDevicePtr->SetSkew(1.0);
+    cameraDevicePtr->SetSensorSize(1.0);
     cameraDevicePtr->Insert();
     CameraDeviceElementId cameraDeviceId = cameraDevicePtr->GetId();
 
@@ -202,17 +213,26 @@ void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDb
     //Insert ten photos for this cameraDevice
     for (int photoNumber = 0; photoNumber < 10; photoNumber++)
         {
+        PosePtr pPose(Pose::Create(*spatialModelP));
+        ASSERT_TRUE(pPose.IsValid());
+        DPoint3d center = { 1.0,2.0,3.0 };
+        pPose->SetCenter(center);
+        Angle omega(Angle::FromDegrees(0));
+        Angle phi(Angle::FromDegrees(0));
+        Angle kappa(Angle::FromDegrees(0));
+        pPose->SetOmega(omega);
+        pPose->SetPhi(phi);
+        pPose->SetKappa(kappa);
+        auto poseInserted = pPose->Insert();
+        ASSERT_TRUE(poseInserted.IsValid());
+        PoseElementId poseId(pPose->GetId());
+
         // Create Photo for the cameraDevice
-        auto ShotPtr = Shot::Create(*spatialModelP, cameraDeviceId);
+        auto ShotPtr = Shot::Create(*spatialModelP, cameraDeviceId, poseId);
 
         //Change Photo properties
         Utf8String photoLabel(Utf8PrintfString("BasicPhoto%d",photoNumber));
         ShotPtr->SetLabel(photoLabel.c_str());
-        RotMatrix rotation(RotMatrix::FromIdentity());
-        DPoint3d center = { 1.0,2.0,3.0 };
-        Pose pose(center, rotation);
-        ShotPtr->SetPose(pose);
-        ShotPtr->SetPhotoId(photoNumber);
 
         //Insert Photo element
         ShotPtr->Insert();
@@ -222,3 +242,83 @@ void DataCaptureTestsFixture::CreateSampleShotProjectWithCameraDevice(Dgn::DgnDb
     dgndb.SaveChanges("SamplePhotos");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Chantal.Poulin                    04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void DataCaptureTestsFixture::CreateSampleDroneProjectWithCameraDevice(Dgn::DgnDbR dgndb, Utf8CP cameraDeviceLable)
+    {
+    DgnModelId spatialModelId = QueryFirstSpatialModelId(dgndb);
+    DgnModelPtr spatialModelPtr = dgndb.Models().GetModel(spatialModelId);
+    SpatialModelP spatialModelP = spatialModelPtr->ToSpatialModelP();
+
+    DgnModelId definitionModelId = QueryFirstDefinitionModelId(dgndb);
+    DgnModelPtr definitonModelPtr = dgndb.Models().GetModel(definitionModelId);
+    DefinitionModelP definitonModelP = definitonModelPtr->ToDefinitionModelP();
+    ASSERT_TRUE(definitonModelPtr.IsValid());
+    ASSERT_TRUE(definitonModelPtr->IsDefinitionModel());
+
+    // Create GimbalAngleRange
+    auto gimbalAngleRangePtr = GimbalAngleRange::Create(*spatialModelP);
+    ASSERT_TRUE(gimbalAngleRangePtr.IsValid());
+
+    gimbalAngleRangePtr->SetMinimumAngle(Angle::FromDegrees(20));
+    gimbalAngleRangePtr->SetMaximumAngle(Angle::FromDegrees(40));
+
+    auto gimbalAngleRangeInsertedPtr = gimbalAngleRangePtr->Insert();
+    GimbalAngleRangeElementId gimbalAngleRangeElmId = gimbalAngleRangeInsertedPtr->GetId();
+
+    // Create CameraDevice Model
+    auto cameraDeviceModelPtr = CameraDeviceModel::Create(*definitonModelP);
+    cameraDeviceModelPtr->Insert();
+    ASSERT_TRUE(cameraDeviceModelPtr.IsValid());
+
+    // Create Camera
+    auto cameraDevicePtr = CameraDevice::Create(*spatialModelP, cameraDeviceModelPtr->GetId());
+    ASSERT_TRUE(cameraDevicePtr.IsValid());
+
+    cameraDevicePtr->SetLabel(cameraDeviceLable);
+    cameraDevicePtr->SetFocalLength(0.00479835);
+    cameraDevicePtr->SetImageWidth(5456);
+    cameraDevicePtr->SetImageHeight(3632);
+    DPoint2d principalPoint = { 2677.8,1772 };
+    cameraDevicePtr->SetPrincipalPoint(principalPoint);
+    RadialDistortionPtr  pRadialDistortion = RadialDistortion::Create(1, 2, 3);
+    TangentialDistortionPtr  pTangentialDistortion = TangentialDistortion::Create(4, 5);
+    cameraDevicePtr->SetRadialDistortion(pRadialDistortion.get());
+    cameraDevicePtr->SetTangentialDistortion(pTangentialDistortion.get());
+    cameraDevicePtr->SetAspectRatio(1.0);
+    cameraDevicePtr->SetSkew(1.0);
+    cameraDevicePtr->SetSensorSize(1.0);
+
+    auto cameraDeviceInsertedPtr = cameraDevicePtr->Insert();
+    ASSERT_TRUE(cameraDeviceInsertedPtr.IsValid());
+    CameraDeviceElementId cameraDeviceId = cameraDeviceInsertedPtr->GetId();
+    ASSERT_TRUE(cameraDeviceId.IsValid());
+
+    // Create Gimbal
+    auto gimbalPtr = Gimbal::Create(*spatialModelP);
+    ASSERT_TRUE(gimbalPtr.IsValid());
+
+    DgnElementIdSet gimbalAngleRangeSet;
+    gimbalAngleRangeSet.insert(gimbalAngleRangeElmId);
+    gimbalPtr->SetGimbalAngleRangeElementIdSet(gimbalAngleRangeSet);
+
+    DgnElementIdSet cameraDeviceSet;
+    cameraDeviceSet.insert(cameraDeviceId);
+    gimbalPtr->SetCameraElementIdSet(cameraDeviceSet);
+
+    auto gimbalInsertedPtr = gimbalPtr->Insert();
+    GimbalElementId gimbalElmId = gimbalInsertedPtr->GetId();
+
+    // Create Drone
+    auto dronePtr = Drone::Create(*spatialModelP, gimbalElmId);
+    dronePtr->SetLabel("Drone1");
+
+    ASSERT_TRUE(dronePtr.IsValid());
+
+    auto droneInsertedPtr = dronePtr->Insert();
+    DroneElementId droneElmId = droneInsertedPtr->GetId();
+
+    //Save changes
+    dgndb.SaveChanges("SampleDrone");
+	}
