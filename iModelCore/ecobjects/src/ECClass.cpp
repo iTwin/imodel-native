@@ -2240,6 +2240,24 @@ ECSchemaCP ECClass::_GetContainerSchema
     return &m_schema;
     }
 
+size_t ECClass::GetPropertyCount(bvector<ECClassCP>& visitedClasses) const
+    {
+    size_t propCount = 0;
+    auto it = std::find_if(visitedClasses.begin(), visitedClasses.end(), [this](ECClassCP ecClass) { return ECClass::ClassesAreEqualByName(this, ecClass); });
+    if (visitedClasses.end() != it)
+        return propCount;
+
+    for (const auto& prop : m_propertyList)
+        if (nullptr == prop->GetBaseProperty())
+            ++propCount;
+    visitedClasses.push_back(this);
+
+    for (const auto& baseClass : m_baseClasses)
+        propCount += baseClass->GetPropertyCount(visitedClasses);
+
+    return propCount;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2248,15 +2266,8 @@ size_t ECClass::GetPropertyCount (bool includeBaseClasses) const
     if (!includeBaseClasses || !HasBaseClasses())
         return m_propertyList.size();
 
-    size_t propCount = 0;
-    for (const auto& prop : m_propertyList)
-        if (nullptr == prop->GetBaseProperty())
-            ++propCount;
-
-    for (const auto& baseClass : m_baseClasses)
-        propCount += baseClass->GetPropertyCount(true);
-
-    return propCount;
+    bvector<ECClassCP> visitedClasses;
+    return GetPropertyCount(visitedClasses);
     }
     
 /*---------------------------------------------------------------------------------**//**

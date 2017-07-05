@@ -1389,6 +1389,7 @@ private:
     static bool     CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
     static bool     AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
+    size_t          GetPropertyCount(bvector<ECClassCP>& visitedClasses) const;
 
     static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
     ECObjectsStatus FixArrayPropertyOverrides();

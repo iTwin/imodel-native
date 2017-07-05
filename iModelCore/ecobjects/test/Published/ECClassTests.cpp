@@ -102,27 +102,31 @@ TEST_F(ClassTest, GetPropertyCount)
     }
 
 //---------------------------------------------------------------------------------------//
-// @bsimethod                                                    Colin.Kerr		06/2017
+// @bsimethod                                                    Colin.Kerr     06/2017
 //+---------------+---------------+---------------+---------------+---------------+------///
-TEST_F(ClassTest, GetPropertyCount_WithOverrides)
+TEST_F(ClassTest, GetPropertyCount_WithOverridesAndDiamonds)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0);
 
-    ECEntityClassP baseClass, derivedClass, derivedClass1;
+    ECEntityClassP baseClass, baseClass1, derivedClass, derivedClass1;
     schema->CreateEntityClass(baseClass, "Banana");
+    schema->CreateEntityClass(baseClass1, "Banana1");
     schema->CreateEntityClass(derivedClass, "DerivedBanana");
     derivedClass->AddBaseClass(*baseClass);
     schema->CreateEntityClass(derivedClass1, "SuperDerivedBanana");
     derivedClass1->AddBaseClass(*derivedClass);
+    derivedClass1->AddBaseClass(*baseClass);
 
-    PrimitiveECPropertyP prop1, baseProp, derivedPropOverride, derived1PropOverride;
+    PrimitiveECPropertyP prop1, prop1Prime, baseProp, derivedPropOverride, derived1PropOverride;
     baseClass->CreatePrimitiveProperty(prop1, "Prop1", PrimitiveType::PRIMITIVETYPE_Integer);
     baseClass->CreatePrimitiveProperty(baseProp, "Property", PrimitiveType::PRIMITIVETYPE_Double);
+    baseClass1->CreatePrimitiveProperty(prop1Prime, "Prop1", PrimitiveType::PRIMITIVETYPE_Integer);
     derivedClass->CreatePrimitiveProperty(derivedPropOverride, "Property", PrimitiveType::PRIMITIVETYPE_Double);
     derivedClass1->CreatePrimitiveProperty(derived1PropOverride, "Property", PrimitiveType::PRIMITIVETYPE_Double);
 
     TestPropertyCount(*baseClass, 2, 2);
+    TestPropertyCount(*baseClass1, 1, 1);
     TestPropertyCount(*derivedClass, 1, 2);
     TestPropertyCount(*derivedClass1, 1, 2);
     }
