@@ -483,6 +483,11 @@ void BulkBisDomainCrudTestFixture::ImportSchemasFromFolder(BeFileName const& sch
     ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
     ctx->AddSchemaPath(schemaFolder);
 
+    BeFileName ecdbSchemaSearchPath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(ecdbSchemaSearchPath);
+    ecdbSchemaSearchPath.AppendToPath(L"ECSchemas").AppendToPath(L"ECDb");
+    ctx->AddSchemaPath(ecdbSchemaSearchPath);
+
     bvector<BeFileName> schemaPaths;
     BeDirectoryIterator::WalkDirsAndMatch(schemaPaths, schemaFolder, L"*.ecschema.xml", false);
 
