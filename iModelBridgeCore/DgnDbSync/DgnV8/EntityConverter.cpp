@@ -1436,7 +1436,7 @@ bool ElementConverter::SchemaRemapper::_ResolvePropertyName(Utf8StringR serializ
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-Utf8CP ElementConverter::UnitResolver::_ResolveUnitName(ECPropertyCR ecProperty) const
+Utf8String ElementConverter::UnitResolver::_ResolveUnitName(ECPropertyCR ecProperty) const
     {
     if (!m_convSchema.IsValid())
         {

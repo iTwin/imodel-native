@@ -173,7 +173,7 @@ struct ElementConverter
             private:
                 mutable ECN::ECSchemaPtr m_convSchema;
 
-                virtual Utf8CP _ResolveUnitName(ECN::ECPropertyCR ecProperty) const override;
+                virtual Utf8String _ResolveUnitName(ECN::ECPropertyCR ecProperty) const override;
             };
 
         Converter& m_converter;
