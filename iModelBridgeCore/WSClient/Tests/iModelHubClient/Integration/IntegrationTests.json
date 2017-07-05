@@ -1,0 +1,16 @@
+{
+  "Environment": "",
+  "Host": "https://127.0.0.1:443/ws",
+  "Ims": false,
+  "ProjectNr": "",
+  "Users":
+  [{
+  "Password": "admin",
+  "Username": "admin",
+  "IsAdmin": true
+  },
+  {
+  "Password": "password",
+  "Username": "simpleUser"
+  }]
+}

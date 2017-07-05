@@ -178,6 +178,7 @@
         <SubPart PartName="iModelHubClient-Library-Android-Shim"/>
         <SubPart PartName="WSClient-Xliffs" />
         <SubPart PartName="iModelHubClient-Xliffs" />
+        <SubProduct ProductName="iModelHubNativeTests" />
     </Part>
 
     <Part Name="iModelHubClient-PublicAPI" BentleyBuildMakeFile="iModelHubClientPrewire.mke">
@@ -213,6 +214,76 @@
             </Files>
         </Bindings>
     </Part>
+
+    <Part Name="iModelHubPrewireForIntegrationTests" BentleyBuildMakeFile="Tests/iModelHubClient/prewire.mke">
+        <Bindings>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="iModelHubNativeTests" SubPartDirectory="NativeTests/Integration">Delivery/NativeTests/ignore_list.txt</Files>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelHubBackdoorForIntegrationTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+        <SubPart PartName="iModelHubPrewireForIntegrationTests" />
+        <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHub/Backdoor" SourceName="Delivery/NativeTests/Objects/Backdoor"/>
+        </Bindings>
+    </Part>
+
+    <Part Name="iModelHubIntegrationTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Integration -dUsePublishedApi">
+	    <SubPart PartName="iModelHubBackdoorForIntegrationTests"/>
+        <SubPart PartName="IMHSClientExe"/>
+        <SubPart PartName="iModelHubClient-Library"/>
+        <Bindings>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="NativeTests/Integration" SourceName="Delivery/NativeTests/Objects/Integration"/>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="NativeTests/Integration">Delivery/NativeTests/IntegrationTests.json</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="NativeTests/Integration">Delivery/NativeTests/PerformanceTests.json</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ECSchemas" SubPartDirectory="NativeTests/Integration">Delivery/NativeTests/DgnPlatformTest.ecschema.xml</Files>
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelHubNativeTestsCollection">
+        <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
+        <SubPart PartName="iModelHubIntegrationTests"/>
+        <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
+        <Directories DirectoryListName="iModelHubNativeTests"/>
+    </Product>
+
+    <Part Name="iModelHubGtest" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/buildGTest.mke"
+    BentleyBuildMakeOptions="-dTEST_NAME=iModelHubNativeTests -dTEST_COLLECTION_PRODUCT=iModelHubNativeTestsCollection -dTEST_FRAMEWORK_SQLANG=DgnPlatform_en.sqlang.db3" OnlyPlatforms="x64">
+        <SubProduct ProductName="iModelHubNativeTestsCollection"/>
+        <Bindings>
+            <Files ProductDirectoryName="Gtest-NativeAssemblies">Delivery/Gtest/iModelHubNativeTests/Assemblies/*</Files>
+            <Directory ProductDirectoryName="Gtest-Assets" SourceName="Delivery/Gtest/iModelHubNativeTests/Assets" />
+        </Bindings>
+    </Part>
+
+    <Product Name="iModelHubNativeTests">
+        <SubPart PartName="iModelHubGtest"/>
+        <Directories DirectoryListName="iModelHubNativeTests"/>
+    </Product>
+
+    <Part Name="IMHSClientExe" BentleyBuildMakeFile="Tests/iModelHubClient/IMHSClientExe/IMHSClient.mke" OnlyPlatforms="x64">
+        <SubPart PartName="iModelHubClient-Library"/>
+        <Bindings>
+            <Files>
+                Delivery\IMHSClientExe.exe
+            </Files>
+        </Bindings>
+    </Part>
+	
+    <ProductDirectoryList ListName="iModelHubNativeTests">
+        <ProductDirectory Name="Gtest-NativeAssemblies"    Path=""/>
+        <ProductDirectory Name="Assemblies"                Path=""/>
+        <ProductDirectory Name="Assets"                    Path="Assets"/>
+        <ProductDirectory Name="Assets"                    Path="Assets" LibType="static"/>
+        <ProductDirectory Name="sqlang"                    Path="sqlang" RelativeTo="Assets"/>
+        <ProductDirectory Name="sqlang"                    Path="sqlang" RelativeTo="Assets" LibType="static"/>
+        <ProductDirectory Name="Gtest-Assets"              Path="Assets"/>
+        <ProductDirectory Name="VendorNotices"             Deliver="false" />
+        <ProductDirectory Name="VendorNotices"             Deliver="false" LibType="static" />
+        <ProductDirectory Name="LoggingManagedAssemblies"  Deliver="false"/>
+        <ProductDirectory Name="LoggingNativeAssemblies"   Deliver="false"/>
+    </ProductDirectoryList>
 
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // ConnectWebServicesClientC lib                                          // -->
