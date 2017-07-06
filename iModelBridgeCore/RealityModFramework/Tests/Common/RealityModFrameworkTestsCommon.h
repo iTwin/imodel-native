@@ -58,6 +58,11 @@ struct MockWSGRequest : WSGRequest
     MockWSGRequest() : WSGRequest()
     {}
 
+	~MockWSGRequest()
+    {
+		s_instance = nullptr;
+    }
+
     MOCK_CONST_METHOD1(SetCertificatePath, void(Utf8String certificate));
     MOCK_CONST_METHOD5(PerformAzureRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));
     MOCK_CONST_METHOD4(PrepareRequest, CURL*(const WSGURL& wsgRequest, RawServerResponse& responseString, bool verifyPeer, BeFile* file));

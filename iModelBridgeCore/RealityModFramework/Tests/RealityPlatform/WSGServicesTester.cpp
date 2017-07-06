@@ -12,6 +12,7 @@
 #include <Bentley/BeTest.h>
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <RealityPlatform/WSGServices.h>
+#include "../common/RealityModFrameworkTestsCommon.h"
 
 
 USING_NAMESPACE_BENTLEY_REALITYPLATFORM
@@ -112,44 +113,14 @@ TEST(NodeNavigator, ParametersConstructor)
 
 //=====================================================================================
 //! @bsiclass                                   Remi.Charbonneau              05/2017
-//=====================================================================================
-struct MockWSGRequest : WSGRequest
-	{
-	MockWSGRequest() : WSGRequest()
-	{}
-
-	MOCK_CONST_METHOD5(_PerformRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));
-	MOCK_CONST_METHOD5(PerformAzureRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));
-	MOCK_CONST_METHOD4(PrepareRequest, CURL*(const WSGURL& wsgRequest, RawServerResponse& responseString, bool verifyPeer, BeFile* file));
-	MOCK_CONST_METHOD5(PerformRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));	
-	};
-
-//=====================================================================================
-//! @bsiclass                                   Remi.Charbonneau              05/2017
 //! NodeNavigatorFixture
 //! Fixture class to host a fake WSGInstance
 //! It hold a Mock WSGRequest so that all call to WSGRequest::GetInstance() can be intercepted
 //=====================================================================================
-class WSGServicesRequestFixture : public testing::Test
+class WSGServicesRequestFixture : public MockRealityDataServiceFixture
 	{
-	public:
-		static NiceMock<MockWSGRequest>* s_mockWSGInstance;
-
-		static void SetUpTestCase()
-		{
-			s_mockWSGInstance = new NiceMock<MockWSGRequest>();
-		}
-
-		static void TearDownTestCase()
-		{
-			delete s_mockWSGInstance;
-			s_mockWSGInstance = nullptr;
-		}
 
 	};
-
-NiceMock<MockWSGRequest>* WSGServicesRequestFixture::s_mockWSGInstance = nullptr;
-
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                          Remi.Charbonneau                         05/2017
