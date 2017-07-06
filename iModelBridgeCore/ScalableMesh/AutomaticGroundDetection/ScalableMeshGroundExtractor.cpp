@@ -378,7 +378,7 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
 
 
 	DRange3d extractionRange = DRange3d::From(m_extractionArea);
-	double targetResolutionThreshold = sqrt((extractionRange.XLength()*extractionRange.YLength()* m_smGcsRatioToMeter) / 1000000.0);
+	double targetResolutionThreshold = 0.01;//sqrt((extractionRange.XLength()*extractionRange.YLength()* m_smGcsRatioToMeter) / 1000000.0);
         
     if (minTextureResolution != DBL_MAX)
         return  m_limitTextureResolution ? std::max(targetResolutionThreshold,minTextureResolution) * m_smGcsRatioToMeter
