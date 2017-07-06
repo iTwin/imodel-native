@@ -336,7 +336,6 @@ StatusInt AlignmentPairEditor::_SolveSpiralPI (size_t index, bvector<AlignmentPI
         {
         BeAssert(false);
         }
-    pis.at (index).arc.radius;
 
     delete spiralA;
     delete spiralB;
@@ -2643,12 +2642,6 @@ bool AlignmentPairEditor::InsertEndIntersection (CurveVectorCR drapeVector, doub
         }
     return false;
     }
-
-const auto pvi_sorter = [] (AlignmentPVI first, AlignmentPVI second) ->bool
-    {
-    if (first.poles[PVI].x < second.poles[PVI].x) return true; 
-    return false;
-    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     04/2016

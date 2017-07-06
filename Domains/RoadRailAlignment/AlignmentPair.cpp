@@ -10,7 +10,6 @@
 #define STROKE_PERCENTAGE_OF_LENGTH 0.03
 #define HIGHZ 1e+10
 static double s_assertTol = 1.0e-4;
-static int s_noisy = true;
 bool TestLength (double a, double b)
     {
 #if !defined(NDEBUG)
@@ -316,7 +315,7 @@ bool AlignmentPair::ClosestPointAndTangentXY (DPoint3dR locationPoint, DPoint3dC
     double distanceAlong = HorizontalDistanceFromStart(locationPoint);
     if (_HorizontalIndexVector ()->SearchByDistanceFromPathStart (distanceAlong, locDetail) == true)
         {
-        DPoint3d onPt = locDetail.PointAndUnitTangent (tangent);
+        locDetail.PointAndUnitTangent (tangent);
         return true;
         }
     return false;
