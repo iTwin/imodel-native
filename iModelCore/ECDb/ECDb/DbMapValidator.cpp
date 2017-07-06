@@ -574,8 +574,8 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 }
 
             //WIP ECObjects bug in GetPropertyCount 
-            const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
-            //const int propCount = (int) std::distance(classMap.GetClass().GetProperties(true).begin(), classMap.GetClass().GetProperties(true).end());
+            //const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
+            const int propCount = (int) std::distance(classMap.GetClass().GetProperties(true).begin(), classMap.GetClass().GetProperties(true).end());
 
             if (dataPropertyMapCount != propCount)
                 {
