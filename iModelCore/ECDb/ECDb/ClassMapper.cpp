@@ -958,7 +958,6 @@ DbColumn* RelationshipClassEndTableMappingContext::CreateRelECClassIdColumn(DbMa
     DbColumn* relClassIdCol = fkTable.FindColumnP(fkColInfo.GetRelClassIdColumnName().c_str());
     if (relClassIdCol != nullptr)
         {
-        BeAssert(Enum::Contains(relClassIdCol->GetKind(), DbColumn::Kind::RelECClassId));
         if (makeRelClassIdColNotNull && !relClassIdCol->DoNotAllowDbNull())
             {
             relClassIdCol->GetConstraintsR().SetNotNullConstraint();
@@ -1007,18 +1006,15 @@ DbColumn* RelationshipClassEndTableMappingContext::CreateForeignKeyColumn(DbTabl
     {
     ECRelationshipClassCR relClass = *m_relationshipMap.GetClass().GetRelationshipClassCP();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
-    DbColumn::Kind foreignKeyColumnKind = GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId;
-
     fkColInfo = ForeignKeyColumnInfo::FromNavigationProperty(*navPropMap.GetProperty().GetAsNavigationProperty());
     const bool multiplicityImpliesNotNullOnFkCol = navPropMap.CardinalityImpliesNotNull();
-
     DbColumn* fkColumn = const_cast<DbColumn*>(fkTable.FindColumn(fkColInfo.GetFkColumnName().c_str()));
     if (fkTable.GetType() == DbTable::Type::Existing)
         {
         //for existing tables, the FK column must exist otherwise we fail schema import
         if (fkColumn != nullptr)
             {
-            if (SUCCESS != ValidateForeignKeyColumn(*fkColumn, multiplicityImpliesNotNullOnFkCol, foreignKeyColumnKind))
+            if (SUCCESS != ValidateForeignKeyColumn(*fkColumn, multiplicityImpliesNotNullOnFkCol))
                 return nullptr;
 
             return fkColumn;
@@ -1188,9 +1184,6 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::FinishMapping()
         if (!primaryTableWasAlreadyInEditState)
             columnRefClassId->GetTableR().GetEditHandleR().BeginEdit();
 
-        if (!columnRefClassId->IsShared())
-            columnRefClassId->AddKind(GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId);
-
         for (auto & kp : m_partitions)
             for (auto & entry : kp.second)
                 {
@@ -1276,9 +1269,6 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(N
     if (!fkTableWasAlreadyInEditState)
         columnRefId->GetTableR().GetEditHandleR().BeginEdit();
 
-    if (!columnRefId->IsShared())
-        columnRefId->AddKind(GetReferencedEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
-
     DbColumn* columnId = const_cast<DbColumn*>(columnRefId->GetTableR().FindFirst(DbColumn::Kind::ECInstanceId));
     if (columnId == nullptr)
         return ClassMappingStatus::Error;
@@ -1287,22 +1277,13 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(N
     if (columnClassId == nullptr)
         return ClassMappingStatus::Error;
 
-    if (!columnClassId->IsShared())
-        columnClassId->AddKind(DbColumn::Kind::RelECClassId);
-
     DbColumn* columnForeignClassId = const_cast<DbColumn*>(columnRefId->GetTable().FindFirst(DbColumn::Kind::ECClassId));
     if (columnForeignClassId == nullptr)
         return ClassMappingStatus::Error;
 
-    if (!columnForeignClassId->IsShared())
-        columnForeignClassId->AddKind(GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId);
-
     DbColumn* columnForeignId = const_cast<DbColumn*>(columnRefId->GetTableR().FindFirst(DbColumn::Kind::ECInstanceId));
     if (columnForeignId == nullptr)
         return ClassMappingStatus::Error;
-
-    if (!columnForeignId->IsShared())
-        columnForeignId->AddKind(GetForeignEnd() == ECRelationshipEnd_Source ? DbColumn::Kind::SourceECInstanceId : DbColumn::Kind::TargetECInstanceId);
 
     PRECONDITION(columnRefId != nullptr, ClassMappingStatus::Error);
     PRECONDITION(columnId != nullptr, ClassMappingStatus::Error);
@@ -1326,39 +1307,27 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(N
     return navPropMap.SetMembers(*columnRefId, *columnClassId, m_relationshipMap.GetClass().GetId()) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
     }
 
-    //--------------------------------------------------------------------------------------
-    //@bsimethod                                 Krischan.Eberle                   04/2016
-    //+---------------+---------------+---------------+---------------+---------------+------
-    BentleyStatus RelationshipClassEndTableMappingContext::ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind fkColKind)
+//--------------------------------------------------------------------------------------
+//@bsimethod                                 Krischan.Eberle                   04/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus RelationshipClassEndTableMappingContext::ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol)
+    {
+    if (fkColumn.DoNotAllowDbNull() != cardinalityImpliesNotNullOnFkCol)
         {
-        DbTable& fkTable = fkColumn.GetTableR();
+        Utf8CP error = nullptr;
+        if (cardinalityImpliesNotNullOnFkCol)
+            error = "Failed to map ECRelationshipClass '%s'. It is mapped to an existing foreign key column which is nullable "
+            "although the relationship's cardinality implies that the column is not nullable. Either modify the cardinality or mark the property specified that maps to the foreign key column as not nullable.";
+        else
+            error = "Failed to map ECRelationshipClass '%s'. It is mapped to an existing foreign key column which is not nullable "
+            "although the relationship's cardinality implies that the column is nullable. Please modify the cardinality accordingly.";
 
-        if (fkColumn.DoNotAllowDbNull() != cardinalityImpliesNotNullOnFkCol)
-            {
-            Utf8CP error = nullptr;
-            if (cardinalityImpliesNotNullOnFkCol)
-                error = "Failed to map ECRelationshipClass '%s'. It is mapped to an existing foreign key column which is nullable "
-                "although the relationship's cardinality implies that the column is not nullable. Either modify the cardinality or mark the property specified that maps to the foreign key column as not nullable.";
-            else
-                error = "Failed to map ECRelationshipClass '%s'. It is mapped to an existing foreign key column which is not nullable "
-                "although the relationship's cardinality implies that the column is nullable. Please modify the cardinality accordingly.";
-
-            Issues().Report(error, m_relationshipMap.GetRelationshipClass().GetFullName());
-            return ERROR;
-            }
-
-        const bool tableIsReadonly = !fkTable.GetEditHandle().CanEdit();
-        if (tableIsReadonly)
-            fkTable.GetEditHandleR().BeginEdit();
-
-        //Kind of existing columns must be modified so that they also have the constraint ecinstanceid kind
-        const_cast<DbColumn&>(fkColumn).AddKind(fkColKind);
-
-        if (tableIsReadonly)
-            fkTable.GetEditHandleR().EndEdit();
-
-        return SUCCESS;
+        Issues().Report(error, m_relationshipMap.GetRelationshipClass().GetFullName());
+        return ERROR;
         }
+
+    return SUCCESS;
+    }
 
 
 /*---------------------------------------------------------------------------------------

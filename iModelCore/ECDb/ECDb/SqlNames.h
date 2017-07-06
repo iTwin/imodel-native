@@ -59,20 +59,10 @@ static_assert(0 == (int) DbColumn::Kind::Unknown, "Persisted enum DbColumn::Kind
 static_assert(1 == (int) DbColumn::Kind::ECInstanceId, "Persisted enum DbColumn::Kind has changed");
 #define SQLVAL_DbColumn_Kind_ECClassId "2"
 static_assert(2 == (int) DbColumn::Kind::ECClassId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_SourceECInstanceId "4"
-static_assert(4 == (int) DbColumn::Kind::SourceECInstanceId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_SourceECClassId "8"
-static_assert(8 == (int) DbColumn::Kind::SourceECClassId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_TargetECInstanceId "16"
-static_assert(16 == (int) DbColumn::Kind::TargetECInstanceId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_TargetECClassId "32"
-static_assert(32 == (int) DbColumn::Kind::TargetECClassId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_DataColumn "64"
-static_assert(64 == (int) DbColumn::Kind::DataColumn, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_SharedDataColumn "128"
-static_assert(128 == (int) DbColumn::Kind::SharedDataColumn, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_RelECClassId "256"
-static_assert(256 == (int) DbColumn::Kind::RelECClassId, "Persisted enum DbColumn::Kind has changed");
+#define SQLVAL_DbColumn_Kind_DataColumn "4"
+static_assert(4 == (int) DbColumn::Kind::DataColumn, "Persisted enum DbColumn::Kind has changed");
+#define SQLVAL_DbColumn_Kind_SharedDataColumn "8"
+static_assert(8 == (int) DbColumn::Kind::SharedDataColumn, "Persisted enum DbColumn::Kind has changed");
 
 //** Enum DbTable::Type
 #define SQLVAL_DbTable_Type_Primary "0"

@@ -153,7 +153,7 @@ struct RelationshipClassEndTableMappingContext : NonCopyableClass
         bool TryGetPartition(ClassMapCR, std::vector<PartitionInfo*>&);
         PartitionInfo* CreatePartition(DbTableId);
         BentleyStatus AddIndexToRelationshipEnd(PartitionInfo const&);
-        BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol, DbColumn::Kind);
+        BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol);
         DbColumn* CreateForeignKeyColumn(DbTable& fkTable, NavigationPropertyMap const&, ForeignKeyColumnInfo&);
         ClassMappingStatus CreateForeignKeyConstraint(DbTable const& referencedTable);
         DbColumn* CreateRelECClassIdColumn(DbMap const&, ECN::ECClassCR, DbTable& fkTable, ForeignKeyColumnInfo const&, DbColumn const& fkCol, NavigationPropertyMap const&);

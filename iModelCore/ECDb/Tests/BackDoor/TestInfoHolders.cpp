@@ -201,15 +201,6 @@ void PrintTo(Column::Kind kind, std::ostream* os)
         *os << ENUM_TOSTRING(Column::Kind::ECInstanceId);
         }
 
-    if ((kindInt & (int) Column::Kind::RelECClassId) != 0)
-        {
-        if (!isFirstMatch)
-            *os << "|";
-
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::RelECClassId);
-        }
-
     if ((kindInt & (int) Column::Kind::SharedDataColumn) != 0)
         {
         if (!isFirstMatch)
@@ -217,42 +208,6 @@ void PrintTo(Column::Kind kind, std::ostream* os)
 
         isFirstMatch = false;
         *os << ENUM_TOSTRING(Column::Kind::SharedDataColumn);
-        }
-
-    if ((kindInt & (int) Column::Kind::SourceECClassId) != 0)
-        {
-        if (!isFirstMatch)
-            *os << "|";
-
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::SourceECClassId);
-        }
-
-    if ((kindInt & (int) Column::Kind::SourceECInstanceId) != 0)
-        {
-        if (!isFirstMatch)
-            *os << "|";
-
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::SourceECInstanceId);
-        }
-
-    if ((kindInt & (int) Column::Kind::TargetECClassId) != 0)
-        {
-        if (!isFirstMatch)
-            *os << "|";
-
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::TargetECClassId);
-        }
-
-    if ((kindInt & (int) Column::Kind::TargetECInstanceId) != 0)
-        {
-        if (!isFirstMatch)
-            *os << "|";
-
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::TargetECInstanceId);
         }
 
     if ((kindInt & (int) Column::Kind::Unknown) != 0)

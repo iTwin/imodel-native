@@ -77,38 +77,6 @@ ConstraintECClassIdPropertyMap const* RelationshipClassMap::GetConstraintECClass
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-bool RelationshipClassEndTableMap::Partition::Check(DbTable const& table, DbColumn const& checkColumn, DbColumn::Kind kind, ECN::ECRelationshipEnd const* fromEnd)
-    {
-    bool skipTableCheck;
-    if (kind == DbColumn::Kind::SourceECClassId && *fromEnd == ECN::ECRelationshipEnd::ECRelationshipEnd_Source)
-        skipTableCheck = true;
-    else if (kind == DbColumn::Kind::TargetECClassId && *fromEnd == ECN::ECRelationshipEnd::ECRelationshipEnd_Target)
-        skipTableCheck = true;
-    else
-        skipTableCheck = false;
-
-    if (!skipTableCheck)
-        {
-        BeAssert(table.GetId() == checkColumn.GetTable().GetId());
-        if (table.GetId() != checkColumn.GetTable().GetId())
-            return  false;
-        }
-
-    if (!checkColumn.IsShared())
-        {
-        if (!Enum::Contains(checkColumn.GetKind(), kind))
-            {
-            BeAssert(false);
-            return  false;
-            }
-        }
-
-    return true;
-    }
-
-//--------------------------------------------------------------------------------------
-// @bsimethod                                   Affan.Khan                         06/17
-//+---------------+---------------+---------------+---------------+---------------+------
 uint64_t RelationshipClassEndTableMap::Partition::QuickHash64(Utf8CP str, uint64_t mix)
     {
     const uint64_t mulp = 2654435789;
@@ -138,25 +106,6 @@ RelationshipClassEndTableMap::Partition::Partition(DbColumn const& ecInstanceId,
 //+---------------+---------------+---------------+---------------+---------------+------
 std::unique_ptr<RelationshipClassEndTableMap::Partition> RelationshipClassEndTableMap::Partition::Create(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const& sourceClassId, DbColumn const& targetId, DbColumn const& targetClassId, ECN::ECRelationshipEnd fromEnd)
     {
-    DbTable const& table = ecInstanceId.GetTable();
-    if (!Check(table, ecInstanceId, DbColumn::Kind::ECInstanceId))
-        return nullptr;
-
-    if (!Check(table, ecClassId, DbColumn::Kind::RelECClassId))
-        return nullptr;
-
-    if (!Check(table, sourceId, DbColumn::Kind::SourceECInstanceId))
-        return nullptr;
-
-    if (!Check(table, sourceClassId, DbColumn::Kind::SourceECClassId, &fromEnd))
-        return nullptr;
-
-    if (!Check(table, targetId, DbColumn::Kind::TargetECInstanceId))
-        return nullptr;
-
-    if (!Check(table, targetClassId, DbColumn::Kind::TargetECClassId, &fromEnd))
-        return nullptr;
-
     return std::unique_ptr<Partition>(new Partition(ecInstanceId, ecClassId, sourceId, sourceClassId, targetId, targetClassId));
     }
 
@@ -651,10 +600,9 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     
     DbTable* vtable = GetTables().front();
-    const_cast<DbColumn&>(vtable->GetECClassIdColumn()).AddKind(DbColumn::Kind::RelECClassId);
     PRECONDITION(vtable != nullptr && vtable->GetType() == DbTable::Type::Virtual, ClassMappingStatus::Error);
     {////////SourceECInstanceId
-    DbColumn* sourceECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::SourceECInstanceId, PersistenceType::Virtual);
+    DbColumn* sourceECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::DataColumn, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECInstanceId});
     if (propMap == nullptr || sourceECInstanceId == nullptr)
         {
@@ -669,7 +617,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////SourceECClassId
-    DbColumn* sourceECClassId = vtable->CreateColumn(ECDBSYS_PROP_SourceECClassId, DbColumn::Type::Integer, DbColumn::Kind::SourceECClassId, PersistenceType::Virtual);
+    DbColumn* sourceECClassId = vtable->CreateColumn(ECDBSYS_PROP_SourceECClassId, DbColumn::Type::Integer, DbColumn::Kind::DataColumn, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECClassId});
     if (propMap == nullptr || sourceECClassId == nullptr)
         {
@@ -684,7 +632,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////TargetECInstanceId
-    DbColumn* targetECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_TargetECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::TargetECInstanceId, PersistenceType::Virtual);
+    DbColumn* targetECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_TargetECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::DataColumn, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetECInstanceId});
     if (propMap == nullptr || targetECInstanceId == nullptr)
         {
@@ -699,7 +647,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////TargetECClassId
-    DbColumn* targetECClassId = vtable->CreateColumn(ECDBSYS_PROP_TargetECClassId, DbColumn::Type::Integer, DbColumn::Kind::TargetECClassId, PersistenceType::Virtual);
+    DbColumn* targetECClassId = vtable->CreateColumn(ECDBSYS_PROP_TargetECClassId, DbColumn::Type::Integer, DbColumn::Kind::DataColumn, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetECClassId});
     if (propMap == nullptr || targetECClassId == nullptr)
         {
@@ -969,12 +917,10 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(ClassMappi
         return nullptr;
         }
 
-    const DbColumn::Kind columnId = relationshipEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? DbColumn::Kind::SourceECClassId : DbColumn::Kind::TargetECClassId;
-
     if (ConstraintIncludesAnyClass(foreignEndConstraint.GetConstraintClasses()) || foreignEndTableCount > 1)
         {
         //! We will create ECClassId column in this case
-        endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), columnId, PersistenceType::Physical);
+        endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), PersistenceType::Physical);
         BeAssert(endECClassIdColumn != nullptr);
         }
     else
@@ -982,7 +928,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(ClassMappi
         //! We will use JOIN to otherTable to get the ECClassId (if any)
         endECClassIdColumn = const_cast<DbColumn*>(foreignEndClassMap->GetPrimaryTable().FindFirst(DbColumn::Kind::ECClassId));
         if (endECClassIdColumn == nullptr)
-            endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), columnId, PersistenceType::Virtual);
+            endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), PersistenceType::Virtual);
         }
 
     return endECClassIdColumn;
@@ -1004,7 +950,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Class
         return ClassMappingStatus::Error;
         }
 
-    DbColumn const* sourceECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::SourceECInstanceId, PersistenceType::Physical);
+    DbColumn const* sourceECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), PersistenceType::Physical);
     if (sourceECInstanceIdColumn == nullptr)
         return ClassMappingStatus::Error;
 
@@ -1034,7 +980,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Class
         return ClassMappingStatus::Error;
         }
 
-    DbColumn const* targetECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), DbColumn::Kind::TargetECInstanceId, PersistenceType::Physical);
+    DbColumn const* targetECInstanceIdColumn = CreateConstraintColumn(columnName.c_str(), PersistenceType::Physical);
     if (targetECInstanceIdColumn == nullptr)
         return ClassMappingStatus::Error;
 
@@ -1359,7 +1305,7 @@ BentleyStatus RelationshipClassLinkTableMap::_Load(ClassMapLoadContext& ctx, DbC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    11/2013
 //---------------------------------------------------------------------------------------
-DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnName, DbColumn::Kind columnKind, PersistenceType persType)
+DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnName, PersistenceType persType)
     {
     DbTable& table = GetPrimaryTable();
     const bool wasEditMode = table.GetEditHandle().CanEdit();
@@ -1368,26 +1314,18 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
 
     DbColumn* column = table.FindColumnP(columnName);
     if (column != nullptr)
-        {
-        if (!Enum::Intersects(column->GetKind(), columnKind))
-            column->AddKind(columnKind);
-
         return column;
-        }
 
     persType = table.GetType() != DbTable::Type::Existing ? persType : PersistenceType::Virtual;
     //Following protect creating virtual id/fk columns in persisted tables.
     if (table.GetType() != DbTable::Type::Virtual && persType == PersistenceType::Virtual)
         {
-        if (columnKind == DbColumn::Kind::SourceECInstanceId || columnKind == DbColumn::Kind::TargetECInstanceId)
-            {
-            LOG.errorv("Failed to map ECRelationshipClass '%s': No columns found for " ECDBSYS_PROP_SourceECInstanceId " or " ECDBSYS_PROP_TargetECInstanceId " in table '%s'. Consider applying the LinkTableRelationshipMap custom attribute to the ECRelationshipClass.", 
-                       GetClass().GetFullName(), table.GetName().c_str());
-            return nullptr;
-            }
+        LOG.errorv("Failed to map ECRelationshipClass '%s': No columns found for " ECDBSYS_PROP_SourceECInstanceId " or " ECDBSYS_PROP_TargetECInstanceId " in table '%s'. Consider applying the LinkTableRelationshipMap custom attribute to the ECRelationshipClass.",
+                   GetClass().GetFullName(), table.GetName().c_str());
+        return nullptr;
         }
         
-    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, columnKind, persType);
+    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, DbColumn::Kind::DataColumn, persType);
 
     if (!wasEditMode)
         table.GetEditHandleR().EndEdit();

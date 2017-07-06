@@ -984,19 +984,8 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
 
     NavigationPropertyMap::IdPropertyMap const& idPropMap = propMap.GetIdPropertyMap();
     DbColumn const& idCol = idPropMap.GetColumn();
-
     NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = propMap.GetRelECClassIdPropertyMap();
     DbColumn const& relClassIdCol = relClassIdPropMap.GetColumn();
-
-    if (!relClassIdCol.IsShared())
-        {
-        if (!Enum::Contains(relClassIdCol.GetKind(), DbColumn::Kind::RelECClassId))
-            {
-            Issues().Report("The navigation property '%s.%s' maps to the RelECClassId column '%s.%s' which is not of Kind 'DbColumn::Kind::RelECClassId' although it is not a shared column.", 
-                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
-            return ERROR;
-            }
-        }
 
     //for existing tables we don't create constraints and such, so don't validate them in that case
     if (propMap.GetTable().GetType() == DbTable::Type::Existing)
