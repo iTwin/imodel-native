@@ -152,6 +152,14 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
                 }
             }
 
+        if (assertion.GetClassMap().GetPrimaryTable().GetType() == DbTable::Type::Virtual)
+            {
+            Utf8String notSupportedMessage;
+            notSupportedMessage.Sprintf("Cannot run ECSQL INSERT, UPDATE, or DELETE on 'Abstract' ECEntityClass '%s'. ",
+                                        className.c_str());
+
+            return Policy::CreateNotSupported(notSupportedMessage);
+            }
         }
 
     return Policy::CreateSupported();
