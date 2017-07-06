@@ -6,20 +6,21 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
+#include <Bentley/BeId.h>
+#include <Bentley/Nullable.h>
+#include <Bentley/DateTime.h>
+#include <Bentley/BeTimeUtilities.h>
+#include <Bentley/PerformanceLogger.h>
 #include <Bentley/CatchNonPortable.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
-#include <Bentley/DateTime.h>
-#include <Bentley/BeTimeUtilities.h>
-#include <Bentley/PerformanceLogger.h>
 #include <algorithm>
 #include <memory>
 
 #include "ECDbInternalTypes.h"
 #include "ECDbLogger.h"
 #include "IssueReporter.h"
-#include "Nullable.h"
 
 #include "ECDbImpl.h"
 

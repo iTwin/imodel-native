@@ -10,9 +10,9 @@
 #include "ECDbInternalTypes.h"
 #include <ECObjects/ECObjectsAPI.h>
 #include <Bentley/BeId.h>
+#include <Bentley/Nullable.h>
 #include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 #include "MapStrategy.h"
-#include "Nullable.h"
 #include <unordered_map>
 #include <bitset>
 

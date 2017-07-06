@@ -334,7 +334,6 @@
     <ClInclude Include="ECDbSqlFunctions.h">
       <Filter>ECDb</Filter>
     </ClInclude>
-    <ClInclude Include="Nullable.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolContext.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
