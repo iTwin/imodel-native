@@ -26,6 +26,10 @@ struct DbMapValidator final : NonCopyableClass
         SchemaImportContext& m_schemaImportContext;
         Mode m_mode = Mode::All;
 
+        mutable bmap<DbColumnId, bset<DbIndex const*>> m_indexesByColumnCache;
+
+        BentleyStatus Initialize() const;
+
         BentleyStatus ValidateDbSchema() const;
         BentleyStatus ValidateDbTable(DbTable const&) const;
         BentleyStatus ValidateDbColumn(DbColumn const&, bset<Utf8String, CompareIUtf8Ascii> const& physicalColumns) const;
@@ -40,7 +44,9 @@ struct DbMapValidator final : NonCopyableClass
         BentleyStatus ValidateRelationshipClassEndTableMap(RelationshipClassEndTableMap const&) const;
         BentleyStatus ValidateRelationshipClassLinkTableMap(RelationshipClassLinkTableMap const&) const;
         BentleyStatus ValidatePropertyMap(PropertyMap const&, bmap<DbColumn const*, SingleColumnDataPropertyMap const*>& duplicateColumnMappings) const;
-        BentleyStatus ValidateNavigationPropertyMap(NavigationPropertyMap const&, bmap<DbColumn const*, SingleColumnDataPropertyMap const*>& duplicateColumnMappings) const;
+        BentleyStatus ValidateNavigationPropertyMap(NavigationPropertyMap const&) const;
+        BentleyStatus ValidateNavigationPropertyMapNotNull(NavigationPropertyMap const&, DbColumn const& idCol, DbColumn const& relClassIdCol, bool isPhysicalFk) const;
+        BentleyStatus ValidateNavigationPropertyMapUniqueness(NavigationPropertyMap const&, DbColumn const& idCol, DbColumn const& relClassIdCol, bool isPhysicalFk) const;
 
         ECDbCR GetECDb() const { return m_dbMap.GetECDb(); }
         DbSchema const& GetDbSchema() const { return m_dbMap.GetDbSchema(); }

@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
 #include <Bentley/CatchNonPortable.h>
+#include <Bentley/Nullable.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
@@ -19,7 +20,6 @@
 #include "ECDbInternalTypes.h"
 #include "ECDbLogger.h"
 #include "IssueReporter.h"
-#include "Nullable.h"
 
 #include "ECDbImpl.h"
 

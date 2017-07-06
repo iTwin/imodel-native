@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 //__BENTLEY_INTERNAL_ONLY__
+#include <Bentley/Nullable.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include "ECDbInternalTypes.h"
-#include "Nullable.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

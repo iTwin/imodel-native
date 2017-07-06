@@ -1041,6 +1041,10 @@ DbColumn* RelationshipClassEndTableMappingContext::CreateForeignKeyColumn(DbTabl
     bool makeFkColNotNull = false;
     if (m_relInfo.GetMappingType().GetType() == RelationshipMappingType::Type::PhysicalForeignKey)
         {
+        //WIP_CLEANUP This can be simplified a lot once we create this from the nav prop map because then we know the constraint class already:
+        //const bool isNavPropClassExclusiveRootClass = idCol.GetTable().HasExclusiveRootECClass() && idCol.GetTable().GetExclusiveRootECClassId() == propMap.GetClassMap().GetClass().GetId();
+        //bool makeFkColNotNull = propMap.CardinalityImpliesNotNull() && isNavPropClassExclusiveRootClass;
+
         bset<ECClassId> foreignEndConstraintClassIds;
         for (ECClassCP constraintClass : foreignEndConstraint.GetConstraintClasses())
             foreignEndConstraintClassIds.insert(constraintClass->GetId());

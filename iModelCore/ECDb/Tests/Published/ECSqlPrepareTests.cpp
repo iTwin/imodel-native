@@ -1779,6 +1779,8 @@ TEST_F(ECSqlUpdatePrepareTests, Polymorphic)
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.THBase SET S = 'hello'"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.TCBase SET S = 'hello'"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.TCBase SET S = 'hello'"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.AbstractBaseWithSingleSubclass SET Prop1= 'hello'"));
     }
 
 //---------------------------------------------------------------------------------------

@@ -12,22 +12,21 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Affan.Khan                           06/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::Validate() const
-    {
-    if (SUCCESS != ValidateDbSchema())
-        return ERROR;
 
-    return ValidateDbMap();
-    }
 //---------------------------------------------------------------------------------------
-// @bsimethod                                Affan.Khan                           06/2017
+// @bsimethod                                Krischan.Eberle                07/2017                
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::ValidateDbSchema() const
+BentleyStatus DbMapValidator::Initialize() const
     {
-    std::vector<DbTable const*> tables;
+    //cache indexes by their columns for later validation
+    for (std::unique_ptr<DbIndex> const& index : m_dbMap.GetDbSchema().GetIndexes())
+        {
+        for (DbColumn const* col : index->GetColumns())
+            {
+            m_indexesByColumnCache[col->GetId()].insert(index.get());
+            }
+        }
+
     if (m_mode == Mode::All)
         {
         CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT Id FROM ec_Table");
@@ -42,14 +41,85 @@ BentleyStatus DbMapValidator::ValidateDbSchema() const
                 BeAssert(false);
                 return ERROR;
                 }
+            }
 
-            tables.push_back(table);
+        stmt = GetECDb().GetCachedStatement("SELECT Id FROM ec_Class");
+        if (stmt == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        while (stmt->Step() == BE_SQLITE_ROW)
+            {
+            const ECClassId classId = stmt->GetValueId<ECClassId>(0);
+            ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
+            if (ecClass == nullptr)
+                {
+                Issues().Report("Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
+                return ERROR;
+                }
+
+            ClassMap const* classMap = m_dbMap.GetClassMap(*ecClass);
+            if (classMap == nullptr)
+                {
+                Issues().Report("Could not load class map for ECClass %s from the file.", ecClass->GetFullName());
+                return ERROR;
+                }
+            }
+
+        return SUCCESS;
+        }
+
+
+    Statement relStmt;
+    if (BE_SQLITE_OK != relStmt.Prepare(GetECDb(), "SELECT DISTINCT RelationshipClassId FROM ec_RelationshipConstraint"))
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    while (relStmt.Step() == BE_SQLITE_ROW)
+        {
+        const ECClassId relClassId = relStmt.GetValueId<ECClassId>(0);
+        ECClassCP ecClass = GetECDb().Schemas().GetClass(relClassId);
+        if (ecClass == nullptr)
+            {
+            Issues().Report("Could not load RelationshipECClass for ECClassId %s from the file.", relClassId.ToString().c_str());
+            return ERROR;
+            }
+
+        ClassMap const* classMap = m_dbMap.GetClassMap(*ecClass);
+        if (classMap == nullptr)
+            {
+            Issues().Report("Could not load class map for RelationshipECClass %s from the file.", ecClass->GetFullName());
+            return ERROR;
             }
         }
-    else
-        tables = GetDbSchema().GetCachedTables();
 
-    for (DbTable const* table : tables)
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::Validate() const
+    {
+    if (SUCCESS != Initialize())
+        return ERROR;
+
+    if (SUCCESS != ValidateDbSchema())
+        return ERROR;
+
+    return ValidateDbMap();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                Affan.Khan                           06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateDbSchema() const
+    {
+    for (DbTable const* table : GetDbSchema().GetCachedTables())
         {
         if (SUCCESS != ValidateDbTable(*table))
             return ERROR;
@@ -255,7 +325,8 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8String, CompareIUtf8Ascii> const& physicalColumns) const
     {
-    if (!column.IsVirtual() && column.GetTable().GetType() != DbTable::Type::Virtual)
+    DbTable::Type const tableType = column.GetTable().GetType();
+    if (!column.IsVirtual() && tableType != DbTable::Type::Virtual)
         {
         if (physicalColumns.find(column.GetName()) == physicalColumns.end())
             {
@@ -266,6 +337,12 @@ BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8
 
     if (column.IsShared())
         {
+        if (tableType == DbTable::Type::Existing || tableType == DbTable::Type::Virtual)
+            {
+            Issues().Report("The table '%s' is of type 'Existing' or 'Virtual', but its column '%s' is a shared column. This is invalid.", column.GetTable().GetName().c_str(), column.GetName().c_str());
+            return ERROR;
+            }
+
         if (column.GetConstraints().HasNotNullConstraint())
             {
             Issues().Report("Column '%s.%s' is a shared column and has the 'NOT NULL' constraint. This is not valid for shared columns.", column.GetTable().GetName().c_str(), column.GetName().c_str());
@@ -442,72 +519,15 @@ BentleyStatus DbMapValidator::ValidateDbMap() const
         }
 
     std::vector<ClassMap const*> classMaps;
-    if (m_mode == Mode::All)
+    for (bpair<ECClassId, ClassMapPtr> const& entry : m_dbMap.GetClassMapCache())
         {
-        CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT Id FROM ec_Class");
-        if (stmt == nullptr)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        while (stmt->Step() == BE_SQLITE_ROW)
-            {
-            const ECClassId classId = stmt->GetValueId<ECClassId>(0);
-            ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
-            if (ecClass == nullptr)
-                {
-                Issues().Report("Could not load ECClass for ECClassId %s from the file.", classId.ToString().c_str());
-                return ERROR;
-                }
-
-            ClassMap const* classMap = m_dbMap.GetClassMap(*ecClass);
-            if (classMap == nullptr)
-                {
-                Issues().Report("Could not load class map for ECClass %s from the file.", ecClass->GetFullName());
-                return ERROR;
-                }
-
-            classMaps.push_back(classMap);
-            }
-        }
-    else
-        {
-        Statement relStmt;
-        if (BE_SQLITE_OK != relStmt.Prepare(GetECDb(), "SELECT DISTINCT RelationshipClassId FROM ec_RelationshipConstraint"))
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        while (relStmt.Step() == BE_SQLITE_ROW)
-            {
-            const ECClassId relClassId = relStmt.GetValueId<ECClassId>(0);
-            ECClassCP ecClass = GetECDb().Schemas().GetClass(relClassId);
-            if (ecClass == nullptr)
-                {
-                Issues().Report("Could not load RelationshipECClass for ECClassId %s from the file.", relClassId.ToString().c_str());
-                return ERROR;
-                }
-
-            ClassMap const* classMap = m_dbMap.GetClassMap(*ecClass);
-            if (classMap == nullptr)
-                {
-                Issues().Report("Could not load class map for RelationshipECClass %s from the file.", ecClass->GetFullName());
-                return ERROR;
-                }
-            //Why don't we add the class map to the list to check?
-            }
-
-        for (bpair<ECClassId, ClassMapPtr> const& entry : m_dbMap.GetClassMapCache())
-            classMaps.push_back(entry.second.get());
+        classMaps.push_back(entry.second.get());
         }
 
-    for (ClassMapCP classMap : classMaps)
-        {
-        if (SUCCESS != ValidateClassMap(*classMap))
-            return ERROR;
-        }
+    for (ClassMap const* classMap : classMaps)
+
+    if (SUCCESS != ValidateClassMap(*classMap))
+        return ERROR;
 
     return SUCCESS;
     }
@@ -553,11 +573,9 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 return ERROR;
                 }
 
-            //WIP: This seems to have a bug for multi inheritance
-            //const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
-            int propCount = 0;
-            ECPropertyIterable propIterable = classMap.GetClass().GetProperties(true);
-            for (auto it = propIterable.begin(); it != propIterable.end(); ++it) { propCount++; }
+            //WIP ECObjects bug in GetPropertyCount 
+            const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
+            //const int propCount = (int) std::distance(classMap.GetClass().GetProperties(true).begin(), classMap.GetClass().GetProperties(true).end());
 
             if (dataPropertyMapCount != propCount)
                 {
@@ -631,8 +649,13 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
         }
 
     bmap<DbColumn const*, SingleColumnDataPropertyMap const*> duplicateColumnMappings;
+    ECClassCR ecClass = classMap.GetClass();
     for (PropertyMap const* propMap : classMap.GetPropertyMaps())
         {
+        //ignore inherited properties as they were validated on their base classes
+        if (&propMap->GetProperty().GetClass() != &ecClass)
+            continue;
+
         if (SUCCESS != ValidatePropertyMap(*propMap, duplicateColumnMappings))
             return ERROR;
         }
@@ -865,7 +888,7 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
 
             case PropertyMap::Type::Navigation:
             {
-            if (SUCCESS != ValidateNavigationPropertyMap(propertyMap.GetAs<NavigationPropertyMap>(), duplicateColumnMappings))
+            if (SUCCESS != ValidateNavigationPropertyMap(propertyMap.GetAs<NavigationPropertyMap>()))
                 return ERROR;
 
             break;
@@ -971,7 +994,7 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Krischan.Eberle                       07/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMap const& propMap, bmap<DbColumn const*, SingleColumnDataPropertyMap const*>& duplicateColumnMappings) const
+BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMap const& propMap) const
     {
     if (propMap.Find(ECDBSYS_PROP_NavPropId) == nullptr || propMap.Find(ECDBSYS_PROP_NavPropRelECClassId) == nullptr)
         {
@@ -979,14 +1002,36 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
         return ERROR;
         }
 
-    const bool isPhysicalFk = propMap.HasForeignKeyConstraint();
-    //const bool impliesNotNull = propMap.CardinalityImpliesNotNull();
+    //for existing tables we don't create constraints and such, so don't validate them in that case
+    if (propMap.GetTable().GetType() == DbTable::Type::Existing)
+        return SUCCESS;
 
+    const bool isPhysicalFk = propMap.HasForeignKeyConstraint();
     NavigationPropertyMap::IdPropertyMap const& idPropMap = propMap.GetIdPropertyMap();
     DbColumn const& idCol = idPropMap.GetColumn();
 
     NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropMap = propMap.GetRelECClassIdPropertyMap();
     DbColumn const& relClassIdCol = relClassIdPropMap.GetColumn();
+
+    if (propMap.GetProperty().GetAsNavigationProperty()->GetRelationshipClass()->GetClassModifier() == ECClassModifier::Sealed)
+        {
+        if (relClassIdCol.GetPersistenceType() == PersistenceType::Physical)
+            {
+            Issues().Report("The navigation property '%s.%s' has the RelECClassId column '%s.%s' which should not exist because the navigation property's relationship is sealed.",
+                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+            return ERROR;
+            }
+        }
+    else
+        {
+        //if the table per se is virtual (because it is a mixin or abstract class), then we must not do the check
+        if (relClassIdCol.GetTable().GetType() != DbTable::Type::Virtual && relClassIdCol.GetPersistenceType() == PersistenceType::Virtual)
+            {
+            Issues().Report("The navigation property '%s.%s' has the RelECClassId column '%s.%s' which is virtual, but should exist in the table because the navigation property's relationship is not sealed.",
+                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+            return ERROR;
+            }
+        }
 
     if (!relClassIdCol.IsShared())
         {
@@ -998,18 +1043,6 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
             }
         }
 
-    //for existing tables we don't create constraints and such, so don't validate them in that case
-    if (propMap.GetTable().GetType() == DbTable::Type::Existing)
-        return SUCCESS;
-
-    if (idCol.IsUnique() || relClassIdCol.IsUnique())
-        {
-        Issues().Report("The navigation property '%s.%s' maps to the foreign key column '%s.%s' and the RelECClassId column '%s.%s'. At least one of them has a UNIQUE constraint. This should never be the case as uniqueness is enforced via a unique index where necessary.",
-                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                        idCol.GetTable().GetName().c_str(), idCol.GetName().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
-        return ERROR;
-        }
-
     if (isPhysicalFk)
         {
         if (idCol.IsShared() || relClassIdCol.IsShared())
@@ -1019,54 +1052,126 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
                             idCol.GetTable().GetName().c_str(), idCol.GetName().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
             return ERROR;
             }
+        }
 
-    /* The rules are more complicated as we cannot do NOT NULL if base classes are mapped to the same table
-        if (impliesNotNull)
+    if (SUCCESS != ValidateNavigationPropertyMapNotNull(propMap, idCol, relClassIdCol, isPhysicalFk))
+        return ERROR;
+
+    return ValidateNavigationPropertyMapUniqueness(propMap, idCol, relClassIdCol, isPhysicalFk);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Krischan.Eberle                       07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateNavigationPropertyMapNotNull(NavigationPropertyMap const& propMap, DbColumn const& idCol, DbColumn const& relClassIdCol, bool isPhysicalFk) const
+    {
+    if (!isPhysicalFk)
+        {
+        if (idCol.DoNotAllowDbNull())
             {
-            if (!idCol.DoNotAllowDbNull())
-                {
-                Issues().Report("The multiplicity of the navigation property '%s.%s' implies a NOT NULL constraint on the foreign key column '%s.%s'. But the column doesn't have one.",
-                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                                idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
-                return ERROR;
-                }
-
-            if (!relClassIdCol.DoNotAllowDbNull())
-                {
-                Issues().Report("The multiplicity of the navigation property '%s.%s' implies a NOT NULL constraint on the RelECClassId column '%s.%s'. But the column doesn't have one.",
-                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                                relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
-                return ERROR;
-                }
+            Issues().Report("The navigation property '%s.%s' maps to a logical foreign key. But its foreign column '%s.%s' has a NOT NULL constraint which is invalid for logical foreign keys.",
+                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                            idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
+            return ERROR;
             }
-        else
-            {
-            if (idCol.DoNotAllowDbNull())
-                {
-                Issues().Report("The multiplicity of the navigation property '%s.%s' implies that the foreign key column is nullable. But the column has a NOT NULL constraint.",
-                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                                idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
-                return ERROR;
-                }
 
-            if (relClassIdCol.DoNotAllowDbNull())
-                {
-                Issues().Report("The multiplicity of the navigation property '%s.%s' implies that the RelECClassId column is nullable. But the column has a NOT NULL constraint.",
-                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
-                                relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
-                return ERROR;
-                }
-            }
-            */
         return SUCCESS;
         }
 
-    BeAssert(!isPhysicalFk);
-    if (idCol.DoNotAllowDbNull() || idCol.IsUnique())
+    BeAssert(isPhysicalFk);
+    //The FK and RelECClassId can be made NOT NULL if the multiplicity on the referenced end is (1..X) AND
+    //if the nav prop's class is the exclusive root of the table. If it wasn't base classes would face NOT NULL constraint violations
+    //because they will leave the FK column empty
+    const bool isNavPropClassExclusiveRootClass = idCol.GetTable().HasExclusiveRootECClass() && idCol.GetTable().GetExclusiveRootECClassId() == propMap.GetClassMap().GetClass().GetId();
+    const bool fkExpectedNotNull = propMap.CardinalityImpliesNotNull() && isNavPropClassExclusiveRootClass;
+    if (fkExpectedNotNull)
         {
-        Issues().Report("The navigation property '%s.%s' maps to a logical foreign key. But its foreign column '%s.%s' has a NOT NULL or UNIQUE constraint which is invalid for logical foreign keys.",
+        if (!idCol.DoNotAllowDbNull())
+            {
+            Issues().Report("The navigation property '%s.%s' implies a NOT NULL constraint on the foreign key column '%s.%s'. But the column doesn't have one.",
+                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                            idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
+            return ERROR;
+            }
+
+        if (!relClassIdCol.DoNotAllowDbNull())
+            {
+            Issues().Report("The navigation property '%s.%s' implies a NOT NULL constraint on the RelECClassId column '%s.%s'. But the column doesn't have one.",
+                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                            relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+            return ERROR;
+            }
+
+        return SUCCESS;
+        }
+
+    //FK expected to be nullable
+    if (idCol.DoNotAllowDbNull())
+        {
+        Issues().Report("The navigation property '%s.%s' implies that the foreign key column is nullable. But the column has a NOT NULL constraint.",
                         propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
                         idCol.GetTable().GetName().c_str(), idCol.GetName().c_str());
+        return ERROR;
+        }
+
+    if (relClassIdCol.DoNotAllowDbNull())
+        {
+        Issues().Report("The navigation property '%s.%s' implies that the RelECClassId column is nullable. But the column has a NOT NULL constraint.",
+                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                        relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Krischan.Eberle                       07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateNavigationPropertyMapUniqueness(NavigationPropertyMap const& propMap, DbColumn const& idCol, DbColumn const& relClassIdCol, bool isPhysicalFk) const
+    {
+    DbTable const& table = idCol.GetTable();
+
+    if (idCol.IsUnique() || relClassIdCol.IsUnique())
+        {
+        Issues().Report("The navigation property '%s.%s' maps to the foreign key column '%s.%s' and the RelECClassId column '%s.%s'. At least one of them has a UNIQUE constraint. This should never be the case as uniqueness is enforced via a unique index where necessary.",
+                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                        table.GetName().c_str(), idCol.GetName().c_str(), table.GetName().c_str(), relClassIdCol.GetName().c_str());
+        return ERROR;
+        }
+
+
+    const bool uniqueIndexExpected = isPhysicalFk && propMap.CardinalityImpliesUnique();
+    auto it = m_indexesByColumnCache.find(idCol.GetId());
+
+    int systemIndexCount = 0;
+
+    if (it != m_indexesByColumnCache.end())
+        {
+        for (DbIndex const* index : it->second)
+            {
+            //user defined indexes and multi-col indexes are ignored as they are not cardinality driven indexes
+            if (!index->IsAutoGenerated() || index->GetColumns().size() > 1)
+                continue;
+
+            if (!uniqueIndexExpected && index->GetIsUnique())
+                {
+                Issues().Report("The navigation property '%s.%s' implies that the foreign key column '%s.%s' must not be unique. But there is the unique index '%s' on the column.",
+                                propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                                table.GetName().c_str(), idCol.GetName().c_str(), index->GetName().c_str());
+                return ERROR;
+                }
+
+            systemIndexCount++;
+            }
+        }
+
+
+    if (uniqueIndexExpected && systemIndexCount == 0)
+        {
+        Issues().Report("The navigation property '%s.%s' implies that the foreign key column '%s.%s' is unique. But there is no unique index to enforce it.",
+                        propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(),
+                        table.GetName().c_str(), idCol.GetName().c_str());
         return ERROR;
         }
 
