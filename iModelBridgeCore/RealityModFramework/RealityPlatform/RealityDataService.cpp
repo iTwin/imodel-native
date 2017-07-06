@@ -2031,7 +2031,7 @@ bvector<bpair<WString, uint64_t>> RealityDataService::Request(const AllRealityDa
             fileName = value;
             reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Element, "Content-Length", false, nullptr);
             reader->ReadTo(IBeXmlReader::NodeType::NODE_TYPE_Text, nullptr, false, &value);
-            BeStringUtilities::ParseUInt64(fileSize, value.c_str());
+            fileSize = BeStringUtilities::ParseUInt64(Utf8String(value.c_str()).c_str());
 
             documents.push_back(make_bpair(fileName, fileSize));
             }

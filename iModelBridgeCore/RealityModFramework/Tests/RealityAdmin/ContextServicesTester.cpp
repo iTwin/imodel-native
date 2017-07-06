@@ -601,7 +601,9 @@ TEST_F(ContextServicesTestFixture, COMPLETETest)
             reader->ReadToNextAttribute(&attributeName, &attribute); //url
             reader->ReadToNextAttribute(&attributeName, &attribute); //filesize
             ASSERT_TRUE(attributeName.CompareToI("filesize") == 0);
-            ASSERT_TRUE(BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(statedSize, attribute.c_str()));
+            BentleyStatus ret;
+            statedSize = BeStringUtilities::ParseUInt64(Utf8String(attribute.c_str()).c_str(), &ret);
+            ASSERT_TRUE(BentleyStatus::SUCCESS == ret);
             ASSERT_TRUE(BeFileStatus::Success == file.GetSize(actualSize));
             ASSERT_TRUE(actualSize == statedSize);
             file.Close();
