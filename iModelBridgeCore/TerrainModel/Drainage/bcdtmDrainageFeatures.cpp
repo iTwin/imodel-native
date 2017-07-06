@@ -685,6 +685,303 @@ errexit:
     if (ret == DTM_SUCCESS) ret = DTM_ERROR;
     goto cleanup;
     }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+int bcdtmDrainage_returnRidgeOrSumpLinesDtmObject
+(
+    BC_DTM_OBJ         *dtmP,                    // ==> Pointer To Dtm Object 
+    DTMFeatureType     dtmFeatureType,           // == Ridge or Sump
+    bool               zeroSlopeOnly,         // ==> Return Zero Slope lines only
+    DTMFeatureCallback loadFunctionP,            // ==> Pointer To Load Function
+    bool               useFence,                 // ==> Load Feature Within Fence
+    DTMFenceType    fenceType,                // ==> Type Of Fence Reactangular Or Shape
+    DTMFenceOption    fenceOption,              // ==> Fence Option <INSIDE(1),OVERLAP(2),OUTSIDE(3)>
+    const DPoint3d     *fencePtsP,               // ==> DPoint3d Array Of Fence Points 
+    int                numFencePts,              // ==> Number Of Fence Points
+    void               *userP,                   // ==> User Pointer Passed Back To User
+    int&               numRidgeLines             // <== Number Of Ridge Lines Found 
+)
+    {
+    int               ret = DTM_SUCCESS, dbg = DTM_TRACE_VALUE(0);
+    int               cacheSize = 10000;
+    long              startPnt, lastPnt, clPtr;
+    DTMFeatureType  lineType;
+    bool              voidsInDtm;
+    BC_DTM_OBJ        *clipDtmP = nullptr;
+    DTMLineCache      lineCache;
+    DTMDrainageTables *drainageTablesP = nullptr;
+
+    // Log Entry Arguments
+
+    if (dbg)
+        {
+        bcdtmWrite_message(0, 0, 0, "Returning Ridge Lines");
+        bcdtmWrite_message(0, 0, 0, "dtmP              = %p", dtmP);
+        bcdtmWrite_message(0, 0, 0, "loadFunctionP     = %p", loadFunctionP);
+        bcdtmWrite_message(0, 0, 0, "useFence          = %8ld", useFence);
+        bcdtmWrite_message(0, 0, 0, "fenceOption       = %8ld", fenceOption);
+        bcdtmWrite_message(0, 0, 0, "fencePtsP         = %p", fencePtsP);
+        bcdtmWrite_message(0, 0, 0, "numFencePts       = %8ld", numFencePts);
+        bcdtmWrite_message(0, 0, 0, "userP             = %p", userP);
+        }
+
+    // Validate Fence 
+    numRidgeLines = 0;
+    if (useFence && (fencePtsP == nullptr || numFencePts <= 2)) useFence = false;
+    if (useFence && (fencePtsP->x != (fencePtsP + numFencePts - 1)->x || fencePtsP->y != (fencePtsP + numFencePts - 1)->y)) useFence = false;
+
+    if (useFence)
+        {
+        if (fenceType != DTMFenceType::Block && fenceType != DTMFenceType::Shape) fenceType = DTMFenceType::Block;
+        if (fenceOption != DTMFenceOption::Inside      && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Overlap;
+        }
+
+
+    // Test For Valid DTM Object
+    if (bcdtmObject_testForValidDtmObject(dtmP)) goto errexit;
+
+    // Test For DTM Object In Tin State
+
+    if (dtmP->dtmState != DTMState::Tin)
+        {
+        bcdtmWrite_message(1, 0, 0, "Method Requires Triangulated DTM");
+        goto errexit;
+        }
+
+    // Check Load Function Set
+    if (loadFunctionP == nullptr)
+        {
+        bcdtmWrite_message(1, 0, 0, "Call Back Function Not Set");
+        goto errexit;
+        }
+
+    // Check For Voids
+    voidsInDtm = bcdtmDrainageList_checkForVoidsInDtmObject(dtmP);
+
+    // Set Point Scan Range
+    startPnt = 0;
+    lastPnt = dtmP->numPoints - 1;
+
+    // Build Clipping Tin For Fence
+    if (useFence)
+        {
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Building Clipping Tin");
+        if (bcdtmClip_buildClippingTinFromFencePointsDtmObject(&clipDtmP, fencePtsP, numFencePts)) goto errexit;
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Building Clipping Tin Completed");
+        if (fenceType == DTMFenceType::Block && dtmP->xMin >= clipDtmP->xMin && dtmP->xMax <= clipDtmP->xMax &&  dtmP->yMin >= clipDtmP->yMin && dtmP->yMax <= clipDtmP->yMax) useFence = FALSE;
+        }
+
+    /*
+    **    Find First Point Before And Last Point After Fence
+    */
+    startPnt = 0 ;
+    lastPnt  = dtmP->numPoints ;
+    numRidgeLines = 0 ;
+
+    if (useFence && fenceOption == DTMFenceOption::Overlap)
+        {
+        if (dbg) bcdtmWrite_message(0, 0, 0, "Scanning For Overlap Triangle Edges");
+        bcdtmFind_binaryScanDtmObject(dtmP, clipDtmP->xMin, &startPnt);
+        while (startPnt > 0 && pointAddrP(dtmP, startPnt)->x >= clipDtmP->xMin) --startPnt;
+        if (pointAddrP(dtmP, startPnt)->x < clipDtmP->xMin) ++startPnt;
+        bcdtmFind_binaryScanDtmObject(dtmP, clipDtmP->xMax, &lastPnt);
+        while (lastPnt < dtmP->numPoints - 1 && pointAddrP(dtmP, lastPnt)->x <= clipDtmP->xMin) ++lastPnt;
+        /*
+        **      Mark Points Within Fence Block
+        */
+        if (fenceType == DTMFenceType::Block)
+            {
+            for (long p1 = startPnt; p1 <= lastPnt; ++p1)
+                {
+                DPoint3dP pntP = pointAddrP(dtmP, p1);
+                if (pntP->y >= clipDtmP->yMin && pntP->y <= clipDtmP->yMax) nodeAddrP(dtmP, p1)->sPtr = 1;
+                }
+            }
+        /*
+        **      Mark Points Within Fence Shape
+        */
+        if (fenceType == DTMFenceType::Shape)
+            {
+            for (long p1 = startPnt; p1 <= lastPnt; ++p1)
+                {
+                DPoint3dP pntP = pointAddrP(dtmP, p1);
+                long findType = 0;
+                if (pntP->x >= clipDtmP->xMin && pntP->x <= clipDtmP->xMax && pntP->y >= clipDtmP->yMin && pntP->y <= clipDtmP->yMax)
+                    {
+                    long trgPnt1, trgPnt2, trgPnt3;
+                    if (bcdtmFind_triangleDtmObject(clipDtmP, pntP->x, pntP->y, &findType, &trgPnt1, &trgPnt2, &trgPnt3)) goto errexit;
+                    }
+                if (findType) nodeAddrP(dtmP, p1)->sPtr = 1;
+                }
+            }
+            /*
+            **      Scan And Load Triangle Edges
+            */
+            for (long p1 = startPnt; p1 <= lastPnt; ++p1)
+                {
+                auto node1P = nodeAddrP(dtmP, p1);
+                if (node1P->sPtr == 1 && (clPtr = node1P->cPtr) != dtmP->nullPtr)
+                    {
+                    while (clPtr != dtmP->nullPtr)
+                        {
+                        auto clistP = clistAddrP(dtmP, clPtr);
+                        auto p2 = clistP->pntNum;
+                        clPtr = clistP->nextPtr;
+                        auto node2P = nodeAddrP(dtmP, p2);
+                        if (p2 > p1 && node2P->sPtr == 1)
+                            {
+                            bool voidFlag = false;
+                            if (voidsInDtm)
+                                {
+                                if (bcdtmList_testForVoidLineDtmObject(dtmP, p1, p2, voidFlag)) goto errexit;
+                                }
+                            if (voidFlag == false && (!zeroSlopeOnly || (pointAddrP(dtmP, p1)->z == pointAddrP(dtmP, p2)->z)))
+                                {
+                                /*
+                                **                     Set Point Addresses And Coordinates
+                                */
+                                long antPnt = bcdtmList_nextAntDtmObject(dtmP, p1, p2);
+                                long clkPnt = bcdtmList_nextClkDtmObject(dtmP, p1, p2);
+                                if (bcdtmDrainage_checkForSumpOrRidgeLineDtmObject(dtmP, drainageTablesP, p1, p2, antPnt, clkPnt, &lineType)) goto errexit;
+
+                                if (lineType == dtmFeatureType)
+                                    {
+                                    numRidgeLines++;
+                                    if (lineCache.StoreLineInCache(*pointAddrP(dtmP, p1), *pointAddrP(dtmP, p2))) goto errexit;
+                                    if (lineCache.SizeOfCache() >= cacheSize &&
+                                        lineCache.CallUserDelegateWithCacheLines(loadFunctionP, (DTMFeatureType)dtmFeatureType, DTM_NULL_USER_TAG, DTM_NULL_FEATURE_ID, true, userP) != DTM_SUCCESS) goto errexit;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+        }
+    /*
+    **    Scan And Load Triangle Edges
+    */
+    else
+        {
+        if( dbg ) bcdtmWrite_message(0,0,0,"Scanning Triangle Edges") ;
+        for( long p1 = startPnt ; p1 < lastPnt ; ++p1 )
+            {
+            auto nodeP = nodeAddrP(dtmP,p1) ;
+            if( ( clPtr = nodeP->cPtr) != dtmP->nullPtr )
+                {
+                while( clPtr != dtmP->nullPtr )
+                    {
+                    auto clistP = clistAddrP(dtmP,clPtr) ;
+                    auto p2     = clistP->pntNum ;
+                    clPtr  = clistP->nextPtr ;
+                    if( p2 > p1 )
+                        {
+                        bool voidFlag = false;
+                        if( voidsInDtm ) { if( bcdtmList_testForVoidLineDtmObject(dtmP,p1,p2,voidFlag)) goto errexit ; }
+                        if (voidFlag == false && (!zeroSlopeOnly || (pointAddrP(dtmP, p1)->z == pointAddrP(dtmP, p2)->z)))
+                            {
+                            long antPnt = bcdtmList_nextAntDtmObject(dtmP, p1, p2);
+                            long clkPnt = bcdtmList_nextClkDtmObject(dtmP, p1, p2);
+                            if (bcdtmDrainage_checkForSumpOrRidgeLineDtmObject(dtmP, drainageTablesP, p1, p2, antPnt, clkPnt, &lineType)) goto errexit;
+
+                            if (lineType == dtmFeatureType)
+                                {
+                                numRidgeLines++;
+
+                                /*
+                                **                      Load Triangle Edge
+                                */
+                                if (!useFence)
+                                    {
+                                    if (lineCache.StoreLineInCache(*pointAddrP(dtmP, p1), *pointAddrP(dtmP, p2))) goto errexit;
+                                    }
+                                /*
+                                **                      Check If Triangle Edge Lies In Fence
+                                */
+                                else
+                                    {
+                                    DPoint3d ridgePts[2] = {*pointAddrP(dtmP, p1), *pointAddrP(dtmP, p2)};
+                                    long numClipArrays, clipResult;
+                                    DTM_POINT_ARRAY** clipArraysPP = nullptr;
+
+                                    if (bcdtmClip_featurePointArrayToTinHullDtmObject(clipDtmP, fenceOption, ridgePts, 2, &clipResult, &clipArraysPP, &numClipArrays)) goto errexit;
+                                    if (clipResult == 1)
+                                        {
+                                        if (lineCache.StoreLineInCache(*pointAddrP(dtmP, p1), *pointAddrP(dtmP, p2))) goto errexit;
+                                        }
+                                    else if (clipResult == 2)
+                                        {
+                                        for (long n = 0; n < numClipArrays; ++n)
+                                            {
+                                            BeAssert(clipArraysPP[n]->numPoints == 2);
+                                            if (lineCache.StoreLineInCache(clipArraysPP[n]->pointsP[0], clipArraysPP[n]->pointsP[1])) goto errexit;
+                                            }
+                                        bcdtmMem_freePointerArrayToPointArrayMemory(&clipArraysPP, numClipArrays);
+                                        }
+                                    }
+
+                                if (lineCache.SizeOfCache() >= cacheSize && lineCache.CallUserDelegateWithCacheLines(loadFunctionP, dtmFeatureType, DTM_NULL_USER_TAG, DTM_NULL_FEATURE_ID, true, userP) != DTM_SUCCESS) goto errexit;
+
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Triangle Edges Loaded = %10ld",numRidgeLines) ;
+
+    //  Check For Remaining Cache Lines
+    if (lineCache.SizeOfCache() > 0)
+        {
+        if (lineCache.CallUserDelegateWithCacheLines(loadFunctionP, dtmFeatureType, DTM_NULL_USER_TAG, DTM_NULL_FEATURE_ID, true, userP) != DTM_SUCCESS) goto errexit;
+        }
+
+    //  Log Number Of Ridge Lines Returned
+
+    if (dbg) bcdtmWrite_message(0, 0, 0, "Number Of Ridge Lines = %8d", numRidgeLines);
+
+    // Clean Up
+
+cleanup:
+    if (clipDtmP != nullptr) bcdtmObject_destroyDtmObject(&clipDtmP);
+
+    // Return
+
+    if (dbg && ret == DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Returning Ridge Lines Completed");
+    if (dbg && ret != DTM_SUCCESS) bcdtmWrite_message(0, 0, 0, "Returning Ridge Lines Error");
+    return(ret);
+
+    // Error Exit
+
+errexit:
+    if (ret == DTM_SUCCESS) ret = DTM_ERROR;
+    goto cleanup;
+    }
+
+    /*-------------------------------------------------------------------+
+    |                                                                    |
+    |                                                                    |
+    |                                                                    |
+    +-------------------------------------------------------------------*/
+    int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
+    (
+        BC_DTM_OBJ         *dtmP,                    // ==> Pointer To Dtm Object 
+        DTMFeatureCallback loadFunctionP,            // ==> Pointer To Load Function
+        bool               useFence,                 // ==> Load Feature Within Fence
+        DTMFenceType       fenceType,                // ==> Type Of Fence Reactangular Or Shape
+        DTMFenceOption     fenceOption,              // ==> Fence Option <INSIDE(1),OVERLAP(2),OUTSIDE(3)>
+        const DPoint3d     *fencePtsP,               // ==> DPoint3d Array Of Fence Points 
+        int                numFencePts,              // ==> Number Of Fence Points
+        void               *userP,                   // ==> User Pointer Passed Back To User
+        int&               numSumpLines              // <== Number Of Sump Lines Found 
+    )
+        {
+        return bcdtmDrainage_returnRidgeOrSumpLinesDtmObject(dtmP, DTMFeatureType::SumpLine, true, loadFunctionP, useFence, fenceType, fenceOption, fencePtsP, numFencePts, userP, numSumpLines);
+        }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -692,470 +989,19 @@ errexit:
 +-------------------------------------------------------------------*/
 int bcdtmDrainage_returnSumpLinesDtmObject
 (
- BC_DTM_OBJ         *dtmP,                    // ==> Pointer To Dtm Object 
- DTMFeatureCallback loadFunctionP,            // ==> Pointer To Load Function
- bool               useFence,                 // ==> Load Feature Within Fence
- DTMFenceType       fenceType,                // ==> Type Of Fence Reactangular Or Shape
- DTMFenceOption     fenceOption,              // ==> Fence Option <INSIDE(1),OVERLAP(2),OUTSIDE(3)>
- const DPoint3d     *fencePtsP,               // ==> DPoint3d Array Of Fence Points 
- int                numFencePts,              // ==> Number Of Fence Points
- void               *userP,                   // ==> User Pointer Passed Back To User
- int&               numSumpLines              // <== Number Of Sump Lines Found 
+    BC_DTM_OBJ         *dtmP,                    // ==> Pointer To Dtm Object 
+    DTMFeatureCallback loadFunctionP,            // ==> Pointer To Load Function
+    bool               useFence,                 // ==> Load Feature Within Fence
+    DTMFenceType    fenceType,                // ==> Type Of Fence Reactangular Or Shape
+    DTMFenceOption    fenceOption,              // ==> Fence Option <INSIDE(1),OVERLAP(2),OUTSIDE(3)>
+    const DPoint3d     *fencePtsP,               // ==> DPoint3d Array Of Fence Points 
+    int                numFencePts,              // ==> Number Of Fence Points
+    void               *userP,                   // ==> User Pointer Passed Back To User
+    int&               numSumpLines             // <== Number Of Ridge Lines Found 
 )
-{
- int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- int               cacheSize=10000 ;
- long              pnt, startPnt, lastPnt, smpPnt, clkPnt, antPnt, clPtr;
- bool voidLine;
- DTMFeatureType lineType;
- DTMFenceOption  sumpExtent;
- long               sumpLineFound;
- DTMFeatureType  dtmFeatureType = DTMFeatureType::SumpLine;
- double            xSumpMin,xSumpMax,ySumpMin,ySumpMax ;
- bool              voidsInDtm=false ;
- DPoint3d          sumpPts[2] ;
- BC_DTM_OBJ        *clipDtmP=nullptr ;
- DTM_TIN_NODE      *nodeP ;
- DTMLineCache      lineCache ; 
- DTMDrainageTables *drainageTablesP=nullptr ;
-
-// Log Entry Arguments
-
- if( dbg ) 
-   {
-    bcdtmWrite_message(0,0,0,"Returning Sump Lines") ; 
-    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
-    bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
-    bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
-    bcdtmWrite_message(0,0,0,"fencePtsP         = %p",fencePtsP) ;
-    bcdtmWrite_message(0,0,0,"numFencePts       = %8ld",numFencePts) ;
-    bcdtmWrite_message(0,0,0,"userP             = %p",userP) ;
-   }
-
-// Validate Fence 
-
- numSumpLines = 0 ;
- if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside;
- if (useFence && (fencePtsP == nullptr || numFencePts <= 2)) useFence = false;
- if( useFence && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = false ;
-
-// Test For Valid DTM Object
-
- if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit  ;
-
-// Test For DTM Object In Tin State
-
- if( dtmP->dtmState != DTMState::Tin )
-   {
-    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
-    goto errexit ; 
-   } 
-
-// Check Load Function Set
-
- if( loadFunctionP == nullptr )
-   {
-    bcdtmWrite_message(1,0,0,"Call Back Function Not Set") ;
-    goto errexit ;
-   }
-
-// Check For Voids
-
- voidsInDtm = bcdtmDrainageList_checkForVoidsInDtmObject(dtmP) ;
-
-// Set Point Scan Range
-
- startPnt = 0 ;
- lastPnt  = dtmP->numPoints - 1 ;
-
-// Build Clipping Tin For Fence
-
- if( useFence ) 
-   {
-    if( bcdtmClip_buildClippingTinFromFencePointsDtmObject(&clipDtmP,fencePtsP,numFencePts)) goto errexit ;
-/*
-    if( fenceOption == DTMFenceOption::Inside || fenceOption == DTMFenceOption::Overlap )
-      {
-       bcdtmFind_binaryScanDtmObject(dtmP,clipDtmP->xMin,&startPnt) ;
-       while( startPnt > 0 && pointAddrP(dtmP,startPnt)->x >= clipDtmP->xMin ) --startPnt ;
-       if( pointAddrP(dtmP,startPnt)->x < clipDtmP->xMin ) ++startPnt ;
-       bcdtmFind_binaryScanDtmObject(dtmP,clipDtmP->xMax,&lastPnt) ;
-       while( lastPnt < dtmP->numPoints - 1 && pointAddrP(dtmP,lastPnt)->x <= clipDtmP->xMin ) ++lastPnt ;
-      }
-*/
-   }
-
-// Scan Tin Points And Test For Sump Lines
-
- for( pnt = startPnt ; pnt <= lastPnt ; ++pnt )
-   {
-    nodeP = nodeAddrP(dtmP,pnt) ;
-
-//  Test For Valid Point
-
-    if( ( clPtr = nodeP->cPtr ) != dtmP->nullPtr )
-      {
-       if(( antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt,clistAddrP(dtmP,clPtr)->pntNum)) < 0 ) goto errexit ;
-       while ( clPtr != dtmP->nullPtr )
-         {
-          smpPnt  = clistAddrP(dtmP,clPtr)->pntNum ;
-          clPtr   = clistAddrP(dtmP,clPtr)->nextPtr ;
-          if(( clkPnt = bcdtmList_nextClkDtmObject(dtmP,pnt,smpPnt)) < 0 ) goto errexit ;
-
-//        Check For Valid Tin Line
-
-          if( smpPnt > pnt )
-            {
-
-//           Check For Void Line
-
-             voidLine = false ; 
-             if( voidsInDtm )
-               {
-                if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,smpPnt,voidLine)) goto errexit ;
-               }
-
-//           Only Process For None Void Lines
-
-             if( ! voidLine )
-               {  
-
-//              Test Tin Line For Fence Option Against Bounding Rectangle
-
-                sumpLineFound = true ;
-                if( useFence )
-                  {
-
-//                 Get Bounding Rectangle For Sump Line
-
-                   xSumpMin =  xSumpMax = pointAddrP(dtmP,pnt)->x ;
-                   ySumpMin =  ySumpMax = pointAddrP(dtmP,pnt)->y ;
-                   if( pointAddrP(dtmP,smpPnt)->x < xSumpMin ) xSumpMin = pointAddrP(dtmP,smpPnt)->x ;
-                   if( pointAddrP(dtmP,smpPnt)->x > xSumpMax ) xSumpMax = pointAddrP(dtmP,smpPnt)->x ;
-                   if( pointAddrP(dtmP,smpPnt)->y < ySumpMin ) ySumpMin = pointAddrP(dtmP,smpPnt)->y ;
-                   if( pointAddrP(dtmP,smpPnt)->y > ySumpMax ) ySumpMax = pointAddrP(dtmP,smpPnt)->y ;
-
-//                 Check Fence Option Against Bounding Rectangle
-
-                   if( fenceOption == DTMFenceOption::Inside  || fenceOption == DTMFenceOption::Overlap )
-                     { 
-                      if( xSumpMax < clipDtmP->xMin ||  xSumpMin > clipDtmP->xMax || ySumpMax < clipDtmP->yMin ||  ySumpMin > clipDtmP->yMax ) sumpLineFound = true ;
-                     }
-                   if( fenceOption == DTMFenceOption::Outside )
-                     { 
-                      sumpLineFound = false ;
-                      if( xSumpMax < clipDtmP->xMin ||  xSumpMin > clipDtmP->xMax || ySumpMax < clipDtmP->yMin ||  ySumpMin > clipDtmP->yMax ) sumpLineFound = true  ;
-                     }
-                  }
-
-//              Process Further If Fence Option Staifies Bounding Rectangle
-
-                if( sumpLineFound )
-                  {
-
-//                 Check For Sump Line 
-
-                   if( bcdtmDrainage_checkForSumpOrRidgeLineDtmObject(dtmP,drainageTablesP,pnt,smpPnt,antPnt,clkPnt,&lineType)) goto errexit ;
-                   if( lineType == DTMFeatureType::SumpLine )
-                     {
-
-//                    Determine Sump Line Extent With Fence
-
-                      if( useFence )
-                        {
-                         sumpPts[0].x = pointAddrP(dtmP,pnt)->x    ; sumpPts[0].y = pointAddrP(dtmP,pnt)->y    ;  
-                         sumpPts[1].x = pointAddrP(dtmP,smpPnt)->x ; sumpPts[1].y = pointAddrP(dtmP,smpPnt)->y ;  
-                         if( bcdtmClip_determineFeatureExtentWithFenceDtmObject(clipDtmP,sumpPts,2,&sumpExtent)) goto errexit ;
-                         if( fenceOption != sumpExtent ) sumpLineFound = false ;
-                        } 
- 
-//                    Store Sump Line In Cache
-         
-                      if( sumpLineFound ) 
-                        {
-                         ++numSumpLines ; 
-                         if( lineCache.StoreLineInCache(pointAddrP(dtmP,pnt)->x,pointAddrP(dtmP,pnt)->y,pointAddrP(dtmP,pnt)->z,pointAddrP(dtmP,smpPnt)->x,pointAddrP(dtmP,smpPnt)->y,pointAddrP(dtmP,smpPnt)->z)) goto errexit ;
-                         if( lineCache.SizeOfCache() >= cacheSize )
-                           {
-                            if( lineCache.CallUserDelegateWithCacheLines(loadFunctionP,(DTMFeatureType)dtmFeatureType,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,userP) != DTM_SUCCESS ) goto errexit ;
-                           }
-                        }
-                     }
-                  }
-               }
-            }
-          antPnt = smpPnt ; 
-         }
-      }
-   }
-
-//  Check For Remaining Cache Lines
-
- if( lineCache.SizeOfCache() > 0 )
-   {
-    if( lineCache.CallUserDelegateWithCacheLines(loadFunctionP,(DTMFeatureType)dtmFeatureType,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,userP) != DTM_SUCCESS ) goto errexit ;
-   }
-
-//  Log Number Of Sump Lines Returned
-
- if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Sump Lines = %8d",numSumpLines) ;
-
-// Clean Up
-
- cleanup :
- if( clipDtmP  != nullptr ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
-
-// Return
-
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Returning Sump Lines Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Returning Sump Lines Error") ; 
- return(ret) ;
-
-// Error Exit
-
- errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ;
-}
-/*-------------------------------------------------------------------+
-|                                                                    |
-|                                                                    |
-|                                                                    |
-+-------------------------------------------------------------------*/
-int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
-(
- BC_DTM_OBJ         *dtmP,                    // ==> Pointer To Dtm Object 
- DTMFeatureCallback loadFunctionP,            // ==> Pointer To Load Function
- bool               useFence,                 // ==> Load Feature Within Fence
- DTMFenceType       fenceType,                // ==> Type Of Fence Reactangular Or Shape
- DTMFenceOption     fenceOption,              // ==> Fence Option <INSIDE(1),OVERLAP(2),OUTSIDE(3)>
- const DPoint3d     *fencePtsP,               // ==> DPoint3d Array Of Fence Points 
- int                numFencePts,              // ==> Number Of Fence Points
- void               *userP,                   // ==> User Pointer Passed Back To User
- int&               numSumpLines              // <== Number Of Sump Lines Found 
-)
-{
- int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- int               cacheSize=10000 ;
- long              pnt, startPnt, lastPnt, smpPnt, clkPnt, antPnt, clPtr;
- DTMFenceOption  sumpExtent;
- bool              sumpLineFound,voidLine ;
- DTMFeatureType dtmFeatureType = DTMFeatureType::SumpLine, lineType;
- bool              voidsInDtm=false ;
- double            xSumpMin,xSumpMax,ySumpMin,ySumpMax,pntZ ;
- DPoint3d          sumpPts[2] ;
- BC_DTM_OBJ        *clipDtmP=nullptr ;
- DTM_TIN_NODE      *nodeP ;
- DTMLineCache      lineCache ; 
- DTMDrainageTables *drainageTablesP=nullptr ;
-
-// Log Entry Arguments
-
- if( dbg ) 
-   {
-    bcdtmWrite_message(0,0,0,"Returning Sump Lines") ; 
-    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
-    bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
-    bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
-    bcdtmWrite_message(0,0,0,"fencePtsP         = %p",fencePtsP) ;
-    bcdtmWrite_message(0,0,0,"numFencePts       = %8ld",numFencePts) ;
-    bcdtmWrite_message(0,0,0,"userP             = %p",userP) ;
-   }
-
-// Validate Fence 
-
- numSumpLines = 0 ;
- if (fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside;
- if (useFence && (fencePtsP == nullptr || numFencePts <= 2)) useFence = false;
- if( useFence && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = false ;
-
-// Test For Valid DTM Object
-
- if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit  ;
-
-// Test For DTM Object In Tin State
-
- if( dtmP->dtmState != DTMState::Tin )
-   {
-    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
-    goto errexit ; 
-   } 
-
-// Check Load Function Set
-
- if( loadFunctionP == nullptr )
-   {
-    bcdtmWrite_message(1,0,0,"Call Back Function Not Set") ;
-    goto errexit ;
-   }
-
-// Check For Voids
-
- voidsInDtm = bcdtmDrainageList_checkForVoidsInDtmObject(dtmP) ;
-
-// Set Point Scan Range
-
- startPnt = 0 ;
- lastPnt  = dtmP->numPoints - 1 ;
-
-// Build Clipping Tin For Fence
-
- if( useFence ) 
-   {
-    if( bcdtmClip_buildClippingTinFromFencePointsDtmObject(&clipDtmP,fencePtsP,numFencePts)) goto errexit ;
-/*
-    if( fenceOption == DTMFenceOption::Inside || fenceOption == DTMFenceOption::Overlap )
-      {
-       bcdtmFind_binaryScanDtmObject(dtmP,clipDtmP->xMin,&startPnt) ;
-       while( startPnt > 0 && pointAddrP(dtmP,startPnt)->x >= clipDtmP->xMin ) --startPnt ;
-       if( pointAddrP(dtmP,startPnt)->x < clipDtmP->xMin ) ++startPnt ;
-       bcdtmFind_binaryScanDtmObject(dtmP,clipDtmP->xMax,&lastPnt) ;
-       while( lastPnt < dtmP->numPoints - 1 && pointAddrP(dtmP,lastPnt)->x <= clipDtmP->xMin ) ++lastPnt ;
-      }
-*/
-   }
-
-// Scan Tin Points And Test For Sump Lines
-
- for( pnt = startPnt ; pnt <= lastPnt ; ++pnt )
-   {
-    pntZ  = pointAddrP(dtmP,pnt)->z ;
-    nodeP = nodeAddrP(dtmP,pnt) ;
-
-//  Test For Valid Point
-
-    if( ( clPtr = nodeP->cPtr ) != dtmP->nullPtr )
-      {
-       if(( antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt,clistAddrP(dtmP,clPtr)->pntNum)) < 0 ) goto errexit ;
-       while ( clPtr != dtmP->nullPtr )
-         {
-          smpPnt  = clistAddrP(dtmP,clPtr)->pntNum ;
-          clPtr   = clistAddrP(dtmP,clPtr)->nextPtr ;
-          if(( clkPnt = bcdtmList_nextClkDtmObject(dtmP,pnt,smpPnt)) < 0 ) goto errexit ;
-
-//        Check For Valid Tin Line
-
-          if( smpPnt > pnt )
-            {
-
-//           Check For Zero Slope Sump Line
-
-             if( pointAddrP(dtmP,smpPnt)->z == pntZ )
-               { 
-
-//              Check For Void Line
-
-                voidLine = false; 
-                if( voidsInDtm )
-                  {
-                   if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,smpPnt,voidLine)) goto errexit ;
-                  }
-
-//              Only Process For None Void Lines
-
-                if( ! voidLine )
-                  {  
-
-//                 Test Tin Line For Fence Option Against Bounding Rectangle
-
-                   sumpLineFound = true ;
-                   if( useFence )
-                     {
-
-//                    Get Bounding Rectangle For Sump Line
-
-                      xSumpMin =  xSumpMax = pointAddrP(dtmP,pnt)->x ;
-                      ySumpMin =  ySumpMax = pointAddrP(dtmP,pnt)->y ;
-                      if( pointAddrP(dtmP,smpPnt)->x < xSumpMin ) xSumpMin = pointAddrP(dtmP,smpPnt)->x ;
-                      if( pointAddrP(dtmP,smpPnt)->x > xSumpMax ) xSumpMax = pointAddrP(dtmP,smpPnt)->x ;
-                      if( pointAddrP(dtmP,smpPnt)->y < ySumpMin ) ySumpMin = pointAddrP(dtmP,smpPnt)->y ;
-                      if( pointAddrP(dtmP,smpPnt)->y > ySumpMax ) ySumpMax = pointAddrP(dtmP,smpPnt)->y ;
-
-//                    Check Fence Option Against Bounding Rectangle
-
-                      if( fenceOption == DTMFenceOption::Inside  || fenceOption == DTMFenceOption::Overlap )
-                        { 
-                         if( xSumpMax < clipDtmP->xMin ||  xSumpMin > clipDtmP->xMax || ySumpMax < clipDtmP->yMin ||  ySumpMin > clipDtmP->yMax ) sumpLineFound = true ;
-                        }
-                      if( fenceOption == DTMFenceOption::Outside )
-                        { 
-                         sumpLineFound = false ;
-                         if( xSumpMax < clipDtmP->xMin ||  xSumpMin > clipDtmP->xMax || ySumpMax < clipDtmP->yMin ||  ySumpMin > clipDtmP->yMax ) sumpLineFound = true  ;
-                        }
-                     }
-
-//                 Process Further If Fence Option Staifies Bounding Rectangle
-
-                   if( sumpLineFound )
-                     {
-
-//                    Check For Sump Line 
-
-                      if( bcdtmDrainage_checkForSumpOrRidgeLineDtmObject(dtmP,drainageTablesP,pnt,smpPnt,antPnt,clkPnt,&lineType)) goto errexit ;
-                      if( lineType == DTMFeatureType::SumpLine )
-                        {
-
-//                       Determine Sump Line Extent With Fence
-
-                         if( useFence )
-                           {
-                            sumpPts[0].x = pointAddrP(dtmP,pnt)->x    ; sumpPts[0].y = pointAddrP(dtmP,pnt)->y    ;  
-                            sumpPts[1].x = pointAddrP(dtmP,smpPnt)->x ; sumpPts[1].y = pointAddrP(dtmP,smpPnt)->y ;  
-                            if( bcdtmClip_determineFeatureExtentWithFenceDtmObject(clipDtmP,sumpPts,2,&sumpExtent)) goto errexit ;
-                            if( fenceOption != sumpExtent ) sumpLineFound = false ;
-                           } 
- 
-//                       Store Sump Line In Cache
-         
-                         if( sumpLineFound ) 
-                           {
-                            ++numSumpLines ; 
-                            if( lineCache.StoreLineInCache(pointAddrP(dtmP,pnt)->x,pointAddrP(dtmP,pnt)->y,pointAddrP(dtmP,pnt)->z,pointAddrP(dtmP,smpPnt)->x,pointAddrP(dtmP,smpPnt)->y,pointAddrP(dtmP,smpPnt)->z)) goto errexit ;
-                            if( lineCache.SizeOfCache() >= cacheSize )
-                              {
-                               if( lineCache.CallUserDelegateWithCacheLines(loadFunctionP,(DTMFeatureType)dtmFeatureType,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,userP) != DTM_SUCCESS ) goto errexit ;
-                              }
-                           }
-                        }
-                     }
-                  } 
-               }
-            }
-          antPnt = smpPnt ; 
-         }
-      }
-   }
-
-//  Check For Remaining Cache Lines
-
- if( lineCache.SizeOfCache() > 0 )
-   {
-    if( lineCache.CallUserDelegateWithCacheLines(loadFunctionP,(DTMFeatureType)dtmFeatureType,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,userP) != DTM_SUCCESS ) goto errexit ;
-   }
-
-//  Log Number Of Sump Lines Returned
-
- if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Sump Lines = %8d",numSumpLines) ;
-
-// Clean Up
-
- cleanup :
- if( clipDtmP  != nullptr ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
-
-// Return
-
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Returning Sump Lines Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Returning Sump Lines Error") ; 
- return(ret) ;
-
-// Error Exit
-
- errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ;
-}
+    {
+    return bcdtmDrainage_returnRidgeOrSumpLinesDtmObject(dtmP, DTMFeatureType::SumpLine, false, loadFunctionP, useFence, fenceType, fenceOption, fencePtsP, numFencePts, userP, numSumpLines);
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -1163,232 +1009,19 @@ int bcdtmDrainage_returnZeroSlopeSumpLinesDtmObject
 +-------------------------------------------------------------------*/
 int bcdtmDrainage_returnRidgeLinesDtmObject
 (
- BC_DTM_OBJ         *dtmP,                    // ==> Pointer To Dtm Object 
- DTMFeatureCallback loadFunctionP,            // ==> Pointer To Load Function
- bool               useFence,                 // ==> Load Feature Within Fence
- DTMFenceType    fenceType,                // ==> Type Of Fence Reactangular Or Shape
- DTMFenceOption    fenceOption,              // ==> Fence Option <INSIDE(1),OVERLAP(2),OUTSIDE(3)>
- const DPoint3d     *fencePtsP,               // ==> DPoint3d Array Of Fence Points 
- int                numFencePts,              // ==> Number Of Fence Points
- void               *userP,                   // ==> User Pointer Passed Back To User
- int&               numRidgeLines             // <== Number Of Ridge Lines Found 
+    BC_DTM_OBJ         *dtmP,                    // ==> Pointer To Dtm Object 
+    DTMFeatureCallback loadFunctionP,            // ==> Pointer To Load Function
+    bool               useFence,                 // ==> Load Feature Within Fence
+    DTMFenceType    fenceType,                // ==> Type Of Fence Reactangular Or Shape
+    DTMFenceOption    fenceOption,              // ==> Fence Option <INSIDE(1),OVERLAP(2),OUTSIDE(3)>
+    const DPoint3d     *fencePtsP,               // ==> DPoint3d Array Of Fence Points 
+    int                numFencePts,              // ==> Number Of Fence Points
+    void               *userP,                   // ==> User Pointer Passed Back To User
+    int&               numRidgeLines             // <== Number Of Ridge Lines Found 
 )
-{
- int               ret=DTM_SUCCESS,dbg=DTM_TRACE_VALUE(0) ;
- int               cacheSize=10000 ;
- long              pnt, startPnt, lastPnt, rdgPnt, clkPnt, antPnt, clPtr;
- bool voidLine;
- DTMFenceOption    ridgeExtent;
- long              ridgeLineFound;
- DTMFeatureType  dtmFeatureType = DTMFeatureType::RidgeLine, lineType;
- double            xRidgeMin,xRidgeMax,yRidgeMin,yRidgeMax ;
- bool              voidsInDtm ;
- DPoint3d          ridgePts[2] ;
- BC_DTM_OBJ        *clipDtmP=nullptr ;
- DTM_TIN_NODE      *nodeP ;
- DTMLineCache      lineCache ; 
- DTMDrainageTables *drainageTablesP=nullptr ;
-
-// Log Entry Arguments
-
- if( dbg ) 
-   {
-    bcdtmWrite_message(0,0,0,"Returning Ridge Lines") ; 
-    bcdtmWrite_message(0,0,0,"dtmP              = %p",dtmP) ;
-    bcdtmWrite_message(0,0,0,"loadFunctionP     = %p",loadFunctionP) ;
-    bcdtmWrite_message(0,0,0,"useFence          = %8ld",useFence) ;
-    bcdtmWrite_message(0,0,0,"fenceOption       = %8ld",fenceOption) ;
-    bcdtmWrite_message(0,0,0,"fencePtsP         = %p",fencePtsP) ;
-    bcdtmWrite_message(0,0,0,"numFencePts       = %8ld",numFencePts) ;
-    bcdtmWrite_message(0,0,0,"userP             = %p",userP) ;
-   }
-
-// Validate Fence 
-
- numRidgeLines = 0 ;
-  if( fenceOption != DTMFenceOption::Inside && fenceOption != DTMFenceOption::Outside && fenceOption != DTMFenceOption::Overlap) fenceOption = DTMFenceOption::Inside ;
- if( useFence && ( fencePtsP == nullptr || numFencePts <= 2 ) ) useFence = false ;
- if( useFence && ( fencePtsP->x != (fencePtsP+numFencePts-1)->x || fencePtsP->y != (fencePtsP+numFencePts-1)->y )) useFence = false ;
-
-// Test For Valid DTM Object
-
- if( bcdtmObject_testForValidDtmObject(dtmP)) goto errexit  ;
-
-// Test For DTM Object In Tin State
-
- if( dtmP->dtmState != DTMState::Tin )
-   {
-    bcdtmWrite_message(1,0,0,"Method Requires Triangulated DTM") ;
-    goto errexit ; 
-   } 
-
-// Check Load Function Set
-
- if( loadFunctionP == nullptr )
-   {
-    bcdtmWrite_message(1,0,0,"Call Back Function Not Set") ;
-    goto errexit ;
-   }
-
-// Check For Voids
-
- voidsInDtm = bcdtmDrainageList_checkForVoidsInDtmObject(dtmP) ;
-
-// Set Point Scan Range
-
- startPnt = 0 ;
- lastPnt  = dtmP->numPoints - 1 ;
-
-// Build Clipping Tin For Fence
-
- if( useFence ) 
-   {
-    if( bcdtmClip_buildClippingTinFromFencePointsDtmObject(&clipDtmP,fencePtsP,numFencePts)) goto errexit ;
-/*
-    if( fenceOption == DTMFenceOption::Inside || fenceOption == DTMFenceOption::Overlap )
-      {
-       bcdtmFind_binaryScanDtmObject(dtmP,clipDtmP->xMin,&startPnt) ;
-       while( startPnt > 0 && pointAddrP(dtmP,startPnt)->x >= clipDtmP->xMin ) --startPnt ;
-       if( pointAddrP(dtmP,startPnt)->x < clipDtmP->xMin ) ++startPnt ;
-       bcdtmFind_binaryScanDtmObject(dtmP,clipDtmP->xMax,&lastPnt) ;
-       while( lastPnt < dtmP->numPoints - 1 && pointAddrP(dtmP,lastPnt)->x <= clipDtmP->xMin ) ++lastPnt ;
-      }
-*/
-   }
-
-// Scan Tin Points And Test For Ridge Lines
-
- for( pnt = startPnt ; pnt <= lastPnt ; ++pnt )
-   {
-    nodeP = nodeAddrP(dtmP,pnt) ;
-
-//  Test For Valid Point
-
-    if( ( clPtr = nodeP->cPtr ) != dtmP->nullPtr )
-      {
-       if(( antPnt = bcdtmList_nextAntDtmObject(dtmP,pnt,clistAddrP(dtmP,clPtr)->pntNum)) < 0 ) goto errexit ;
-       while ( clPtr != dtmP->nullPtr )
-         {
-          rdgPnt  = clistAddrP(dtmP,clPtr)->pntNum ;
-          clPtr   = clistAddrP(dtmP,clPtr)->nextPtr ;
-          if(( clkPnt = bcdtmList_nextClkDtmObject(dtmP,pnt,rdgPnt)) < 0 ) goto errexit ;
-
-//        Check For Valid Tin Line
-
-          if( rdgPnt > pnt )
-            {
-
-
-//           Check For Void Line
-
-             voidLine = false ; 
-             if( voidsInDtm )
-               {
-                if( bcdtmList_testForVoidLineDtmObject(dtmP,pnt,rdgPnt,voidLine)) goto errexit ;
-               }
-
-//           Only Process For None Void Lines
-
-             if( ! voidLine )
-               {  
-
-//              Test Tin Line For Fence Option Against Bounding Rectangle
-
-                ridgeLineFound = true ;
-                if( useFence )
-                  {
-
-//                 Get Bounding Rectangle For Ridge Line
-
-                   xRidgeMin =  xRidgeMax = pointAddrP(dtmP,pnt)->x ;
-                   yRidgeMin =  yRidgeMax = pointAddrP(dtmP,pnt)->y ;
-                   if( pointAddrP(dtmP,rdgPnt)->x < xRidgeMin ) xRidgeMin = pointAddrP(dtmP,rdgPnt)->x ;
-                   if( pointAddrP(dtmP,rdgPnt)->x > xRidgeMax ) xRidgeMax = pointAddrP(dtmP,rdgPnt)->x ;
-                   if( pointAddrP(dtmP,rdgPnt)->y < yRidgeMin ) yRidgeMin = pointAddrP(dtmP,rdgPnt)->y ;
-                   if( pointAddrP(dtmP,rdgPnt)->y > yRidgeMax ) yRidgeMax = pointAddrP(dtmP,rdgPnt)->y ;
-
-//                 Check Fence Option Against Bounding Rectangle
-
-                   if( fenceOption == DTMFenceOption::Inside  || fenceOption == DTMFenceOption::Overlap )
-                     { 
-                      if( xRidgeMax < clipDtmP->xMin ||  xRidgeMin > clipDtmP->xMax || yRidgeMax < clipDtmP->yMin ||  yRidgeMin > clipDtmP->yMax ) ridgeLineFound = true ;
-                     }
-                   if( fenceOption == DTMFenceOption::Outside )
-                     { 
-                      ridgeLineFound = false ;
-                      if( xRidgeMax < clipDtmP->xMin ||  xRidgeMin > clipDtmP->xMax || yRidgeMax < clipDtmP->yMin ||  yRidgeMin > clipDtmP->yMax ) ridgeLineFound = true  ;
-                     }
-                  }
-
-//              Process Further If Fence Option Staifies Bounding Rectangle
-
-                if( ridgeLineFound )
-                  {
-
-//                 Check For Ridge Line 
-
-                   if( bcdtmDrainage_checkForSumpOrRidgeLineDtmObject(dtmP,drainageTablesP,pnt,rdgPnt,antPnt,clkPnt,&lineType)) goto errexit ;
-                   if( lineType == DTMFeatureType::RidgeLine )
-                     {
-
-//                    Determine Ridge Line Extent With Fence
-
-                      if( useFence )
-                        {
-                         ridgePts[0].x = pointAddrP(dtmP,pnt)->x    ; ridgePts[0].y = pointAddrP(dtmP,pnt)->y    ;  
-                         ridgePts[1].x = pointAddrP(dtmP,rdgPnt)->x ; ridgePts[1].y = pointAddrP(dtmP,rdgPnt)->y ;  
-                         if( bcdtmClip_determineFeatureExtentWithFenceDtmObject(clipDtmP,ridgePts,2,&ridgeExtent)) goto errexit ;
-                         if( fenceOption != ridgeExtent ) ridgeLineFound = false ;
-                        } 
- 
-//                    Store Ridge Line In Cache
-         
-                      if( ridgeLineFound ) 
-                        {
-                         ++numRidgeLines ; 
-                         if( lineCache.StoreLineInCache(pointAddrP(dtmP,pnt)->x,pointAddrP(dtmP,pnt)->y,pointAddrP(dtmP,pnt)->z,pointAddrP(dtmP,rdgPnt)->x,pointAddrP(dtmP,rdgPnt)->y,pointAddrP(dtmP,rdgPnt)->z)) goto errexit ;
-                         if( lineCache.SizeOfCache() >= cacheSize )
-                           {
-                            if( lineCache.CallUserDelegateWithCacheLines(loadFunctionP,(DTMFeatureType)dtmFeatureType,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,userP) != DTM_SUCCESS ) goto errexit ;
-                           }
-                        }
-                     }
-                  }
-               }
-            }
-          antPnt = rdgPnt ; 
-         }
-      }
-   }
-
-//  Check For Remaining Cache Lines
-
- if( lineCache.SizeOfCache() > 0 )
-   {
-    if( lineCache.CallUserDelegateWithCacheLines(loadFunctionP,(DTMFeatureType)dtmFeatureType,DTM_NULL_USER_TAG,DTM_NULL_FEATURE_ID,userP) != DTM_SUCCESS ) goto errexit ;
-   }
-
-//  Log Number Of Ridge Lines Returned
-
- if( dbg ) bcdtmWrite_message(0,0,0,"Number Of Ridge Lines = %8d",numRidgeLines) ;
-
-// Clean Up
-
- cleanup :
- if( clipDtmP  != nullptr ) bcdtmObject_destroyDtmObject(&clipDtmP) ;
-
-// Return
-
- if( dbg && ret == DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Returning Ridge Lines Completed") ; 
- if( dbg && ret != DTM_SUCCESS ) bcdtmWrite_message(0,0,0,"Returning Ridge Lines Error") ; 
- return(ret) ;
-
-// Error Exit
-
- errexit :
- if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
- goto cleanup ;
-}
+    {
+    return bcdtmDrainage_returnRidgeOrSumpLinesDtmObject(dtmP, DTMFeatureType::RidgeLine, false, loadFunctionP, useFence, fenceType, fenceOption, fencePtsP, numFencePts, userP, numRidgeLines);
+    }
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |

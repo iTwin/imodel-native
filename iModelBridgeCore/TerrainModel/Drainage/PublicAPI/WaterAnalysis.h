@@ -153,7 +153,7 @@ struct TraceFeature : RefCountedBase
             for (auto& child : m_children)
                 {
                 if (&oldChild == child.get())
-                    child = &oldChild;
+                    child = &newChild;
                 }
             }
 
@@ -179,6 +179,15 @@ struct TraceFeature : RefCountedBase
             }
 
         virtual TraceFeaturePtr Clone(DrainageTracerR tracer) const abstract;
+
+        virtual bvector<TraceFeatureP> GetReferences() const
+            {
+            bvector<TraceFeatureP> ret;
+            ret.push_back(m_parent);
+            for (auto& child : m_children)
+                ret.push_back(child.get());
+            return ret;
+            }
 
         virtual void RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable)
             {
@@ -401,6 +410,7 @@ struct TracePond : public TraceFeature
         void ProcessPondExits(bvector<TraceFeaturePtr>& newFeatures, bool ignorePondDepth = false);
 
         virtual void RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable) override;
+        virtual bvector<TraceFeatureP> GetReferences() const override;
     public:
         DPoint3dCR GetLowPoint() const
             {
@@ -445,6 +455,8 @@ struct TracePond : public TraceFeature
 
         bool IsFull()
             {
+            if (m_depth == 0)
+                return true;
             if (m_maxVolume == -1)
                 return false;
             return CurrentVolume() >= m_maxVolume;
@@ -495,11 +507,12 @@ struct TracePondExit : public TraceFeature
         struct FlowInfo
             {
             long pt;
+            long pt2;
             TraceFeatureP child;
             TraceFeatureP thePond = nullptr;
             bool isNowPond = false;
 
-            FlowInfo(long pt, TraceFeatureP child) : pt(pt), child(child)
+            FlowInfo(long pt, long pt2, TraceFeatureP child) : pt(pt), pt2(pt2), child(child)
                 {
                 }
             };
@@ -531,6 +544,8 @@ struct TracePondExit : public TraceFeature
         void GetExitFlows(bvector<TraceFeaturePtr>& newFeatures, long priorPnt, long nextPnt);
 
     public:
+        virtual void ReplaceChildren(TraceFeature& oldChild, TraceFeature& newChild) override;
+
         void Process(bvector<TraceFeaturePtr>& newFeatures, bool ignoreFalseLow);
         TracePondP ProcessDeadPond(bvector<TraceFeaturePtr>& newFeatures);
         void CheckIsCalculated();
@@ -542,6 +557,10 @@ struct TracePondExit : public TraceFeature
             SetEnclosed();
             m_enclosingPond = &enclosingPond;
             m_hasProcessedDeadPond = true;
+            }
+        bool HasProcessedDeadPond() const
+            {
+            return m_hasProcessedDeadPond;
             }
         TracePondP GetEnclosedPond()
             {
@@ -600,6 +619,7 @@ struct TracePondExit : public TraceFeature
             }
 
         virtual void RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable) override;
+        virtual bvector<TraceFeatureP> GetReferences() const override;
 
 
     };
@@ -728,11 +748,18 @@ struct TracePondFromPondExit: public TracePond
             {
             return new TracePondFromPondExit(*this, tracer);
             }
+        virtual bvector<TraceFeatureP> GetReferences() const override
+            {
+            auto ret = __super::GetReferences();
+            ret.push_back(m_pondExit);
+            return ret;
+            }
         virtual void RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable) override
             {
             __super::RemapFeatures(featureRemapTable);
             m_pondExit = dynamic_cast<TracePondExitP>(featureRemapTable[m_pondExit]);
             }
+
     };
 #endif
 
@@ -764,6 +791,10 @@ struct DrainageTracer : RefCounted<IRefCounted>
         DrainageTracer(DrainageTracerCR from);
         BENTLEYDTMDRAINAGE_EXPORT virtual ~DrainageTracer();
     public:
+        const bvector<TraceFeaturePtr>& GetFeatures() const
+            {
+            return m_features;
+            }
         double GetPondElevationTolerance() const
             {
             return m_pondElevationTolerance;

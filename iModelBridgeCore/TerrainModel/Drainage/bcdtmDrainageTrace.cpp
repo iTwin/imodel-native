@@ -2856,6 +2856,13 @@ int bcdtmDrainage_checkForSumpOrRidgeLineDtmObject
         if (bcdtmDrainage_getTriangleEdgeFlowDirectionDtmObject(dtmP, drainageTablesP, linePoint2, linePoint1, clkPoint, clkVoid, clkFlow)) goto errexit;
         if (pointAddrP(dtmP, linePoint1)->z == pointAddrP(dtmP, linePoint2)->z && pointAddrP(dtmP, linePoint1)->z == pointAddrP(dtmP, clkPoint)->z) clkFlat = 1;
         }
+
+    /* If line on hull, */
+    if (nodeAddrP(dtmP, linePoint2)->hPtr == linePoint1)
+        antFlow = clkFlow;
+
+    if (nodeAddrP(dtmP, linePoint1)->hPtr == linePoint2)
+        clkFlow = antFlow;
     /*
     ** Write Flow Direcitions
     */
