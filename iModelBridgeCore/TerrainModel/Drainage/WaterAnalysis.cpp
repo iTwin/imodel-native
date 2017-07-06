@@ -818,7 +818,7 @@ struct RemoveZSlope
                 if (next != np)
                     return true;
                 }
-            bool isOnHull = IsOnHull(dtmP, *np, m_analysis.DTMHasVoids());
+            bool isOnHull = isLineOnHullOrVoidOrHole(dtmP, *sp, *np); // , m_analysis.DTMHasVoids()); //  IsOnHull(dtmP, *np, m_analysis.DTMHasVoids());
 
             if (!isOnHull)
                 {
@@ -890,7 +890,6 @@ bool PondAnalysis::GetExitPoints(double testZ)
         if (startInfo.m_hasFinished)
             continue;
 
-        bool hasRealExit = false;
         auto& list = startInfo.tPtr;
         SetCurrentIndex(startInfo.index);
         for (auto sp = list.begin(); sp != list.end(); sp++)
@@ -907,12 +906,6 @@ bool PondAnalysis::GetExitPoints(double testZ)
                 IsSumpOrExit(isSump, isExit, sp, np, list);
                 if (isOnHull || isExit)
                     {
-                    if (!hasRealExit)
-                        {
-                        hasRealExit = true;
-                        startInfo.m_exitPoints.clear();
-                        }
-
                     isExit = true;
                     }
                 else
@@ -922,16 +915,7 @@ bool PondAnalysis::GetExitPoints(double testZ)
                         }
                     else
                         {
-                        //long outerPt = bcdtmList_nextClkDtmObject(dtmP, *sp, *np);
-                        //double outerZ = pointAddrP(dtmP, outerPt)->z;
-                        //if (outerZ == testZ)
-                        //    {
-                        //    }
-                        //else
-                        if (!hasRealExit)
-                            {
-                            isExit = isSump;
-                            }
+                        isExit = isSump;
                         }
                     }
                 if (isExit)
@@ -1254,8 +1238,6 @@ void PondAnalysis::CreateInitialTPtr()
             {
             long antPnt = bcdtmList_nextAntDtmObject(dtmP, m_lowPnt, m_pntNum2);
             long clkPnt = bcdtmList_nextClkDtmObject(dtmP, m_lowPnt, m_pntNum2);
-            TestLowPoint(m_lowPnt);
-            TestLowPoint(m_pntNum2);
 
             if (nodeAddrP(dtmP, m_lowPnt)->hPtr == m_pntNum2)
                 {
@@ -1284,6 +1266,8 @@ void PondAnalysis::CreateInitialTPtr()
             SetCurrentIndex(m_nextIndex);
             ExpandingPondInfo epi(TPtrList(m_pointList, m_lowPnt, dtmP), m_nextIndex++);
             epi.m_location = ExpandingPondInfo::Location::Outer;
+            for (auto pnt : epi.tPtr)
+                TestLowPoint(pnt);
             m_outerUnknown = false;
             m_startPoints.push_back(epi);
             break;
@@ -1294,14 +1278,13 @@ void PondAnalysis::CreateInitialTPtr()
             nodeAddrP(dtmP, m_pntNum2)->tPtr = m_pntNum3;
             nodeAddrP(dtmP, m_pntNum3)->tPtr = m_lowPnt;
             AddTriangleToValues(m_lowPnt, m_pntNum2, m_pntNum3, m_lowZ);
-            TestLowPoint(m_lowPnt);
-            TestLowPoint(m_pntNum2);
-            TestLowPoint(m_pntNum3);
 
             long firstPoint = m_lowPnt;
             //m_isZSlope = FixLowPts(firstPoint, m_lowZ);
             SetCurrentIndex(m_nextIndex);
             ExpandingPondInfo epi(TPtrList(m_pointList, firstPoint, dtmP), m_nextIndex++);
+            for (auto pnt : epi.tPtr)
+                TestLowPoint(pnt);
             epi.m_location = ExpandingPondInfo::Location::Outer;
             m_outerUnknown = false;
             m_startPoints.push_back(epi);
@@ -1762,6 +1745,367 @@ void PondAnalysis::DebugSaveTPtr(int n)
     SetCurrentIndex(curIndex);
     }
 
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+int bcdtmFind_hullIntersectionDtmObject2(BC_DTM_OBJ *dtmP,long *intFoundP,long point,double x,double y,long *pnt1P,long *pnt2P,long *pnt3P )
+    {
+    /*
+    ** Do Not Fucking Change This Function
+    */
+    int    ret=DTM_SUCCESS,sd1,sd2 ;
+    long   fp,p1,p2,isw=1 ;
+    double xInt,yInt,dist,dd  ;
+    double xln,xlm,yln,ylm,xhn,xhm,yhn,yhm  ;
+    /*
+    ** Initialise Variables
+    */
+    *intFoundP = 0 ;
+    p1 = fp = dtmP->hullPoint ;
+    p2 = nodeAddrP(dtmP,p1)->hPtr ;
+    dist = bcdtmMath_distance(pointAddrP(dtmP,point)->x,pointAddrP(dtmP,point)->y,x,y) ;
+    if( pointAddrP(dtmP,point)->x <= x ) { xln = pointAddrP(dtmP,point)->x ; xlm = x ; }
+    else                                 { xlm = pointAddrP(dtmP,point)->x ; xln = x ; }
+    if( pointAddrP(dtmP,point)->y <= y ) { yln = pointAddrP(dtmP,point)->y ; ylm = y ; }
+    else                                 { ylm = pointAddrP(dtmP,point)->y ; yln = y ; }
+    /*
+    ** Scan Convex Hull
+    */
+    do
+        {
+        if( p1 != point && p2 != point )
+            {
+            if( pointAddrP(dtmP,p1)->x <= pointAddrP(dtmP,p2)->x ) { xhn = pointAddrP(dtmP,p1)->x ; xhm = pointAddrP(dtmP,p2)->x ; }
+            else                                                   { xhm = pointAddrP(dtmP,p1)->x ; xhn = pointAddrP(dtmP,p2)->x ; }
+            if( pointAddrP(dtmP,p1)->y <= pointAddrP(dtmP,p2)->y ) { yhn = pointAddrP(dtmP,p1)->y ; yhm = pointAddrP(dtmP,p2)->y ; }
+            else                                                   { yhm = pointAddrP(dtmP,p1)->y ; yhn = pointAddrP(dtmP,p2)->y ; }
+            xhn = xhn - 0.0001 ; yhn = yhn - 0.0001 ;
+            xhm = xhm + 0.0001 ; yhm = yhm + 0.0001 ;
+            if( xln <= xhm && xlm >= xhn && yln <= yhm  && ylm >= yhn  )
+                {
+                sd1 = bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,pointAddrP(dtmP,point)->x,pointAddrP(dtmP,point)->y) ;
+                sd2 = bcdtmMath_sideOf(pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,x,y) ;
+                if( sd1 != sd2 )
+                    {
+                    sd1 = bcdtmMath_sideOf(x,y,pointAddrP(dtmP,point)->x,pointAddrP(dtmP,point)->y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y) ;
+                    sd2 = bcdtmMath_sideOf(x,y,pointAddrP(dtmP,point)->x,pointAddrP(dtmP,point)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y) ;
+                    if( sd1 != sd2 )
+                        {
+                        bcdtmMath_normalIntersectCordLines(x,y,pointAddrP(dtmP,point)->x,pointAddrP(dtmP,point)->y,pointAddrP(dtmP,p1)->x,pointAddrP(dtmP,p1)->y,pointAddrP(dtmP,p2)->x,pointAddrP(dtmP,p2)->y,&xInt,&yInt) ;
+                        dd = bcdtmMath_distance(xInt,yInt,x,y) ;
+                        if( isw || dd < dist )
+                            {
+                            *pnt1P = p1 ;
+                            *pnt2P = p2 ;
+                            if(( *pnt3P = bcdtmList_nextAntDtmObject(dtmP,p1,p2) ) < 0 ) goto errexit ;
+                            *intFoundP = 1 ;
+                            }
+                        }
+                    }
+                }
+            }
+        p1 = p2 ; p2 = nodeAddrP(dtmP,p1)->hPtr ;
+        } while ( p1 != fp ) ;
+        /*
+        ** Clean Up
+        */
+    cleanup :
+        /*
+        ** Job Completed
+        */
+        return(ret) ;
+        /*
+        ** Error Exit
+        */
+    errexit :
+        if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
+        goto cleanup ;
+    }
+
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+bool IsOnLine(BC_DTM_OBJ* dtmP, DPoint3dCR p1, DPoint3dCR p2, double x, double y)
+    {
+    long onLine;
+    double nX, nY;
+    double nD = bcdtmMath_distanceOfPointFromLine(&onLine,p1.x,p1.y,p2.x,p2.y,x, y ,&nX,&nY);
+    return (nD < dtmP->plTol && onLine);
+    }
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+int bcdtmFind_triangleForPointFromPointDtmObject2(BC_DTM_OBJ *dtmP,double x,double y,long closestPnt,long *pntTypeP,long *pnt1P,long *pnt2P,long *pnt3P)
+/*
+** This Function Finds The Triangle Containing Point x,y From closestPnt
+**
+** *pntTypeP = 0  Point External To DTMFeatureState::Tin
+**           = 1  Point In Triangle pnt1P-pnt2P-pnt3P
+**
+*/
+    {
+    int  ret=DTM_SUCCESS,sdof1,sdof2 ;
+    long p0,p1,p2,p3,clc,hullIntFnd,scan=1 ;
+    /*
+    ** Initialise
+    */
+    *pntTypeP = 0 ;
+    *pnt1P = *pnt2P = *pnt3P = dtmP->nullPnt ;
+    /*
+    ** Scan Circular List about Closest Point and determine if p lies within a Triangle
+    */
+    p0  = closestPnt ;
+    while ( scan )
+        {
+        p1  = p0 ;
+        clc = nodeAddrP(dtmP,p1)->cPtr ;
+        p3  = clistAddrP(dtmP,clc)->pntNum ;
+        if(( p2 = bcdtmList_nextAntDtmObject(dtmP,p1,p3)) < 0 ) goto errexit ;
+        sdof1 = bcdtmMath_linePointSideOfDtmObject(dtmP,p1,p2,x,y) ;
+        while ( clc != dtmP->nullPtr )
+            {
+            p3  = clistAddrP(dtmP,clc)->pntNum ;
+            clc = clistAddrP(dtmP,clc)->nextPtr ;
+            sdof2 = bcdtmMath_linePointSideOfDtmObject(dtmP,p1,p3,x,y) ;
+            if( nodeAddrP(dtmP,p1)->hPtr != p2 )
+                {
+                if( sdof1 <= 0 && sdof2 >= 0 )
+                    {
+                    /*
+                    **           Test For Point In Triangle
+                    */
+                    if( bcdtmMath_linePointSideOfDtmObject(dtmP,p2,p3,x,y) <= 0 )
+                        {
+                        if( x == pointAddrP(dtmP,p1)->x && y == pointAddrP(dtmP,p1)->y ) { *pnt1P = p1 ; *pntTypeP = 1 ; goto cleanup ; }
+                        if( x == pointAddrP(dtmP,p2)->x && y == pointAddrP(dtmP,p2)->y ) { *pnt1P = p2 ; *pntTypeP = 1 ; goto cleanup ; }
+                        if( x == pointAddrP(dtmP,p3)->x && y == pointAddrP(dtmP,p3)->y ) { *pnt1P = p3 ; *pntTypeP = 1 ; goto cleanup ; }
+                        *pnt1P = p1 ;
+                        *pnt2P = p2 ;
+                        *pnt3P = p3 ;
+                        *pntTypeP = 2 ;
+                        scan = 0 ;
+                        goto cleanup ;
+                        }
+                    /*
+                    **           Test For Point Going External From Hull Line pnt3P-pnt2P
+                    */
+                    if( nodeAddrP(dtmP,p3)->hPtr == p2 )
+                        {
+                        if( bcdtmFind_hullIntersectionDtmObject2(dtmP,&hullIntFnd,p1,x,y,&p0,&p2,&p3) ) goto errexit ;
+                        if( ! hullIntFnd ) goto cleanup ;
+                        }
+                    /*
+                    **           Get Next Point To Scan
+                    */
+                    else if(( p0 = bcdtmList_nextClkDtmObject(dtmP,p3,p2)) < 0 ) goto errexit ;
+                    /*
+                    **           Stop Scan Around Current Point
+                    */
+                    clc = dtmP->nullPtr ;
+                    }
+                }
+            else
+                {
+                // Check if the point is on the hull line.
+                if (IsOnLine(dtmP, *pointAddrP(dtmP,p1), *pointAddrP(dtmP,p2), x, y))
+                    {
+                    *pnt1P = p1;
+                    *pnt2P = p2;
+                    *pnt3P = bcdtmList_nextAntDtmObject(dtmP, p1, p2);
+                    *pntTypeP = 2;
+                    scan = 0;
+                    goto cleanup;
+                    }
+                }
+            p2 = p3 ;
+            sdof1 = sdof2 ;
+            }
+        /*
+        **  Test For Line Goining External From Hull Point pnt1P
+        */
+        if( p1 == p0 )
+            {
+            if( bcdtmFind_hullIntersectionDtmObject2(dtmP,&hullIntFnd,p1,x,y,&p0,&p2,&p3) ) goto errexit ;
+            if( ! hullIntFnd ) goto cleanup ;
+            }
+        }
+    /*
+    ** Clean Up
+    */
+cleanup :
+    /*
+    ** Job Completed
+    */
+    return(ret) ;
+    /*
+    ** Error Exit
+    */
+errexit :
+    if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
+    goto cleanup ;
+    }
+
+int bcdtmFind_triangleDtmObject2(BC_DTM_OBJ *dtmP,double x,double y,long *fndTypeP,long *pnt1P,long *pnt2P,long *pnt3P)
+/*
+** This routine finds the triangle the point x,y lies in
+**
+** Find Type ( fndTypeP ) Return Values
+**
+**   0 - Data Point Outside Data Set Area
+**   1 - Point on Triangle Vertex p1
+**   2 - Triangle Found vertices are p1,p2,p3
+*/
+    {
+    int   ret=DTM_SUCCESS;
+    long  closestPnt  ;
+    /*
+    ** Initialise
+    */
+    *fndTypeP = 0 ;
+    *pnt1P = *pnt2P = *pnt3P = dtmP->nullPnt ;
+
+    /*
+    ** Check Dtm In Tin State
+    */
+    if( dtmP->dtmState != DTMState::Tin )
+        {
+        bcdtmWrite_message(2,0,0,"DTM Object %p Not Triangulated") ;
+        goto errexit ;
+        }
+    /*
+    ** Check If Point Is External To Minimum Bounding Rectangle Of DTMFeatureState::Tin
+    */
+    if( x >= dtmP->xMin - 1.0  && x <= dtmP->xMax + 1.0 && y >= dtmP->yMin - 1.0  && y <= dtmP->yMax + 1.0 )
+        {
+        /*
+        **  Find Closest Tin Point to p(x,y)
+        */
+        if( bcdtmFind_closestPointDtmObject(dtmP,x,y,&closestPnt) == 1 )
+            {
+            *pnt1P = closestPnt ;
+            *fndTypeP = 1 ;
+            }
+        /*
+        ** Scan Tin Structure For Point
+        */
+        else if( bcdtmFind_triangleForPointFromPointDtmObject2(dtmP,x,y,closestPnt,fndTypeP,pnt1P,pnt2P,pnt3P)) goto errexit ;
+        }
+    /*
+    ** Clean Up
+    */
+cleanup :
+    /*
+    ** Job Completed
+    */
+    return(ret) ;
+    /*
+    ** Error Exit
+    */
+errexit :
+    if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
+    goto cleanup ;
+    }
+
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+int bcdtmFind_triangleForPointDtmObject2(BC_DTM_OBJ *dtmP,double x,double y,double *ZP,long *fndTypeP,long *pnt1P,long *pnt2P,long *pnt3P )
+/*
+**
+** Note :- fndTypeP ( Point Find Type ) Return Values
+**
+**  == 0   Point External To Dtm
+**  == 1   Point Coincident with Point pnt1P
+**  == 2   Point On Line pnt1-Ppnt2P
+**  == 3   Point On Hull Line pnt1P-pnt2P
+**  == 4   Point In Triangle pnt1P-pnt2P-pnt3P
+**
+*/
+    {
+    int  ret=DTM_SUCCESS ;
+    long p ;
+    /*
+    ** Initialise Variables
+    */
+    *ZP       = 0.0 ;
+    *fndTypeP = 0   ;
+    *pnt1P = *pnt2P = *pnt3P = dtmP->nullPnt ;
+    /*
+    ** Find Triangle
+    */
+    if( bcdtmFind_triangleDtmObject2(dtmP,x,y,fndTypeP,pnt1P,pnt2P,pnt3P) ) goto errexit ;
+    /*
+    ** If Point Inside Tin Hull Interpolate Point
+    */
+    if( *fndTypeP  )
+        {
+        /*
+        **  Point Coincident With Existing dtmP Point
+        */
+        if( *fndTypeP == 1 ) *ZP = pointAddrP(dtmP,*pnt1P)->z ;
+        else
+            {
+            /*
+            **     Set Find Type To Triangle
+            */
+            *fndTypeP = 4 ;
+            /*
+            **     Set Points Clockwise
+            */
+            if( bcdtmMath_pointSideOfDtmObject(dtmP,*pnt1P,*pnt2P,*pnt3P) > 0 ) { p = *pnt2P ; *pnt2P = *pnt3P ; *pnt3P = p ; }
+            /*
+            **     Test If Point On Tin Line
+            */
+            if     ( IsOnLine(dtmP, *pointAddrP(dtmP,*pnt1P),*pointAddrP(dtmP,*pnt2P),x,y)) { *fndTypeP = 2 ; *pnt3P = dtmP->nullPnt ; }
+            else if( IsOnLine(dtmP, *pointAddrP(dtmP,*pnt2P),*pointAddrP(dtmP,*pnt3P),x,y)) { *fndTypeP = 2 ; *pnt1P = *pnt2P ; *pnt2P = *pnt3P ; *pnt3P = dtmP->nullPnt ; }
+            else if( IsOnLine(dtmP, *pointAddrP(dtmP,*pnt3P),*pointAddrP(dtmP,*pnt1P),x,y)) { *fndTypeP = 2 ; *pnt2P = *pnt3P ; *pnt3P = dtmP->nullPnt ; }
+            /*
+            **     Test If Point On Hull Line
+            */
+            if( *fndTypeP == 2 )
+                {
+                if      ( nodeAddrP(dtmP,*pnt1P)->hPtr == *pnt2P )    *fndTypeP = 3 ;
+                else if ( nodeAddrP(dtmP,*pnt2P)->hPtr == *pnt1P )  { *fndTypeP = 3 ;p = *pnt1P ; *pnt1P = *pnt2P ; *pnt2P = p ; }
+                }
+            /*
+            **     Set Lowest Point Number First
+            */
+            if( *fndTypeP == 4 ) while ( *pnt1P > *pnt2P || *pnt1P > *pnt3P ) { p = *pnt1P ; *pnt1P = *pnt2P ; *pnt2P = *pnt3P ; *pnt3P = p ; }
+            if( *fndTypeP == 2 && *pnt1P > *pnt2P )  { p = *pnt1P ; *pnt1P = *pnt2P ; *pnt2P = p ; }
+            /*
+            **     Interpolate Point
+            */
+            if( *fndTypeP  < 4 ) bcdtmMath_interpolatePointOnLineDtmObject(dtmP,x,y,ZP,*pnt1P,*pnt2P) ;
+            if( *fndTypeP == 4 ) bcdtmMath_interpolatePointOnTriangleDtmObject(dtmP,x,y,ZP,*pnt1P,*pnt2P,*pnt3P) ;
+            }
+        }
+    /*
+    ** Clean Up
+    */
+cleanup :
+    /*
+    ** Return
+    */
+    return(ret) ;
+    /*
+    ** Error Exit
+    */
+errexit :
+    if( ret == DTM_SUCCESS ) ret = DTM_ERROR ;
+    goto cleanup ;
+    }
+
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
@@ -1772,7 +2116,7 @@ void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
     BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
     m_finished = true;
 
-    if (bcdtmFind_triangleForPointDtmObject(dtmP, m_startPoint.x, m_startPoint.y, &z, &pointType, &trgPnt1, &trgPnt2, &trgPnt3))
+    if (bcdtmFind_triangleForPointDtmObject2(dtmP, m_startPoint.x, m_startPoint.y, &z, &pointType, &trgPnt1, &trgPnt2, &trgPnt3))
         return;
 
     if (pointType == 0) // Point off triangulation.
@@ -1836,6 +2180,7 @@ void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
             if (existingPond != nullptr)
                 return;
             auto child = TracePondTriangle::Create(m_tracer, *this, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
+            m_children.push_back(child);
             newFeatures.push_back(child);
             return;
             }
@@ -1861,28 +2206,26 @@ void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
     else if (trgPnt2 != dtmP->nullPnt && trgPnt3 == dtmP->nullPnt)
         {
         trgPnt3 = bcdtmList_nextAntDtmObject(dtmP, trgPnt1, trgPnt2);
-        if (trgPnt3 < 0)
+        if (trgPnt3 >= 0)
             {
-            SetError(); return;
-            }
-        if (pointAddrP(dtmP, trgPnt3)->z < z && bcdtmList_testLineDtmObject(dtmP, trgPnt3, trgPnt2))
-            {
-            auto child = TraceOnEdge::Create(m_tracer, *this, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
-            newFeatures.push_back(child);
-            m_children.push_back(child);
+            if (/*pointAddrP(dtmP, trgPnt3)->z < z &&*/ bcdtmList_testLineDtmObject(dtmP, trgPnt3, trgPnt2))
+                {
+                auto child = TraceOnEdge::Create(m_tracer, *this, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
+                newFeatures.push_back(child);
+                m_children.push_back(child);
+                }
             }
 
         std::swap(trgPnt1, trgPnt2);
         trgPnt3 = bcdtmList_nextAntDtmObject(dtmP, trgPnt1, trgPnt2);
-        if (trgPnt3 < 0)
+        if (trgPnt3 >= 0)
             {
-            SetError(); return;
-            }
-        if (pointAddrP(dtmP, trgPnt3)->z < z && bcdtmList_testLineDtmObject(dtmP, trgPnt3, trgPnt2))
-            {
-            auto child = TraceOnEdge::Create(m_tracer, *this, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
-            newFeatures.push_back(child);
-            m_children.push_back(child);
+            if (/*pointAddrP(dtmP, trgPnt3)->z < z &&*/ bcdtmList_testLineDtmObject(dtmP, trgPnt3, trgPnt2))
+                {
+                auto child = TraceOnEdge::Create(m_tracer, *this, trgPnt1, trgPnt2, trgPnt3, DPoint3d::FromXYZ(m_startPoint.x, m_startPoint.y, z));
+                newFeatures.push_back(child);
+                m_children.push_back(child);
+                }
             }
         }
     }
@@ -2014,6 +2357,11 @@ void TraceOnEdge::ProcessZSlopeTriangle(bvector<TraceFeaturePtr>& newFeatures)
         if (nextPnt3 == dtmP->nullPnt)  // This flows of the triangulation?
             {
             m_finished = true;
+            if (nodeAddrP(dtmP, pnt2)->hPtr == pnt1)
+                {
+                // This flows along the edge, so fall of the edge.
+                return;
+                }
             auto child = TraceOnPoint::GetOrCreate(newFeatures, m_tracer, *this, pnt1, nextPt, lastAngle);
             m_children.push_back(child);
             return;
@@ -2185,13 +2533,6 @@ void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
         return;
         }
 
-    if (nodeAddrP(dtmP, pnt1)->hPtr == pnt2)
-        {
-        // This is on the edge
-        m_finished = true;
-        return;
-        }
-
     if (nodeAddrP(dtmP, pnt2)->hPtr == pnt1)
         {
         // This is on the edge
@@ -2334,6 +2675,13 @@ void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
     if (pnt2 == dtmP->nullPnt)
         {
         m_finished = true;
+
+        if (nodeAddrP(dtmP, pnt2)->hPtr == pnt1)
+            {
+            // This flows along the edge, so fall of the edge.
+            return;
+            }
+
         auto child = TraceOnPoint::GetOrCreate(newFeatures, m_tracer, *this, nextPnt1, nextPt, lastAngle);
         m_children.push_back(child);
         return;
@@ -2482,19 +2830,6 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
     long type;
     double slope, angle;
 
-    long hullPoint = 0;
-    if (bcdtmList_checkForPointOnHullLineDtmObject(dtmP, m_ptNum, &hullPoint))
-        {
-        SetError(); return;
-        }
-
-    if (hullPoint)
-        {
-        m_onHullPoint = true;
-        m_finished = true;
-        return;
-        }
-
     TracePondP pond = m_tracer.FindPondLowPt(m_ptNum);
 
     if (nullptr != pond)
@@ -2565,6 +2900,13 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
             DPoint3d nextPt = *pointAddrP(dtmP, pnt1);
             double lastAngle = bcdtmMath_getAngle(m_pt.x, m_pt.y, nextPt.x, nextPt.y);
 
+            if (isLineOnHullOrVoidOrHole(dtmP, m_ptNum, pnt1))
+                {
+                m_onHullPoint = true;
+                m_finished = true;
+                return;
+                }
+
             auto child = GetOrCreate(newFeatures, m_tracer, *this, pnt1, nextPt, lastAngle, m_ptNum);
             m_children.push_back(child);
 
@@ -2584,7 +2926,16 @@ void TraceOnPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
             return;
             }
 
-        CreateAndAddEdge(newFeatures, pnt1, pnt2, m_pt, angle);
+        long intPnt;
+        DPoint3d nextPt;
+        if (bcdtmDrainage_calculateIntersectOfApexRadialWithTriangleBaseDtmObject(dtmP, m_ptNum, pnt1, pnt2, angle, &nextPt.x, &nextPt.y, &nextPt.z, &intPnt))
+            {
+            SetError();
+            return;
+            }
+
+        m_points.push_back(nextPt);
+        CreateAndAddEdge(newFeatures, pnt1, pnt2, nextPt, angle);
 #ifdef OLD
         // ToDo need to get the point on the edge and add to m_points
         // m_points.push_back();
@@ -2779,6 +3130,18 @@ TracePond::TracePond(TracePondCR from, DrainageTracer& newTracer) : TraceFeature
 
 
 //----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  06/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+bvector<TraceFeatureP> TracePond::GetReferences() const
+    {
+    auto ret = __super::GetReferences();
+    for (auto& exit : m_exitPoints)
+        ret.push_back(exit.exit);
+    ret.push_back(m_topLevelPond);
+    return ret;
+    }
+
+//----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePond::RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable)
@@ -2789,7 +3152,7 @@ void TracePond::RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapT
     m_topLevelPond = dynamic_cast<TracePondP>(featureRemapTable[m_topLevelPond]);
     }
 
-//-------------------------------------------------------------------------OpenRo---------------*
+//----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 PondAnalysis& TracePond::GetPondAnalysis()
@@ -2885,9 +3248,9 @@ void TracePond::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunct
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
     {
+    m_finished = true;
     BC_DTM_OBJ* dtmP = m_tracer.GetDTM().GetTinHandle();
     bvector<PondExitInfo> exits;
-    m_finished = true;
 
     GetExitInfo(exits);
 
@@ -2895,7 +3258,10 @@ void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
     if (nullptr == dynamic_cast<TracePondFromPondExitP>(this))
         {
         for (auto pnt : m_pondAnalysis->GetLowPoints())
+            {
+            BeAssert(m_tracer.FindPondLowPt(pnt) == nullptr || m_tracer.FindPondExit(pnt) != nullptr);
             m_tracer.AddPondLowPond(pnt, *this);
+            }
         }
     if (exits.empty())
         {
@@ -2986,9 +3352,27 @@ void TracePond::Process(bvector<TraceFeaturePtr>& newFeatures)
         if (!hasNonDeadPond)
             {
             // Create new Pond from PondExit.
-            auto enclosingPond = existingPondsExits[0]->ProcessDeadPond(newFeatures);
+            bool needsProcessing = false;
+            auto enclosingPond = existingPondsExits[0]->GetEnclosedPond();
+
             for (auto&& a : existingPondsExits)
-                a->SetHasProcessedDeadPond(*enclosingPond);
+                {
+                needsProcessing |= !a->HasProcessedDeadPond();
+                if (enclosingPond == nullptr && a->GetEnclosedPond() != nullptr)
+                    enclosingPond = a->GetEnclosedPond();
+                else if (enclosingPond != a->GetEnclosedPond())
+                    enclosingPond = a->GetEnclosedPond();
+                }
+
+            if (!existingPondsExits[0]->HasProcessedDeadPond() != needsProcessing)
+                needsProcessing = true;
+
+            if (needsProcessing)
+                {
+                enclosingPond = existingPondsExits[0]->ProcessDeadPond(newFeatures);
+                for (auto&& a : existingPondsExits)
+                    a->SetHasProcessedDeadPond(*enclosingPond);
+                }
             }
         }
     }
@@ -3226,6 +3610,50 @@ void TracePondExit::CheckFullPond(TracePond& pond)
 
 
 //----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  06/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+bvector<TraceFeatureP> TracePondExit::GetReferences() const
+    {
+    auto ret = __super::GetReferences();
+    ret.push_back(m_enclosingPond);
+    for (auto& pond : m_ponds)
+        ret.push_back(pond);
+    for (auto& exit: m_exits)
+        ret.push_back(exit.pond);
+    for (auto& flow : m_flows)
+        {
+        ret.push_back(flow.child);
+        ret.push_back(flow.thePond);
+        }
+    return ret;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  06/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondExit::ReplaceChildren(TraceFeature& oldChild, TraceFeature& newChild)
+    {
+    __super::ReplaceChildren(oldChild, newChild);
+    if (m_enclosingPond == &oldChild)
+        m_enclosingPond = dynamic_cast<TracePondFromPondExitP>(&newChild);
+
+    for (auto& pond : m_ponds)
+        {
+        if (&oldChild == pond)
+            pond = dynamic_cast<TracePondP>(&newChild);
+        }
+
+    for (auto& flow : m_flows)
+        {
+        if (&oldChild == flow.child)
+            flow.child = &newChild;
+        if (&oldChild == flow.thePond)
+            flow.thePond = &newChild;
+        }
+
+    }
+
+//----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePondExit::RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapTable)
@@ -3296,10 +3724,17 @@ void TracePondExit::GetNewWaterVolumes(double totalVol, bvector<TraceFeature::Wa
                             BeAssert(m_processedInitialPondFlows == false);
                             m_processedInitialPondFlows = true;
                             bvector<TraceFeaturePtr> newFeatures;
-                            long priorPnt = m_exits.front().nextPnt;
-                            long nextPnt = m_exits.front().priorPnt;
+                            size_t numFlows = m_flows.size();
 
-                            GetExitFlows(newFeatures, priorPnt, nextPnt);
+                            for (auto it = m_exits.begin() + 1; it != m_exits.end(); it++)
+                                {
+                                long priorPnt = it->priorPnt;
+                                long nextPnt = it->nextPnt;
+
+                                GetExitFlows(newFeatures, priorPnt, nextPnt);
+                                if (numFlows != m_flows.size())
+                                    break;
+                                }
                             m_tracer.AddAndProcessFeatures(newFeatures);
                             CheckFullPond(*pond);
 
@@ -3799,6 +4234,21 @@ void TracePondExit::GetExitFlows(bvector<TraceFeaturePtr>& newFeatures, long pri
     for (auto& flow : flows)
         {
         if (hasRealExit && flow.pt.z == m_exitPt.z)
+            {
+            flow.pnt1 = dtmP->nullPnt;
+            continue;
+            }
+
+        for (auto& existingFlow : m_flows)
+            {
+            if (existingFlow.pt == flow.pnt1 && existingFlow.pt2 == flow.pnt2)
+                {
+                flow.pnt1 = dtmP->nullPnt;
+                break;
+                }
+            }
+
+        if (flow.pnt1 == dtmP->nullPnt)
             continue;
 
         m_numExitFlows++;
@@ -3839,6 +4289,34 @@ void TracePondExit::GetExitFlows(bvector<TraceFeaturePtr>& newFeatures, long pri
                             }
                         continue;
                         }
+                    }
+                }
+
+            if (flow.pt.z == m_exitPt.z)
+                {
+                auto existingPond = m_tracer.FindPondLowPt(m_exitPnt);
+
+                if (existingPond != nullptr)
+                    {
+                    m_children.push_back(existingPond);
+                    continue;
+                    }
+                    // Check if this is a flat triangle.
+                long oPt1 = bcdtmList_nextAntDtmObject(dtmP, m_exitPnt, flow.pnt1);
+                if (m_exitPt.z == pointAddrP(dtmP, oPt1)->z)
+                    {
+                    auto child = TracePondTriangle::Create(m_tracer, *this, flow.pnt1, m_exitPnt, oPt1, flow.pt);
+                    newFeatures.push_back(child);
+                    m_children.push_back(child);
+                    continue;
+                    }
+                long oPt2 = bcdtmList_nextClkDtmObject(dtmP, m_exitPnt, flow.pnt1);
+                if (m_exitPt.z == pointAddrP(dtmP, oPt2)->z)
+                    {
+                    auto child = TracePondTriangle::Create(m_tracer, *this, flow.pnt1, oPt2, m_exitPnt, flow.pt);
+                    newFeatures.push_back(child);
+                    m_children.push_back(child);
+                    continue;
                     }
                 }
             auto child = TraceOnPoint::GetOrCreate(newFeatures, m_tracer, *this, flow.pnt1, flow.pt, lastAngle);
@@ -3897,9 +4375,9 @@ void TracePondExit::GetExitFlows(bvector<TraceFeaturePtr>& newFeatures, long pri
     int i = 0;
     for (auto& flow : flows)
         {
-        if (hasRealExit && flow.pt.z == m_exitPt.z)
+        if (flow.pnt1 == dtmP->nullPnt)
             continue;
-        m_flows.push_back(FlowInfo(flow.pnt1, m_children[i++ + currentChildrenNum].get()));
+        m_flows.push_back(FlowInfo(flow.pnt1, flow.pnt2, m_children[i++ + currentChildrenNum].get()));
         }
 
     BeAssert(!m_flows.empty());
@@ -4252,3 +4730,4 @@ END_BENTLEY_TERRAINMODEL_NAMESPACE
 // 2. For PondFromExit we need to get the other exit points, to make sure we have all boundaries.
 // 3. Cope with voids.
 // 4. Cope with inner ponds.
+// Cope with a pond with multiple exits which all flow into a single pond and then is closed. combin.xml @ (290050.643m,6242831.536m,68.928m)
