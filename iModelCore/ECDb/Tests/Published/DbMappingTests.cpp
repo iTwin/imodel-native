@@ -6973,7 +6973,7 @@ TEST_F(DbMappingTestFixture, UserDefinedIndexTest)
                                GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
-    ASSERT_EQ(ERROR, SetupECDb("userdefinedindextest8.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("userdefinedindextest8.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts8' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
