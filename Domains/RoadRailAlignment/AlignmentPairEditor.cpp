@@ -2,7 +2,7 @@
 |
 |     $Source: AlignmentPairEditor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailAlignmentInternal.h>
@@ -230,7 +230,7 @@ StatusInt AlignmentPairEditor::_SolveArcPI (size_t index, bvector<AlignmentPI>& 
     const DVec3d v1_norm = DVec3d::FromStartEndNormalize (pis.at (index).location, pis.at (index + 1).location);
     const DVec3d poi = DVec3d::From (pis.at (index).location);
 
-    const double angle = abs (v0_norm.AngleToXY (v1_norm));
+    const double angle = fabs (v0_norm.AngleToXY (v1_norm));
     DVec3d bisector = DVec3d::FromSumOf (v0_norm, v1_norm);
     bisector.ScaleToLength (pis.at (index).arc.radius / sin (angle / 2.0));
     const double tgArcLen = ( pis.at (index).arc.radius / tan (angle / 2.0) );
@@ -332,7 +332,10 @@ StatusInt AlignmentPairEditor::_SolveSpiralPI (size_t index, bvector<AlignmentPI
     else
         pis.at (index).arc.clockwise = true;
     double radius;
-    arc.IsCircularXY (radius);
+    if (!arc.IsCircularXY(radius))
+        {
+        BeAssert(false);
+        }
     pis.at (index).arc.radius;
 
     delete spiralA;
@@ -700,7 +703,7 @@ bool AlignmentPairEditor::AddPrimitivesFromPI (CurveVectorR hvec, const Alignmen
                 if (false == DSpiral2dBase::SymmetricLineSpiralSpiralLineTransition (pi.spiral1.beginSpiralPt,
                     pi.spiral2.endSpiralPt, pi.location, pi.spiral1.length, *spiralA, *spiralB,
                     lineToSpiralA, lineToSpiralB, spiralAToArc, resultRadius))
-                    return nullptr;
+                    break;
 
                 const double fractionA = 0;
                 const double fractionB = 1;
@@ -1260,7 +1263,7 @@ CurveVectorPtr AlignmentPairEditor::AddSpirals (size_t index, double length, Ali
 AlignmentPI::HorizontalPIType AlignmentPairEditor::GetHorizontalPIType (size_t index)
     {
     bvector<AlignmentPI> pis = _GetPIs ();
-    if (index < 0 || index >= pis.size ()) return AlignmentPI::HorizontalPIType::NONE;
+    if (/*index < 0 || */index >= pis.size ()) return AlignmentPI::HorizontalPIType::NONE;
 
     return pis[index].curveType;
     }
@@ -1501,7 +1504,7 @@ CurveVectorPtr AlignmentPairEditor::DeletePI (DPoint3d pviPt)
 CurveVectorPtr AlignmentPairEditor::DeletePI (size_t index)
     {
     bvector<AlignmentPI> pis = _GetPIs ();
-    if (index < 0 || index >= pis.size ())
+    if (/*index < 0 || */index >= pis.size ())
         return nullptr;
     if (index == 0 || index == ( pis.size () - 1 )) // can't delete beginning or end for now
         {

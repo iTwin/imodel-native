@@ -38,7 +38,8 @@ public:
     ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentModelCR model);
 
     AlignmentModelPtr GetAlignmentModel() const { return dynamic_cast<AlignmentModelP>(GetModel().get()); }
-    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr QueryHorizontal() const;
+    ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr QueryHorizontal() const;    
+    ROADRAILALIGNMENT_EXPORT Dgn::DgnElementId QueryMainVerticalId() const;
     ROADRAILALIGNMENT_EXPORT VerticalAlignmentCPtr QueryMainVertical() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryVerticalAlignmentIds() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnModelId QueryVerticalAlignmentSubModelId() const;

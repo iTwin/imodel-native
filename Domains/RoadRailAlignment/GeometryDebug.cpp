@@ -2,13 +2,15 @@
 |
 |     $Source: GeometryDebug.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailAlignmentInternal.h>
 
+#if defined(_WIN32)
 // for debugging with VS. Might have to check for Windows platform at compile time if we go cross platform
 #include <Windows.h>
+#endif
 
 // initialization of debug-mutable class static ..
 int GeometryDebug::s_debug = 0;
@@ -28,7 +30,9 @@ void GeometryDebug::Announce (CurveVectorCR cv, char const *name)
         auto g = IGeometry::Create (a);
         BentleyGeometryJson::TryGeometryToJsonString (s, *g, true);
         printf ("\n%s\n", s.c_str ());
+#if defined(_WIN32)
         OutputDebugString(s.c_str());
+#endif
         }
 #endif
     }

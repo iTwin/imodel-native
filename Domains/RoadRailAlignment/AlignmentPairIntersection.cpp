@@ -2,7 +2,7 @@
 |
 |     $Source: AlignmentPairIntersection.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailAlignmentInternal.h>
@@ -600,7 +600,7 @@ bool AlignmentIntersection::ComputeClosestToStation(double referenceStation, boo
         bool bSet = false;
         for (auto info : potentialIntersections)
             {
-            double checkDist = ::abs(referenceStation - (alongPrimary ? info.PrimaryStation() : info.SecondaryStation()));
+            double checkDist = fabs(referenceStation - (alongPrimary ? info.PrimaryStation() : info.SecondaryStation()));
             //if (maxDistance == nullptr || checkDist <= *maxDistance)
                 {
                 if (bSet == false)

@@ -88,9 +88,9 @@ HorizontalAlignmentCPtr Alignment::QueryHorizontal() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      08/2016
+* @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-VerticalAlignmentCPtr Alignment::QueryMainVertical() const
+DgnElementId Alignment::QueryMainVerticalId() const
     {
     auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT TargetECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToMainVertical) " WHERE SourceECInstanceId = ?");
     BeAssert(stmtPtr.IsValid());
@@ -99,9 +99,17 @@ VerticalAlignmentCPtr Alignment::QueryMainVertical() const
 
     DgnElementId verticalId;
     if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
-        return nullptr;
+        return DgnElementId();
 
-    return VerticalAlignment::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
+    return stmtPtr->GetValueId<DgnElementId>(0);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+VerticalAlignmentCPtr Alignment::QueryMainVertical() const
+    { 
+    return VerticalAlignment::Get(GetDgnDb(), QueryMainVerticalId()); 
     }
 
 /*---------------------------------------------------------------------------------**//**
