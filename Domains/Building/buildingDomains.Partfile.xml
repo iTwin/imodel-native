@@ -57,6 +57,7 @@
     <ProductDirectoryList ListName="Tests">
         <ProductDirectory Name="VendorNotices"                  Path="VendorNotices"/>
         <ProductDirectory Name="Assemblies"                     Path="Assemblies"/>
+        <ProductDirectory Name="Libs"                           Path="Libs"/>
         <ProductDirectory Name="Assets"                         Path="Assemblies/Assets"/>
         <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
         <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
