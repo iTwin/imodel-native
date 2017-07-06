@@ -12,8 +12,6 @@ static intptr_t s_homeThreadId;
 static size_t s_nonHomeThreadCount;
 static thread_local BeJsEnvironmentP t_jsenv;
 static thread_local BeJsContextP t_jscontext;
-static thread_local DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* t_jsnotificationHandler;
-static DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* s_defaultNotificationHandler;
 
 BEGIN_BENTLEY_DGNPLATFORM_NAMESPACE
 struct DgnScriptContext : BeJsContext
@@ -129,9 +127,6 @@ void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
 
     delete t_jsenv;
     t_jsenv = nullptr;
-
-    if (nullptr != t_jsnotificationHandler)
-        t_jsnotificationHandler = nullptr;
     }
 
 //---------------------------------------------------------------------------------------
@@ -163,107 +158,9 @@ BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/17
-//---------------------------------------------------------------------------------------
-DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::RegisterScriptNotificationHandler(ScriptNotificationHandler& h)
-    {
-    ScriptNotificationHandler* was = t_jsnotificationHandler;
-    t_jsnotificationHandler = &h;
-    return was;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/17
-//---------------------------------------------------------------------------------------
-DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler* DgnPlatformLib::Host::ScriptAdmin::GetScriptNotificationHandler()
-    {
-    if (nullptr != t_jsnotificationHandler)
-        return t_jsnotificationHandler;
-
-    BeSystemMutexHolder _thread_safe_;
-
-    if (nullptr == s_defaultNotificationHandler)
-        s_defaultNotificationHandler = new ScriptNotificationHandler; // we should always have a default notification handler
-
-    return s_defaultNotificationHandler;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::HandleScriptError (ScriptNotificationHandler::Category category, Utf8CP description, Utf8CP details)
-    {
-    auto nh = GetScriptNotificationHandler();
-    if (nullptr == nh)
-        return;
-    nh->_HandleScriptError(GetDgnScriptContext(), category, description, details);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details)
-    {
-    NativeLogging::LoggingManager::GetLogger("DgnScript")->errorv("Script error category: %x, description: %s, details: %s", (int)category, description, details);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP message)
-    {
-    auto nh = GetScriptNotificationHandler();
-    if (nullptr == nh)
-        return;
-    nh->_HandleLogMessage(category, sev, message);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::_HandleLogMessage(Utf8CP category, LoggingSeverity severity, Utf8CP message)
-    {
-    NativeLogging::LoggingManager::GetLogger(category)->message(ToNativeLoggingSeverity(severity), message);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::_OnHostTermination(bool px)
     {
     delete this;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
-void/*Json::Value*/ DgnPlatformLib::Host::ScriptAdmin::EvaluateScript(Utf8CP script)
-    {
-    BeJsContext::EvaluateStatus evstatus;
-    BeJsContext::EvaluateException evexception;
-    /*auto res = */GetDgnScriptContext().EvaluateScript(script, "file:///DgnScriptContext.js", &evstatus, &evexception);
-    //m_jsContext->
-    if (BeJsContext::EvaluateStatus::Success != evstatus)
-        {
-        if (BeJsContext::EvaluateStatus::ParseError==evstatus)
-            HandleScriptError(ScriptNotificationHandler::Category::ParseError, "", "");
-        else
-            HandleScriptError(ScriptNotificationHandler::Category::Exception, evexception.message.c_str(), evexception.trace.c_str());
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      02/16
-//---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::_ThrowException(Utf8CP exname, Utf8CP details)
-    {
-#ifdef WIP_BEJAVASCRIPT // *** BeJsContext is not quite ready to return values while JsRT is in an exception state
-    BeJsContext::EvaluateStatus status; // We do have to ask for the status. Otherwise BeJsContext will assert.
-    // BeJsContext::EvaluateException exception; *** NB: Don't request the exception info. If you do, then BeJsContext will clear the exception, prevent it from being propagated to the caller.
-    GetDgnScriptContext().EvaluateScript(Utf8PrintfString("Bentley.Dgn.ThrowException('%s', '%s')", exname, details? details: ""),
-                                            "file://DgnJsApi.js", &status, nullptr);
-#else
-    T_HOST.GetScriptAdmin().HandleScriptError(DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Exception, exname, details);
-#endif
-    }
-

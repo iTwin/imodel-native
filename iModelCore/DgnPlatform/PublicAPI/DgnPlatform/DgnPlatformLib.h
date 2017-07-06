@@ -77,55 +77,10 @@ public:
             virtual bool _GetACSContextLock() const {return false;}     //!< If ACS Plane Lock is on, standard view rotations are relative to the ACS instead of global.
             };
 
-        //! Provides access to scripting services.
-        //! This is a complete implementation of the Admin needed to establish a scripting environment and to set up and use the DgnScript.
-        //! You may subclass ScriptAdmin if you want to add more thread-specific contexts to it.
+        //! Provides access to a BeJsContext on threads other than the UI thread.
         struct ScriptAdmin : IHostObject
             {
-            enum class LoggingSeverity : uint32_t
-                {
-                // *** NB: These values must be the same as NativeLogging::SEVERITY, except that they are positive instead of negative
-                Fatal   = 0, 
-                Error   = 1, 
-                Warning = 2, 
-                Info    = 3, 
-                Debug   = 4, 
-                Trace   = 5
-                };
-
             DGNPLATFORM_EXPORT void CheckCleanup();
-
-            static NativeLogging::SEVERITY ToNativeLoggingSeverity(LoggingSeverity severity)
-                {
-                // *** NB: ScriptAdmin::LoggingSeverity must be the same as NativeLogging::SEVERITY, except that they are positive instead of negative
-                return (NativeLogging::SEVERITY)(-(int32_t)severity); 
-                }
-
-            struct INativePointerMarshaller
-                {
-                virtual void _MarshallNativePointerToJs(BeJsNativePointerR, BeJsContextR, void*native) = 0;
-                virtual void _MarshallNativePointerFromJs(void*native, BeJsNativePointerCR) { ; } // rarely needed
-                };
-
-            //! Interface to be implemented by helpers that can import optional script libraries into the DgnScriptContext
-            struct ScriptLibraryImporter
-                {
-                //! Import the specified script
-                virtual void _ImportScriptLibrary(BeJsContextR, Utf8CP libName) = 0;
-
-                //! Return the marshaller to use for the specified type. Return nullptr if the type is unrecognized.
-                //! @param typeScriptTypeName The name of the type in the TypeScript API
-                virtual INativePointerMarshaller* _GetMarshallerForType(Utf8StringCR typeScriptTypeName) = 0;
-                };
-
-            //! Interface for handling errors reported by scripts or that prevent scripts from running. This should be a singleton. It will not be freed.
-            struct ScriptNotificationHandler
-                {
-                //! Handle a script error
-                enum class Category {ReportedByScript, ParseError, Exception, Other};
-                DGNPLATFORM_EXPORT virtual void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details);
-                DGNPLATFORM_EXPORT virtual void _HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP msg);
-                };
 
             DGNPLATFORM_EXPORT ScriptAdmin();
             DGNPLATFORM_EXPORT ~ScriptAdmin();
@@ -133,6 +88,7 @@ public:
             //! Prepare to execute scripts on the current thread. Call only once per thread!
             //! @see DgnScriptThreadEnabler
             DGNPLATFORM_EXPORT void InitializeOnThread();
+
             //! Indicate that the current thread is finished executing scripts. A thread that has called InitializeOnThread must call TerminateOnThread before exiting!
             //! @see DgnScriptThreadEnabler
             DGNPLATFORM_EXPORT void TerminateOnThread();
@@ -144,25 +100,6 @@ public:
             //! Get the BeJsContext to use when executing script that needs to use the Dgn script object model on the current thread.
             //! All scripts to be evaluated on this thread must use this BeJsContext.
             DGNPLATFORM_EXPORT BeJsContextR GetDgnScriptContext();
-
-            //! Generate an exception in JavaScript
-            //! @param exname   The name of the exception to throw
-            //! @param details  Information about the exception
-            DGNPLATFORM_EXPORT virtual void _ThrowException(Utf8CP exname, Utf8CP details);
-
-            //! Register the script error handler for the current thread
-            DGNPLATFORM_EXPORT ScriptNotificationHandler* RegisterScriptNotificationHandler(ScriptNotificationHandler& h);
-
-            //! Get the script error handler for the current thread
-            DGNPLATFORM_EXPORT ScriptNotificationHandler* GetScriptNotificationHandler();
-
-            //! Handle a reported script error. Invokes the registered error handler.
-            DGNPLATFORM_EXPORT void HandleScriptError (ScriptNotificationHandler::Category category, Utf8CP description, Utf8CP details);
-
-            //! Handle a notification sent from the script. Invokes the registered handler.
-            DGNPLATFORM_EXPORT void HandleLogMessage (Utf8CP category, LoggingSeverity sev, Utf8CP msg);
-
-            DGNPLATFORM_EXPORT void/*Json::Value*/ EvaluateScript(Utf8CP script);
 
             //! Clean up
             DGNPLATFORM_EXPORT void _OnHostTermination(bool px) override;

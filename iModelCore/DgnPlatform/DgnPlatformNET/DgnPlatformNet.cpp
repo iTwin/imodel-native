@@ -2051,7 +2051,7 @@ internal:
         Utf8CP dot = strchr(ecSqlClassName, '.');
         if (nullptr == dot)
             {
-            BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError(BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "malformed ECSql ecclass name", ecSqlClassName);
+            // *** NEEDS WORK: BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError(BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "malformed ECSql ecclass name", ecSqlClassName);
             return nullptr;
             }
         Utf8String ecschema(ecSqlClassName, dot);
@@ -2060,20 +2060,20 @@ internal:
         BDGN::DgnClassId pclassId = BDGN::DgnClassId(db.Schemas().GetClassId(ecschema.c_str(), ecclass.c_str()));
         if (!pclassId.IsValid())
             {
-            BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError(BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "ECClass not found", ecSqlClassName);
+            // *** NEEDS WORK: BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError(BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "ECClass not found", ecSqlClassName);
             return nullptr;
             }
         BDGN::dgn_ElementHandler::Element* handler = BDGN::dgn_ElementHandler::Element::FindHandler(model.GetDgnDb(), pclassId);
         if (nullptr == handler)
             {
-            BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError(BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "handler not found", ecSqlClassName);
+            // *** NEEDS WORK: BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError(BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "handler not found", ecSqlClassName);
             return nullptr;
             }
         BDGN::DgnElementPtr el = handler->Create(BDGN::DgnElement::CreateParams(db, model.GetModelId(), pclassId));
         if (!el.IsValid())
             {
             Utf8PrintfString details ("class: %s", ecSqlClassName);
-            BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError(BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "dgn_ElementHandler::Geometric3d::GetHandler().Create failed", details.c_str());
+            // *** NEEDS WORK: BDGN::DgnPlatformLib::GetHost().GetScriptAdmin().HandleScriptError(BDGN::DgnPlatformLib::Host::ScriptAdmin::ScriptNotificationHandler::Category::Other, "dgn_ElementHandler::Geometric3d::GetHandler().Create failed", details.c_str());
             return nullptr;
             }
         return el;
