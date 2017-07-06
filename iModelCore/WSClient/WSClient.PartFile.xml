@@ -263,6 +263,7 @@
     </Product>
 
     <Part Name="IMHSClientExe" BentleyBuildMakeFile="Tests/iModelHubClient/IMHSClientExe/IMHSClient.mke" OnlyPlatforms="x64">
+        <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="iModelHubClient-Library"/>
         <Bindings>
             <Files>
