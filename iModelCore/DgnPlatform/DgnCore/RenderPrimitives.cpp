@@ -1159,7 +1159,7 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
         // If there is no region outline, and never should be one, don't generate edges
         // See: text background (or anything else with blanking fill)
         DisplayParamsCR params = GetDisplayParams();
-        bool wantEdges = curveVector.IsValid() && !params.HasBlankingFill() && !params.HasRegionOutline();
+        bool wantEdges = curveVector.IsNull() || (!params.HasBlankingFill() && !params.HasRegionOutline());
         polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, wantEdges));
         }
 
