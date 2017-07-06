@@ -2995,6 +2995,7 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
     GeoCoords::GCS gcs(this->GetGCS());
     GeoCoords::Unit unit(gcs.GetHorizontalUnit());
 
+
 	//TFS#721455 - dgnModel may be an attachment
 	DgnModelCP targetModel = dgnModel->AsDgnModelCP();
 	if (targetModel == nullptr && dgnModel->AsDgnAttachmentCP() != nullptr)
