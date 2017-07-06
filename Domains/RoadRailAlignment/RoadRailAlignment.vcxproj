@@ -111,7 +111,7 @@
     <NMakeBuildCommandLine>bb -p RoadRailAlignment -f RoadRailAlignment -r DgnDomains-RoadRailAlignment -ax64 b</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -p RoadRailAlignment -f RoadRailAlignment -r DgnDomains-RoadRailAlignment -N0 r RoadRailAlignment</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -p RoadRailAlignment -f RoadRailAlignment -r DgnDomains-RoadRailAlignment -ax64 re RoadRailAlignment -c</NMakeCleanCommandLine>
-    <NMakePreprocessorDefinitions>__ROADRAILALIGNMENT_BUILD__;_WIN32;</NMakePreprocessorDefinitions>
+    <NMakePreprocessorDefinitions>__ROADRAILALIGNMENT_BUILD__;BENTLEY_WIN32;</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>$(SrcRoot)DgnDomains\RoadRailAlignment\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\PublicAPI\;$(OutRoot)Winx64\BuildContexts\RoadRailAlignment\VendorAPI\;$(SrcRoot)DgnDomains\RoadRailAlignment\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
