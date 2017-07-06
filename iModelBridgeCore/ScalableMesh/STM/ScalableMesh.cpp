@@ -3057,7 +3057,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             {             
             double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * unit.GetRatioToBase();
 
-            computedTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0, 0, 0), scaleUorPerMeters, scaleUorPerMeters, scaleUorPerMeters);
+            DPoint3d globalOrigin2 = modelInfo.GetGlobalOrigin();
+
+            computedTransform = Transform::FromRowValues(scaleUorPerMeters, 0, 0, globalOrigin2.x,
+                                                         0, scaleUorPerMeters, 0, globalOrigin2.y,
+                                                         0, 0, scaleUorPerMeters, globalOrigin2.z);
             }
         }
 
