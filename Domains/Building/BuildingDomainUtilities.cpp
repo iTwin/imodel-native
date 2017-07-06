@@ -427,6 +427,34 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
+	ECN::ECEntityClassP   BuildingDomainUtilities::CreatePhysicalElementEntityClassFromArchPhysicalClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className, Utf8StringCR  archClassName)
+		{
+		ECN::ECClassCP baseClass = GetExistingECClass(db, BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME, archClassName);
+
+		if (nullptr == baseClass)
+			return nullptr;
+
+		ECN::ECEntityClassP newClass;
+
+		if (ECN::ECObjectsStatus::Success != schema->CreateEntityClass(newClass, className))
+			return nullptr;
+
+		if (ECN::ECObjectsStatus::Success != newClass->AddBaseClass(*baseClass))
+			{
+			schema->DeleteClass(*newClass);
+			return nullptr;
+			}
+
+		return newClass;
+
+		}
+
+
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
 	ECN::ECEntityClassP   BuildingDomainUtilities::CreateUniqueAspetClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className)
 		{
 		ECN::ECClassCP baseClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect);
@@ -488,7 +516,7 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
-	Dgn::PhysicalElementPtr  BuildingDomainUtilities::CreatePhysicalElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model)
+	Dgn::PhysicalElementPtr  BuildingDomainUtilities::CreatePhysicalElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model, Utf8CP categoryName )
 		{
 
 		Dgn::DgnDbR db = model.GetDgnDb();
@@ -507,7 +535,12 @@ namespace BuildingDomain
 		if (NULL == elmHandler)
 			return nullptr;
 
-		Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, className.c_str());
+		Utf8String localCategoryName = buildingClass->GetDisplayLabel();
+
+		if (nullptr != categoryName)
+			localCategoryName = categoryName;
+
+		Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, localCategoryName.c_str());
 
 		Dgn::GeometricElement3d::CreateParams params(db, modelId, classId, categoryId);
 
@@ -550,22 +583,15 @@ namespace BuildingDomain
 		if (NULL == elmHandler)
 			return nullptr;
 
-		Dgn::PhysicalType::CreateParams(db, model.GetModelId(), classId);
+		Dgn::PhysicalType::CreateParams params(db, model.GetModelId(), classId);
 
-		Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, className.c_str());
+//		Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, className.c_str());
 
-		Dgn::GeometricElement3d::CreateParams params(db, modelId, classId, categoryId);
+//	Dgn::GeometricElement3d::CreateParams params(db, modelId, classId, categoryId);
 
 		Dgn::DgnElementPtr element = elmHandler->Create(params);
 
 		Dgn::PhysicalTypePtr buildingElement = dynamic_pointer_cast<Dgn::PhysicalType>(element);
-
-		//auto geomSource = buildingElement->ToGeometrySourceP();
-
-		//if (nullptr == geomSource)
-		//	return nullptr;
-
-	//	geomSource->SetCategoryId(categoryId);
 
 		return buildingElement;
 

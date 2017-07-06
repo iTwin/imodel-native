@@ -39,7 +39,7 @@ namespace BuildingDomain
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildDynamicSchemaName            (Utf8StringCR modelCodeName);
 		BUILDING_DOMAIN_EXPORT static BentleyStatus                                    RegisterDomainHandlers            ();
 		BUILDING_DOMAIN_EXPORT static BentleyStatus                                    CreateBuildingModels              (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr, bool createDynamicSchema = true, ECN::ECSchemaPtr suppliedDynamicSchema = nullptr);
-		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr      GetBuildingPhyicalModel           (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr       GetBuildingPhyicalModel           (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
         BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingTypeDefinitionModelPtr GetBuildingTypeDefinitionModel    (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
 		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr       CreateBuildingPhyicalModel        (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
 		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingTypeDefinitionModelPtr CreateBuildingTypeDefinitionModel (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
@@ -50,6 +50,7 @@ namespace BuildingDomain
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaPtr                                 GetUpdateableSchema               (BuildingPhysical::BuildingPhysicalModelCPtr model);
 		BUILDING_DOMAIN_EXPORT static Dgn::SchemaStatus                                UpdateSchemaInDb                  (Dgn::DgnDbR db, ECN::ECSchemaR updatedSchema);
 		BUILDING_DOMAIN_EXPORT static ECN::ECEntityClassP                              CreatePhysicalElementEntityClass  (Dgn::DgnDbPtr db, ECN::ECSchemaPtr, Utf8StringCR     className);
+		BUILDING_DOMAIN_EXPORT static ECN::ECEntityClassP                              CreatePhysicalElementEntityClassFromArchPhysicalClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr, Utf8StringCR className, Utf8StringCR archClassName);
 		BUILDING_DOMAIN_EXPORT static ECN::ECEntityClassP                              CreatePhysicalTypeEntityClass     (Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className);
 		BUILDING_DOMAIN_EXPORT static ECN::ECEntityClassP                              CreateUniqueAspetClass            (Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR  className);
 		BUILDING_DOMAIN_EXPORT static ECN::IECInstancePtr                              AddAspect                         (Dgn::PhysicalModelCR model, Dgn::PhysicalElementPtr element, Utf8StringCR schemaName, Utf8StringCR className);
@@ -58,17 +59,21 @@ namespace BuildingDomain
 		BUILDING_DOMAIN_EXPORT static ECN::ECClassCP                                   GetExistingECClass                (Dgn::DgnDbPtr db, Utf8StringCR schemaName, Utf8StringCR  className);
 
 
-		BUILDING_DOMAIN_EXPORT static Dgn::PhysicalElementPtr                          CreatePhysicalElement             (Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model);
+		BUILDING_DOMAIN_EXPORT static Dgn::PhysicalElementPtr                          CreatePhysicalElement             (Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model, Utf8CP categoryName = nullptr );
 		BUILDING_DOMAIN_EXPORT static Dgn::PhysicalTypePtr                             CreatePhysicalTypeElement         (Utf8StringCR schemaName, Utf8StringCR className, Dgn::DefinitionModelCR model);
 
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaCP                                  InsertSuppliedSchema              (ECN::ECSchemaPtr suppliedDynamicSchema, BuildingPhysical::BuildingPhysicalModelPtr model);
 
-		                       static Dgn::DgnCode                                     CreateCode(Dgn::PhysicalModelCR model, Utf8StringCR codeValue) { return Dgn::CodeSpec::CreateCode(BENTLEY_ARCHITECTURAL_PHYSICAL_AUTHORITY, model, codeValue); }
+		                        static Utf8String                                      CreateCodeSpecNameFromECClass(ECN::ECClassCP ecClass) {	Utf8String codeSpecName = ecClass->GetSchema().GetName() + "-" + ecClass->GetName(); return codeSpecName;}
+			
 
+		                       static Dgn::DgnCode                                     CreateCode(Dgn::DgnModelCR model, Utf8StringCR codeValue) { return Dgn::CodeSpec::CreateCode(BENTLEY_ARCHITECTURAL_PHYSICAL_AUTHORITY, model, codeValue); }
+							   static Dgn::DgnCode                                     CreateCode(Dgn::DgnModelCR model, ECN::ECClassCP ecClass, Utf8StringCR codeValue) { return Dgn::CodeSpec::CreateCode(CreateCodeSpecNameFromECClass(ecClass).c_str(), model, codeValue); }
+							   
 
-		template <class T> static RefCountedPtr<T>                                     QueryById(Dgn::PhysicalModelCR model, Dgn::DgnElementId id) { Dgn::DgnDbR    db = model.GetDgnDb(); return db.Elements().GetForEdit<T>(id); }
-		template <class T> static RefCountedPtr<T>                                     QueryByCode(Dgn::PhysicalModelCR model, Dgn::DgnCodeCR code) { Dgn::DgnDbR  db = model.GetDgnDb(); return QueryById<T>(model, db.Elements().QueryElementIdByCode(code)); }
-		template <class T> static RefCountedPtr<T>									   QueryByCodeValue(Dgn::PhysicalModelCR model, Utf8StringCR codeValue) { Dgn::DgnCode code = CreateCode(model, codeValue); return QueryByCode<T>(model, code); }
+		template <class T> static RefCountedPtr<T>                                     QueryById(Dgn::DgnModelCR model, Dgn::DgnElementId id) { Dgn::DgnDbR    db = model.GetDgnDb(); return db.Elements().GetForEdit<T>(id); }
+		template <class T> static RefCountedPtr<T>                                     QueryByCode(Dgn::DgnModelCR model, Dgn::DgnCodeCR code) { Dgn::DgnDbR  db = model.GetDgnDb(); return QueryById<T>(model, db.Elements().QueryElementIdByCode(code)); }
+		template <class T> static RefCountedPtr<T>									   QueryByCodeValue(Dgn::DgnModelCR model, Utf8StringCR codeValue) { Dgn::DgnCode code = CreateCode(model, codeValue); return QueryByCode<T>(model, code); }
 
 		};
 
