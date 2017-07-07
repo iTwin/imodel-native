@@ -130,6 +130,9 @@ TEST(BeTimeUtilitiesTests, strftime)
     }
 
 #if defined (NOT_NOW)
+//---------------------------------------------------------------------------------------
+// @betest                                      Shaun.Sewall                    09/11
+//---------------------------------------------------------------------------------------
 // It's hopeless. The time spent in Sleep varies a great deal and is unpredictable
 TEST(BeTimeUtilitiesTests, StopWatch)
     {

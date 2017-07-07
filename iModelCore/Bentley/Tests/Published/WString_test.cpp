@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/WString_test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -28,6 +28,10 @@ int s_dummy;
 
 //  Make sure that all platforms interpret precision specifier correctly.
 //  Note that you can only ask for 16 1/2 significant digits. Anything beyond that is undefined/platform-specific.
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      02/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest,SprintfFloatPrecision)
     {
     double d = 1.1999999999999989;
@@ -40,6 +44,9 @@ TEST(WStringTest,SprintfFloatPrecision)
     ASSERT_STREQ( strg.c_str(), L"1.1999999999999988" ) << L"   actually got " << str.c_str();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest,emptyStrings)
     {
     // WString(), WString(L""), and WString((WCharCP)NULL) are all ways of defining the empty string.
@@ -60,6 +67,9 @@ TEST(WStringTest,emptyStrings)
     ASSERT_TRUE (sl.empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest,append)
     {
     WString str;
@@ -67,6 +77,9 @@ TEST(WStringTest,append)
     str.append (1, static_cast <wchar_t> (i + L'0'));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest,CompareTo)
     {
     WString str (L"abc 123 def 456");
@@ -136,6 +149,9 @@ TEST(WStringTest, ToLowerToUpper)
 // ******************************************************
 // ******************************************************
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, BentleyConstructorTest)
 {
     // The first caller to convert strings in a process has to ensure BeStringUtilities::Initialize is called.
@@ -169,6 +185,10 @@ TEST(WStringTest, BentleyConstructorTest)
 // *** TEST BENTLEY ADDED METHODS
 // ******************************************************
 // ******************************************************
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, CharToMSWChar)
     {
     // The first caller to convert strings in a process has to ensure BeStringUtilities::Initialize is called.
@@ -195,7 +215,9 @@ TEST(WStringTest, CharToMSWChar)
     VERIFY(str.length() == 6);
 
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, Utils)
     {
     WString str (L" abc ");
@@ -234,6 +256,9 @@ TEST(WStringTest, Utils)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, Operators)
     {
     WString a (L"abc");
@@ -244,6 +269,9 @@ TEST(WStringTest, Operators)
     VERIFY( z > a );
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, WStringsInContainers)
     {
     bvector<WString> v;
@@ -272,7 +300,9 @@ TEST(WStringTest, WStringsInContainers)
 // Copyright (C) 1999, 2000, 2001, 2002, 2003, 2009
 // Free Software Foundation, Inc.
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, ConstructorTest01)
 {
   typedef WString::size_type csize_type;
@@ -408,7 +438,9 @@ TEST(WStringTest, ConstructorTest01)
   VERIFY( str06 == str01 );
 }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, ConstructorTest02)
 {
   // template<typename _InputIter>
@@ -418,6 +450,9 @@ TEST(WStringTest, ConstructorTest02)
   VERIFY( s.size() == 10 );
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, ConstructorTest03)
 {
   const wchar_t* with_nulls = L"This contains \0 a zero Byte.";
@@ -456,6 +491,9 @@ TEST(WStringTest, ConstructorTest03)
 #endif
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 // http://gcc.gnu.org/ml/libstdc++/2002-06/msg00025.html
 TEST(WStringTest, ConstructorTest04)
 {
@@ -482,6 +520,9 @@ TEST(WStringTest, ConstructorTest04)
 //}
 //#endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 // libstdc++/42261
 TEST(WStringTest, ConstructorTest99)
 {
@@ -489,7 +530,9 @@ TEST(WStringTest, ConstructorTest99)
   VERIFY( s == L"ffffff" );
 }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, ElementAccess01)
 {
   typedef WString::size_type csize_type;
@@ -550,6 +593,9 @@ TEST(WStringTest, ElementAccess01)
 #endif
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 // Do a quick sanity check on known problems with element access and
 // ref-counted strings. These should all pass, regardless of the
 // underlying string implementation, of course.
@@ -630,6 +676,9 @@ TEST(WStringTest, ElementAccess02)
   VERIFY(test);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 // Do another sanity check, this time for member functions that return
 // iterators, namely insert and erase.
 TEST(WStringTest, ElementAccess03)
@@ -680,6 +729,9 @@ TEST(WStringTest, ElementAccess03)
   VERIFY( str12 != str13 );
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 // http://gcc.gnu.org/ml/libstdc++/2004-01/msg00184.html
 TEST(WStringTest, ElementAccess04)
 {
@@ -697,6 +749,9 @@ TEST(WStringTest, ElementAccess04)
     }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 // as per 21.3.4
 TEST(WStringTest, ElementAccess05)
 {
@@ -713,6 +768,9 @@ TEST(WStringTest, ElementAccess05)
   }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, Find01)
 {
   typedef WString::size_type csize_type;
@@ -775,6 +833,9 @@ TEST(WStringTest, Find01)
   VERIFY( csz01 == npos );
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 // 21.3.6.2 basic_string rfind
 TEST(WStringTest, rfind01)
 {
@@ -838,6 +899,9 @@ TEST(WStringTest, rfind01)
   VERIFY( csz01 == npos );
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, Insert01)
 {
   typedef WString::size_type csize_type;
@@ -995,7 +1059,9 @@ TEST(WStringTest, Insert01)
   str03.insert(str03.end(), str01.begin(), str01.end()); 
   VERIFY( str03 == L"baker beach, san franciscorodeo beach, marin" );
 }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, Operations01)
 {
   WString empty;
@@ -1006,6 +1072,9 @@ TEST(WStringTest, Operations01)
   VERIFY( p != NULL );
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, Replace01)
 {
   typedef WString::size_type csize_type;
@@ -1055,6 +1124,9 @@ TEST(WStringTest, Replace01)
   VERIFY( x == L"jeHelloo" );
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(WStringTest, Substr01)
 {
   typedef WString::size_type csize_type;

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/NonPublished/fileatp.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (_MSC_VER)
@@ -25,6 +25,9 @@ BeFileName& getlogfilename ( WCharCP name )
     return s_logFileName;
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, configSUCCESS)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -36,6 +39,9 @@ TEST (SimpleFileLogger, configSUCCESS)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, configFAILURE)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -45,6 +51,9 @@ TEST (SimpleFileLogger, configFAILURE)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetOptionSUCCESS)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -63,6 +72,9 @@ TEST (SimpleFileLogger, SetOptionSUCCESS)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetOptionFAILURE)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -75,6 +87,9 @@ TEST (SimpleFileLogger, SetOptionFAILURE)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetSeveritySUCCESS)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -93,6 +108,9 @@ TEST (SimpleFileLogger, SetSeveritySUCCESS)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetSeverityFAILURE)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -112,6 +130,9 @@ TEST (SimpleFileLogger, SetSeverityFAILURE)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, SetMaxMessageSize)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -128,7 +149,9 @@ TEST (SimpleFileLogger, SetMaxMessageSize)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
-
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (SimpleFileLogger, FatalMessage)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );

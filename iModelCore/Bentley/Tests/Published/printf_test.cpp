@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/printf_test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <Bentley/BeTest.h>
@@ -125,6 +125,9 @@ if (strcmp (string+(n-xn), endswith) != 0)
 
 static double returnZero() {return 0.0;}
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(printf_test, Strings)
 {
 // --- wstrings ---
@@ -156,7 +159,9 @@ BeStringUtilities::Snprintf (buf, "%hs", "abc");
 EXPECT_TRUE( strcmp (buf, "abc") == 0 );
 }
 }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(printf_test, Numbers)
 {
   char buf[8];

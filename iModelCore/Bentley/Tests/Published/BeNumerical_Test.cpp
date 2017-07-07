@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeNumerical_Test.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -18,6 +18,9 @@ static void compareToTolerance (double v)
     ASSERT_TRUE( BeNumerical::Compare (v, v-vTol)       ==  1 );
     }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST(BeNumerical,Test1)
     {
     ASSERT_TRUE( BeNumerical::Compare ( 1.0,     0.0) ==  1 );

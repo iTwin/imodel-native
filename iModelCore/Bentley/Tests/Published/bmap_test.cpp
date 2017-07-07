@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/bmap_test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -16,6 +16,9 @@
 // Copyright (C) 1999, 2000, 2001, 2002, 2003, 2009
 // Free Software Foundation, Inc.
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (bmap_test, Simple)
     {
     bmap<int, int> m;
@@ -76,6 +79,9 @@ TEST (bmap_test, InitBMap)
 }
 
 #ifdef BMAP_DOES_NOT_HAVE_AT
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 // libstdc++/23578
 TEST (bmap_test, ElementAccess01) 
 { 
@@ -128,6 +134,9 @@ TEST (bmap_test, ElementAccess01)
 }
 #endif
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 // libstdc++/3349 and
 // http://gcc.gnu.org/ml/gcc-patches/2001-08/msg01375.html
 TEST (bmap_test, ModifiersInsert01)
@@ -177,6 +186,9 @@ namespace bc_stdcxx {
     { ++bmap_swap_calls; }
 };
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 // Should use bmap specialization for swap.
 TEST (bmap_test, ModifiersSwap01)
 {
@@ -188,6 +200,9 @@ TEST (bmap_test, ModifiersSwap01)
 }
 #endif
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 // A few tests for equal_range of bmaps
 TEST (bmap_test, Operations01)
 {
@@ -309,7 +324,9 @@ TEST (bmap_test, Operations01)
 #endif
 }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 // A few tests for equal_range, in the occasion of libstdc++/29385.
 TEST (bstdmap_test, Operations01)
 {

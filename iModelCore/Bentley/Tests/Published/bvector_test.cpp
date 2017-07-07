@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/bvector_test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -383,7 +383,9 @@ TEST_F (bvector_test, Capacity_2)
   sz02 = vec01.size();
   ASSERT_TRUE( sz01 == sz02 );
 }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 // Verifies basic functionality of reserve() with forced reallocation.
 TEST_F (bvector_test, test_reserve)
 {
@@ -412,7 +414,9 @@ TEST_F (bvector_test, test_reserve)
 }
 
 #ifndef NO_CPP_EXCEPTION_HANDLERS
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 // Verifies that reserve() with reallocation offers the strong
 // exception guarantee.
 TEST_F (bvector_test, test_reserve_exception_guarantee)
@@ -445,7 +449,9 @@ TEST_F (bvector_test, test_reserve_exception_guarantee)
 }
 
 #endif
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, S29134)
 {
   bvector<int> v;
@@ -464,7 +470,9 @@ TEST_F (bvector_test, S29134)
 //  ASSERT_TRUE( v.size() == v.capacity() );
 //}
 //#endif
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, ConstructorCompilation)
 {
   // 1
@@ -481,12 +489,18 @@ template class bvector<double>;
 template class bvector< A<B> >;
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, ConstructorCompilation102)
 {
   bvector<int> v1;
   bvector<int> v2(v1);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 // test range constructors and range-fill constructor
 TEST_F (bvector_test, Range_constructors)
 {
@@ -512,6 +526,10 @@ TEST_F (bvector_test, Range_constructors)
 // case 2: lhs.size() < rhs.size() < lhs.capacity()
 // case 3: lhs.capacity() < rhs.size()
 //
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_assignment_operator_1)
 {
   // setup
@@ -538,6 +556,9 @@ TEST_F (bvector_test, test_assignment_operator_1)
   tracker_allocator_counter::reset();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_assignment_operator_2)
 {
   // setup
@@ -566,6 +587,9 @@ TEST_F (bvector_test, test_assignment_operator_2)
   tracker_allocator_counter::reset();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_assignment_operator_3)
 {
   // setup
@@ -602,6 +626,10 @@ TEST_F (bvector_test, test_assignment_operator_3)
 // case 4: [23.2.4.1 (3)] n > capacity(), exception guarantees
 // case 5: [23.1.1 (9)] fill assign disguised as a range assign
 //
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_fill_assign_1)
 {
   // setup
@@ -628,6 +656,9 @@ TEST_F (bvector_test, test_fill_assign_1)
   tracker_allocator_counter::reset();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_fill_assign_2)
 {
   // setup
@@ -660,6 +691,9 @@ TEST_F (bvector_test, test_fill_assign_2)
   tracker_allocator_counter::reset();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_fill_assign_3)
 {
   // setup
@@ -693,6 +727,9 @@ TEST_F (bvector_test, test_fill_assign_3)
   tracker_allocator_counter::reset();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_fill_assign_4)
 {
   // setup
@@ -719,6 +756,9 @@ TEST_F (bvector_test, test_fill_assign_4)
   tracker_allocator_counter::reset();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_range_assign_2)
 {
   // setup
@@ -747,6 +787,9 @@ TEST_F (bvector_test, test_range_assign_2)
   tracker_allocator_counter::reset();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_range_assign_3)
 {
   // setup
@@ -777,6 +820,9 @@ TEST_F (bvector_test, test_range_assign_3)
   tracker_allocator_counter::reset();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, test_range_assign_4)
 {
   // setup
@@ -808,7 +854,9 @@ TEST_F (bvector_test, test_range_assign_4)
   tracker_allocator_counter::reset();
 }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, S23578)
 { 
   typedef bvector<int> vector_type;
@@ -830,6 +878,9 @@ TEST_F (bvector_test, S23578)
   }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, InsertCompilation)
 {
   // POD types
@@ -847,6 +898,9 @@ TEST_F (bvector_test, InsertCompilation)
   vec02.insert(vec02.begin(), pnp01, pnp01 + 1);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, Assign)
 {
   const int K = 417;
@@ -890,6 +944,9 @@ namespace EraseTest
     const unsigned int N5 = sizeof(A5) / sizeof(int);
     };
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, Erase1)
 {
   typedef bvector<int>   vec_type;
@@ -927,6 +984,9 @@ TEST_F (bvector_test, Erase1)
   ASSERT_TRUE( v.empty() );
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, Erase2)
 {
   typedef bvector<bvector<int> >   vec_type;
@@ -988,6 +1048,9 @@ namespace std
     { ++swap_calls; }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 // Should use swap function specialization above for swap.
 TEST_F (bvector_test, Swap01)
 {
@@ -998,6 +1061,9 @@ TEST_F (bvector_test, Swap01)
   ASSERT_TRUE(1 == swap_calls);
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 // Should not use swap function specialization for swap.
 TEST_F (bvector_test, Swap02)
 {
@@ -1023,6 +1089,9 @@ namespace InsertTypes
     { return X(); }
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (bvector_test, InsertTypesCompilationTest)
 {
   bvector<InsertTypes::X> v(5);

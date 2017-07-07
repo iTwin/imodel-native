@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/scanf_test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <Bentley/BeTest.h>
@@ -314,6 +314,9 @@ static void test_swscanf( void )
     ok( ret == EOF || ret == 0, "BE_STRING_UTILITIES_SWSCANF returns %x instead of %x\n", ret, EOF );
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(scanf_test,Tests)
 {
     test_sscanf();
@@ -323,6 +326,9 @@ TEST(scanf_test,Tests)
     test_swscanf();
 }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(scanf_test,WStringConversions)
     {
     WCharCP winput = L"ABC";
@@ -343,6 +349,9 @@ TEST(scanf_test,WStringConversions)
     ASSERT_TRUE( 0 == strcmp(aoutput,ainput) );
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      04/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(scanf_test,WStringMixes)
     {
     int v;

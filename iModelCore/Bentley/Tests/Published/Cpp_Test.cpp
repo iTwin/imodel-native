@@ -951,7 +951,9 @@ void test_numeric_limits ()
     ASSERT_EQ ((std::numeric_limits<int8_t>::max)(), 127);
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    sam.wilson                      05/2010
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(Cpp, LanguageFeatures)
     {
     #if defined(__APPLE__) && defined (__clang__)
