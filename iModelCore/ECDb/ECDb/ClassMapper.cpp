@@ -1639,9 +1639,9 @@ EndTableMappingContextCollection::EndTableMappingContextCollection(SchemaImportC
      Set(ColumnId::ECInstanceId, &partition.GetECInstanceId());
      Set(ColumnId::ECClassId, &partition.GetECClassId());
      Set(ColumnId::SourceECInstanceId, &partition.GetSourceECInstanceId());
-     Set(ColumnId::SourceEClassId, &partition.GetSourceECClassId());
+     Set(ColumnId::SourceEClassId, partition.GetSourceECClassId());
      Set(ColumnId::TargetECInstanceId, &partition.GetTargetECInstanceId());
-     Set(ColumnId::TargetECClassId, &partition.GetTargetECClassId());
+     Set(ColumnId::TargetECClassId, partition.GetTargetECClassId());
      m_isPersisted = true;
      EXPECTED_CONDITION(IsValid());
      }

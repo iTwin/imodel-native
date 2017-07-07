@@ -76,13 +76,12 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
     struct Partition : NonCopyableClass
         {
         private:
-            const DbColumn &m_ecInstanceId, &m_ecClassId, &m_sourceId, &m_sourceClassId, &m_targetId, &m_targetClassId;
+            const DbColumn &m_ecInstanceId, &m_ecClassId, &m_sourceId, *m_sourceClassId, &m_targetId, *m_targetClassId;
             uint64_t m_hashCode;
 
         private:
-            static bool Check(DbTable const& table, DbColumn const& checkColumn, DbColumn::Kind kind, ECN::ECRelationshipEnd const* fromEnd = nullptr);
             static  uint64_t QuickHash64(Utf8CP str, uint64_t mix = 0);
-            Partition(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const& sourceClassId, DbColumn const& targetId, DbColumn const& targetClassId);
+            Partition(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const* sourceClassId, DbColumn const& targetId, DbColumn const* targetClassId);
 
         public:
             ~Partition(){}
@@ -90,14 +89,14 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             DbColumn const& GetECInstanceId() const { return m_ecInstanceId; }
             DbColumn const& GetECClassId() const { return m_ecClassId; }
             DbColumn const& GetSourceECInstanceId() const { return m_sourceId; }
-            DbColumn const& GetSourceECClassId() const { return m_sourceClassId; }
+            DbColumn const* GetSourceECClassId() const { return m_sourceClassId; }
             DbColumn const& GetTargetECInstanceId() const { return m_targetId; }
-            DbColumn const& GetTargetECClassId() const { return m_targetClassId; }
+            DbColumn const* GetTargetECClassId() const { return m_targetClassId; }
             DbColumn const& GetConstraintECInstanceId(ECN::ECRelationshipEnd end) const { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECInstanceId() : GetTargetECInstanceId();}
-            DbColumn const& GetConstraintECClassId(ECN::ECRelationshipEnd end) const { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassId() : GetTargetECClassId(); }
+            DbColumn const* GetConstraintECClassId(ECN::ECRelationshipEnd end) const { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassId() : GetTargetECClassId(); }
             uint64_t GetHashCode() const { return m_hashCode; }
-            bool CanQuery() const { return GetTable().GetType()!=DbTable::Type::Virtual; }
-            static std::unique_ptr<Partition> Create(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const& sourceClassId, DbColumn const& targetId, DbColumn const& targetClassId, ECN::ECRelationshipEnd fromEnd);
+            bool CanQuery() const { return GetTable().GetType() != DbTable::Type::Virtual && GetTargetECClassId() != nullptr && GetSourceECClassId() != nullptr; }
+            static std::unique_ptr<Partition> Create(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const* sourceClassId, DbColumn const& targetId, DbColumn const* targetClassId, ECN::ECRelationshipEnd fromEnd);
         };
 
     struct PartitionView : NonCopyableClass

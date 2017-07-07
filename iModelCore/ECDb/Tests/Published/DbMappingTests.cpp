@@ -16,6 +16,206 @@ struct DbMappingTestFixture : ECDbTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, IncrementallyMapRelationship)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IncrementallyMapRelationship.ecdb", SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='SourceEnd'  modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <ClassMap xmlns='ECDbMap.02.00'>"
+        "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "          </ClassMap>"
+        "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "      </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='TargetEnd'  modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <ClassMap xmlns='ECDbMap.02.00'>"
+        "              <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "          </ClassMap>"
+        "         <JoinedTablePerDirectSubclass xmlns='ECDbMap.02.00'/>"
+        "      </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='ISourceEnd' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>SourceEnd</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='ITargetEnd' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>TargetEnd</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "      <ECNavigationProperty propertyName='SourceEnd' relationshipName='SourceHasTarget' direction='Backward' />"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='SourceHasTarget' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
+        "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source End'>"
+        "         <Class class='ISourceEnd' />"
+        "     </Source>"
+        "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target End'>"
+        "        <Class class='ITargetEnd' />"
+        "     </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>")));
+
+    m_ecdb.SaveChanges();
+    Table ts_ISourceEnd = GetHelper().GetMappedTable("ts_ISourceEnd");
+    ASSERT_TRUE(ts_ISourceEnd.Exists()) << "Mapped table ts_ISourceEnd";
+    ASSERT_EQ(Table::Type::Virtual, ts_ISourceEnd.GetType()) << "Mapped table ts_ISourceEnd";
+    ASSERT_EQ(2, ts_ISourceEnd.GetColumns().size()) << "Mapped table ts_ISourceEnd";
+
+    Table ts_ITargetEnd = GetHelper().GetMappedTable("ts_ITargetEnd");
+    ASSERT_TRUE(ts_ITargetEnd.Exists()) << "Mapped table ts_ITargetEnd";
+    ASSERT_EQ(Table::Type::Virtual, ts_ITargetEnd.GetType()) << "Mapped table ts_ITargetEnd";
+    ASSERT_EQ(2 + 2, ts_ITargetEnd.GetColumns().size()) << "Mapped table ts_ITargetEnd";
+
+    Table ts_SourceEnd = GetHelper().GetMappedTable("ts_SourceEnd");
+    ASSERT_TRUE(ts_SourceEnd.Exists()) << "Mapped table ts_SourceEnd";
+    ASSERT_EQ(Table::Type::Primary, ts_SourceEnd.GetType()) << "Mapped table ts_SourceEnd";
+    ASSERT_EQ(2, ts_SourceEnd.GetColumns().size()) << "Mapped table ts_ISourceEnd";
+
+    Table ts_TargetEnd = GetHelper().GetMappedTable("ts_TargetEnd");
+    ASSERT_TRUE(ts_TargetEnd.Exists()) << "Mapped table ts_TargetEnd";
+    ASSERT_EQ(Table::Type::Primary, ts_TargetEnd.GetType()) << "Mapped table ts_TargetEnd";
+    ASSERT_EQ(2, ts_TargetEnd.GetColumns().size()) << "Mapped table ts_TargetEnd";
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.ISourceEnd"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SourceEnd (ECInstanceId) VALUES(NULL)"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.TargetEnd (ECInstanceId) VALUES(NULL)"));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.SourceEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.TargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.SourceHasTarget"));
+
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<ECSchema schemaName='TargetImpl' alias='tri' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='TestSchema' version='01.00.00' alias='ts'/>"
+        "  <ECEntityClass typeName='TargetImpl0'>"
+        "      <BaseClass>ts:TargetEnd</BaseClass>"
+        "      <BaseClass>ts:ITargetEnd</BaseClass>"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+    
+    Table tri_TargetImpl0 = GetHelper().GetMappedTable("tri_TargetImpl0");
+    ASSERT_TRUE(tri_TargetImpl0.Exists()) << "Mapped table tri_TargetImpl0";
+    ASSERT_EQ(Table::Type::Joined, tri_TargetImpl0.GetType()) << "Mapped table tri_TargetImpl0";
+    ASSERT_EQ(2 + 2, tri_TargetImpl0.GetColumns().size()) << "Mapped table tri_TargetImpl0";
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO tri.TargetImpl0 (SourceEnd.Id) VALUES(1)"));
+    m_ecdb.Schemas().CreateClassViewsInDb();
+    m_ecdb.SaveChanges();
+
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.SourceHasTarget"));
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+        "<ECSchema schemaName='SourceImpl' alias='sri' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='TestSchema' version='01.00.00' alias='ts'/>"
+        "  <ECEntityClass typeName='SourceImpl0'>"
+        "      <BaseClass>ts:SourceEnd</BaseClass>"
+        "      <BaseClass>ts:ISourceEnd</BaseClass>"
+        "  </ECEntityClass>"
+        "</ECSchema>")));
+
+    Table sri_SourceImpl0 = GetHelper().GetMappedTable("sri_SourceImpl0");
+    ASSERT_TRUE(sri_SourceImpl0.Exists()) << "Mapped table sri_SourceImpl0";
+    ASSERT_EQ(Table::Type::Joined, sri_SourceImpl0.GetType()) << "Mapped table sri_SourceImpl0";
+    ASSERT_EQ(2, sri_SourceImpl0.GetColumns().size()) << "Mapped table sri_SourceImpl0";
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO sri.SourceImpl0 (ECInstanceId) VALUES(null)"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.SourceEnd"));
+    ASSERT_EQ(BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId FROM ts.TargetEnd"));
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, NullViewCheck)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("NullViewCheck.ecdb", SchemaItem(
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
+        "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
+        "  <ECEntityClass typeName='SourceEnd'  modifier='Abstract' />"
+        "  <ECEntityClass typeName='TargetEnd'  modifier='Abstract' />"
+        "  <ECEntityClass typeName='ISourceEnd' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>SourceEnd</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "  </ECEntityClass>"
+        "  <ECEntityClass typeName='ITargetEnd' modifier='Abstract'>"
+        "      <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "              <AppliesToEntityClass>TargetEnd</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "      </ECCustomAttributes>"
+        "      <ECNavigationProperty propertyName='SourceEnd' relationshipName='SourceHasTarget' direction='Backward'  modifier='Abstract'/>"
+        "  </ECEntityClass>"
+        "  <ECRelationshipClass typeName='SourceHasTarget' strength='holding' strengthDirection='Forward' modifier='Sealed'>"
+        "      <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Source End'>"
+        "         <Class class='ISourceEnd' />"
+        "     </Source>"
+        "      <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Target End'>"
+        "        <Class class='ITargetEnd' />"
+        "     </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>")));
+
+    m_ecdb.SaveChanges();
+    Table ts_ISourceEnd = GetHelper().GetMappedTable("ts_ISourceEnd");
+    ASSERT_TRUE(ts_ISourceEnd.Exists()) << "Mapped table ts_ISourceEnd";
+    ASSERT_EQ(Table::Type::Virtual, ts_ISourceEnd.GetType()) << "Mapped table ts_ISourceEnd";
+    ASSERT_EQ(2, ts_ISourceEnd.GetColumns().size()) << "Mapped table ts_ISourceEnd";
+
+    Table ts_ITargetEnd = GetHelper().GetMappedTable("ts_ITargetEnd");
+    ASSERT_TRUE(ts_ITargetEnd.Exists()) << "Mapped table ts_ITargetEnd";
+    ASSERT_EQ(Table::Type::Virtual, ts_ITargetEnd.GetType()) << "Mapped table ts_ITargetEnd";
+    ASSERT_EQ(2 + 2, ts_ITargetEnd.GetColumns().size()) << "Mapped table ts_ITargetEnd";
+
+    Table ts_SourceEnd = GetHelper().GetMappedTable("ts_SourceEnd");
+    ASSERT_TRUE(ts_SourceEnd.Exists()) << "Mapped table ts_SourceEnd";
+    ASSERT_EQ(Table::Type::Virtual, ts_SourceEnd.GetType()) << "Mapped table ts_SourceEnd";
+    ASSERT_EQ(2, ts_SourceEnd.GetColumns().size()) << "Mapped table ts_ISourceEnd";
+
+    Table ts_TargetEnd = GetHelper().GetMappedTable("ts_TargetEnd");
+    ASSERT_TRUE(ts_TargetEnd.Exists()) << "Mapped table ts_TargetEnd";
+    ASSERT_EQ(Table::Type::Virtual, ts_TargetEnd.GetType()) << "Mapped table ts_TargetEnd";
+    ASSERT_EQ(2, ts_TargetEnd.GetColumns().size()) << "Mapped table ts_TargetEnd";
+    
+    m_ecdb.SaveChanges();
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd                                                                FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceEnd.Id, SourceEnd.RelECClassId                                     FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId                                                                           FROM ts.ISourceEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId                                                                           FROM ts.SourceEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId                                                                           FROM ts.TargetEnd"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.SourceHasTarget"));
+
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.ITargetEnd (ECInstanceId) VALUES (1)"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.ISourceEnd (ECInstanceId,SourceEnd.Id) VALUES (2,2)"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SourceEnd  (ECInstanceId) VALUES (3)"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.TargetEnd  (ECInstanceId) VALUES (4)"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.SourceHasTarget(SourceECInstanceId, TargetECInstanceId) VALUES (1, 2)"));
+
+
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.ITargetEnd"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.ISourceEnd"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.SourceEnd"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.TargetEnd"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.SourceHasTarget"));
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MultiSessionImportWithMixin)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("MultiSessionImportWithMixin.ecdb", SchemaItem(
