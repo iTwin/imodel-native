@@ -21,11 +21,11 @@ TEST_F(BulkBisDomainCrudTestFixture, Test)
     if (!domainSchemaFolder.DoesPathExist())
         return; 
 
-    SetupDomainBimFile("bulkcrud_domainschemas.ecdb", domainSchemaFolder, bisSchemaFolder);
-    if (m_failed)
-        return;
+    ASSERT_EQ(SUCCESS, SetupDomainBimFile("bulkcrud_domainschemas.ecdb", domainSchemaFolder, bisSchemaFolder));
 
- /*   TestDataset testDataset;
+    EXPECT_EQ(ExpectedColumn("bis_InformationReferenceElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("bis", "UrlLink", "Url")));
+    EXPECT_EQ(ExpectedColumn("bis_InformationReferenceElement", "js1"), GetHelper().GetPropertyMapColumn(AccessString("bis", "EmbeddedFileLink", "Name")));
+    /*   TestDataset testDataset;
     ASSERT_EQ(SUCCESS, testDataset.Populate(m_ecdb)) << domainSchemaFolder.GetNameUtf8().c_str();
 
     AssertInsert(testDataset);
