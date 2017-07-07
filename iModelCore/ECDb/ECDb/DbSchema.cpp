@@ -1292,6 +1292,12 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
         return nullptr;
         }
 
+    if (GetType() == DbTable::Type::Virtual)
+        {
+        //!Force column to be virtual
+        persistenceType = PersistenceType::Virtual;
+        }
+
     if (!id.IsValid())
         m_dbSchema.GetECDb().GetImpl().GetSequence(IdSequences::Key::ColumnId).GetNextValue(id);
 

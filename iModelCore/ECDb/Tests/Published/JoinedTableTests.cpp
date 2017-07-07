@@ -856,10 +856,10 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
         switch (i)
             {
                 case 0:
-                    ASSERT_EQ(64, sqlstmt.GetValueInt(0)); //Column A is unshared Data Column
+                    ASSERT_EQ(4, sqlstmt.GetValueInt(0)); //Column A is unshared Data Column
                     break;
                 default:
-                    ASSERT_EQ(128, sqlstmt.GetValueInt(0)); //other columns are a Shared Column
+                    ASSERT_EQ(8, sqlstmt.GetValueInt(0)); //other columns are a Shared Column
                     break;
             }
         sqlstmt.Finalize();

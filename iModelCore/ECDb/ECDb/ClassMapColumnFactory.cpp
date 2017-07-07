@@ -114,9 +114,6 @@ BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, C
     return SUCCESS;
     }
 
-
-
-
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
@@ -135,7 +132,9 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
 
         if (base == nullptr)
             {
-            const size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().Size();
+            ECPropertyIterableCR itor = classMap.GetClass().GetProperties(true);
+            const size_t nProperties = std::distance(itor.begin(), itor.end()) + 2;
+            const size_t unmapped = nProperties - classMap.GetPropertyMaps().Size();            
             if (unmapped > 0)
                 {
                 if (QueryInheritedColumnMaps(columnMaps, classMap) != SUCCESS)
@@ -160,14 +159,15 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
 
         if (base == nullptr)
             {
-            size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().Size();
+            ECPropertyIterableCR itor = classMap.GetClass().GetProperties(true);
+            const size_t nProperties = std::distance(itor.begin(), itor.end()) + 2;
+            const size_t unmapped = nProperties - classMap.GetPropertyMaps().Size();
             if (unmapped > 0)
                 {
                 if (QueryInheritedColumnMaps(columnMaps, classMap) != SUCCESS)
                     return ERROR;
                 }
             }
-
 
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;

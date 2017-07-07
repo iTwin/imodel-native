@@ -1033,14 +1033,6 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
             }
         }
 
-    if (!relClassIdCol.IsShared())
-        {
-        if (!Enum::Contains(relClassIdCol.GetKind(), DbColumn::Kind::RelECClassId))
-            {
-            Issues().Report("The navigation property '%s.%s' maps to the RelECClassId column '%s.%s' which is not of Kind 'DbColumn::Kind::RelECClassId' although it is not a shared column.", 
-                            propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
-            return ERROR;
-            }
         }
 
     if (isPhysicalFk)

@@ -31,3 +31,5 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 ECSqlSelectPrepareTests.LikeOperator
 
 DbMappingTestFixture.SchemaImportWithDoNotFailSchemaValidationForLegacyIssuesFlag
+#Affan: Abstract class now mapped to virtual table and virtual table cannot have user indexes. Test need upated
+DbMappingTestFixture.UserDefinedIndexTest

@@ -815,11 +815,11 @@ TEST_F(DbMappingTestFixture, SimpleTree)
             </ECSchema>)xml")));
 
     ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_M").GetType());
-    ASSERT_EQ(ExpectedColumn("ts_M", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "M", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_M", "M_S",Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "M", "M_S")));
 
     ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_ML").GetType());
-    ASSERT_EQ(ExpectedColumn("ts_ML", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ML", "M_S")));
-    ASSERT_EQ(ExpectedColumn("ts_ML", "ML_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "ML", "ML_S")));
+    ASSERT_EQ(ExpectedColumn("ts_ML", "M_S", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "ML", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_ML", "ML_S", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "ML", "ML_S")));
 
     ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_L").GetType());
     ASSERT_EQ(ExpectedColumn("ts_L", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "L", "M_S")));
@@ -839,8 +839,8 @@ TEST_F(DbMappingTestFixture, SimpleTree)
     ASSERT_EQ(ExpectedColumn("ts_LR", "LR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LR", "LR_S")));
 
     ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_MR").GetType());
-    ASSERT_EQ(ExpectedColumn("ts_MR", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "MR", "M_S")));
-    ASSERT_EQ(ExpectedColumn("ts_MR", "MR_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "MR", "MR_S")));
+    ASSERT_EQ(ExpectedColumn("ts_MR", "M_S", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "MR", "M_S")));
+    ASSERT_EQ(ExpectedColumn("ts_MR", "MR_S", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "MR", "MR_S")));
 
     ASSERT_EQ(Table::Type::Primary, GetHelper().GetMappedTable("ts_R").GetType());
     ASSERT_EQ(ExpectedColumn("ts_R", "M_S"), GetHelper().GetPropertyMapColumn(AccessString("ts", "R", "M_S")));
@@ -1010,7 +1010,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
 
     ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts1_Base").GetType()) << "abstract class";
     ASSERT_FALSE(GetHelper().TableExists("ts1_Base")) << "Mapped virtual table is expected to not exist in the file";
-    ASSERT_TRUE(GetHelper().TableExists("_ts1_Base")) << "expects updatable view as it has at least one concrete subclass";
+    ASSERT_FALSE(GetHelper().TableExists("_ts1_Base")) << "virtual class should not have a updatable view even if it has subclass with table";
 
     ASSERT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts1_Sub1").GetType()) << "abstract class";
     ASSERT_FALSE(GetHelper().TableExists("ts1_Sub1")) << "Mapped virtual table is expected to not exist in the file";
@@ -1054,7 +1054,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
                 </ECSchema>)xml")));
 
     ASSERT_FALSE(GetHelper().TableExists("ts2_Base")) << "abstract class";
-    ASSERT_TRUE(GetHelper().TableExists("_ts2_Base")) << "expects updatable view as it has at least one concrete subclass";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_Base")) << "virtual class should not have a updatable view even if it has subclass with table";
 
     ASSERT_FALSE(GetHelper().TableExists("ts2_IMixin")) << "abstract class";
     ASSERT_FALSE(GetHelper().TableExists("_ts2_IMixin")) << "mixins never have updatable views as they are not updatable";
@@ -1063,7 +1063,7 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
     ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub1")) << "no updatable view expected as it doesn't have concrete subclasses";
 
     ASSERT_FALSE(GetHelper().TableExists("ts2_Sub2")) << "abstract class";
-    ASSERT_TRUE(GetHelper().TableExists("_ts2_Sub2")) << "expects updatable view as it has at least one concrete subclass";
+    ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub2")) << "virtual class should not have a updatable view even if it has subclass with table";
 
     ASSERT_TRUE(GetHelper().TableExists("ts2_Sub21")) << "concrete class";
     ASSERT_FALSE(GetHelper().TableExists("_ts2_Sub21")) << "no updatable view expected as it is leaf class";
@@ -1189,10 +1189,10 @@ TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
 
     ASSERT_FALSE(GetHelper().TableExists("ts_Base_Abstract_OwnTable")) << "is expected to be virtual";
        
-    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable","Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable","Id",Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "ECInstanceId")));
 
     ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_OwnTable", "Prop1", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_OwnTable", "Prop1")));
 
     ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_Abstract_OwnTable", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECInstanceId")));
     ASSERT_EQ(ExpectedColumn("ts_Sub_Of_Base_Abstract_OwnTable", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Sub_Of_Base_Abstract_OwnTable", "ECClassId")));
@@ -1213,9 +1213,9 @@ TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
 
 
     ASSERT_FALSE(GetHelper().TableExists("ts_Base_Abstract_NoSubclass_OwnTable")) << "is expected to be virtual";
-    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_OwnTable", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_OwnTable", "Id", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECInstanceId")));
     ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_OwnTable", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "ECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_OwnTable", "Prop1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1")));
+    ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_OwnTable", "Prop1", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_OwnTable", "Prop1")));
 
 
     ASSERT_EQ(ExpectedColumn("ts_Base_Abstract_NoSubclass_TPH", "Id"), GetHelper().GetPropertyMapColumn(AccessString("ts", "Base_Abstract_NoSubclass_TPH", "ECInstanceId")));
@@ -9288,14 +9288,14 @@ TEST_F(DbMappingTestFixture, CRUDOnMixins)
 
     //-----------DELETE----------
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.IMixin"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Parent"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Parent"));
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "DELETE FROM ONLY ts.Child"));
     stmt.Finalize();
 
     //-----------UPDATE----------
     ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.IMixin SET IMixin_Prop='UpdatedVal'"));
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Parent SET Parent_Prop='UpdatedVal'"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, stmt.Prepare(m_ecdb, "UPDATE ts.Parent SET Parent_Prop='UpdatedVal'"));
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "UPDATE ts.Child SET Child_Prop=200"));
     stmt.Finalize();

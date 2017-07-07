@@ -4270,7 +4270,7 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignKey)
     EXPECT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
 
     EXPECT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
-    EXPECT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "Id", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
     EXPECT_EQ(ExpectedColumn("ts_AHasB", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECClassId")));
     EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
     EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
@@ -4342,7 +4342,7 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignKeyWithRelSubclasses)
     EXPECT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
 
     EXPECT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
-    EXPECT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "Id", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
     EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
     EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
     EXPECT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));
@@ -4417,7 +4417,7 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignKeyWithoutTph)
     EXPECT_EQ(ExpectedColumn("ts_A", "Price"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "A", "Price")));
 
     EXPECT_EQ(Table::Type::Virtual, GetHelper().GetMappedTable("ts_AHasB").GetType());
-    EXPECT_EQ(ExpectedColumn("ts_AHasB", "Id"), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_AHasB", "Id", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "ECInstanceId")));
     EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECInstanceId")));
     EXPECT_EQ(ExpectedColumn("ts_AHasB", "SourceECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "SourceECClassId")));
     EXPECT_EQ(ExpectedColumn("ts_AHasB", "TargetECInstanceId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("TestSchema", "AHasB", "TargetECInstanceId")));

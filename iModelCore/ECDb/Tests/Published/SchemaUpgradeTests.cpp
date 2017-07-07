@@ -1467,7 +1467,7 @@ TEST_F(SchemaUpgradeTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTabl
             sql.Sprintf("Select ColumnKind from ec_Column c Inner Join ec_PropertyMap pm on c.id=pm.ColumnId Inner join ec_PropertyPath pp on pm.PropertyPathId=pp.Id Where AccessString='%c'", Props[i]);
             ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, sql.c_str())) << "Prepare failed for sql: " << sql;
             ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
-            ASSERT_EQ(128, sqlstmt.GetValueInt(0));  // 128  == SharedDataColumn(128)
+            ASSERT_EQ(8, sqlstmt.GetValueInt(0));  // 128  == SharedDataColumn(8)
             }
 
         //Inserting Instances in Classes C31 and C32

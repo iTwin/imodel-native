@@ -1769,10 +1769,10 @@ TEST_F(ECSqlUpdatePrepareTests, Options)
 TEST_F(ECSqlUpdatePrepareTests, Polymorphic)
     {
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.PSA SET I = 123"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.Abstract SET I = 123"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.Abstract SET I = 123"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I = 123"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.AbstractNoSubclasses SET I = 123"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.Abstract SET I = 123"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.Abstract SET I = 123"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I = 123"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractNoSubclasses SET I = 123"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractTablePerHierarchy SET I = 123"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.AbstractTablePerHierarchy SET I = 123"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.THBase SET S = 'hello'"));
@@ -1859,10 +1859,10 @@ TEST_F(ECSqlUpdatePrepareTests, TargetClass)
 
     // Abstract classes
     //by contract non-polymorphic updates on abstract classes are valid, but are a no-op
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.Abstract SET I=123, S='hello'"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.Abstract SET I=123, S='hello'"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.Abstract SET I=123, S='hello'"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.Abstract SET I=123, S='hello'"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.AbstractNoSubclasses SET I=123, S='hello'"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ecsql.PSAHasMyMixin SET SourceECInstanceId=?")) << "ECRels cannot be updated.";
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSAHasMyMixin SET SourceECInstanceId=?")) << "ECRels cannot be updated.";
     // mixins
@@ -2078,8 +2078,8 @@ TEST_F(ECSqlDeletePrepareTests, From)
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.TH5"));
 
     // Delete abstract classes
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.Abstract"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.Abstract"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.Abstract"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.PSAHasMyMixin"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.PSAHasMyMixin"));
     // Delete mixins
@@ -2101,8 +2101,8 @@ TEST_F(ECSqlDeletePrepareTests, From)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.PUnmapped")) << "Unmapped classes cannot be used in DELETE statements.";
 
     // Abstract classes
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.Abstract")) << "by contract non-polymorphic deletes on abstract classes are valid, but are a no-op";
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.AbstractNoSubclasses"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract")) << "by contract non-polymorphic deletes on abstract classes are valid, but are a no-op";
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.AbstractNoSubclasses"));
 
     // Subclasses of abstract class
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.Sub1"));
@@ -2188,10 +2188,10 @@ TEST_F(ECSqlDeletePrepareTests, Options)
 TEST_F(ECSqlDeletePrepareTests, Polymorphic)
     {
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.P"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.Abstract"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.Abstract"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.AbstractNoSubclasses"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.AbstractNoSubclasses"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.Abstract"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.Abstract"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ecsql.AbstractNoSubclasses"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.AbstractNoSubclasses"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.AbstractTablePerHierarchy"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.AbstractTablePerHierarchy"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ecsql.THBase"));
