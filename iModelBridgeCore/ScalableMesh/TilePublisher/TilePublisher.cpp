@@ -396,12 +396,13 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& o
     {
     // .b3dm file
     Json::Value sceneJson(Json::objectValue);
-
-    //m_meshes.push_back(TileMeshPtr(&mesh));
-
     ProcessMeshes(sceneJson);
-
     Utf8String sceneStr = Json::FastWriter().write(sceneJson);
+
+    Json::Value featureTableJson(Json::objectValue);
+    Utf8String featureTableStr = featureTableJson.empty() ? Utf8String() : Json::FastWriter().write(featureTableJson);
+    uint32_t featureTableJSONByteLength = static_cast<uint32_t>(featureTableStr.size());
+    uint32_t featureTableBinaryByteLength = 0;
 
     Json::Value batchTableJson(Json::objectValue);
     #ifndef VANCOUVER_API
@@ -409,45 +410,51 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& o
     #else
         m_batchIds.ToJson(batchTableJson);
     #endif
-    Utf8String batchTableStr = Json::FastWriter().write(batchTableJson);
-    uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-    uint32_t batchTableBinarySize = 0;
+    Utf8String batchTableStr = batchTableJson.empty() ? Utf8String() : Json::FastWriter().write(batchTableJson);
+    uint32_t batchTableJSONByteLength = static_cast<uint32_t>(batchTableStr.size());
+    uint32_t batchTableBinaryByteLength = 0;
 
     // GLTF header = 5 32-bit values
     static const size_t s_gltfHeaderSize = 20;
-    //static const char s_gltfMagic[] = "glTF";
-    //static const uint32_t s_gltfVersion = 1;
     //static const uint32_t s_gltfSceneFormat = 0;
     uint32_t sceneStrLength = static_cast<uint32_t>(sceneStr.size());
     uint32_t gltfLength = s_gltfHeaderSize + sceneStrLength + m_binaryData.GetSize();
 
     // B3DM header = 6 32-bit values
     // Header immediately followed by batch table json
-    static const size_t s_b3dmHeaderSize = 24;
+    static const size_t s_b3dmHeaderSize = 28;
     //static const char s_b3dmMagic[] = "b3dm";
     //static const uint32_t s_b3dmVersion = 1;
-    uint32_t b3dmNumBatches = /*m_batchIds.Count()*/0;
-    uint32_t b3dmLength = gltfLength + s_b3dmHeaderSize + batchTableStrLen;
+    uint32_t b3dmLength = s_b3dmHeaderSize + featureTableJSONByteLength + batchTableJSONByteLength + gltfLength;
 
     outData.resize(b3dmLength);
     uint32_t dataOffset = 0;
 
+    // b3dm header
     memcpy(outData.data() + dataOffset, &s_b3dmMagic, 4);
     dataOffset += 4;
     memcpy(outData.data() + dataOffset, &s_b3dmVersion, sizeof(s_b3dmVersion));
     dataOffset += sizeof(s_b3dmVersion);
     memcpy(outData.data() + dataOffset, &b3dmLength, sizeof(b3dmLength));
     dataOffset += sizeof(b3dmLength);
-    memcpy(outData.data() + dataOffset, &batchTableStrLen, sizeof(batchTableStrLen));
-    dataOffset += sizeof(batchTableStrLen);
-    memcpy(outData.data() + dataOffset, &batchTableBinarySize, sizeof(batchTableBinarySize));
-    dataOffset += sizeof(batchTableBinarySize);
-    memcpy(outData.data() + dataOffset, &b3dmNumBatches, sizeof(b3dmNumBatches));
-    dataOffset += sizeof(b3dmNumBatches);
+    memcpy(outData.data() + dataOffset, &featureTableJSONByteLength, sizeof(featureTableJSONByteLength));
+    dataOffset += sizeof(featureTableJSONByteLength);
+    memcpy(outData.data() + dataOffset, &featureTableBinaryByteLength, sizeof(featureTableBinaryByteLength));
+    dataOffset += sizeof(featureTableBinaryByteLength);
+    memcpy(outData.data() + dataOffset, &batchTableJSONByteLength, sizeof(batchTableJSONByteLength));
+    dataOffset += sizeof(batchTableJSONByteLength);
+    memcpy(outData.data() + dataOffset, &batchTableBinaryByteLength, sizeof(batchTableBinaryByteLength));
+    dataOffset += sizeof(batchTableBinaryByteLength);
 
-    memcpy(outData.data() + dataOffset, batchTableStr.c_str(), batchTableStrLen);
-    dataOffset += batchTableStrLen;
+    // feature table
+    memcpy(outData.data() + dataOffset, featureTableStr.c_str(), featureTableJSONByteLength);
+    dataOffset += featureTableJSONByteLength;
 
+    // batch table
+    memcpy(outData.data() + dataOffset, batchTableStr.c_str(), batchTableJSONByteLength);
+    dataOffset += batchTableJSONByteLength;
+
+    // gltf
     memcpy(outData.data() + dataOffset, &s_gltfMagic, 4);
     dataOffset += 4;
     memcpy(outData.data() + dataOffset, &s_gltfVersion, sizeof(s_gltfVersion));
