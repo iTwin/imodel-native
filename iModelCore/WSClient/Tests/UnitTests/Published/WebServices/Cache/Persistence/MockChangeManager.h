@@ -25,10 +25,12 @@ struct MockChangeManager : public IChangeManager
             return std::make_shared<MockChangeManager> ();
             }
 
-        MOCK_CONST_METHOD1 (IsSyncActive,
+        MOCK_CONST_METHOD1 (IsUploadActive,
             bool(ECInstanceKeyCR));
-        MOCK_METHOD2 (SetSyncActive,
+        MOCK_METHOD2 (SetUploadActive,
             void(ECInstanceKeyCR, bool active));
+        MOCK_CONST_METHOD0(GetUploadingInstances,
+            const ECInstanceKeyMultiMap&());
         MOCK_METHOD4 (LegacyCreateObject,
             ECInstanceKey (ECClassCR, JsonValueCR, ECInstanceKeyCR, SyncStatus));
         MOCK_METHOD0 (GetLegacyParentRelationshipClass,

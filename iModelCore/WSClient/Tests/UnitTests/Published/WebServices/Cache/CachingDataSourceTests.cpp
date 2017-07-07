@@ -2598,7 +2598,7 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
         {
         ds->GetCacheAccessThread()->ExecuteAsync([&]
             {
-            EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+            EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(instance));
             });
         return CreateCompletedAsyncTask(StubWSCreateObjectResult({"TestSchema.TestClass", "Created"}));
         }));
@@ -2609,9 +2609,9 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
         .Times(1)
         .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(instances.ToWSObjectsResponse()))));
 
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(instance));
     ds->SyncLocalChanges(nullptr, nullptr)->Wait();
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(instance));
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedRelationship_SetsSyncActiveFlagAndResetsItAfterSuccessfulSync)
@@ -2628,16 +2628,16 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedRelationship_SetsSyncActi
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
         .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr)
         {
-        EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
+        EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(relationship));
         return CreateCompletedAsyncTask(WSChangesetResult::Error(StubWSConnectionError()));
         }));
 
     SyncOptions options;
     options.SetUseChangesets(true);
 
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(relationship));
     ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(relationship));
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CancelSync_IsActiveSyncResets)
@@ -2655,8 +2655,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CancelSync_IsActiveSyncResets)
     EXPECT_CALL(GetMockClient(), SendChangesetRequest(_, _, _))
         .WillOnce(Invoke([&] (HttpBodyPtr changesetBody, HttpRequest::ProgressCallbackCR, ICancellationTokenPtr ct)
         {
-        EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
-        EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+        EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(relationship));
+        EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(instance));
         ds->CancelAllTasks();
         return CreateCompletedAsyncTask(WSChangesetResult::Error(StubWSConnectionError()));
         }));
@@ -2664,11 +2664,11 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CancelSync_IsActiveSyncResets)
     SyncOptions options;
     options.SetUseChangesets(true);
 
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(relationship));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(instance));
     ds->SyncLocalChanges(nullptr, nullptr, options)->Wait();
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(relationship));
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(relationship));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(instance));
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlagAndResetsItAfterFailedSync)
@@ -2689,14 +2689,14 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SetsSyncActiveFlag
         {
         ds->GetCacheAccessThread()->ExecuteAsync([=]
             {
-            EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+            EXPECT_TRUE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(instance));
             });
         return CreateCompletedAsyncTask(StubWSCreateObjectResult());
         }));
 
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(instance));
     ds->SyncLocalChanges(nullptr, nullptr)->Wait();
-    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsSyncActive(instance));
+    EXPECT_FALSE(ds->StartCacheTransaction().GetCache().GetChangeManager().IsUploadActive(instance));
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObject_SendsCreateObjectRequestWithCorrectParameters)

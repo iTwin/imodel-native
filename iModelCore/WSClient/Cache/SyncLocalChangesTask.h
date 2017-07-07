@@ -60,7 +60,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
 
         AsyncTaskPtr<void> SyncNextChangeset();
 
-        void SetSyncActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active);
+        void SetUploadActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active);
 
         AsyncTaskPtr<void> SyncChangeGroup(ChangeGroupPtr changeGroup);
         AsyncTaskPtr<void> SyncNextChangeGroup();

@@ -55,7 +55,7 @@ void SyncLocalChangesTask::_OnExecute()
     m_instancesStillInSync.clear();
 
     for (auto changeGroup : m_changeGroups)
-        SetSyncActiveForChangeGroup(txn, *changeGroup, true);
+        SetUploadActiveForChangeGroup(txn, *changeGroup, true);
 
     txn.Commit();
 
@@ -63,7 +63,7 @@ void SyncLocalChangesTask::_OnExecute()
         {
         auto txn = m_ds->StartCacheTransaction();
         for (auto instance : m_instancesStillInSync)
-            txn.GetCache().GetChangeManager().SetSyncActive(instance, false);
+            txn.GetCache().GetChangeManager().SetUploadActive(instance, false);
         m_instancesStillInSync.clear();
 
         txn.Commit();
@@ -200,7 +200,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
             {
             auto txn = m_ds->StartCacheTransaction();
             for (auto changeGroup : *changesetChangeGroups)
-                SetSyncActiveForChangeGroup(txn, *changeGroup, false);
+                SetUploadActiveForChangeGroup(txn, *changeGroup, false);
 
             if (!result.IsSuccess())
                 {
@@ -304,12 +304,12 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeGroup()
     return SyncChangeGroup(m_currentChangeGroup)->Then(m_ds->GetCacheAccessThread(), [=]
         {
         auto txn = m_ds->StartCacheTransaction();
-        SetSyncActiveForChangeGroup(txn, *m_currentChangeGroup, false);
+        SetUploadActiveForChangeGroup(txn, *m_currentChangeGroup, false);
         txn.Commit();
         });
     }
 
-void SyncLocalChangesTask::SetSyncActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active)
+void SyncLocalChangesTask::SetUploadActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active)
     {
     auto objectKey = changeGroup.GetObjectChange().GetInstanceKey();
     auto relationshipKey = changeGroup.GetRelationshipChange().GetInstanceKey();
@@ -318,17 +318,17 @@ void SyncLocalChangesTask::SetSyncActiveForChangeGroup(CacheTransactionCR txn, C
     if (objectKey.IsValid())
         {
         m_instancesStillInSync.erase(objectKey);
-        txn.GetCache().GetChangeManager().SetSyncActive(objectKey, active);
+        txn.GetCache().GetChangeManager().SetUploadActive(objectKey, active);
         }
     if (relationshipKey.IsValid())
         {
         m_instancesStillInSync.erase(relationshipKey);
-        txn.GetCache().GetChangeManager().SetSyncActive(relationshipKey, active);
+        txn.GetCache().GetChangeManager().SetUploadActive(relationshipKey, active);
         }
     if (fileKey.IsValid())
         {
         m_instancesStillInSync.erase(fileKey);
-        txn.GetCache().GetChangeManager().SetSyncActive(fileKey, active);
+        txn.GetCache().GetChangeManager().SetUploadActive(fileKey, active);
         }
     }
 
