@@ -26,6 +26,9 @@
 #include <ScalableMesh/IScalableMeshTextureGenerator.h>
 #include <ScalableMesh/ScalableMeshLib.h>
 
+#include "..\GeoCoords\ReprojectionUtils.h"
+
+
 #include "..\STM\GeneratorTextureProvider.h"
 
 #include <Bentley\BeDirectoryIterator.h>
@@ -574,10 +577,23 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
         DPoint3d pt;                
         bvector<DPoint3d> addtionalSeedPts; 
 
+        BaseGCSPtr sourceGcs;
+
+        if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && !m_scalableMesh->IsCesium3DTiles())
+            {
+            sourceGcs = BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr());
+            }
+            
         for (int ptInd = 0; ptInd < dtmPtr->GetPointCount(); ptInd++)
             {             
             DTMStatusInt status = dtmPtr->GetPoint(ptInd, pt);
             assert(status == SUCCESS);
+
+            if (sourceGcs.IsValid())
+                {
+                ReprojectPt(pt, pt, m_destinationGcs, sourceGcs, GeoCoordInterpretation::Cartesian, GeoCoordInterpretation::Cartesian);
+                }
+
             addtionalSeedPts.push_back(pt);
             }
 
