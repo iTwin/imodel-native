@@ -2,7 +2,7 @@
 |
 |     $Source: Bentley/nonport/BeStringUtilities.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32) || defined (BENTLEY_WINRT)
@@ -2373,27 +2373,6 @@ int BeStringUtilities::Wtoi(wchar_t const* s)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  09/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void BeStringUtilities::FormatUInt64(WCharP buf, uint64_t value)
-    {
-    FormatUInt64(buf, value, 10ULL);
-    }
-
-void BeStringUtilities::FormatUInt64(Utf8P buf, uint64_t value)
-    {
-    FormatUInt64(buf, value, 10ULL);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BeStringUtilities::FormatHexUInt64(WCharP buf, uint64_t value)
-    {
-    FormatUInt64(buf, value, 16ULL);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
 void BeStringUtilities::FormatUInt64(WCharP string, uint64_t number, uint64_t base)
     {
     WCharCP digits = nullptr;
@@ -2464,88 +2443,77 @@ void BeStringUtilities::FormatUInt64(Utf8P string, uint64_t number, uint64_t bas
         Strrev(string);
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                  09/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus BeStringUtilities::ParseUInt64(uint64_t& value, WCharCP string)
-    {
-    if (WString::IsNullOrEmpty(string))
-        return ERROR;
-
-    value = 0;
-    //string is not empty, therefore string[0] will never fail
-    size_t i = 0;
-    while (string[i] != '\0')
-        {
-        WChar c = string[i];
-        if (!isdigit(c))
-            return ERROR;
-
-        uint64_t digit = c - '0';
-        value *= 10;
-        value += digit;
-        i++;
-        }
-
-    return SUCCESS;    
-    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool hasHexPrefix(Utf8CP str) {return (str[0] == '0' && (str[1] == 'X' || str[1] == 'x'));}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                  12/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus BeStringUtilities::ParseUInt64(uint64_t& value, Utf8CP string)
+uint64_t BeStringUtilities::ParseUInt64(Utf8CP string, BentleyStatus* outStat)
     {
-    if (Utf8String::IsNullOrEmpty(string))
-        return ERROR;
+    BentleyStatus ALLOW_NULL_OUTPUT(status,outStat);
 
-    value = 0;
-    //string is not empty, therefore string[0] will never fail
-    size_t i = 0;
-    while (string[i] != '\0')
+    status = ERROR;
+    if (Utf8String::IsNullOrEmpty(string))
+        return 0;
+
+    if (hasHexPrefix(string))
+        return ParseHex(string, &status);
+
+    uint64_t value = 0;
+    for ( ; *string; ++string)
         {
-        Utf8Char c = string[i];
+        char c = *string;
         if (!isdigit(c))
-            return ERROR;
+            return 0;
 
         uint64_t digit = c - '0';
         value *= 10;
         value += digit;
-        i++;
         }
 
-    return SUCCESS;
+    status = SUCCESS;
+    return value;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeStringUtilities::ParseHexUInt64(uint64_t& value, WCharCP hs)
+uint64_t BeStringUtilities::ParseHex(Utf8CP hs, BentleyStatus* outStat)
     {
-    if (hs[0] == '0' && tolower(hs[1]) == 'x')
+    BentleyStatus ALLOW_NULL_OUTPUT(status,outStat);
+    status = ERROR;
+
+    if (hasHexPrefix(hs))
         hs += 2;
+
     if (!*hs)
-        return ERROR;
-    value = 0;
+        return 0;
+
+    uint64_t value = 0;
     for ( ; *hs; ++hs)
         {
         uint64_t hexit;
-        wchar_t c = *hs;
+        char c = *hs;
         if (isdigit(c))
             hexit = c - '0';
         else
             {
-            if (isupper(c))
-                c = static_cast <wchar_t> (tolower(c));
-            if (c >= 'a' && c <= 'f')
+            if (c >= 'A' && c <= 'F')
+                hexit = 10 + (c - 'A');
+            else if (c >= 'a' && c <= 'f')
                 hexit = 10 + (c - 'a');
             else
-                return ERROR;
+                return 0;
             }
         value <<= 4;
         value += hexit;
         }
-    return SUCCESS;    
+
+    status = SUCCESS;
+    return value;    
     }
 
 /*---------------------------------------------------------------------------------**//**
