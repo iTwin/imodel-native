@@ -106,6 +106,9 @@ TEST_F(AsyncTaskTests, Then_ThenCallbackAdded_ExecutedAfterOriginalTaskWasExecut
     EXPECT_TRUE(result == 2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, Then_MultipleThensChained_AllExecutedInCorrectOrder)
     {
     BeAtomic<int> lastCompletedThenTask (0);

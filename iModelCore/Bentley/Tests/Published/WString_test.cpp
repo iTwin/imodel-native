@@ -606,8 +606,7 @@ TEST(WStringTest, ElementAccess01)
 * @bsimethod                                    sam.wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
 // Do a quick sanity check on known problems with element access and
-// ref-counted strings. These should all pass, regardless of the
-// underlying string implementation, of course.
+// ref-counted strings. These should all pass, regardless of the underlying string implementation, of course.
 TEST(WStringTest, ElementAccess02)
 {
   bool test = true;
