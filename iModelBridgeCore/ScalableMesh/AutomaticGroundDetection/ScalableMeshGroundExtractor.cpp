@@ -502,7 +502,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(terrainCreator->GetProgress());
     
-    status = terrainCreator->Create(true, true);
+    status = terrainCreator->Create();
     terrainCreator->SaveToFile();
     
     if (m_groundPreviewer.IsValid())
