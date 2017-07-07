@@ -760,6 +760,8 @@
         <ProductDirectory Name="MavenDependencies"                  Deliver="false" LibType="static"/>    
         <ProductDirectory Name="AndroidSO"                          Deliver="false"/>
         <ProductDirectory Name="AndroidSO"                          Deliver="false" LibType="static"/>
+        <ProductDirectory Name="sqlang"                             Deliver="false" />
+        <ProductDirectory Name="sqlang"                             Deliver="false" LibType="static" />
         <ProductDirectory Name="APK"                                Path=""/>    
         <ProductDirectory Name="APK"                                Path=""  LibType="static"/>
     </ProductDirectoryList>
