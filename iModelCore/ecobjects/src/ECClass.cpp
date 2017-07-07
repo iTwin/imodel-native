@@ -29,7 +29,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments()
+    m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments(), m_propertyCountCached(false), m_propertyCount(0)
     {
     //
     };
@@ -580,6 +580,9 @@ void ECClass::InvalidateDefaultStandaloneEnabler() const
     m_defaultStandaloneEnabler = NULL;
     for (ECClassP derivedClass : m_derivedClasses)
         derivedClass->InvalidateDefaultStandaloneEnabler();
+
+    m_propertyCountCached = false;
+    m_propertyCount = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2240,24 +2243,6 @@ ECSchemaCP ECClass::_GetContainerSchema
     return &m_schema;
     }
 
-size_t ECClass::GetPropertyCount(bvector<ECClassCP>& visitedClasses) const
-    {
-    size_t propCount = 0;
-    auto it = std::find_if(visitedClasses.begin(), visitedClasses.end(), [this](ECClassCP ecClass) { return ECClass::ClassesAreEqualByName(this, ecClass); });
-    if (visitedClasses.end() != it)
-        return propCount;
-
-    for (const auto& prop : m_propertyList)
-        if (nullptr == prop->GetBaseProperty())
-            ++propCount;
-    visitedClasses.push_back(this);
-
-    for (const auto& baseClass : m_baseClasses)
-        propCount += baseClass->GetPropertyCount(visitedClasses);
-
-    return propCount;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   03/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -2266,8 +2251,15 @@ size_t ECClass::GetPropertyCount (bool includeBaseClasses) const
     if (!includeBaseClasses || !HasBaseClasses())
         return m_propertyList.size();
 
-    bvector<ECClassCP> visitedClasses;
-    return GetPropertyCount(visitedClasses);
+    if (m_propertyCountCached)
+        return m_propertyCount;
+
+    PropertyList props;
+    GetProperties(true, &props);
+    m_propertyCount = (uint16_t)props.size();
+    m_propertyCountCached = true;
+
+    return m_propertyCount;
     }
     
 /*---------------------------------------------------------------------------------**//**

@@ -114,6 +114,7 @@ TEST_F(ClassTest, GetPropertyCount_WithOverridesAndDiamonds)
     schema->CreateEntityClass(baseClass1, "Banana1");
     schema->CreateEntityClass(derivedClass, "DerivedBanana");
     derivedClass->AddBaseClass(*baseClass);
+    derivedClass->AddBaseClass(*baseClass1);
     schema->CreateEntityClass(derivedClass1, "SuperDerivedBanana");
     derivedClass1->AddBaseClass(*derivedClass);
     derivedClass1->AddBaseClass(*baseClass);

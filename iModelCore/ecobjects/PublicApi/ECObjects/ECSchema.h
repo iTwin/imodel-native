@@ -1369,6 +1369,8 @@ private:
 
     PropertyMap                     m_propertyMap;
     PropertyList                    m_propertyList;
+    mutable bool                    m_propertyCountCached;
+    mutable uint16_t                m_propertyCount;
     mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
     bvector<Utf8String> m_xmlComments;
     bmap<Utf8String, bvector<Utf8String>> m_contentXmlComments;
@@ -1389,7 +1391,6 @@ private:
     static bool     CheckBaseClassCycles(ECClassCP currentBaseClass, const void * arg);
     static bool     AddUniquePropertiesToList(ECClassCP crrentBaseClass, const void * arg);
     bool            TraverseBaseClasses(TraversalDelegate traverseMethod, bool recursive, const void * arg) const;
-    size_t          GetPropertyCount(bvector<ECClassCP>& visitedClasses) const;
 
     static bool     ConvertPropertyToPrimitveArray(ECClassP thisClass, ECClassCP startingClass, Utf8String propName, bool includeDerivedClasses = false);
     ECObjectsStatus FixArrayPropertyOverrides();
