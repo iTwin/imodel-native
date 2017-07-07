@@ -1502,8 +1502,12 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
                 builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh, range, is2d);
 
             uint32_t fillColor = displayParams->GetFillColor();
+
+            meshBuilder->BeginPolyface(*polyface, tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges);
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
                 meshBuilder->AddTriangle(*visitor, displayParams->GetRenderingAsset(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+
+            meshBuilder->EndPolyface();
             }
 
         if (!options.WantSurfacesOnly())
