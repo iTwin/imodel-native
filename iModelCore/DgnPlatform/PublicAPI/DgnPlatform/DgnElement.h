@@ -2284,7 +2284,7 @@ protected:
     GeometrySource3dCP _GetAsGeometrySource3d() const override final {return this;}
     Utf8CP _GetGeometryColumnClassName() const override final {return BIS_CLASS_GeometricElement3d;}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    DGNPLATFORM_EXPORT DgnDbStatus _SetCategoryId(DgnCategoryId) override;
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override;
@@ -2361,7 +2361,7 @@ protected:
     GeometrySource2dCP _GetAsGeometrySource2d() const override final {return this;}
     Utf8CP _GetGeometryColumnClassName() const override final {return BIS_CLASS_GeometricElement2d;}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    DGNPLATFORM_EXPORT DgnDbStatus _SetCategoryId(DgnCategoryId) override;
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;

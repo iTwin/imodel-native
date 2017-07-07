@@ -2976,6 +2976,28 @@ DgnDbStatus GeometricElement::DoSetCategoryId(DgnCategoryId catId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement2d::_SetCategoryId(DgnCategoryId categoryId)
+    {
+    if (!DrawingCategory::Get(GetDgnDb(), categoryId).IsValid())
+        return DgnDbStatus::InvalidCategory; // A GeometricElement2d requires an existing DrawingCategory
+
+    return DoSetCategoryId(categoryId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_SetCategoryId(DgnCategoryId categoryId)
+    {
+    if (!SpatialCategory::Get(GetDgnDb(), categoryId).IsValid())
+        return DgnDbStatus::InvalidCategory; // A GeometricElement3d requires an existing SpatialCategory
+
+    return DoSetCategoryId(categoryId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement2d::_SetPlacement(Placement2dCR placement)
