@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="Concrete" nameSpacePrefix="Concrete" version="1.0" description="Concrete Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00" prefix="bsca" />
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis" />
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00" prefix="CoreCA" />
+    <ECSchemaReference name="EditorCustomAttributes" version="01.00" prefix="beca" />
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.00">
+            <FinalizationHistory />
+            <TrackingEnabled>True</TrackingEnabled>
+            <SchemaFullNameAtEditingStart>Concrete.01.00</SchemaFullNameAtEditingStart>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECClass typeName="ConcreteElement" isDomainClass="False">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="FrameElement" isDomainClass="True">
+        <BaseClass>ConcreteElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="Beam" isDomainClass="True">
+        <BaseClass>FrameElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="Column" isDomainClass="True">
+        <BaseClass>FrameElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="SubStructureElement" isDomainClass="False">
+        <BaseClass>ConcreteElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="ShallowFoundationElement" isDomainClass="False">
+        <BaseClass>SubStructureElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="SurfaceElement" isDomainClass="True">
+        <BaseClass>ConcreteElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="Slab" isDomainClass="True">
+        <BaseClass>SurfaceElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="SpreadFooting" isDomainClass="True">
+        <BaseClass>ShallowFoundationElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="StripFooting" isDomainClass="True">
+        <BaseClass>ShallowFoundationElement</BaseClass>
+    </ECClass>
+    <ECClass typeName="Wall" isDomainClass="True">
+        <BaseClass>SurfaceElement</BaseClass>
+    </ECClass>
+</ECSchema>
