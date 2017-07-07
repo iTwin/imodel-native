@@ -993,8 +993,10 @@ void Root::DrawInView(SceneContextR context)
         selectedTile->_DrawGraphics(args);
         }
 
+#if defined(DEBUG_TILE_SELECTION)
     if (!selectedTiles.empty())
         THREADLOG.debugv("Selected %u tiles", static_cast<uint32_t>(selectedTiles.size()));
+#endif
 
     args.DrawGraphics();
     }
