@@ -977,7 +977,6 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
     auto assertRelECClassId = [this] (ECDbCR ecdb, Utf8CP tableName, Utf8CP relClassIdColumnName, RelClassIdExistenceMode expectedExistenceMode, bool expectedNotNull, bool expectedHasIndex)
         {
-        const int relClassIdColumnKind = 4;
         Utf8String ddl = TestHelper(ecdb).GetDdl(tableName);
         ASSERT_FALSE(ddl.empty());
 
@@ -994,12 +993,12 @@ TEST_F(ECRelationshipInheritanceTestFixture, RelECClassId)
 
         ASSERT_EQ(BE_SQLITE_ROW, stmt->Step());
 
-        const int actualKind = stmt->GetValueInt(0);
+        const Column::Kind actualKind = (Column::Kind) stmt->GetValueInt(0);
         const bool actualIsVirtual = stmt->GetValueInt(1) != 0;
         const bool actualIsNotNull = stmt->GetValueInt(2) != 0;
         stmt = nullptr;
 
-        ASSERT_EQ(relClassIdColumnKind, actualKind) << "Table: " << tableName << " Column: " << relClassIdColumnName;
+        ASSERT_EQ(Column::Kind::Default, actualKind) << "Table: " << tableName << " Column: " << relClassIdColumnName;
         ASSERT_EQ(actualIsVirtual, expectedExistenceMode == RelClassIdExistenceMode::Virtual) << "Table: " << tableName << " Column: " << relClassIdColumnName;
         ASSERT_EQ(actualIsNotNull, expectedNotNull) << "Table: " << tableName << " Column: " << relClassIdColumnName;
 

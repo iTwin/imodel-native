@@ -497,10 +497,8 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
                 joinedTables.insert(&column->GetTableR());
             else if (column->GetTable().GetType() == DbTable::Type::Overflow)
                 overflowTables.insert(&column->GetTableR());
-            else if (!Enum::Contains(column->GetKind(), DbColumn::Kind::ECClassId))
-                {
+            else if (column->GetKind() != DbColumn::Kind::ECClassId)
                 primaryTables.insert(&column->GetTableR());
-                }
             }
         }
     //Orderly add the tables

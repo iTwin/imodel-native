@@ -354,7 +354,7 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
         resolveColumnName(resolvedColumnName, params.GetColumnName(), classId, retryCount);
         }
 
-    DbColumn* newColumn = GetEffectiveTable()->CreateColumn(resolvedColumnName, colType, DbColumn::Kind::DataColumn, PersistenceType::Physical);
+    DbColumn* newColumn = GetEffectiveTable()->CreateColumn(resolvedColumnName, colType, DbColumn::Kind::Default, PersistenceType::Physical);
     if (newColumn == nullptr)
         return nullptr;
 
@@ -444,7 +444,7 @@ void ClassMapColumnFactory::ReserveSharedColumns(uint32_t columnsRequired) const
         {
         const uint32_t maxColumnInBaseTable = 63;
         const std::vector<DbColumn const*> physicalColumns = m_primaryOrJoinedTable->FindAll(PersistenceType::Physical);
-        const std::vector<DbColumn const*> sharedColumns = m_primaryOrJoinedTable->FindAll(DbColumn::Kind::SharedDataColumn);
+        const std::vector<DbColumn const*> sharedColumns = m_primaryOrJoinedTable->FindAll(DbColumn::Kind::SharedData);
         const uint32_t nAvaliablePhysicalColumns = maxColumnInBaseTable - (uint32_t) physicalColumns.size();
         sharedColumnThatCanBeReused = 0;
         for (DbColumn const* sharedColumn : sharedColumns)

@@ -101,11 +101,10 @@ public:
     enum class Kind
         {
         //NOTE: do not assign other ints to the values as they get persisted as is in the ECDb file
-        Unknown = 0, //! Not known to ECDb or user define columns
+        Default = 0, //! Not known to ECDb or user define columns
         ECInstanceId = 1, //! ECInstanceId system column, i.e.the primary key of the table
         ECClassId = 2, //! ECClassId system column. Use if more then on classes is mapped to this table
-        DataColumn = 4, //! unshared data column
-        SharedDataColumn = 8, //! shared data column
+        SharedData = 4, //! shared data column
         };
 
     struct Constraints final: NonCopyableClass
@@ -194,12 +193,11 @@ public:
     Constraints const& GetConstraints() const { return m_constraints; };
     bool IsOnlyColumnOfPrimaryKeyConstraint() const;
     Kind GetKind() const { return m_kind; }
-    bool IsShared() const { return Enum::Intersects( m_kind, Kind::SharedDataColumn); }
+    bool IsShared() const { return m_kind ==  Kind::SharedData; }
     DbTable& GetTableR() const { return m_table; }
     Constraints& GetConstraintsR() { return m_constraints; };
     void SetIsPrimaryKeyColumn(PrimaryKeyDbConstraint const& pkConstraint) { m_pkConstraint = &pkConstraint; }
     BentleyStatus SetKind(Kind);
-    BentleyStatus AddKind(Kind kind) { return SetKind(Enum::Or(m_kind, kind)); }
     bool IsVirtual() const { return GetPersistenceType() == PersistenceType::Virtual; }
     //!@return position of this column in its table (0-based index).
     int DeterminePosition() const;

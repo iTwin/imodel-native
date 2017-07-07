@@ -847,23 +847,10 @@ TEST_F(JoinedTableTestFixture, CRUDOnColumnTypes_Physical_Shared_Overflow)
     Statement sqlstmt;
 
     //Verifying that the properties are mapped correctly to the desired columns
-    std::vector<Utf8Char> Props = {'A','B','C'};
-    for (size_t i = 0; i < 3; i++)
-        {
-        sql.Sprintf("Select ColumnKind from ec_Column c Inner Join ec_PropertyMap pm on c.id=pm.ColumnId Inner join ec_PropertyPath pp on pm.PropertyPathId=pp.Id Where AccessString='%c'", Props[i]);
-        ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, sql.c_str())) << "Prepare failed for sql: " << sql;
-        ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
-        switch (i)
-            {
-                case 0:
-                    ASSERT_EQ(4, sqlstmt.GetValueInt(0)); //Column A is unshared Data Column
-                    break;
-                default:
-                    ASSERT_EQ(8, sqlstmt.GetValueInt(0)); //other columns are a Shared Column
-                    break;
-            }
-        sqlstmt.Finalize();
-        }
+    ASSERT_EQ(Column::Kind::Default, GetHelper().GetPropertyMapColumn(AccessString("ts", "Goo", "A")).GetKind());
+    ASSERT_EQ(Column::Kind::Default, GetHelper().GetPropertyMapColumn(AccessString("ts", "Foo", "A")).GetKind());
+    ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "Foo", "B")).GetKind());
+    ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "Foo", "C")).GetKind());
 
     //-----------------------------INSERT----------------------------------------------------
     ASSERT_EQ(stmt.Prepare(m_ecdb, "INSERT INTO ts.Foo (ECInstanceId, A, B, C) VALUES (?,?,?,?)"), ECSqlStatus::Success);

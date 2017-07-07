@@ -281,7 +281,7 @@ Column TestHelper::GetColumnFromCurrentRow(Utf8StringCR tableName, Statement& st
     if (!stmt.IsColumnNull(columnFieldsStartIndex + 7))
         collation = (Column::Collation) stmt.GetValueInt(columnFieldsStartIndex + 7);
 
-    Column::Kind kind = Column::Kind::Unknown;
+    Column::Kind kind = Column::Kind::Default;
     if (!stmt.IsColumnNull(columnFieldsStartIndex + 8))
         kind = (Column::Kind) stmt.GetValueInt(columnFieldsStartIndex + 8);
 

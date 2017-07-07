@@ -1459,16 +1459,16 @@ TEST_F(SchemaUpgradeTestFixture, VerifyMappingOfPropertiesToOverflowOnJoinedTabl
         ASSERT_FALSE(GetHelper().TableExists("ts_C32"));
 
         //Verifying that the properties are mapped to the overflow columns
-        std::vector<Utf8Char> Props = { 'C','D','E','F','G','H','I','J' };
-        for (size_t i = 0; i < 8; i++)
-            {
-            Utf8String sql;
-            Statement sqlstmt;
-            sql.Sprintf("Select ColumnKind from ec_Column c Inner Join ec_PropertyMap pm on c.id=pm.ColumnId Inner join ec_PropertyPath pp on pm.PropertyPathId=pp.Id Where AccessString='%c'", Props[i]);
-            ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, sql.c_str())) << "Prepare failed for sql: " << sql;
-            ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
-            ASSERT_EQ(8, sqlstmt.GetValueInt(0));  // 128  == SharedDataColumn(8)
-            }
+        ASSERT_EQ(Column::Kind::Default, GetHelper().GetPropertyMapColumn(AccessString("ts", "C1", "A")).GetKind());
+        ASSERT_EQ(Column::Kind::Default, GetHelper().GetPropertyMapColumn(AccessString("ts", "C1", "B")).GetKind());
+        ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "C2", "C")).GetKind());
+        ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "C2", "D")).GetKind());
+        ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "C3", "E")).GetKind());
+        ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "C3", "F")).GetKind());
+        ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "C31", "G")).GetKind());
+        ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "C31", "H")).GetKind());
+        ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "C32", "I")).GetKind());
+        ASSERT_EQ(Column::Kind::SharedData, GetHelper().GetPropertyMapColumn(AccessString("ts", "C32", "J")).GetKind());
 
         //Inserting Instances in Classes C31 and C32
         assertInsertECSql(m_ecdb, "INSERT INTO ts.C31 (E,F,G,H) VALUES (10.32,3,11.1,50)");

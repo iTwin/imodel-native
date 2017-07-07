@@ -53,16 +53,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //when enum values are changed
 
 //** Enum DbColumn::Kind
-#define SQLVAL_DbColumn_Kind_Unknown "0"
-static_assert(0 == (int) DbColumn::Kind::Unknown, "Persisted enum DbColumn::Kind has changed");
+#define SQLVAL_DbColumn_Kind_Default "0"
+static_assert(0 == (int) DbColumn::Kind::Default, "Persisted enum DbColumn::Kind has changed");
 #define SQLVAL_DbColumn_Kind_ECInstanceId "1"
 static_assert(1 == (int) DbColumn::Kind::ECInstanceId, "Persisted enum DbColumn::Kind has changed");
 #define SQLVAL_DbColumn_Kind_ECClassId "2"
 static_assert(2 == (int) DbColumn::Kind::ECClassId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_DataColumn "4"
-static_assert(4 == (int) DbColumn::Kind::DataColumn, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_SharedDataColumn "8"
-static_assert(8 == (int) DbColumn::Kind::SharedDataColumn, "Persisted enum DbColumn::Kind has changed");
+#define SQLVAL_DbColumn_Kind_SharedData "4"
+static_assert(4 == (int) DbColumn::Kind::SharedData, "Persisted enum DbColumn::Kind has changed");
 
 //** Enum DbTable::Type
 #define SQLVAL_DbTable_Type_Primary "0"

@@ -1538,7 +1538,7 @@ DbTable const* ConstraintECClassIdJoinInfo::RequiresJoinTo(ConstraintECClassIdPr
         if (map.GetConstraintMap(map.GetReferencedEnd()).GetECClassIdPropMap() == &propertyMap)
             {
             SystemPropertyMap::PerTableIdPropertyMap const* c = propertyMap.FindDataPropertyMap(*table);
-            if (Enum::Contains(c->GetColumn().GetKind(), DbColumn::Kind::ECClassId))
+            if (c->GetColumn().GetKind() == DbColumn::Kind::ECClassId)
                 return table;
             }
 

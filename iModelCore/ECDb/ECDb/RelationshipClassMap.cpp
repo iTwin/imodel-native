@@ -602,7 +602,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     DbTable* vtable = GetTables().front();
     PRECONDITION(vtable != nullptr && vtable->GetType() == DbTable::Type::Virtual, ClassMappingStatus::Error);
     {////////SourceECInstanceId
-    DbColumn* sourceECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::DataColumn, PersistenceType::Virtual);
+    DbColumn* sourceECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECInstanceId});
     if (propMap == nullptr || sourceECInstanceId == nullptr)
         {
@@ -617,7 +617,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////SourceECClassId
-    DbColumn* sourceECClassId = vtable->CreateColumn(ECDBSYS_PROP_SourceECClassId, DbColumn::Type::Integer, DbColumn::Kind::DataColumn, PersistenceType::Virtual);
+    DbColumn* sourceECClassId = vtable->CreateColumn(ECDBSYS_PROP_SourceECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECClassId});
     if (propMap == nullptr || sourceECClassId == nullptr)
         {
@@ -632,7 +632,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////TargetECInstanceId
-    DbColumn* targetECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_TargetECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::DataColumn, PersistenceType::Virtual);
+    DbColumn* targetECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_TargetECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetECInstanceId});
     if (propMap == nullptr || targetECInstanceId == nullptr)
         {
@@ -647,7 +647,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
     }/////////////////////////
 
     {////////TargetECClassId
-    DbColumn* targetECClassId = vtable->CreateColumn(ECDBSYS_PROP_TargetECClassId, DbColumn::Type::Integer, DbColumn::Kind::DataColumn, PersistenceType::Virtual);
+    DbColumn* targetECClassId = vtable->CreateColumn(ECDBSYS_PROP_TargetECClassId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECClassIdPropertyMap> propMap = ConstraintECClassIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Target, {targetECClassId});
     if (propMap == nullptr || targetECClassId == nullptr)
         {
@@ -1325,7 +1325,7 @@ DbColumn* RelationshipClassLinkTableMap::CreateConstraintColumn(Utf8CP columnNam
         return nullptr;
         }
         
-    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, DbColumn::Kind::DataColumn, persType);
+    column = table.CreateColumn(Utf8String(columnName), DbColumn::Type::Integer, DbColumn::Kind::Default, persType);
 
     if (!wasEditMode)
         table.GetEditHandleR().EndEdit();

@@ -174,49 +174,26 @@ void PrintTo(Column::Type type, std::ostream* os)
 //+---------------+---------------+---------------+---------------+---------------+------
 void PrintTo(Column::Kind kind, std::ostream* os)
     {
-    const int kindInt = (int) kind;
-
-    bool isFirstMatch = true;
-    if ((kindInt & (int) Column::Kind::DataColumn) != 0)
+    switch (kind)
         {
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::DataColumn);
-        }
+            case Column::Kind::Default:
+                *os << ENUM_TOSTRING(Column::Kind::Default);
+                break;
 
-    if ((kindInt & (int) Column::Kind::ECClassId) != 0)
-        {
-        if (!isFirstMatch)
-            *os << "|";
+            case Column::Kind::ECClassId:
+                *os << ENUM_TOSTRING(Column::Kind::ECClassId);
+                break;
 
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::ECClassId);
-        }
+            case Column::Kind::ECInstanceId:
+                *os << ENUM_TOSTRING(Column::Kind::ECInstanceId);
+                break;
+            case Column::Kind::SharedData:
+                *os << ENUM_TOSTRING(Column::Kind::SharedData);
+                break;
 
-    if ((kindInt & (int) Column::Kind::ECInstanceId) != 0)
-        {
-        if (!isFirstMatch)
-            *os << "|";
-
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::ECInstanceId);
-        }
-
-    if ((kindInt & (int) Column::Kind::SharedDataColumn) != 0)
-        {
-        if (!isFirstMatch)
-            *os << "|";
-
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::SharedDataColumn);
-        }
-
-    if ((kindInt & (int) Column::Kind::Unknown) != 0)
-        {
-        if (!isFirstMatch)
-            *os << "|";
-
-        isFirstMatch = false;
-        *os << ENUM_TOSTRING(Column::Kind::Unknown);
+            default:
+                *os << "Unhandled Column::Kind. Adjust the PrintTo method";
+                break;
         }
     }
 

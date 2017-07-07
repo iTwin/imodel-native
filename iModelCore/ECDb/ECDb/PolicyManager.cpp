@@ -155,7 +155,7 @@ Policy PolicyManager::DoGetPolicy(ClassIsValidInECSqlPolicyAssertion const& asse
         if (assertion.GetClassMap().GetPrimaryTable().GetType() == DbTable::Type::Virtual)
             {
             Utf8String notSupportedMessage;
-            notSupportedMessage.Sprintf("Cannot run ECSQL INSERT, UPDATE, or DELETE on 'Abstract' ECEntityClass '%s'. ",
+            notSupportedMessage.Sprintf("ECClass '%s' is mapped to a virtual table. Therefore only ECSQL SELECT statements can be used against the class.",
                                         className.c_str());
 
             return Policy::CreateNotSupported(notSupportedMessage);

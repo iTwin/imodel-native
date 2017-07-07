@@ -129,7 +129,7 @@ BentleyStatus DbSchema::SynchronizeExistingTables()
         for (Utf8StringCP addColumn : added)
             {
             auto itor = newColumnList.find(addColumn);
-            if (table->CreateColumn(*addColumn, itor->second->GetType(), DbColumn::Kind::DataColumn, PersistenceType::Physical) == nullptr)
+            if (table->CreateColumn(*addColumn, itor->second->GetType(), DbColumn::Kind::Default, PersistenceType::Physical) == nullptr)
                 {
                 BeAssert("Failed to create column");
                 return ERROR;
@@ -1012,7 +1012,7 @@ BentleyStatus DbSchema::LoadColumns(DbTable& table) const
             pkOrdinals.push_back((size_t) primaryKeyOrdinal);
             }
 
-        if (Enum::Contains(columnKind, DbColumn::Kind::SharedDataColumn))
+        if (columnKind == DbColumn::Kind::SharedData)
             sharedColumnCount++;
         }
 
@@ -1310,7 +1310,7 @@ DbColumn* DbTable::CreateColumn(DbColumnId id, Utf8StringCR colName, DbColumn::T
     else
         m_orderedColumns.insert(m_orderedColumns.begin() + (size_t) position, newColumnP);
 
-    if (Enum::Contains(kind, DbColumn::Kind::ECClassId))
+    if (kind == DbColumn::Kind::ECClassId)
         m_classIdColumn = newColumnP;
 
     return newColumnP;
@@ -1324,7 +1324,7 @@ DbColumn* DbTable::CreateSharedColumn()
     Utf8String generatedName;
     m_sharedColumnNameGenerator.Generate(generatedName);
     BeAssert(FindColumn(generatedName.c_str()) == nullptr);
-    return CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedDataColumn, PersistenceType::Physical);
+    return CreateColumn(generatedName, DbColumn::Type::Any, DbColumn::Kind::SharedData, PersistenceType::Physical);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1374,7 +1374,7 @@ const  std::vector<DbColumn const*> DbTable::FindAll(DbColumn::Kind kind) const
     std::vector<DbColumn const*> columns;
     for (DbColumn const* column : m_orderedColumns)
         {
-        if (Enum::Intersects(column->GetKind(), kind))
+        if (column->GetKind() == kind)
             columns.push_back(column);
         }
 
@@ -1388,7 +1388,7 @@ DbColumn const* DbTable::FindFirst(DbColumn::Kind kind) const
     {
     for (DbColumn const* column : m_orderedColumns)
         {
-        if (Enum::Intersects(column->GetKind(), kind))
+        if (column->GetKind() == kind)
             return column;
         }
 

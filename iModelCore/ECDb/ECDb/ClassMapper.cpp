@@ -773,7 +773,7 @@ DbTable* ClassMapper::TableMapper::CreateTableForExistingTableStrategy(ClassMap 
     std::vector<size_t> pkOrdinals;
     for (SqliteColumnInfo const& colInfo : existingColumnInfos)
         {
-        DbColumn* column = table->CreateColumn(colInfo.GetName(), colInfo.GetType(), DbColumn::Kind::DataColumn, PersistenceType::Physical);
+        DbColumn* column = table->CreateColumn(colInfo.GetName(), colInfo.GetType(), DbColumn::Kind::Default, PersistenceType::Physical);
         if (column == nullptr)
             {
             BeAssert(false && "Failed to create column");
@@ -981,7 +981,7 @@ DbColumn* RelationshipClassEndTableMappingContext::CreateRelECClassIdColumn(DbMa
     else
         {
         //WIP_CLEANUP: virtual columns should also be created by the factory
-        relClassIdCol = fkTable.CreateColumn(fkColInfo.GetRelClassIdColumnName(), DbColumn::Type::Integer, DbColumn::Kind::DataColumn, persType);
+        relClassIdCol = fkTable.CreateColumn(fkColInfo.GetRelClassIdColumnName(), DbColumn::Type::Integer, DbColumn::Kind::Default, persType);
 
         if (makeRelClassIdColNotNull && !relClassIdCol->DoNotAllowDbNull())
             {

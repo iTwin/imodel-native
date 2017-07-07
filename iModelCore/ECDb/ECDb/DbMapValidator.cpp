@@ -288,6 +288,12 @@ BentleyStatus DbMapValidator::ValidateDbTable(DbTable const& table) const
 
             case DbTable::Type::Virtual:
             {
+            if (nonVirtualColumnCount != 0)
+                {
+                Issues().Report("DbTable '%s' is of type 'Virtual' and therefore all its DbColumns must be virtual as well.", table.GetName().c_str());
+                return ERROR;
+                }
+
             if (table.GetLinkNode().GetParent() != nullptr && !table.GetLinkNode().GetChildren().empty())
                 {
                 Issues().Report("DbTable '%s' is of type 'Virtual' and therefore must neither have a parent table nor a child table.", table.GetName().c_str());
@@ -379,15 +385,13 @@ BentleyStatus DbMapValidator::ValidateDbColumn(DbColumn const& column, bset<Utf8
         return ERROR;
         }
 
-    if (Enum::Contains(column.GetKind(), DbColumn::Kind::ECInstanceId) ||
-        Enum::Contains(column.GetKind(), DbColumn::Kind::ECClassId))
+    //Kind used to be an flags enum, but no longer is. so verify that the kind is on only the discrete enum values
+    DbColumn::Kind actualKind = column.GetKind();
+    if (actualKind != DbColumn::Kind::Default && actualKind != DbColumn::Kind::ECClassId &&
+        actualKind != DbColumn::Kind::ECInstanceId && actualKind != DbColumn::Kind::SharedData)
         {
-        if (column.IsShared())
-            {
-            Issues().Report("DbColumn '%s.%s' has invalid DbColumn::Kinds. A column cannot have DbColumn::Kind::ECInstanceId or DbColumn::Kind::ECClassId and at the same time DbColumn::Kind::SharedDataColumn.",
-                            column.GetTable().GetName().c_str(), column.GetName().c_str());
-            return ERROR;
-            }
+        Issues().Report("DbColumn '%s.%s' has an invalid DbColumn::Kind: %d", column.GetTable().GetName().c_str(), column.GetName().c_str(), Enum::ToInt(actualKind));
+        return ERROR;
         }
 
     return SUCCESS;
@@ -852,7 +856,7 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
             ECInstanceIdPropertyMap const& prop = propertyMap.GetAs<ECInstanceIdPropertyMap>();
             for (SystemPropertyMap::PerTableIdPropertyMap const* perTablePropMap : prop.GetDataPropertyMaps())
                 {
-                if (!Enum::Contains(perTablePropMap->GetColumn().GetKind(), DbColumn::Kind::ECInstanceId))
+                if (perTablePropMap->GetColumn().GetKind() != DbColumn::Kind::ECInstanceId)
                     {
                     Issues().Report("The ECInstanceId property map '%s.%s' must map to columns of Kind 'DbColumn::Kind::ECInstanceId'. Violating column: %s.%s ", propertyMap.GetClassMap().GetClass().GetFullName(),
                                     propertyMap.GetAccessString().c_str(), perTablePropMap->GetColumn().GetTable().GetName().c_str(), perTablePropMap->GetColumn().GetName().c_str());
@@ -872,7 +876,7 @@ BentleyStatus DbMapValidator::ValidatePropertyMap(PropertyMap const& propertyMap
             ECClassIdPropertyMap const& prop = propertyMap.GetAs<ECClassIdPropertyMap>();
             for (SystemPropertyMap::PerTableIdPropertyMap const* perTablePropMap : prop.GetDataPropertyMaps())
                 {
-                if (!Enum::Contains(perTablePropMap->GetColumn().GetKind(), DbColumn::Kind::ECClassId))
+                if (perTablePropMap->GetColumn().GetKind() != DbColumn::Kind::ECClassId)
                     {
                     Issues().Report("The ECClassId property map '%s.%s' must map to columns of Kind 'DbColumn::Kind::ECClassId'. Violating column: %s.%s ", propertyMap.GetClassMap().GetClass().GetFullName(),
                                     propertyMap.GetAccessString().c_str(), perTablePropMap->GetColumn().GetTable().GetName().c_str(), perTablePropMap->GetColumn().GetName().c_str());
@@ -1031,8 +1035,6 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
                             propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str(), relClassIdCol.GetTable().GetName().c_str(), relClassIdCol.GetName().c_str());
             return ERROR;
             }
-        }
-
         }
 
     if (isPhysicalFk)
