@@ -11,6 +11,9 @@
 #include <Bentley/Tasks/UniqueTaskHolder.h>
 #include <Bentley/Tasks/WorkerThread.h>
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledTwice_ExecutesJustFirstTask)
     {
     auto thread = WorkerThread::Create ("TestThread");
@@ -41,6 +44,9 @@ TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledTwice_ExecutesJustFirstTask)
     AsyncTask::WhenAll (tasks)->Wait ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledSecondTimeAfterFirstFinished_ExecutesSecondTime)
     {
     auto thread = WorkerThread::Create ("TestThread");
@@ -70,6 +76,9 @@ TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledSecondTimeAfterFirstFinished
     EXPECT_EQ (2, i);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledTwiceWithThenTasks_ReturnsValueToBothThens)
     {
     auto thread = WorkerThread::Create ("TestThread");
@@ -109,6 +118,9 @@ TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledTwiceWithThenTasks_ReturnsVa
     EXPECT_EQ (2, i);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledOnceAndExecutorDeleted_DoesNotCrashAndExecutesTask)
     {
     auto thread = WorkerThread::Create ("TestThread");
@@ -132,6 +144,9 @@ TEST_F (UniqueTaskHolderTests, GetRunningTask_CalledOnceAndExecutorDeleted_DoesN
     EXPECT_EQ (42, task->GetResult ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UniqueTaskHolderTests, GetRunningTask_ReturnsCompletedTask_ExecutesAndPropogatesBack)
     {
     auto thread = WorkerThread::Create("TestThread");
