@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-DataSourceCacheOpenState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment, bset<ECInstanceKey>& syncKeys) :
+DataSourceCacheOpenState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment, ECInstanceKeyMultiMap& syncKeys) :
 m_dbAdapter(db),
 m_statementCache(db),
 
@@ -34,9 +34,8 @@ m_cachedQueryManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_relati
 m_navigationBaseManager(m_dbAdapter, m_statementCache),
 m_changeInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_objectInfoManager, m_relationshipInfoManager, m_fileInfoManager),
 m_changeManager(m_dbAdapter, m_instanceHelper, m_hierarchyManager, m_cachedQueryManager, m_objectInfoManager, m_relationshipInfoManager,
-m_fileInfoManager, m_changeInfoManager, m_fileStorage, m_rootManager, m_activeSyncKeys),
+m_fileInfoManager, m_changeInfoManager, m_fileStorage, m_rootManager, syncKeys),
 m_fileStorage(m_dbAdapter, m_statementCache, environment),
-m_activeSyncKeys(syncKeys),
 m_cacheSchema(nullptr),
 m_extendedDataAdapter(db)
     {}

@@ -37,7 +37,7 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
     private:
         struct Core
             {
-            Core(ObservableECDb& db, CacheEnvironmentCR environment, bset<ECInstanceKey>& syncKeys);
+            Core(ObservableECDb& db, CacheEnvironmentCR environment, ECInstanceKeyMultiMap& syncKeys);
 
             ECDbAdapter                 m_dbAdapter;
             ECSqlStatementCache         m_statementCache;
@@ -53,7 +53,6 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
             ChangeInfoManager           m_changeInfoManager;
             ChangeManager               m_changeManager;
             FileStorage                 m_fileStorage;
-            bset<ECInstanceKey>         m_activeSyncKeys;
 
             ECSchemaCP                  m_cacheSchema;
 
@@ -65,7 +64,7 @@ struct DataSourceCacheOpenState : public IECDbSchemaChangeListener
         CacheEnvironment m_environment;
 
         std::shared_ptr<Core> m_core;
-        bset<ECInstanceKey> m_activeSyncKeys;
+        ECInstanceKeyMultiMap m_activeSyncKeys;
 
     private:
         Core& GetCore();

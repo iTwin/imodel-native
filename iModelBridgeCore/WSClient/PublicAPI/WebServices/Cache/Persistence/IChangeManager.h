@@ -75,9 +75,11 @@ struct EXPORT_VTABLE_ATTRIBUTE IChangeManager
         //! -- Making local changes to existing data --
 
         // Check if sync is currently active - when modifications to existing changes cannot be done.
-        virtual bool IsSyncActive(ECInstanceKeyCR instanceKey) const = 0;
+        virtual bool IsUploadActive(ECInstanceKeyCR instanceKey) const = 0;
         // Internal use only! Set sync active so modifications to existing changes could not be done.
-        virtual void SetSyncActive(ECInstanceKeyCR instanceKey, bool active) = 0;
+        virtual void SetUploadActive(ECInstanceKeyCR instanceKey, bool active) = 0;
+        // Returns all instance keys of currently instances in synchronization process
+        virtual const ECInstanceKeyMultiMap& GetUploadingInstances() const = 0;
 
         //! For legacy server (version < 2.0) only. Create new object in local cache under specified parent
         virtual ECInstanceKey LegacyCreateObject(ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus = SyncStatus::Ready) = 0;
