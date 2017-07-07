@@ -70,6 +70,7 @@ public:
 
     DataSourceAccount*      GetDataSourceAccount();
     StrategyType            GetStrategyType() { return m_strategyType; }
+    uint32_t                GetNextNodeID() { return m_nextNodeID++; }
 
     static Ptr Create(StrategyType strategy, DataSourceAccount* account);
 
@@ -80,8 +81,9 @@ private:
 
 private:
 
-    StrategyType         m_strategyType = NORMAL;
-    DataSourceAccount*   m_account;
+    StrategyType          m_strategyType = NORMAL;
+    DataSourceAccount*    m_account = nullptr;
+    std::atomic<uint32_t> m_nextNodeID = 0;
     };
 
 struct SMGroupCache : public BENTLEY_NAMESPACE_NAME::RefCountedBase 
@@ -323,7 +325,6 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
     private:
         bool   m_isLoaded = false;
         bool   m_isLoading = false;
-        bool   m_mustResetNodeIDGenerator = false;
         uint32_t m_level = 0;
         size_t m_totalSize;
         uint32_t m_nLevels = 0;
@@ -389,8 +390,6 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
             }
 
         void DeclareRoot() { m_isRoot = true; }
-
-        void ResetNodeIDGenerator() { m_mustResetNodeIDGenerator = true; }
 
         uint32_t GetLevel() { return m_level; }
 
