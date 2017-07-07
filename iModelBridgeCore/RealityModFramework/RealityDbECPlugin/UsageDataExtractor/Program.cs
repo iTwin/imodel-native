@@ -348,7 +348,8 @@ namespace UsageDataExtractor
                                 return "None";
                                 }
                             else
-                                throw;
+                                //throw;
+                                return "None";
                             }
                         }
                     else
