@@ -26,17 +26,24 @@
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
 
         <Bindings>
-            <Libs>Delivery/$(libprefix)StructuralMaterials$(libext)</Libs>
+            <!--Libs>Delivery/$(libprefix)StructuralMaterials$(libext)</Libs-->
+            <Files ProductDirectoryName="Libs" >
+                Delivery/$(libprefix)StructuralMaterials$(libext)
+                Delivery/$(shlibprefix)StructuralMaterials$(ApiNumber)$(shlibext)
+            </Files>
             <Assemblies>Delivery/$(shlibprefix)StructuralMaterials$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="StructuralMaterialsAPI" BentleyBuildMakeFile="StructuralMaterials\StructuralMaterialsSchema.prewire.mke">
+    <Part Name="StructuralMaterialsAPI" BentleyBuildMakeFile="StructuralMaterials\StructuralMaterialsSchema.prewire.mke" ApiNumber="B02">
         <Bindings>
             <PublicAPI Domain="StructuralMaterials"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/StructuralMaterials.ecschema.xml
             </Files>
+
+            <Directory SourceName="PublicApi/StructuralMaterials" ProductDirectoryName="StructuralMaterialsIncludes" />
+            
           <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
             <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
