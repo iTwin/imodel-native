@@ -217,7 +217,7 @@
 
     <Part Name="iModelHubPrewireForIntegrationTests" BentleyBuildMakeFile="Tests/iModelHubClient/prewire.mke">
         <Bindings>
-            <Files ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="iModelHubNativeTests" SubPartDirectory="NativeTests/Integration">Delivery/NativeTests/ignore_list.txt</Files>
+            <Files ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="iModelHubNativeTests" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/ignore_list.txt</Files>
         </Bindings>
     </Part>
 
@@ -225,7 +225,7 @@
         <SubPart PartName="iModelHubPrewireForIntegrationTests" />
         <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHub/Backdoor" SourceName="Delivery/NativeTests/Objects/Backdoor"/>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHub/Backdoor" SourceName="Delivery/iModelHubNativeTests/Objects/Backdoor"/>
         </Bindings>
     </Part>
 
@@ -234,10 +234,10 @@
         <SubPart PartName="IMHSClientExe"/>
         <SubPart PartName="iModelHubClient-Library"/>
         <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="NativeTests/Integration" SourceName="Delivery/NativeTests/Objects/Integration"/>
-            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="NativeTests/Integration">Delivery/NativeTests/IntegrationTests.json</Files>
-            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="NativeTests/Integration">Delivery/NativeTests/PerformanceTests.json</Files>
-            <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ECSchemas" SubPartDirectory="NativeTests/Integration">Delivery/NativeTests/DgnPlatformTest.ecschema.xml</Files>
+            <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHubNativeTests/Integration" SourceName="Delivery/iModelHubNativeTests/Objects/Integration"/>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/IntegrationTests.json</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/PerformanceTests.json</Files>
+            <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="ECSchemas" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/DgnPlatformTest.ecschema.xml</Files>
         </Bindings>
     </Part>
 

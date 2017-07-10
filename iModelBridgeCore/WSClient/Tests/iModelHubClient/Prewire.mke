@@ -9,5 +9,5 @@
 
 baseDir = $(_MakeFilePath)
 
-$(BuildContext)Delivery/NativeTests/ignore_list.txt : $(baseDir)ignore_list.txt
+$(BuildContext)Delivery/iModelHubNativeTests/ignore_list.txt : $(baseDir)ignore_list.txt
     $(LinkFirstDepToFirstTarget)
