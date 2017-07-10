@@ -38,6 +38,9 @@ protected:
     virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
 
+    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, Dgn::PropertyArrayIndex const& arrayIndex) const override;
+    virtual Dgn::DgnDbStatus _SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, Dgn::PropertyArrayIndex const& arrayIndex) override;
+
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(StatusAspect)
     ROADRAILPHYSICAL_EXPORT static StatusAspectPtr Create(Status status);

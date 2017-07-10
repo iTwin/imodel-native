@@ -80,6 +80,32 @@ DgnDbStatus StatusAspect::_UpdateProperties(DgnElementCR el, ECCrudWriteToken co
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus StatusAspect::_GetPropertyValue(ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
+    {
+    if (0 != strcmp("Status", propertyName))
+        return DgnDbStatus::BadRequest;
+
+    value.SetInteger(static_cast<int32_t>(GetStatus()));
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus StatusAspect::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
+    {
+    if (0 != strcmp("Status", propertyName) || value.IsNull())
+        return DgnDbStatus::BadRequest;
+
+    SetStatus(static_cast<Status>(value.GetInteger()));
+
+    return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyLocatedStatus::LinearlyLocatedStatus(CreateParams const& params):
