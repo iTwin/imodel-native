@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="DgnPlatformTest" alias="dptest" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
+    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
+    
+    <ECEntityClass typeName="TestUniqueAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TestUniqueAspectProperty" typeName="string"/>
+        <ECProperty propertyName="Length" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestMultiAspect">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TestMultiAspectProperty" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DgnSqlTestUniqueAspect">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="TestUniqueAspectProperty" typeName="string"/>
+        <ECProperty propertyName="Length" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DgnSqlTestMultiAspect">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECProperty propertyName="TestMultiAspectProperty" typeName="string"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestUniqueAspectNoHandler">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="TestUniqueAspectProperty" typeName="string"/>
+        <ECProperty propertyName="Length" typeName="double"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TestMultiAspectNoHandler">
+        <BaseClass>bis:ElementMultiAspect</BaseClass>
+        <ECProperty propertyName="TestMultiAspectProperty" typeName="string"/>
+    </ECEntityClass>
+    
+</ECSchema>
