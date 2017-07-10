@@ -1728,7 +1728,7 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
         return *found->second;
 
     bool is2d = m_tile.GetElementRoot().Is2d();
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_tileRange, is2d);
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_tileRange, is2d, key.m_isPlanar);
     m_builderMap[key] = builder;
     return *builder;
     }
@@ -1847,7 +1847,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.IsTextured();
 
-    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh);
+    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
@@ -1989,7 +1989,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
 
-    MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
+    MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, false);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     uint32_t fillColor = displayParams.GetLineColor();

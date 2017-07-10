@@ -484,15 +484,16 @@ private:
     PrimitiveType                   m_type;
     mutable MeshEdgesPtr            m_edges;
     bool                            m_is2d;
+    bool                            m_isPlanar;
 
-    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d)
-        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d) { }
+    Mesh(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
+        : m_displayParams(&params), m_features(featureTable), m_type(type), m_verts(range), m_is2d(is2d), m_isPlanar(isPlanar) { }
 
     friend struct MeshBuilder;
     void SetDisplayParams(DisplayParamsCR params) { m_displayParams = &params; }
 public:
-    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d)
-        { return new Mesh(params, featureTable, type, range, is2d); }
+    static MeshPtr Create(DisplayParamsCR params, FeatureTableP featureTable, PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
+        { return new Mesh(params, featureTable, type, range, is2d, isPlanar); }
 
     DPoint3d                        GetPoint(uint32_t index) const;
     DGNPLATFORM_EXPORT DRange3d     GetTriangleRange(TriangleCR triangle) const;
@@ -521,6 +522,7 @@ public:
 
     bool IsEmpty() const { return m_triangles.Empty() && m_polylines.empty(); }
     bool Is2d() const { return m_is2d; }
+    bool IsPlanar() const { return m_isPlanar; }
     PrimitiveType GetType() const { return m_type; }
 
     DGNPLATFORM_EXPORT DRange3d GetRange() const;
@@ -540,21 +542,26 @@ public:
 struct MeshMergeKey
 {
     DisplayParamsCP     m_params;                                                                                                                                                     
-    bool                m_hasNormals;
     Mesh::PrimitiveType m_primitiveType;
+    bool                m_hasNormals;
+    bool                m_isPlanar;
 
-    MeshMergeKey() : m_params(nullptr), m_hasNormals(false), m_primitiveType(Mesh::PrimitiveType::Mesh) { }
-    MeshMergeKey(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type) : m_params(&params), m_hasNormals(hasNormals), m_primitiveType(type) { }
-    MeshMergeKey(MeshCR mesh) : MeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), mesh.GetType()) { }
+    MeshMergeKey() : m_params(nullptr), m_primitiveType(Mesh::PrimitiveType::Mesh), m_hasNormals(false), m_isPlanar(false) { }
+    MeshMergeKey(MeshCR mesh) : MeshMergeKey(mesh.GetDisplayParams(),  !mesh.Normals().empty(), mesh.GetType(), mesh.IsPlanar()) { }
+    MeshMergeKey(DisplayParamsCR params, bool hasNormals, Mesh::PrimitiveType type, bool isPlanar)
+        : m_params(&params), m_primitiveType(type), m_hasNormals(hasNormals), m_isPlanar(isPlanar) { }
 
     bool operator<(MeshMergeKey const& rhs) const
         {
         BeAssert(nullptr != m_params && nullptr != rhs.m_params);
-        if(m_hasNormals != rhs.m_hasNormals)
-            return !m_hasNormals;
-
         if (m_primitiveType != rhs.m_primitiveType)
             return m_primitiveType < rhs.m_primitiveType;
+
+        if (m_isPlanar != rhs.m_isPlanar)
+            return !m_isPlanar;
+
+        if (m_hasNormals != rhs.m_hasNormals)
+            return !m_hasNormals;
 
         return m_params->IsLessThan(*rhs.m_params, DisplayParams::ComparePurpose::Merge);
         }
@@ -629,13 +636,13 @@ private:
     RefCountedPtr<Polyface>         m_currentPolyface;
     DRange3d                        m_tileRange;
 
-    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d)
-        : m_mesh(Mesh::Create(params, featureTable, type, range, is2d)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
+    MeshBuilder(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
+        : m_mesh(Mesh::Create(params, featureTable, type, range, is2d, isPlanar)), m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_tileRange(range) { }
 
     uint32_t AddVertex(VertexMap& vertices, VertexKeyCR vertex);
 public:
-    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d)
-        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d); }
+    static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
+        { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar); }
 
     DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
@@ -660,11 +667,13 @@ struct Polyface
     DisplayParamsCPtr   m_displayParams;
     PolyfaceHeaderPtr   m_polyface;
     bool                m_displayEdges = true;
+    bool                m_isPlanar = false;
 
-    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges = true) : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges) { }
+    Polyface(DisplayParamsCR displayParams, PolyfaceHeaderR polyface, bool displayEdges=true, bool isPlanar=false)
+        : m_displayParams(&displayParams), m_polyface(&polyface), m_displayEdges(displayEdges), m_isPlanar(isPlanar) { }
 
     void Transform(TransformCR transform) { if (m_polyface.IsValid()) m_polyface->Transform(transform); }
-    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges); }
+    Polyface Clone() const { return Polyface(*m_displayParams, *m_polyface->Clone(), m_displayEdges, m_isPlanar); }
 };
 
 //=======================================================================================

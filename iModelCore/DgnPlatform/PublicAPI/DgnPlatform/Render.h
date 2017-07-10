@@ -2117,6 +2117,7 @@ struct TriMeshArgs
     QPoint3d::Params    m_pointParams;
     MaterialPtr         m_material;
     FillFlags           m_fillFlags = FillFlags::None;
+    bool                m_isPlanar = false;
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
