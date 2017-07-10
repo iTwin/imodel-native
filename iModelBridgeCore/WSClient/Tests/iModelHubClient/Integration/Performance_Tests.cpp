@@ -208,7 +208,7 @@ struct PerformanceTests : public IntegrationTestsBase
 
         EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("CodeSpecId"), elementCode.GetCodeSpecId()));
 
-        EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("CodeScopeId"), elementCode.GetScopeElementId()));
+        EXPECT_EQ(ECSqlStatus::Success, stmt.BindId(stmt.GetParameterIndex("CodeScopeId"), elementCode.GetScopeElementId(model->GetDgnDb())));
 
         EXPECT_EQ(ECSqlStatus::Success, stmt.BindNull(stmt.GetParameterIndex("UserLabel")));
 
