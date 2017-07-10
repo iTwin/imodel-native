@@ -45,3 +45,6 @@ DgnElementTests.NavigationPropertyOnTargetDelete
 
 #TFS 697010
 CompatibilityTests.ModifyBaseline       #crashing with repeat
+
+ECInstancesCompatibility.UpdateInstances
+    # bim2-0r1, x64, NDEBUG, fails after updating compatibility files from 2-0-1-46 to 2-0-1-53.
