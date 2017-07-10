@@ -1313,6 +1313,7 @@ ClassMappingStatus RelationshipClassEndTableMapper::UpdatePersistedEnd(Navigatio
     if (AddIndexToRelationshipEnd(*newPartition) == ERROR)
         return  ClassMappingStatus::Error;
 
+    m_navigationPropertyMapped++;
     const_cast<RelationshipClassEndTableMap&>(m_relationshipMap).Modified();
     return navPropMap.SetMembers(*columnRefId, *columnClassId, m_relationshipMap.GetClass().GetId()) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
     }
@@ -1520,7 +1521,7 @@ RelationshipClassEndTableMapper::PartitionInfo* RelationshipClassEndTableMapper:
     }
 
 RelationshipClassEndTableMapper::RelationshipClassEndTableMapper(SchemaImportContext& schemaContext, RelationshipClassEndTableMap const& relationshipMap)
-    : m_relationshipMap(relationshipMap), m_schemaContext(schemaContext)
+    : m_relationshipMap(relationshipMap), m_schemaContext(schemaContext), m_navigationPropertyMapped(0)
     {
     for (RelationshipClassEndTableMap::Partition const* partition : relationshipMap.GetPartitionView().GetPartitions(/*skipVirutalTable =*/ false))
         m_partitions[partition->GetTable().GetId()].push_back(PartitionInfo(*partition));

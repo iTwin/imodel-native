@@ -1651,6 +1651,126 @@ BentleyStatus SchemaWriter::UpdateCustomAttributes(SchemaPersistenceHelper::Gene
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool SchemaWriter::IsChangeToBaseClassIsSupported(ECClassCR baseClass)
+    {
+    if (ECEntityClassCP entityClass = baseClass.GetEntityClassCP())
+        {
+        if (entityClass->IsMixin())
+            {
+            ECPropertyIterableCR propertyItor = baseClass.GetProperties(true);
+            return  propertyItor.begin() == propertyItor.end();
+            }
+        }
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                         Affan.Khan  07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus SchemaWriter::UpdateBaseClasses(BaseClassChanges& baseClassChanges, ECN::ECClassCR oldClass, ECN::ECClassCR newClass)
+    {
+    if (!baseClassChanges.IsValid())
+        return SUCCESS;
+
+    std::function<ECClassCP(ECClassCR, Utf8StringCR)> findBaseClass = [] (ECClassCR ecClass, Utf8StringCR qualifiedName)
+        {
+        ECClassCP baseClass = nullptr;
+        for (ECClassCP bc : ecClass.GetBaseClasses())
+            {
+            if (qualifiedName == bc->GetFullName())
+                {
+                baseClass = bc;
+                break;
+                }
+            }
+       
+        return baseClass;
+        };
+
+    bool overrideAllBaseClasses = false;
+    for (size_t i = 0; i < baseClassChanges.Count(); i++)
+        {
+        auto& change = baseClassChanges.At(i);
+        if (change.GetState() == ChangeState::Deleted)
+            {
+
+            ECClassCP oldBaseClass = findBaseClass(oldClass, change.GetOld().Value());
+            if (oldBaseClass == nullptr)
+                return ERROR;
+
+            if (IsChangeToBaseClassIsSupported(*oldBaseClass))
+                overrideAllBaseClasses = true;
+            else
+                {
+                Issues().Report("ECSchema Upgrade failed. ECClass %s: Removing a base class from an ECClass is not supported.",
+                                oldClass.GetFullName());
+                return ERROR;
+                }
+            }
+        else if (change.GetState() == ChangeState::New)
+            {
+            ECClassCP newBaseClass = findBaseClass(newClass, change.GetNew().Value());
+            if (newBaseClass == nullptr)
+                return ERROR;
+
+            if (IsChangeToBaseClassIsSupported(*newBaseClass))
+                overrideAllBaseClasses = true;
+            else
+                {
+                Issues().Report("ECSchema Upgrade failed. ECClass %s: Adding a new base class to an ECClass is not supported.",
+                                oldClass.GetFullName());
+                return ERROR;
+                }
+            }
+        else if (change.GetState() == ChangeState::Modified)
+            {
+            ECClassCP newBaseClass = findBaseClass(newClass, change.GetNew().Value());
+            if (newBaseClass == nullptr)
+                return ERROR;
+
+            ECClassCP oldBaseClass = findBaseClass(oldClass, change.GetOld().Value());
+            if (oldBaseClass == nullptr)
+                return ERROR;
+
+            if (IsChangeToBaseClassIsSupported(*oldBaseClass) && IsChangeToBaseClassIsSupported(*newBaseClass))
+                overrideAllBaseClasses = true;
+            else
+                {
+                Issues().Report("ECSchema Upgrade failed. ECClass %s: Modifying the position of a base class in the list of base classes of an ECClass is not supported.",
+                                oldClass.GetFullName());
+                return ERROR;
+                }
+            }
+        }
+    ///Overide baseClasses
+    if (overrideAllBaseClasses)
+        {
+        Statement stmt;
+        if (stmt.Prepare(m_ecdb, "DELETE FROM " TABLE_ClassHasBaseClasses " WHERE ClassId=?") != BE_SQLITE_OK)
+            return ERROR;
+
+        stmt.BindId(1, newClass.GetId());
+        if (stmt.Step() != BE_SQLITE_DONE)
+            return ERROR;
+
+        int baseClassIndex = 0;
+        for (ECClassCP baseClass : newClass.GetBaseClasses())
+            {
+            if (SUCCESS != ImportClass(*baseClass))
+                return ERROR;
+
+            if (SUCCESS != InsertBaseClassEntry(newClass.GetId(), *baseClass, baseClassIndex++))
+                return ERROR;
+            }
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan  03/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldClass, ECClassCR newClass)
@@ -1684,7 +1804,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
             if (!newClass.GetDerivedClasses().empty())
                 {
                 Issues().Report("ECSchema Upgrade failed. ECClass %s: Changing the ECClassModifier to 'Sealed' is only valid if the class does not have derived classes.",
-                                          oldClass.GetFullName());
+                                oldClass.GetFullName());
 
                 return ERROR;
                 }
@@ -1692,7 +1812,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
         else if (newValue == ECClassModifier::Abstract)
             {
             Issues().Report("ECSchema Upgrade failed. ECClass %s: Changing the ECClassModifier to 'Abstract' is not supported.",
-                                      oldClass.GetFullName());
+                            oldClass.GetFullName());
 
             return ERROR;
             }
@@ -1703,7 +1823,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
     if (classChange.ClassType().IsValid())
         {
         Issues().Report("ECSchema Upgrade failed. ECClass %s: Changing the ECClassType of an ECClass is not supported.",
-                                  oldClass.GetFullName());
+                        oldClass.GetFullName());
         return ERROR;
         }
 
@@ -1712,7 +1832,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
         if (classChange.GetName().GetNew().IsNull())
             {
             Issues().Report("ECSchema Upgrade failed. ECClass %s: Name must always be set for an ECClass.",
-                                      oldClass.GetFullName());
+                            oldClass.GetFullName());
             return ERROR;
             }
 
@@ -1741,14 +1861,14 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
         if (relationshipChange.GetStrength().IsValid())
             {
             Issues().Report("ECSchema Upgrade failed. ECRelationshipClass %s: Changing the 'Strength' of an ECRelationshipClass is not supported.",
-                                      oldClass.GetFullName());
+                            oldClass.GetFullName());
             return ERROR;
             }
 
         if (relationshipChange.GetStrengthDirection().IsValid())
             {
             Issues().Report("ECSchema Upgrade failed. ECRelationshipClass %s: Changing the 'StrengthDirection' of an ECRelationshipClass is not supported.",
-                                      oldClass.GetFullName());
+                            oldClass.GetFullName());
             return ERROR;
             }
 
@@ -1763,7 +1883,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
                 return ERROR;
 
         if (relationshipChange.GetTarget().IsValid())
-            if (UpdateRelationshipConstraint(classId,  relationshipChange.GetTarget(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
+            if (UpdateRelationshipConstraint(classId, relationshipChange.GetTarget(), newRel->GetSource(), oldRel->GetTarget(), false, oldRel->GetFullName()) == ERROR)
                 return ERROR;
         }
 
@@ -1774,30 +1894,11 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
             return ERROR;
         }
 
+
     if (classChange.BaseClasses().IsValid())
         {
-        for (size_t i = 0; i < classChange.BaseClasses().Count(); i++)
-            {
-            auto& change = classChange.BaseClasses().At(i);
-            if (change.GetState() == ChangeState::Deleted)
-                {
-                Issues().Report("ECSchema Upgrade failed. ECClass %s: Removing a base class from an ECClass is not supported.",
-                                          oldClass.GetFullName());
-                return ERROR;
-                }
-            else if (change.GetState() == ChangeState::New)
-                {
-                Issues().Report("ECSchema Upgrade failed. ECClass %s: Adding a new base class to an ECClass is not supported.",
-                                          oldClass.GetFullName());
-                return ERROR;
-                }
-            else if (change.GetState() == ChangeState::Modified)
-                {
-                Issues().Report("ECSchema Upgrade failed. ECClass %s: Modifying the position of a base class in the list of base classes of an ECClass is not supported.",
-                                          oldClass.GetFullName());
-                return ERROR;
-                }
-            }
+        if (UpdateBaseClasses(classChange.BaseClasses(), oldClass, newClass) != SUCCESS)
+            return ERROR;
         }
 
     if (classChange.Properties().IsValid())

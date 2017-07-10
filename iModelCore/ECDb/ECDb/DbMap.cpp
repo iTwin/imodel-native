@@ -215,6 +215,28 @@ void DbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, 
 
         return;
         }
+    else
+        {
+        //If all baseClasses are mixin then considier the class as root class.
+        bool noneMixin = false;
+        for (ECClassCP baseClass : ecclass.GetBaseClasses())
+            {
+            if (auto entityClass = baseClass->GetEntityClassCP())
+                {
+                if (entityClass->IsMixin())
+                    continue;
+                }
+
+            noneMixin = true;
+            break;
+            }
+
+        if (!noneMixin)
+            {
+            rootClassList.push_back(&ecclass);
+            return;
+            }
+        }
 
     for (ECClassCP baseClass : ecclass.GetBaseClasses())
         {
