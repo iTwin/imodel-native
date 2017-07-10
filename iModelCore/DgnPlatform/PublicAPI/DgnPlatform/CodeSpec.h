@@ -176,7 +176,11 @@ public:
         RelatedElement = 4, //!< The Code value must be unique among other elements also scoped by the same element
     };
 
-    typedef DgnCode::ScopeRequirement ScopeRequirement;
+    enum class ScopeRequirement 
+    {
+        ElementId = 1, //!< The DgnCode is required to have a valid DgnElementId as its scope
+        FederationGuid = 2 //!< The DgnCode is required to have a valid FederationGuid as its scope
+    };
 
 private:
     BE_JSON_NAME(type);
@@ -192,7 +196,7 @@ private:
 public:
     Type GetType() const {return (Type) GetValue(json_type()).asInt((int) Type::Repository);}
     bool IsFederationGuidRequired() const {return GetValue(json_fGuidRequired()).asBool(false);} //!< If true, the scope element is required to have a FederationGuid
-    DgnCode::ScopeRequirement GetScopeRequirement() const {return IsFederationGuidRequired() ? DgnCode::ScopeRequirement::FederationGuid : DgnCode::ScopeRequirement::ElementId;}
+    ScopeRequirement GetScopeRequirement() const {return IsFederationGuidRequired() ? ScopeRequirement::FederationGuid : ScopeRequirement::ElementId;}
     Utf8String GetRelationship() const {return GetValue(json_relationship()).asString();}
 
     static CodeScopeSpec CreateRepositoryScope(ScopeRequirement scopeRequirement=ScopeRequirement::ElementId) {return CodeScopeSpec(Type::Repository, scopeRequirement);}
@@ -280,7 +284,7 @@ public:
     DGNPLATFORM_EXPORT static CodeSpecPtr Create(DgnDbR db, Utf8CP name, CodeScopeSpecCR scopeSpec=CodeScopeSpec::CreateRepositoryScope());
 
     CodeScopeSpecCR GetScope() const {return m_scopeSpec;}
-    DgnCode::ScopeRequirement GetScopeRequirement() const {return GetScope().GetScopeRequirement();}
+    CodeScopeSpec::ScopeRequirement GetScopeRequirement() const {return GetScope().GetScopeRequirement();}
     void SetScope(CodeScopeSpecCR scopeSpec) {m_scopeSpec = scopeSpec;}
     bool IsRepositoryScope() const {return CodeScopeSpec::Type::Repository == GetScope().GetType();}
     bool IsModelScope() const {return CodeScopeSpec::Type::Model == GetScope().GetType();}

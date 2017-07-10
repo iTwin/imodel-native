@@ -455,7 +455,7 @@ declare module Bentley.Dgn /*** NATIVE_TYPE_NAME = BentleyApi::Dgn ***/ {
         CodeSpecId: DgnObjectIdP;
 
         /** The Scope of this code */
-        Scope: DgnObjectIdP;
+        Scope: Bentley_Utf8String;
 
         /** The Value of this code */
         Value: Bentley_Utf8String;

@@ -1525,7 +1525,7 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnCodeCR code) const
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
 
-    return QueryElementIdByCode(code.GetCodeSpecId(), code.GetScopeElementId(), code.GetValue());
+    return QueryElementIdByCode(code.GetCodeSpecId(), code.GetScopeElementId(GetDgnDb()), code.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**

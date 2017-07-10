@@ -269,9 +269,6 @@ DgnDbStatus DgnElement::_OnInsert()
             return DgnDbStatus::InvalidCode;
         }
 
-    if (DgnDbStatus::Success != m_code.ResolveScope(GetDgnDb()))
-        return DgnDbStatus::InvalidCode;
-
     if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
         return DgnDbStatus::DuplicateCode;
 
@@ -1090,7 +1087,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
 
     statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeSpec), m_code.GetCodeSpecId());
-    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScopeElementId());
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScopeElementId(GetDgnDb()));
 
     if (HasUserLabel())
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel), GetUserLabel(), IECSqlBinder::MakeCopy::No);
@@ -1479,15 +1476,6 @@ void DgnElement::CopyAppDataFrom(DgnElementCR source) const
         {
         AddAppData(*a.first, a.second.get());
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
-    {
-    m_specId = importer.RemapCodeSpecId(m_specId);
-    m_scopeElementId = importer.FindElementId(m_scopeElementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2415,7 +2403,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeScope,
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetNavigationInfo(el.GetCode().GetScopeElementId());
+            value.SetNavigationInfo(el.GetCode().GetScopeElementId(el.GetDgnDb()));
             return DgnDbStatus::Success;
             },
         

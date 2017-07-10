@@ -240,18 +240,18 @@ IBriefcaseManagerPtr DgnPlatformLib::Host::RepositoryAdmin::_CreateBriefcaseMana
 
 #define TABLE_Codes "Codes"
 #define TABLE_UnavailableCodes "UnavailableCodes"
-#define CODE_SpecId "SpecId"
-#define CODE_ScopeElementId "ScopeElementId"
-#define CODE_ScopeFederationGuid "ScopeFederationGuid"
+#define CODE_CodeSpecId "CodeSpecId"
+#define CODE_Scope "Scope"
 #define CODE_Value "CodeValue"
-#define CODE_Columns CODE_SpecId "," CODE_ScopeElementId "," CODE_ScopeFederationGuid "," CODE_Value
+#define CODE_Columns CODE_CodeSpecId "," CODE_Scope "," CODE_Value
 #define CODE_Values "(" CODE_Columns ")"
-#define STMT_InsertCode "INSERT INTO " TABLE_Codes " " CODE_Values " Values (?,?,?,?)"
-#define STMT_InsertUnavailableCode "INSERT INTO " TABLE_UnavailableCodes " " CODE_Values " Values (?,?,?,?)"
+#define STMT_InsertCode "INSERT INTO " TABLE_Codes " " CODE_Values " Values (?,?,?)"
+#define STMT_InsertUnavailableCode "INSERT INTO " TABLE_UnavailableCodes " " CODE_Values " Values (?,?,?)"
 #define STMT_SelectUnavailableCodesInSet "SELECT " CODE_Columns " FROM " TABLE_UnavailableCodes " WHERE InVirtualSet(@vset," CODE_Columns ")"
 #define STMT_DeleteCodesInSet "DELETE FROM " TABLE_Codes " WHERE InVirtualSet(@vset," CODE_Columns ")"
+#define STMT_SelectCode "SELECT * FROM " TABLE_Codes " WHERE " CODE_CodeSpecId "=? AND " CODE_Scope "=? AND " CODE_Value "=?"
 
-enum CodeColumn { CodeSpec=0, ScopeElementId, ScopeFederationGuid, Value };
+enum CodeColumn { CodeSpec=0, Scope, Value };
 
 #define TABLE_Locks "Locks"
 #define TABLE_UnavailableLocks "UnavailableLocks"
@@ -357,9 +357,8 @@ bool BriefcaseManagerBase::InitializeLocalDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool BriefcaseManagerBase::CreateCodesTable(Utf8CP tableName)
     {
-    return BE_SQLITE_OK == m_localDb.CreateTable(tableName, CODE_SpecId " INTEGER,"
-                                                            CODE_ScopeElementId " INTEGER,"
-                                                            CODE_ScopeFederationGuid " BINARY,"
+    return BE_SQLITE_OK == m_localDb.CreateTable(tableName, CODE_CodeSpecId " INTEGER,"
+                                                            CODE_Scope " TEXT,"
                                                             CODE_Value " TEXT,"
                                                             "PRIMARY KEY" CODE_Values);
     }
@@ -473,8 +472,7 @@ void BriefcaseManagerBase::InsertCodes(DgnCodeSet const& codes, TableType tableT
             }
 
         stmt->BindId(CodeColumn::CodeSpec+1, code.GetCodeSpecId());
-        stmt->BindId(CodeColumn::ScopeElementId+1, code.GetScopeElementId());
-        stmt->BindGuid(CodeColumn::ScopeFederationGuid+1, code.GetScopeFederationGuid());
+        stmt->BindText(CodeColumn::Scope+1, code.GetScopeString(), Statement::MakeCopy::No);
         stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
         stmt->Step();
         stmt->Reset();
@@ -495,8 +493,7 @@ struct VirtualCodeSet : VirtualSet
         return m_codes.end() != std::find_if(m_codes.begin(), m_codes.end(), [&](DgnCode const& arg)
             {
             return arg.GetCodeSpecId().GetValueUnchecked() == vals[CodeColumn::CodeSpec].GetValueUInt64()
-                && arg.GetScopeElementId().GetValueUnchecked() == vals[CodeColumn::ScopeElementId].GetValueUInt64()
-                && arg.GetScopeFederationGuid() == vals[CodeColumn::ScopeFederationGuid].GetValueGuid()
+                && arg.GetScopeString().Equals(vals[CodeColumn::Scope].GetValueText())
                 && arg.GetValue().Equals(vals[CodeColumn::Value].GetValueText());
             });
         }
@@ -508,7 +505,8 @@ struct VirtualCodeSet : VirtualSet
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BriefcaseManagerBase::Cull(DgnCodeSet& codes)
     {
-    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement("SELECT * FROM " TABLE_Codes " WHERE " CODE_SpecId "=? AND (" CODE_ScopeElementId "=? OR " CODE_ScopeFederationGuid "=?) AND " CODE_Value "=?");
+    // Don't bother asking server to reserve codes which we've already reserved...
+    CachedStatementPtr stmt = GetLocalDb().GetCachedStatement(STMT_SelectCode);
     auto iter = codes.begin();
     while (iter != codes.end())
         {
@@ -521,11 +519,9 @@ void BriefcaseManagerBase::Cull(DgnCodeSet& codes)
             continue;
             }
 
-        stmt->BindId(1, code.GetCodeSpecId());
-        stmt->BindId(2, code.GetScopeElementId());
-        stmt->BindGuid(3, code.GetScopeFederationGuid());
-        stmt->BindText(4, code.GetValue(), Statement::MakeCopy::No);
-
+        stmt->BindId(CodeColumn::CodeSpec+1, code.GetCodeSpecId());
+        stmt->BindText(CodeColumn::Scope+1, code.GetScopeString(), Statement::MakeCopy::No);
+        stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
         if (BE_SQLITE_ROW == stmt->Step())
             iter = codes.erase(iter);
         else
@@ -974,8 +970,10 @@ RepositoryStatus BriefcaseManagerBase::FastQueryCodes(Response& response, DgnCod
             break;
 
         // NB: FastQuery cannot supply all ownership/revision details...callers who care can check the RequestPurpose of the Response and query server for details.
-        DgnCode code(stmt->GetValueId<CodeSpecId>(CodeColumn::CodeSpec), DgnCode::ScopeRequirement::Unknown, stmt->GetValueId<DgnElementId>(CodeColumn::ScopeElementId), stmt->GetValueGuid(CodeColumn::ScopeFederationGuid), stmt->GetValueText(CodeColumn::Value));
-        code.ResolveScope(GetDgnDb()); // call ResolveScope so that ScopeElementId and ScopeFederationGuid can be matched up
+        DgnCode code = DgnCode::From(stmt->GetValueId<CodeSpecId>(CodeColumn::CodeSpec), stmt->GetValueText(CodeColumn::Scope), stmt->GetValueText(CodeColumn::Value));
+        if (!code.IsValid())
+            continue;
+
         DgnCodeInfo details(code);
         details.SetReserved(BeSQLite::BeBriefcaseId());
         response.CodeStates().insert(details);
@@ -1903,14 +1901,8 @@ bool DgnLock::FromJson(JsonValueCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> void toJson(JsonValueR json, T const& obj) { obj.ToJson(json); }
-template<> void toJson(JsonValueR json, BeBriefcaseId const& id) { RepositoryJson::BriefcaseIdToJson(json, id); }
-template<> void toJson(JsonValueR json, DgnCodeCR code)
-    {
-    RepositoryJson::BeInt64IdToJson(json[JSON_Id], code.GetCodeSpecId());
-    json[JSON_Scope] = code.GetScopeString();
-    json[JSON_Name] = code.GetValue();
-    }
+template<typename T> void toJson(JsonValueR value, T const& obj) { obj.ToJson(value); }
+template<> void toJson(JsonValueR value, BeBriefcaseId const& id) { RepositoryJson::BriefcaseIdToJson(value, id); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
@@ -1929,23 +1921,6 @@ template<typename T> static void collectionToJson(JsonValueR value, T const& obj
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    05/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-template<typename T> bool fromJson(T& obj, JsonValueCR json) { return obj.FromJson(json); }
-template<> bool fromJson(DgnCodeR code, JsonValueCR json)
-    {
-    CodeSpecId specId;
-    if (!RepositoryJson::BeInt64IdFromJson(specId, json[JSON_Id]))
-        {
-        code.Invalidate();
-        return false;
-        }
-
-    code = DgnCode::From(specId, json[JSON_Scope].asString(), json[JSON_Name].asString());
-    return code.IsValid();
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 template<typename T> static bool setFromJson(bset<T>& objs, JsonValueCR value)
@@ -1957,7 +1932,7 @@ template<typename T> static bool setFromJson(bset<T>& objs, JsonValueCR value)
     uint32_t nObjs = value.size();
     for (uint32_t i = 0; i < nObjs; i++)
         {
-        if (!fromJson(obj, value[i]))
+        if (!obj.FromJson(value[i]))
             return false;
 
         objs.insert(obj);
@@ -2105,6 +2080,32 @@ bool DgnLockInfo::FromJson(JsonValueCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCode::ToJson(JsonValueR value) const
+    {
+    RepositoryJson::BeInt64IdToJson(value[JSON_Id], m_specId);
+    value[JSON_Scope] = m_scope;
+    value[JSON_Name] = m_value;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnCode::FromJson(JsonValueCR value)
+    {
+    if (!RepositoryJson::BeInt64IdFromJson(m_specId, value[JSON_Id]))
+        {
+        *this = DgnCode();
+        return false;
+        }
+
+    m_scope = value[JSON_Scope].asString();
+    m_value = value[JSON_Name].asString();
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCodeState::ToJson(JsonValueR value) const
     {
     value[JSON_CodeStateType] = static_cast<uint32_t>(m_type);
@@ -2134,7 +2135,7 @@ bool DgnCodeState::FromJson(JsonValueCR value)
 void DgnCodeInfo::ToJson(JsonValueR value) const
     {
     DgnCodeState::ToJson(value);
-    toJson(value[JSON_Code], m_code);
+    m_code.ToJson(value[JSON_Code]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2142,7 +2143,7 @@ void DgnCodeInfo::ToJson(JsonValueR value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnCodeInfo::FromJson(JsonValueCR value)
     {
-    return fromJson(m_code, value[JSON_Code]) && DgnCodeState::FromJson(value);
+    return m_code.FromJson(value[JSON_Code]) && DgnCodeState::FromJson(value);
     }
 
 /*---------------------------------------------------------------------------------**//**

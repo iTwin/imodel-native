@@ -14,7 +14,6 @@ USING_NAMESPACE_BENTLEY_DPTEST
 +===============+===============+===============+===============+===============+======*/
 struct CategoryTests : public DgnDbTestFixture
     {
-
     void CompareCategories(DgnCategoryId catId, Utf8CP name, DgnCategory::Rank rank, Utf8CP descr)
         {
         DgnCategoryCPtr cat = DgnCategory::Get(*m_db, catId);
@@ -51,7 +50,7 @@ struct CategoryTests : public DgnDbTestFixture
             {
             EXPECT_STREQ(subcat->GetSubCategoryName().c_str(), other.GetSubCategoryName().c_str());
             EXPECT_EQ(subcat->GetCategoryId(), other.GetCategoryId());
-            EXPECT_EQ(subcat->GetCode().GetScopeElementId(), other.GetCode().GetScopeElementId());
+            EXPECT_EQ(subcat->GetCode().GetScopeElementId(*m_db), other.GetCode().GetScopeElementId(*m_db));
             EXPECT_EQ(subcat->GetDescription(), other.GetDescription());
             EXPECT_TRUE(subcat->GetAppearance().IsEqual(other.GetAppearance()));
             }

@@ -411,7 +411,7 @@ TEST_F(CreateFromInstanceTests, SampleForHopen)
     ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Model", ECValue(model->GetModelId())));
     ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Category", ECValue(categoryId)));
     ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("CodeSpec", ECValue(emptyCode.GetCodeSpecId())));
-    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("CodeScope", ECValue(emptyCode.GetScopeElementId())));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("CodeScope", ECValue(emptyCode.GetScopeElementId(*m_db))));
     ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.Street", ECValue(str_StocktonDrive)));
     ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.Name", ECValue(str_Exton)));
     ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.State", ECValue(str_Pennsylvania)));
@@ -444,7 +444,7 @@ TEST_F(CreateFromInstanceTests, SampleForHopen)
         ASSERT_EQ(testElement->GetModelId(), model->GetModelId());
         ASSERT_EQ(testElement->GetCategoryId(), categoryId);
         ASSERT_EQ(testElement->GetCode().GetCodeSpecId(), emptyCode.GetCodeSpecId());
-        ASSERT_EQ(testElement->GetCode().GetScopeElementId(), emptyCode.GetScopeElementId());
+        ASSERT_EQ(testElement->GetCode().GetScopeElementId(*m_db), emptyCode.GetScopeElementId(*m_db));
         ASSERT_TRUE(testElement->GetCode().GetValue().empty());
         ASSERT_STREQ(testElement->GetPropertyValueString("Location.Street").c_str(), str_StocktonDrive);
         ASSERT_STREQ(testElement->GetPropertyValueString("Location.City.Name").c_str(), str_Exton);

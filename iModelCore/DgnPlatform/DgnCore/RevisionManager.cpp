@@ -740,16 +740,21 @@ static DgnModelId GetModelIdFromChangeOrDb(ChangeIterator::ColumnIterator const&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/2017
 //---------------------------------------------------------------------------------------
-static DgnCode GetCodeFromChangeOrDb(ChangeIterator::ColumnIterator const& columnIter, Changes::Change::Stage stage)
+static DgnCode GetCodeFromChangeOrDb(DgnDbCR db, ChangeIterator::ColumnIterator const& columnIter, Changes::Change::Stage stage)
     {
     DbDupValue codeSpecId = GetValueFromChangeOrDb(columnIter, "CodeSpec.Id", stage);
-    DbDupValue scope = GetValueFromChangeOrDb(columnIter, "CodeScope.Id", stage);
+    DbDupValue scopeElementId = GetValueFromChangeOrDb(columnIter, "CodeScope.Id", stage);
     DbDupValue value = GetValueFromChangeOrDb(columnIter, "CodeValue", stage);
 
-    if (codeSpecId.IsValid() && scope.IsValid() && value.IsValid())
-        return DgnCode(codeSpecId.GetValueId<CodeSpecId>(), scope.GetValueId<DgnElementId>(), value.GetValueText());
+    CodeSpecCPtr codeSpec = db.CodeSpecs().GetCodeSpec(codeSpecId.GetValueId<CodeSpecId>());
+    if (!codeSpec.IsValid())
+        return DgnCode();
 
-    return DgnCode();
+    DgnElementCPtr scopeElement = db.Elements().GetElement(scopeElementId.GetValueId<DgnElementId>());
+    if (!scopeElement.IsValid())
+        return DgnCode();
+
+    return codeSpec->CreateCode(*scopeElement, value.GetValueText());
     }
 
 //---------------------------------------------------------------------------------------
@@ -802,11 +807,8 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
         DbOpcode dbOpcode = entry.GetDbOpcode();
         ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
 
-        DgnCode oldCode = (dbOpcode == DbOpcode::Insert) ? DgnCode() : GetCodeFromChangeOrDb(columnIter, Changes::Change::Stage::Old);
-        DgnCode newCode = (dbOpcode == DbOpcode::Delete) ? DgnCode() : GetCodeFromChangeOrDb(columnIter, Changes::Change::Stage::New);
-
-        oldCode.ResolveScope(dgndb); // determine ScopeRequirement::ElementId or ScopeRequirement::FederationGuid
-        newCode.ResolveScope(dgndb); // determine ScopeRequirement::ElementId or ScopeRequirement::FederationGuid
+        DgnCode oldCode = (dbOpcode == DbOpcode::Insert) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::Old);
+        DgnCode newCode = (dbOpcode == DbOpcode::Delete) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::New);
 
         if (oldCode == newCode)
             continue;

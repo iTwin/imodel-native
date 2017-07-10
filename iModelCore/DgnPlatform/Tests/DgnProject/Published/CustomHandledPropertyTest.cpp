@@ -81,7 +81,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
 
         ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(codeScopeIndex, ECN::ECValue(1)));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, codeScopeIndex));
-        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetScopeElementId())));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetScopeElementId(*m_db))));
         checkValue1.Clear();
 
         ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(codeValueIndex, ECN::ECValue(1)));
@@ -118,7 +118,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetCodeSpecId())));
      checkValue1.Clear();
      ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, codeScopeIndex));
-     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetScopeElementId())));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetScopeElementId(*m_db))));
      checkValue1.Clear();
      ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, codeValueIndex));
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));

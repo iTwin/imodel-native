@@ -3096,14 +3096,14 @@ TEST_F(CodesManagerTest, PlantScenario)
     EXPECT_FALSE(unitCodeSpec->GetScope().IsFederationGuidRequired());
 
     Utf8CP fakeRelationship = "Fake.EquipmentScopedByUnit"; // relationship name not validated by CodeScopeSpec yet
-    CodeSpecPtr equipmentCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Equipment", CodeScopeSpec::CreateRelatedElementScope(fakeRelationship, DgnCode::ScopeRequirement::FederationGuid));
+    CodeSpecPtr equipmentCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Equipment", CodeScopeSpec::CreateRelatedElementScope(fakeRelationship, CodeScopeSpec::ScopeRequirement::FederationGuid));
     EXPECT_TRUE(equipmentCodeSpec.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, equipmentCodeSpec->Insert());
     EXPECT_TRUE(equipmentCodeSpec->IsRelatedElementScope());
     EXPECT_STREQ(equipmentCodeSpec->GetScope().GetRelationship().c_str(), fakeRelationship);
     EXPECT_TRUE(equipmentCodeSpec->GetScope().IsFederationGuidRequired());
 
-    CodeSpecPtr nozzleCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Nozzle", CodeScopeSpec::CreateParentElementScope(DgnCode::ScopeRequirement::FederationGuid));
+    CodeSpecPtr nozzleCodeSpec = CodeSpec::Create(db, "CodesManagerTest.Nozzle", CodeScopeSpec::CreateParentElementScope(CodeScopeSpec::ScopeRequirement::FederationGuid));
     EXPECT_TRUE(nozzleCodeSpec.IsValid());
     EXPECT_EQ(DgnDbStatus::Success, nozzleCodeSpec->Insert());
     EXPECT_TRUE(nozzleCodeSpec->IsParentElementScope());
@@ -3170,7 +3170,6 @@ TEST_F(CodesManagerTest, PlantScenario)
     wrongCodes.insert(unitCodeSpec->CreateCode(*physicalModel, "U2")); // wrong name
     wrongCodes.insert(unitCodeSpec->CreateCode(db.GetDictionaryModel(), "U1")); // wrong model
     wrongCodes.insert(DgnCode(unitCodeSpec->GetCodeSpecId(), DgnElementId(), "U1")); // invalid scope
-    wrongCodes.insert(DgnCode(nozzleCodeSpec->GetCodeSpecId(), DgnCode::ScopeRequirement::Unknown, DgnElementId(), BeGuid(), "N1")); // invalid scope
     wrongCodes.insert(nozzleCodeSpec->CreateCode(equipment1Guid, "N3")); // wrong scope
 
     for (DgnCodeCR wrongCode : wrongCodes)

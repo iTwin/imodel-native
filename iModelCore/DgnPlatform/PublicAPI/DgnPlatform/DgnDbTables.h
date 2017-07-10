@@ -178,20 +178,10 @@ struct ModelIterator;
 //=======================================================================================
 struct DgnCode
 {
-public:
-    enum class ScopeRequirement 
-    {
-        Unknown = 0, //!< CodeSpec has not yet been queried to resolve the ScopeRequirement
-        ElementId = 1, //!< The DgnCode is required to have a valid DgnElementId as its scope
-        FederationGuid = 2 //!< The DgnCode is required to have a valid FederationGuid as its scope
-    };
-
 private:
-    CodeSpecId m_specId;
-    ScopeRequirement m_scopeRequirement = ScopeRequirement::Unknown;
-    DgnElementId m_scopeElementId;
-    BeSQLite::BeGuid m_scopeFederationGuid;
-    Utf8String m_value;
+    CodeSpecId m_specId; //!< @see CodeSpec
+    Utf8String m_scope; //!< Note: stored as a string, but must be a valid/serialized FederationGuid or ElementId
+    Utf8String m_value; //!< Note: can be "empty" (persisted as null)
 
 public:
     //! Constructs an invalid DgnCode
@@ -199,25 +189,15 @@ public:
 
     //! Construct a DgnCode scoped to an existing element.
     //! @note The best practice is to call CodeSpec::CreateCode rather than this constructor
-    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scopeElementId(scopeElementId), m_value(value) {}
+    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scope(scopeElementId.ToString(BeInt64Id::UseHex::Yes)), m_value(value) {}
     //! Construct a DgnCode scoped to an element that does not yet exist, but when it does exist it will have the specified FederationGuid. Typically used for reserving codes.
-    DgnCode(CodeSpecId specId, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) : m_specId(specId), m_scopeFederationGuid(scopeFederationGuid), m_value(value) {}
-    //! Used by CodeSpec::CreateCode methods
-    //! @private
-    DgnCode(CodeSpecId specId, ScopeRequirement scopeRequirement, DgnElementId scopeElementId, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) 
-        : m_specId(specId), m_scopeRequirement(scopeRequirement), m_scopeElementId(scopeElementId), m_scopeFederationGuid(scopeFederationGuid), m_value(value) 
-        {
-        if (ScopeRequirement::ElementId == m_scopeRequirement) {BeAssert(m_scopeElementId.IsValid());}
-        if (ScopeRequirement::FederationGuid == m_scopeRequirement) {BeAssert(m_scopeFederationGuid.IsValid());}
-        }
+    DgnCode(CodeSpecId specId, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) : m_specId(specId), m_scope(scopeFederationGuid.ToString()), m_value(value) {}
 
     //! Invalidate this DgnCode
     void Invalidate() 
         {
         m_specId.Invalidate();
-        m_scopeRequirement = ScopeRequirement::Unknown;
-        m_scopeElementId.Invalidate();
-        m_scopeFederationGuid.Invalidate();
+        m_scope.clear();
         m_value.clear();
         }
 
@@ -226,34 +206,21 @@ public:
     //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
     bool IsEmpty() const {return m_specId.IsValid() && m_value.empty();}
     //! Determine if two DgnCodes are equivalent
-    DGNPLATFORM_EXPORT bool operator==(DgnCode const& other) const;
+    bool operator==(DgnCodeCR other) const {return m_specId==other.m_specId && m_value==other.m_value && m_scope==other.m_scope;}
     //! Determine if two DgnCodes are not equivalent
-    bool operator!=(DgnCode const& other) const {return !(*this == other);}
+    bool operator!=(DgnCodeCR other) const {return !(*this == other);}
     //! Perform ordered comparison, e.g. for inclusion in associative containers
-    DGNPLATFORM_EXPORT bool operator<(DgnCode const& rhs) const;
+    DGNPLATFORM_EXPORT bool operator<(DgnCodeCR rhs) const;
 
     //! Get the value for this DgnCode
     Utf8StringCR GetValue() const {return m_value;}
     //! Get the value for this DgnCode
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
 
-    //! Return true if this DgnCode has had its ScopeRequirement and ScopeFederationGuid (if needed) resolved.
-    bool IsScopeRequirementKnown() const {return m_scopeRequirement != ScopeRequirement::Unknown;}
-    //! Resolve the scope of this DgnCode. This involves looking up the ScopeRequirement from the CodeSpec and correlating ScopeElementId with ScopeFederationGuid.
-    DGNPLATFORM_EXPORT DgnDbStatus ResolveScope(DgnDbCR);
-    //! Get the ScopeRequirement currently stored on this DgnCode. 
-    ScopeRequirement GetScopeRequirement() const {return m_scopeRequirement;}
-    //! Get the DgnElementId (currently stored on this DgnCode) of the element providing the uniqueness scope for the code value
-    //! @see ResolveScopeElementId
-    DgnElementId GetScopeElementId() const {return m_scopeElementId;}
-    //! Get the scope FederationGuid currently stored on this DgnCode.
-    BeSQLite::BeGuidCR GetScopeFederationGuid() const {return m_scopeFederationGuid;}
+    //! Get the DgnElementId of the element providing the uniqueness scope for the code value.
+    DGNPLATFORM_EXPORT DgnElementId GetScopeElementId(DgnDbR db) const;
     //! Return the scope serialized to a string whose format is dependent on ScopeRequirement
-    Utf8String GetScopeString() const 
-        {
-        BeAssert(IsScopeRequirementKnown());
-        return (ScopeRequirement::FederationGuid == m_scopeRequirement) ? m_scopeFederationGuid.ToString() : m_scopeElementId.ToString();
-        }
+    Utf8StringCR GetScopeString() const {return m_scope;}
 
     //! Get the CodeSpecId of the CodeSpec that issued this DgnCode.
     CodeSpecId GetCodeSpecId() const {return m_specId;}
@@ -298,6 +265,9 @@ public:
     };
 
     static Iterator MakeIterator(DgnDbR db, Iterator::Options options = Iterator::Options()) {return Iterator(db, options);}
+
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
 };
 
 typedef bset<DgnCode> DgnCodeSet;
