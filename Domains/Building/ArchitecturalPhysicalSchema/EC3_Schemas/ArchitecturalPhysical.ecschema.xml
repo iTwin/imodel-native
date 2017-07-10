@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="ArchitecturalPhysical" alias="ArchPhys" version="01.00.00" description="Architectural Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
     <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
-    <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="EditorCustomAttributes" version="01.00.03" alias="beca"/>
     <ECCustomAttributes>
@@ -41,29 +39,6 @@
         <ECEnumerator value="15" displayLabel="ROLLINGUP"/>
         <ECEnumerator value="16" displayLabel="USERDEFINED"/>
         <ECEnumerator value="17" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="Railing_PredefinedType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="HANDRAIL"/>
-        <ECEnumerator value="1" displayLabel="GUARDRAIL"/>
-        <ECEnumerator value="2" displayLabel="BALUSTRADE"/>
-        <ECEnumerator value="3" displayLabel="USERDEFINED"/>
-        <ECEnumerator value="4" displayLabel="NOTDEFINED"/>
-    </ECEnumeration>
-    <ECEnumeration typeName="Ramp_ShapeType" backingTypeName="int" isStrict="true">
-        <ECEnumerator value="0" displayLabel="FLAT_ROOF"/>
-        <ECEnumerator value="1" displayLabel="SHED_ROOF"/>
-        <ECEnumerator value="2" displayLabel="GABLE_ROOF"/>
-        <ECEnumerator value="3" displayLabel="HIP_ROOF"/>
-        <ECEnumerator value="4" displayLabel="HIPPED_GABLE_ROOF"/>
-        <ECEnumerator value="5" displayLabel="GAMBREL_ROOF"/>
-        <ECEnumerator value="6" displayLabel="MANSARD_ROOF"/>
-        <ECEnumerator value="7" displayLabel="BARREL_ROOF"/>
-        <ECEnumerator value="8" displayLabel="RAINBOW_ROOF"/>
-        <ECEnumerator value="9" displayLabel="BUTTERFLY_ROOF"/>
-        <ECEnumerator value="10" displayLabel="PAVILION_ROOF"/>
-        <ECEnumerator value="11" displayLabel="DOME_ROOF"/>
-        <ECEnumerator value="12" displayLabel="FREEFORM"/>
-        <ECEnumerator value="13" displayLabel="NOTDEFINED"/>
     </ECEnumeration>
     <ECEnumeration typeName="Stair_ShapeType" backingTypeName="int" isStrict="true">
         <ECEnumerator value="0" displayLabel="STRAIGHT_RUN_STAIR"/>
@@ -128,165 +103,12 @@
     </ECEntityClass>
     <ECEntityClass typeName="Railing">
         <BaseClass>bis:PhysicalElement</BaseClass>
-        <ECProperty propertyName="PredefinedType" typeName="Railing_PredefinedType" description="(From IFC) Enumeration : IfcRailingTypeEnum .OPTIONAL." displayLabel="Predefined Type"/>
     </ECEntityClass>
     <ECEntityClass typeName="Ramp" description="A slopping element that transistions between two elevations">
-        <ECProperty propertyName="BBoxHigh" typeName="point3d" description="The 'high' point of the element-aligned bounding box of the Element." displayLabel="Bounding Box High">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="BBoxLow" typeName="point3d" description="The 'low' point of the element-aligned bounding box of the Element." displayLabel="Bounding Box Low">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Category" typeName="long" description="The Spatial Category used to categorize the 3D Geometric Element">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="CodeValue" typeName="string" description="Code is the formal name (business key) for an element. The combination of Code Specification, Code Scope, and the Code value must be unique." displayLabel="Code">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>True</IsNullable>
-                    <IsUnique>False</IsUnique>
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
-                <CustomHandledProperty xmlns="BisCore.01.00">
-                    <StatementTypes>6</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="CodeScope" typeName="string" description="Code Scope identifies the element/name that provides the uniqueness scope for the code value. The combination of Code Specification, Code Scope, and the Code value must be unique." displayLabel="Code Scope">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>False</IsNullable>
-                    <IsUnique>False</IsUnique>
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00">
-                    <StatementTypes>6</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="CodeSpec" typeName="long" description="The Code Specification used to generate and validate the code for the element. The combination of Code Specification, Code Scope, and the Code value must be unique." displayLabel="Code Specification">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00">
-                    <StatementTypes>6</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FederationGuid" typeName="binary" description="The GUID used to federate this element across repositories." displayLabel="Federation GUID">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>True</IsNullable>
-                    <IsUnique>True</IsUnique>
-                </PropertyMap>
-                <CustomHandledProperty xmlns="BisCore.01.00">
-                    <StatementTypes>6</StatementTypes>
-                </CustomHandledProperty>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="GeometryStream" typeName="binary" description="Binary stream used to persist the geometry of this Element." displayLabel="Geometry Stream">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="InSpatialIndex" typeName="boolean" description="If true, this element will have an entry in the Spatial Index." displayLabel="In Spatial Index">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="JsonProperties" typeName="string" description="A string property that users and/or applications can use to persist JSON values." displayLabel="JSON Properties">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00">
-                    <StatementTypes>6</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="LastMod" typeName="dateTime" description="The last modified time of the element. This is maintained by the core framework and should not be set directly by applications." displayLabel="Last Modified" readOnly="true">
-            <ECCustomAttributes>
-                <DateTimeInfo xmlns="CoreCustomAttributes.01.00">
-                    <DateTimeKind>Utc</DateTimeKind>
-                </DateTimeInfo>
-                <CustomHandledProperty xmlns="BisCore.01.00">
-                    <StatementTypes>0</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Model" typeName="long" description="The Model that contains this element." readOnly="true">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00">
-                    <StatementTypes>2</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Origin" typeName="point3d" description="The placement origin of the Element.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Parent" typeName="long" description="The parent element that owns this element.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00">
-                    <StatementTypes>6</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Pitch" typeName="double" description="The Pitch angle (in degrees) of the orientation of the Element.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Roll" typeName="double" description="The Roll angle (in degrees) of the orientation of the Element.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="ShapeType" typeName="Ramp_ShapeType" description="(From IFC) Enumeration : IfcRoofTypeEnum" displayLabel="Shape Type"/>
-        <ECProperty propertyName="TypeDefinition" typeName="long" displayLabel="Type Definition">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="UserLabel" typeName="string" description="An optional name given by the user (as opposed to the formal name stored in the Code value)." displayLabel="User Label">
-            <ECCustomAttributes>
-                <PropertyMap xmlns="ECDbMap.02.00">
-                    <IsNullable>True</IsNullable>
-                    <IsUnique>False</IsUnique>
-                    <Collation>NoCase</Collation>
-                </PropertyMap>
-                <CustomHandledProperty xmlns="BisCore.01.00">
-                    <StatementTypes>6</StatementTypes>
-                </CustomHandledProperty>
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Yaw" typeName="double" description="The Yaw angle (in degrees) of the orientation of the Element.">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.01.03"/>
-                <CustomHandledProperty xmlns="BisCore.01.00"/>
-            </ECCustomAttributes>
-        </ECProperty>
+        <BaseClass>bis:PhysicalElement</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="Roof">
         <BaseClass>bis:PhysicalElement</BaseClass>
-        <ECProperty propertyName="ShapeType" typeName="Ramp_ShapeType" description="(From IFC) Enumeration : IfcRoofTypeEnum" displayLabel="Shape Type"/>
     </ECEntityClass>
     <ECEntityClass typeName="Stair">
         <BaseClass>bis:PhysicalElement</BaseClass>
