@@ -2337,6 +2337,7 @@ TEST_F(iModelManagerTests, CodesStatesResponseTest)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas        07/2017
 //---------------------------------------------------------------------------------------
+/* WIP - uncomment with next DgnClientSDK build
 TEST_F(iModelManagerTests, CodeIdsTest)
     {
     //Prapare imodel and acquire briefcases
@@ -2376,3 +2377,4 @@ TEST_F(iModelManagerTests, CodeIdsTest)
     EXPECT_EQ(DgnCode::ScopeRequirement::ElementId, code1Result.GetScopeRequirement());
     EXPECT_EQ(DgnCode::ScopeRequirement::FederationGuid, code2Result.GetScopeRequirement());
     }
+*/
