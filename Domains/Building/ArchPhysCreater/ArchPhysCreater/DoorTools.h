@@ -15,8 +15,8 @@
 
 struct DoorTools
     {
-    static  ArchitecturalPhysical::DoorPtr CreateDoor( BuildingPhysical::BuildingPhysicalModelR model, int doorNumber );
-    static  ArchitecturalPhysical::WindowPtr CreateWindow1 (BuildingPhysical::BuildingPhysicalModelR model, int windowNumber);
+    static  Dgn::PhysicalElementPtr CreateDoor    (BuildingPhysical::BuildingPhysicalModelR model, int doorNumber );
+    static  Dgn::PhysicalElementPtr CreateWindow1 (BuildingPhysical::BuildingPhysicalModelR model, int windowNumber);
 
     };
 

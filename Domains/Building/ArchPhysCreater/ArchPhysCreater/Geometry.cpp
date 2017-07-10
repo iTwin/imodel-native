@@ -85,11 +85,11 @@ BentleyStatus GeometricTools::CreateFrameGeometry(Dgn::GeometryBuilderPtr builde
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreateDoorGeometry(ArchitecturalPhysical::DoorPtr door, BuildingPhysical::BuildingPhysicalModelR model)
+BentleyStatus GeometricTools::CreateDoorGeometry(Dgn::PhysicalElementPtr door, BuildingPhysical::BuildingPhysicalModelR model)
     {
     Dgn::DgnDbR db = model.GetDgnDb();
     Dgn::DgnModelId modelId = model.GetModelId();
-    Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorCategoryId(db);
+    //Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorCategoryId(db);
 
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*door);
@@ -98,11 +98,11 @@ BentleyStatus GeometricTools::CreateDoorGeometry(ArchitecturalPhysical::DoorPtr 
 
     // Append geometry/params for tile casing
 
-    builder->Append(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorFrameSubCategoryId(db));
+   // builder->Append(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorFrameSubCategoryId(db));
 
     Dgn::Render::GeometryParams params;
-    params.SetCategoryId(categoryId);
-    params.SetSubCategoryId(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorFrameSubCategoryId(db));
+//    params.SetCategoryId(categoryId);
+ //   params.SetSubCategoryId(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorFrameSubCategoryId(db));
     // params.SetMaterialId(ToyTileMaterial::QueryColoredPlasticMaterialId(db));
     params.SetLineColor(Dgn::ColorDef::Red());
     params.SetFillColor(Dgn::ColorDef::Red());
@@ -124,10 +124,10 @@ BentleyStatus GeometricTools::CreateDoorGeometry(ArchitecturalPhysical::DoorPtr 
 
     // Create the Panel
 
-    builder->Append(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorPanelSubCategoryId(db));
+  //  builder->Append(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorPanelSubCategoryId(db));
 
-    params.SetCategoryId(categoryId);
-    params.SetSubCategoryId(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorPanelSubCategoryId(db));
+ //   params.SetCategoryId(categoryId);
+  //  params.SetSubCategoryId(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorPanelSubCategoryId(db));
     params.SetLineColor(Dgn::ColorDef::Brown());
     params.SetFillColor(Dgn::ColorDef::Brown());
     builder->Append(params);
@@ -162,13 +162,13 @@ BentleyStatus GeometricTools::CreateDoorGeometry(ArchitecturalPhysical::DoorPtr 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreateWindowGeometry(ArchitecturalPhysical::ArchitecturalBaseElementPtr window, BuildingPhysical::BuildingPhysicalModelR model)
+BentleyStatus GeometricTools::CreateWindowGeometry(Dgn::PhysicalElementPtr window, BuildingPhysical::BuildingPhysicalModelR model)
     {
     Dgn::DgnDbR db = model.GetDgnDb();
     Dgn::DgnModelId modelId = model.GetModelId();
-    Dgn::DgnCategoryId    windowCategoryId      = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(db);
-    Dgn::DgnSubCategoryId windowFraneCategoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowFrameSubCategoryId(db);
-    Dgn::DgnSubCategoryId windowPanelCategoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowPanelSubCategoryId(db);
+    //Dgn::DgnCategoryId    windowCategoryId      = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(db);
+    //Dgn::DgnSubCategoryId windowFraneCategoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowFrameSubCategoryId(db);
+   // Dgn::DgnSubCategoryId windowPanelCategoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowPanelSubCategoryId(db);
 
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*window);
@@ -177,11 +177,11 @@ BentleyStatus GeometricTools::CreateWindowGeometry(ArchitecturalPhysical::Archit
 
     // Append geometry/params for tile casing
 
-    builder->Append(windowFraneCategoryId);
+//    builder->Append(windowFraneCategoryId);
 
     Dgn::Render::GeometryParams params;
-    params.SetCategoryId(windowCategoryId);
-    params.SetSubCategoryId(windowFraneCategoryId);
+ //   params.SetCategoryId(windowCategoryId);
+   // params.SetSubCategoryId(windowFraneCategoryId);
     // params.SetMaterialId(ToyTileMaterial::QueryColoredPlasticMaterialId(db));
     params.SetLineColor(Dgn::ColorDef::DarkGrey());
     params.SetFillColor(Dgn::ColorDef::DarkGrey());
@@ -203,10 +203,10 @@ BentleyStatus GeometricTools::CreateWindowGeometry(ArchitecturalPhysical::Archit
 
     // Create the Panel
 
-    builder->Append(windowPanelCategoryId);
+  //  builder->Append(windowPanelCategoryId);
 
-    params.SetCategoryId(windowCategoryId);
-    params.SetSubCategoryId(windowPanelCategoryId);
+ //   params.SetCategoryId(windowCategoryId);
+  //  params.SetSubCategoryId(windowPanelCategoryId);
     Dgn::ColorDef color(255, 255, 255, 100);
     params.SetLineColor(color);
     params.SetFillColor(color);
@@ -241,7 +241,7 @@ BentleyStatus GeometricTools::CreateWindowGeometry(ArchitecturalPhysical::Archit
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus GeometricTools::CreateGeometry(ArchitecturalPhysical::ArchitecturalBaseElementPtr element, BuildingPhysical::BuildingPhysicalModelR model)
+BentleyStatus GeometricTools::CreateGeometry(Dgn::PhysicalElementPtr element, BuildingPhysical::BuildingPhysicalModelR model)
     {
     Dgn::DgnDbR db = model.GetDgnDb();
     Dgn::DgnModelId modelId = model.GetModelId();

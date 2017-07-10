@@ -8,7 +8,7 @@
 
 #pragma once
 #include "stdafx.h"      
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools\KnownDesktopLocationsAdmin.h>
 
                 
                 
@@ -24,7 +24,7 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
 
         virtual void _SupplyProductName(Utf8StringR name) override { name.assign("ArchPhysCreator"); }
         //__PUBLISH_SECTION_START__
-        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new   Dgn::WindowsKnownLocationsAdmin(); }
+        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new   Dgn::KnownDesktopLocationsAdmin(); }
 
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
@@ -54,5 +54,5 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
         //  BuildingTypeDefinitionModelPtr CreateBuildingTypeDefinitionModel(Dgn::DgnDbR db);
         Dgn::DgnViewId CreateView(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR displayStyle);
         BentleyStatus DoCreate();
-		BentleyStatus DoUpdateSchema();
+		BentleyStatus DoUpdateSchema(Dgn::DgnDbPtr db); 
 	};

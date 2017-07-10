@@ -55,6 +55,7 @@ namespace ArchitecturalPhysical
 
 		public:
 			//! Get the DgnCategoryId to be used for Door Elements
+#ifdef NOT_NOW
 			ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCategoryId QueryBuildingPhysicalDoorCategoryId(Dgn::DgnDbR);
 
 			//! Get the DgnSubCategoryId for a Door Panel
@@ -74,7 +75,7 @@ namespace ArchitecturalPhysical
 
 			//! Get the DgnSubCategoryId for a Door frame
 			ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCategoryId QueryBuildingPhysicalWallCategoryId(Dgn::DgnDbR db);
-
+#endif
 			//! Get the DgnSubCategoryId for a Door frame
 			ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCategoryId QueryBuildingPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName );
 

@@ -119,7 +119,9 @@ xcopy /y $(srcRoot)ECDb\ECDb\ECSchemas\* $(outdir)Assets\ECSchemas\ECDb\
 xcopy /y $(outroot)\Winx64\BuildContexts\ECStandards\ECSchemas\Standard\* $(outdir)Assets\ECSchemas\standard\
 xcopy /y $(outroot)\Winx64\BuildContexts\ECStandards\ECSchemas\Standard\General\* $(outdir)Assets\ECSchemas\standard\
 xcopy /y $(outroot)\Winx64\BuildContexts\ECStandards\ECSchemas\Standard\LibraryUnits\* $(outdir)Assets\ECSchemas\standard\
-xcopy /y $(outroot)\Winx64\build\DgnPlatform\DgnPlatform_en.sqlang.db3 $(outdir)Assets\sqlang\</Command>
+xcopy /y $(outroot)\Winx64\build\DgnPlatform\DgnPlatform_en.sqlang.db3 $(outdir)Assets\sqlang\
+xcopy /y  $(srcRoot)DgnPlatform\LastResortFonts\lastresortfonts d:\Builds\SourceTrees\Bim02Dev\source\DgnDomains\Building\ArchPhysCreater\x64\Debug\Assets\
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

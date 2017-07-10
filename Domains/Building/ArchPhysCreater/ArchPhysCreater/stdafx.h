@@ -5,14 +5,7 @@
 
 #pragma once
 
-//#include "targetver.h"
-
-//#include <stdio.h>
-//#include <tchar.h>
-
-//#include <ArchitecturalPhysical/ArchitecturalPhysicalApi.h>
 #include <BuildingDomain/BuildingDomainApi.h>
-//#include <BuildingPhysical/BuildingPhysicalApi.h>
 #include "Geometry.h"
 #include "DoorTools.h"
 

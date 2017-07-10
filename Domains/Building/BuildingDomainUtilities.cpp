@@ -238,7 +238,7 @@ namespace BuildingDomain
 				return BentleyStatus::ERROR;
 			}
 
-		BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = CreateBuildingTypeDefinitionModel(modelCodeName, db);
+		BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = CreateBuildingTypeDefinitionModel(modelCodeName, db, parentSubject);
 
 		if (!typeDefinitionModel.IsValid())
 			return BentleyStatus::ERROR;

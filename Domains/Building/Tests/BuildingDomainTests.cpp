@@ -150,21 +150,33 @@ TEST_F(BuildingDomainTestFixture, GetBuildingModel)
 
 	ASSERT_TRUE(db.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel  = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
-
+	BuildingPhysical::BuildingPhysicalModelPtr       buildingModel     = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME, *db);
 	ASSERT_TRUE(buildingModel.IsValid());
+	BuildingPhysical::BuildingTypeDefinitionModelPtr buildingTypeModel = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel(MODEL_TEST_NAME, *db);
+	ASSERT_TRUE(buildingTypeModel.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel1 = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME1, *db);
+	Dgn::DgnCode subjectCode = Dgn::Subject::CreateCode(*(db->Elements().GetRootSubject()), MODEL_TEST_NAME1);
 
+	ASSERT_TRUE(subjectCode.IsValid());
+
+	Dgn::DgnElementId          subjectId = db->Elements().QueryElementIdByCode(subjectCode);
+	Dgn::SubjectCPtr           subject   = db->Elements().Get<Dgn::Subject>(subjectId);
+
+	BuildingPhysical::BuildingPhysicalModelPtr       buildingModel1     = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME1, *db, subject);
 	ASSERT_TRUE(buildingModel1.IsValid());
+	BuildingPhysical::BuildingTypeDefinitionModelPtr buildingTypeModel1 = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel(MODEL_TEST_NAME1, *db, subject);
+	ASSERT_TRUE(buildingTypeModel1.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel2 = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME2, *db);
-
+	BuildingPhysical::BuildingPhysicalModelPtr       buildingModel2     = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME2, *db);
 	ASSERT_TRUE(buildingModel2.IsValid());
+	BuildingPhysical::BuildingTypeDefinitionModelPtr buildingTypeModel2 = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel(MODEL_TEST_NAME2, *db);
+	ASSERT_TRUE(buildingTypeModel2.IsValid());
 
-	BuildingPhysical::BuildingPhysicalModelCPtr buildingModel3 = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME3, *db);
-
+	BuildingPhysical::BuildingPhysicalModelPtr       buildingModel3     = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(MODEL_TEST_NAME3, *db);
 	ASSERT_TRUE(buildingModel3.IsValid());
+	BuildingPhysical::BuildingTypeDefinitionModelPtr buildingTypeModel3 = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel(MODEL_TEST_NAME3, *db);
+	ASSERT_TRUE(buildingTypeModel2.IsValid());
+
 	}
 
 //---------------------------------------------------------------------------------------

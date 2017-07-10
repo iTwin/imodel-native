@@ -56,6 +56,7 @@ GTEST_MAIN_IS_SUPPLIED = 1
 
 LOCAL_GUNITTEST_OBJS + $(MultiCompileObjectList)
 LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)SubParts/Libs/*.lib]
+LOCAL_GUNITTEST_OBJS + $[@wildcard $(BuildContext)delivery/*.lib]
 #LOCAL_GUNITTEST_OBJS + $(BuildContext)../DgnPlatform/Delivery/UnitTests/Objects/DgnDbTestUtils/DgnDbTestUtils.obj
 
 #LINKER_LIBRARIES_DELAYLOADED  + $(BuildContext)SubParts/VersionedDgnV8Libs/DgnPlatform.lib
