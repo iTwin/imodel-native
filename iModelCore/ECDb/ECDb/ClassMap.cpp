@@ -272,10 +272,19 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
         {
         if (property->GetIsNavigation() && &property->GetClass() == &m_ecClass)
             {
-            //WIP_RELMAP_REFACTOR extract ForeignKeyConstraint on nav prop for later use during mapping the relationship
+            //WIP_CLEANUP extract ForeignKeyConstraint on nav prop for later use during mapping the relationship
             //WIP this can be changed once relationship mapping is refactored
             if (ctx.GetImportCtx().CacheFkConstraintCA(*property->GetAsNavigationProperty()))
                 {
+                //WIP_CLEANUP This is a bad location for it. When the hold piece of code is cleaned up make sure to move it as well
+                if (GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
+                    {
+                    Issues().Report("Failed to map ECClass %s. Its navigation property %s has the ForeignKeyConstraint custom attribute which cannot be applied for MapStrategy 'ExistingTable'.",
+                                        m_ecClass.GetFullName(), property->GetName().c_str());
+
+                    return ClassMappingStatus::Error;
+                    }
+
                 SchemaPolicy const* noAdditionalForeignKeyConstraintsPolicy = nullptr;
                 if (ctx.GetImportCtx().GetSchemaPolicies().IsOptedIn(noAdditionalForeignKeyConstraintsPolicy, SchemaPolicy::Type::NoAdditionalForeignKeyConstraints))
                     {

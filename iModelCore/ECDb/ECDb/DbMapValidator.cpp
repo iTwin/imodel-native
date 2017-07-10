@@ -1008,7 +1008,15 @@ BentleyStatus DbMapValidator::ValidateNavigationPropertyMap(NavigationPropertyMa
 
     //for existing tables we don't create constraints and such, so don't validate them in that case
     if (propMap.GetTable().GetType() == DbTable::Type::Existing)
+        {
+        if (propMap.HasForeignKeyConstraint())
+            {
+            Issues().Report("The navigation property map '%s.%s' has the ForeignKeyConstraint custom attribute which is not allowed for classes with MapStrategy 'ExistingTable'.", propMap.GetClassMap().GetClass().GetFullName(), propMap.GetAccessString().c_str());
+            return ERROR;
+            }
+
         return SUCCESS;
+        }
 
     const bool isPhysicalFk = propMap.HasForeignKeyConstraint();
     NavigationPropertyMap::IdPropertyMap const& idPropMap = propMap.GetIdPropertyMap();
