@@ -1912,7 +1912,7 @@ TEST_F(DbMappingTestFixture, ExistingTableCATests)
     {
     ASSERT_EQ(BE_SQLITE_OK, SetupECDb("existingtablecatests.ecdb"));
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE TABLE ts_Parent(Id INTEGER PRIMARY KEY, Name TEXT); CREATE TABLE ts_Child(Id INTEGER PRIMARY KEY, ParentId INTEGER, Tag REAL)"));
-    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(
         R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
