@@ -29,7 +29,7 @@ cIncs + -I$(PlatformVendorAPI)
 BEGTEST_NAME  = $(TestDir)iModelHub
 BEGTEST_INPUT = $(baseDir)$(TestDir)/
 BEGTEST_IGNORE= $(baseDir)ignore_list.txt
-BEGTEST_OUTPUT=$(OutputRootDir)build/NativeTests/
+BEGTEST_OUTPUT=$(OutputRootDir)build/iModelHubNativeTests/
 o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 
 %ifdef UsePublishedApi
@@ -50,14 +50,14 @@ o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
 %include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
 
 # Deliver 
-$(BuildContext)Delivery/NativeTests/IntegrationTests.json : $(baseDir)Integration/IntegrationTests.json
+$(BuildContext)Delivery/iModelHubNativeTests/IntegrationTests.json : $(baseDir)Integration/IntegrationTests.json
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/NativeTests/PerformanceTests.json : $(baseDir)Integration/PerformanceTests.json
+$(BuildContext)Delivery/iModelHubNativeTests/PerformanceTests.json : $(baseDir)Integration/PerformanceTests.json
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/NativeTests/DgnPlatformTest.ecschema.xml : $(baseDir)ECSchemas/DgnPlatformTest.ecschema.xml
+$(BuildContext)Delivery/iModelHubNativeTests/DgnPlatformTest.ecschema.xml : $(baseDir)ECSchemas/DgnPlatformTest.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
-$(BuildContext)Delivery/NativeTests/Objects/$(TestDir) : ${o}
+$(BuildContext)Delivery/iModelHubNativeTests/Objects/$(TestDir) : ${o}
     $(LinkFirstDepToFirstTargetAsDirectory)
