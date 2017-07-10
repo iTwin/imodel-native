@@ -577,10 +577,7 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
                 return ERROR;
                 }
 
-            //WIP ECObjects bug in GetPropertyCount 
-            //const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
-            const int propCount = (int) std::distance(classMap.GetClass().GetProperties(true).begin(), classMap.GetClass().GetProperties(true).end());
-
+            const int propCount = (int) classMap.GetClass().GetPropertyCount(true);
             if (dataPropertyMapCount != propCount)
                 {
                 Issues().Report("The number of property maps for ECClass '%s' does not match the number of properties. Property maps: %d, properties: %d.", classMap.GetClass().GetFullName(),

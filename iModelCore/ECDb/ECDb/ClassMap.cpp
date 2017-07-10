@@ -364,6 +364,12 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImportContext, std::vector<IndexMappingInfoPtr> const& indexInfoList) const
     {
+    if (m_type == ClassMap::Type::RelationshipEndTable && !indexInfoList.empty())
+        {
+        Issues().Report("Failed to map ECRelationshipClass %s. DbIndexes cannot be defined for foreign-key type relationships.", GetClass().GetFullName());
+        return ERROR;
+        }
+
     int i = 0;
     for (IndexMappingInfoPtr const& indexInfo : indexInfoList)
         {
@@ -383,6 +389,14 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
+            if (propertyMap->IsSystem())
+                {
+                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
+                                "A DbIndex cannot be specified on the system ECProperty '%s'.",
+                                i, GetClass().GetFullName(), propertyAccessString.c_str());
+                return ERROR;
+                }
+
             ECPropertyCR prop = propertyMap->GetProperty();
             if (!prop.GetIsPrimitive())
                 {
@@ -395,7 +409,7 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
             DbTable const& table = GetJoinedOrPrimaryTable();
             GetColumnsPropertyMapVisitor columnVisitor(table);
             propertyMap->AcceptVisitor(columnVisitor);
-            if (columnVisitor.GetVirtualColumnCount() > 0)
+            if (table.GetType() != DbTable::Type::Virtual && columnVisitor.GetVirtualColumnCount() > 0)
                 {
                 Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
                                 "The specified ECProperty '%s' is mapped to a virtual column.",
