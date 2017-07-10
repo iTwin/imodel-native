@@ -1,0 +1,16 @@
+{
+  "Environment": "DEV",
+  "Host": "https://127.0.0.1:44300",
+  "Ims": true,
+  "ProjectNr": "192507",
+  "Users":
+  [{
+  "Password": "pmadm1",
+  "Username": "BistroDEV_pmadm1@mailinator.com",
+  "IsAdmin": true
+  },
+  {
+  "Password": "regular1",
+  "Username": "BistroDEV_reg1@mailinator.com"
+  }]
+}
