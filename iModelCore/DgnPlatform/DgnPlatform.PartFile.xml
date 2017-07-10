@@ -126,6 +126,7 @@
         <Bindings>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnPlatformTestDomain.h</Files>
         </Bindings>
     </Part>
 

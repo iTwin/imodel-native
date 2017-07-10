@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/DgnHandlersTests.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,11 +11,11 @@
 #include <DgnPlatform/GenericDomain.h>
 #include <Bentley/BeTest.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include "../TestFixture/GenericDgnModelTestFixture.h"
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 #define LOCALIZED_STR(str) str
 
