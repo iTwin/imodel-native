@@ -257,7 +257,7 @@
         </Bindings>
     </Part>
 
-    <Product Name="iModelHubNativeTests">
+    <Product Name="iModelHubNativeTests" SaveProduct="true">
         <SubPart PartName="iModelHubGtest"/>
         <Directories DirectoryListName="iModelHubNativeTests"/>
     </Product>
