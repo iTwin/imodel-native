@@ -35,7 +35,8 @@ enum class HitPriority
     Vertex      = 300,
     Origin      = 400,
     Edge        = 400,
-    TextBox     = 550,
+    TextBox     = 500,
+    Region      = 550,
     Interior    = 600,
 };
 
