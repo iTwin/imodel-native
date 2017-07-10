@@ -569,7 +569,8 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
         return nullptr;
 
     Mesh::PrimitiveType     primitiveType = (Mesh::PrimitiveType) primitiveValue["type"].asUInt();
-    MeshPtr                 mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d());
+    bool                    isPlanar = primitiveValue["isPlanar"].asBool();
+    MeshPtr                 mesh = Mesh::Create(*displayParams, featureTable, primitiveType, DRange3d::NullRange(), !m_model.Is3d(), isPlanar);
     MeshEdgesPtr            meshEdges;
 
     if(SUCCESS != ReadVertices(mesh->VertsR(), primitiveValue))

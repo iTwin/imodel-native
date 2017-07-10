@@ -1859,7 +1859,6 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     bool                    anyContributed = false;
     uint32_t                fillColor = displayParams.GetFillColor();
 
-    
 //  BeAssert (displayParams.IgnoresLighting() || 0 != tilePolyface.m_polyface->GetNormalCount());
     builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges));
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
@@ -1872,7 +1871,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
             m_contentRange.Extend(visitor->Point());
             }
         }
-    DRange3d        polyfaceRange = polyface->PointRange();
+
     builder.EndPolyface();
 
     if (anyContributed)
@@ -1892,7 +1891,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
 Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
     {
     // Might be more efficient to modify input in-place.
-    Strokes output(*input.m_displayParams, input.m_disjoint);
+    Strokes output(*input.m_displayParams, input.m_disjoint, input.m_isPlanar);
     enum    State { kInside, kOutside, kCrossedOutside };
 
     output.m_strokes.reserve(input.m_strokes.size());
@@ -1989,7 +1988,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
 
-    MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, false);
+    MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     uint32_t fillColor = displayParams.GetLineColor();
