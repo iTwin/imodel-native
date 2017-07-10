@@ -85,7 +85,7 @@ public:
     //! @param[in] useHex if UseHex::Yes, output will be in hex with leading "0X"
     //! to hold the maximal number of decimal digits of UInt64 plus the trailing 0 character.
     //! You can use BeInt64Id::ID_STRINGBUFFER_LENGTH to allocate the @p stringBuffer.
-    void ToString(Utf8P stringBuffer, UseHex useHex=UseHex::Yes) const 
+    void ToString(Utf8P stringBuffer, UseHex useHex=UseHex::No) const 
         {
         if (useHex == UseHex::Yes)
             BeStringUtilities::FormatUInt64(stringBuffer, ID_STRINGBUFFER_LENGTH, m_id, (HexFormatOptions) ((int)HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase));
@@ -96,7 +96,7 @@ public:
     //! Converts this BeInt64Id to a string representation.
     //! @param[in] useHex set to Yes to create a hexidecimal string with leading "0X"
     //! @remarks Consider the overload BeInt64Id::ToString(Utf8Char*) if you want to avoid allocating Utf8Strings.
-    Utf8String ToString(UseHex useHex=UseHex::Yes) const
+    Utf8String ToString(UseHex useHex=UseHex::No) const
         {
         Utf8Char idStrBuffer[ID_STRINGBUFFER_LENGTH];
         ToString(idStrBuffer, useHex);
