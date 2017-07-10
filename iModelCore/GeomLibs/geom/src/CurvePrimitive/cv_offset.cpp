@@ -436,7 +436,7 @@ CurveVectorPtr JoinOffsets (CurveVector::BoundaryType btype)
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      12/2012
 +--------------------------------------------------------------------------------------*/
-CurveVectorPtr CurveVector::CloneOffsetCurvesXY (CurveOffsetOptionsCR options)
+CurveVectorPtr CurveVector::CloneOffsetCurvesXY (CurveOffsetOptionsCR options) const
     {
     BoundaryType btype = GetBoundaryType ();
     if (btype == BOUNDARY_TYPE_Open

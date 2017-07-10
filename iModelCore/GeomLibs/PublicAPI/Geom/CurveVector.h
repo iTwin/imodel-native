@@ -288,7 +288,7 @@ GEOMDLLIMPEXP CurveVectorPtr CloneWithBlends (BlendType, double radiusA, double 
 //! return a (deep) clone with all curves offset by signed distance.
 //!  This is a curve operation, and may result in self-intersecting offset curves.
 //! @remark A positive offset is to the right of the curve (i.e. CCW outer loop offsets to a larger area)
-GEOMDLLIMPEXP CurveVectorPtr CloneOffsetCurvesXY (CurveOffsetOptionsCR options);
+GEOMDLLIMPEXP CurveVectorPtr CloneOffsetCurvesXY (CurveOffsetOptionsCR options) const;
 
 //! return a (deep) clone with all areas increased or decreased according to the offset distance.
 //! @remark A positive offset is to the right of the curve (i.e. CCW outer loop offsets to a larger area)
