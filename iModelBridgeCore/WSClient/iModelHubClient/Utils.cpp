@@ -315,6 +315,27 @@ bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR stateValue, BeS
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             07/2017
+//---------------------------------------------------------------------------------------
+bool GetScopeFromString(Utf8CP scopeString, DgnElementId& scopeElementId, BeGuidR scopeFederationGuid, DgnCode::ScopeRequirement& scopeRequirement)
+    {
+    if (BentleyStatus::SUCCESS == scopeFederationGuid.FromString(scopeString))
+        {
+        scopeRequirement = DgnCode::ScopeRequirement::FederationGuid;
+        return true;
+        }
+
+    if (BentleyStatus::SUCCESS == BeInt64Id::FromString(scopeElementId, scopeString))
+        {
+        scopeRequirement = DgnCode::ScopeRequirement::ElementId;
+        return true;
+        }
+
+    scopeRequirement = DgnCode::ScopeRequirement::Unknown;
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                12/2016
 //---------------------------------------------------------------------------------------
 bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId)
@@ -338,14 +359,16 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
         return false;
     
     DgnElementId scopeElementId;
-    if (BentleyStatus::SUCCESS != BeInt64Id::FromString(scopeElementId, scopeElementString.c_str()))
+    BeGuid scopeFederationGuid;
+    DgnCode::ScopeRequirement scopeRequirement = DgnCode::ScopeRequirement::Unknown;
+    if (!GetScopeFromString(scopeElementString.c_str(), scopeElementId, scopeFederationGuid, scopeRequirement))
         return false;
     
     for (auto it = values.begin(); it != values.end(); ++it)
         {
         Utf8String value = "";
         StringFromJson(value, *it);
-        codeSet.insert(DgnCode(codeSpecId, scopeElementId, value));
+        codeSet.insert(DgnCode(codeSpecId, scopeRequirement, scopeElementId, scopeFederationGuid, value));
         }
 
     return true;
@@ -373,10 +396,12 @@ bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeSt
         return false;
 
     DgnElementId scopeElementId;
-    if (BentleyStatus::SUCCESS != BeInt64Id::FromString(scopeElementId, scopeElementString.c_str()))
+    BeGuid scopeFederationGuid;
+    DgnCode::ScopeRequirement scopeRequirement = DgnCode::ScopeRequirement::Unknown;
+    if (!GetScopeFromString(scopeElementString.c_str(), scopeElementId, scopeFederationGuid, scopeRequirement))
         return false;
 
-    code = DgnCode(codeSpecId, scopeElementId, value);
+    code = DgnCode(codeSpecId, scopeRequirement, scopeElementId, scopeFederationGuid, value);
     return true;
     }
 
