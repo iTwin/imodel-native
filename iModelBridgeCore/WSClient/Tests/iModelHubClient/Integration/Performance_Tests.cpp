@@ -175,7 +175,7 @@ struct PerformanceTests : public IntegrationTestsBase
         {
         Utf8String name;
         name.Sprintf("%i-%i", m_codeValueBatch, m_codeValueIndex);
-        DgnCode code = DgnMaterial::CreateCode(db.GetDictionaryModel(), name);
+        DgnCode code = PhysicalMaterial::CreateCode(db.GetDictionaryModel(), name);
         m_codeValueIndex++;
         auto postRequestSize = PerformanceTestSettings::Instance().GetCodePostRequestSize();
         if (postRequestSize != 0 && m_codeValueIndex >= postRequestSize)
