@@ -119,7 +119,7 @@ struct SchemaPolicies final
         bool IsOptedIn(SchemaPolicy const*&, SchemaPolicy::Type) const;
     };
 
-struct EndTableMappingContextCollection;
+struct RelationshipClassEndTableMapperCollection;
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2014
 //+===============+===============+===============+===============+===============+======
@@ -144,7 +144,7 @@ struct SchemaImportContext final
         std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
         bmap<ECN::ECClassId, ForeignKeyConstraintCustomAttribute> m_fkConstraintCACache;
         ForeignKeyConstraintCustomAttribute m_emptyFkConstraintCA;
-        std::unique_ptr<EndTableMappingContextCollection> m_relCol;
+        std::unique_ptr<RelationshipClassEndTableMapperCollection> m_relCol;
         SchemaPolicies m_schemaPolicies;
 
     public:

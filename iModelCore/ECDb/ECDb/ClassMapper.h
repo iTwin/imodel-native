@@ -32,9 +32,7 @@ struct ClassMapper final
                 static DbTable* FindOrCreateTable(ClassMap const&, ClassMappingInfo const&, DbTable::Type, DbTable const* primaryTable);
                 static DbTable* CreateTableForExistingTableStrategy(ClassMap const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
                 static DbTable* CreateTableForOtherStrategies(ClassMap const&, Utf8StringCR tableName, DbTable::Type, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
-
                 static BentleyStatus CreateClassIdColumn(DbSchema&, DbTable&, PersistenceType);
-                
                 static bool IsExclusiveRootClassOfTable(ClassMappingInfo const&);
                 static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
 
@@ -53,12 +51,9 @@ struct ClassMapper final
     private:
         ClassMap& m_classMap;
         DbClassMapLoadContext const* m_loadContext;
-
         explicit ClassMapper(ClassMap& classMap) : m_classMap(classMap), m_loadContext(nullptr) {}
         ClassMapper(ClassMap& classMap, DbClassMapLoadContext const& loadContext) : m_classMap(classMap), m_loadContext(&loadContext) {}
-
         PropertyMap* ProcessProperty(ECN::ECPropertyCR);
-
         RefCountedPtr<DataPropertyMap> MapPrimitiveProperty(ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* compoundPropMap);
         RefCountedPtr<Point2dPropertyMap> MapPoint2dProperty(ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* parentPropMap, Utf8StringCR accessString, DbColumn::CreateParams const&);
         RefCountedPtr<Point3dPropertyMap> MapPoint3dProperty(ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* parentPropMap, Utf8StringCR accessString, DbColumn::CreateParams const&);
@@ -68,7 +63,6 @@ struct ClassMapper final
         RefCountedPtr<NavigationPropertyMap> MapNavigationProperty(ECN::NavigationECPropertyCR);
         Utf8String ComputeAccessString(ECN::ECPropertyCR, CompoundDataPropertyMap const* parentPropMap);
         static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
-
         static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ClassMap const&, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
 
     public:
@@ -86,7 +80,7 @@ struct ClassMapper final
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-struct RelationshipClassEndTableMappingContext : NonCopyableClass
+struct RelationshipClassEndTableMapper : NonCopyableClass
     {
     private:
         //=======================================================================================
@@ -143,11 +137,12 @@ struct RelationshipClassEndTableMappingContext : NonCopyableClass
 
     private:
         static Utf8CP RELECCLASSID_COLNAME_TOKEN;
-        RelationshipMappingInfo const& m_relInfo;
         RelationshipClassEndTableMap const& m_relationshipMap;
         std::map<DbTableId, std::vector<PartitionInfo>> m_partitions;
         SchemaImportContext& m_schemaContext;
+        std::unique_ptr<ForeignKeyMappingType> m_foreignKeyMappingType;
 
+    private:
         const std::vector<DbColumn const*> GetPartitionColumns(PartitionInfo::ColumnId) const;
         bool PersistedEndHasNonVirtualForeignKeyColumn() const;
         bool TryGetPartition(ClassMapCR, std::vector<PartitionInfo*>&);
@@ -161,12 +156,10 @@ struct RelationshipClassEndTableMappingContext : NonCopyableClass
         ECN::ECRelationshipEnd GetReferencedEnd() const;
         IssueReporter const& Issues() const;
         ECDbCR GetECDb() const;
-
-        RelationshipClassEndTableMappingContext(SchemaImportContext&, RelationshipClassEndTableMap const&, RelationshipMappingInfo const&);
-
+        RelationshipClassEndTableMapper(SchemaImportContext&, RelationshipClassEndTableMap const&);
+        bool IsPhysicalForeignKey() const { BeAssert(m_foreignKeyMappingType != nullptr); return m_foreignKeyMappingType->GetType() == RelationshipMappingType::Type::PhysicalForeignKey; }
     public:
-        static std::unique_ptr<RelationshipClassEndTableMappingContext> Create(SchemaImportContext&, RelationshipClassEndTableMap const&, RelationshipMappingInfo const&);
-
+        static std::unique_ptr<RelationshipClassEndTableMapper> Create(SchemaImportContext&, RelationshipClassEndTableMap const&);
         ClassMappingStatus UpdatePersistedEnd(NavigationPropertyMap&);
         ClassMappingStatus FinishMapping();
     };
@@ -174,17 +167,17 @@ struct RelationshipClassEndTableMappingContext : NonCopyableClass
 //=======================================================================================
 // @bsiclass                                                   Affan.Khan          07/16
 //+===============+===============+===============+===============+===============+======
-struct EndTableMappingContextCollection
+struct RelationshipClassEndTableMapperCollection
     {
     private:
-        std::vector <std::unique_ptr<RelationshipClassEndTableMappingContext>> m_contextList;
-        std::map<ECN::ECClassId, RelationshipClassEndTableMappingContext*> m_contentMap;
+        std::vector <std::unique_ptr<RelationshipClassEndTableMapper>> m_contextList;
+        std::map<ECN::ECClassId, RelationshipClassEndTableMapper*> m_contentMap;
         SchemaImportContext& m_schemaImportContext;
         static ECN::ECClassCP GetRoot(ECN::ECClassCR ecClass);
 
     public:
-        EndTableMappingContextCollection(SchemaImportContext& ctx);
-        void RegisterContext(RelationshipClassEndTableMap const& relationshipMap, RelationshipMappingInfo const& relinfo);
+        RelationshipClassEndTableMapperCollection(SchemaImportContext& ctx);
+        void RegisterContext(RelationshipClassEndTableMap const& relationshipMap);
         ClassMappingStatus FinishMapping();
         ClassMappingStatus Map(NavigationPropertyMap& navPropMap);
     };
