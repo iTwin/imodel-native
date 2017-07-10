@@ -32,6 +32,9 @@ protected:
     virtual LinearlyReferencedAtLocationCP _ToLinearlyReferencedAtLocation() const { return nullptr; }
     virtual LinearlyReferencedFromToLocationCP _ToLinearlyReferencedFromToLocation() const { return nullptr; }
 
+    static BentleyStatus SetDistanceExpressionValue(DistanceExpressionR expression, Utf8CP ecPropertyName, ECN::ECValueCR value);
+    static BentleyStatus GetECValue(ECN::ECValueR value, DistanceExpressionCR expression, Utf8CP ecPropertyName);
+
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyReferencedLocation)
 
@@ -61,6 +64,9 @@ protected:
 
     virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
+
+    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, Dgn::PropertyArrayIndex const& arrayIndex) const override;
+    virtual Dgn::DgnDbStatus _SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, Dgn::PropertyArrayIndex const& arrayIndex) override;
 
     virtual bool _HasChanges() const override;
     virtual LinearlyReferencedAtLocationCP _ToLinearlyReferencedAtLocation() const override { return this; }
@@ -95,6 +101,9 @@ protected:
 
     virtual Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken) override;
     virtual Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
+
+    virtual Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, Dgn::PropertyArrayIndex const& arrayIndex) const override;
+    virtual Dgn::DgnDbStatus _SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, Dgn::PropertyArrayIndex const& arrayIndex) override;
 
     virtual bool _HasChanges() const override;
     virtual LinearlyReferencedFromToLocationCP _ToLinearlyReferencedFromToLocation() const override { return this; }

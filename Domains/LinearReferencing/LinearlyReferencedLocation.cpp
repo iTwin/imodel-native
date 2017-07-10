@@ -18,6 +18,88 @@ LinearlyReferencedLocation::LinearlyReferencedLocation()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus LinearlyReferencedLocation::SetDistanceExpressionValue(DistanceExpressionR expression, Utf8CP ecPropertyName, ECValueCR value)
+    {
+    if (0 == strcmp("DistanceAlongFromStart", ecPropertyName) && !value.IsNull())
+        {
+        expression.SetDistanceAlongFromStart(value.GetDouble());
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp("DistanceAlongFromReferent", ecPropertyName))
+        {
+        if (value.IsNull())
+            expression.SetDistanceAlongFromReferent(NullableDouble());
+        else
+            expression.SetDistanceAlongFromReferent(value.GetDouble());
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp("LateralOffsetFromILinearElement", ecPropertyName))
+        {
+        if (value.IsNull())
+            expression.SetLateralOffsetFromILinearElement(NullableDouble());
+        else
+            expression.SetLateralOffsetFromILinearElement(value.GetDouble());
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp("VerticalOffsetFromILinearElement", ecPropertyName))
+        {
+        if (value.IsNull())
+            expression.SetVerticalOffsetFromILinearElement(NullableDouble());
+        else
+            expression.SetVerticalOffsetFromILinearElement(value.GetDouble());
+        return BentleyStatus::SUCCESS;
+        }
+
+    return BentleyStatus::ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus LinearlyReferencedLocation::GetECValue(ECN::ECValueR value, DistanceExpressionCR expression, Utf8CP ecPropertyName)
+    {
+    if (0 == strcmp("DistanceAlongFromStart", ecPropertyName) && !value.IsNull())
+        {
+        value.SetDouble(expression.GetDistanceAlongFromStart());
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp("DistanceAlongFromReferent", ecPropertyName))
+        {
+        if (expression.GetDistanceAlongFromReferent().IsNull())
+            value.SetIsNull(true);
+        else
+            value.SetDouble(expression.GetDistanceAlongFromReferent().Value());
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp("LateralOffsetFromILinearElement", ecPropertyName))
+        {
+        if (expression.GetLateralOffsetFromILinearElement().IsNull())
+            value.SetIsNull(true);
+        else
+            value.SetDouble(expression.GetLateralOffsetFromILinearElement().Value());
+        return BentleyStatus::SUCCESS;
+        }
+
+    if (0 == strcmp("VerticalOffsetFromILinearElement", ecPropertyName))
+        {
+        if (expression.GetVerticalOffsetFromILinearElement().IsNull())
+            value.SetIsNull(true);
+        else
+            value.SetDouble(expression.GetVerticalOffsetFromILinearElement().Value());
+        return BentleyStatus::SUCCESS;
+        }
+
+    return BentleyStatus::ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 LinearlyReferencedAtLocation::LinearlyReferencedAtLocation()
@@ -117,6 +199,34 @@ DgnDbStatus LinearlyReferencedAtLocation::_LoadProperties(DgnElementCR el)
     m_originalAtPosition = m_atPosition;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus LinearlyReferencedAtLocation::_GetPropertyValue(ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
+    {
+    if (0 != strcmp("AtPosition", propertyName))
+        return DgnDbStatus::BadRequest;
+
+    if (BentleyStatus::SUCCESS == GetECValue(value, GetAtPosition(), propertyName))
+        return DgnDbStatus::Success;
+
+    return DgnDbStatus::BadRequest;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus LinearlyReferencedAtLocation::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
+    {
+    if (0 != strcmp("AtPosition", propertyName))
+        return DgnDbStatus::BadRequest;
+
+    if (BentleyStatus::SUCCESS == SetDistanceExpressionValue(GetAtPositionR(), propertyName, value))
+        return DgnDbStatus::Success;
+
+    return DgnDbStatus::BadRequest;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -253,4 +363,44 @@ DgnDbStatus LinearlyReferencedFromToLocation::_LoadProperties(DgnElementCR el)
     m_originalToPosition = m_toPosition;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus LinearlyReferencedFromToLocation::_GetPropertyValue(ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
+    {
+    if (0 == strcmp("FromPosition", propertyName))
+        {
+        if (BentleyStatus::SUCCESS == GetECValue(value, GetFromPosition(), propertyName))
+            return DgnDbStatus::Success;
+        }
+
+    if (0 == strcmp("ToPosition", propertyName))
+        {
+        if (BentleyStatus::SUCCESS == GetECValue(value, GetToPosition(), propertyName))
+            return DgnDbStatus::Success;
+        }
+
+    return DgnDbStatus::BadRequest;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus LinearlyReferencedFromToLocation::_SetPropertyValue(Utf8CP propertyName, ECValueCR value, PropertyArrayIndex const& arrayIndex)
+    {
+    if (0 == strcmp("FromPosition", propertyName))
+        {
+        if (BentleyStatus::SUCCESS == SetDistanceExpressionValue(GetFromPositionR(), propertyName, value))
+            return DgnDbStatus::Success;
+        }
+
+    if (0 == strcmp("ToPosition", propertyName))
+        {
+        if (BentleyStatus::SUCCESS == SetDistanceExpressionValue(GetToPositionR(), propertyName, value))
+            return DgnDbStatus::Success;
+        }
+
+    return DgnDbStatus::BadRequest;
     }
