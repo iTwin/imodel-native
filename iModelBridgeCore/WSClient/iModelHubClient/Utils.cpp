@@ -315,33 +315,12 @@ bool CodeStateFromJson(DgnCodeStateR codeState, RapidJsonValueCR stateValue, BeS
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             07/2017
-//---------------------------------------------------------------------------------------
-bool GetScopeFromString(Utf8CP scopeString, DgnElementId& scopeElementId, BeGuidR scopeFederationGuid, DgnCode::ScopeRequirement& scopeRequirement)
-    {
-    if (BentleyStatus::SUCCESS == scopeFederationGuid.FromString(scopeString))
-        {
-        scopeRequirement = DgnCode::ScopeRequirement::FederationGuid;
-        return true;
-        }
-
-    if (BentleyStatus::SUCCESS == BeInt64Id::FromString(scopeElementId, scopeString))
-        {
-        scopeRequirement = DgnCode::ScopeRequirement::ElementId;
-        return true;
-        }
-
-    scopeRequirement = DgnCode::ScopeRequirement::Unknown;
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas                12/2016
 //---------------------------------------------------------------------------------------
 bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId)
     {
     CodeSpecId codeSpecId;
-    Utf8String scopeElementString;
+    Utf8String scopeString;
 
     if (!serverJson.HasMember(ServerSchema::Property::CodeSpecId) || !serverJson.HasMember(ServerSchema::Property::CodeScope) ||
         !serverJson.HasMember(ServerSchema::Property::Values) || !serverJson.HasMember(ServerSchema::Property::BriefcaseId) ||
@@ -349,7 +328,7 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
         return false;
 
     if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
-        !StringFromJson(scopeElementString, serverJson[ServerSchema::Property::CodeScope]) ||
+        !StringFromJson(scopeString, serverJson[ServerSchema::Property::CodeScope]) ||
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
         !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::State], briefcaseId))
         return false;
@@ -358,17 +337,13 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
     if (0 == values.Size())
         return false;
     
-    DgnElementId scopeElementId;
-    BeGuid scopeFederationGuid;
-    DgnCode::ScopeRequirement scopeRequirement = DgnCode::ScopeRequirement::Unknown;
-    if (!GetScopeFromString(scopeElementString.c_str(), scopeElementId, scopeFederationGuid, scopeRequirement))
-        return false;
-    
     for (auto it = values.begin(); it != values.end(); ++it)
         {
         Utf8String value = "";
         StringFromJson(value, *it);
-        codeSet.insert(DgnCode(codeSpecId, scopeRequirement, scopeElementId, scopeFederationGuid, value));
+        DgnCode code = DgnCode::From(codeSpecId, scopeString, value);
+        if (code.IsValid())
+            codeSet.insert(code);
         }
 
     return true;
@@ -380,7 +355,7 @@ bool GetMultiCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeSet& codeSet
 bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeStateR codeState, BeSQLite::BeBriefcaseId& briefcaseId)
     {
     CodeSpecId codeSpecId;
-    Utf8String scopeElementString;
+    Utf8String scopeString;
     Utf8String value;
 
     if (!serverJson.HasMember(ServerSchema::Property::CodeSpecId) || !serverJson.HasMember(ServerSchema::Property::CodeScope) ||
@@ -389,20 +364,14 @@ bool GetCodeFromServerJson(RapidJsonValueCR serverJson, DgnCodeR code, DgnCodeSt
         return false;
 
     if (!BeInt64IdFromJson(codeSpecId, serverJson[ServerSchema::Property::CodeSpecId]) ||
-        !StringFromJson(scopeElementString, serverJson[ServerSchema::Property::CodeScope]) ||
+        !StringFromJson(scopeString, serverJson[ServerSchema::Property::CodeScope]) ||
         !StringFromJson(value, serverJson[ServerSchema::Property::Value]) ||
         !BriefcaseIdFromJson(briefcaseId, serverJson[ServerSchema::Property::BriefcaseId]) ||
         !CodeStateFromJson(codeState, serverJson[ServerSchema::Property::State], briefcaseId))
         return false;
 
-    DgnElementId scopeElementId;
-    BeGuid scopeFederationGuid;
-    DgnCode::ScopeRequirement scopeRequirement = DgnCode::ScopeRequirement::Unknown;
-    if (!GetScopeFromString(scopeElementString.c_str(), scopeElementId, scopeFederationGuid, scopeRequirement))
-        return false;
-
-    code = DgnCode(codeSpecId, scopeRequirement, scopeElementId, scopeFederationGuid, value);
-    return true;
+    code = DgnCode::From(codeSpecId, scopeString, value);
+    return code.IsValid();
     }
 
 //---------------------------------------------------------------------------------------
