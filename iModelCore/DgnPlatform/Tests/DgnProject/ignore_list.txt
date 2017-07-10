@@ -611,4 +611,4 @@ ChangeSummaryTestFixture.ElementChildRelationshipChanges
     #       Which is: 2
     # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (213 ms)
 
-	
+DgnScriptTest.RunScripts # Ignored on "holdouts" because script projections were deleted on Bim02-R1
