@@ -31,6 +31,12 @@ struct ElementAspectTests : public DgnDbTestFixture
 
         return codeSpec;
     }
+
+    void SetUniqueAspectPropertyValue(DgnElementR, ECN::ECClassCR, Utf8CP propertyName, Utf8CP propertyValue);
+    void SetMultiAspectPropertyValue(DgnElementR, ECN::ECClassCR, ECInstanceId, Utf8CP propertyName, Utf8CP propertyValue);
+
+    void AssertUniqueAspectPropertyValue(Utf8CP expectedValue, DgnElementCR, ECN::ECClassCR, Utf8CP propertyName);
+    void AssertMultiAspectPropertyValue(Utf8CP expectedValue, DgnElementCR, ECN::ECClassCR, ECInstanceId, Utf8CP propertyName);
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -498,9 +504,8 @@ TEST_F(ElementAspectTests, GenericAspect_CRUD)
     {
     // Open Source Db
     SetupSeedProject();
-    CodeSpecId codeSpec1Id;
 
-    auto maspectclassNoHandler = m_db->Schemas().GetClass("DgnPlatformTest", "TestMultiAspectNoHandler");
+    auto maspectclassNoHandler = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, "TestMultiAspectNoHandler");
     ASSERT_TRUE(nullptr != maspectclassNoHandler);
 
     auto maspectclassWithHandler = TestMultiAspect::GetECClass(*m_db);
@@ -659,9 +664,8 @@ TEST_F(ElementAspectTests, GenericUniqueAspect_CRUD)
     {
     // Open Source Db
     SetupSeedProject();
-    CodeSpecId codeSpec1Id;
     m_db->Schemas().CreateClassViewsInDb();
-    ECN::ECClassCP uaspectclassNoHandler = m_db->Schemas().GetClass("DgnPlatformTest", "TestUniqueAspectNoHandler");
+    ECN::ECClassCP uaspectclassNoHandler = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, "TestUniqueAspectNoHandler");
     ASSERT_TRUE(nullptr != uaspectclassNoHandler);
 
     auto uaspectclassWithHandler = TestUniqueAspect::GetECClass(*m_db);
@@ -730,4 +734,208 @@ TEST_F(ElementAspectTests, GenericUniqueAspect_CRUD)
         ASSERT_STREQ("foo-changed", stmt->GetValueText(0));
     }
 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementAspectTests::SetUniqueAspectPropertyValue(DgnElementR element, ECN::ECClassCR aspectClass, Utf8CP propertyName, Utf8CP propertyValue)
+    {
+    DgnElement::UniqueAspect* aspect = DgnElement::UniqueAspect::GetAspectP(element, aspectClass);
+    ASSERT_NE(aspect, nullptr);
+    ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(propertyName, ECN::ECValue(propertyValue)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementAspectTests::SetMultiAspectPropertyValue(DgnElementR element, ECN::ECClassCR aspectClass, ECInstanceId aspectInstanceId, Utf8CP propertyName, Utf8CP propertyValue)
+    {
+    DgnElement::MultiAspect* aspect = DgnElement::MultiAspect::GetAspectP(element, aspectClass, aspectInstanceId);
+    ASSERT_NE(aspect, nullptr);
+    ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(propertyName, ECN::ECValue(propertyValue)));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementAspectTests::AssertUniqueAspectPropertyValue(Utf8CP expectedValue, DgnElementCR element, ECN::ECClassCR aspectClass, Utf8CP propertyName)
+    {
+    DgnElement::UniqueAspect const* aspect = DgnElement::UniqueAspect::GetAspect(element, aspectClass);
+    ASSERT_NE(aspect, nullptr);
+    ECN::ECValue actualValue;
+    ASSERT_EQ(DgnDbStatus::Success, aspect->GetPropertyValue(actualValue, propertyName));
+    ASSERT_STREQ(expectedValue, actualValue.ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ElementAspectTests::AssertMultiAspectPropertyValue(Utf8CP expectedValue, DgnElementCR element, ECN::ECClassCR aspectClass, ECInstanceId aspectInstanceId, Utf8CP propertyName)
+    {
+    ASSERT_TRUE(aspectInstanceId.IsValid());
+    DgnElement::MultiAspect const* aspect = DgnElement::MultiAspect::GetAspect(element, aspectClass, aspectInstanceId);
+    ASSERT_NE(aspect, nullptr);
+    ECN::ECValue actualValue;
+    ASSERT_EQ(DgnDbStatus::Success, aspect->GetPropertyValue(actualValue, propertyName));
+    ASSERT_STREQ(expectedValue, actualValue.ToString().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ElementAspectTests, PresentationRuleScenarios)
+    {
+    USING_NAMESPACE_BENTLEY_EC;
+    SetupSeedProject();
+    ASSERT_EQ(BentleyStatus::SUCCESS, m_db->Schemas().CreateClassViewsInDb());
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "MySpatialCategory");
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "MyPhysicalModel");
+
+    TestElementPtr element = TestElement::Create(*m_db, physicalModel->GetModelId(), categoryId);
+    ASSERT_TRUE(element.IsValid());
+
+    ECClassCP aspectClassUniqueNoHandler = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_CLASS_TestUniqueAspectNoHandler);
+    ASSERT_NE(aspectClassUniqueNoHandler, nullptr);
+
+    ECClassCP aspectClassUnique = TestUniqueAspect::GetECClass(*m_db);
+    ASSERT_NE(aspectClassUnique, nullptr);
+
+    ECClassCP aspectClassMultiNoHandler = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_CLASS_TestMultiAspectNoHandler);
+    ASSERT_NE(aspectClassMultiNoHandler, nullptr);
+
+    ECClassCP aspectClassMulti = TestMultiAspect::GetECClass(*m_db);
+    ASSERT_NE(aspectClassMulti, nullptr);
+
+    // add instance of DgnPlatformTest.TestUniqueAspectNoHandler
+        {
+        RefCountedPtr<DgnElement::UniqueAspect> aspect = DgnElement::UniqueAspect::CreateAspect(*m_db, *aspectClassUniqueNoHandler);
+        ASSERT_TRUE(aspect.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty, ECValue("Aspect1")));
+        ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(DPTEST_TEST_UNIQUE_ASPECT_LengthProperty, ECValue(1.0)));
+        DgnElement::UniqueAspect::SetAspect(*element, *aspect);
+        }
+
+    // add instance of DgnPlatformTest.TestUniqueAspect
+        {
+        RefCountedPtr<DgnElement::UniqueAspect> aspect = DgnElement::UniqueAspect::CreateAspect(*m_db, *aspectClassUnique);
+        ASSERT_TRUE(aspect.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty, ECValue("Aspect2")));
+        ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(DPTEST_TEST_UNIQUE_ASPECT_LengthProperty, ECValue(2.0)));
+        DgnElement::UniqueAspect::SetAspect(*element, *aspect);
+        }
+
+    // add first instance of DgnPlatformTest.TestMultiAspectNoHandler
+        {
+        RefCountedPtr<DgnElement::MultiAspect> aspect = DgnElement::MultiAspect::CreateAspect(*m_db, *aspectClassMultiNoHandler);
+        ASSERT_TRUE(aspect.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty, ECValue("Aspect3")));
+        DgnElement::MultiAspect::AddAspect(*element, *aspect);
+        }
+
+    // add second instance of DgnPlatformTest.TestMultiAspectNoHandler
+        {
+        RefCountedPtr<DgnElement::MultiAspect> aspect = DgnElement::MultiAspect::CreateAspect(*m_db, *aspectClassMultiNoHandler);
+        ASSERT_TRUE(aspect.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty, ECValue("Aspect4")));
+        DgnElement::MultiAspect::AddAspect(*element, *aspect);
+        }
+
+    // add first instance of DgnPlatformTest.TestMultiAspect
+        {
+        RefCountedPtr<DgnElement::MultiAspect> aspect = DgnElement::MultiAspect::CreateAspect(*m_db, *aspectClassMulti);
+        ASSERT_TRUE(aspect.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty, ECValue("Aspect5")));
+        DgnElement::MultiAspect::AddAspect(*element, *aspect);
+        }
+
+    // add second instance of DgnPlatformTest.TestMultiAspect
+        {
+        RefCountedPtr<DgnElement::MultiAspect> aspect = DgnElement::MultiAspect::CreateAspect(*m_db, *aspectClassMulti);
+        ASSERT_TRUE(aspect.IsValid());
+        ASSERT_EQ(DgnDbStatus::Success, aspect->SetPropertyValue(DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty, ECValue("Aspect6")));
+        DgnElement::MultiAspect::AddAspect(*element, *aspect);
+        }
+
+    // insert element (and aspects) and verify counts
+    ASSERT_TRUE(element->Insert().IsValid());
+    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*m_db, DPTEST_SCHEMA(DPTEST_CLASS_TestUniqueAspectNoHandler)));
+    ASSERT_EQ(1, DgnDbTestUtils::SelectCountFromECClass(*m_db, DPTEST_SCHEMA(DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME)));
+    ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect)));
+    ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*m_db, DPTEST_SCHEMA(DPTEST_CLASS_TestMultiAspectNoHandler)));
+    ASSERT_EQ(2, DgnDbTestUtils::SelectCountFromECClass(*m_db, DPTEST_SCHEMA(DPTEST_TEST_MULTI_ASPECT_CLASS_NAME)));
+    ASSERT_EQ(4, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)));
+    ASSERT_EQ(6, DgnDbTestUtils::SelectCountFromECClass(*m_db, BIS_SCHEMA(BIS_CLASS_ElementAspect)));
+
+    // cause element to be reloaded
+    DgnElementId elementId = element->GetElementId();
+    element = nullptr;
+    m_db->Memory().PurgeUntil(0);
+    element = m_db->Elements().GetForEdit<TestElement>(elementId);
+    ASSERT_TRUE(element.IsValid());
+
+    ECInstanceId aspectInstanceId3, aspectInstanceId4, aspectInstanceId5, aspectInstanceId6;
+
+    // Query for ECInstanceIds of DgnPlatformTest.TestMultiAspectNoHandler aspects (only set after Insert)
+        {
+        CachedECSqlStatementPtr statement = m_db->GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DPTEST_SCHEMA(DPTEST_CLASS_TestMultiAspectNoHandler) " WHERE " DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "=?");
+        statement->BindText(1, "Aspect3", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, statement->Step());
+        aspectInstanceId3 = statement->GetValueId<ECInstanceId>(0);
+        ASSERT_TRUE(aspectInstanceId3.IsValid());
+
+        statement->Reset();
+        statement->BindText(1, "Aspect4", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, statement->Step());
+        aspectInstanceId4 = statement->GetValueId<ECInstanceId>(0);
+        ASSERT_TRUE(aspectInstanceId4.IsValid());
+        }
+
+    // Query for ECInstanceIds of DgnPlatformTest.TestMultiAspect aspects (only set after Insert)
+        {
+        CachedECSqlStatementPtr statement = m_db->GetPreparedECSqlStatement("SELECT ECInstanceId FROM " DPTEST_SCHEMA(DPTEST_TEST_MULTI_ASPECT_CLASS_NAME) " WHERE " DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "=?");
+        statement->BindText(1, "Aspect5", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, statement->Step());
+        aspectInstanceId5 = statement->GetValueId<ECInstanceId>(0);
+        ASSERT_TRUE(aspectInstanceId5.IsValid());
+
+        statement->Reset();
+        statement->BindText(1, "Aspect6", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_ROW, statement->Step());
+        aspectInstanceId6 = statement->GetValueId<ECInstanceId>(0);
+        ASSERT_TRUE(aspectInstanceId6.IsValid());
+        }
+
+    // verify inserted instances
+    AssertUniqueAspectPropertyValue("Aspect1", *element, *aspectClassUniqueNoHandler, DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty);
+    AssertUniqueAspectPropertyValue("Aspect2", *element, *aspectClassUnique, DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty);
+    AssertMultiAspectPropertyValue("Aspect3", *element, *aspectClassMultiNoHandler, aspectInstanceId3, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
+    AssertMultiAspectPropertyValue("Aspect4", *element, *aspectClassMultiNoHandler, aspectInstanceId4, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
+    AssertMultiAspectPropertyValue("Aspect5", *element, *aspectClassMulti, aspectInstanceId5, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
+    AssertMultiAspectPropertyValue("Aspect6", *element, *aspectClassMulti, aspectInstanceId6, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
+
+    // update property values
+    SetUniqueAspectPropertyValue(*element, *aspectClassUniqueNoHandler, DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty, "Aspect1-Updated");
+    SetUniqueAspectPropertyValue(*element, *aspectClassUnique, DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty, "Aspect2-Updated");
+    SetMultiAspectPropertyValue(*element, *aspectClassMultiNoHandler, aspectInstanceId3, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty, "Aspect3-Updated");
+    SetMultiAspectPropertyValue(*element, *aspectClassMultiNoHandler, aspectInstanceId4, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty, "Aspect4-Updated");
+    SetMultiAspectPropertyValue(*element, *aspectClassMulti, aspectInstanceId5, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty, "Aspect5-Updated");
+    SetMultiAspectPropertyValue(*element, *aspectClassMulti, aspectInstanceId6, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty, "Aspect6-Updated");
+
+    // cause aspects to be updated
+    ASSERT_TRUE(element->Update().IsValid());
+
+    // cause element to be reloaded
+    element = nullptr;
+    m_db->Memory().PurgeUntil(0);
+    element = m_db->Elements().GetForEdit<TestElement>(elementId);
+    ASSERT_TRUE(element.IsValid());
+
+    // verify updated instances
+    AssertUniqueAspectPropertyValue("Aspect1-Updated", *element, *aspectClassUniqueNoHandler, DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty);
+    AssertUniqueAspectPropertyValue("Aspect2-Updated", *element, *aspectClassUnique, DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty);
+    AssertMultiAspectPropertyValue("Aspect3-Updated", *element, *aspectClassMultiNoHandler, aspectInstanceId3, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
+    AssertMultiAspectPropertyValue("Aspect4-Updated", *element, *aspectClassMultiNoHandler, aspectInstanceId4, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
+    AssertMultiAspectPropertyValue("Aspect5-Updated", *element, *aspectClassMulti, aspectInstanceId5, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
+    AssertMultiAspectPropertyValue("Aspect6-Updated", *element, *aspectClassMulti, aspectInstanceId6, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
     }
