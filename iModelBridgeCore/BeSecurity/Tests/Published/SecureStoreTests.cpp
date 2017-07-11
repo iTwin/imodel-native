@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/SecureStoreTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -281,6 +281,9 @@ TEST_F (SecureStoreTests, LegacyClearValue_LegacyValueExists_RemovesNonLegacyVal
     }
 #endif
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Vincas.Razma                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Encrypt_EmptyPassed_ReturnsNonEmpty)
     {
     StubLocalState localState;
@@ -288,6 +291,9 @@ TEST_F(SecureStoreTests, Encrypt_EmptyPassed_ReturnsNonEmpty)
     EXPECT_STRNE("", store.Encrypt("").c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Vincas.Razma                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Encrypt_NullPassed_ReturnsNotEmpty)
     {
     StubLocalState localState;
@@ -295,6 +301,9 @@ TEST_F(SecureStoreTests, Encrypt_NullPassed_ReturnsNotEmpty)
     EXPECT_STRNE("", store.Encrypt(nullptr).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Vincas.Razma                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Encrypt_ValuePassed_ReturnsNonEmptyDifferentValue)
     {
     StubLocalState localState;
@@ -302,6 +311,9 @@ TEST_F(SecureStoreTests, Encrypt_ValuePassed_ReturnsNonEmptyDifferentValue)
     EXPECT_STRNE("Foo Boo", store.Encrypt("Foo Boo").c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Vincas.Razma                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Encrypt_SameValuePassedTwice_ReturnsNonEmptyDifferentValues)
     {
     StubLocalState localState;
@@ -314,6 +326,9 @@ TEST_F(SecureStoreTests, Encrypt_SameValuePassedTwice_ReturnsNonEmptyDifferentVa
     EXPECT_STRNE(encrypted1.c_str(), encrypted2.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Vincas.Razma                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Decrypt_InvalidValuesPassed_ReturnsEmpty)
     {
     StubLocalState localState;
@@ -327,6 +342,9 @@ TEST_F(SecureStoreTests, Decrypt_InvalidValuesPassed_ReturnsEmpty)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Vincas.Razma                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Decrypt_EncryptedValuePassed_ReturnsOriginal)
     {
     StubLocalState localState;
@@ -336,6 +354,9 @@ TEST_F(SecureStoreTests, Decrypt_EncryptedValuePassed_ReturnsOriginal)
     EXPECT_STREQ("Foo Boo", store.Decrypt(store.Encrypt("Foo Boo").c_str()).c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Vincas.Razma                   03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(SecureStoreTests, Decrypt_EncryptedLargeValuePassed_ReturnsOriginal)
     {
     StubLocalState localState;
