@@ -1,0 +1,31 @@
+// All "Equals" operators EXCEPT static bool Equals($(ThisType),$(ThisType)), which must be implemented specific to each class.
+
+<def name=SEPARATOR> ^</def>
+<defExpansion name=XOROVERFIELDS>$(SEPARATEDFIELDS)</defExpansion>
+
+
+/// <summary>Test if $(ThisType) equals $(ThisType).</summary>
+INSTANCEMETHOD(public, bool, Equals)
+(
+INPUT_STRUCT ($(ThisType), other, "$(ThisType) right of equality")
+)
+    {
+    return $(ThisType).Equals (*this, other);
+    }
+ENDMETHOD
+
+/// <summary>Test if $(ThisType) equals $(ThisType).</summary>
+CLASSMETHOD(public, bool, Equals)
+(
+INPUT_STRUCT ($(ThisType), left, "$(ThisType) left of equality"),
+INPUT_STRUCT ($(ThisType), right, "$(ThisType) right of equality")
+)
+    {
+    return
+        INSTANCEOF (left, DVector3d) &&
+        INSTANCEOF (right, DVector3d) &&
+        FOREACH field in $(ANDOVERFIELDS) expand left.field == right.field  END_FOREACH;
+    }
+ENDMETHOD
+
+    

@@ -1,0 +1,75 @@
+
+
+<expandFile>@getenv{JSMETASRCPATH}/jsOperatorOverloads.in</expandFile>
+
+
+
+/// <summary>Test if $(ThisType) is within the given tolerance.</summary>
+INSTANCEMETHOD(public, bool, IsWithinTolerance) (
+INPUT_STRUCT($(ThisType), right, "right operand"), 
+INPUT_BYVALUE(double, tolerance, "tolerance"))
+    {
+    return FOREACH field in $(ANDOVERFIELDS) expand Math::abs (this.field - right.field) < tolerance  END_FOREACH;
+    }
+ENDMETHOD
+ 
+/// <summary>Add an origin, and a $(ThisType) times a scales.</summary>
+CLASSMETHOD(public, void, Add, OriginAnd2Scaled) (
+INPUT_STRUCT($(ThisType), origin, "base"), 
+INPUT_STRUCT($(ThisType), termA, "first term"), 
+INPUT_BYVALUE(double, scaleA, "scaleA"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand origin.field + termA.field * scaleA END_FOREACH);
+    }
+ENDMETHOD
+
+/// <summary>Add an origin, and 2 $(ThisType) times 2 scales.</summary>
+CLASSMETHOD(public, void, Add, OriginAnd2Scaled) (
+INPUT_STRUCT($(ThisType), origin, "base"), 
+INPUT_STRUCT($(ThisType), termA, "first term"), 
+INPUT_BYVALUE(double, scaleA, "scaleA"), 
+INPUT_STRUCT($(ThisType), termB, "second term"), 
+INPUT_BYVALUE(double, scaleB, "scaleB"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand origin.field + termA.field * scaleA + termB.field * scaleB END_FOREACH);
+    }
+ENDMETHOD
+
+/// <summary>Add an origin, and 3 $(ThisType) times 3 scales.</summary>
+CLASSMETHOD(public, void, Add, OriginAnd3Scaled) (
+INPUT_STRUCT($(ThisType), origin, "base"), 
+INPUT_STRUCT($(ThisType), termA, "first term"), 
+INPUT_BYVALUE(double, scaleA, "scaleA"), 
+INPUT_STRUCT($(ThisType), termB, "second term"), 
+INPUT_BYVALUE(double, scaleB, "scaleB"), 
+INPUT_STRUCT($(ThisType), termC, "third term"), 
+INPUT_BYVALUE(double, scaleC, "scaleC"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand origin.field + termA.field * scaleA + termB.field * scaleB + termC.field * scaleC END_FOREACH);
+    }
+ENDMETHOD
+
+/// <summary>Add 2 $(ThisType) times 2 scales.</summary>
+CLASSMETHOD(public, void, Add, 2Scaled) (
+INPUT_STRUCT($(ThisType), termA, "first term"), 
+INPUT_BYVALUE(double, scaleA, "scaleA"), 
+INPUT_STRUCT($(ThisType), termB, "second term"), 
+INPUT_BYVALUE(double, scaleB, "scaleB"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand termA.field * scaleA + termB.field * scaleB END_FOREACH);
+    }
+ENDMETHOD
+
+/// <summary>Add 3 $(ThisType) times 3 scales.</summary>
+CLASSMETHOD(public, void, Add, 3Scaled) (
+INPUT_STRUCT($(ThisType), termA, "first term"), 
+INPUT_BYVALUE(double, scaleA, "scaleA"), 
+INPUT_STRUCT($(ThisType), termB, "second term"), 
+INPUT_BYVALUE(double, scaleB, "scaleB"), 
+INPUT_STRUCT($(ThisType), termC, "third term"), 
+INPUT_BYVALUE(double, scaleC, "scaleC"))
+    {
+    return NEW_BY_ALL_FIELDS (FOREACH field in $(COMMASEPFIELDS) expand termA.field * scaleA + termB.field * scaleB + termC.field * scaleC END_FOREACH);
+    }
+ENDMETHOD
+

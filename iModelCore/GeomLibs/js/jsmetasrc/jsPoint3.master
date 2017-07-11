@@ -1,0 +1,34 @@
+/*-------------------------------------------------------------------------------------+
+|
+|     $Source: js/jsmetasrc/jsPoint3.master $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+
+export class DPoint3d
+{
+/// <summary>
+/// x,y,z coordinates of a point.
+/// </summary>
+
+
+<def name=SEPARATEDFIELDS>
+        x$(SEPARATOR)
+        y$(SEPARATOR)
+        z</def>
+<def name=SEPARATEDFIELDSUFFIXES>
+        x$(SEPARATOR)
+        y</def>
+
+<def name=ThisType>DPoint3d</def>
+<def name=ThisShortType>P</def>
+<def name=VectorType>DVector3d</def>
+<def name=PointType>DPoint3d</def>
+<def name=SubtractionResultType>DVector3d</def>
+
+<expandFile>@getenv{JSMETASRCPATH}/jsLinearOps.in</expandFile>
+<expandFile>@getenv{JSMETASRCPATH}/jsEqualsOps.in</expandFile>
+<expandFile>@getenv{JSMETASRCPATH}/jsMaxAbs.in</expandFile>
+
+}

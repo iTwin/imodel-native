@@ -1,0 +1,40 @@
+/*-------------------------------------------------------------------------------------+
+|
+|     $Source: js/jsmetasrc/jsMatrix3.master $
+|
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|
++--------------------------------------------------------------------------------------*/
+export class DMatrix3d
+{
+/// <summary>3x3 matrix for linear transformation of xyz vectors.
+/// </summary>
+//     The 9 matrix entries are stored in named
+//  coffxx, coffxy, coffxz
+//  coffyx, coffyy, coffyz
+//  coffzx, coffzy, coffzz
+
+
+<def name=SEPARATEDFIELDS>
+        coffxx$(SEPARATOR) coffxy$(SEPARATOR) coffxz$(SEPARATOR)
+        coffyx$(SEPARATOR) coffyy$(SEPARATOR) coffyz$(SEPARATOR)
+        coffzx$(SEPARATOR) coffzy$(SEPARATOR) coffzz
+        </def>
+<def name=SEPARATEDFIELDSUFFIXES>
+        xx$(SEPARATOR) xy$(SEPARATOR) xz$(SEPARATOR)
+        yx$(SEPARATOR) yy$(SEPARATOR) yz$(SEPARATOR)
+        zx$(SEPARATOR) zy$(SEPARATOR) zz
+        </def>
+
+<def name=ThisType>DMatrix3d</def>
+<def name=ThisShortType>M</def>
+<def name=SubtractionResultType>DMatrix3d</def>
+<def name=VectorType>DVector3d</def>
+<def name=PointType>DPoint3d</def>
+<def name=MatrixType>DMatrix3d</def>
+<def name=TransformType>DTransform3d</def>
+<expandFile>@getenv{JSMETASRCPATH}/jsLinearOps.in</expandFile>
+<expandFile>@getenv{JSMETASRCPATH}/jsEqualsOps.in</expandFile>
+<expandFile>@getenv{JSMETASRCPATH}/jsMaxAbs.in</expandFile>
+
+}
