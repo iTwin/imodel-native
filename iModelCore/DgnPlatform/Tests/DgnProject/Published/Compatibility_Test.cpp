@@ -925,7 +925,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
         for (ECClassP Class : DerivedClasses)
             {
-            if (Class->GetName() != "Category" && Class->GetName() != "Texture"  && Class->GetName() != "ViewDefinition" && Class->GetName() != "SubCategory" && Class->GetName() != "InformationPartitionElement")
+            if (Class->GetName() != BIS_CLASS_Category && Class->GetName() != BIS_CLASS_Texture  && Class->GetName() != BIS_CLASS_ViewDefinition && Class->GetName() != BIS_CLASS_SubCategory && Class->GetName() != BIS_CLASS_InformationPartitionElement)
                 {
                 List.push_back(Class);
                 if (Class != nullptr)
@@ -982,7 +982,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
         for (ECClassCP ecClass : DerivedClassList)
             {
-            if (ecClass->GetSchema().GetName() == "BisCore" && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
+            if (ecClass->GetSchema().GetName() == BIS_ECSCHEMA_NAME && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
                 {
                 //Gets the className
                 Utf8StringCR className = ecClass->GetName();
@@ -1043,7 +1043,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
         for (ECClassCP ecClass : DerivedClassList)
             {
-            if (ecClass->GetSchema().GetName() == "BisCore" && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
+            if (ecClass->GetSchema().GetName() == BIS_ECSCHEMA_NAME && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
                 {
                 //Gets the className
                 Utf8StringCR className = ecClass->GetName();
@@ -1118,7 +1118,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
         for (ECClassCP ecClass : DerivedClassList)
             {
-            if (ecClass->GetSchema().GetName() == "BisCore" && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
+            if (ecClass->GetSchema().GetName() == BIS_ECSCHEMA_NAME && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
                 {
                 //Gets the className
                 Utf8StringCR className = ecClass->GetName();
@@ -1159,7 +1159,6 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
     +---------------+---------------+---------------+---------------+---------------+------------------*/
     void ECInstancesCompatibility::InsertInstancesForInformationReferenceElement(ECClassCP className)
         {
-
         printf("\n\nInserting instances for InformationReferenceElement heirarchy:\n\n");
 
         List.clear();
@@ -1174,7 +1173,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
         for (ECClassCP ecClass : DerivedClassList)
             {
-            if (ecClass->GetSchema().GetName() == "BisCore" && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
+            if (ecClass->GetSchema().GetName() == BIS_ECSCHEMA_NAME && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
                 {
                 //Gets the className
                 Utf8StringCR className = ecClass->GetName();
@@ -1198,7 +1197,6 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
-
 
                 //Creating Element of the specified instance
                 DgnElementPtr ele = createElement(ClassInstance);
@@ -1224,7 +1222,6 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
     +---------------+---------------+---------------+---------------+---------------+------------------*/
     void ECInstancesCompatibility::InsertInstancesForDefinitionElement(ECClassCP className)
         {
-
         printf("\n\nInserting instances for DefinitionElement heirarchy:\n\n");
 
         List.clear();
@@ -1235,19 +1232,20 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
         ASSERT_TRUE(defModel.IsValid());
         DgnModelId model_id = defModel->GetModelId();
 
-        SubjectCPtr rootSubject = m_db->Elements().GetRootSubject();
-
         List.push_back(className);
 
         std::vector<ECClassCP> DerivedClassList = getDerivedClasses(className);
 
         for (ECClassCP ecClass : DerivedClassList)
             {
-            if (ecClass->GetSchema().GetName() == "BisCore" && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
+            if (ecClass->GetSchema().GetName() == BIS_ECSCHEMA_NAME && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
                 {
                 //Gets the className
                 Utf8StringCR className = ecClass->GetName();
                 ASSERT_TRUE(ecClass != nullptr) << "ECClass '" << className << "' not found.";
+
+                if (className == BIS_CLASS_GeometryPart) // skip since it is an error to insert a bis:GeometryPart with no GeometryStream
+                    continue;
 
                 //Creates Instance of the given class
                 ECN::StandaloneECInstancePtr ClassInstance = ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
@@ -1296,7 +1294,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
         for (ECClassCP ecClass : DerivedClassList)
             {
-            if (ecClass->GetSchema().GetName() == "BisCore" && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
+            if (ecClass->GetSchema().GetName() == BIS_ECSCHEMA_NAME && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
                 {
                 //Gets the className
                 Utf8StringCR className = ecClass->GetName();
@@ -1383,7 +1381,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
         for (ECClassCP ecClass : DerivedClassList)
             {
-            if (ecClass->GetSchema().GetName() == "BisCore" && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
+            if (ecClass->GetSchema().GetName() == BIS_ECSCHEMA_NAME && ecClass->IsEntityClass() && ecClass->GetClassModifier() != ECClassModifier::Abstract)
                 {
                 ValidClassesForInstanceInsertion.push_back(ecClass);
                 }
