@@ -2993,8 +2993,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
 
     //Delete Foo ===================================================================================================
-    m_ecdb.SaveChanges();
-    SchemaItem deleteFoo(
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
@@ -3011,8 +3011,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='GD' typeName='double' />"
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(deleteFoo)) << "Delete derived class should be successful";
+        "</ECSchema>"))) << "Delete derived class should be successful";
 
     //Following should not exist
     ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
