@@ -340,10 +340,6 @@ DataSourceCacheTests.*
 ChunkedUploadRequestTests.PerformAsync_FirtResponseNotResumeIncomplete_StopsRequest
     # bim0200dev, x64, NDEBUG, firebug, random hang
 
-#--------------------------------------------------------------------------------
-# NEW not reviewed issues
-#--------------------------------------------------------------------------------
-
  WSClientTests.GetServerInfo_CalledTwiceWithSuccessfullConnection_QueriesServerOnce
     # bim0200dev, x64, DEBUG, random hang
     #
@@ -399,3 +395,8 @@ ChunkedUploadRequestTests.PerformAsync_FirtResponseNotResumeIncomplete_StopsRequ
     #   ucrtbase.dll!_o__strtoui64()   Unknown
     #   kernel32.dll!BaseThreadInitThunk() Unknown
     #   ntdll.dll!RtlUserThreadStart() Unknown
+
+#--------------------------------------------------------------------------------
+# NEW not reviewed issues
+#--------------------------------------------------------------------------------
+
