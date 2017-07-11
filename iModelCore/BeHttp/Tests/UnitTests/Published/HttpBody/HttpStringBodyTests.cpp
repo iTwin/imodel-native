@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, AsString_Empty_ReturnsEmptyString)
     {
@@ -20,7 +20,7 @@ TEST_F (HttpStringBodyTests, AsString_Empty_ReturnsEmptyString)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, AsString_ConstructedWithString_ReturnsEqualString)
     {
@@ -29,7 +29,7 @@ TEST_F (HttpStringBodyTests, AsString_ConstructedWithString_ReturnsEqualString)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpStringBodyTests, AsString_CreatedWithNullPtr_ReturnsEmptyString)
     {
@@ -38,7 +38,7 @@ TEST_F(HttpStringBodyTests, AsString_CreatedWithNullPtr_ReturnsEmptyString)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpStringBodyTests, AsString_CreatedWithSharedString_ReturnsString)
     {
@@ -47,7 +47,7 @@ TEST_F(HttpStringBodyTests, AsString_CreatedWithSharedString_ReturnsString)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, SetPosition_ValuePassed_PositionSet)
     {
@@ -60,7 +60,7 @@ TEST_F (HttpStringBodyTests, SetPosition_ValuePassed_PositionSet)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, Reset_FilledBody_ClearsContents)
     {
@@ -70,7 +70,7 @@ TEST_F (HttpStringBodyTests, Reset_FilledBody_ClearsContents)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, Reset_PositionSet_ClearsPosition)
     {

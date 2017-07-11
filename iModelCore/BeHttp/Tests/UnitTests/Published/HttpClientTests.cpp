@@ -13,7 +13,7 @@
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_UrlAndMethodPassed_SetsUrlAndMethod)
     {
@@ -25,7 +25,7 @@ TEST_F (HttpClientTests, CreateRequest_UrlAndMethodPassed_SetsUrlAndMethod)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_NoHeaderProvider_EmptyHeaders)
     {
@@ -36,7 +36,7 @@ TEST_F (HttpClientTests, CreateRequest_NoHeaderProvider_EmptyHeaders)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_DefaultHeaderProvider_EmptyHeaders)
     {
@@ -47,7 +47,7 @@ TEST_F (HttpClientTests, CreateRequest_DefaultHeaderProvider_EmptyHeaders)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_HeaderProviderWithHeadersSet_HeadersSetToRequest)
     {

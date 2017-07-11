@@ -22,7 +22,7 @@ bmap<Utf8String, Utf8String> GetHttpHeaders(Utf8String key, Utf8String value)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasValue_PassesRequestToSuppliedHandler)
     {
@@ -39,7 +39,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasValue_P
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasNoValue_RetrievesAuthorizationAndPerformsRequest)
     {
@@ -58,7 +58,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorisationHeaderHasNoValue
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorizationHeaderHasNoValueAndRetrieveAuthorizationReturnsError_TriesRequestWithoutCredentials)
     {
@@ -78,7 +78,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_AuthorizationHeaderHasNoValue
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_FirstRequestHasAuthorizationButFailsAndRetrieveAuthorizationReturnsError_ReturnsResponse)
     {
@@ -97,7 +97,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_FirstRequestHasAuthorizationB
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_ResponseUnauthorized_RetrievesAuthorizationAndRetriesRequest)
     {
@@ -119,7 +119,7 @@ TEST_F (AuthenticationHandlerTests, PerformRequest_ResponseUnauthorized_Retrieve
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AuthenticationHandlerTests, PerformRequest_ResponseNonLoginError_ReturnsResponseDirectly)
     {

@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, SetValue_EmptyString_RemovesValue)
     {
@@ -27,7 +27,7 @@ TEST_F(HttpHeadersTests, SetValue_EmptyString_RemovesValue)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetValue_SingleSetValue_ReturnsValue)
     {
@@ -39,7 +39,7 @@ TEST_F(HttpHeadersTests, GetValue_SingleSetValue_ReturnsValue)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetValue_SetValueAndAddValue_ReturnValuesCommaSeparated)
     {
@@ -52,7 +52,7 @@ TEST_F(HttpHeadersTests, GetValue_SetValueAndAddValue_ReturnValuesCommaSeparated
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetValue_MultipleSetValue_ReturnsOnlyLastValue)
     {
@@ -65,7 +65,7 @@ TEST_F(HttpHeadersTests, GetValue_MultipleSetValue_ReturnsOnlyLastValue)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetValue_ValueNotSet_ReturnsNullptr)
     {
@@ -74,7 +74,7 @@ TEST_F(HttpHeadersTests, GetValue_ValueNotSet_ReturnsNullptr)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, GetMap_ValuesSet_ReturnsMap)
     {
@@ -89,7 +89,7 @@ TEST_F(HttpHeadersTests, GetMap_ValuesSet_ReturnsMap)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpHeadersTests, Clear_SetValueAndClear_ReturnsEmptyMap)
     {

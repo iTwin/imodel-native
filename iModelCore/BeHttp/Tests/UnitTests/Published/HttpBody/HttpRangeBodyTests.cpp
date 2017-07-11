@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_FullRange_ReturnsSameString)
     {
@@ -21,7 +21,7 @@ TEST_F (HttpRangeBodyTests, AsString_FullRange_ReturnsSameString)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromStart_ReturnsClipped)
     {
@@ -31,7 +31,7 @@ TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromStart_ReturnsClipped)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromEnd_ReturnsClipped)
     {
@@ -41,7 +41,7 @@ TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromEnd_ReturnsClipped)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromBothEnds_ReturnsClipped)
     {
@@ -51,7 +51,7 @@ TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromBothEnds_ReturnsClipped)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_CalledAfterRead_StringifiesAllContent)
     {
@@ -64,7 +64,7 @@ TEST_F (HttpRangeBodyTests, AsString_CalledAfterRead_StringifiesAllContent)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, Read_AsStringCalledAfterRead_ReadingContinuesAsNormal)
     {
@@ -82,7 +82,7 @@ TEST_F (HttpRangeBodyTests, Read_AsStringCalledAfterRead_ReadingContinuesAsNorma
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, SetPosition_ValuePassed_PositionSet)
     {
@@ -95,7 +95,7 @@ TEST_F (HttpRangeBodyTests, SetPosition_ValuePassed_PositionSet)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, Reset_FilledBody_ClearsContentsInRange)
     {
@@ -113,7 +113,7 @@ TEST_F (HttpRangeBodyTests, Reset_FilledBody_ClearsContentsInRange)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, Reset_PositionSet_ClearsPosition)
     {

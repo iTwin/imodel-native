@@ -13,7 +13,7 @@
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithProxyUrl_RequestWithProxyUrl)
     {
@@ -32,7 +32,7 @@ TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithProxyUrl_RequestWithPro
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithoutProxyUrl_RequestWithoutProxyUrl)
     {
@@ -51,7 +51,7 @@ TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithoutProxyUrl_RequestWith
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithProxyUrl_RequestWithProxyUrlAndCredentials)
     {
@@ -81,7 +81,7 @@ TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithProxyUrl_RequestWithPro
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProxyHttpHandlerTests, PerformRequest_ResponseWithNoneStatus_ReturnsHandlerThatDoesNotSetProxy)
     {
@@ -102,7 +102,7 @@ TEST_F (ProxyHttpHandlerTests, PerformRequest_ResponseWithNoneStatus_ReturnsHand
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       05/16
+* @bsimethod                                Vincas.Razma                       05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProxyHttpHandlerTests, PerformRequest_ResponseWithOKStatus_ReturnsHandlerThatDoesNotSetProxy)
     {

@@ -11,7 +11,7 @@
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpMultipartBodyTests, SetPosition_ValuePassed_PositionSet)
     {
@@ -25,7 +25,7 @@ TEST_F (HttpMultipartBodyTests, SetPosition_ValuePassed_PositionSet)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                Grigas.Petraitis                       06/16
+* @bsimethod                                Vincas.Razma                       06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpMultipartBodyTests, Reset_PositionSet_ClearsPosition)
     {
