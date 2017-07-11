@@ -244,6 +244,11 @@ protected:
 
 private:
 
+#ifndef VANCOUVER_API
+    //Avoid assert added on Bim02    
+    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return std::numeric_limits<uint32_t>::max(); }
+#endif
+
     // string table name
     const std::string m_sMasterHeaderTable = "SMMasterHeader";
     const std::string m_sNodeHeaderTable = "SMNodeHeader";

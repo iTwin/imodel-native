@@ -31,12 +31,12 @@ BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 class IScalableMeshEdit abstract : public RefCountedBase
     {
     protected:
-        virtual int _RemoveWithin(ClipVectorCP clipPlaneSet, const bvector<IScalableMeshNodePtr>& priorityNodes) = 0;
+        virtual int _RemoveWithin(BentleyB0200::Dgn::ClipVectorCP clipPlaneSet, const bvector<IScalableMeshNodePtr>& priorityNodes) = 0;
 
     public:
-        BENTLEY_SM_EXPORT int RemoveWithin(ClipVectorCP clipPlaneSet);
+        BENTLEY_SM_EXPORT int RemoveWithin(BentleyB0200::Dgn::ClipVectorCP clipPlaneSet);
 
-        BENTLEY_SM_EXPORT int RemoveWithin(ClipVectorCP clipPlaneSet, const bvector<IScalableMeshNodePtr>& priorityNodes);
+        BENTLEY_SM_EXPORT int RemoveWithin(BentleyB0200::Dgn::ClipVectorCP clipPlaneSet, const bvector<IScalableMeshNodePtr>& priorityNodes);
     };
 
 typedef RefCountedPtr<IScalableMeshEdit>                          IScalableMeshEditPtr;

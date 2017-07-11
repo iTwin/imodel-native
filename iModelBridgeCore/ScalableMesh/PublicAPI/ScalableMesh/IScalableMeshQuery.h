@@ -608,7 +608,7 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         virtual StatusInt _GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const = 0;
 
-        virtual StatusInt _GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const = 0;       
+        virtual StatusInt _GetDisplayClipVectors(bvector<BentleyB0200::Dgn::ClipVectorPtr>& clipVectors) const = 0;
 
         virtual void      _SetIsInVideoMemory(bool isInVideoMemory) = 0;
 
@@ -619,7 +619,7 @@ struct IScalableMeshCachedDisplayNode : public virtual IScalableMeshNode
 
         BENTLEY_SM_EXPORT StatusInt GetCachedTextures(bvector<SmCachedDisplayTexture*>& cachedTexture, bvector<uint64_t>& textureIds) const;
 
-        BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<ClipVectorPtr>& clipVectors) const;         
+        BENTLEY_SM_EXPORT StatusInt GetDisplayClipVectors(bvector<BentleyB0200::Dgn::ClipVectorPtr>& clipVectors) const;
 
         BENTLEY_SM_EXPORT void      SetIsInVideoMemory(bool isInVideoMemory);
 
@@ -726,7 +726,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
                
         virtual const double*       _GetRootToViewMatrix() const = 0;
 
-        virtual const ClipVectorPtr _GetViewClipVector() const = 0;
+        virtual const BentleyB0200::Dgn::ClipVectorPtr _GetViewClipVector() const = 0;
 
         virtual bool                _IsProgressiveDisplay() const = 0;
 
@@ -740,7 +740,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         virtual StatusInt       _SetStopQueryCallback(StopQueryCallbackFP stopQueryCallbackFP) = 0;
         
-        virtual void            _SetViewClipVector(ClipVectorPtr& viewClipVector) = 0;            
+        virtual void            _SetViewClipVector(BentleyB0200::Dgn::ClipVectorPtr& viewClipVector) = 0;
                                                   
     public : 
 
@@ -761,7 +761,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         const double*       GetRootToViewMatrix() const;
 
-        const ClipVectorPtr GetViewClipVector() const;
+        const BentleyB0200::Dgn::ClipVectorPtr GetViewClipVector() const;
 
         bool                IsProgressiveDisplay() const;
     
@@ -784,7 +784,7 @@ struct IScalableMeshViewDependentMeshQueryParams abstract: virtual public IScala
 
         BENTLEY_SM_EXPORT void      SetUseSplitThresholdForTileSelection(bool useSplitThreshold);    
 
-        BENTLEY_SM_EXPORT void      SetViewClipVector(ClipVectorPtr& viewClipVector);
+        BENTLEY_SM_EXPORT void      SetViewClipVector(BentleyB0200::Dgn::ClipVectorPtr& viewClipVector);
         
         BENTLEY_SM_EXPORT static    IScalableMeshViewDependentMeshQueryParamsPtr CreateParams();       
     };
@@ -810,7 +810,7 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const = 0;
 
         virtual int _Query(bvector<IScalableMeshNodePtr>&                       meshNodesPtr,
-                           ClipVectorCP                                        queryExtent3d,
+                           BentleyB0200::Dgn::ClipVectorCP                      queryExtent3d,
                            const IScalableMeshMeshQueryParamsPtr&  scmQueryParamsPtr) const = 0;
         
     /*__PUBLISH_SECTION_START__*/
@@ -830,7 +830,7 @@ struct IScalableMeshMeshQuery abstract: RefCountedBase
 
 
          BENTLEY_SM_EXPORT int Query(bvector<IScalableMeshNodePtr>&                      meshNodesPtr,
-                                     ClipVectorCP                                        queryExtent3d,
+                                     BentleyB0200::Dgn::ClipVectorCP                                        queryExtent3d,
                                      const IScalableMeshMeshQueryParamsPtr& scmQueryParamsPtr) const;
     };
 

@@ -143,7 +143,7 @@
     <IncludePath>C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnPlatform\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\scalablemesh\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ImagePP\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\BeSQLite\PublicAPI;C:\dev\ConceptStation\src\Imagepp\PublicApi;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\TerrainModel\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\Bentley\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\ConceptStation\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI;C:\dev\ConceptStation\out\debug\Winx64\BuildContexts\DgnDisplay\PublicAPI\RasterCore;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine> bb -p ScalableMeshATPexe -f ScalableMesh -r ScalableMesh -ax64 re ScalableMeshATPexe</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine> bb -p ScalableMeshATPExe -f ScalableMesh -r ScalableMesh -ax64 re ScalableMeshATPExe</NMakeBuildCommandLine>
     <NMakeOutput>$(OutRoot)Winx64\build\ScalableMesh\ScalableMeshATPexe\ScalableMeshATPexe.exe</NMakeOutput>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
     <NMakePreprocessorDefinitions>Intellisense;WIN32;winNT;_VISCXX;_CONVERSION_DONT_USE_THREAD_LOCALE;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES=1;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES_COUNT=1;_SECURE_SCL_THROWS=1;_SECURE_SCL=0;WIN32_LEAN_AND_MEAN;WINVER=0x0501;_WIN32_WINNT=0x0501;_WIN32_IE=0x0501;DEBUG;_DEBUG;SCALABLE_MESH_ATP;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
