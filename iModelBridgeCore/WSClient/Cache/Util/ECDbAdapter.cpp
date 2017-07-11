@@ -1227,7 +1227,7 @@ BentleyStatus ECDbAdapter::DeleteInstancesDirectly(const ECInstanceKeyMultiMap& 
             return "DELETE FROM ONLY " + ecClass->GetECSqlName() + " WHERE InVirtualSet(?, ECInstanceId) ";
             });
 
-        statement->BindInt64(1, (int64_t) &ids); // WIP06: use BindVirtualSet() when available
+        statement->BindVirtualSet(1, ids);
         DbResult result;
         if (BE_SQLITE_DONE != (result = statement->Step()))
             return ERROR;
