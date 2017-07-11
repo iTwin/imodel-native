@@ -28,6 +28,7 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
         std::shared_ptr<Statement> m_findRelationshipClassesStatement;
         std::shared_ptr<ECInstanceFinder> m_finder;
         bset<DeleteListener*> m_deleteListeners;
+        bmap<ECClassId, std::tuple<ECPropertyId, Utf8String, ECClassId>> m_navigationProperties;
 
     private:
         static bool DoesConstraintSupportECClass(ECRelationshipConstraintCR constraint, ECClassCR ecClass, bool allowPolymorphic);
@@ -52,6 +53,10 @@ struct ECDbAdapter : public IECDbAdapter, public IECDbSchemaChangeListener
 
         BentleyStatus DeleteInstances(const ECInstanceKeyMultiMap& instances, bset<ECInstanceKey>& deleted);
         BentleyStatus DeleteInstancesDirectly(const ECInstanceKeyMultiMap& instances, bset<ECInstanceKey>& deleted);
+        BentleyStatus DeleteInstancesUsingECSQL(ECClassCP ecClass, const ECInstanceIdSet& ids);
+        BentleyStatus DeleteRelationshipInstancesUsingECSQL(ECRelationshipClassCP ecClass, const ECInstanceIdSet& ids);
+        BentleyStatus GetNavigationProperty(ECRelationshipClassCP ecClass, ECPropertyId& propertyIdOut, Utf8String& propertyNameOut, ECClassId& classIdOut);
+
         BentleyStatus OnBeforeDelete(ECClassCR ecClass, ECInstanceId instanceId, bset<ECInstanceKey>& additionalToDeleteOut);
 
     public:
