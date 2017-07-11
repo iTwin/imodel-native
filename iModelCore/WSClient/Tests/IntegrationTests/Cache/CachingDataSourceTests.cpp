@@ -253,9 +253,6 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
-    cachePath = BeFileName(StubFilePath("punchlistcache.ecdb"));
-    DataSourceCache::DeleteCacheFromDisk(cachePath, StubCacheEnvironemnt());
-
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
     auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
@@ -275,8 +272,24 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyPunchlistV11_Succeeds)
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
-    cachePath = BeFileName(StubFilePath("punchlistcache.ecdb"));
-    DataSourceCache::DeleteCacheFromDisk(cachePath, StubCacheEnvironemnt());
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyMarkupV2_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
+
+    Utf8String serverUrl = "https://qa-connect-punchlist.bentley.com";
+    Utf8String repositoryId = "MarkupServiceV2.0--default";
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
 
     auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
     ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
