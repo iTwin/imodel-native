@@ -19,11 +19,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 BentleyStatus DbMapValidator::Initialize() const
     {
     //cache indexes by their columns for later validation
-    for (std::unique_ptr<DbIndex> const& index : m_dbMap.GetDbSchema().GetIndexes())
+    for (DbIndex const* index : m_dbMap.GetDbSchema().GetIndexes())
         {
         for (DbColumn const* col : index->GetColumns())
             {
-            m_indexesByColumnCache[col->GetId()].insert(index.get());
+            m_indexesByColumnCache[col->GetId()].insert(index);
             }
         }
 
@@ -125,7 +125,7 @@ BentleyStatus DbMapValidator::ValidateDbSchema() const
             return ERROR;
         }
 
-    for (std::unique_ptr<DbIndex> const& index : GetDbSchema().GetIndexes())
+    for (DbIndex const* index : GetDbSchema().GetIndexes())
         {
         if (SUCCESS != ValidateDbIndex(*index))
             return ERROR;

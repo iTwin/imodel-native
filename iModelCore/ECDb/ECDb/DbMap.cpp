@@ -437,9 +437,9 @@ BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
 BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
     {
     std::vector<DbIndex const*> indexes;
-    for (std::unique_ptr<DbIndex> const& indexPtr : m_dbSchema.GetIndexes())
+    for (DbIndex const* index : m_dbSchema.GetIndexes())
         {
-        indexes.push_back(indexPtr.get());
+        indexes.push_back(index);
         }
 
     //replicate indexes for other tables to which subclasses map (only for non-unique indexes or for unique indexes if no more than one non-virtual table is involved)
