@@ -25,5 +25,3 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 #TFS 721630 
 ECSqlSelectPrepareTests.LikeOperator
 
-#Affan: Abstract class now mapped to virtual table and virtual table cannot have user indexes. Test need upated
-DbMappingTestFixture.UserDefinedIndexTest

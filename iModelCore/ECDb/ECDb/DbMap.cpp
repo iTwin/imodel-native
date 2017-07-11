@@ -464,6 +464,7 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
         indexes.push_back(indexPtr.get());
         }
 
+    //replicate indexes for other tables to which subclasses map (only for non-unique indexes or for unique indexes if no more than one non-virtual table is involved)
     IndexMappingInfoCache indexInfoCache(m_ecdb, ctx);
     for (DbIndex const* index : indexes)
         {
@@ -486,7 +487,12 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
             }
 
         StorageDescription const& storageDesc = classMap->GetStorageDescription();
-        std::vector<Partition> const& horizPartitions = storageDesc.GetHorizontalPartitions();
+        if (index->GetIsUnique() && storageDesc.HasMultipleNonVirtualHorizontalPartitions())
+            {
+            Issues().Report("Failed to map ECClass '%s'. The unique index '%s' defined on it spans multiple tables which is not supported. Consider applying the 'TablePerHierarchy' strategy to the ECClass.",
+                            ecClass->GetFullName(), index->GetName().c_str());
+            return ERROR;
+            }
 
         std::vector<IndexMappingInfoPtr> const* baseClassIndexInfos = nullptr;
         if (SUCCESS != indexInfoCache.TryGetIndexInfos(baseClassIndexInfos, *classMap))
@@ -495,7 +501,7 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
         BeAssert(baseClassIndexInfos != nullptr);
 
         DbTable const& indexTable = index->GetTable();
-        for (Partition const& horizPartition : horizPartitions)
+        for (Partition const& horizPartition : storageDesc.GetHorizontalPartitions())
             {
             if (&indexTable == &horizPartition.GetTable())
                 continue;
