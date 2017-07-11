@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpBody/HttpStringBodyTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,30 +10,45 @@
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, AsString_Empty_ReturnsEmptyString)
     {
     auto body = HttpStringBody::Create ();
     EXPECT_EQ ("", body->AsString ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, AsString_ConstructedWithString_ReturnsEqualString)
     {
     auto body = HttpStringBody::Create ("TestContent");
     EXPECT_EQ ("TestContent", body->AsString ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpStringBodyTests, AsString_CreatedWithNullPtr_ReturnsEmptyString)
     {
     auto body = HttpStringBody::Create(std::shared_ptr<Utf8String>());
     EXPECT_EQ("", body->AsString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpStringBodyTests, AsString_CreatedWithSharedString_ReturnsString)
     {
     auto body = HttpStringBody::Create(std::make_shared<Utf8String>("TestContent"));
     EXPECT_EQ("TestContent", body->AsString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, SetPosition_ValuePassed_PositionSet)
     {
     auto body = HttpStringBody::Create ("foo");
@@ -44,6 +59,9 @@ TEST_F (HttpStringBodyTests, SetPosition_ValuePassed_PositionSet)
     EXPECT_EQ (2, pos);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, Reset_FilledBody_ClearsContents)
     {
     auto body = HttpStringBody::Create ("foo");
@@ -51,6 +69,9 @@ TEST_F (HttpStringBodyTests, Reset_FilledBody_ClearsContents)
     EXPECT_EQ ("", body->AsString ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpStringBodyTests, Reset_PositionSet_ClearsPosition)
     {
     auto body = HttpStringBody::Create ();

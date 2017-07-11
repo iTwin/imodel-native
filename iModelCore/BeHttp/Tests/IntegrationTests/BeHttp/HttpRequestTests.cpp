@@ -34,6 +34,9 @@ void HttpRequestTests::SetUpTestCase()
     HttpClient::Initialize(path);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_BentleyTasksApiAndOneRequest_ExecutesSuccessfully)
     {
     Request request("http://httpbin.org/ip");
@@ -45,6 +48,9 @@ TEST_F(HttpRequestTests, PerformAsync_BentleyTasksApiAndOneRequest_ExecutesSucce
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_OneRequestWithThen_ExecutesChainedTaskSuccessfully)
     {
     Response response;
@@ -62,6 +68,9 @@ TEST_F(HttpRequestTests, PerformAsync_OneRequestWithThen_ExecutesChainedTaskSucc
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_OneRequestWithThen_ExecutesChainedTaskSuccessfully)
     {
     Response response;
@@ -79,6 +88,9 @@ TEST_F(HttpRequestTests, Perform_OneRequestWithThen_ExecutesChainedTaskSuccessfu
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F(HttpRequestTests, Perform_FiddlerProxySet_ExecutesSuccessfully)
 //    {
 //    HttpRequest request("http://httpbin.org/ip");
@@ -89,6 +101,9 @@ TEST_F(HttpRequestTests, Perform_OneRequestWithThen_ExecutesChainedTaskSuccessfu
 //    EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasValidCert_Success)
     {
     Request request("https://google.com/");
@@ -100,6 +115,9 @@ TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasValidCert_Success)
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasValidCert_Success)
     {
     Request request("https://google.com/");
@@ -111,6 +129,9 @@ TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasValidCert_Success
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasInvalidCert_Fails)
     {
     Request request("https://qa-connect.bentley.com/");
@@ -122,6 +143,9 @@ TEST_F(HttpRequestTests, Perform_CertValidationSetAndSiteHasInvalidCert_Fails)
     EXPECT_EQ(HttpStatus::None, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasInvalidCert_Succeeds)
     {
     Request request("https://qa-connect.bentley.com/");
@@ -133,6 +157,9 @@ TEST_F(HttpRequestTests, Perform_CertValidationNotSetAndSiteHasInvalidCert_Succe
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_OneRequest_ExecutesSuccessfully)
     {
     // Simple test for deprecated method
@@ -146,6 +173,9 @@ TEST_F(HttpRequestTests, Perform_OneRequest_ExecutesSuccessfully)
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfully)
     {
     Request request("http://httpbin.org/ip");
@@ -157,6 +187,9 @@ TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfully)
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_MovedRequest_ExecutesSuccessfully)
     {
     Request request(std::move(Request("http://httpbin.org/ip")));
@@ -168,6 +201,9 @@ TEST_F(HttpRequestTests, Perform_MovedRequest_ExecutesSuccessfully)
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EncodesUnsafeCharactersAndExecutesSuccessfully)
     {
     //2014. Folowing urls with special symbols tested on browsers (# and % not tested )
@@ -196,6 +232,9 @@ TEST_F(HttpRequestTests, Perform_UnsafeCharactersInUrl_EncodesUnsafeCharactersAn
     EXPECT_STREQ("http://httpbin.org/ip?%3C%3E%22%23%7B%7D%7C%5C%5E%5B%5D%60", response.GetEffectiveUrl().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, GetUrl_UnsafeCharactersInUrl_ReturnsEncodedCharactersInUrl)
     {
     Request request(R"(http://httpbin.org/ip?<>"#{}|\^[]`)");
@@ -203,6 +242,9 @@ TEST_F(HttpRequestTests, GetUrl_UnsafeCharactersInUrl_ReturnsEncodedCharactersIn
     EXPECT_STREQ("http://httpbin.org/ip?%3C%3E%22%23%7B%7D%7C%5C%5E%5B%5D%60", request.GetUrl().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, GetUrl_TextAsUrlPassed_ReturnsSameText)
     {
     Request request("test url");
@@ -210,6 +252,9 @@ TEST_F(HttpRequestTests, GetUrl_TextAsUrlPassed_ReturnsSameText)
     EXPECT_STREQ("test url", request.GetUrl().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_MalformedUrl_Fails)
     {
     BeTest::SetFailOnAssert(false);
@@ -222,6 +267,9 @@ TEST_F(HttpRequestTests, Perform_MalformedUrl_Fails)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_NonexistingUrl_ExecutesWithError)
     {
     Request request("http://aaaaaa.bentley.com");
@@ -233,6 +281,9 @@ TEST_F(HttpRequestTests, Perform_NonexistingUrl_ExecutesWithError)
     EXPECT_STREQ("", response.GetBody().AsString().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_BasicAuthorizationCorrectCredentials_Success)
     {
     Request request("https://httpbin.org/basic-auth/user/pass");
@@ -245,6 +296,9 @@ TEST_F(HttpRequestTests, Perform_BasicAuthorizationCorrectCredentials_Success)
     EXPECT_TRUE(Json::Reader::DoParse(response.GetBody().AsString()).isObject());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_BasicAuthorizationNoCredentials_Fails)
     {
     Request request("https://httpbin.org/basic-auth/user/pass");
@@ -255,6 +309,9 @@ TEST_F(HttpRequestTests, Perform_BasicAuthorizationNoCredentials_Fails)
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_BasicAuthorizationIncorrectCredentials_Fails)
     {
     Request request("https://httpbin.org/basic-auth/user/pass");
@@ -266,6 +323,9 @@ TEST_F(HttpRequestTests, Perform_BasicAuthorizationIncorrectCredentials_Fails)
     EXPECT_EQ(ConnectionStatus::OK, response.GetConnectionStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_FollowRedirectsTrue_RedirectsSuccessfully)
     {
     Request request("http://httpbin.org/redirect/1");
@@ -276,6 +336,9 @@ TEST_F(HttpRequestTests, Perform_FollowRedirectsTrue_RedirectsSuccessfully)
     EXPECT_EQ(HttpStatus::OK, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_FolowRedirectsFalse_ReturnsWithFound)
     {
     Request request("http://httpbin.org/redirect/1");
@@ -286,6 +349,9 @@ TEST_F(HttpRequestTests, Perform_FolowRedirectsFalse_ReturnsWithFound)
     EXPECT_EQ(HttpStatus::Found, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfullyWithChainedTask)
     {
     Response response;
@@ -304,6 +370,9 @@ TEST_F(HttpRequestTests, PerformAsync_OneRequest_ExecutesSuccessfullyWithChained
     EXPECT_FALSE(Json::Reader::DoParse(response.GetBody().AsString()).isNull());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_ReusingSameResponseBodyWithData_ResetsResponseBodySoDataWouldNotBeMerged)
     {
     auto responseBody = HttpStringBody::Create("SomeData");
@@ -326,6 +395,9 @@ TEST_F(HttpRequestTests, PerformAsync_ReusingSameResponseBodyWithData_ResetsResp
     EXPECT_EQ("B", responseBody->AsString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_ReusingSameRequestBody_KeepsSameBody)
     {
     Request request("http://httpbin.org/post", "POST");
@@ -338,6 +410,9 @@ TEST_F(HttpRequestTests, Perform_ReusingSameRequestBody_KeepsSameBody)
     EXPECT_EQ(Json::Reader::DoParse(response.GetBody().AsString())["data"].asString(), "TestBody");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                           12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_ManyRequests_ExecutesSuccessfully)
     {
     int testRequestCount = 10;
@@ -377,6 +452,9 @@ TEST_F(HttpRequestTests, Perform_ManyRequests_ExecutesSuccessfully)
     BeDebugLog(Utf8PrintfString("Setupping requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
     }
     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
     {
     int testRequestCount = 10;
@@ -418,7 +496,10 @@ TEST_F(HttpRequestTests, PerformAsync_ManyRequests_ExecutesSuccessfully)
 
     BeDebugLog(Utf8PrintfString("Setupping requests took: %4llu ms. Waiting took: %4llu ms", mid - start, end - mid).c_str());
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_DeclareCompressedEncodingWithoutEnablingRequestCompression_BadRequestError)
     {
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
@@ -431,6 +512,9 @@ TEST_F(HttpRequestTests, Perform_DeclareCompressedEncodingWithoutEnablingRequest
     EXPECT_EQ(HttpStatus::BadRequest, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompression_Success)
     {
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
@@ -450,6 +534,9 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompression_Success)
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                           02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionForRequestWithType_Success)
     {
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
@@ -470,6 +557,9 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionForRequestWithType_Succ
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                           02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithCompressionTypesSet_Success)
     {
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
@@ -492,6 +582,9 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithCompressionTypesSet
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                           02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompression_ContentEncodingHeaderAdded)
     {
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
@@ -508,6 +601,9 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompression_ContentEncodingHeaderA
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                           02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionRequestNotCompressibleType_BadRequestError)
     {
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
@@ -526,6 +622,9 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionRequestNotCompressibleT
     EXPECT_EQ(HttpStatus::BadRequest, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerThanContentSize_Success)
     {
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");
@@ -546,6 +645,9 @@ TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerTh
     EXPECT_EQ(HttpStatus::MethodNotAllowed, response.GetHttpStatus());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       12/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpRequestTests, Perform_EnableRequestCompressionWithMinimalSizeLargerThanContentSizeWithCompressedContentEncodingEnabled_BadRequestError)
     {
     Request request("https://bsw-wsg.bentley.com/bistro/v2.4/Repositories/", "POST");

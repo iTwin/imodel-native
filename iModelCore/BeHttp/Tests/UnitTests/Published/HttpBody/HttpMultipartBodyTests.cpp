@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpBody/HttpMultipartBodyTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,9 @@
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpMultipartBodyTests, SetPosition_ValuePassed_PositionSet)
     {
     auto body = HttpMultipartBody::Create ();
@@ -21,6 +24,9 @@ TEST_F (HttpMultipartBodyTests, SetPosition_ValuePassed_PositionSet)
     EXPECT_EQ (2, pos);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpMultipartBodyTests, Reset_PositionSet_ClearsPosition)
     {
     auto body = HttpMultipartBody::Create ();

@@ -10,6 +10,9 @@
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Open_NonExistingFile_CreatesEmptyFile)
     {
     auto path = FSTest::StubFilePath();
@@ -22,6 +25,9 @@ TEST_F(HttpFileBodyTests, Open_NonExistingFile_CreatesEmptyFile)
     EXPECT_EQ("", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Open_FileWithContent_DoesNothing)
     {
     auto path = FSTest::StubFile("ABC");
@@ -32,6 +38,9 @@ TEST_F(HttpFileBodyTests, Open_FileWithContent_DoesNothing)
     EXPECT_EQ("ABC", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Open_FileLockedForWrite_DoesNothing)
     {
     auto path = FSTest::StubFile("ABC");
@@ -44,6 +53,9 @@ TEST_F(HttpFileBodyTests, Open_FileLockedForWrite_DoesNothing)
     EXPECT_EQ("ABC", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, SetPosition_NonExistingFile_FilePositionSet)
     {
     auto path = FSTest::StubFilePath();
@@ -56,6 +68,9 @@ TEST_F(HttpFileBodyTests, SetPosition_NonExistingFile_FilePositionSet)
     EXPECT_EQ(10, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, SetPosition_EmptyFile_FilePositionSet)
     {
     auto path = FSTest::StubFile("");
@@ -68,6 +83,9 @@ TEST_F(HttpFileBodyTests, SetPosition_EmptyFile_FilePositionSet)
     EXPECT_EQ(10, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, SetPosition_PositionToContent_FilePositionSet)
     {
     auto path = FSTest::StubFile("ABCD");
@@ -80,6 +98,9 @@ TEST_F(HttpFileBodyTests, SetPosition_PositionToContent_FilePositionSet)
     EXPECT_EQ(2, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Reset_NonExistingFile_SucceedsAndDoesNothing)
     {
     auto path = FSTest::StubFilePath();
@@ -89,6 +110,9 @@ TEST_F(HttpFileBodyTests, Reset_NonExistingFile_SucceedsAndDoesNothing)
     EXPECT_FALSE(path.DoesPathExist());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Reset_FileWithContent_DeletesFile)
     {
     auto path = FSTest::StubFile("TestContent");
@@ -98,6 +122,9 @@ TEST_F(HttpFileBodyTests, Reset_FileWithContent_DeletesFile)
     EXPECT_FALSE(path.DoesPathExist());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Reset_PositionSet_ClearsPosition)
     {
     auto body = HttpFileBody::Create(FSTest::StubFilePath());
@@ -110,6 +137,9 @@ TEST_F(HttpFileBodyTests, Reset_PositionSet_ClearsPosition)
     EXPECT_EQ(0, pos);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Reset_NoFileAtPath_Succeeds)
     {
     auto path = FSTest::StubFilePath();
@@ -119,6 +149,9 @@ TEST_F(HttpFileBodyTests, Reset_NoFileAtPath_Succeeds)
     ASSERT_EQ(SUCCESS, body->Reset());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_NonExistingFile_CreatesFileAndWritesContent)
     {
     auto path = FSTest::StubFilePath();
@@ -129,6 +162,9 @@ TEST_F(HttpFileBodyTests, Write_NonExistingFile_CreatesFileAndWritesContent)
     EXPECT_EQ("ABC", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_FileWithContent_OverridesContentAtPosition)
     {
     auto path = FSTest::StubFile("ABC");
@@ -139,6 +175,9 @@ TEST_F(HttpFileBodyTests, Write_FileWithContent_OverridesContentAtPosition)
     EXPECT_EQ("DBC", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_FileLockedForWrite_WritesNothing)
     {
     auto path = FSTest::StubFile("ABC");
@@ -153,6 +192,9 @@ TEST_F(HttpFileBodyTests, Write_FileLockedForWrite_WritesNothing)
     EXPECT_EQ("ABC", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_FileWithContentWithoutOpen_OverridesContentAtPosition)
     {
     auto path = FSTest::StubFile("ABC");
@@ -162,6 +204,9 @@ TEST_F(HttpFileBodyTests, Write_FileWithContentWithoutOpen_OverridesContentAtPos
     EXPECT_EQ("DBC", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_FileWithContentAndPositionSet_OverridesContentAtPosition)
     {
     auto path = FSTest::StubFile("ABC");
@@ -172,6 +217,9 @@ TEST_F(HttpFileBodyTests, Write_FileWithContentAndPositionSet_OverridesContentAt
     EXPECT_EQ("DBC", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_AfterResetCalled_Succeeds)
     {
     auto path = FSTest::StubFile("A");
@@ -182,6 +230,9 @@ TEST_F(HttpFileBodyTests, Write_AfterResetCalled_Succeeds)
     EXPECT_EQ("B", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_MultipleTimes_IncrementsPosition)
     {
     auto path = FSTest::StubFile("ABC");
@@ -203,6 +254,9 @@ TEST_F(HttpFileBodyTests, Write_MultipleTimes_IncrementsPosition)
     EXPECT_EQ("DEFG", FSTest::ReadFile(path));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Write_PositionSetToContent_OverridesCotentAtPosition)
     {
     auto path = FSTest::StubFile("ABCD");
@@ -218,6 +272,9 @@ TEST_F(HttpFileBodyTests, Write_PositionSetToContent_OverridesCotentAtPosition)
     EXPECT_EQ(3, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_NonExistingFile_ReadsNothing)
     {
     auto path = FSTest::StubFilePath();
@@ -229,6 +286,9 @@ TEST_F(HttpFileBodyTests, Read_NonExistingFile_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_EmptyFile_ReadsNothing)
     {
     auto path = FSTest::StubFile("");
@@ -240,6 +300,9 @@ TEST_F(HttpFileBodyTests, Read_EmptyFile_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_FileWithContent_ReadsContent)
     {
     auto path = FSTest::StubFile("ABC");
@@ -251,6 +314,9 @@ TEST_F(HttpFileBodyTests, Read_FileWithContent_ReadsContent)
     EXPECT_STREQ("ABC", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_FileWithContentWithoutOpen_ReadsNothing)
     {
     auto path = FSTest::StubFile("ABC");
@@ -261,6 +327,9 @@ TEST_F(HttpFileBodyTests, Read_FileWithContentWithoutOpen_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_FileWithContentAfterReset_ReadsNothing)
     {
     auto path = FSTest::StubFile("ABC");
@@ -272,6 +341,9 @@ TEST_F(HttpFileBodyTests, Read_FileWithContentAfterReset_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_FileLockedForWrite_ReadsContent)
     {
     auto path = FSTest::StubFile("ABC");
@@ -285,6 +357,9 @@ TEST_F(HttpFileBodyTests, Read_FileLockedForWrite_ReadsContent)
     EXPECT_STREQ("ABC", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_MultipleTimes_IncrementsPosition)
     {
     auto path = FSTest::StubFile("ABC");
@@ -313,6 +388,9 @@ TEST_F(HttpFileBodyTests, Read_MultipleTimes_IncrementsPosition)
     EXPECT_EQ(3, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, Read_PositionSetToContent_ReadsContentAtPosition)
     {
     auto path = FSTest::StubFile("ABCD");
@@ -329,6 +407,9 @@ TEST_F(HttpFileBodyTests, Read_PositionSetToContent_ReadsContentAtPosition)
     EXPECT_EQ(3, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_NonExistingFile_ReturnsZero)
     {
     auto path = FSTest::StubFilePath();
@@ -336,6 +417,9 @@ TEST_F(HttpFileBodyTests, GetLength_NonExistingFile_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_EmptyFile_ReturnsZero)
     {
     auto path = FSTest::StubFile("");
@@ -343,6 +427,9 @@ TEST_F(HttpFileBodyTests, GetLength_EmptyFile_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileWithContentWithoutOpen_ReturnsLength)
     {
     auto path = FSTest::StubFile("ABC");
@@ -350,6 +437,9 @@ TEST_F(HttpFileBodyTests, GetLength_FileWithContentWithoutOpen_ReturnsLength)
     EXPECT_EQ(3, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterOpen_ReturnsLength)
     {
     auto path = FSTest::StubFile("ABC");
@@ -358,6 +448,9 @@ TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterOpen_ReturnsLength)
     EXPECT_EQ(3, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterReset_ReturnsZero)
     {
     auto path = FSTest::StubFile("ABC");
@@ -366,6 +459,9 @@ TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterReset_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterWrite_ReturnsNewLength)
     {
     auto path = FSTest::StubFile("ABC");
@@ -377,6 +473,9 @@ TEST_F(HttpFileBodyTests, GetLength_FileWithContentAfterWrite_ReturnsNewLength)
     EXPECT_EQ(6, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, GetLength_FileLockedForWrite_ReturnsLength)
     {
     auto path = FSTest::StubFile("ABC");
@@ -386,12 +485,18 @@ TEST_F(HttpFileBodyTests, GetLength_FileLockedForWrite_ReturnsLength)
     EXPECT_EQ(3, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, AsString_NoFileAtPath_ReturnsEmptyString)
     {
     auto body = HttpFileBody::Create(FSTest::StubFilePath());
     EXPECT_EQ("", body->AsString());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Vincas.Razma                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpFileBodyTests, AsString_FileWithContentAtPath_ReturnsContents)
     {
     auto body = HttpFileBody::Create(FSTest::StubFile("TestContent"));

@@ -11,6 +11,9 @@
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Open_EmptyVector_DoesNothing)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -20,6 +23,9 @@ TEST_F(HttpBinaryBodyTests, Open_EmptyVector_DoesNothing)
     EXPECT_TRUE(vector->empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Open_VectorWithContent_DoesNothing)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -34,6 +40,9 @@ TEST_F(HttpBinaryBodyTests, Open_VectorWithContent_DoesNothing)
     EXPECT_FALSE(vector->empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, AsString_VectorWithContent_EmptyString)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -49,6 +58,9 @@ TEST_F(HttpBinaryBodyTests, AsString_VectorWithContent_EmptyString)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 //Not sure about this
 TEST_F(HttpBinaryBodyTests, SetPosition_EmptyBinaryVector_Error)
     {
@@ -62,6 +74,9 @@ TEST_F(HttpBinaryBodyTests, SetPosition_EmptyBinaryVector_Error)
     EXPECT_EQ(0, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, SetPosition_PositionToContent_PositionSet)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -79,6 +94,9 @@ TEST_F(HttpBinaryBodyTests, SetPosition_PositionToContent_PositionSet)
     EXPECT_EQ(2, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, SetPosition_PositionOutsideContent_Error)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -96,6 +114,9 @@ TEST_F(HttpBinaryBodyTests, SetPosition_PositionOutsideContent_Error)
     EXPECT_EQ(0, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, SetPosition_PositionOutsideContent_PositionNotReset)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -114,6 +135,9 @@ TEST_F(HttpBinaryBodyTests, SetPosition_PositionOutsideContent_PositionNotReset)
     EXPECT_EQ(2, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Reset_EmptyVector_SucceedsAndDoesNothing)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -123,6 +147,9 @@ TEST_F(HttpBinaryBodyTests, Reset_EmptyVector_SucceedsAndDoesNothing)
     EXPECT_TRUE(vector->empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Reset_VectorWithContent_EmptiesVector)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -137,6 +164,9 @@ TEST_F(HttpBinaryBodyTests, Reset_VectorWithContent_EmptiesVector)
     EXPECT_TRUE(vector->empty());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Reset_PositionSet_ClearsPosition)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -155,6 +185,9 @@ TEST_F(HttpBinaryBodyTests, Reset_PositionSet_ClearsPosition)
     EXPECT_EQ(0, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Write_EmptyVector_WritesContent)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -167,6 +200,9 @@ TEST_F(HttpBinaryBodyTests, Write_EmptyVector_WritesContent)
     EXPECT_STREQ("abc", str.c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Write_VectorWithContent_OverridesContentAtPosition)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -184,6 +220,9 @@ TEST_F(HttpBinaryBodyTests, Write_VectorWithContent_OverridesContentAtPosition)
     EXPECT_EQ("dbc", str);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Write_VectorWithContentWithoutOpen_OverridesContentAtPosition)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -200,6 +239,9 @@ TEST_F(HttpBinaryBodyTests, Write_VectorWithContentWithoutOpen_OverridesContentA
     EXPECT_EQ("dbc", str);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Write_AfterResetCalled_Succeeds)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -219,6 +261,9 @@ TEST_F(HttpBinaryBodyTests, Write_AfterResetCalled_Succeeds)
     EXPECT_EQ("b", str);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Write_MultipleTimes_IncrementsPosition)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -250,6 +295,9 @@ TEST_F(HttpBinaryBodyTests, Write_MultipleTimes_IncrementsPosition)
     EXPECT_EQ("defg", str);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Write_PositionSetToContent_OverridesCotentAtPosition)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -272,6 +320,9 @@ TEST_F(HttpBinaryBodyTests, Write_PositionSetToContent_OverridesCotentAtPosition
     EXPECT_EQ(3, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Read_EmptyVector_ReadsNothing)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -283,6 +334,9 @@ TEST_F(HttpBinaryBodyTests, Read_EmptyVector_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Read_VectorWithContent_ReadsContent)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -299,6 +353,9 @@ TEST_F(HttpBinaryBodyTests, Read_VectorWithContent_ReadsContent)
     EXPECT_STREQ("abcd", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Read_VectorWithContentAfterReset_ReadsNothing)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -316,6 +373,9 @@ TEST_F(HttpBinaryBodyTests, Read_VectorWithContentAfterReset_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Read_MultipleTimes_IncrementsPosition)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -349,6 +409,9 @@ TEST_F(HttpBinaryBodyTests, Read_MultipleTimes_IncrementsPosition)
     EXPECT_EQ(3, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, Read_PositionSetToContent_ReadsContentAtPosition)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -370,6 +433,9 @@ TEST_F(HttpBinaryBodyTests, Read_PositionSetToContent_ReadsContentAtPosition)
     EXPECT_EQ(3, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, GetLength_EmptyVector_ReturnsZero)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -377,6 +443,9 @@ TEST_F(HttpBinaryBodyTests, GetLength_EmptyVector_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, GetLength_VectorWithContentWithoutOpen_ReturnsVectorLenght)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -389,6 +458,9 @@ TEST_F(HttpBinaryBodyTests, GetLength_VectorWithContentWithoutOpen_ReturnsVector
     EXPECT_EQ(3, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, GetLength_VectorWithContentAfterOpen_ReturnsVectorLenght)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -403,6 +475,9 @@ TEST_F(HttpBinaryBodyTests, GetLength_VectorWithContentAfterOpen_ReturnsVectorLe
     EXPECT_EQ(3, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, GetLength_VectorWithContentAfterReset_ReturnsZero)
     {
     auto vector = std::make_shared<bvector<char>>();
@@ -416,6 +491,9 @@ TEST_F(HttpBinaryBodyTests, GetLength_VectorWithContentAfterReset_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpBinaryBodyTests, GetLength_VectorWithContentAfterWrite_ReturnsNewLength)
     {
     auto vector = std::make_shared<bvector<char>>();

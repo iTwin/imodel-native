@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -11,6 +11,10 @@
 #include <BeHttp/HttpClient.h>
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_UrlAndMethodPassed_SetsUrlAndMethod)
     {
     HttpClient client;
@@ -20,6 +24,9 @@ TEST_F (HttpClientTests, CreateRequest_UrlAndMethodPassed_SetsUrlAndMethod)
     EXPECT_EQ ("BOO", request.GetMethod ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_NoHeaderProvider_EmptyHeaders)
     {
     HttpClient client (nullptr, nullptr);
@@ -28,6 +35,9 @@ TEST_F (HttpClientTests, CreateRequest_NoHeaderProvider_EmptyHeaders)
     EXPECT_EQ (0, request.GetHeaders ().GetMap ().size ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_DefaultHeaderProvider_EmptyHeaders)
     {
     HttpClient client (HttpHeaderProvider::Create (), nullptr);
@@ -36,6 +46,9 @@ TEST_F (HttpClientTests, CreateRequest_DefaultHeaderProvider_EmptyHeaders)
     EXPECT_EQ (0, request.GetHeaders ().GetMap ().size ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpClientTests, CreateRequest_HeaderProviderWithHeadersSet_HeadersSetToRequest)
     {
     HttpRequestHeaders headers;

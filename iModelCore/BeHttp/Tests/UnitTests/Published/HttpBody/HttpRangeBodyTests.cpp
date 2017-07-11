@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/HttpBody/HttpRangeBodyTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,9 @@
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_FullRange_ReturnsSameString)
     {
     HttpRangeBodyPtr body = HttpRangeBody::Create (HttpStringBody::Create ("abcde"), 0, 4);
@@ -17,6 +20,9 @@ TEST_F (HttpRangeBodyTests, AsString_FullRange_ReturnsSameString)
     EXPECT_STREQ ("abcde", body->AsString ().c_str ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromStart_ReturnsClipped)
     {
     HttpRangeBodyPtr body = HttpRangeBody::Create (HttpStringBody::Create ("abcde"), 2, 4);
@@ -24,6 +30,9 @@ TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromStart_ReturnsClipped)
     EXPECT_STREQ ("cde", body->AsString ().c_str ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromEnd_ReturnsClipped)
     {
     HttpRangeBodyPtr body = HttpRangeBody::Create (HttpStringBody::Create ("abcde"), 0, 2);
@@ -31,6 +40,9 @@ TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromEnd_ReturnsClipped)
     EXPECT_STREQ ("abc", body->AsString ().c_str ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromBothEnds_ReturnsClipped)
     {
     HttpRangeBodyPtr body = HttpRangeBody::Create (HttpStringBody::Create ("abcde"), 1, 3);
@@ -38,6 +50,9 @@ TEST_F (HttpRangeBodyTests, AsString_RangeClippedFromBothEnds_ReturnsClipped)
     EXPECT_STREQ ("bcd", body->AsString ().c_str ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, AsString_CalledAfterRead_StringifiesAllContent)
     {
     HttpRangeBodyPtr body = HttpRangeBody::Create (HttpStringBody::Create ("abcde"), 0, 4);
@@ -48,6 +63,9 @@ TEST_F (HttpRangeBodyTests, AsString_CalledAfterRead_StringifiesAllContent)
     EXPECT_STREQ ("abcde", body->AsString ().c_str ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, Read_AsStringCalledAfterRead_ReadingContinuesAsNormal)
     {
     HttpRangeBodyPtr body = HttpRangeBody::Create (HttpStringBody::Create ("abc"), 0, 4);
@@ -63,6 +81,9 @@ TEST_F (HttpRangeBodyTests, Read_AsStringCalledAfterRead_ReadingContinuesAsNorma
     EXPECT_STREQ ("c", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, SetPosition_ValuePassed_PositionSet)
     {
     auto body = HttpRangeBody::Create (HttpStringBody::Create ("foo"), 0, 2);
@@ -73,6 +94,9 @@ TEST_F (HttpRangeBodyTests, SetPosition_ValuePassed_PositionSet)
     EXPECT_EQ (2, pos);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, Reset_FilledBody_ClearsContentsInRange)
     {
     auto strBody = HttpStringBody::Create ("ABCD");
@@ -88,6 +112,9 @@ TEST_F (HttpRangeBodyTests, Reset_FilledBody_ClearsContentsInRange)
     EXPECT_EQ ('D', str[3]);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       06/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (HttpRangeBodyTests, Reset_PositionSet_ClearsPosition)
     {
     auto body = HttpRangeBody::Create (HttpStringBody::Create ("foo"), 0, 2);

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/ProxyHttpHandlerTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,6 +12,9 @@
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithProxyUrl_RequestWithProxyUrl)
     {
     auto mockHandler = std::make_shared<MockHttpHandler> ();
@@ -28,6 +31,9 @@ TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithProxyUrl_RequestWithPro
     proxyHandler._PerformRequest (request)->Wait ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithoutProxyUrl_RequestWithoutProxyUrl)
     {
     auto mockHandler = std::make_shared<MockHttpHandler> ();
@@ -44,6 +50,9 @@ TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithoutProxyUrl_RequestWith
     proxyHandler._PerformRequest (request)->Wait ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithProxyUrl_RequestWithProxyUrlAndCredentials)
     {
     Utf8String proxyUrl ("http://proxy.com");
@@ -71,6 +80,9 @@ TEST_F (ProxyHttpHandlerTests, PerformRequest_HandlerWithProxyUrl_RequestWithPro
     proxy._PerformRequest (request)->Wait ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (ProxyHttpHandlerTests, PerformRequest_ResponseWithNoneStatus_ReturnsHandlerThatDoesNotSetProxy)
     {
     auto mockHandler = std::make_shared<MockHttpHandler> ();
@@ -89,6 +101,9 @@ TEST_F (ProxyHttpHandlerTests, PerformRequest_ResponseWithNoneStatus_ReturnsHand
     proxy->_PerformRequest(Http::Request("http://foo"))->Wait();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Grigas.Petraitis                       05/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ProxyHttpHandlerTests, PerformRequest_ResponseWithOKStatus_ReturnsHandlerThatDoesNotSetProxy)
     {
     auto mockHandler = std::make_shared<MockHttpHandler> ();

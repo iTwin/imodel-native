@@ -11,6 +11,9 @@
 
 USING_NAMESPACE_BENTLEY_HTTP_UNIT_TESTS
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_NullPointerContent_Error)
     {
     auto body = HttpCompressedBody::Create(nullptr);
@@ -19,6 +22,9 @@ TEST_F(HttpCompressedBodyTests, SetPosition_NullPointerContent_Error)
     ASSERT_EQ(ERROR, body->SetPosition(2));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_WithoutOpen_Error)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -26,6 +32,9 @@ TEST_F(HttpCompressedBodyTests, SetPosition_WithoutOpen_Error)
     ASSERT_EQ(ERROR, body->SetPosition(2));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_PositionToContent_PositionSet)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -38,6 +47,9 @@ TEST_F(HttpCompressedBodyTests, SetPosition_PositionToContent_PositionSet)
     EXPECT_EQ(2, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_AfterClose_PositionSet)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -51,6 +63,9 @@ TEST_F(HttpCompressedBodyTests, SetPosition_AfterClose_PositionSet)
     EXPECT_EQ(2, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, SetPosition_PositionOutsideContent_Error)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -59,6 +74,9 @@ TEST_F(HttpCompressedBodyTests, SetPosition_PositionOutsideContent_Error)
     ASSERT_EQ(ERROR, body->SetPosition(body->GetLength() + 1));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Reset_NullPointerContent_SucceedsAndDoesNothing)
     {
     auto body = HttpCompressedBody::Create(nullptr);
@@ -67,6 +85,9 @@ TEST_F(HttpCompressedBodyTests, Reset_NullPointerContent_SucceedsAndDoesNothing)
     ASSERT_EQ(SUCCESS, body->Reset());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Reset_NonEmptyContent_ContentNotChanged)
     {
     auto innerBody = HttpStringBody::Create("foo");
@@ -77,6 +98,9 @@ TEST_F(HttpCompressedBodyTests, Reset_NonEmptyContent_ContentNotChanged)
     ASSERT_STREQ("foo", innerBody->AsString().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Reset_PositionSet_ClearsPosition)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -90,6 +114,9 @@ TEST_F(HttpCompressedBodyTests, Reset_PositionSet_ClearsPosition)
     EXPECT_EQ(0, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Reset_PositionSetForContentBody_ContentBodyPositionNotChanged)
     {
     auto innerBody = HttpStringBody::Create("foo");
@@ -105,6 +132,9 @@ TEST_F(HttpCompressedBodyTests, Reset_PositionSetForContentBody_ContentBodyPosit
     EXPECT_EQ(2, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Write_NullPointerContent_WritesNothing)
     {
     auto body = HttpCompressedBody::Create(nullptr);
@@ -115,6 +145,9 @@ TEST_F(HttpCompressedBodyTests, Write_NullPointerContent_WritesNothing)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Write_NonEmptyContent_WritesNothing)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -125,6 +158,9 @@ TEST_F(HttpCompressedBodyTests, Write_NonEmptyContent_WritesNothing)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NullPointerContent_ReadsNothing)
     {
     auto body = HttpCompressedBody::Create(nullptr);
@@ -135,6 +171,9 @@ TEST_F(HttpCompressedBodyTests, Read_NullPointerContent_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContentWithoutOpen_ReadsNothing)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -144,6 +183,9 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContentWithoutOpen_ReadsNothing)
     EXPECT_STREQ("", buffer);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_Succeeds)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -153,6 +195,9 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_Succeeds)
     ASSERT_EQ(body->GetLength(), body->Read(buffer, 32));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_ContentNotChanged)
     {
     auto innerBody = HttpStringBody::Create("foo");
@@ -164,6 +209,9 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_ContentNotChanged)
     EXPECT_STREQ("foo", innerBody->AsString().c_str());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_ContentBodyPositionNotChanged)
     {
     auto innerBody = HttpStringBody::Create("foo");
@@ -181,6 +229,9 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContent_ContentBodyPositionNotChang
     ASSERT_EQ(originalPosition, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_NonEmptyContentAfterClose_Succeeds)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -191,6 +242,9 @@ TEST_F(HttpCompressedBodyTests, Read_NonEmptyContentAfterClose_Succeeds)
     ASSERT_EQ(body->GetLength(), body->Read(buffer, 32));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_AfterReset_ReadsNothing)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -202,6 +256,9 @@ TEST_F(HttpCompressedBodyTests, Read_AfterReset_ReadsNothing)
     ASSERT_EQ(0, body->Read(buffer, 32));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Read_MultipleTimes_IncrementsPosition)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -227,6 +284,9 @@ TEST_F(HttpCompressedBodyTests, Read_MultipleTimes_IncrementsPosition)
     EXPECT_EQ(5, position);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NullPointerContent_ReturnsZero)
     {
     auto body = HttpCompressedBody::Create(nullptr);
@@ -235,6 +295,9 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NullPointerContent_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_EmptyContent_ReturnsLenght)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create());
@@ -243,6 +306,9 @@ TEST_F(HttpCompressedBodyTests, GetLenght_EmptyContent_ReturnsLenght)
     EXPECT_LT(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentWithoutOpen_ReturnsZero)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -250,6 +316,9 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentWithoutOpen_ReturnsZero
     EXPECT_EQ(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptySmallContent_ReturnsLenghtLargerThanContentLenght)
     {
     auto innerBody = HttpStringBody::Create("foo");
@@ -259,6 +328,9 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptySmallContent_ReturnsLenghtLarg
     EXPECT_LT(innerBody->GetLength(), body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyLargeContent_ReturnsLenghtSmallerThanContentLenght)
     {
     auto innerBody = HttpStringBody::Create("abcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZabcdefghjklmnopQrstvwxyz1234567890!@#$%^&*()ABCDEFGHJKLMNOPQRSTVWXYZ");
@@ -268,6 +340,9 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyLargeContent_ReturnsLenghtSmal
     EXPECT_GT(innerBody->GetLength(), body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentAfterClose_ReturnsLenght)
     {
     auto innerBody = HttpStringBody::Create("foo");
@@ -278,6 +353,9 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentAfterClose_ReturnsLengh
     EXPECT_LT(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentAfterReset_ReturnsZero)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -288,6 +366,9 @@ TEST_F(HttpCompressedBodyTests, GetLenght_NonEmptyContentAfterReset_ReturnsZero)
     EXPECT_EQ(0, body->GetLength());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, AsString_NullPointerContent_ReturnsEmptyString)
     {
     auto body = HttpCompressedBody::Create(nullptr);
@@ -298,6 +379,9 @@ TEST_F(HttpCompressedBodyTests, AsString_NullPointerContent_ReturnsEmptyString)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, AsString_NonEmptyContentWithoutOpen_ReturnsEmptyString)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -307,6 +391,9 @@ TEST_F(HttpCompressedBodyTests, AsString_NonEmptyContentWithoutOpen_ReturnsEmpty
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, AsString_NonEmptyContent_ReturnsEmptyString)
     {
     auto body = HttpCompressedBody::Create(HttpStringBody::Create("foo"));
@@ -317,6 +404,9 @@ TEST_F(HttpCompressedBodyTests, AsString_NonEmptyContent_ReturnsEmptyString)
     BeTest::SetFailOnAssert(true);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Close_NullPointerContent_DoesNothing)
     {
     auto body = HttpCompressedBody::Create(nullptr);
@@ -324,6 +414,9 @@ TEST_F(HttpCompressedBodyTests, Close_NullPointerContent_DoesNothing)
     body->Close();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Julius.Cepukenas                       11/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(HttpCompressedBodyTests, Close_NonEmptyContent_DoesNothing)
     {
     auto innerBody = HttpStringBody::Create("foo");
