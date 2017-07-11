@@ -1692,7 +1692,9 @@ private:
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained) { AddStrokes(strokes, geom, geom.GetDisplayParams(), rangePixels, isContained); }
     void AddStrokes(StrokesR, GeometryR, DisplayParamsCR, double rangePixels, bool isContained);
-    Strokes ClipStrokes(StrokesCR strokes) const;
+    Strokes ClipSegments(StrokesCR strokes) const;
+    void ClipStrokes(StrokesR strokes) const;
+    void ClipPoints(StrokesR strokes) const;
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
@@ -1886,11 +1888,24 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::ClipStrokes(StrokesR strokes) const
+    {
+    if (strokes.m_disjoint)
+        ClipPoints(strokes);
+    else
+        strokes = ClipSegments(strokes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
+Strokes MeshGenerator::ClipSegments(StrokesCR input) const
     {
     // Might be more efficient to modify input in-place.
+    BeAssert(!input.m_disjoint);
+
     Strokes output(*input.m_displayParams, input.m_disjoint, input.m_isPlanar);
     enum    State { kInside, kOutside, kCrossedOutside };
 
@@ -1953,6 +1968,20 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::ClipPoints(StrokesR strokes) const
+    {
+    BeAssert(strokes.m_disjoint);
+
+    for (auto& stroke : strokes.m_strokes)
+        {
+        auto eraseAt = std::remove_if(stroke.m_points.begin(), stroke.m_points.end(), [&](DPoint3dCR pt) { return !m_tileRange.IsContained(pt); });
+        stroke.m_points.erase(eraseAt);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
@@ -1979,11 +2008,7 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR
         return;
 
     if (!isContained)
-        {
-        Strokes clippedStrokes = ClipStrokes(strokes);
-        AddStrokes(clippedStrokes, geom, rangePixels, true);
-        return;
-        }
+        ClipStrokes(strokes);
 
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
