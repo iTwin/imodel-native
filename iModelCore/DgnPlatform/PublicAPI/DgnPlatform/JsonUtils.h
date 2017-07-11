@@ -10,6 +10,7 @@
 
 #include <BeJsonCpp/BeJsonUtilities.h>
 #include <DgnPlatform/ClipVector.h>
+#include <ECObjects/ECValue.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -232,11 +233,15 @@ static void DPoint3dVectorFromJson(bvector<DPoint3d>& points, JsonValueCR inValu
 // @bsimethod                                                   Sam.Wilson     06/16
 //---------------------------------------------------------------------------------------
 template<typename T>
-static T IdFromJson(JsonValueCR inValue)
+static T IdFromJson(JsonValueCR json)
     {
-    uint64_t idValue;
-    BeStringUtilities::ParseUInt64(idValue, inValue.asCString());
-    return T(idValue);
+    if (!json.isString())
+        {
+        BeAssert(false);
+        return T();
+        }
+
+    return T(T::FromString(json.asCString()).GetValueUnchecked());
     }
 
 //---------------------------------------------------------------------------------------
@@ -245,9 +250,7 @@ static T IdFromJson(JsonValueCR inValue)
 template<typename T>
 static void IdToJson(JsonValueR outValue, T id)
     {
-    Utf8Char buf[32];
-    BeStringUtilities::FormatUInt64(buf, id.GetValueUnchecked());
-    outValue = buf;
+    outValue = id.ToString(typename T::UseHex::Yes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -351,6 +354,30 @@ static BeSQLite::IdSet<T> IdSetFromJsonString(Utf8StringCR jsonString)
     IdSetFromJson(ids, jsonArray);
     return ids;
     }
+
+/*---------------------------------------------------------------------------------**//**
+*! Represent a NavigationProperty in JSON, in the format used by iModelJson.
+* @bsimethod                                                    Sam.Wilson      07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNPLATFORM_EXPORT static void NavigationPropertyToJson(JsonValueR json, ECN::ECValue::NavigationInfo const&);
+
+/*---------------------------------------------------------------------------------**//**
+*! Parse a NavigationProperty from JSON, according to the format used by iModelJson.
+* @bsimethod                                                    Sam.Wilson      07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNPLATFORM_EXPORT static void NavigationPropertyFromJson(ECN::ECValue&, JsonValueCR json, DgnDbR db);
+
+/*---------------------------------------------------------------------------------**//**
+*! Represent a 64-bit integer in JSON, in the format used by iModelJson.
+* @bsimethod                                                    Sam.Wilson      07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNPLATFORM_EXPORT static uint64_t UInt64FromJson(JsonValueCR json);
+
+/*---------------------------------------------------------------------------------**//**
+*! Parse a 64-bit integer from JSON, according to the format used by iModelJson.
+* @bsimethod                                                    Sam.Wilson      07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DGNPLATFORM_EXPORT static void UInt64ToJson(JsonValueR json, uint64_t value);
 
 };
 
