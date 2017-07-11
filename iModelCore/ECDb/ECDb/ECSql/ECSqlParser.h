@@ -44,7 +44,7 @@ public:
 
     BentleyStatus TryResolveClass(std::shared_ptr<ClassNameExp::Info>& classMetaInfo, Utf8StringCR schemaNameOrAlias, Utf8StringCR className);
     void GetSubclasses(ClassListById& classes, ECN::ECClassCR ecClass);
-    void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd, bool* containAnyClass);
+    void GetConstraintClasses(ClassListById& classes, ECN::ECRelationshipConstraintCR constraintEnd);
     bool IsEndClassOfRelationship(ECN::ECClassCR searchClass, ECN::ECRelationshipEnd searchEnd, ECN::ECRelationshipClassCR relationshipClass);
     Utf8String GenerateAlias();
 

@@ -2747,15 +2747,10 @@ void ECSqlParseContext::GetSubclasses(ClassListById& classes, ECClassCR ecClass)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlParseContext::GetConstraintClasses(ClassListById& classes, ECRelationshipConstraintCR constraintEnd, bool* containAnyClass)
+void ECSqlParseContext::GetConstraintClasses(ClassListById& classes, ECRelationshipConstraintCR constraintEnd)
     {
-    if (containAnyClass)
-        *containAnyClass = false;
     for (auto ecClass : constraintEnd.GetConstraintClasses())
         {
-        if (containAnyClass && !(*containAnyClass) && ecClass->GetName() == "AnyClass" && ecClass->GetSchema().GetName() == "Bentley_Standard_Classes")
-            *containAnyClass = true;
-
         if (classes.find(ecClass->GetId()) == classes.end())
             {
             classes[ecClass->GetId()] = ecClass;
@@ -2774,11 +2769,7 @@ bool ECSqlParseContext::IsEndClassOfRelationship(ECClassCR searchClass, ECRelati
         (searchEnd == ECRelationshipEnd::ECRelationshipEnd_Source) ? relationshipClass.GetSource() : relationshipClass.GetTarget();
 
     bmap<ECClassId, ECClassCP> classes;
-    bool containsAnyClass = false;
-    GetConstraintClasses(classes, constraintEnd, &containsAnyClass);
-    if (containsAnyClass)
-        return true;
-
+    GetConstraintClasses(classes, constraintEnd);
     return classes.find(searchClass.GetId()) != classes.end();
     }
 

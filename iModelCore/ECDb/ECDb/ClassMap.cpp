@@ -818,15 +818,8 @@ BentleyStatus ClassMap::MapSystemColumns()
             return ERROR;
             }
 
-        //WIP: If we push it at back it will break some code that presume that first table is the correct one.
-        // The order should not be important
-#ifndef NOT_A_GOOD_SOLUTION
         ecInstanceIdColumns.insert(ecInstanceIdColumns.begin(), ecInstanceIdColumn);
         ecClassIdColumns.insert(ecClassIdColumns.begin(), ecClassIdColumn);
-#else //This is the right way because order should not be important and anycode that depend on order should be corrected.
-        ecInstanceIdColumns.push_back(ecInstanceIdColumn);
-        ecClassIdColumns.push_back(ecClassIdColumn);
-#endif
         }
 
     if (ecInstanceIdColumns.empty() || ecClassIdColumns.empty())

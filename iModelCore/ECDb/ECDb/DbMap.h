@@ -54,7 +54,7 @@ struct DbMap final : NonCopyableClass
 
         //!Loads the class maps if they were not loaded yet
         size_t GetTableCountOnRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
-        std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR, bool* hasAnyClass) const;
+        std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
 
         DbSchema const& GetDbSchema() const { return m_dbSchema; }
         DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }

@@ -63,7 +63,6 @@ struct RelationshipClassMap : ClassMap
         ConstraintECClassIdPropertyMap const* GetSourceECClassIdPropMap() const { return m_sourceConstraintMap.GetECClassIdPropMap(); }
         ConstraintECInstanceIdPropertyMap const* GetTargetECInstanceIdPropMap() const { return m_targetConstraintMap.GetECInstanceIdPropMap(); }
         ConstraintECClassIdPropertyMap const* GetTargetECClassIdPropMap() const { return m_targetConstraintMap.GetECClassIdPropMap(); }
-        static bool ConstraintIncludesAnyClass(ECN::ECRelationshipConstraintClassList const&);
     };
 
 typedef RelationshipClassMap const& RelationshipClassMapCR;
