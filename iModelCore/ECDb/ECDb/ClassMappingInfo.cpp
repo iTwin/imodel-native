@@ -91,7 +91,7 @@ ClassMappingStatus ClassMappingInfo::_EvaluateMapStrategy(SchemaImportContext& c
         return ClassMappingStatus::Success;
         }
 
-    if (ClassMap::IsAnyClass(m_ecClass) || (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo("InstanceCount") == 0))
+    if (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo("InstanceCount") == 0)
         {
         LogClassNotMapped(NativeLogging::LOG_INFO, m_ecClass, "ECClass is a standard class not supported by ECDb.");
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
@@ -1055,12 +1055,7 @@ BentleyStatus RelationshipMappingInfo::FailIfConstraintClassIsNotMapped() const
 //+---------------+---------------+---------------+---------------+---------------+------
 std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(DbMap const&  dbMap,  SchemaImportContext& ctx, ECRelationshipConstraintCR relationshipEnd, bool ignoreJoinedTables) 
     {
-    bool hasAnyClass = false;
-    std::set<ClassMap const*> classMaps = dbMap.GetClassMapsFromRelationshipEnd(ctx, relationshipEnd, &hasAnyClass);
-
-    if (hasAnyClass)
-        return std::set<DbTable const*>();
-
+    std::set<ClassMap const*> classMaps = dbMap.GetClassMapsFromRelationshipEnd(ctx, relationshipEnd);
     std::map<DbTable const*, std::set<DbTable const*>> joinedTables;
     std::set<DbTable const*> tables;
     for (ClassMap const* classMap : classMaps)

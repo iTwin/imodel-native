@@ -25,7 +25,7 @@ ClassMappingCACache const* SchemaImportContext::GetClassMappingCACache(ECClassCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan       06/2017
 //--------------------------------------------------------------------------------------
-SchemaImportContext::SchemaImportContext(SchemaManager::SchemaImportOptions options) :m_relCol(new EndTableMappingContextCollection(*this)), m_options(options) {}
+SchemaImportContext::SchemaImportContext(SchemaManager::SchemaImportOptions options) :m_relCol(new RelationshipClassEndTableMapperCollection(*this)), m_options(options) {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   07/2015
@@ -59,11 +59,10 @@ ClassMappingStatus SchemaImportContext::FinishEndTableMapping() { return m_relCo
 //---------------------------------------------------------------------------------------
 void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMappingInfo>& info)
     {
-    ClassMappingInfo* pInfo = info.get();
     m_classMappingInfoCache[&classMap] = std::move(info);
 
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-        m_relCol->RegisterContext(classMap.GetAs<RelationshipClassEndTableMap>(), static_cast<RelationshipMappingInfo const&> (*pInfo));
+        m_relCol->RegisterContext(classMap.GetAs<RelationshipClassEndTableMap>());
     }
 
 //---------------------------------------------------------------------------------------

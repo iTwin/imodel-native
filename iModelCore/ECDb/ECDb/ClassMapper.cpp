@@ -939,17 +939,18 @@ BentleyStatus ClassMapper::TableMapper::DetermineTablePrefix(Utf8StringR tablePr
 // @bsimethod                                   Krischan.Eberle                   03/17
 //+---------------+---------------+---------------+---------------+---------------+------
 //static
-Utf8CP RelationshipClassEndTableMappingContext::RELECCLASSID_COLNAME_TOKEN = "RelECClassId";
+Utf8CP RelationshipClassEndTableMapper::RELECCLASSID_COLNAME_TOKEN = "RelECClassId";
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumn* RelationshipClassEndTableMappingContext::CreateRelECClassIdColumn(DbMap const& dbMap, ECClassCR ecClass, DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol, NavigationPropertyMap const& navPropMap)
+DbColumn* RelationshipClassEndTableMapper::CreateRelECClassIdColumn(DbMap const& dbMap, ECClassCR ecClass, DbTable& fkTable, ForeignKeyColumnInfo const& fkColInfo, DbColumn const& fkCol, NavigationPropertyMap const& navPropMap)
     {
     BeAssert(!ecClass.HasBaseClasses() && "CreateRelECClassIdColumn is expected to only be called for root rel classes");
 
-    const bool makeRelClassIdColNotNull = m_relInfo.GetMappingType().GetType() == RelationshipMappingType::Type::PhysicalForeignKey && fkCol.DoNotAllowDbNull();
+
+    const bool makeRelClassIdColNotNull = IsPhysicalForeignKey() && fkCol.DoNotAllowDbNull();
 
     PersistenceType persType = PersistenceType::Physical;
     if (fkTable.GetType() == DbTable::Type::Virtual || fkTable.GetType() == DbTable::Type::Existing || ecClass.GetClassModifier() == ECClassModifier::Sealed)
@@ -1002,7 +1003,7 @@ DbColumn* RelationshipClassEndTableMappingContext::CreateRelECClassIdColumn(DbMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-DbColumn* RelationshipClassEndTableMappingContext::CreateForeignKeyColumn(DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo& fkColInfo)
+DbColumn* RelationshipClassEndTableMapper::CreateForeignKeyColumn(DbTable&  fkTable, NavigationPropertyMap const& navPropMap, ForeignKeyColumnInfo& fkColInfo)
     {
     ECRelationshipClassCR relClass = *m_relationshipMap.GetClass().GetRelationshipClassCP();
     ECRelationshipConstraintCR foreignEndConstraint = GetForeignEnd() == ECRelationshipEnd_Source ? relClass.GetSource() : relClass.GetTarget();
@@ -1035,7 +1036,7 @@ DbColumn* RelationshipClassEndTableMappingContext::CreateForeignKeyColumn(DbTabl
         }
 
     bool makeFkColNotNull = false;
-    if (m_relInfo.GetMappingType().GetType() == RelationshipMappingType::Type::PhysicalForeignKey)
+    if (IsPhysicalForeignKey())
         {
         //WIP_CLEANUP This can be simplified a lot once we create this from the nav prop map because then we know the constraint class already:
         //const bool isNavPropClassExclusiveRootClass = idCol.GetTable().HasExclusiveRootECClass() && idCol.GetTable().GetExclusiveRootECClassId() == propMap.GetClassMap().GetClass().GetId();
@@ -1067,16 +1068,16 @@ DbColumn* RelationshipClassEndTableMappingContext::CreateForeignKeyColumn(DbTabl
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipClassEndTableMappingContext::CreateForeignKeyConstraint(DbTable const& referencedTable)
+ClassMappingStatus RelationshipClassEndTableMapper::CreateForeignKeyConstraint(DbTable const& referencedTable)
     {
-    if (m_relInfo.GetMappingType().GetType() != RelationshipMappingType::Type::PhysicalForeignKey)
+    if (!IsPhysicalForeignKey())
         return ClassMappingStatus::Success; // logical key don't get fk constraints (by definition)
-
+    
     ECRelationshipClassCR relClass = *m_relationshipMap.GetClass().GetRelationshipClassCP();
     ForeignKeyDbConstraint::ActionType onDelete = ForeignKeyDbConstraint::ActionType::NotSpecified;
     ForeignKeyDbConstraint::ActionType onUpdate = ForeignKeyDbConstraint::ActionType::NotSpecified;
-    ForeignKeyDbConstraint::ActionType userRequestedDeleteAction = m_relInfo.GetMappingType().GetAs<PhysicalForeignKeyMappingType>().GetOnDeleteAction();
-    ForeignKeyDbConstraint::ActionType userRequestedUpdateAction = m_relInfo.GetMappingType().GetAs<PhysicalForeignKeyMappingType>().GetOnUpdateAction();
+    ForeignKeyDbConstraint::ActionType userRequestedDeleteAction = m_foreignKeyMappingType->GetAs<PhysicalForeignKeyMappingType>().GetOnDeleteAction();
+    ForeignKeyDbConstraint::ActionType userRequestedUpdateAction = m_foreignKeyMappingType->GetAs<PhysicalForeignKeyMappingType>().GetOnUpdateAction();
 
     if (userRequestedDeleteAction != ForeignKeyDbConstraint::ActionType::NotSpecified)
         onDelete = userRequestedDeleteAction;
@@ -1129,7 +1130,7 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::CreateForeignKeyCons
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipClassEndTableMappingContext::FinishMapping()
+ClassMappingStatus RelationshipClassEndTableMapper::FinishMapping()
     {
     if (m_relationshipMap.IsRelationshipSubclass())
         return ClassMappingStatus::Success;
@@ -1158,7 +1159,7 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::FinishMapping()
         }
 
     DbTable const* primaryTable = tables.empty() ? nullptr : *std::begin(tables);
-    if (m_relInfo.GetMappingType().GetType() == RelationshipMappingType::Type::PhysicalForeignKey)
+    if (IsPhysicalForeignKey())
         {
         if (PersistedEndHasNonVirtualForeignKeyColumn())
             {
@@ -1205,13 +1206,18 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::FinishMapping()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Affan.Khan            05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(NavigationPropertyMap& navPropMap)
+ClassMappingStatus RelationshipClassEndTableMapper::UpdatePersistedEnd(NavigationPropertyMap& navPropMap)
     {
     BeAssert(!navPropMap.IsComplete());
-    if (navPropMap.GetClassMap().GetClass().GetFullName () == Utf8String("BridgePhysical:Bridge"))
+    if (m_foreignKeyMappingType == nullptr)
         {
-        printf("");
+        ForeignKeyConstraintCustomAttribute foreignKeyConstraintCustomAttribute;
+        ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(foreignKeyConstraintCustomAttribute, *navPropMap.GetProperty().GetAsNavigationProperty());
+        m_foreignKeyMappingType = ForeignKeyMappingType::Create(m_relationshipMap.GetRelationshipClass(), GetForeignEnd(), foreignKeyConstraintCustomAttribute, GetECDb().GetImpl().Issues());
+        if (m_foreignKeyMappingType == nullptr)
+            return ClassMappingStatus::Error;
         }
+
     //nav prop only supported if going from foreign end (where FK column is persisted) to referenced end
     NavigationECPropertyCP navigationProperty = navPropMap.GetProperty().GetAsNavigationProperty();
     if (m_relationshipMap.GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
@@ -1307,6 +1313,7 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(N
     if (AddIndexToRelationshipEnd(*newPartition) == ERROR)
         return  ClassMappingStatus::Error;
 
+
     const_cast<RelationshipClassEndTableMap&>(m_relationshipMap).Modified();
     return navPropMap.SetMembers(*columnRefId, *columnClassId, m_relationshipMap.GetClass().GetId()) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
     }
@@ -1314,7 +1321,7 @@ ClassMappingStatus RelationshipClassEndTableMappingContext::UpdatePersistedEnd(N
 //--------------------------------------------------------------------------------------
 //@bsimethod                                 Krischan.Eberle                   04/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipClassEndTableMappingContext::ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol)
+BentleyStatus RelationshipClassEndTableMapper::ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol)
     {
     if (fkColumn.DoNotAllowDbNull() != cardinalityImpliesNotNullOnFkCol)
         {
@@ -1337,9 +1344,9 @@ BentleyStatus RelationshipClassEndTableMappingContext::ValidateForeignKeyColumn(
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    affan.khan         9/2012
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RelationshipClassEndTableMappingContext::AddIndexToRelationshipEnd(RelationshipClassEndTableMappingContext::PartitionInfo const& info)
+BentleyStatus RelationshipClassEndTableMapper::AddIndexToRelationshipEnd(RelationshipClassEndTableMapper::PartitionInfo const& info)
     {
-    if (m_relInfo.GetMappingType().GetType() != RelationshipMappingType::Type::PhysicalForeignKey)
+    if (!IsPhysicalForeignKey())
         return SUCCESS; //indexes only for physical fks - even if they would be enforcing cardinality (via a unique index)
 
     //0:0 or 1:1 cardinalities imply unique index
@@ -1367,13 +1374,13 @@ BentleyStatus RelationshipClassEndTableMappingContext::AddIndexToRelationshipEnd
 
     // name of the index
     Nullable<Utf8String> name(isUniqueIndex ? "uix_" : "ix_");
-    name.ValueR().append(persistenceEndTable.GetName()).append("_fk_").append(m_relationshipMap.GetClass().GetSchema().GetAlias() + "_" + m_relInfo.GetClass().GetName());
+    name.ValueR().append(persistenceEndTable.GetName()).append("_fk_").append(m_relationshipMap.GetClass().GetSchema().GetAlias() + "_" + m_relationshipMap.GetClass().GetName());
     if (m_relationshipMap.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable)
         name.ValueR().append("_source");
     else
         name.ValueR().append("_target");
 
-    m_relationshipMap.GetDbMap().GetDbSchemaR().CreateIndex(persistenceEndTable, name, isUniqueIndex, {refId}, true, true, m_relInfo.GetClass().GetId());
+    m_relationshipMap.GetDbMap().GetDbSchemaR().CreateIndex(persistenceEndTable, name, isUniqueIndex, {refId}, true, true, m_relationshipMap.GetClass().GetId());
     return SUCCESS;
     }
 
@@ -1382,7 +1389,7 @@ BentleyStatus RelationshipClassEndTableMappingContext::AddIndexToRelationshipEnd
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECN::ECRelationshipEnd RelationshipClassEndTableMappingContext::GetForeignEnd() const
+ECN::ECRelationshipEnd RelationshipClassEndTableMapper::GetForeignEnd() const
     {
     return m_relationshipMap.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd_Source : ECRelationshipEnd_Target;
     }
@@ -1390,7 +1397,7 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMappingContext::GetForeignEnd() 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle       11/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-ECN::ECRelationshipEnd RelationshipClassEndTableMappingContext::GetReferencedEnd() const
+ECN::ECRelationshipEnd RelationshipClassEndTableMapper::GetReferencedEnd() const
     {
     return GetForeignEnd() == ECRelationshipEnd_Source ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
     }
@@ -1402,7 +1409,7 @@ ECN::ECRelationshipEnd RelationshipClassEndTableMappingContext::GetReferencedEnd
 // @bsimethod                                 Krischan.Eberle                    01/2014
 //---------------------------------------------------------------------------------------
 //static
-RelationshipClassEndTableMappingContext::ForeignKeyColumnInfo RelationshipClassEndTableMappingContext::ForeignKeyColumnInfo::FromNavigationProperty(ECN::NavigationECPropertyCR navProp)
+RelationshipClassEndTableMapper::ForeignKeyColumnInfo RelationshipClassEndTableMapper::ForeignKeyColumnInfo::FromNavigationProperty(ECN::NavigationECPropertyCR navProp)
     {
     //the FK column name is implied as <nav prop name>Id.
     //if nav prop name ends with "Id" already, it is not appended again.
@@ -1419,7 +1426,7 @@ RelationshipClassEndTableMappingContext::ForeignKeyColumnInfo RelationshipClassE
 // @bsimethod                                 Krischan.Eberle                    01/2014
 //---------------------------------------------------------------------------------------
 //static
-Utf8String RelationshipClassEndTableMappingContext::ForeignKeyColumnInfo::DetermineRelClassIdColumnName(Utf8StringCR fkColName)
+Utf8String RelationshipClassEndTableMapper::ForeignKeyColumnInfo::DetermineRelClassIdColumnName(Utf8StringCR fkColName)
     {
     Utf8String relClassIdColName;
     if (fkColName.EndsWithIAscii("id"))
@@ -1434,7 +1441,7 @@ Utf8String RelationshipClassEndTableMappingContext::ForeignKeyColumnInfo::Determ
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-const std::vector<DbColumn const*> RelationshipClassEndTableMappingContext::GetPartitionColumns(RelationshipClassEndTableMappingContext::PartitionInfo::ColumnId id) const
+const std::vector<DbColumn const*> RelationshipClassEndTableMapper::GetPartitionColumns(RelationshipClassEndTableMapper::PartitionInfo::ColumnId id) const
     {
     std::vector<DbColumn const*> list;
     for (auto & kp : m_partitions)
@@ -1451,7 +1458,7 @@ const std::vector<DbColumn const*> RelationshipClassEndTableMappingContext::GetP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-bool RelationshipClassEndTableMappingContext::PersistedEndHasNonVirtualForeignKeyColumn() const
+bool RelationshipClassEndTableMapper::PersistedEndHasNonVirtualForeignKeyColumn() const
     {
     for (DbColumn const* refId : GetPartitionColumns(PartitionInfo::ConstraintECInstanceId(GetReferencedEnd())))
         if (refId->GetPersistenceType() == PersistenceType::Physical)
@@ -1463,7 +1470,7 @@ bool RelationshipClassEndTableMappingContext::PersistedEndHasNonVirtualForeignKe
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-bool RelationshipClassEndTableMappingContext::TryGetPartition(ClassMapCR classMap, std::vector<RelationshipClassEndTableMappingContext::PartitionInfo*>& partitions)
+bool RelationshipClassEndTableMapper::TryGetPartition(ClassMapCR classMap, std::vector<RelationshipClassEndTableMapper::PartitionInfo*>& partitions)
     {
     auto itor = m_partitions.find(classMap.GetJoinedOrPrimaryTable().GetId());
     if (itor != m_partitions.end())
@@ -1488,33 +1495,33 @@ bool RelationshipClassEndTableMappingContext::TryGetPartition(ClassMapCR classMa
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-std::unique_ptr<RelationshipClassEndTableMappingContext> RelationshipClassEndTableMappingContext::Create(SchemaImportContext& schemaContext, RelationshipClassEndTableMap const& relationshipMap, RelationshipMappingInfo const& relinfo)
+std::unique_ptr<RelationshipClassEndTableMapper> RelationshipClassEndTableMapper::Create(SchemaImportContext& schemaContext, RelationshipClassEndTableMap const& relationshipMap)
     {
-    return std::unique_ptr<RelationshipClassEndTableMappingContext>(new RelationshipClassEndTableMappingContext(schemaContext, relationshipMap, relinfo));
+    return std::unique_ptr<RelationshipClassEndTableMapper>(new RelationshipClassEndTableMapper(schemaContext, relationshipMap));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-ECDbCR RelationshipClassEndTableMappingContext::GetECDb() const { return m_relationshipMap.GetDbMap().GetECDb(); }
+ECDbCR RelationshipClassEndTableMapper::GetECDb() const { return m_relationshipMap.GetDbMap().GetECDb(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-IssueReporter const& RelationshipClassEndTableMappingContext::Issues() const { return m_relationshipMap.GetDbMap().GetECDb().GetImpl().Issues(); }
+IssueReporter const& RelationshipClassEndTableMapper::Issues() const { return m_relationshipMap.GetDbMap().GetECDb().GetImpl().Issues(); }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-RelationshipClassEndTableMappingContext::PartitionInfo* RelationshipClassEndTableMappingContext::CreatePartition(DbTableId id)
+RelationshipClassEndTableMapper::PartitionInfo* RelationshipClassEndTableMapper::CreatePartition(DbTableId id)
     {
     std::vector<PartitionInfo>& parts = m_partitions[id];
     auto itor = parts.insert(parts.end(), PartitionInfo());
     return &(*itor);
     }
 
-RelationshipClassEndTableMappingContext::RelationshipClassEndTableMappingContext(SchemaImportContext& schemaContext, RelationshipClassEndTableMap const& relationshipMap, RelationshipMappingInfo const& relinfo)
-    :m_relInfo(relinfo), m_relationshipMap(relationshipMap), m_schemaContext(schemaContext)
+RelationshipClassEndTableMapper::RelationshipClassEndTableMapper(SchemaImportContext& schemaContext, RelationshipClassEndTableMap const& relationshipMap)
+    : m_relationshipMap(relationshipMap), m_schemaContext(schemaContext)
     {
     for (RelationshipClassEndTableMap::Partition const* partition : relationshipMap.GetPartitionView().GetPartitions(/*skipVirutalTable =*/ false))
         m_partitions[partition->GetTable().GetId()].push_back(PartitionInfo(*partition));
@@ -1523,21 +1530,21 @@ RelationshipClassEndTableMappingContext::RelationshipClassEndTableMappingContext
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-void EndTableMappingContextCollection::RegisterContext(RelationshipClassEndTableMap const& relationshipMap, RelationshipMappingInfo const& relinfo)
+void RelationshipClassEndTableMapperCollection::RegisterContext(RelationshipClassEndTableMap const& relationshipMap)
     {
     ECN::ECClassCP effectiveClass = GetRoot(relationshipMap.GetClass());
     auto itor = m_contentMap.find(effectiveClass->GetId());
     if (itor != m_contentMap.end())
         return;
 
-    auto newVal = m_contextList.insert(m_contextList.end(), RelationshipClassEndTableMappingContext::Create(m_schemaImportContext, relationshipMap, relinfo));
+    auto newVal = m_contextList.insert(m_contextList.end(), RelationshipClassEndTableMapper::Create(m_schemaImportContext, relationshipMap));
     m_contentMap[effectiveClass->GetId()] = (*newVal).get();
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-ClassMappingStatus EndTableMappingContextCollection::FinishMapping()
+ClassMappingStatus RelationshipClassEndTableMapperCollection::FinishMapping()
     {
     for (auto& entry : m_contextList)
         {
@@ -1551,7 +1558,7 @@ ClassMappingStatus EndTableMappingContextCollection::FinishMapping()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-ClassMappingStatus EndTableMappingContextCollection::Map(NavigationPropertyMap& navPropMap)
+ClassMappingStatus RelationshipClassEndTableMapperCollection::Map(NavigationPropertyMap& navPropMap)
     {
     NavigationECPropertyCR navProp = static_cast<NavigationECPropertyCR>(navPropMap.GetProperty());
     ECRelationshipClassCP navRel = navProp.GetRelationshipClass();
@@ -1596,7 +1603,7 @@ ClassMappingStatus EndTableMappingContextCollection::Map(NavigationPropertyMap& 
             return ClassMappingStatus::Error;
         }
 
-    RelationshipClassEndTableMappingContext* ctx = itor->second;
+    RelationshipClassEndTableMapper* ctx = itor->second;
     const bool useColumnReservation = navPropMap.GetClassMap().GetColumnFactory().UsesSharedColumnStrategy();
     if (useColumnReservation)
         navPropMap.GetClassMap().GetColumnFactory().ReserveSharedColumns(navPropMap.GetName());
@@ -1611,14 +1618,14 @@ ClassMappingStatus EndTableMappingContextCollection::Map(NavigationPropertyMap& 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
-EndTableMappingContextCollection::EndTableMappingContextCollection(SchemaImportContext& ctx)
+RelationshipClassEndTableMapperCollection::RelationshipClassEndTableMapperCollection(SchemaImportContext& ctx)
     :m_schemaImportContext(ctx)
     {}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                    06/2017
 //---------------------------------------------------------------------------------------
- ECN::ECClassCP EndTableMappingContextCollection::GetRoot(ECN::ECClassCR ecClass)
+ ECN::ECClassCP RelationshipClassEndTableMapperCollection::GetRoot(ECN::ECClassCR ecClass)
     {
     ECN::ECClassCP cursor = &ecClass;
     while (cursor->HasBaseClasses())
@@ -1633,7 +1640,7 @@ EndTableMappingContextCollection::EndTableMappingContextCollection(SchemaImportC
  //---------------------------------------------------------------------------------------
  // @bsimethod                                 Affan.Khan                    06/2017
  //---------------------------------------------------------------------------------------
- RelationshipClassEndTableMappingContext::PartitionInfo::PartitionInfo(RelationshipClassEndTableMap::Partition const& partition) 
+ RelationshipClassEndTableMapper::PartitionInfo::PartitionInfo(RelationshipClassEndTableMap::Partition const& partition) 
      :m_isPersisted(false)
      {
      Set(ColumnId::ECInstanceId, &partition.GetECInstanceId());
@@ -1649,7 +1656,7 @@ EndTableMappingContextCollection::EndTableMappingContextCollection(SchemaImportC
  //---------------------------------------------------------------------------------------
  // @bsimethod                                 Affan.Khan                    06/2017
  //---------------------------------------------------------------------------------------
- void  RelationshipClassEndTableMappingContext::PartitionInfo::Set(ColumnId id, DbColumn const* column)
+ void  RelationshipClassEndTableMapper::PartitionInfo::Set(ColumnId id, DbColumn const* column)
      {
      if (m_isPersisted)
          {
@@ -1663,7 +1670,7 @@ EndTableMappingContextCollection::EndTableMappingContextCollection(SchemaImportC
  //---------------------------------------------------------------------------------------
  // @bsimethod                                 Affan.Khan                    06/2017
  //---------------------------------------------------------------------------------------
- void RelationshipClassEndTableMappingContext::PartitionInfo::Clear()
+ void RelationshipClassEndTableMapper::PartitionInfo::Clear()
      {
      for (auto i = 0; i < 6; i++)
          m_cols[i] = nullptr;
@@ -1672,7 +1679,7 @@ EndTableMappingContextCollection::EndTableMappingContextCollection(SchemaImportC
  //---------------------------------------------------------------------------------------
  // @bsimethod                                 Affan.Khan                    06/2017
  //---------------------------------------------------------------------------------------
- bool RelationshipClassEndTableMappingContext::PartitionInfo::IsValid() const
+ bool RelationshipClassEndTableMapper::PartitionInfo::IsValid() const
      {
      for (auto i = 0; i < 6; i++)
          if (m_cols[i] == nullptr)

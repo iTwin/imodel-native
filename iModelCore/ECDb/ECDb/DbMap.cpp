@@ -215,6 +215,28 @@ void DbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, 
 
         return;
         }
+    else
+        {
+        //If all baseClasses are mixin then considier the class as root class.
+        bool noneMixin = false;
+        for (ECClassCP baseClass : ecclass.GetBaseClasses())
+            {
+            if (auto entityClass = baseClass->GetEntityClassCP())
+                {
+                if (entityClass->IsMixin())
+                    continue;
+                }
+
+            noneMixin = true;
+            break;
+            }
+
+        if (!noneMixin)
+            {
+            rootClassList.push_back(&ecclass);
+            return;
+            }
+        }
 
     for (ECClassCP baseClass : ecclass.GetBaseClasses())
         {
@@ -637,12 +659,7 @@ BentleyStatus DbMap::PurgeOrphanTables() const
 //---------------------------------------------------------------------------------------
 size_t DbMap::GetTableCountOnRelationshipEnd(SchemaImportContext& ctx, ECRelationshipConstraintCR relationshipEnd) const
     {
-    bool hasAnyClass = false;
-    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(ctx, relationshipEnd, &hasAnyClass);
-
-    if (hasAnyClass)
-        return std::numeric_limits<size_t>::max();
-
+    std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(ctx, relationshipEnd);
     const bool abstractEndPoint = relationshipEnd.GetConstraintClasses().size() == 1 && relationshipEnd.GetConstraintClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
     
     std::set<DbTable const*> nonVirtualTables;
@@ -665,23 +682,11 @@ size_t DbMap::GetTableCountOnRelationshipEnd(SchemaImportContext& ctx, ECRelatio
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                      12/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-std::set<ClassMap const*> DbMap::GetClassMapsFromRelationshipEnd(SchemaImportContext& ctx, ECRelationshipConstraintCR constraint, bool* hasAnyClass) const
+std::set<ClassMap const*> DbMap::GetClassMapsFromRelationshipEnd(SchemaImportContext& ctx, ECRelationshipConstraintCR constraint) const
     {
-    if (hasAnyClass != nullptr)
-        *hasAnyClass = false;
-
     std::set<ClassMap const*> classMaps;
     for (ECClassCP ecClass : constraint.GetConstraintClasses())
         {
-        if (ClassMap::IsAnyClass(*ecClass))
-            {
-            if (hasAnyClass)
-                *hasAnyClass = true;
-
-            classMaps.clear();
-            return classMaps;
-            }
-
         ClassMap const* classMap = nullptr;
         if (SUCCESS != TryGetClassMap(classMap, ctx.GetClassMapLoadContext(), *ecClass))
             {

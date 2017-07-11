@@ -20,20 +20,7 @@ RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECN::ECC
     BeAssert(ecRelClass.IsRelationshipClass());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                        12/13
-//---------------------------------------------------------------------------------------
-//static
-bool RelationshipClassMap::ConstraintIncludesAnyClass(ECN::ECRelationshipConstraintClassList const& constraintClasses)
-    {
-    for (ECClassCP constraintClass : constraintClasses)
-        {
-        if (IsAnyClass(*constraintClass))
-            return true;
-        }
 
-    return false;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
@@ -916,7 +903,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(ClassMappi
         return nullptr;
         }
 
-    if (ConstraintIncludesAnyClass(foreignEndConstraint.GetConstraintClasses()) || foreignEndTableCount > 1)
+    if (foreignEndTableCount > 1)
         {
         //! We will create ECClassId column in this case
         endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), PersistenceType::Physical);
@@ -1344,7 +1331,7 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
     // * it has more than one classes including subclasses in case of a polymorphic constraint. 
     //So we first determine whether a constraint class id column is needed
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
-    addConstraintClassIdColumnNeeded = constraintClasses.size() > 1 || ConstraintIncludesAnyClass(constraintClasses);
+    addConstraintClassIdColumnNeeded = constraintClasses.size() > 1 ;
     //if constraint is polymorphic, and if addConstraintClassIdColumnNeeded is not true yet,
     //we also need to check if the constraint classes have subclasses. If there is at least one, addConstraintClassIdColumnNeeded
     //is set to true;
