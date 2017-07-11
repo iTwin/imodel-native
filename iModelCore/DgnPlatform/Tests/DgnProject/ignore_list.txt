@@ -52,3 +52,4 @@ DgnChangeSummaryTestFixture.ValidateChangeSummaries  #it was a disable test
 
 ECInstancesCompatibility.UpdateInstances
     # bim2-0r1, x64, NDEBUG, fails after updating compatibility files from 2-0-1-46 to 2-0-1-53.
+    # NOTE: Test fails because the baseline file contains an invalid bis:GeometryPart (null GeometryStream) that we cannot load. This will be resolved when the baseline files are re-created
