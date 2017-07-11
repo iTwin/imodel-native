@@ -18,7 +18,7 @@
         <SubPart PartName="HeaderFiles"/>
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
         <Bindings>
-            <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies">Delivery/$(shlibprefix)TerrainModelCore$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)TerrainModelCore$(ApiNumber)$(shlibext)</Assemblies>
             <Libs ProductDirectoryName="TerrainModelNativeCoreLibs" Required="false"> Delivery/$(libprefix)TerrainModelCore$(libext)</Libs>
         </Bindings>
     </Part>
@@ -31,7 +31,7 @@
         <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />	
         <SubPart PartName="ImagePPDll"  PartFile="ImagePP" Repository="ImagePP" />
         <Bindings>
-            <Assemblies ProductDirectoryName="TerrainModelNativeAssemblies" >Delivery\$(shlibprefix)TerrainModelFormats$(ApiNumber)$(shlibext)</Assemblies>
+            <Assemblies>Delivery\$(shlibprefix)TerrainModelFormats$(ApiNumber)$(shlibext)</Assemblies>
             <Libs>Delivery\$(libprefix)TerrainModelFormats$(libext)</Libs>
         </Bindings>
     </Part>
@@ -42,7 +42,7 @@
       <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />
       <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
       <Bindings>
-        <Assemblies ProductDirectoryName="AutomaticGroundDetection" >Delivery/$(shlibprefix)AutomaticGroundDetection$(ApiNumber)$(shlibext)</Assemblies>
+        <Assemblies>Delivery/$(shlibprefix)AutomaticGroundDetection$(ApiNumber)$(shlibext)</Assemblies>
         <Libs>Delivery\$(libprefix)AutomaticGroundDetection$(libext)</Libs>
       </Bindings>
     </Part>
