@@ -340,6 +340,1099 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "</ECSchema>"))) << "Index with properties that map to different tables is not supported";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
+    {
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_entityclass.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_foo_id</Name>
+                                    <Properties>
+                                        <string>ECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_foo_id</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>ECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_foo_classid</Name>
+                                    <Properties>
+                                        <string>ECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <IsUnique>true</IsUnique>
+                                    <Name>uix_foo_classid</Name>
+                                    <Properties>
+                                        <string>ECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <IsUnique>false</IsUnique>
+                                    <Name>ix_foo_id_prop2</Name>
+                                    <Properties>
+                                        <string>ECInstanceId</string>
+                                        <string>Prop2</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <IsUnique>true</IsUnique>
+                                    <Name>uix_foo_id_prop2</Name>
+                                    <Properties>
+                                        <string>ECInstanceId</string>
+                                        <string>Prop2</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <IsUnique>false</IsUnique>
+                                    <Name>ix_foo_prop1_classid</Name>
+                                    <Properties>
+                                        <string>Prop1</string>
+                                        <string>ECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <IsUnique>true</IsUnique>
+                                    <Name>uix_foo_prop1_classid</Name>
+                                    <Properties>
+                                        <string>Prop1</string>
+                                        <string>ECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Prop1" typeName="string" />
+                    <ECProperty propertyName="Prop2" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"))) << "Indexes on ECInstanceId and non-virtual ECClassId props";
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo_id", false, "ts_Foo", "Id").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo_id").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("uix_foo_id", true, "ts_Foo", "Id").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_foo_id").c_str());
+
+            EXPECT_FALSE(GetHelper().IndexExists("ix_foo_classid")) << "Is duplicate to system index on class id col";
+            EXPECT_STRCASEEQ(IndexInfo("ix_ts_Foo_ecclassid", false, "ts_Foo", "ECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_Foo_ecclassid").c_str()) << "System index on ECClassId col";
+
+            EXPECT_STRCASEEQ(IndexInfo("uix_foo_classid", true, "ts_Foo", "ECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_foo_classid").c_str());
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo_id_prop2", false, "ts_Foo", std::vector<Utf8String>{"Id", "Prop2"}).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo_id_prop2").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("uix_foo_id_prop2", true, "ts_Foo", std::vector<Utf8String>{"Id", "Prop2"}).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_foo_id_prop2").c_str());
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo_prop1_classid", false, "ts_Foo", std::vector<Utf8String>{"Prop1", "ECClassId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo_prop1_classid").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("uix_foo_prop1_classid", true, "ts_Foo", std::vector<Utf8String>{"Prop1", "ECClassId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_foo_prop1_classid").c_str());
+            }
+
+
+            ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECEntityClass typeName="Foo" modifier="None">
+            <ECCustomAttributes>
+                <DbIndexList xmlns="ECDbMap.02.00">
+                    <Indexes>
+                        <DbIndex>
+                            <Name>ix_foo_classid</Name>
+                            <Properties>
+                                <string>ECClassId</string>
+                            </Properties>
+                        </DbIndex>
+                    </Indexes>
+                </DbIndexList>
+            </ECCustomAttributes>
+            <ECProperty propertyName="Prop1" typeName="string" />
+            <ECProperty propertyName="Prop2" typeName="int" />
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "Cannot define index on virtual ECClassId col";
+
+            {
+            //index on nav prop (logical FK)
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_navprop.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_parentid</Name>
+                                    <Properties>
+                                        <string>Parent.Id</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_parentid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Parent.Id</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_parentrelclassid</Name>
+                                    <Properties>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_parentrelclassid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_parentid_parentrelclassid</Name>
+                                    <Properties>
+                                        <string>Parent.Id</string>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_name_parentid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Name</string>
+                                        <string>Parent.Id</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml")));
+
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_parentid", false, "ts_Child", "ParentId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_parentid").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("uix_parentid", true, "ts_Child", "ParentId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_parentid").c_str());
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_parentrelclassid", false, "ts_Child", "ParentRelECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_parentrelclassid").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("uix_parentrelclassid", true, "ts_Child", "ParentRelECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_parentrelclassid").c_str());
+
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_parentid_parentrelclassid", false, "ts_Child", std::vector<Utf8String>{"ParentId", "ParentRelECClassId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_parentid_parentrelclassid").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("uix_name_parentid", true, "ts_Child", std::vector<Utf8String>{"Name", "ParentId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_name_parentid").c_str());
+
+            ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_parentrelclassid</Name>
+                                    <Properties>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+        </ECSchema>)xml"))) << "Cannot define index on virtual RelECClassId col";
+
+            ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>uix_parentrelclassid</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+        </ECSchema>)xml"))) << "Cannot define index on virtual RelECClassId col";
+            }
+
+                {
+                //index on nav prop (physical FK)
+                ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_navprop.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_parentid</Name>
+                                    <Properties>
+                                        <string>Parent.Id</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_parentid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Parent.Id</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_parentrelclassid</Name>
+                                    <Properties>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_parentrelclassid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_parentid_parentrelclassid</Name>
+                                    <Properties>
+                                        <string>Parent.Id</string>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_name_parentid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Name</string>
+                                        <string>Parent.Id</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward">
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml")));
+
+
+                EXPECT_FALSE(GetHelper().IndexExists("ix_parentid")) << "Is duplicate to system index on nav id col (by cardinality of the relationship)";
+                EXPECT_STRCASEEQ(IndexInfo("ix_ts_Child_fk_ts_Rel_target", false, "ts_Child", "ParentId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_Child_fk_ts_Rel_target").c_str()) << "System index on nav id col (by cardinality of the relationship)";
+                EXPECT_STRCASEEQ(IndexInfo("uix_parentid", true, "ts_Child", "ParentId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_parentid").c_str());
+
+                EXPECT_FALSE(GetHelper().IndexExists("ix_parentrelclassid")) << "Is duplicate to system index on nav relecclassid col";
+                EXPECT_STRCASEEQ(IndexInfo("ix_ts_Child_ParentRelECClassId", false, "ts_Child", "ParentRelECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_Child_ParentRelECClassId").c_str());
+                EXPECT_STRCASEEQ(IndexInfo("uix_parentrelclassid", true, "ts_Child", "ParentRelECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_parentrelclassid").c_str());
+
+
+                EXPECT_STRCASEEQ(IndexInfo("ix_parentid_parentrelclassid", false, "ts_Child", std::vector<Utf8String>{"ParentId", "ParentRelECClassId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_parentid_parentrelclassid").c_str());
+                EXPECT_STRCASEEQ(IndexInfo("uix_name_parentid", true, "ts_Child", std::vector<Utf8String>{"Name", "ParentId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_name_parentid").c_str());
+
+                ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+                    R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_parentrelclassid</Name>
+                                    <Properties>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward">
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+        </ECSchema>)xml"))) << "Cannot define index on virtual RelECClassId col";
+
+                ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+                    R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>uix_parentrelclassid</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward">
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+        </ECSchema>)xml"))) << "Cannot define index on virtual RelECClassId col";
+                }
+
+                    {
+                    //index on nav prop (physical FK) with 1:1
+                    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_navprop.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>uix_parentid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Parent.Id</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_parentrelclassid</Name>
+                                    <Properties>
+                                        <string>Parent.RelECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward">
+                        <ECCustomAttributes>
+                            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                    </ECNavigationProperty>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..1)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml")));
+
+
+                    EXPECT_FALSE(GetHelper().IndexExists("uix_parentid")) << "Is duplicate to system index on nav id col (by cardinality of the relationship)";
+                    EXPECT_STRCASEEQ(IndexInfo("uix_ts_Child_fk_ts_Rel_target", true, "ts_Child", "ParentId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_Child_fk_ts_Rel_target").c_str()) << "System index on nav id col (by cardinality of the relationship)";
+
+                    EXPECT_FALSE(GetHelper().IndexExists("ix_parentrelclassid")) << "Is duplicate to system index on nav relecclassid col";
+                    EXPECT_STRCASEEQ(IndexInfo("ix_ts_Child_ParentRelECClassId", false, "ts_Child", "ParentRelECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_Child_ParentRelECClassId").c_str());
+                    }
+
+                    {
+                    //index Point members
+                    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_points.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_llx</Name>
+                                    <Properties>
+                                        <string>LL.X</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_llx</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>LL.X</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_lly</Name>
+                                    <Properties>
+                                        <string>LL.Y</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_lly</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>LL.Y</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_originx</Name>
+                                    <Properties>
+                                        <string>Origin.X</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_originx</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Origin.X</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_originy</Name>
+                                    <Properties>
+                                        <string>Origin.Y</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_originy</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Origin.Y</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_originz</Name>
+                                    <Properties>
+                                        <string>Origin.Z</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_originz</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Origin.Z</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_llx_originz</Name>
+                                    <Properties>
+                                        <string>LL.X</string>
+                                        <string>Origin.Z</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_originx_lly</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Origin.X</string>
+                                        <string>LL.Y</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="LL" typeName="Point2d" />
+                    <ECProperty propertyName="Origin" typeName="Point3d" />
+                </ECEntityClass>
+            </ECSchema>)xml")));
+
+
+                    EXPECT_STRCASEEQ(IndexInfo("ix_llx", false, "ts_Foo", "LL_X").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_llx").c_str());
+                    EXPECT_STRCASEEQ(IndexInfo("uix_llx", true, "ts_Foo", "LL_X").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_llx").c_str());
+                    EXPECT_STRCASEEQ(IndexInfo("ix_lly", false, "ts_Foo", "LL_Y").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_lly").c_str());
+                    EXPECT_STRCASEEQ(IndexInfo("uix_lly", true, "ts_Foo", "LL_Y").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_lly").c_str());
+
+                    EXPECT_STRCASEEQ(IndexInfo("ix_originx", false, "ts_Foo", "Origin_X").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_originx").c_str());
+                    EXPECT_STRCASEEQ(IndexInfo("uix_originx", true, "ts_Foo", "Origin_X").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_originx").c_str());
+                    EXPECT_STRCASEEQ(IndexInfo("ix_originy", false, "ts_Foo", "Origin_Y").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_originy").c_str());
+                    EXPECT_STRCASEEQ(IndexInfo("uix_originy", true, "ts_Foo", "Origin_Y").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_originy").c_str());
+                    EXPECT_STRCASEEQ(IndexInfo("ix_originz", false, "ts_Foo", "Origin_Z").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_originz").c_str());
+                    EXPECT_STRCASEEQ(IndexInfo("uix_originz", true, "ts_Foo", "Origin_Z").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_originz").c_str());
+
+                    EXPECT_STRCASEEQ(IndexInfo("ix_llx_originz", false, "ts_Foo", std::vector<Utf8String>{"LL_X", "Origin_Z"}).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_llx_originz").c_str());
+                    EXPECT_STRCASEEQ(IndexInfo("uix_originx_lly", true, "ts_Foo", std::vector<Utf8String>{"Origin_X", "LL_Y"}).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_originx_lly").c_str());
+                    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, UserDefinedIndexesOnFKRelSystemProperties)
+    {
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel_id</Name>
+                                    <Properties>
+                                        <string>ECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on FK rel is not valid";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel_classid</Name>
+                                    <Properties>
+                                        <string>ECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on FK rel is not valid";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel</Name>
+                                    <Properties>
+                                        <string>SourceECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on FK rel is not valid";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel</Name>
+                                    <Properties>
+                                        <string>SourceECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on FK rel is not valid";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel</Name>
+                                    <Properties>
+                                        <string>TargetECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on FK rel is not valid";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECProperty propertyName="Name" typeName="string" />
+                    <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel</Name>
+                                    <Properties>
+                                        <string>TargetECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on FK rel is not valid";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, UserDefinedIndexesOnLinkTableRelSystemProperties)
+    {
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_linktable.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel_id</Name>
+                                    <Properties>
+                                        <string>ECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_rel_id</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>ECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_rel_classid</Name>
+                                    <Properties>
+                                        <string>ECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_rel_classid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>ECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_rel_sourceid</Name>
+                                    <Properties>
+                                        <string>SourceECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_rel_sourceid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>SourceECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_rel_targetid</Name>
+                                    <Properties>
+                                        <string>TargetECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_rel_targetid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>TargetECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_rel_sourceid_order</Name>
+                                    <Properties>
+                                        <string>SourceECInstanceId</string>
+                                        <string>Order</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_rel_sourceid_order</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>SourceECInstanceId</string>
+                                        <string>Order</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>ix_rel_order_targetid</Name>
+                                    <Properties>
+                                        <string>Order</string>
+                                        <string>TargetECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>
+                                <DbIndex>
+                                    <Name>uix_rel_order_targetid</Name>
+                                    <IsUnique>true</IsUnique>
+                                    <Properties>
+                                        <string>Order</string>
+                                        <string>TargetECInstanceId</string>
+                                    </Properties>
+                                </DbIndex>                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                    <ECProperty propertyName="Order" typeName="int" />
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Indexes on all system props of a link table rel";
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_rel_id", false, "ts_Rel", "Id").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_rel_id").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("uix_rel_id", true, "ts_Rel", "Id").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_rel_id").c_str());
+
+            EXPECT_FALSE(GetHelper().IndexExists("ix_rel_classid")) << "Is duplicate to system index on class id col";
+            EXPECT_STRCASEEQ(IndexInfo("ix_ts_Rel_ecclassid", false, "ts_Rel", "ECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_Rel_ecclassid").c_str()) << "System index on ECClassId col";
+
+            EXPECT_STRCASEEQ(IndexInfo("uix_rel_classid", true, "ts_Rel", "ECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_rel_classid").c_str());
+
+
+            EXPECT_FALSE(GetHelper().IndexExists("ix_rel_sourceid")) << "Is duplicate to system index on sourceid col (because of cardinality)";
+            EXPECT_STRCASEEQ(IndexInfo("ix_ts_Rel_source", false, "ts_Rel", "SourceId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_Rel_source").c_str()) << "System index on SourceId col (because of cardinality)";
+            EXPECT_STRCASEEQ(IndexInfo("uix_rel_sourceid", true, "ts_Rel", "SourceId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_rel_sourceid").c_str());
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_rel_targetid", false, "ts_Rel", "TargetId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_rel_targetid").c_str());
+            EXPECT_FALSE(GetHelper().IndexExists("uix_rel_targetid")) << "Is duplicate to system index on targetid col (because of cardinality)";
+            EXPECT_STRCASEEQ(IndexInfo("uix_ts_Rel_target", true, "ts_Rel", "TargetId").ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_Rel_target").c_str()) << "System index on TargetId col (because of cardinality)";
+
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_rel_sourceid_order", false, "ts_Rel", std::vector<Utf8String>{"SourceId", "Order"}).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_rel_sourceid_order").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("uix_rel_sourceid_order", true, "ts_Rel", std::vector<Utf8String>{"SourceId", "Order"}).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_rel_sourceid_order").c_str());
+
+            EXPECT_STRCASEEQ(IndexInfo("ix_rel_order_targetid", false, "ts_Rel", std::vector<Utf8String>{"Order", "TargetId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("ix_rel_order_targetid").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("uix_rel_order_targetid", true, "ts_Rel", std::vector<Utf8String>{"Order", "TargetId"}).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_rel_order_targetid").c_str());
+            }
+
+            ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel_sourceclassid</Name>
+                                    <Properties>
+                                        <string>SourceECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                             </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on SourceECClassId is expected to fail as SourceECClassId is never mapped to the link table";
+
+            ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel_sourceclassid</Name>
+                                    <Properties>
+                                        <string>SourceECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                             </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on SourceECClassId is expected to fail as SourceECClassId is virtual column";
+
+            ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel_targetclassid</Name>
+                                    <Properties>
+                                        <string>TargetECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                             </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on TargetECClassId is expected to fail as TargetECClassId is never mapped to the link table";
+
+            ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+                R"xml(<?xml version='1.0' encoding='utf-8'?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+               <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+               <ECEntityClass typeName="Parent" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Code" typeName="string" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Child" modifier="None">
+                    <ECCustomAttributes>
+                        <ClassMap xmlns="ECDbMap.02.00">
+                            <MapStrategy>TablePerHierarchy</MapStrategy>
+                        </ClassMap>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Name" typeName="string" />
+                </ECEntityClass>
+                <ECRelationshipClass typeName="Rel" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <Name>ix_rel_targetclassid</Name>
+                                    <Properties>
+                                        <string>TargetECClassId</string>
+                                    </Properties>
+                                </DbIndex>
+                             </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                        <Class class="Parent"/>
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                        <Class class="Child"/>
+                    </Target>
+                </ECRelationshipClass>   
+            </ECSchema>)xml"))) << "Index on TargetECClassId is expected to fail as TargetECClassId is virtual column";
+    }
+
+    
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/15
@@ -778,7 +1871,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnTph)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IndexTests, UserDefinedIndexesOnNonTph)
+TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
     {
     EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -1019,6 +2112,275 @@ TEST_F(IndexTests, UserDefinedIndexesOnNonTph)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
+    {
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedNonUniqueIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECEntityClass typeName="Root" modifier="Abstract">
+            <ECCustomAttributes>
+                <DbIndexList xmlns="ECDbMap.02.00">
+                        <Indexes>
+                        <DbIndex>
+                            <Name>ix_root</Name>
+                            <Properties>
+                                <string>RootProp</string>
+                            </Properties>
+                        </DbIndex>
+                        </Indexes>
+                </DbIndexList>
+            </ECCustomAttributes>
+            <ECProperty propertyName="RootProp" typeName="int" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub_A">
+            <BaseClass>Root</BaseClass>
+            <ECProperty propertyName="PropA" typeName="int" />
+        </ECEntityClass>
+        <ECEntityClass typeName="Sub_B">
+            <BaseClass>Root</BaseClass>
+            <ECProperty propertyName="PropB" typeName="int" />
+        </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
+
+            EXPECT_FALSE(GetHelper().TableExists("ts_Root"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_root_ts_Sub_A", false, "ts_Sub_A", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts_Sub_A").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("ix_root_ts_Sub_B", false, "ts_Sub_B", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts_Sub_B").c_str());
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedNonUniqueIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub">
+               <BaseClass>Root</BaseClass>
+               <ECProperty propertyName="PropA" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SubSub">
+               <BaseClass>Sub</BaseClass>
+               <ECProperty propertyName="PropB" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
+
+            EXPECT_FALSE(GetHelper().TableExists("ts_Root"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_root_ts_Sub", false, "ts_Sub", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts_Sub").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("ix_root_ts_SubSub", false, "ts_SubSub", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts_SubSub").c_str());
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedNonUniqueIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <Name>ix_sub</Name>
+                               <Properties>
+                                  <string>SubProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+               <BaseClass>Root</BaseClass>
+                <ECProperty propertyName="SubProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SubSub">
+               <BaseClass>Sub</BaseClass>
+               <ECProperty propertyName="PropA" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SubSubSub">
+               <BaseClass>SubSub</BaseClass>
+               <ECProperty propertyName="PropB" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
+
+            EXPECT_FALSE(GetHelper().TableExists("ts_Root"));
+            EXPECT_FALSE(GetHelper().TableExists("ts_Sub"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_sub_ts_SubSub", false, "ts_SubSub", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts_SubSub").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("ix_sub_ts_SubSubSub", false, "ts_SubSubSub", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts_SubSubSub").c_str());
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedNonUniqueIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <Name>ix_sub</Name>
+                               <Properties>
+                                  <string>SubProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+               <BaseClass>Root</BaseClass>
+                <ECProperty propertyName="SubProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SubSub_A">
+               <BaseClass>Sub</BaseClass>
+               <ECProperty propertyName="PropA" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="SubSub_B">
+               <BaseClass>Sub</BaseClass>
+               <ECProperty propertyName="PropB" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
+            EXPECT_FALSE(GetHelper().TableExists("ts_Root"));
+            EXPECT_FALSE(GetHelper().TableExists("ts_Sub"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_sub_ts_SubSub_A", false, "ts_SubSub_A", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts_SubSub_A").c_str());
+            EXPECT_STRCASEEQ(IndexInfo("ix_sub_ts_SubSub_B", false, "ts_SubSub_B", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts_SubSub_B").c_str());
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract class, no subclasses";
+
+            ASSERT_FALSE(GetHelper().TableExists("ts_Root")) << "index on abstract class, no subclasses";
+            ASSERT_FALSE(GetHelper().IndexExists("ix_root")) << "index on abstract class, no subclasses";
+            }
+
+            //multi-session import
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract class, no subclasses";
+
+            ASSERT_FALSE(GetHelper().TableExists("ts_Root")) << "index on abstract class, no subclasses";
+            ASSERT_FALSE(GetHelper().IndexExists("ix_root")) << "index on abstract class, no subclasses";
+
+            ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+            <ECEntityClass typeName="Sub">
+               <BaseClass>ts:Root</BaseClass>
+               <ECProperty propertyName="SubProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "Adding single subclass to abstract base class";
+
+            ASSERT_TRUE(GetHelper().TableExists("ts2_Sub")) << "index on abstract class with single subclasses";
+            ASSERT_STRCASEEQ(IndexInfo("ix_root_ts2_Sub", false, "ts2_Sub", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts2_Sub").c_str()) << "index on abstract class with single subclasses";
+
+            ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema3" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+            <ECEntityClass typeName="Sub2">
+               <BaseClass>ts:Root</BaseClass>
+               <ECProperty propertyName="SubProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "Adding second subclass to abstract base class";
+
+            ASSERT_TRUE(GetHelper().TableExists("ts3_Sub2")) << "index on abstract class with single subclasses";
+            ASSERT_STRCASEEQ(IndexInfo("ix_root_ts3_Sub2", false, "ts3_Sub2", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts3_Sub2").c_str()) << "index on abstract class with single subclasses";
+            }
+
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub" modifier="None">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <Name>ix_sub</Name>
+                               <Properties>
+                                  <string>SubProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+               <BaseClass>Root</BaseClass>
+               <ECProperty propertyName="SubProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on base class which doesn't have subclasses yet";
+
+            ASSERT_TRUE(GetHelper().TableExists("ts_Sub")) << "index on abstract class with single subclasses";
+            ASSERT_STRCASEEQ(IndexInfo("ix_sub", false, "ts_Sub", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub").c_str()) << "index on concrete class";
+
+            ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />    
+            <ECEntityClass typeName="SubSub">
+               <BaseClass>ts:Sub</BaseClass>
+               <ECProperty propertyName="SubSubProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "Index property now spans two tables -> replication of index expected";
+
+            ASSERT_TRUE(GetHelper().TableExists("ts2_SubSub")) << "index on abstract class with single subclasses";
+            ASSERT_STRCASEEQ(IndexInfo("ix_sub_ts2_SubSub", false, "ts2_SubSub", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts2_SubSub").c_str()) << "replicated index on sub class table";
+            }
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     06/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, UserDefinedIndexesOnSharedColumns)
@@ -1176,372 +2538,121 @@ TEST_F(IndexTests, UserDefinedIndexesOnSharedColumns)
             }
     }
 
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     08/15
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IndexTests, UserDefinedOnSystemProperties)
+TEST_F(IndexTests, UserDefinedIndexWithWhereClauseAndPropertyMapCAIsNullable)
     {
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Name>ix_Foo_ECInstanceId</Name>"
-        "                       <Properties>"
-        "                          <string>ECInstanceId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "</ECSchema>"))) << "Cannot define index on ECInstanceId";
+        ASSERT_EQ(SUCCESS, SetupECDb("notnullableproptest1.ecdb", SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+            "    <ECEntityClass typeName='B' modifier='None'>"
+            "        <ECCustomAttributes>"
+            "            <DbIndexList xmlns='ECDbMap.02.00'>"
+            "               <Indexes>"
+            "                   <DbIndex>"
+            "                       <Name>ix_b_code</Name>"
+            "                       <Properties>"
+            "                           <string>Code</string>"
+            "                       </Properties>"
+            "                       <Where>IndexedColumnsAreNotNull</Where>"
+            "                   </DbIndex>"
+            "               </Indexes>"
+            "            </DbIndexList>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Code' typeName='long' >"
+            "           <ECCustomAttributes>"
+            "            <PropertyMap xmlns='ECDbMap.02.00'>"
+            "               <IsNullable>false</IsNullable>"
+            "            </PropertyMap>"
+            "           </ECCustomAttributes>"
+            "        </ECProperty>"
+            "        <ECProperty propertyName='Name' typeName='string' />"
+            "    </ECEntityClass>"
+            "</ECSchema>")));
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Name>ix_Foo_ECClassId</Name>"
-        "                       <Properties>"
-        "                          <string>ECClassId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "</ECSchema>"))) << "Cannot define index on ECClassId";
-    }
+        Utf8CP indexName = "ix_b_code";
+        ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts1_B", "Code").ToDdl().c_str(),
+                         GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Krischan.Eberle                     07/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IndexTests, UserDefinedOnRelationships)
-    {
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "        <ECNavigationProperty propertyName='Foo' relationshipName='FooHasGoo' direction='Backward'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='FooHasGoo' strength='referencing' modifier='Sealed'>"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Name>ix_FooHasGoo_SourceECInstanceId</Name>"
-        "                       <Properties>"
-        "                          <string>SourceECInstanceId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "    <Source multiplicity='(0..1)' polymorphic='true' roleLabel='has'>"
-        "      <Class class='Foo' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='is related to'>"
-        "      <Class class='Goo' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "Cannot define index on fk relationship";
+        ASSERT_EQ(SUCCESS, SetupECDb("notnullableproptest2.ecdb", SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+            "    <ECEntityClass typeName='B' modifier='None'>"
+            "        <ECCustomAttributes>"
+            "            <DbIndexList xmlns='ECDbMap.02.00'>"
+            "               <Indexes>"
+            "                   <DbIndex>"
+            "                       <Name>ix_b_code_name</Name>"
+            "                       <Properties>"
+            "                           <string>Code</string>"
+            "                           <string>Name</string>"
+            "                       </Properties>"
+            "                       <Where>IndexedColumnsAreNotNull</Where>"
+            "                   </DbIndex>"
+            "               </Indexes>"
+            "            </DbIndexList>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Code' typeName='long' >"
+            "           <ECCustomAttributes>"
+            "            <PropertyMap xmlns='ECDbMap.02.00'>"
+            "               <IsNullable>false</IsNullable>"
+            "            </PropertyMap>"
+            "           </ECCustomAttributes>"
+            "        </ECProperty>"
+            "        <ECProperty propertyName='Name' typeName='string' />"
+            "    </ECEntityClass>"
+            "</ECSchema>")));
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='FooHasGoo' strength='referencing' modifier='Sealed'>"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Name>ix_FooHasGoo_ECInstanceId</Name>"
-        "                       <Properties>"
-        "                          <string>ECInstanceId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "    <Source multiplicity='(0..*)' polymorphic='true' roleLabel='has'>"
-        "      <Class class='Foo' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='is related to'>"
-        "      <Class class='Goo' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "Cannot define index on ECInstanceId for link table relationship";
+        indexName = "ix_b_code_name";
+        ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts2_B", std::vector<Utf8String>{"Code", "Name"}, IndexInfo::WhereClause(true, {"Name"})).ToDdl().c_str(),
+                         GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='FooHasGoo' strength='referencing' modifier='Sealed'>"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Name>ix_FooHasGoo_ECClassId</Name>"
-        "                       <Properties>"
-        "                          <string>ECClassId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "    <Source multiplicity='(0..*)' polymorphic='true' roleLabel='has'>"
-        "      <Class class='Foo' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='is related to'>"
-        "      <Class class='Goo' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "Cannot define index on ECClassId for link table relationship";
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='FooHasGoo' strength='referencing' modifier='Sealed'>"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Name>ix_FooHasGoo_SourceECInstanceId</Name>"
-        "                       <Properties>"
-        "                          <string>SourceECInstanceId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "    <Source multiplicity='(0..*)' polymorphic='true' roleLabel='has'>"
-        "      <Class class='Foo' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='is related to'>"
-        "      <Class class='Goo' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "Cannot define index on SourceECInstanceId for link table relationship";
+        ASSERT_EQ(SUCCESS, SetupECDb("notnullableproptest3.ecdb", SchemaItem(
+            "<?xml version='1.0' encoding='utf-8'?>"
+            "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+            "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+            "    <ECEntityClass typeName='B' modifier='None'>"
+            "        <ECCustomAttributes>"
+            "            <DbIndexList xmlns='ECDbMap.02.00'>"
+            "               <Indexes>"
+            "                   <DbIndex>"
+            "                       <Name>ix_b_code_name</Name>"
+            "                       <Properties>"
+            "                           <string>Code</string>"
+            "                           <string>Name</string>"
+            "                       </Properties>"
+            "                       <Where>IndexedColumnsAreNotNull</Where>"
+            "                   </DbIndex>"
+            "               </Indexes>"
+            "            </DbIndexList>"
+            "        </ECCustomAttributes>"
+            "        <ECProperty propertyName='Code' typeName='long' >"
+            "           <ECCustomAttributes>"
+            "            <PropertyMap xmlns='ECDbMap.02.00'>"
+            "               <IsNullable>false</IsNullable>"
+            "            </PropertyMap>"
+            "           </ECCustomAttributes>"
+            "        </ECProperty>"
+            "        <ECProperty propertyName='Name' typeName='string'>"
+            "           <ECCustomAttributes>"
+            "            <PropertyMap xmlns='ECDbMap.02.00'>"
+            "               <IsNullable>false</IsNullable>"
+            "            </PropertyMap>"
+            "           </ECCustomAttributes>"
+            "        </ECProperty>"
+            "    </ECEntityClass>"
+            "</ECSchema>")));
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='FooHasGoo' strength='referencing' modifier='Sealed'>"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Name>ix_FooHasGoo_TargetECInstanceId</Name>"
-        "                       <Properties>"
-        "                          <string>TargetECInstanceId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "    <Source multiplicity='(0..*)' polymorphic='true' roleLabel='has'>"
-        "      <Class class='Foo' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='is related to'>"
-        "      <Class class='Goo' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "Cannot define index on TargetECInstanceId for link table relationship";
-
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='FooHasGoo' strength='referencing' modifier='Sealed'>"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Name>ix_FooHasGoo_SourceECClassId</Name>"
-        "                       <Properties>"
-        "                          <string>SourceECClassId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "    <Source multiplicity='(0..*)' polymorphic='true' roleLabel='has'>"
-        "      <Class class='Foo' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='is related to'>"
-        "      <Class class='Goo' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "Cannot define index on SourceECClassId for link table relationship";
-
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='FooHasGoo' strength='referencing' modifier='Sealed'>"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>False</IsUnique>"
-        "                       <Name>ix_FooHasGoo_TargetECClassId</Name>"
-        "                       <Properties>"
-        "                          <string>TargetECClassId</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "    <Source multiplicity='(0..*)' polymorphic='true' roleLabel='has'>"
-        "      <Class class='Foo' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='is related to'>"
-        "      <Class class='Goo' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>"))) << "Cannot define index on TargetECClassId for link table relationship";
-
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("indexonrelationships.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Foo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='Goo' modifier='None' >"
-        "        <ECProperty propertyName='Code' typeName='int'/>"
-        "    </ECEntityClass>"
-        "    <ECRelationshipClass typeName='FooHasGoo' strength='referencing' modifier='Sealed'>"
-        "        <ECCustomAttributes>"
-        "           <DbIndexList xmlns='ECDbMap.02.00'>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>True</IsUnique>"
-        "                       <Name>uix_FooHasGoo_Order</Name>"
-        "                       <Properties>"
-        "                          <string>Order</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </DbIndexList>"
-        "        </ECCustomAttributes>"
-        "    <Source multiplicity='(0..*)' polymorphic='true' roleLabel='has'>"
-        "      <Class class='Foo' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic = 'true' roleLabel='is related to'>"
-        "      <Class class='Goo' />"
-        "    </Target>"
-        "    <ECProperty propertyName='Order' typeName='int'/>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>")));
-
-    Utf8CP indexName = "uix_FooHasGoo_Order";
-    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts_FooHasGoo", "Order").ToDdl().c_str(), GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Maha Nasir                     10/15
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IndexTests, RelECClassId)
-    {
-    ASSERT_EQ(SUCCESS, SetupECDb("IndexGenerationOnClassId.ecdb", SchemaItem(
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='Test' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='ClassA' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P0' typeName='string' />"
-        "    </ECEntityClass>"
-        "    <ECEntityClass typeName='ClassB' modifier='None' >"
-        "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "        </ECCustomAttributes>"
-        "        <ECProperty propertyName='P0' typeName='string' />"
-        "    </ECEntityClass>"
-        "</ECSchema>")));
-
-    Statement sqlstmt;
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, "SELECT Name FROM ec_Index WHERE Id=(SELECT IndexId FROM ec_IndexColumn WHERE ColumnId=(SELECT Id FROM ec_Column WHERE Name='ECClassId' AND TableId=(SELECT Id FROM ec_Table WHERE Name='ts_ClassA')))"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
-    ASSERT_STREQ("ix_ts_ClassA_ecclassid", sqlstmt.GetValueText(0));
-    sqlstmt.Finalize();
-
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, sqlstmt.Prepare(m_ecdb, "SELECT Name FROM ec_Index WHERE Id=(SELECT IndexId FROM ec_IndexColumn WHERE ColumnId=(SELECT Id FROM ec_Column WHERE Name='ECClassId' AND TableId=(SELECT Id FROM ec_Table WHERE Name='ts_ClassB')))"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, sqlstmt.Step());
-    ASSERT_STREQ("ix_ts_ClassB_ecclassid", sqlstmt.GetValueText(0));
-    sqlstmt.Finalize();
-    }
+        indexName = "ix_b_code_name";
+        ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts3_B", std::vector<Utf8String>{"Code", "Name"}).ToDdl().c_str(),
+                         GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+        }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Majd.Uddin                         03/14
@@ -1656,6 +2767,587 @@ TEST_F(IndexTests, UserDefinedUniqueIndex)
     ASSERT_TRUE(sqlCmd.find("UNIQUE") == std::string::npos);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     10/15
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, ImplicitIndexesForRelationships)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships1.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts1" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="A" modifier="None" >
+                        <ECProperty propertyName="AId" typeName="string" />
+                        <ECNavigationProperty propertyName="PartnerB" relationshipName="Rel11Backwards" direction="Forward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECNavigationProperty propertyName="AId" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
+                        <ECNavigationProperty propertyName="PartnerA" relationshipName="Rel11" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
+                        <ECProperty propertyName="BId" typeName="long" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="BB" modifier="None">
+                        <BaseClass>B</BaseClass>
+                        <ECProperty propertyName="BBId" typeName="long" />
+                    </ECEntityClass>
+                   <ECRelationshipClass typeName="Rel" strength="embedding" modifier="Sealed">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="owns">
+                      <Class class="A" />
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                      <Class class="B" />
+                    </Target>
+                  </ECRelationshipClass>
+                   <ECRelationshipClass typeName="Rel11" strength="embedding" modifier="Sealed">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="relates">
+                      <Class class="A" />
+                    </Source>
+                    <Target multiplicity="(1..1)" polymorphic="True" roleLabel="relates">
+                      <Class class="B" />
+                    </Target>
+                  </ECRelationshipClass>
+                   <ECRelationshipClass typeName="Rel11Backwards" strength="embedding" strengthDirection="Backward" modifier="Sealed">
+                    <Source multiplicity="(1..1)" polymorphic="True" roleLabel="relates">
+                      <Class class="A" />
+                    </Source>
+                    <Target multiplicity="(1..1)" polymorphic="True" roleLabel="relates">
+                      <Class class="B" />
+                    </Target>
+                  </ECRelationshipClass>
+                   <ECRelationshipClass typeName="RelNN" strength="referencing" modifier="Sealed">
+                    <Source multiplicity="(1..*)" polymorphic="True" roleLabel="references">
+                      <Class class="A" />
+                    </Source>
+                    <Target multiplicity="(1..*)" polymorphic="True" roleLabel="references">
+                      <Class class="B" />
+                    </Target>
+                  </ECRelationshipClass>
+                </ECSchema>)xml")));
+
+    Utf8CP indexName = "ix_ts1_B_fk_ts1_Rel_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts1_B", "AId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+    indexName = "uix_ts1_B_fk_ts1_Rel11_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_B", "PartnerAId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+    indexName = "uix_ts1_A_fk_ts1_Rel11Backwards_source";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_A", "PartnerBId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+    indexName = "ix_ts1_RelNN_source";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts1_RelNN", "SourceId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+    indexName = "ix_ts1_RelNN_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts1_RelNN", "TargetId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+    indexName = "uix_ts1_RelNN_sourcetarget";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts1_RelNN", std::vector<Utf8String>{"SourceId", "TargetId"}).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships2.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="A" modifier="None" >
+                        <ECProperty propertyName="AId" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <ShareColumns xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="AId" typeName="long" />
+                        <ECNavigationProperty propertyName="A" relationshipName="Rel" direction="Backward">
+                            <ECCustomAttributes>
+                                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                            </ECCustomAttributes>
+                        </ECNavigationProperty>
+                        <ECProperty propertyName="BId" typeName="long" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="BB" modifier="None">
+                        <BaseClass>B</BaseClass>
+                        <ECProperty propertyName="BBId" typeName="long" />
+                    </ECEntityClass>
+                   <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="embedding">
+                    <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                      <Class class="A" />
+                    </Source>
+                    <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                      <Class class="B" />
+                    </Target>
+                  </ECRelationshipClass>
+                </ECSchema>)xml")));
+
+    indexName = "ix_ts2_B_fk_ts2_Rel_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts2_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+
+    ASSERT_EQ(ExpectedColumns({ExpectedColumn("ts2_b","AId"),
+                              ExpectedColumn("ts2_b","ARelECClassId", Virtual::Yes)}),
+              GetHelper().GetPropertyMapColumns(AccessString("TestSchema", "B", "A")));
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships3.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='BId' typeName='long' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='BB' modifier='None'>"
+        "        <BaseClass>B</BaseClass>"
+        "        <ECProperty propertyName='BBId' typeName='long' />"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='Rel' direction='Backward' >"
+        "           <ECCustomAttributes>"
+        "               <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
+        "           </ECCustomAttributes>"
+        "        </ECNavigationProperty>"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='embedding'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='A' />"
+        "    </Source>"
+        "    <Target cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='BB'/>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>")));
+
+    indexName = "ix_ts3_B_fk_ts3_Rel_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts3_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships4.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts4' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='A' modifier='None' >"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "            </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='Rel11' direction='Backward' >"
+        "           <ECCustomAttributes>"
+        "               <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
+        "           </ECCustomAttributes>"
+        "        </ECNavigationProperty>"
+        "        <ECProperty propertyName='BId' typeName='long' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='BB' modifier='None'>"
+        "        <BaseClass>B</BaseClass>"
+        "        <ECProperty propertyName='BBId' typeName='long' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='Rel11' modifier='Sealed' >"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='A' />"
+        "    </Source>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='B'/>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>")));
+
+    indexName = "uix_ts4_B_fk_ts4_Rel11_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts4_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str());
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships50.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts50" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="Code" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                             </ClassMap>
+                        </ECCustomAttributes>
+                        <ECNavigationProperty propertyName="A" relationshipName="RelBase" direction="Backward">
+                           <ECCustomAttributes>
+                               <ForeignKeyConstraint xmlns="ECDbMap.02.00" />
+                           </ECCustomAttributes>
+                        </ECNavigationProperty>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B1" modifier="None">
+                        <BaseClass>B</BaseClass>
+                        <ECProperty propertyName="B1Id" typeName="long" />
+                    </ECEntityClass>
+                   <ECRelationshipClass typeName="RelBase" modifier="Abstract" strength="referencing">
+                    <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                      <Class class="A"/>
+                    </Source>
+                    <Target multiplicity="(1..*)" polymorphic="True" roleLabel="is referenced by">
+                      <Class class="B"/>
+                    </Target>
+                  </ECRelationshipClass>
+                   <ECRelationshipClass typeName="RelSub1" modifier="Sealed" strength="referencing">
+                    <BaseClass>RelBase</BaseClass>
+                    <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                      <Class class="A" />
+                    </Source>
+                    <Target multiplicity="(1..1)" polymorphic="True" roleLabel="is referenced by">
+                      <Class class="B1"/>
+                    </Target>
+                  </ECRelationshipClass>
+                </ECSchema>)xml")));
+
+    ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts50_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+
+    indexName = "ix_ts50_B_fk_ts50_RelBase_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts50_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    indexName = "ix_ts50_B_ARelECClassId";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts50_B", "ARelECClassId", IndexInfo::WhereClause(true, {"ARelECClassId"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    ASSERT_FALSE(GetHelper().IndexExists("uix_ts50_B_fk_ts50_RelSub1_target"));
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships5.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts5' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='A' modifier='None'>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "             </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECNavigationProperty propertyName='AId' relationshipName='RelBase' direction='Backward'>"
+        "           <ECCustomAttributes>"
+        "               <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
+        "           </ECCustomAttributes>"
+        "        </ECNavigationProperty>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B1' modifier='None'>"
+        "        <BaseClass>B</BaseClass>"
+        "        <ECProperty propertyName='B1Id' typeName='long' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='A'/>"
+        "    </Source>"
+        "    <Target cardinality='(1,N)' polymorphic='True'>"
+        "      <Class class='B'/>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='RelSub1' modifier='Sealed' strength='referencing'>"
+        "    <BaseClass>RelBase</BaseClass>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='A' />"
+        "    </Source>"
+        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class='B1'/>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>")));
+
+    ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts5_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+
+    indexName = "ix_ts5_B_fk_ts5_RelBase_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts5_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    indexName = "ix_ts5_B_ARelECClassId";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts5_B", "ARelECClassId", IndexInfo::WhereClause(true, {"ARelECClassId"})).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    ASSERT_FALSE(GetHelper().IndexExists("uix_ts5_B_fk_ts5_RelSub1_target"));
+
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships6.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts6' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='A' modifier='None'>"
+        "        <ECProperty propertyName='Code' typeName='string' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "             </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECNavigationProperty propertyName='AInstance' relationshipName='RelBase' direction='Backward' >"
+        "           <ECCustomAttributes>"
+        "               <ForeignKeyConstraint xmlns='ECDbMap.02.00' />"
+        "           </ECCustomAttributes>"
+        "        </ECNavigationProperty>"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B1' modifier='None'>"
+        "        <BaseClass>B</BaseClass>"
+        "        <ECProperty propertyName='B1Id' typeName='long' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class='A'/>"
+        "    </Source>"
+        "    <Target cardinality='(1,N)' polymorphic='True'>"
+        "      <Class class='B'/>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='RelSub1' modifier='Sealed' strength='referencing'>"
+        "    <BaseClass>RelBase</BaseClass>"
+        "    <Source cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class='A' />"
+        "    </Source>"
+        "    <Target cardinality='(1,1)' polymorphic='True'>"
+        "      <Class class='B1'/>"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>")));
+
+    ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts6_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
+
+    indexName = "ix_ts6_B_AInstanceRelECClassId";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts6_B", "AInstanceRelECClassId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    indexName = "ix_ts6_B_fk_ts6_RelBase_target";
+    ASSERT_STRCASEEQ(IndexInfo(indexName, false, "ts6_B", "AInstanceId").ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+    ASSERT_FALSE(GetHelper().IndexExists("uix_ts6_B_fk_ts6_RelSub1_target"));
+
+
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships7.ecdb", SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts7' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='B' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "             </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='long' />"
+        "    </ECEntityClass>"
+        "    <ECEntityClass typeName='B1' modifier='None'>"
+        "        <BaseClass>B</BaseClass>"
+        "        <ECProperty propertyName='B1Id' typeName='long' />"
+        "    </ECEntityClass>"
+        "   <ECRelationshipClass typeName='RelBase' modifier='Abstract' strength='referencing'>"
+        "        <ECCustomAttributes>"
+        "            <ClassMap xmlns='ECDbMap.02.00'>"
+        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "             </ClassMap>"
+        "            <ShareColumns xmlns='ECDbMap.02.00'/>"
+        "        </ECCustomAttributes>"
+        "    <Source cardinality='(0,N)' polymorphic='True'>"
+        "      <Class class='B'/>"
+        "    </Source>"
+        "    <Target cardinality='(1,N)' polymorphic='True'>"
+        "      <Class class='B' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='RelSub11' modifier='Sealed' strength='referencing'>"
+        "    <BaseClass>RelBase</BaseClass>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='B' />"
+        "    </Source>"
+        "    <Target cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='B1' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "   <ECRelationshipClass typeName='RelSub1N' modifier='Sealed' strength='referencing'>"
+        "    <BaseClass>RelBase</BaseClass>"
+        "    <Source cardinality='(0,1)' polymorphic='True'>"
+        "      <Class class='B1' />"
+        "    </Source>"
+        "    <Target cardinality='(1,N)' polymorphic='True'>"
+        "      <Class class='B1' />"
+        "    </Target>"
+        "  </ECRelationshipClass>"
+        "</ECSchema>")));
+
+    ASSERT_EQ(9, (int) GetHelper().GetIndexNamesForTable("ts7_RelBase").size());
+
+
+
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships8.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts8" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="A" modifier="None">
+                        <ECProperty propertyName="AId" typeName="long" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B" modifier="None">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                             </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="Code" typeName="long" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B1" modifier="None">
+                        <BaseClass>B</BaseClass>
+                        <ECProperty propertyName="B1Code" typeName="long" />
+                        <ECNavigationProperty propertyName="A1" relationshipName="RelPoly" direction="Backward" >
+                           <ECCustomAttributes>
+                               <ForeignKeyConstraint xmlns="ECDbMap.02.00" />
+                           </ECCustomAttributes>
+                        </ECNavigationProperty>
+                        <ECNavigationProperty propertyName="A2" relationshipName="RelNonPoly" direction="Backward" >
+                           <ECCustomAttributes>
+                               <ForeignKeyConstraint xmlns="ECDbMap.02.00" />
+                           </ECCustomAttributes>
+                        </ECNavigationProperty>
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B11" modifier="None">
+                        <BaseClass>B1</BaseClass>
+                        <ECProperty propertyName="B11Code" typeName="long" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="B2" modifier="None">
+                        <BaseClass>B</BaseClass>
+                        <ECProperty propertyName="B2Code" typeName="long" />
+                    </ECEntityClass>
+                   <ECRelationshipClass typeName="RelNonPoly" modifier="Sealed" strength="referencing">
+                    <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                      <Class class="A" />
+                    </Source>
+                    <Target multiplicity="(0..1)" polymorphic="False" roleLabel="references">
+                      <Class class="B1" />
+                    </Target>
+                  </ECRelationshipClass>
+                   <ECRelationshipClass typeName="RelPoly" modifier="Sealed" strength="referencing">
+                    <Source multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                      <Class class="A" />
+                    </Source>
+                    <Target multiplicity="(0..1)" polymorphic="True" roleLabel="references">
+                      <Class class="B1" />
+                    </Target>
+                  </ECRelationshipClass>
+                </ECSchema>)xml")));
+
+    ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts8_B").size());
+
+    ECClassId b1ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "B1");
+    ECClassId b11ClassId = m_ecdb.Schemas().GetClassId("TestSchema", "B11");
+
+
+    indexName = "uix_ts8_B_fk_ts8_RelNonPoly_target";
+    IndexInfo::WhereClause indexWhereClause;
+    indexWhereClause.AppendNotNullFilter({"A2Id"});
+    indexWhereClause.AppendClassIdFilter({b1ClassId});
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts8_B", "A2Id", indexWhereClause).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << "RelNonPoly must exclude index on B11 as the constraint is non-polymorphic";
+
+    indexWhereClause.Clear();
+    //RelPoly must include index on B11 as the constraint is polymorphic
+
+    indexName = "uix_ts8_B_fk_ts8_RelPoly_target";
+    indexWhereClause.AppendNotNullFilter({"A1Id"}).AppendClassIdFilter({b1ClassId, b11ClassId});
+    ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts8_B", "A1Id", indexWhereClause).ToDdl().c_str(),
+                     GetHelper().GetIndexDdl(indexName).c_str()) << indexName;
+
+
+
+    //Tests that AllowDuplicateRelationships Flag from LinkTableRelationshipMap CA is applied to subclasses
+    ASSERT_EQ(SUCCESS, SetupECDb("indexcreationforrelationships´9.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts9\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
+                                                                                    "  <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
+                                                                                    "  <ECEntityClass typeName='A' modifier='None'>"
+                                                                                    "    <ECProperty propertyName='Name' typeName='string' />"
+                                                                                    "  </ECEntityClass>"
+                                                                                    "  <ECEntityClass typeName='B' modifier='None'>"
+                                                                                    "    <ECCustomAttributes>"
+                                                                                    "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                                    "        </ClassMap>"
+                                                                                    "    </ECCustomAttributes>"
+                                                                                    "    <ECProperty propertyName='BName' typeName='string' />"
+                                                                                    "  </ECEntityClass>"
+                                                                                    "  <ECEntityClass typeName='C' modifier='None'>"
+                                                                                    "    <BaseClass>B</BaseClass>"
+                                                                                    "    <ECProperty propertyName='CName' typeName='string' />"
+                                                                                    "  </ECEntityClass>"
+                                                                                    "  <ECRelationshipClass typeName='ARelB' modifier='Abstract' strength='referencing'>"
+                                                                                    "    <ECCustomAttributes>"
+                                                                                    "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                                    "                <MapStrategy>TablePerHierarchy</MapStrategy>"
+                                                                                    "        </ClassMap>"
+                                                                                    "        <LinkTableRelationshipMap xmlns='ECDbMap.02.00'>"
+                                                                                    "             <AllowDuplicateRelationships>True</AllowDuplicateRelationships>"
+                                                                                    "        </LinkTableRelationshipMap>"
+                                                                                    "    </ECCustomAttributes>"
+                                                                                    "    <Source cardinality='(0,N)' polymorphic='True'>"
+                                                                                    "      <Class class = 'A' />"
+                                                                                    "    </Source>"
+                                                                                    "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                                                                    "      <Class class = 'B' />"
+                                                                                    "    </Target>"
+                                                                                    "  </ECRelationshipClass>"
+                                                                                    "  <ECRelationshipClass typeName='ARelC' modifier='Sealed' strength='referencing'>"
+                                                                                    "    <BaseClass>ARelB</BaseClass>"
+                                                                                    "    <Source cardinality='(0,1)' polymorphic='True'>"
+                                                                                    "      <Class class = 'A' />"
+                                                                                    "    </Source>"
+                                                                                    "    <Target cardinality='(0,N)' polymorphic='True'>"
+                                                                                    "      <Class class = 'C' />"
+                                                                                    "    </Target>"
+                                                                                    "  </ECRelationshipClass>"
+                                                                                    "</ECSchema>")));
+
+    ASSERT_TRUE(GetHelper().TableExists("ts9_ARelB"));
+    ASSERT_FALSE(GetHelper().TableExists("ts9_ARelC")) << "ARelC is expected to be persisted in ts9_ARelB as well (SharedTable strategy)";
+
+    //ARelB must not have a unique index on source and target as it as AllowDuplicateRelationship set to true.
+    //ARelC must not have the unique index either, as AllowDuplicateRelationship is applied to subclasses
+    std::vector<Utf8String> indexNames = GetHelper().GetIndexNamesForTable("ts9_ARelB");
+    ASSERT_EQ(3, (int) indexNames.size()) << "Indexes on ts9_ARelB";
+    ASSERT_STREQ("ix_ts9_ARelB_ecclassid", indexNames[0].c_str());
+    ASSERT_STREQ("ix_ts9_ARelB_source", indexNames[1].c_str());
+    ASSERT_STREQ("ix_ts9_ARelB_target", indexNames[2].c_str());
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     1/17

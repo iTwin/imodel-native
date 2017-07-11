@@ -481,6 +481,40 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
         return ERROR;
         }
 
+    if (index.GetTable().GetType() == DbTable::Type::Virtual)
+        return SUCCESS;
+
+    bset<DbTable const*> tables;
+    for (DbColumn const* col : index.GetColumns())
+        {
+        if (col->GetPersistenceType() == PersistenceType::Virtual)
+            {
+            Issues().Report("Index '%s' is defined on a virtual column (which does not exist): %s.%s.", index.GetName().c_str(), col->GetTable().GetName().c_str(), col->GetName().c_str());
+            return ERROR;
+            }
+
+        tables.insert(&col->GetTable());
+        if (tables.size() > 1)
+            {
+            Issues().Report("Index '%s' is defined on columns from different tables.", index.GetName().c_str());
+            return ERROR;
+            }
+        }
+
+    CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT NULL FROM sqlite_master WHERE Type='index' AND Name=? COLLATE NO CASE");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    stmt->BindText(1, index.GetName(), Statement::MakeCopy::No);
+    if (BE_SQLITE_ROW != stmt->Step())
+        {
+        Issues().Report("Index '%s' is expected to physically exist in the file, but does not.", index.GetName().c_str());
+        return ERROR;
+        }
+
     return SUCCESS;
     }
 

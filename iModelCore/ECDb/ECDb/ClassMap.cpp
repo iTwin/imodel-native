@@ -389,14 +389,6 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
-            if (propertyMap->IsSystem())
-                {
-                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                                "A DbIndex cannot be specified on the system ECProperty '%s'.",
-                                i, GetClass().GetFullName(), propertyAccessString.c_str());
-                return ERROR;
-                }
-
             ECPropertyCR prop = propertyMap->GetProperty();
             if (!prop.GetIsPrimitive())
                 {
@@ -406,13 +398,23 @@ BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImp
                 return ERROR;
                 }
 
+            
+            if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId)
+                {
+                BeAssert(m_type == ClassMap::Type::RelationshipLinkTable);
+                Issues().Report("DbIndex custom attribute #%d on ECRelationshipClass '%s' is invalid. Cannot define index on the "
+                                "system properties " ECDBSYS_PROP_SourceECClassId " or " ECDBSYS_PROP_TargetECClassId ".",
+                                i, GetClass().GetFullName());
+                return ERROR;
+                }
+
             DbTable const& table = GetJoinedOrPrimaryTable();
             GetColumnsPropertyMapVisitor columnVisitor(table);
             propertyMap->AcceptVisitor(columnVisitor);
             if (table.GetType() != DbTable::Type::Virtual && columnVisitor.GetVirtualColumnCount() > 0)
                 {
                 Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                                "The specified ECProperty '%s' is mapped to a virtual column.",
+                                "The specified ECProperty '%s' cannot be used in the index as it is not mapped to a column (aka virtual column).",
                                 i, GetClass().GetFullName(), propertyAccessString.c_str());
                 return ERROR;
                 }
