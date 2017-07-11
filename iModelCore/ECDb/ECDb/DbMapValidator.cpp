@@ -501,20 +501,6 @@ BentleyStatus DbMapValidator::ValidateDbIndex(DbIndex const& index) const
             }
         }
 
-    CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT NULL FROM sqlite_master WHERE Type='index' AND Name=? COLLATE NO CASE");
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    stmt->BindText(1, index.GetName(), Statement::MakeCopy::No);
-    if (BE_SQLITE_ROW != stmt->Step())
-        {
-        Issues().Report("Index '%s' is expected to physically exist in the file, but does not.", index.GetName().c_str());
-        return ERROR;
-        }
-
     return SUCCESS;
     }
 

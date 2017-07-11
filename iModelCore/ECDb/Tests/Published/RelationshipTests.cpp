@@ -1477,6 +1477,64 @@ TEST_F(RelationshipMappingTestFixture, FKConstraintsOnLinkTables)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, LinkTablesAndSharedColumns)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("LinkTablesAndSharedColumns.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                   <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                      <ECEntityClass typeName="A" >
+                        <ECProperty propertyName="Prop1" typeName="string" />
+                      </ECEntityClass>
+                      <ECEntityClass typeName="B" >
+                        <ECProperty propertyName="Prop2" typeName="string" />
+                      </ECEntityClass>
+                      <ECRelationshipClass typeName="LinkTable" modifier="None">
+                            <ECCustomAttributes>
+                                <ClassMap xmlns="ECDbMap.02.00">
+                                  <MapStrategy>TablePerHierarchy</MapStrategy>
+                                </ClassMap>
+                                <ShareColumns xmlns="ECDbMap.02.00">
+                                    <ApplyToSubclassesOnly>false</ApplyToSubclassesOnly>
+                                </ShareColumns>
+                            </ECCustomAttributes>
+                            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="has">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(1..1)" polymorphic="True" roleLabel="has">
+                              <Class class="B"/>
+                            </Target>
+                      </ECRelationshipClass>
+                      <ECRelationshipClass typeName="LinkTableSub" modifier="None">
+                            <BaseClass>LinkTable</BaseClass>
+                            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="has">
+                              <Class class="A"/>
+                            </Source>
+                            <Target multiplicity="(1..1)" polymorphic="True" roleLabel="has">
+                              <Class class="B"/>
+                            </Target>
+                      </ECRelationshipClass>
+                 </ECSchema>)xml")));
+
+    ASSERT_EQ(ExpectedColumn("ts_LinkTable", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "SourceECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "SourceECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTable", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "TargetECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "TargetECClassId")));
+
+    ASSERT_FALSE(GetHelper().TableExists("ts_LinkTableSub"));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTable", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "SourceECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "SourceECClassId")));
+    ASSERT_EQ(ExpectedColumn("ts_LinkTable", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "TargetECInstanceId")));
+    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "TargetECClassId")));
+
+    std::vector<Utf8String> linkTableIndexes = GetHelper().GetIndexNamesForTable("ts_LinkTable");
+    ASSERT_EQ(1, linkTableIndexes.size());
+    ASSERT_STRCASEEQ("ix_ts_LinkTable_ecclassid", linkTableIndexes[0].c_str()) << "Only index on ts_LinkTable";
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         02/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(RelationshipMappingTestFixture, AmbigousRelationshipProperty)

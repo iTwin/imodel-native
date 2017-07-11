@@ -3040,9 +3040,9 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
             ASSERT_EQ(3, (int) GetHelper().GetIndexNamesForTable("ts50_B").size()) << "Expected indices: class id index, user defined index; no indexes for the relationship constraints";
 
             ASSERT_STRCASEEQ(IndexInfo("ix_ts50_B_fk_ts50_RelBase_target", false, "ts50_B", "AId", IndexInfo::WhereClause(true, {"AId"})).ToDdl().c_str(),
-                             GetHelper().GetIndexDdl("ix_ts50_B_fk_ts50_RelBase_target").c_str()) << indexName;
+                             GetHelper().GetIndexDdl("ix_ts50_B_fk_ts50_RelBase_target").c_str());
             ASSERT_STRCASEEQ(IndexInfo("ix_ts50_B_ARelECClassId", false, "ts50_B", "ARelECClassId", IndexInfo::WhereClause(true, {"ARelECClassId"})).ToDdl().c_str(),
-                             GetHelper().GetIndexDdl("ix_ts50_B_ARelECClassId").c_str()) << indexName;
+                             GetHelper().GetIndexDdl("ix_ts50_B_ARelECClassId").c_str());
 
             ASSERT_FALSE(GetHelper().IndexExists("uix_ts50_B_fk_ts50_RelSub1_target"));
             }
@@ -3378,8 +3378,14 @@ TEST_F(IndexTests, ImplicitIndexesForRelationshipsOnSharedColumns)
 
     Column idCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Child", "Parent.Id"));
     ASSERT_TRUE(idCol.Exists());
+    ASSERT_EQ(Virtual::No, idCol.GetVirtual());
     Column relClassIdCol = GetHelper().GetPropertyMapColumn(AccessString("ts", "Child", "Parent.RelECClassId"));
     ASSERT_TRUE(relClassIdCol.Exists());
+    ASSERT_EQ(Virtual::No, relClassIdCol.GetVirtual());
+
+    std::vector<Utf8String> indexes = GetHelper().GetIndexNamesForTable("ts_Child");
+    ASSERT_EQ(1, indexes.size()) << "Indexes on ts_Child";
+    ASSERT_STRCASEEQ("ix_ts_Child_ecclassid", indexes[0].c_str()) << "Only index on ts_Child";
     }
 
 //---------------------------------------------------------------------------------------
