@@ -9,6 +9,10 @@
 #include "include/DataSourceAccountCURL.h"
 #include "include/DataSourceCURL.h"
 
+#ifdef LOG_CURL
+#include <Bentley/BeFile.h>
+#endif
+
 OpenSSLMutexes* OpenSSLMutexes::s_instance = nullptr;
 
 OpenSSLMutexes::OpenSSLMutexes(size_t numMutexes)
@@ -178,6 +182,24 @@ DataSourceStatus DataSourceAccountCURL::downloadBlobSync(DataSourceURL &url, Dat
         assert(!"HTTP error, download failed or resource not found");
         status = DataSourceStatus(DataSourceStatus::Status_Error_Not_Found);
         }
+
+#ifdef LOG_CURL
+    {
+    BeFile file;
+    uint32_t NbCharsWritten = 0;
+    if (BeFileStatus::Success == file.Open(L"C:\\cds_log.txt", BeFileAccess::Write, BeFileSharing::None) || BeFileStatus::Success == file.Create(L"C:\\cds_log.txt"))
+        {
+        utf8URL += "\r\n";
+        file.Write(&NbCharsWritten, utf8URL.c_str(), (uint32_t)utf8URL.size());
+        char message[10000];
+        sprintf(message, "Date: %s\r\nServer: %s\r\ncurl_easy_perform() result message: %s\r\nHTTP result code: %s\r\n", 
+            response_header.data["Date"].c_str(), response_header.data["Server"].c_str(), curl_easy_strerror(res), response_header.data["HTTP"].c_str());
+        std::string curl_message(message);
+        file.Write(&NbCharsWritten, curl_message.c_str(), (uint32_t)curl_message.size());
+        }
+    }
+#endif
+
     if (!response_header.data.empty()) response_header.data.clear();
 
     curl_handle->free_header_list();

@@ -327,7 +327,10 @@ DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffe
                                                      // Get the thread's DataSource or create a new one
     DataSource *dataSource = nullptr;
     if ((dataSource = this->GetDataSourceAccount()->getOrCreateThreadDataSource()) == nullptr)
+        {
+        assert(!"Could not initialize data source");
         return nullptr;
+        }
 
     // Make sure caching is enabled for this DataSource
     dataSource->setCachingEnabled(s_stream_enable_caching);
