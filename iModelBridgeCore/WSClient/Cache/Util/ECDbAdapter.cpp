@@ -38,6 +38,7 @@ void ECDbAdapter::OnSchemaChanged()
     m_inserters = ECSqlAdapterCache<ECInstanceInserter>(*m_ecDb);
     m_findRelationshipClassesStatement = nullptr;
     m_finder = nullptr;
+    m_navigationProperties.clear();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -1214,30 +1215,124 @@ BentleyStatus ECDbAdapter::DeleteInstancesDirectly(const ECInstanceKeyMultiMap& 
 
         ECInstanceIdSet ids;
         for (auto ciit = classInstances.first; ciit != classInstances.second; ++ciit)
-            {
             ids.insert(ciit->second);
-            }
 
-        Utf8PrintfString key("DeleteInstancesDirectly:%llu", ecClassId.GetValue());
-        auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        ECClassCP ecClass = GetECClass(ecClassId);
+        if (ecClass->IsRelationshipClass())
             {
-            ECClassCP ecClass = GetECClass(ecClassId);
-            if (nullptr == ecClass)
-                return bastring();
-            return "DELETE FROM ONLY " + ecClass->GetECSqlName() + " WHERE InVirtualSet(?, ECInstanceId) ";
-            });
-
-        statement->BindVirtualSet(1, ids);
-        DbResult result;
-        if (BE_SQLITE_DONE != (result = statement->Step()))
-            return ERROR;
+            if (SUCCESS != DeleteRelationshipInstancesUsingECSQL(ecClass->GetRelationshipClassCP(), ids))
+                return ERROR;
+            }
+        else
+            {
+            if (SUCCESS != DeleteInstancesUsingECSQL(ecClass, ids))
+                return ERROR;
+            }
 
         for (auto id : ids)
-            {
             deleted.insert({ecClassId, id});
-            }
         }
 
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::DeleteRelationshipInstancesUsingECSQL(ECRelationshipClassCP ecClass, const ECInstanceIdSet& ids)
+    {
+    if (nullptr == ecClass)
+        return ERROR;
+
+    ECPropertyId navPropertyId;
+    Utf8String navPropertyName;
+    ECClassId constraintClassId;
+    if (SUCCESS != GetNavigationProperty(ecClass, navPropertyId, navPropertyName, constraintClassId))
+        return ERROR;
+
+    if (!navPropertyId.IsValid())
+        return DeleteInstancesUsingECSQL(ecClass, ids);
+
+    Utf8PrintfString key("DeleteRelationshipInstancesUsingECSQL:%llu", navPropertyId.GetValue());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        ECClassCP constraintClass = GetECClass(constraintClassId);
+        if (nullptr == constraintClass)
+            return bastring();
+        return "UPDATE " + constraintClass->GetECSqlName() + " SET " + navPropertyName + " = NULL WHERE InVirtualSet(?, ECInstanceId) ";
+        });
+
+    statement->BindVirtualSet(1, ids);
+    DbResult result = statement->Step();
+    if (BE_SQLITE_DONE != result)
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::GetNavigationProperty
+(
+ECRelationshipClassCP relClass, 
+ECPropertyId& propertyIdOut, 
+Utf8String& propertyNameOut, 
+ECClassId& classIdOut
+)
+    {
+    auto it = m_navigationProperties.find(relClass->GetId());
+    if (it == m_navigationProperties.end())
+        {
+        auto statement = m_statementCache.GetPreparedStatement("GetNavigationProperty", [&]
+            {
+            return "SELECT ECInstanceId, Name, Class.Id FROM meta.ECPropertyDef WHERE NavigationRelationshipClass.Id = ? ";
+            });
+
+        statement->BindId(1, relClass->GetId());
+        DbResult result = statement->Step();
+
+        std::tuple<ECPropertyId, Utf8String, ECClassId> tuple;
+
+        if (BE_SQLITE_ROW == result)
+            {            
+            std::get<0>(tuple) = statement->GetValueId<ECPropertyId>(0);
+            std::get<1>(tuple) = statement->GetValueText(1);
+            std::get<2>(tuple) = statement->GetValueId<ECClassId>(2);
+            }
+        else if (BE_SQLITE_DONE != result)
+            {
+            return ERROR;
+            }
+
+        it = m_navigationProperties.insert({relClass->GetId(), tuple}).first;
+        }
+
+    propertyIdOut = std::get<0>(it->second);
+    propertyNameOut = std::get<1>(it->second);
+    classIdOut = std::get<2>(it->second);
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ECDbAdapter::DeleteInstancesUsingECSQL(ECClassCP ecClass, const ECInstanceIdSet& ids)
+    {
+    if (nullptr == ecClass)
+        return ERROR;
+
+    Utf8PrintfString key("DeleteInstancesUsingECSQL:%llu", ecClass->GetId().GetValue());
+    auto statement = m_statementCache.GetPreparedStatement(key, [&]
+        {
+        return "DELETE FROM ONLY " + ecClass->GetECSqlName() + " WHERE InVirtualSet(?, ECInstanceId) ";
+        });
+
+    statement->BindVirtualSet(1, ids);
+    DbResult result = result = statement->Step();
+    if (BE_SQLITE_DONE != result)
+        return ERROR;
+    
     return SUCCESS;
     }
 
