@@ -2995,7 +2995,15 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
     GeoCoords::GCS gcs(this->GetGCS());
     GeoCoords::Unit unit(gcs.GetHorizontalUnit());
 
-    auto& modelInfo = dgnModel->AsDgnModelCP()->GetModelInfo();
+	//TFS#721455 - dgnModel may be an attachment
+	DgnModelCP targetModel = dgnModel->AsDgnModelCP();
+	if (targetModel == nullptr && dgnModel->AsDgnAttachmentCP() != nullptr)
+		targetModel = dgnModel->AsDgnAttachmentCP()->GetDgnModelP();
+
+	assert(targetModel != nullptr);
+
+	if (targetModel == nullptr) return ERROR; //something is wrong with the reference;
+    auto& modelInfo = targetModel->GetModelInfo();
     
     if (targetCS == nullptr || !gcs.HasGeoRef())
         {
@@ -3003,7 +3011,12 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
                 
         double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * (this->IsCesium3DTiles() ? 1.0 : unit.GetRatioToBase());
 
-        computedTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0, 0, 0), scaleUorPerMeters, scaleUorPerMeters, scaleUorPerMeters);
+        DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
+
+        computedTransform = Transform::FromRowValues(scaleUorPerMeters, 0, 0, globalOrigin.x,
+                                                     0, scaleUorPerMeters, 0, globalOrigin.y,
+                                                     0, 0, scaleUorPerMeters, globalOrigin.z);
+        
                         
         return _SetReprojection(*targetGcs, computedTransform);
         }
@@ -3044,7 +3057,11 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
             {             
             double scaleUorPerMeters = ModelInfo::GetUorPerMeter(&modelInfo) * unit.GetRatioToBase();
 
-            computedTransform = Transform::FromFixedPointAndScaleFactors(DPoint3d::From(0, 0, 0), scaleUorPerMeters, scaleUorPerMeters, scaleUorPerMeters);
+            DPoint3d globalOrigin2 = modelInfo.GetGlobalOrigin();
+
+            computedTransform = Transform::FromRowValues(scaleUorPerMeters, 0, 0, globalOrigin2.x,
+                                                         0, scaleUorPerMeters, 0, globalOrigin2.y,
+                                                         0, 0, scaleUorPerMeters, globalOrigin2.z);
             }
         }
 

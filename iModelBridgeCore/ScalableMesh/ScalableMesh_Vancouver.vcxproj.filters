@@ -1012,6 +1012,9 @@
     <ClInclude Include="STM\ScalableMeshAnalysis.h">
       <Filter>Includes\Core\Analysis</Filter>
     </ClInclude>
+    <ClInclude Include="GeoCoords\ReprojectionUtils.h">
+      <Filter>Includes\GeoCoords</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Foundations\Errors.cpp">

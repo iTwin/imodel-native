@@ -26,6 +26,9 @@
 #include <ScalableMesh/IScalableMeshTextureGenerator.h>
 #include <ScalableMesh/ScalableMeshLib.h>
 
+#include "..\GeoCoords\ReprojectionUtils.h"
+
+
 #include "..\STM\GeneratorTextureProvider.h"
 
 #include <Bentley\BeDirectoryIterator.h>
@@ -378,7 +381,7 @@ double ScalableMeshGroundExtractor::ComputeTextureResolution()
 
 
 	DRange3d extractionRange = DRange3d::From(m_extractionArea);
-	double targetResolutionThreshold = sqrt((extractionRange.XLength()*extractionRange.YLength()* m_smGcsRatioToMeter) / 1000000.0);
+	double targetResolutionThreshold = 0.01;//sqrt((extractionRange.XLength()*extractionRange.YLength()* m_smGcsRatioToMeter) / 1000000.0);
         
     if (minTextureResolution != DBL_MAX)
         return  m_limitTextureResolution ? std::max(targetResolutionThreshold,minTextureResolution) * m_smGcsRatioToMeter
@@ -502,7 +505,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(terrainCreator->GetProgress());
     
-    status = terrainCreator->Create(true, true);
+    status = terrainCreator->Create();
     terrainCreator->SaveToFile();
     
     if (m_groundPreviewer.IsValid())
@@ -574,10 +577,23 @@ void ScalableMeshGroundExtractor::AddXYZFilePointsAsSeedPoints(GroundDetectionPa
         DPoint3d pt;                
         bvector<DPoint3d> addtionalSeedPts; 
 
+        BaseGCSPtr sourceGcs;
+
+        if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && !m_scalableMesh->IsCesium3DTiles())
+            {
+            sourceGcs = BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr());
+            }
+            
         for (int ptInd = 0; ptInd < dtmPtr->GetPointCount(); ptInd++)
             {             
             DTMStatusInt status = dtmPtr->GetPoint(ptInd, pt);
             assert(status == SUCCESS);
+
+            if (sourceGcs.IsValid())
+                {
+                ReprojectPt(pt, pt, m_destinationGcs, sourceGcs, GeoCoordInterpretation::Cartesian, GeoCoordInterpretation::Cartesian);
+                }
+
             addtionalSeedPts.push_back(pt);
             }
 
