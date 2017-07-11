@@ -141,7 +141,6 @@ struct RelationshipClassEndTableMapper : NonCopyableClass
         std::map<DbTableId, std::vector<PartitionInfo>> m_partitions;
         SchemaImportContext& m_schemaContext;
         std::unique_ptr<ForeignKeyMappingType> m_foreignKeyMappingType;
-        int m_navigationPropertyMapped;
     private:
         const std::vector<DbColumn const*> GetPartitionColumns(PartitionInfo::ColumnId) const;
         bool PersistedEndHasNonVirtualForeignKeyColumn() const;
@@ -157,7 +156,7 @@ struct RelationshipClassEndTableMapper : NonCopyableClass
         IssueReporter const& Issues() const;
         ECDbCR GetECDb() const;
         RelationshipClassEndTableMapper(SchemaImportContext&, RelationshipClassEndTableMap const&);
-        bool IsPhysicalForeignKey() const { if (m_navigationPropertyMapped == 0) return false; BeAssert(m_foreignKeyMappingType != nullptr); return m_foreignKeyMappingType->GetType() == RelationshipMappingType::Type::PhysicalForeignKey; }
+        bool IsPhysicalForeignKey() const { if (m_foreignKeyMappingType ==nullptr) return false; return m_foreignKeyMappingType->GetType() == RelationshipMappingType::Type::PhysicalForeignKey; }
     public:
         static std::unique_ptr<RelationshipClassEndTableMapper> Create(SchemaImportContext&, RelationshipClassEndTableMap const&);
         ClassMappingStatus UpdatePersistedEnd(NavigationPropertyMap&);

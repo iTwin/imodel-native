@@ -16,7 +16,7 @@ struct DbMappingTestFixture : ECDbTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(DbMappingTestFixture, IncrementallyMapRelationship)
+TEST_F(DbMappingTestFixture, IncrementallyMapRelationship) 
     {
     ASSERT_EQ(SUCCESS, SetupECDb("IncrementallyMapRelationship.ecdb", SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
