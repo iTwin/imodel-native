@@ -378,6 +378,8 @@ struct PropertyArrayIndex
     PropertyArrayIndex() : m_hasIndex(0) {}
     PropertyArrayIndex(uint32_t index) : m_hasIndex(true), m_index(index) {}
     PropertyArrayIndex(bool useIndex, uint32_t index) : m_hasIndex(useIndex), m_index(index) {}
+    bool HasIndex() const {return m_hasIndex;}
+    uint32_t GetIndex() const {return m_index;}
 };
 
 //=======================================================================================
@@ -807,6 +809,11 @@ public:
         //! @param el   The host element
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
 
+        //! The subclass must implement this method to get the value of a property by name from this aspect
+        virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const = 0;
+        //! The subclass must implement this method to set the value of a property by name for this aspect
+        virtual DgnDbStatus _SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex) = 0;
+
     public:
         //! Get the Id of this aspect
         BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
@@ -823,6 +830,11 @@ public:
 
         //! Get the ECClass for this aspect
         DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass(DgnDbR) const;
+
+        //! Get the value of a property by name from this aspect
+        DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const {return _GetPropertyValue(value, propertyName, arrayIndex);}
+        //! Set the value of a property by name for this aspect
+        DgnDbStatus SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) {return _SetPropertyValue(propertyName, value, arrayIndex);}
 
         //! The aspect should make a copy of itself.
         DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _CloneForImport(DgnElementCR sourceEl, DgnImportContext& importer) const;
@@ -851,6 +863,10 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override final;
 
     public:
+        //! Create a new, uninitialized MultiAspect of the specified ECClass
+        //! @see DgnElement::Aspect::SetPropertyValue
+        DGNPLATFORM_EXPORT static RefCountedPtr<MultiAspect> CreateAspect(DgnDbR, ECN::ECClassCR);
+
         //! Load the specified instance
         //! @param el   The host element
         //! @param ecclass The class of ElementAspect to load
@@ -893,6 +909,8 @@ public:
         Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
         DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
         DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, PropertyArrayIndex const&) const override;
+        DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, PropertyArrayIndex const&) override;
 
         //! Use this constructor when you want to load a multiaspect
         GenericMultiAspect(ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id);
@@ -970,6 +988,11 @@ public:
             BulkInsert,     //!< An application is creating a large number of Elements 
             Other           //!< An unspecified reason
         };
+
+        //! Create a new, uninitialized UniqueAspect of the specified ECClass
+        //! @see DgnElement::Aspect::SetPropertyValue
+        DGNPLATFORM_EXPORT static RefCountedPtr<UniqueAspect> CreateAspect(DgnDbR, ECN::ECClassCR);
+
         //! Prepare to insert or update an Aspect for the specified element
         //! @param el   The host element
         //! @param aspect The new aspect to be adopted by the host.
@@ -1014,6 +1037,8 @@ public:
         Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
         DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
         DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, PropertyArrayIndex const&) const override;
+        DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, PropertyArrayIndex const&) override;
         GenericUniqueAspect(ECN::ECClassCR cls) : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName()) {}
         GenericUniqueAspect(ECN::IECInstanceR inst) : m_instance(&inst),  m_ecclassName(inst.GetClass().GetName()), m_ecschemaName(inst.GetClass().GetSchema().GetName()) {}
 
@@ -2259,7 +2284,7 @@ protected:
     GeometrySource3dCP _GetAsGeometrySource3d() const override final {return this;}
     Utf8CP _GetGeometryColumnClassName() const override final {return BIS_CLASS_GeometricElement3d;}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    DGNPLATFORM_EXPORT DgnDbStatus _SetCategoryId(DgnCategoryId) override;
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override;
@@ -2336,7 +2361,7 @@ protected:
     GeometrySource2dCP _GetAsGeometrySource2d() const override final {return this;}
     Utf8CP _GetGeometryColumnClassName() const override final {return BIS_CLASS_GeometricElement2d;}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    DGNPLATFORM_EXPORT DgnDbStatus _SetCategoryId(DgnCategoryId) override;
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;
