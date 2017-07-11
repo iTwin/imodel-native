@@ -307,6 +307,7 @@ YEAR				{SQL_NEW_KEYWORD(SQL_TOKEN_YEAR);  }
 <SQL>[A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_][A-Za-z\200-\277\300-\337\340-\357\360-\367\370-\373\374-\375_0-9]*      {return gatherName( SQLyytext);}
 
 <SQL>([0-9]+)                   {SQL_NEW_INTNUM; }
+<SQL>(0[Xx][0-9a-fA-F]+)          {SQL_NEW_INTNUM; }
 
 <SQL>("."[0-9]*) |
 <SQL>([0-9]+"."[0-9]*) |

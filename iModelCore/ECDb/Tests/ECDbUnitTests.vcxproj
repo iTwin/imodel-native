@@ -40,7 +40,6 @@
     <ClCompile Include="Published\BulkCrudTestFixture.cpp" />
     <ClCompile Include="Published\BulkCrudTests.cpp" />
     <ClCompile Include="Published\ChangeSummaryTests.cpp" />
-    <ClCompile Include="Published\DataTable.cpp" />
     <ClCompile Include="Published\DateTimeTests.cpp" />
     <ClCompile Include="Published\DbMappingTests.cpp" />
     <ClCompile Include="Published\ECCrudWriteTokenTests.cpp" />
@@ -88,7 +87,6 @@
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Performance\ProfileBreak.h" />
     <ClInclude Include="Published\BulkCrudTestFixture.h" />
-    <ClInclude Include="Published\DataTable.h" />
     <ClInclude Include="Published\ECDbPublishedTests.h" />
     <ClInclude Include="Published\ECSqlExecutionFrameworkHelper.h" />
     <ClInclude Include="Published\ECSqlStatementTestFixture.h" />
