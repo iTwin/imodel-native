@@ -1,0 +1,17 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: ConcreteSchema/ConcreteSchema.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+%include $(BuildContext)SubParts/PublicMki/BentleyApi.mki
+
+appName                         = Concrete
+o                               = $(OutputRootDir)build/$(appName)/
+CCompPDBName                    = $(appName)
+MultiCompileIntermediatePdbFile = $(o)$(CCompPDBName).pdb
+IntermediatePdbFile             = $(MultiCompileIntermediatePdbFile)
+
+nameToDefine = __CONCRETE_BUILD__
+%include cdefapnd.mki

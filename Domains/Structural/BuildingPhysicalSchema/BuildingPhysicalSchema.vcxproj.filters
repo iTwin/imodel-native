@@ -26,16 +26,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\..\out\Winx64\BuildContexts\buildingDomains\PublicAPI\BuildingPhysical\BuildingPhysicalDomain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\out\Winx64\BuildContexts\buildingDomains\PublicAPI\BuildingPhysical\BuildingPhysicalDefinitions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\..\out\Winx64\BuildContexts\buildingDomains\PublicAPI\BuildingPhysical\BuildingPhysicalApi.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="BuildingPhysicalSchemaInternal.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\out\Winx64\BuildContexts\StructuralDomains\PublicAPI\BuildingPhysical\BuildingPhysicalApi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\out\Winx64\BuildContexts\StructuralDomains\PublicAPI\BuildingPhysical\BuildingPhysicalDefinitions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\out\Winx64\BuildContexts\StructuralDomains\PublicAPI\BuildingPhysical\BuildingPhysicalDomain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

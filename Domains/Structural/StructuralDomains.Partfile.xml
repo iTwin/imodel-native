@@ -14,19 +14,36 @@
         <SubPart PartName="StructuralDomains"/>
     </Part>
     
+	
+	<Part Name="Concrete" BentleyBuildMakeFile="ConcreteSchema\ConcreteSchema.mke" ApiNumber="B02">
+        <SubPart PartName="ConcretePublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <Bindings>
+			<Libs>Delivery/$(libprefix)Concrete$(libext)</Libs>
+			<Files ProductDirectoryName="Libs" >
+                Delivery/$(libprefix)Concrete$(libext)
+                Delivery/$(shlibprefix)Concrete$(ApiNumber)$(shlibext)
+            </Files>
+            <Assemblies>Delivery/$(shlibprefix)Concrete$(ApiNumber)$(shlibext)</Assemblies>
+        </Bindings>
+    </Part>
+    
+    <Part Name="ConcretePublicAPI" BentleyBuildMakeFile="ConcreteSchema\ConcreteSchema.prewire.mke">
+        <Bindings>
+            <PublicAPI Domain="Concrete"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/Concrete.ecschema.xml
+            </Files>
+			<Directory SourceName="PublicAPI/Concrete" ProductDirectoryName="ConcreteIncludes" />
+        </Bindings>
+    </Part>
+	
     
     <Part Name="StructuralMaterials" BentleyBuildMakeFile="StructuralMaterials\StructuralMaterialsSchema.mke" ApiNumber="B02">
         <SubPart PartName="StructuralMaterialsAPI"/>
-        <!--Temp-->
-		<SubPart PartName="ArchPhysPublicAPI"/> 
-        <!--Temp-->
-		<SubPart PartName="BuildingCommon"/>
-        <!--Temp-->
-		<SubPart PartName="BuildingPhysical"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-
         <Bindings>
-            <!--Libs>Delivery/$(libprefix)StructuralMaterials$(libext)</Libs-->
+            <Libs>Delivery/$(libprefix)StructuralMaterials$(libext)</Libs>
             <Files ProductDirectoryName="Libs" >
                 Delivery/$(libprefix)StructuralMaterials$(libext)
                 Delivery/$(shlibprefix)StructuralMaterials$(ApiNumber)$(shlibext)
@@ -41,11 +58,7 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/StructuralMaterials.ecschema.xml
             </Files>
-
-            <Directory SourceName="PublicApi/StructuralMaterials" ProductDirectoryName="StructuralMaterialsIncludes" />
-            
-          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
-            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
+            <Directory SourceName="PublicAPI/StructuralMaterials" ProductDirectoryName="StructuralMaterialsIncludes" />
         </Bindings>
     </Part>
 
@@ -55,8 +68,8 @@
         <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
         <SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" />
         <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
+		<SubPart PartName="Concrete"/>
         <SubPart PartName="StructuralMaterials"/>
-        <!--Temp-->
 		<SubPart PartName="ArchitecturalPhysical"/>
         <Bindings>
               <Assemblies>Delivery/$(shlibprefix)StructuralMaterialsTests.exe</Assemblies>
@@ -90,13 +103,12 @@
         </Bindings>
     </Part>
 	
-	<!--Temp-->
+	
 	<Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
         <SubPart PartName="ArchPhysPublicAPI"/>
         <SubPart PartName="BuildingCommon"/>
         <SubPart PartName="BuildingPhysical"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-
         <Bindings>
             <Libs>Delivery/$(libprefix)ArchitecturalPhysical$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)ArchitecturalPhysical$(ApiNumber)$(shlibext)</Assemblies>
@@ -109,8 +121,6 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
             </Files>
-          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
-            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
     </Part>
 
@@ -130,8 +140,6 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/BuildingCommon.ecschema.xml
             </Files>
-          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
-            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
     </Part>
 
@@ -151,8 +159,6 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/BuildingPhysical.ecschema.xml
             </Files>
-          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
-            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
     </Part>
 
