@@ -167,7 +167,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_FileExistsAndCancelled_ReturnsCancel
     EXPECT_EQ(ICachingDataSource::Status::Canceled, result.GetError().GetStatus());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerDoesNotReturnMetaSchema_GetsSchemasAndImportsThemWithMetaSchema)
+TEST_F(CachingDataSourceTests, OpenOrCreate_ServerDoesNotReturnMetaSchema_GetsSchemasAndImportsThemWithMetaSchema)
     {
     auto client = MockWSRepositoryClient::Create();
 
@@ -201,7 +201,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerDoesNotR
     EXPECT_TRUE(nullptr != txn.GetCache().GetAdapter().GetECSchema("UserSchema"));
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerRetursMetaSchema_GetsAllSchemasFromServerButSkipsMetaSchema)
+TEST_F(CachingDataSourceTests, OpenOrCreate_ServerRetursMetaSchema_GetsAllSchemasFromServerButSkipsMetaSchema)
     {
     auto client = MockWSRepositoryClient::Create();
 
@@ -221,6 +221,34 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_SchemaPathNotPassedAndServerRetursMe
         EXPECT_EQ(ObjectId("MetaSchema.ECSchemaDef", "TestSchemaId"), objectId);
         return CreateCompletedAsyncTask(WSFileResult());
         }));
+
+    CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->Wait();
+    }
+
+TEST_F(CachingDataSourceTests, OpenOrCreate_ServerRetursUserAndDeprecatedSchemas_GetsAllSchemasFromServerButSkipsDeprecated)
+    {
+    auto client = MockWSRepositoryClient::Create();
+
+    StubInstances schemas;
+    schemas.Add({"MetaSchema.ECSchemaDef", "A"}, {{"Name", "Contents"},{"NameSpacePrefix", "rest_cnt"}});
+    schemas.Add({"MetaSchema.ECSchemaDef", "B"}, {{"Name", "Views"}, {"NameSpacePrefix", "rest_view"}});
+
+    schemas.Add({"MetaSchema.ECSchemaDef", "C"}, {{"Name", "Contents"},{"NameSpacePrefix", "foo"}});
+    schemas.Add({"MetaSchema.ECSchemaDef", "D"}, {{"Name", "Views"},{"NameSpacePrefix", "foo"}});
+    schemas.Add({"MetaSchema.ECSchemaDef", "E"}, {{"Name", "TestSchema"}, {"NameSpacePrefix", "foo"}});
+
+    EXPECT_CALL(client->GetMockWSClient(), GetServerInfo(_))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSInfoResult::Success(StubWSInfoWebApi()))));
+
+    EXPECT_CALL(*client, SendGetSchemasRequest(_, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(WSObjectsResult::Success(schemas.ToWSObjectsResponse()))));
+
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "C"), _, _, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSFileResult())));
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "D"), _, _, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSFileResult())));
+    EXPECT_CALL(*client, SendGetFileRequest(ObjectId("MetaSchema.ECSchemaDef", "E"), _, _, _, _))
+        .WillOnce(Return(CreateCompletedAsyncTask(WSFileResult())));
 
     CachingDataSource::OpenOrCreate(client, BeFileName(":memory:"), StubCacheEnvironemnt())->Wait();
     }

@@ -73,8 +73,8 @@ struct CachingDataSource :
         BentleyStatus FinalizeOpen(CacheTransactionCR txn);
         ICancellationTokenPtr CreateCancellationToken(ICancellationTokenPtr ct);
 
-        SchemaKey ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId);
-        SchemaKey ExtractSchemaKey(JsonValueCR schemaDef);
+        bool IsServerSchemaSupported(JsonValueCR schemaDef);
+        static SchemaKey ExtractSchemaKey(JsonValueCR schemaDef);
 
         TempFilePtr GetTempFile(Utf8StringCR fileName, ObjectIdCR objectId); // TODO: create mockable file manager
         TempFilePtr GetTempFileForSchema(SchemaKeyCR schemaKey);
@@ -88,7 +88,6 @@ struct CachingDataSource :
             ICancellationTokenPtr ct
             );
 
-        void NotifyOnCacheSchemaChangedListeners();
         CachedResponseKey CreateSchemaListResponseKey(CacheTransactionCR txn);
 
         AsyncTaskPtr<DataOriginResult> CacheObjects
