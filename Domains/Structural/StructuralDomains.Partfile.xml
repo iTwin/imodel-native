@@ -6,39 +6,39 @@
         <SubProduct ProductName="StructuralMaterialsTests"/>
     </Part>
 
-    
+
     <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
     <Part Name="StructuralDomainsWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
         <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
         <SubPart PartName="StructuralDomains"/>
     </Part>
-    
-	
-	<Part Name="Concrete" BentleyBuildMakeFile="ConcreteSchema\ConcreteSchema.mke" ApiNumber="B02">
+
+
+    <Part Name="Concrete" BentleyBuildMakeFile="ConcreteSchema\ConcreteSchema.mke" ApiNumber="B02">
         <SubPart PartName="ConcretePublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
-			<Libs>Delivery/$(libprefix)Concrete$(libext)</Libs>
-			<Files ProductDirectoryName="Libs" >
+            <Libs>Delivery/$(libprefix)Concrete$(libext)</Libs>
+            <Files ProductDirectoryName="Libs" >
                 Delivery/$(libprefix)Concrete$(libext)
                 Delivery/$(shlibprefix)Concrete$(ApiNumber)$(shlibext)
             </Files>
             <Assemblies>Delivery/$(shlibprefix)Concrete$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-    
-    <Part Name="ConcretePublicAPI" BentleyBuildMakeFile="ConcreteSchema\ConcreteSchema.prewire.mke">
+
+    <Part Name="ConcretePublicAPI" BentleyBuildMakeFile="ConcreteSchema\ConcreteSchema.prewire.mke" ApiNumber="B02">
         <Bindings>
             <PublicAPI Domain="Concrete"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/Concrete.ecschema.xml
             </Files>
-			<Directory SourceName="PublicAPI/Concrete" ProductDirectoryName="ConcreteIncludes" />
+            <Directory SourceName="PublicAPI/Concrete" ProductDirectoryName="ConcreteIncludes" />
         </Bindings>
     </Part>
-	
-    
+
+
     <Part Name="StructuralMaterials" BentleyBuildMakeFile="StructuralMaterials\StructuralMaterialsSchema.mke" ApiNumber="B02">
         <SubPart PartName="StructuralMaterialsAPI"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
@@ -51,7 +51,7 @@
             <Assemblies>Delivery/$(shlibprefix)StructuralMaterials$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-    
+
     <Part Name="StructuralMaterialsAPI" BentleyBuildMakeFile="StructuralMaterials\StructuralMaterialsSchema.prewire.mke" ApiNumber="B02">
         <Bindings>
             <PublicAPI Domain="StructuralMaterials"/>
@@ -62,15 +62,15 @@
         </Bindings>
     </Part>
 
-    
+
     <Part Name="StructuralMaterialsTestsExe" DeferType="StructuralMaterialsTests" BentleyBuildMakeFile="StructuralMaterials/Tests/Tests.mke" OnlyPlatforms="x64">
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
         <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
         <SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" />
         <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
-		<SubPart PartName="Concrete"/>
+        <SubPart PartName="Concrete"/>
         <SubPart PartName="StructuralMaterials"/>
-		<SubPart PartName="ArchitecturalPhysical"/>
+        <SubPart PartName="ArchitecturalPhysical"/>
         <Bindings>
               <Assemblies>Delivery/$(shlibprefix)StructuralMaterialsTests.exe</Assemblies>
               <Files ProductDirectoryName="Assets">Delivery/StructuralMaterialsTests.logging.config.xml</Files>
@@ -88,23 +88,23 @@
         <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
         <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
     </ProductDirectoryList>
-    
+
     <Product Name="StructuralMaterialsTests" OnlyPlatforms="x64">
         <SubPart PartName="StructuralMaterialsTestsExe"/>
 <!--        <Directories DirectoryListName="RevitBridgeDirectories" /> -->
         <Directories DirectoryListName="Tests"/>
     </Product>
 
-    
+
     <Part Name="RunStructuralMaterialsTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/StructuralMaterialsTests/StructuralMaterialsTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="StructuralMaterialsTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/StructuralMaterialsTests.log</Files>
         </Bindings>
     </Part>
-	
-	
-	<Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
+
+
+    <Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
         <SubPart PartName="ArchPhysPublicAPI"/>
         <SubPart PartName="BuildingCommon"/>
         <SubPart PartName="BuildingPhysical"/>
@@ -114,7 +114,7 @@
             <Assemblies>Delivery/$(shlibprefix)ArchitecturalPhysical$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-    
+
     <Part Name="ArchPhysPublicAPI" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ArchitecturalPhysical"/>
@@ -124,7 +124,7 @@
         </Bindings>
     </Part>
 
-    
+
     <Part Name="BuildingCommon" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.mke" ApiNumber="B02">
         <SubPart PartName="BuildingCommonPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
@@ -133,7 +133,7 @@
             <Assemblies>Delivery/$(shlibprefix)BuildingCommon$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-    
+
     <Part Name="BuildingCommonPublicAPI" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="BuildingCommon"/>
@@ -152,7 +152,7 @@
             <Assemblies>Delivery/$(shlibprefix)BuildingPhysical$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-    
+
     <Part Name="BuildingPhysicalPublicAPI" BentleyBuildMakeFile="BuildingPhysicalSchema\BuildingPhysicalSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="BuildingPhysical"/>

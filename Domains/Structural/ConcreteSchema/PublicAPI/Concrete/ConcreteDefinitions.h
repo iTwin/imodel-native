@@ -50,6 +50,7 @@
 // ECClass names (combine with CONCRETE_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
 #define CONCRETE_CLASS_ConcreteElement                      "ConcreteElement"
+
 #define CONCRETE_CLASS_FrameElement                         "FrameElement"
 #define CONCRETE_CLASS_Beam                                 "Beam"
 #define CONCRETE_CLASS_Column                               "Column"
@@ -74,3 +75,19 @@
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations
 //-----------------------------------------------------------------------------------------
+CONCRETE_TYPEDEFS(ConcreteElement)
+CONCRETE_REFCOUNTED_TYPEDEFS(ConcreteElement)
+
+CONCRETE_TYPEDEFS(FrameElement)
+CONCRETE_REFCOUNTED_TYPEDEFS(FrameElement)
+CONCRETE_TYPEDEFS(Beam)
+CONCRETE_REFCOUNTED_TYPEDEFS(Beam)
+CONCRETE_TYPEDEFS(Column)
+CONCRETE_REFCOUNTED_TYPEDEFS(Column)
+
+CONCRETE_TYPEDEFS(SurfaceElement)
+CONCRETE_REFCOUNTED_TYPEDEFS(SurfaceElement)
+CONCRETE_TYPEDEFS(Slab)
+CONCRETE_REFCOUNTED_TYPEDEFS(Slab)
+CONCRETE_TYPEDEFS(Wall)
+CONCRETE_REFCOUNTED_TYPEDEFS(Wall)

@@ -11,3 +11,10 @@
 
 #include "ConcreteDefinitions.h"
 #include "ConcreteDomain.h"
+#include "ConcreteElement.h"
+#include "FrameElement.h"
+#include "Beam.h"
+#include "Column.h"
+#include "SurfaceElement.h"
+#include "Slab.h"
+#include "Wall.h"
