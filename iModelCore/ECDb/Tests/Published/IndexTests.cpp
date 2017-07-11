@@ -3348,8 +3348,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationships)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, ImplicitIndexesForRelationshipsOnSharedColumns)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ImplicitIndexesForRelationshipsOnSharedColumns.ecdb", SchemaItem(
-        R"xml(<?xml version='1.0' encoding='utf-8'?>
+    ASSERT_EQ(SUCCESS, SetupECDb("ImplicitIndexesForRelationshipsOnSharedColumns.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                <ECEntityClass typeName="Parent" modifier="None">
@@ -3362,6 +3361,7 @@ TEST_F(IndexTests, ImplicitIndexesForRelationshipsOnSharedColumns)
                         </ClassMap>
                         <ShareColumns xmlns="ECDbMap.02.00">
                             <ApplyToSubclassesOnly>False</ApplyToSubclassesOnly>
+                        </ShareColumns>
                     </ECCustomAttributes>
                     <ECProperty propertyName="Name" typeName="string" />
                     <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>

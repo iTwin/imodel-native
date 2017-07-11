@@ -1499,38 +1499,50 @@ TEST_F(RelationshipMappingTestFixture, LinkTablesAndSharedColumns)
                                     <ApplyToSubclassesOnly>false</ApplyToSubclassesOnly>
                                 </ShareColumns>
                             </ECCustomAttributes>
-                            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="has">
+                            <Source multiplicity="(0..*)" polymorphic="True" roleLabel="has">
                               <Class class="A"/>
                             </Source>
-                            <Target multiplicity="(1..1)" polymorphic="True" roleLabel="has">
+                            <Target multiplicity="(0..*)" polymorphic="True" roleLabel="has">
                               <Class class="B"/>
                             </Target>
                       </ECRelationshipClass>
                       <ECRelationshipClass typeName="LinkTableSub" modifier="None">
                             <BaseClass>LinkTable</BaseClass>
-                            <Source multiplicity="(1..1)" polymorphic="True" roleLabel="has">
+                            <Source multiplicity="(1..*)" polymorphic="True" roleLabel="has">
                               <Class class="A"/>
                             </Source>
                             <Target multiplicity="(1..1)" polymorphic="True" roleLabel="has">
                               <Class class="B"/>
                             </Target>
+                            <ECProperty propertyName="Order" typeName="int" />
                       </ECRelationshipClass>
                  </ECSchema>)xml")));
 
-    ASSERT_EQ(ExpectedColumn("ts_LinkTable", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "SourceECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "SourceECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_LinkTable", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "TargetECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "TargetECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_LinkTable", "SourceId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "SourceECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "SourceECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_LinkTable", "TargetId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "TargetECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTable", "TargetECClassId")));
 
-    ASSERT_FALSE(GetHelper().TableExists("ts_LinkTableSub"));
-    ASSERT_EQ(ExpectedColumn("ts_LinkTable", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "SourceECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "SourceECClassId")));
-    ASSERT_EQ(ExpectedColumn("ts_LinkTable", "ps2"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "TargetECInstanceId")));
-    ASSERT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "TargetECClassId")));
+    EXPECT_FALSE(GetHelper().TableExists("ts_LinkTableSub"));
+    EXPECT_EQ(ExpectedColumn("ts_LinkTable", "SourceId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "SourceECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_A", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "SourceECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_LinkTable", "TargetId"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "TargetECInstanceId")));
+    EXPECT_EQ(ExpectedColumn("ts_B", "ECClassId", Virtual::Yes), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "TargetECClassId")));
+    EXPECT_EQ(ExpectedColumn("ts_LinkTable", "ps1"), GetHelper().GetPropertyMapColumn(AccessString("ts", "LinkTableSub", "Order")));
 
-    std::vector<Utf8String> linkTableIndexes = GetHelper().GetIndexNamesForTable("ts_LinkTable");
-    ASSERT_EQ(1, linkTableIndexes.size());
-    ASSERT_STRCASEEQ("ix_ts_LinkTable_ecclassid", linkTableIndexes[0].c_str()) << "Only index on ts_LinkTable";
+    ECClassId linkTableClassId = m_ecdb.Schemas().GetClassId("TestSchema", "LinkTable");
+    ASSERT_TRUE(linkTableClassId.IsValid());
+    ECClassId linkTableSubClassId = m_ecdb.Schemas().GetClassId("TestSchema", "LinkTableSub");
+    ASSERT_TRUE(linkTableSubClassId.IsValid());
+    EXPECT_EQ(6, GetHelper().GetIndexNamesForTable("ts_LinkTable").size());
+    EXPECT_STRCASEEQ(IndexInfo("ix_ts_LinkTable_ecclassid", false, "ts_LinkTable", "ECClassId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_LinkTable_ecclassid").c_str());
+    EXPECT_STRCASEEQ(IndexInfo("ix_ts_LinkTable_source", false, "ts_LinkTable", "SourceId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_LinkTable_source").c_str());
+    EXPECT_STRCASEEQ(IndexInfo("ix_ts_LinkTable_target", false, "ts_LinkTable", "TargetId").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_ts_LinkTable_target").c_str());
+    EXPECT_STRCASEEQ(IndexInfo("uix_ts_LinkTable_sourcetarget", true, "ts_LinkTable", std::vector<Utf8String>{"SourceId","TargetId"}, IndexInfo::WhereClause(linkTableClassId)).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_LinkTable_sourcetarget").c_str());
+
+    EXPECT_STRCASEEQ(IndexInfo("uix_ts_LinkTableSub_source", true, "ts_LinkTable", "SourceId", IndexInfo::WhereClause(linkTableSubClassId)).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_LinkTableSub_source").c_str());
+    EXPECT_FALSE(GetHelper().IndexExists("ix_ts_LinkTableSub_target")) << "Redundant index to the one created for the base class";
+    EXPECT_STRCASEEQ(IndexInfo("uix_ts_LinkTableSub_sourcetarget", true, "ts_LinkTable", std::vector<Utf8String>{"SourceId","TargetId"}, IndexInfo::WhereClause(linkTableSubClassId)).ToDdl().c_str(), GetHelper().GetIndexDdl("uix_ts_LinkTableSub_sourcetarget").c_str());
     }
 
 
