@@ -1724,11 +1724,24 @@ bool IBriefcaseManager::AreResourcesAvailable(Request& req, Response* pResponse,
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool RepositoryJson::BeInt64IdFromJson(BeInt64Id& id, JsonValueCR value)
     {
-    if (value.isNull() || !value.isConvertibleTo(Json::uintValue))
+    if (value.isNull())
         return false;
 
-    id = BeInt64Id(value.asInt64());
-    return true;
+    if (value.isString()) // string is expected
+        {
+        BentleyStatus status;
+        id = BeInt64Id::FromString(value.asCString(), &status);
+        return BentleyStatus::SUCCESS == status;
+        }
+
+    if (value.isIntegral()) // integer is not expected, but might as well support it as this was the previous behavior
+        {
+        id = BeInt64Id(value.asInt64());
+        return true;
+        }
+
+    BeAssert(false); // should never get here
+    return false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1736,7 +1749,7 @@ bool RepositoryJson::BeInt64IdFromJson(BeInt64Id& id, JsonValueCR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RepositoryJson::BeInt64IdToJson(JsonValueR value, BeInt64Id id)
     {
-    value = id.GetValue();
+    value = id.ToString(BeInt64Id::UseHex::Yes);
     }
 
 /*---------------------------------------------------------------------------------**//**
