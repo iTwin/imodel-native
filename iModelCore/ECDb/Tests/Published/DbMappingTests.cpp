@@ -1317,23 +1317,127 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ECSqlHexSupport)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlHexSupport.ecdb", SchemaItem(
+     ASSERT_EQ(SUCCESS, SetupECDb("ECSqlHexSupport.ecdb", SchemaItem(
         R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECEntityClass typeName="Sample" modifier="None">
-                    <ECProperty propertyName="BaseProp1" typeName="string" />
+                    <ECProperty propertyName="IdHasHex" typeName="string" />
                 </ECEntityClass>
               </ECSchema>)xml")));
 
     ECInstanceKey key;
-    uint64_t expectedECInstaceId = 0x7FFFFFFFFFFFFFFF;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Sample(ECInstanceId, BaseProp1) VALUES (0x7FFFFFFFFFFFFFFF, '0x7FFFFFFFFFFFFFFF')"));
-    ASSERT_EQ(expectedECInstaceId, key.GetInstanceId().GetValue());
-    ASSERT_EQ( BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM ts.Sample WHERE ECInstanceId =  0x7FFFFFFFFFFFFFFF"));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Sample(ECInstanceId, IdHasHex) VALUES (0x7fffffffffffffff, '0x7fffffffffffffff')"));
+    ASSERT_EQ(ECInstanceId(0x7fffffffffffffffULL), key.GetInstanceId());
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Sample WHERE ECInstanceId =  0x7FFFFFFFFFFFFFFF AND IdHasHex='0x7fffffffffffffff'"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_TRUE(Utf8String(stmt.GetNativeSql()).EndsWith("WHERE [Sample].[ECInstanceId]=0x7FFFFFFFFFFFFFFF AND [Sample].[IdHasHex]='0x7fffffffffffffff'"));
+        }
 
-    expectedECInstaceId = 0x7ABCDEF + 39421 - 0x43;
-    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Sample(ECInstanceId, BaseProp1) VALUES (0x7ABCDEF + 39421 - 0x43, '0x7ABCDEF + 39421 - 0x43')"));
-    ASSERT_EQ(expectedECInstaceId, key.GetInstanceId().GetValue());
+    //SekectClause
+    if (true)
+        {            
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT 0x25E95a45eC3A766f, 0x91aff06094827eDF, 0x6397d5a4FBe993A1, 0X866511A9F1a6B466, 0X079155074dec987B, 0x2174EBE7E1019c9c, 0xbdc04FC55E6530C6, 0x73adEBB102163624 FROM ts.Sample WHERE ECInstanceId =  0x7fffffffffffffff "));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueUInt64(0), 0x25e95a45ec3a766f);
+        ASSERT_EQ(stmt.GetValueUInt64(1), 0x91aff06094827edf);
+        ASSERT_EQ(stmt.GetValueUInt64(2), 0x6397d5a4fbe993a1);
+        ASSERT_EQ(stmt.GetValueUInt64(3), 0x866511a9f1a6b466);
+        ASSERT_EQ(stmt.GetValueUInt64(4), 0x079155074dec987b);
+        ASSERT_EQ(stmt.GetValueUInt64(5), 0x2174ebe7e1019c9c);
+        ASSERT_EQ(stmt.GetValueUInt64(6), 0xbdc04fc55e6530c6);
+        ASSERT_EQ(stmt.GetValueUInt64(7), 0x73adebb102163624);
+
+        ASSERT_EQ(stmt.GetValueInt64(0), 0x25e95a45ec3a766f);
+        ASSERT_EQ(stmt.GetValueInt64(1), 0x91aff06094827edf);
+        ASSERT_EQ(stmt.GetValueInt64(2), 0x6397d5a4fbe993a1);
+        ASSERT_EQ(stmt.GetValueInt64(3), 0x866511a9f1a6b466);
+        ASSERT_EQ(stmt.GetValueInt64(4), 0x079155074dec987b);
+        ASSERT_EQ(stmt.GetValueInt64(5), 0x2174ebe7e1019c9c);
+        ASSERT_EQ(stmt.GetValueInt64(6), 0xbdc04fc55e6530c6);
+        ASSERT_EQ(stmt.GetValueInt64(7), 0x73adebb102163624);
+
+        ASSERT_EQ(stmt.GetValueInt(0), 0xffffffffec3a766f);
+        ASSERT_EQ(stmt.GetValueInt(1), 0xffffffff94827edf);
+        ASSERT_EQ(stmt.GetValueInt(2), 0xfffffffffbe993a1);
+        ASSERT_EQ(stmt.GetValueInt(3), 0xfffffffff1a6b466);
+        ASSERT_EQ(stmt.GetValueInt(4), 0xffffffff4dec987b);
+        ASSERT_EQ(stmt.GetValueInt(5), 0xffffffffe1019c9c);
+        ASSERT_EQ(stmt.GetValueInt(6), 0xffffffff5e6530c6);
+        ASSERT_EQ(stmt.GetValueInt(7), 0xffffffff02163624);
+        }
+
+    //Cast hex 
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CAST(0x25E95a45eC3A766f AS INTEGER), CAST(0x91aff06094827eDF AS LONG), CAST(0x6397d5a4FBe993A1 AS TEXT) FROM ts.Sample WHERE ECInstanceId =  0x7fffffffffffffff "));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+        ASSERT_EQ(stmt.GetValueInt64(0), 0x25E95a45eC3A766f);
+        ASSERT_EQ(stmt.GetValueInt64(1), 0x91aff06094827eDF);
+        ASSERT_STREQ(stmt.GetValueText(2), "7176439435815916449");
+        }
+
+    //Cast hex string 
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT CAST('0x25E95a45eC3A766f' AS INTEGER), CAST('0x91aff06094827eDF' AS LONG), CAST('0x6397d5a4FBe993A1' AS TEXT) FROM ts.Sample WHERE ECInstanceId =  0x7fffffffffffffff "));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+
+        ASSERT_EQ(stmt.GetValueInt64(0), 0); 
+        ASSERT_EQ(stmt.GetValueInt64(1), 0);
+        ASSERT_STREQ(stmt.GetValueText(2), "0x6397d5a4FBe993A1");
+        }
+    
+    //BindText
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Sample WHERE ECInstanceId =  ? "));
+        stmt.BindText(1, "0x7fffffffffffffff", IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    //BindInt64
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Sample WHERE ECInstanceId =  ? "));
+        stmt.BindInt64(1, 0x7fffffffffffffff);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+
+    //BindId
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Sample WHERE ECInstanceId =  ? "));
+        stmt.BindId(1, ECInstanceId(0x7fffffffffffffffull));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        }
+
+
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Sample(ECInstanceId, IdHasHex) VALUES (0x7abcdef + 39421 - 0x43, '0x7abcdef + 39421 - 0x43')"));
+    ASSERT_EQ(ECInstanceId(0x7abcdefULL + 39421ULL - 0x43ULL), key.GetInstanceId());
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * FROM ts.Sample WHERE ECInstanceId = 0X7ABCDEF + 39421 - 0X43 AND IdHasHex='0x7abcdef + 39421 - 0x43'"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_TRUE(Utf8String(stmt.GetNativeSql()).EndsWith("WHERE [Sample].[ECInstanceId]=0X7ABCDEF + 39421 - 0X43 AND [Sample].[IdHasHex]='0x7abcdef + 39421 - 0x43'"));
+
+        }
+
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Sample(ECInstanceId, IdHasHex) VALUES (0xabcdefgh, '0xabcdefgh')"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("SELECT * FROM ts.Sample WHERE ECInstanceId > 0xabcdefgh OR IdHasHex = '0xabcdefgh')"));
+    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.Sample WHERE ECInstanceId > 0xabcdefgh OR IdHasHex = '0xabcdefgh')"));
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      05/17
 //+---------------+---------------+---------------+---------------+---------------+------
