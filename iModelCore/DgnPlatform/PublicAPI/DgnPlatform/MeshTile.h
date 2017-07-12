@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#define CLASSIFICATION_WIP
+
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
@@ -838,6 +840,7 @@ protected:
     uint32_t _GetExcessiveRefCountThreshold() const override {return 0x00ffffff;} // A deep tree can trigger this assertion erroneously.
 
 public:
+    bool DoVectorTiles() const { return false; } // { GetModel().GetModelId().GetValue() == 30; }
     DgnModelCR GetModel() const { return *m_model; }
     DRange3dCR GetDgnRange() const { return m_dgnRange; }
     DRange3d GetTileRange() const { DRange3d range = m_dgnRange; m_transformFromDgn.Multiply(range, range); return range; }
@@ -889,7 +892,7 @@ public:
 struct ElementTileNode : TileNode
 {
 private:
-    bool                    m_isLeaf;
+    bool                    m_isLeaf;                         
     mutable bool            m_containsParts;
 
     TileMeshList GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const;
@@ -905,7 +908,7 @@ protected:
     DGNPLATFORM_EXPORT PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool surfacesOnly, ITileGenerationFilterCP filter) const override;
     TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
     void _ClearGeometry() override { m_geometries.clear(); }
-    WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
+    WString _GetFileExtension() const override { return DoVectorTiles() ? L"vctr" : (m_containsParts ? L"cmpt" : L"b3dm"); }
 
 public:
     static ElementTileNodePtr Create(DgnModelCR model, TransformCR transformFromDgn) { return new ElementTileNode(model, transformFromDgn); }
@@ -914,6 +917,7 @@ public:
 
     void AdjustTolerance(double newTolerance);
     void SetIsLeaf(bool isLeaf) { m_isLeaf = isLeaf; }
+
     TileGeometryList const& GetGeometries() const { return m_geometries; }
 
 };
@@ -1017,7 +1021,6 @@ private:
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
     FutureStatus GenerateTilesFromTileTree(IGetTileTreeForPublishingP tileTreePublisher, ITileCollector* collector, double leafTolerance, bool surfacesOnly, DgnModelP model);
-    //FutureGenerateTileResult GenerateTilesFromTileTree(TileP outputTile, TileTree::TileP inputTile, TransformCR transformFromDgn, double leafTolerance, ClipVectorCP clip, DgnModelP model, ITileCollector* collector);
 
 
 public:

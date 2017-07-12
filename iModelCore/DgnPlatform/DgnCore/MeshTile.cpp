@@ -902,48 +902,52 @@ bool TileMeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
-    auto const&       points = visitor.Point();
-    BeAssert(3 == points.size());
+    auto const&         points = visitor.Point();
+    size_t              nTriangles = points.size() - 2;
 
-    if (doVertexCluster)
+    for (size_t iTriangle =0; iTriangle< nTriangles; iTriangle++)
         {
-        DVec3d      cross;
-
-        cross.CrossProductToPoints (points.at(0), points.at(1), points.at(2));
-        if (cross.MagnitudeSquared() < m_areaTolerance)
-            return;
-        }
-
-    TileTriangle            newTriangle(!visitor.GetTwoSided());
-    bvector<DPoint2d>       params = visitor.Param();
-
-    if (includeParams &&
-        !params.empty() &&
-        (m_material || GetMaterial(materialId, dgnDb)))
-        {
-        auto patternMap = m_material->GetPatternMap();
-        bvector<DPoint2d>   computedParams;
-
-        if (patternMap.IsValid())
+        if (doVertexCluster)
             {
-            BeAssert (m_mesh->Points().empty() || !m_mesh->Params().empty());
-            if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor, &m_transformToDgn))
-                params = computedParams;
+            DVec3d      cross;
+
+            cross.CrossProductToPoints (points.at(0), points.at(iTriangle+1), points.at(iTriangle+2));
+            if (cross.MagnitudeSquared() < m_areaTolerance)
+                return;
             }
-        }
-            
-    bool haveNormals = !visitor.Normal().empty();
-    for (size_t i = 0; i < 3; i++)
-        {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), attributes, fillColor);
-        newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
-        }
 
-    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
-    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
+        TileTriangle            newTriangle(!visitor.GetTwoSided());
+        bvector<DPoint2d>       params = visitor.Param();
 
-    AddTriangle(newTriangle);
-    ++m_triangleIndex;
+        if (includeParams &&
+            !params.empty() &&
+            (m_material || GetMaterial(materialId, dgnDb)))
+            {
+            auto patternMap = m_material->GetPatternMap();
+            bvector<DPoint2d>   computedParams;
+
+            if (patternMap.IsValid())
+                {
+                BeAssert (m_mesh->Points().empty() || !m_mesh->Params().empty());
+                if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor, &m_transformToDgn))
+                    params = computedParams;
+                }
+            }
+                
+        bool haveNormals = !visitor.Normal().empty();
+        for (size_t i = 0; i < 3; i++)
+            {
+            size_t index = (0 == i) ? 0 : iTriangle + i; 
+            VertexKey vertex(points.at(index), haveNormals ? &visitor.Normal().at(index) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(index), attributes, fillColor);
+            newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
+            }
+
+        BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
+        BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
+
+        AddTriangle(newTriangle);
+        ++m_triangleIndex;
+        }
      }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1040,7 +1044,12 @@ IFacetOptionsPtr TileGenerator::CreateTileFacetOptions(double chordTolerance)
 
     opts->SetChordTolerance(chordTolerance);
     opts->SetAngleTolerance(s_defaultAngleTolerance);
+#ifdef PRE_TRIANGLE_CONVEX
     opts->SetMaxPerFace(3);
+#else
+    opts->SetMaxPerFace(100);
+    opts->SetConvexFacetsRequired(true);
+#endif
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
     opts->SetNormalsRequired(true);
@@ -2646,8 +2655,11 @@ bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, Simplify
 bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
     {
     PolyfaceHeaderPtr clone = polyface.Clone();
+
+#ifdef PRE_TRIANGLE_CONVEX
     if (!clone->IsTriangulated())
         clone->Triangulate();
+#endif
 
     clone->Transform(Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform()));
 
