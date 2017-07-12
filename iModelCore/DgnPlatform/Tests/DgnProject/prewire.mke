@@ -27,7 +27,7 @@ $(BuildContext)Delivery/UnitTests/DgnDbTestUtils.h : $(DgnPlatformAPISrc)UnitTes
 #------------------------------------------------------------------------------------------
 #   Deliver CompatibilityTestFiles for use by unit tests
 #------------------------------------------------------------------------------------------
-$(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/2-0-1-46/ : $(SrcRoot)CompatibilityTestFiles/2-0-1-46/
+$(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/2-0-1-53/ : $(SrcRoot)CompatibilityTestFiles/2-0-1-53/
     $(LinkFirstDepToFirstTargetAsDirectory)
 
 #   -------------------------------------------------------------------------------------------
