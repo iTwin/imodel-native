@@ -1358,15 +1358,6 @@ TEST_F(DbMappingTestFixture, ECSqlHexSupport)
         ASSERT_EQ(stmt.GetValueInt64(5), 0x2174ebe7e1019c9c);
         ASSERT_EQ(stmt.GetValueInt64(6), 0xbdc04fc55e6530c6);
         ASSERT_EQ(stmt.GetValueInt64(7), 0x73adebb102163624);
-
-        ASSERT_EQ(stmt.GetValueInt(0), 0xffffffffec3a766f);
-        ASSERT_EQ(stmt.GetValueInt(1), 0xffffffff94827edf);
-        ASSERT_EQ(stmt.GetValueInt(2), 0xfffffffffbe993a1);
-        ASSERT_EQ(stmt.GetValueInt(3), 0xfffffffff1a6b466);
-        ASSERT_EQ(stmt.GetValueInt(4), 0xffffffff4dec987b);
-        ASSERT_EQ(stmt.GetValueInt(5), 0xffffffffe1019c9c);
-        ASSERT_EQ(stmt.GetValueInt(6), 0xffffffff5e6530c6);
-        ASSERT_EQ(stmt.GetValueInt(7), 0xffffffff02163624);
         }
 
     //Cast hex 
@@ -1421,7 +1412,6 @@ TEST_F(DbMappingTestFixture, ECSqlHexSupport)
         }
 
 
-
     ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Sample(ECInstanceId, IdHasHex) VALUES (0x7abcdef + 39421 - 0x43, '0x7abcdef + 39421 - 0x43')"));
     ASSERT_EQ(ECInstanceId(0x7abcdefULL + 39421ULL - 0x43ULL), key.GetInstanceId());
     if (true)
@@ -1433,9 +1423,12 @@ TEST_F(DbMappingTestFixture, ECSqlHexSupport)
 
         }
 
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts.Sample(ECInstanceId, IdHasHex) VALUES (0xabcdefgh, '0xabcdefgh')"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("SELECT * FROM ts.Sample WHERE ECInstanceId > 0xabcdefgh OR IdHasHex = '0xabcdefgh')"));
-    ASSERT_EQ(BE_SQLITE_ERROR, GetHelper().ExecuteNonSelectECSql("DELETE FROM ts.Sample WHERE ECInstanceId > 0xabcdefgh OR IdHasHex = '0xabcdefgh')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("INSERT INTO ts.Sample(ECInstanceId, IdHasHex) VALUES (0xabcdefgh, '0xabcdefgh')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT * FROM ts.Sample WHERE ECInstanceId > 0xabcdefgh OR IdHasHex = '0xabcdefgh')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("DELETE FROM ts.Sample WHERE ECInstanceId > 0xabcdefgh OR IdHasHex = '0xabcdefgh')"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, GetHelper().PrepareECSql("SELECT 0xfffffffffffffffff FROM ts.Sample")) << " BE_SQLITE_ERROR hex literal too big: 0xfffffffffffffffff";
+    ASSERT_EQ(ECSqlStatus::Success, GetHelper().PrepareECSql("SELECT 0x FROM ts.Sample")) << "This should fail but currently passes 0x translated into 0";
+
     }
 
 //---------------------------------------------------------------------------------------
