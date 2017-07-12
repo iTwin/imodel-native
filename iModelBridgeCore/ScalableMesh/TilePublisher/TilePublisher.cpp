@@ -118,10 +118,6 @@ void BatchIdMap::ToJson(Json::Value& value) const
 TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS)
     : m_batchIds(TileSource::None), m_centroid(tile.GetTileCenter()), m_tile(&tile), m_context(nullptr)
     {
-//#define CESIUM_RTC_ZERO
-#ifdef CESIUM_RTC_ZERO
-    m_centroid = DPoint3d::FromXYZ(0, 0, 0);
-#endif
     m_meshes = m_tile->GenerateMeshes();
     if (!m_meshes.empty())
         {
@@ -137,10 +133,11 @@ TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr source
             if (destinationGCS->XYZFromLatLong(m_centroid, outLatLong) != SUCCESS)
                 assert(false);
             }
+
         // Convert points to follow Y-up convention and translate to zero (avoids jittering for distant datasets)
         Transform transform = Transform::FromRowValues(1, 0, 0, -m_centroid.x,
-            0, 0, 1, -m_centroid.z,
-            0, -1, 0, m_centroid.y);
+                                                       0, 0, 1, -m_centroid.z,
+                                                       0, -1, 0, m_centroid.y);
         m_meshes[0]->ApplyTransform(transform);
         }
     }
@@ -151,11 +148,6 @@ TilePublisher::TilePublisher(TileNodeCR tile, GeoCoordinates::BaseGCSCPtr source
 TilePublisher::TilePublisher(TileNodeCR tile, PublisherContext& context)
     : m_batchIds(tile.GetSource()), m_centroid(tile.GetTileCenter()), m_tile(&tile), m_context(&context), m_outputFile(NULL)
     {
-#define CESIUM_RTC_ZERO
-#ifdef CESIUM_RTC_ZERO
-    m_centroid = DPoint3d::FromXYZ(0,0,0);
-#endif
-
     m_meshes = m_tile->GenerateMeshes(/*context->GetCache(), context->GetDgnDb(),*/ TileGeometry::NormalMode::Always, false, context.WantPolylines());
     }
 

@@ -743,7 +743,7 @@ class SMGroupingStrategy
         virtual SMNodeGroupPtr      _GetNextGroup               (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_CurrentGroup) = 0;
         virtual void                _ApplyPostProcess           (const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_pGroup) = 0;
         virtual void                _ApplyPostChildNodeProcess  (SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroupPtr pi_pParentGroup, SMNodeGroupPtr& pi_pChildGroup) = 0;
-        virtual size_t              _AddNodeToGroup             (SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_Group) = 0;
+        virtual size_t              _AddNodeToGroup             (SMIndexNodeHeader<EXTENT> pi_NodeHeader, SMNodeGroupPtr pi_Group) = 0;
         virtual void                _AddGroup                   (SMNodeGroup* pi_pNodeGroup) = 0;
         virtual void                _SaveMasterHeader           (const WString pi_pOutputDirPath) const = 0;
         virtual void                _SaveNodeGroup              (SMNodeGroupPtr pi_Group) const = 0;
@@ -842,7 +842,7 @@ class SMBentleyGroupingStrategy : public SMGroupingStrategy<EXTENT>
 
         virtual void                _Apply(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_Group);
         virtual void                _AddGroup(SMNodeGroup* pi_pNodeGroup);
-        virtual size_t              _AddNodeToGroup(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_Group);
+        virtual size_t              _AddNodeToGroup(SMIndexNodeHeader<EXTENT> pi_NodeHeader, SMNodeGroupPtr pi_Group);
         virtual void                _ApplyPostProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_pGroup);
         virtual void                _ApplyPostChildNodeProcess(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroupPtr pi_pParentGroup, SMNodeGroupPtr& pi_pChildGroup);
         virtual SMNodeGroupPtr    _GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_CurrentGroup);
@@ -872,7 +872,7 @@ void SMBentleyGroupingStrategy<EXTENT>::_AddGroup(SMNodeGroup* pi_pNodeGroup)
     }
 
 template<class EXTENT>
-size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_Group)
+size_t SMBentleyGroupingStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT> pi_NodeHeader, SMNodeGroupPtr pi_Group)
     {
     // Fetch node header data
     size_t headerSize = 0;
@@ -983,7 +983,7 @@ class SMCesium3DTileStrategy : public SMGroupingStrategy<EXTENT>
     protected:
         virtual void                _Apply(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_Group);
         virtual void                _AddGroup(SMNodeGroup* pi_pNodeGroup);
-        virtual size_t              _AddNodeToGroup(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_Group);
+        virtual size_t              _AddNodeToGroup(SMIndexNodeHeader<EXTENT> pi_NodeHeader, SMNodeGroupPtr pi_Group);
         virtual void                _ApplyPostProcess(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_pGroup);
         virtual void                _ApplyPostChildNodeProcess(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroupPtr pi_pParentGroup, SMNodeGroupPtr& pi_pChildGroup);
         virtual SMNodeGroupPtr      _GetNextGroup(const SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_CurrentGroup);
@@ -1006,7 +1006,7 @@ void SMCesium3DTileStrategy<EXTENT>::_AddGroup(SMNodeGroup* pi_pNodeGroup)
     }
 
 template<class EXTENT>
-size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_Group)
+size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT> pi_NodeHeader, SMNodeGroupPtr pi_Group)
     {
     if (m_sourceGCS != nullptr && m_sourceGCS != m_destinationGCS)
         {
@@ -1038,7 +1038,7 @@ size_t SMCesium3DTileStrategy<EXTENT>::_AddNodeToGroup(SMIndexNodeHeader<EXTENT>
             high = newExtent.high;
             };
         reprojectExtentHelper(pi_NodeHeader.m_nodeExtent.low, pi_NodeHeader.m_nodeExtent.high);
-        if (pi_NodeHeader.m_nodeCount > 0 && pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
+        if (/*pi_NodeHeader.m_nodeCount > 0 &&*/ pi_NodeHeader.m_contentExtentDefined && !pi_NodeHeader.m_contentExtent.IsNull())
             {
             reprojectExtentHelper(pi_NodeHeader.m_contentExtent.low, pi_NodeHeader.m_contentExtent.high);
             }
