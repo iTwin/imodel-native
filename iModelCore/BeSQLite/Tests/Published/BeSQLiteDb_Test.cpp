@@ -162,6 +162,9 @@ TEST_F(BeSQLiteDbTests, TwoConnections)
 
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
 struct TestBusyRetry : BusyRetry
     {
     int m_maxCount;
@@ -180,7 +183,9 @@ struct TestBusyRetry : BusyRetry
         }
     };
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   12/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(BeSQLiteDbTests, Concurrency_UsingSavepoints)
     {
     SetupDb(L"one.db");
