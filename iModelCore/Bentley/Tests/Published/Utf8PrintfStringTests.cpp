@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/Utf8PrintfStringTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -11,21 +11,31 @@
 
 class Utf8PrintfStringTests : public ::testing::Test {};
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vincas.Razma                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Utf8PrintfStringTests, Ctor_EmptyStringPassed_Empty)
     {
     EXPECT_EQ("", Utf8PrintfString(""));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vincas.Razma                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Utf8PrintfStringTests, Ctor_FormatAndArgumentPassed_FormattedString)
     {
     EXPECT_EQ("Foo", Utf8PrintfString("%s", "Foo"));
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Vincas.Razma                      10/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(Utf8PrintfStringTests, Ctor_FormatAndMultipleArgumentsPassed_FormattedString)
     {
     EXPECT_EQ("Foo Boo", Utf8PrintfString("%s %s", "Foo", "Boo"));
     EXPECT_EQ("42 X", Utf8PrintfString("%d %c", 42, 'X'));
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Farhad.Kabir                        12/16
 //---------------------------------------------------------------------------------------

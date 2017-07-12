@@ -40,7 +40,9 @@ class BentleyLoggingTests :public testing::Test
             }
     };
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Farhad.Kabir                        12/16
+//---------------------------------------------------------------------------------------
 TEST_F(BentleyLoggingTests, LogggerCheck)
     {
     BeFileName logfile;

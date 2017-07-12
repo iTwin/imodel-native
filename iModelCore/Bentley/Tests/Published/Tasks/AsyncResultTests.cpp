@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/Tasks/AsyncResultTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -10,6 +10,9 @@
 
 #include <Bentley/Tasks/AsyncResult.h>
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, Ctor_ErrorTypeOnly_IsSuccessFalse)
     {
     AsyncResult<void, Utf8String> result;
@@ -17,6 +20,9 @@ TEST_F (AsyncResultTests, Ctor_ErrorTypeOnly_IsSuccessFalse)
     EXPECT_EQ ("", result.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, Ctor_ValueAndErrorTypes_IsSuccessFalse)
     {
     AsyncResult<Utf8String, Utf8String> result;
@@ -25,6 +31,9 @@ TEST_F (AsyncResultTests, Ctor_ValueAndErrorTypes_IsSuccessFalse)
     EXPECT_EQ ("", result.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, Error_VoidValueAndParameterAsyncResultWithDifferentValue_SameErrorPassed)
     {
     auto result1 = AsyncResult<Utf8String, Utf8String>::Error ("Error");
@@ -34,6 +43,9 @@ TEST_F (AsyncResultTests, Error_VoidValueAndParameterAsyncResultWithDifferentVal
     EXPECT_EQ (&result1.GetError (), &result2.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, Error_ParameterAsyncResultWithDifferentValue_SameErrorPassed)
     {
     auto result1 = AsyncResult<int, Utf8String>::Error ("Error");
@@ -43,6 +55,9 @@ TEST_F (AsyncResultTests, Error_ParameterAsyncResultWithDifferentValue_SameError
     EXPECT_EQ (&result1.GetError (), &result2.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, Error_ParameterAsyncResultWithVoidValue_SameErrorPassed)
     {
     auto result1 = AsyncResult<void, Utf8String>::Error ("Error");
@@ -52,48 +67,72 @@ TEST_F (AsyncResultTests, Error_ParameterAsyncResultWithVoidValue_SameErrorPasse
     EXPECT_EQ (&result1.GetError (), &result2.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, IsSuccess_ConstructedWithSuccess_True)
     {
     auto result = AsyncResult<int, Utf8String>::Success (0);
     EXPECT_TRUE (result.IsSuccess ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, IsSuccess_ConstructedWithError_False)
     {
     auto result = AsyncResult<int, Utf8String>::Error ("Foo");
     EXPECT_FALSE (result.IsSuccess ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, GetValue_ConstructedWithSuccess_ReturnsSuccessValue)
     {
     auto result = AsyncResult<int, Utf8String>::Success (42);
     EXPECT_EQ (42, result.GetValue ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, GetValue_ConstructedWithError_ReturnsDefault)
     {
     auto result = AsyncResult<Utf8String, Utf8String>::Error ("Error");
     EXPECT_EQ ("", result.GetValue ());
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, GetValue_ConstructedWithErrorWithValue_ReturnsValue)
     {
     auto result = AsyncResult<Utf8String, Utf8String>::Error ("Error", "ErrorResultValue");
     EXPECT_EQ ("ErrorResultValue", result.GetValue ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, GetError_ConstructedWithSuccess_ReturnsDefault)
     {
     auto result = AsyncResult<int, Utf8String>::Success (42);
     EXPECT_EQ ("", result.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, GetError_ConstructedWithError_ReturnsError)
     {
     auto result = AsyncResult<Utf8String, Utf8String>::Error ("FatalError");
     EXPECT_EQ ("FatalError", result.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, SetSuccess_ConstructedWithError_MakesSuccessResult)
     {
     auto result = AsyncResult<int, Utf8String>::Error ("Foo");
@@ -102,7 +141,10 @@ TEST_F (AsyncResultTests, SetSuccess_ConstructedWithError_MakesSuccessResult)
     EXPECT_EQ (42, result.GetValue ());
     EXPECT_EQ ("", result.GetError ());
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, SetError_ConstructedWithSuccess_MakesErrorResult)
     {
     auto result = AsyncResult<Utf8String, Utf8String>::Success ("Success");
@@ -112,30 +154,45 @@ TEST_F (AsyncResultTests, SetError_ConstructedWithSuccess_MakesErrorResult)
     EXPECT_EQ ("Boo", result.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, VoidValueIsSuccess_ConstructedWithSuccess_True)
     {
     auto result = AsyncResult<void, Utf8String>::Success ();
     EXPECT_TRUE (result.IsSuccess ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, VoidValueIsSuccess_ConstructedWithError_False)
     {
     auto result = AsyncResult<void, Utf8String>::Error ("Foo");
     EXPECT_FALSE (result.IsSuccess ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, VoidValueGetError_ConstructedWithSuccess_ReturnsDefault)
     {
     auto result = AsyncResult<void, Utf8String>::Success ();
     EXPECT_EQ ("", result.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, VoidValueGetError_ConstructedWithError_ReturnsError)
     {
     auto result = AsyncResult<Utf8String, Utf8String>::Error ("FatalError");
     EXPECT_EQ ("FatalError", result.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, VoidValueSetSuccess_ConstructedWithError_MakesSuccessResult)
     {
     auto result = AsyncResult<void, Utf8String>::Error ("Foo");
@@ -144,6 +201,9 @@ TEST_F (AsyncResultTests, VoidValueSetSuccess_ConstructedWithError_MakesSuccessR
     EXPECT_EQ ("", result.GetError ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncResultTests, VoidValueSetError_ConstructedWithSuccess_MakesErrorResult)
     {
     auto result = AsyncResult<void, Utf8String>::Success ();
