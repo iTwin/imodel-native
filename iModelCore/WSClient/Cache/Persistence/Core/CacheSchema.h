@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/CacheSchema.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -15,7 +15,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 //--------------------------------------------------------------------------------------+
 
 #define SCHEMA_CacheSchema_Major                                    2
-#define SCHEMA_CacheSchema_Minor                                    1
+#define SCHEMA_CacheSchema_Minor                                    2
 
 #define SCHEMA_CacheSchema                                          "WSCache"
 
@@ -37,12 +37,15 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_CachedResponseInfo_PROPERTY_Name                      "Name"
 #define CLASS_CachedResponseInfo_PROPERTY_AccessDate                "AccessDate"
 #define CLASS_CachedResponseInfo_PROPERTY_IsCompleted               "IsCompleted"
+#define CLASS_CachedResponseInfo_PROPERTY_Parent                    "Parent"
+#define CLASS_CachedResponseInfo_PROPERTY_Holder                    "Holder"
 
 #define CLASS_CachedResponsePageInfo                                "CachedResponsePageInfo"
 #define CLASS_CachedResponsePageInfo_PROPERTY_CacheDate             "CacheDate"
 #define CLASS_CachedResponsePageInfo_PROPERTY_CacheTag              "CacheTag"
 #define CLASS_CachedResponsePageInfo_PROPERTY_Index                 "Index"
 #define CLASS_CachedResponsePageInfo_PROPERTY_IsPartial             "IsPartial"
+#define CLASS_CachedResponsePageInfo_PROPERTY_Response              "Response"
 
 #define CLASS_CachedRelationshipInfo                                "CachedRelationshipInfo"
 #define CLASS_CachedRelationshipInfo_PROPERTY_RemoteId              "RelRemoteId"
@@ -65,6 +68,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_CachedFileInfo_PROPERTY_CacheDate                     "CacheDate"
 #define CLASS_CachedFileInfo_PROPERTY_CacheTag                      "CacheTag"
 #define CLASS_CachedFileInfo_PROPERTY_UpdateDate                    "UpdateDate"
+#define CLASS_CachedFileInfo_PROPERTY_ObjectInfo                    "ObjectInfo"
 
 #define CLASS_ChangeInfo                                            "ChangeInfo"
 #define CLASS_ChangeInfo_PROPERTY_ChangeStatus                      "ChangeStatus"
@@ -74,7 +78,7 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define CLASS_ChangeInfo_PROPERTY_IsLocal                           "IsLocal"
 
 #define CLASS_InstanceBackup                                        "InstanceBackup"
-#define CLASS_InstanceBackup_PROPERTY_InfoId                        "InfoId"
+#define CLASS_InstanceBackup_PROPERTY_ObjectInfo                    "ObjectInfo"
 #define CLASS_InstanceBackup_PROPERTY_Instance                      "Instance"
 
 #define CLASS_RootToNode                                            "RootToNode"
@@ -113,6 +117,8 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 #define ECSql_ObjectInfoToCachedFileInfo                            "[WSC].[" CLASS_ObjectInfoToCachedFileInfo "]"
 #define ECSql_CachedFileInfoToFileInfo                              "[WSC].[" CLASS_CachedFileInfoToFileInfo "]"
 #define ECSql_ObjectInfoToCachedFileInfoOwnership                   "[WSC].[" CLASS_CachedFileInfoToFileInfoOwnership "]"
+
+#define NavPropId                                                   "id"
 
 //! Values for property CLASS_CachedObjectInfo_PROPERTY_InstanceState
 enum class CachedInstanceState
