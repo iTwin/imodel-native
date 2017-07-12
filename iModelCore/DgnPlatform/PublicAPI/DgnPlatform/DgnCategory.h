@@ -305,6 +305,7 @@ public:
 
     //! Looks up the DgnCategoryId of a category by code.
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnDbR db, DgnCodeCR code);
+
     //! Gets a DgnCategory by ID. 
     //! @note It is better to use DrawingCategory::Get or SpatialCategory::Get if the type of category is known
     static DgnCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<DgnCategory>(categoryId);}

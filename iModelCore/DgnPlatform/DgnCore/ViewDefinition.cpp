@@ -354,14 +354,6 @@ ViewControllerPtr DrawingViewDefinition::_SupplyController() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-double DrawingViewDefinition::GetAspectRatioSkew() const
-    {
-    return GetDetail(json_aspectSkew()).asDouble(1.0);
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition2d::_RemapIds(DgnImportContext& importer)
@@ -1234,7 +1226,7 @@ ViewportStatus ViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     viewDiagRoot.SumOf(xDir, xDir.DotProduct(frustumX), yDir, yDir.DotProduct(frustumY));  // vectors on the back plane
     viewDiagRoot.SumOf(viewDiagRoot, zDir, zSize);       // add in z vector perpendicular to x,y
 
-    // use center of frustum and view diagonal for origin. Original frustum may not have been orgthogonal
+    // use center of frustum and view diagonal for origin. Original frustum may not have been orthogonal
     viewOrg.SumOf(frustum.GetCenter(), viewDiagRoot, -0.5);
 
     // delta is in view coordinates
