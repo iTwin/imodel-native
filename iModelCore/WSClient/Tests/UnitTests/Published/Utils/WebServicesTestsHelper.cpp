@@ -326,7 +326,7 @@ ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
     EXPECT_TRUE(schema.IsValid());
 
     if (schema.IsNull())
-        throw std::exception("Failed to parse schema");
+        throw std::exception(); // Failed to parse schema
 
     return schema;
     }
