@@ -3183,21 +3183,18 @@ TEST_F(DataSourceCacheTests, CacheResponse_RelationshipWithProperties_CachesRela
     EXPECT_EQ("RelationshipValue", relationshipJson["TestProperty"].asString());
     }
 
-TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingCardinality_CachesBothAsECDbAllowsThat)
+TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsOneToOneRelationshipsViolatingCardinality_Error)
     {
     auto cache = GetTestCache();
 
     StubInstances instances;
     auto instance = instances.Add({"TestSchema.TestClassA", "A"});
     instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "B"});
-    // Second related instance is allowed unless ForeignKeyConstraint CA is specified
-    instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "C"});
+    instance.AddRelated({"TestSchema.TestOneToOneRelationshipClass", ""}, {"TestSchema.TestClassB", "C"}); // Second related instance should not be allowed
 
-    EXPECT_EQ(CacheStatus::OK, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
-
-    auto relClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestOneToOneRelationshipClass");
-    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "B"}));
-    EXPECT_TRUE(VerifyHasRelationship(cache, relClass, {"TestSchema.TestClassA", "A"}, {"TestSchema.TestClassB", "C"}));
+    BeTest::SetFailOnAssert(false);
+    EXPECT_EQ(CacheStatus::Error, cache->CacheResponse(StubCachedResponseKey(*cache), instances.ToWSObjectsResponse()));
+    BeTest::SetFailOnAssert(true);
     }
 
 TEST_F(DataSourceCacheTests, CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors)
