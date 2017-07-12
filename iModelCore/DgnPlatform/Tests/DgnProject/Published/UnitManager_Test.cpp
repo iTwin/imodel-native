@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/Published/UnitManager_Test.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatform/DgnPlatformApi.h>
@@ -26,6 +26,10 @@ struct UnitManagerTest : public ::testing::Test
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 // UnitDefinition
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    KevinNyman  03/09
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UnitManagerTest, GetStandardUnit)
     {
     UnitDefinition def;

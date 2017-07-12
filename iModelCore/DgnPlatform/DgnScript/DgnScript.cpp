@@ -397,16 +397,13 @@ void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
 //---------------------------------------------------------------------------------------
 void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
     {
-    if (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId)  // To make this a little more foolproof, don't terminate the JS environment on the home thread.
-        return;
-
     if (nullptr == s_jsenv)
         {
         BeAssert(false && "Call ScriptAdmin::TerminateOnThread only once on a given thread");
         return;
         }
 
-    if (true)
+    if (BeThreadUtilities::GetCurrentThreadId() != s_homeThreadId)
         {
         BeSystemMutexHolder _thread_safe_;
         --s_nonHomeThreadCount;
