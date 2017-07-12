@@ -250,7 +250,7 @@ static T IdFromJson(JsonValueCR json)
 template<typename T>
 static void IdToJson(JsonValueR outValue, T id)
     {
-    outValue = id.ToString(typename T::UseHex::Yes);
+    outValue = id.ToString(T::UseHex::Yes);
     }
 
 //---------------------------------------------------------------------------------------
