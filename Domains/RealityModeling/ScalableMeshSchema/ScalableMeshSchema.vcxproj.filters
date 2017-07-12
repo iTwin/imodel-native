@@ -53,13 +53,13 @@
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\PublicApi\ScalableMeshSchema\ScalableMeshDomain.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ScalableMeshDisplayCacheManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="ScalableMeshProgressiveDisplay.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshDomain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicApi/ScalableMeshSchema/ScalableMeshSchemaApi.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -21,11 +21,12 @@
 // ECSchema macros
 //-----------------------------------------------------------------------------------------
 #define BENTLEY_SCALABLEMESH_SCHEMA_NAME                      "ScalableMesh"
-#define BENTLEY_SCALABLEMESH_SCHEMA_PATH                      L"ECSchemas/Domain/ScalableMesh.01.00.ecschema.xml"
+#define BENTLEY_SCALABLEMESH_SCHEMA_PATH                      L"ECSchemas/Domain/ScalableMesh.ecschema.xml"
 #define SCALABLEMESH_SCHEMA(className)                        BENTLEY_SCALABLEMESH_SCHEMA_NAME "." className
 
 //-----------------------------------------------------------------------------------------
 // Include from PublicApi
 //-----------------------------------------------------------------------------------------
 #include <ScalableMeshSchema\ScalableMeshDomain.h>
+#include <ScalableMeshSchema\ScalableMeshHandler.h>
 

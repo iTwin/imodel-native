@@ -22,7 +22,7 @@
         <SubPart PartName="DgnPlatformDll"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <SubPart PartName="ScalableMesh"    PartFile="ScalableMesh"          Repository="ScalableMesh" />
         <Bindings>
-            <Assemblies ProductDirectoryName="RealityAssemblies">Delivery/$(shlibprefix)ScalableMeshSchema$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)ScalableMeshSchema$(shlibext)</Assemblies>
             <Libs>Delivery/$(libprefix)ScalableMeshSchema$(libext)</Libs>
         </Bindings>
     </Part>  
@@ -103,7 +103,7 @@
         <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         <Bindings>
 	    <PublicAPI Domain="ThreeMxReader"/>
-          <Assemblies ProductDirectoryName="ThreeMxAssemblies">Delivery/ThreeMxReaderLegacy.dll</Assemblies>
+          <Assemblies>Delivery/ThreeMxReaderLegacy.dll</Assemblies>
           <Libs>delivery/$(libprefix)ThreeMxReaderLegacy$(libext)</Libs>
         </Bindings>
       </Part>

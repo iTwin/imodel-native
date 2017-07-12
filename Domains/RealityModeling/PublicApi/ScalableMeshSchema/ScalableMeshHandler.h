@@ -44,12 +44,12 @@ public :
 
 public : 
         
-    ScalableMeshDrawingInfo(ViewContextP viewContext)        
+    ScalableMeshDrawingInfo(BentleyB0200::Dgn::ViewContextP viewContext)        
         {
-        m_drawPurpose = viewContext->GetDrawPurpose();           
+        //m_drawPurpose = viewContext->GetDrawPurpose();           
         const DMatrix4d localToView(viewContext->GetViewport()->GetWorldToViewMap()->M0);     
         memcpy(&m_localToViewTransformation, &localToView, sizeof(DMatrix4d));                
-        m_range = viewContext->GetViewport()->GetViewCorners();        
+        //m_range = viewContext->GetViewport()->GetViewCorners();        
         }
 
     ~ScalableMeshDrawingInfo()
@@ -80,9 +80,11 @@ public :
 //=======================================================================================
 // @bsiclass                                                  
 //=======================================================================================
-struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
+struct ScalableMeshModel : IMeshSpatialModel //, Dgn::Render::IGenerateMeshTiles
     {
         DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
+
+        BE_JSON_NAME(scalablemesh)
 
     private:
 
@@ -119,15 +121,16 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
 
         Properties      m_properties;
 
-        virtual void _WriteJsonProperties(Json::Value&) const override;
-        virtual void _ReadJsonProperties(Json::Value const&) override;
-     
+        virtual void _OnSaveJsonProperties() override;
+        virtual void _OnLoadedJsonProperties() override;
+             
         virtual bool _IsMultiResolution() const { return true; };
-        virtual BentleyApi::Dgn::AxisAlignedBox3dCR _GetRange() const override;
+        virtual BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const override;        
+
         virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
         virtual BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
 
-        virtual BentleyStatus _ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) override;
+        virtual BentleyStatus _ReloadClipMask(const BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) override;        
         virtual BentleyStatus _ReloadAllClipMasks() override;
         virtual BentleyStatus _StartClipMaskBulkInsert() override;
         virtual BentleyStatus _StopClipMaskBulkInsert() override;
@@ -137,10 +140,11 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         
         SCALABLEMESH_SCHEMA_EXPORT void _AddTerrainGraphics(TerrainContextR context) const override;
-
-        virtual Render::TileGenerator::Status _GenerateMeshTiles(Render::TileNodePtr& rootTile, TransformCR transformDbToTile) override;
-
+                        
+        
     public:
+
+        //virtual TileGeneratorStatus _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) override;
 
         //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
         ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params);
@@ -185,6 +189,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler:
     public : 
                      
         //NEEDS_WORK_SM : Currently for testing only
-        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename);
+        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement);
     };
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE

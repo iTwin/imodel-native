@@ -11,6 +11,7 @@
 #include <DgnPlatform/DgnDomain.h>
 #include <ScalableMeshSchema\ExportMacros.h>
 #include <ScalableMeshSchema\ScalableMeshSchemaCommon.h>
+#include <ScalableMeshSchema\ScalableMeshSchemaApi.h>
 
 BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
 
@@ -35,9 +36,13 @@ struct ScalableMeshDomain : Dgn::DgnDomain
 {
     DOMAIN_DECLARE_MEMBERS(ScalableMeshDomain, SCALABLEMESH_SCHEMA_EXPORT)
 
+private: 
+
+    WCharCP _GetSchemaRelativePath() const override { return BENTLEY_SCALABLEMESH_SCHEMA_PATH; }
+
 protected:
     virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
-
+    
 public:
 
     ScalableMeshDomain();
