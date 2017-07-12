@@ -319,6 +319,29 @@ TEST_F (CategoryTests, IterateCategories)
     ASSERT_TRUE(foundCategory3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (CategoryTests, ChangeElementCategory)
+    {
+    SetupSeedProject();
+    DgnCategoryId spatialCategoryId1 = DgnDbTestUtils::InsertSpatialCategory(*m_db, "MySpatialCategory1");
+    DgnCategoryId spatialCategoryId2 = DgnDbTestUtils::InsertSpatialCategory(*m_db, "MySpatialCategory2");
+    DgnCategoryId drawingCategoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "MyDrawingCategory");
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "MyPhysicalModel");
+
+    GenericPhysicalObjectPtr element = GenericPhysicalObject::Create(*physicalModel, spatialCategoryId1);
+    ASSERT_TRUE(element.IsValid());
+    ASSERT_TRUE(element->Insert().IsValid());
+    ASSERT_EQ(spatialCategoryId1.GetValue(), element->GetCategoryId().GetValue());
+
+    ASSERT_EQ(DgnDbStatus::Success, element->SetCategoryId(spatialCategoryId2));
+    ASSERT_EQ(spatialCategoryId2.GetValue(), element->GetCategoryId().GetValue());
+
+    ASSERT_NE(DgnDbStatus::Success, element->SetCategoryId(drawingCategoryId));
+    ASSERT_EQ(spatialCategoryId2.GetValue(), element->GetCategoryId().GetValue());
+    }
+
 //=======================================================================================
 //! Test for inserting SubCategories and checking their properties.
 // @bsiclass                                                     Maha Nasir      07/15

@@ -11,9 +11,9 @@
 //=======================================================================================
 
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/Render.h>
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE

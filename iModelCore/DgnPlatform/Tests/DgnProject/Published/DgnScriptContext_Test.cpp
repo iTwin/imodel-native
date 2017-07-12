@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #ifndef BENTLEYCONFIG_NO_JAVASCRIPT
 #include "DgnHandlersTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnScript.h>

@@ -6,7 +6,7 @@
 #include "DgnHandlersTests.h"
 #include "../TestFixture/DgnDbTestFixtures.h"
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   10/15
