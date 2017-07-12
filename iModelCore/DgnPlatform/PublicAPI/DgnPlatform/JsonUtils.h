@@ -250,7 +250,11 @@ static T IdFromJson(JsonValueCR json)
 template<typename T>
 static void IdToJson(JsonValueR outValue, T id)
     {
+#ifdef __APPLE__
+    outValue = id.ToString(T::UseHex::Yes);
+#else
     outValue = id.ToString(typename T::UseHex::Yes);
+#endif
     }
 
 //---------------------------------------------------------------------------------------
