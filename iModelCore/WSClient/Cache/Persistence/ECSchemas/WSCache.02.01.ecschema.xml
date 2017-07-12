@@ -78,7 +78,6 @@
                 </DateTimeInfo>
             </ECCustomAttributes>
         </ECProperty>
-        <ECNavigationProperty propertyName="ObjectInfo" relationshipName="ObjectInfoToCachedFileInfo" direction="Backward" />
     </ECEntityClass>
 
     <ECEntityClass typeName="CachedObjectInfo">
@@ -177,8 +176,6 @@
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="IsCompleted" typeName="boolean"/>
-        <ECNavigationProperty propertyName="Parent" relationshipName="ResponseToParent" direction="Forward"/>
-        <ECNavigationProperty propertyName="Holder" relationshipName="ResponseToHolder" direction="Forward"/>
     </ECEntityClass>
 
     <ECEntityClass typeName="CachedResponsePageInfo">
@@ -193,7 +190,6 @@
         <ECProperty propertyName="CacheTag" typeName="string"/>
         <ECProperty propertyName="Index" typeName="long"/>
         <ECProperty propertyName="IsPartial" typeName="bool" />
-        <ECNavigationProperty propertyName="Response" relationshipName="ResponseToResponsePage" direction="Backward"/>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="RootToNode" strength="holding" modifier="Sealed">
@@ -312,7 +308,6 @@
 
     <ECEntityClass typeName="ExtendedData">
         <ECProperty propertyName="Content" typeName="string"/>
-        <ECNavigationProperty propertyName="Node" relationshipName="NodeToExtendedData" direction="Backward"/>
     </ECEntityClass>
 
     <ECRelationshipClass typeName="NodeToExtendedData" strength="embedding" modifier="Sealed">
