@@ -42,6 +42,8 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S FROM ecsql.PSA"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S.I FROM ecsql.PSA S"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM ecsql.PSA S"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT I, 0x332dff ffff FROM ecsql.PSA S WHERE I=0x2abdef+0x233+22"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, 0x332dffz kkk FROM ecsql.PSA S WHERE I > 0x2abdefz"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S FROM (SELECT S FROM ecsql.PSA) S"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S.S FROM (SELECT S FROM ecsql.PSA) S"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT I FROM (SELECT S, I FROM ecsql.PSA) S"));
@@ -1359,6 +1361,8 @@ TEST_F(ECSqlInsertPrepareTests, DateTime)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlInsertPrepareTests, Into)
     {
+
+
     // Inserting into classes which map to tables with ECClassId columns
     ASSERT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.THBase (S) VALUES ('hello')"));
     //inserting into classes with base classes
@@ -1399,6 +1403,12 @@ TEST_F(ECSqlInsertPrepareTests, Into)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.BlaBla VALUES (123)"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO blabla.PSA VALUES (123)"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.PSA (Garbage, I, L) VALUES ('bla', 123, 100000000)")) << "One of the properties does not exist in the target class.";
+
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.Sub1 (I) VALUES (0xabcdef)"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("INSERT INTO ecsql.Sub1 (I) VALUES (0xabcdef + 0x34d - 343)"));
+
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("INSERT INTO ecsql.Sub1 (I) VALUES (0xabcdefgih)"));
+
     }
 
 //---------------------------------------------------------------------------------------
@@ -1694,6 +1704,11 @@ TEST_F(ECSqlUpdatePrepareTests, Misc)
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA WHERE I = 123"));
+
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET L = 0xabcdef"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET L = 0xabcdef + 0x3434fff+343"));
+
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("UPDATE ONLY ecsql.PSA SET L = 0xabcdefgh"));
 
     // Typical updates
     ASSERT_EQ(ECSqlStatus::Success, Prepare("UPDATE ONLY ecsql.PSA SET I = 124, L = 100000000000, D = -1.2345678, S = 'hello, world'"));
@@ -2154,6 +2169,9 @@ TEST_F(ECSqlDeletePrepareTests, Misc)
     // Class aliases
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.P t WHERE t.D > 0.0")) << "In SQLite they are not allowed, but ECSQL allows them. So test that ECDb properly ommits them during preparation";
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.P t WHERE t.S = ?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql.P t WHERE t.L = 0xabcdef"));
+    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("DELETE FROM ONLY ecsql.P t WHERE t.L = 0xabcdefgh"));
 
     // Delete clause in which the class name and the properties name contain, start with or end with under bar
     ASSERT_EQ(ECSqlStatus::Success, Prepare("DELETE FROM ONLY ecsql._UnderBar u WHERE u.ABC_ = ?"));

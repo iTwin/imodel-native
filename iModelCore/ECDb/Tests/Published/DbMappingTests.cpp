@@ -1313,6 +1313,28 @@ TEST_F(DbMappingTestFixture, UpdatableViews)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                      05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, ECSqlHexSupport)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlHexSupport.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Sample" modifier="None">
+                    <ECProperty propertyName="BaseProp1" typeName="string" />
+                </ECEntityClass>
+              </ECSchema>)xml")));
+
+    ECInstanceKey key;
+    uint64_t expectedECInstaceId = 0x7FFFFFFFFFFFFFFF;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Sample(ECInstanceId, BaseProp1) VALUES (0x7FFFFFFFFFFFFFFF, '0x7FFFFFFFFFFFFFFF')"));
+    ASSERT_EQ(expectedECInstaceId, key.GetInstanceId().GetValue());
+    ASSERT_EQ( BE_SQLITE_ROW, GetHelper().ExecuteNonSelectECSql("SELECT * FROM ts.Sample WHERE ECInstanceId =  0x7FFFFFFFFFFFFFFF"));
+
+    expectedECInstaceId = 0x7ABCDEF + 39421 - 0x43;
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(key, "INSERT INTO ts.Sample(ECInstanceId, BaseProp1) VALUES (0x7ABCDEF + 39421 - 0x43, '0x7ABCDEF + 39421 - 0x43')"));
+    ASSERT_EQ(expectedECInstaceId, key.GetInstanceId().GetValue());
+    }
+//---------------------------------------------------------------------------------------
 // @bsimethod                                  Krischan.Eberle                      05/17
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, ECClassIdColumnVirtuality)
