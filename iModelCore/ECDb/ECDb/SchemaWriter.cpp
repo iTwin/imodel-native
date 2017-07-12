@@ -1448,7 +1448,9 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
     if (propertyChange.GetKindOfQuantity().IsValid())
         {
-        if (propertyChange.GetKindOfQuantity().GetState() == ChangeState::Deleted)
+        StringChange& change = propertyChange.GetKindOfQuantity();
+        sqlUpdateBuilder.AddSetToNull("KindOfQuantityId");
+        if (change.GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("KindOfQuantityId");
         else
             {
@@ -1469,10 +1471,10 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
     if (propertyChange.GetCategory().IsValid())
         {
-        if (propertyChange.GetCategory().GetState() == ChangeState::Deleted)
-            {
-            sqlUpdateBuilder.AddSetToNull("CategoryId"); //set to null;
-            }
+        StringChange& change = propertyChange.GetCategory();
+        sqlUpdateBuilder.AddSetToNull("CategoryId");
+        if (change.GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("CategoryId");
         else
             {
             PropertyCategoryCP cat = newProperty.GetCategory();
