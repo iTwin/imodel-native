@@ -252,6 +252,12 @@ public:
 
     DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
     DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+    
+    BE_JSON_NAME(spec)
+    BE_JSON_NAME(scope)
+    BE_JSON_NAME(value)
+    DGNPLATFORM_EXPORT Json::Value ToJson2() const; //!< Convert to json, format 2
+    DGNPLATFORM_EXPORT bool FromJson2(JsonValueCR value); //!< Attempt to initialize from json, format 2
 };
 
 typedef bset<DgnCode> DgnCodeSet;

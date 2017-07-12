@@ -1197,6 +1197,32 @@ DgnDbStatus DgnElement::_LoadFromDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_ToJson(JsonValueR val) const
+    {
+    val[json_id()] = m_elementId.ToString(BeInt64Id::UseHex::Yes);
+
+    auto ecClass = GetElementClass();
+    val[json_schemaName()] = ecClass->GetSchema().GetName();
+    val[json_className()] = ecClass->GetName();
+    val[json_model()] = m_modelId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_code()] = m_code.ToJson2();
+
+    if (m_parentId.IsValid())
+        val[json_parent()] = m_parentId.ToString(BeInt64Id::UseHex::Yes);
+
+    if (m_federationGuid.IsValid())
+        val[json_federationGuid()] = m_federationGuid.ToString();
+
+    if (!m_userLabel.empty())
+        val[json_userLabel()] = m_userLabel;
+
+    if (!m_jsonProperties.empty())
+        val[json_jsonProperties()] = m_jsonProperties;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementIdSet DgnElement::QueryChildren() const

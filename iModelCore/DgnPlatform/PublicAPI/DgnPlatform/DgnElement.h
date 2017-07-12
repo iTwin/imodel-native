@@ -1171,6 +1171,8 @@ protected:
     //! @see ElementProperties
     virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) {return DgnDbStatus::Success;}
 
+    DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR) const;
+
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
     //! @note If you override this method, you @em must call T_Super::_LoadFromDb() first, forwarding its status
@@ -1483,6 +1485,16 @@ protected:
     CreateParams GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const;
 
 public:
+    BE_JSON_NAME(id)
+    BE_JSON_NAME(schemaName)
+    BE_JSON_NAME(className)
+    BE_JSON_NAME(model)
+    BE_JSON_NAME(code)
+    BE_JSON_NAME(parent)
+    BE_JSON_NAME(federationGuid)
+    BE_JSON_NAME(userLabel)
+    BE_JSON_NAME(jsonProperties)
+
     static Utf8CP MyHandlerECClassName() {return BIS_CLASS_Element;}                //!< @private
     Utf8CP GetHandlerECClassName() const {return _GetHandlerECClassName();}             //!< @private
     Utf8CP GetSuperHandlerECClassName() const {return _GetSuperHandlerECClassName();}   //!< @private
@@ -1785,7 +1797,7 @@ public:
     //! Return the NavigationPropertyInfo for an ECNavigationProperty of the specified name
     DGNPLATFORM_EXPORT NavigationPropertyInfo GetNavigationPropertyInfo(Utf8CP propertyName) const;
 
-    //! Return the value of the ID of an ECNavigationProperty by name
+    //! Return the value of the Id of an ECNavigationProperty by name
     template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName) const
         {
         return GetNavigationPropertyInfo(propertyName).GetId<TBeInt64Id>();
@@ -1916,6 +1928,8 @@ public:
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     //! @see GetPropertyIndex
     DGNPLATFORM_EXPORT DgnDbStatus ClearPropertyArray(uint32_t propertyIndex);
+
+    Json::Value ToJson() const {Json::Value val; _ToJson(val); return val;}
 
     //! @private
     DGNPLATFORM_EXPORT void GetCustomHandledPropertiesAsJson(Json::Value& json) const;
