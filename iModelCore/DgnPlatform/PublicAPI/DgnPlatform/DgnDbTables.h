@@ -250,8 +250,12 @@ public:
 
     static Iterator MakeIterator(DgnDbR db, Iterator::Options options = Iterator::Options()) {return Iterator(db, options);}
 
-    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const; //!< Convert to JSON representation
-    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value); //!< Attempt to initialize from JSON representation
+    //! @private
+    //! @note Not a general purpose method, only to be used by RepositoryManager to convert to a JSON representation
+    DGNPLATFORM_EXPORT void ToJson(JsonValueR value) const;
+    //! @private
+    //! @note Not a general purpose method, only to be used by RepositoryManager to initialize from a JSON representation
+    DGNPLATFORM_EXPORT bool FromJson(JsonValueCR value);
 };
 
 typedef bset<DgnCode> DgnCodeSet;
