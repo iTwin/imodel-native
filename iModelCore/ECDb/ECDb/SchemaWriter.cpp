@@ -2243,13 +2243,23 @@ BentleyStatus SchemaWriter::DeleteCustomAttributes(ECContainerId id, SchemaPersi
 BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
     ECClassCR ecClass = deletedProperty.GetClass();
-
+    
     if (!IsMajorChangeAllowedForSchema(deletedProperty.GetClass().GetSchema().GetId()) && m_ctx.GetOptions() != SchemaManager::SchemaImportOptions::Poisoning)
         {
         Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECProperty '%s.%s' means a major schema change, but the schema's MajorVersion is not incremented. Bump up the major version and try again.",
                         ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
         return ERROR;
         }
+
+    if (deletedProperty.GetIsNavigation())
+        {
+        //Blanket error. We do not check if relationship was also deleted. In that case we would allo nav deletion for shared column/ logical relationships
+        //Fail we do not want to delete a sql column right now
+        Issues().Report("ECSchema Upgrade failed. ECClass %s: Deleting Navigation ECProperty '%s' from an ECClass is not supported.",
+                        ecClass.GetFullName(), deletedProperty.GetName().c_str());
+        return ERROR;
+        }
+
 
     ClassMapCP classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(ecClass);
     if (classMap == nullptr)

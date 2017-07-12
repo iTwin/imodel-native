@@ -16,9 +16,6 @@ SchemaUpgradeTestFixture.UpdateECDbMapCA_DbIndexChanges
 SchemaUpgradeTestFixture.RemoveKindOfQuantityFromECProperty
 SchemaUpgradeTestFixture.RemoveKindOfQuantityFromECArrayProperty
 
-#TFS 718009
-SchemaUpgradeTestFixture.DeleteNavigationProperty
-
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
