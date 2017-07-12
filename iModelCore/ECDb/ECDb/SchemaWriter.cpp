@@ -2499,7 +2499,8 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(PropertyCategoryChanges& ch
                 return ERROR;
                 }
 
-            return ImportPropertyCategory(*cat);
+            if (ImportPropertyCategory(*cat) != SUCCESS)
+                return ERROR;
             }
         else if (change.GetState() == ChangeState::Modified)
             {
@@ -2808,6 +2809,9 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
         return ERROR;
 
     if (UpdateKindOfQuantities(schemaChange.KindOfQuantities(), oldSchema, newSchema) == ERROR)
+        return ERROR;
+
+    if (UpdatePropertyCategories(schemaChange.PropertyCategories(), oldSchema, newSchema) == ERROR)
         return ERROR;
 
     if (UpdateClasses(schemaChange.Classes(), oldSchema, newSchema) == ERROR)

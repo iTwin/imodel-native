@@ -262,6 +262,9 @@ BentleyStatus SchemaComparer::CompareECSchema(SchemaChange& change, ECSchemaCR a
     if (CompareKindOfQuantities(change.KindOfQuantities(), a.GetKindOfQuantities(), b.GetKindOfQuantities()) != SUCCESS)
         return ERROR;
 
+    if (ComparePropertyCategories(change.PropertyCategories(), a.GetPropertyCategories(), b.GetPropertyCategories()) != SUCCESS)
+        return ERROR;
+
     if (CompareReferences(change.References(), a.GetReferencedSchemas(), b.GetReferencedSchemas()) != SUCCESS)
         return ERROR;
 

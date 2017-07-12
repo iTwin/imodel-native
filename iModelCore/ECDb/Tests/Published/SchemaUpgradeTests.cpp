@@ -6991,7 +6991,7 @@ TEST_F(SchemaUpgradeTestFixture, RemoveKindOfQuantityFromECProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaUpgradeTestFixture, KindOfQuantityAddUpdate)
+TEST_F(SchemaUpgradeTestFixture, KindOfQuantityAddUpdateDelete)
     {
     SchemaItem schemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
         <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
@@ -7035,7 +7035,7 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantityAddUpdate)
         }
 
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
-        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
             <KindOfQuantity typeName='K1' description='K1' displayLabel='K1' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;IN' /> 
             <KindOfQuantity typeName='K2' description='K2' displayLabel='K2' persistenceUnit='CM' relativeError='.2' presentationUnits='FT;IN' /> 
             <KindOfQuantity typeName='K3' description='K3' displayLabel='K3' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
@@ -7079,6 +7079,20 @@ TEST_F(SchemaUpgradeTestFixture, KindOfQuantityAddUpdate)
         ASSERT_EQ(k2, foo->GetPropertyP("L2")->GetKindOfQuantity());
         ASSERT_EQ(nullptr, foo->GetPropertyP("L3")->GetKindOfQuantity());
         }
+
+    //Delete KoQ
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+        <ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+            <KindOfQuantity typeName='K1' description='K1' displayLabel='K1' persistenceUnit='CM' relativeError='.5' presentationUnits='FT;IN' /> 
+            <KindOfQuantity typeName='K2' description='K2' displayLabel='K2' persistenceUnit='CM' relativeError='.2' presentationUnits='FT;IN' /> 
+            <KindOfQuantity typeName='K3' description='K3' displayLabel='K3' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
+            <KindOfQuantity typeName='K5' description='K5' displayLabel='K5' persistenceUnit='CM' relativeError='.1' presentationUnits='FT;IN' /> 
+            <ECEntityClass typeName='Foo' >
+                <ECProperty propertyName='L1' typeName='double' kindOfQuantity='K5'/>
+                <ECProperty propertyName='L2' typeName='double' kindOfQuantity='K2'/>
+                <ECProperty propertyName='L3' typeName='double' />
+            </ECEntityClass>
+        </ECSchema>)xml")));
     }
 
 //---------------------------------------------------------------------------------------
@@ -8336,6 +8350,7 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
                                         <PropertyCategory typeName="C2" description="C2" displayLabel="C2" priority="2" />
                                         <PropertyCategory typeName="C3" description="C3" displayLabel="C3" priority="3" />
                                         <PropertyCategory typeName="C4" description="C4" displayLabel="C4" priority="4" />
+                                        <PropertyCategory typeName="C5" description="C5" displayLabel="C5" priority="5" />
                                         <ECEntityClass typeName="Foo" >
                                             <ECProperty propertyName="P1" typeName="double" category="C4" />
                                             <ECProperty propertyName="P2" typeName="double" />
@@ -8369,14 +8384,16 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
         ASSERT_EQ(4, (int) c4->GetPriority());
 
         PropertyCategoryCP c5 = m_ecdb.Schemas().GetPropertyCategory("Schema1", "C5");
-        ASSERT_TRUE(c5 == nullptr);
+        ASSERT_TRUE(c5 != nullptr);
+        ASSERT_STREQ("C5", c5->GetName().c_str());
+        ASSERT_EQ(5, (int) c5->GetPriority());
 
         ECSchemaCP schema1 = m_ecdb.Schemas().GetSchema("Schema1", false);
         ASSERT_TRUE(schema1 != nullptr);
 
         ECClassCP fooClass = m_ecdb.Schemas().GetClass("Schema1", "Foo");
         ASSERT_TRUE(fooClass != nullptr);
-        ASSERT_EQ(4, schema1->GetPropertyCategoryCount());
+        ASSERT_EQ(5, schema1->GetPropertyCategoryCount());
 
         ECPropertyCP p1 = fooClass->GetPropertyP("P1");
         ASSERT_TRUE(p1 != nullptr);
@@ -8398,5 +8415,19 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
         ASSERT_STREQ("C1", p4->GetCategory()->GetName().c_str());
         }
 
+    //Delete a Category
+    ASSERT_EQ(ERROR, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+                                    <ECSchema schemaName="Schema1" alias="s1" version="3.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                        <PropertyCategory typeName="C1" description="C1" displayLabel="C1" priority="1" />
+                                        <PropertyCategory typeName="C2" description="C2" displayLabel="C2" priority="2" />
+                                        <PropertyCategory typeName="C3" description="C3" displayLabel="C3" priority="3" />
+                                        <PropertyCategory typeName="C4" description="C4" displayLabel="C4" priority="4" />
+                                        <ECEntityClass typeName="Foo" >
+                                            <ECProperty propertyName="P1" typeName="double" category="C4" />
+                                            <ECProperty propertyName="P2" typeName="double" />
+                                            <ECProperty propertyName="P3" typeName="double" category="C3" />
+                                            <ECProperty propertyName="P4" typeName="double" category="C1" />
+                                        </ECEntityClass>
+                                    </ECSchema>)xml")));
     }
 END_ECDBUNITTESTS_NAMESPACE
