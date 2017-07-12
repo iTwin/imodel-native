@@ -1463,7 +1463,12 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
             KindOfQuantityId id = m_ecdb.Schemas().GetReader().GetKindOfQuantityId(*koqCP);
             if (!id.IsValid())
-                return ERROR;
+                {
+                if (ImportKindOfQuantity(*koqCP) != SUCCESS)
+                    return ERROR;
+
+                id = koqCP->GetId();
+                }
 
             sqlUpdateBuilder.AddSetExp("KindOfQuantityId", id.GetValue());
             }
@@ -1478,6 +1483,7 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
         else
             {
             PropertyCategoryCP cat = newProperty.GetCategory();
+  
             if (cat == nullptr)
                 {
                 BeAssert(false);
@@ -1486,7 +1492,12 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
             PropertyCategoryId id = m_ecdb.Schemas().GetReader().GetPropertyCategoryId(*cat);
             if (!id.IsValid())
-                return ERROR;
+                {
+                if (ImportPropertyCategory(*cat) != SUCCESS)
+                    return ERROR;
+
+                id = cat->GetId();
+                }
 
             sqlUpdateBuilder.AddSetExp("CategoryId", id.GetValue());
             }
