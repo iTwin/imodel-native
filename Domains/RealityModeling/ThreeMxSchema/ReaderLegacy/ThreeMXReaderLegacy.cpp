@@ -15,7 +15,7 @@
 
 #include <ThreeMxReader/ThreeMxReader.h>
 
-#include "openctm/openctm.h"
+#include "../openctm/openctm.h"
 
 #include <fstream>
 #include <iostream>
