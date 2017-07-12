@@ -70,7 +70,7 @@ public:
     //! Set this BeInt64Id to an invalid value (0).
     void Invalidate() {m_id = 0;}
 
-    enum UseHex {No=0, Yes=1};
+    enum class UseHex {No=0, Yes=1};
     //! Converts this BeInt64Id to its string representation.
     //! 
     //! Typical example:
