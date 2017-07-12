@@ -5146,7 +5146,7 @@ TEST_F(SchemaUpgradeTestFixture, DeleteNavigationProperty)
                         %s
                     </ECEntityClass>
                     <ECRelationshipClass typeName="Rel" modifier="None">
-                            <Source multiplicity="(0..1)" poRemoveKindOfQuantityFromECPropertylymorphic="True" roleLabel="owns">
+                            <Source multiplicity="(0..1)" polymorphic="True" roleLabel="owns">
                               <Class class="A"/>
                             </Source>
                             <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
