@@ -12,7 +12,401 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
 struct DbMappingTestFixture : ECDbTestFixture {};
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IncrementallyMapRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent">
+                        <ECProperty propertyName="Code" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Child">
+                        <ECProperty propertyName="ChildProp" typeName="int" />
+                     </ECEntityClass>
+                     <ECEntityClass typeName="GrandchildA" >
+                        <BaseClass>Child</BaseClass>
+                        <ECProperty propertyName="GrandchildAProp" typeName="int" />
+                        <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                     </ECEntityClass>
+                     <ECEntityClass typeName="GrandchildB" >
+                        <BaseClass>Child</BaseClass>
+                        <ECProperty propertyName="GrandchildBProp" typeName="int" />
+                        <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                    </ECEntityClass>
+                     <ECEntityClass typeName="GrandchildC" >
+                        <BaseClass>Child</BaseClass>
+                        <ECProperty propertyName="GrandchildCProp" typeName="int" />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" strength="referencing" modifier="Sealed">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Parent Has Grandchildren">
+                            <Class class="Parent" />
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Parent Has Grandchildren (Reversed)" abstractConstraint="Child">
+                            <Class class="GrandchildA" />
+                            <Class class="GrandchildB" />
+                        </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml")));
 
+    ECInstanceId instanceParentId = ECInstanceId(1ULL);
+    ECInstanceId instanceGrandchildAId = ECInstanceId(2ULL);;
+    ECInstanceId instanceGrandchildBId = ECInstanceId(3ULL);;
+    ECInstanceId instanceGrandchildCId = ECInstanceId(4ULL);;
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Parent(ECInstanceId, Code) VALUES (%s, 0x10)",
+                                                                             instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildA(ECInstanceId, ChildProp, GrandchildAProp, Parent.Id) VALUES (%s, 0x20, 0x200, %s)",
+                                                                             instanceGrandchildAId.ToString(BeInt64Id::UseHex::Yes).c_str(),
+                                                                             instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildB(ECInstanceId, ChildProp, GrandchildBProp, Parent.Id) VALUES (%s, 0x30, 0x300, %s)",
+                                                                             instanceGrandchildBId.ToString(BeInt64Id::UseHex::Yes).c_str(),
+                                                                             instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildC(ECInstanceId, ChildProp, GrandchildCProp) VALUES (%s, 0x40, 0x400)",
+                                                                             instanceGrandchildCId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        const ECClassId classParentId = m_ecdb.Schemas().GetClass("TestSchema", "Parent")->GetId();
+        const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
+        const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY ECInstanceId"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceParentId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classParentId);
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(2), instanceGrandchildAId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(3), classGrandchildAId);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceParentId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classParentId);
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(2), instanceGrandchildBId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(3), classGrandchildBId);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
+        const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
+        const ECClassId classGrandchildCId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildC")->GetId();
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, ChildProp FROM ts.Child ORDER BY ECInstanceId"));
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceGrandchildAId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classGrandchildAId);
+        ASSERT_EQ(stmt.GetValueInt(2), 0x20);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceGrandchildBId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classGrandchildBId);
+        ASSERT_EQ(stmt.GetValueInt(2), 0x30);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceGrandchildCId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classGrandchildCId);
+        ASSERT_EQ(stmt.GetValueInt(2), 0x40);
+
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IncrementallyMapRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent">
+                        <ECProperty propertyName="Code" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Child">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="ChildProp" typeName="int" />
+                     </ECEntityClass>
+                     <ECEntityClass typeName="GrandchildA" >
+                        <BaseClass>Child</BaseClass>
+                        <ECProperty propertyName="GrandchildAProp" typeName="int" />
+                        <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                     </ECEntityClass>
+                     <ECEntityClass typeName="GrandchildB" >
+                        <BaseClass>Child</BaseClass>
+                        <ECProperty propertyName="GrandchildBProp" typeName="int" />
+                        <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                    </ECEntityClass>
+                     <ECEntityClass typeName="GrandchildC" >
+                        <BaseClass>Child</BaseClass>
+                        <ECProperty propertyName="GrandchildCProp" typeName="int" />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" strength="referencing" modifier="Sealed">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Parent Has Grandchildren">
+                            <Class class="Parent" />
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Parent Has Grandchildren (Reversed)" abstractConstraint="Child">
+                            <Class class="GrandchildA" />
+                            <Class class="GrandchildB" />
+                        </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml")));
+
+    ECInstanceId instanceParentId = ECInstanceId(1ULL);
+    ECInstanceId instanceGrandchildAId = ECInstanceId(2ULL);;
+    ECInstanceId instanceGrandchildBId = ECInstanceId(3ULL);;
+    ECInstanceId instanceGrandchildCId = ECInstanceId(4ULL);;
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Parent(ECInstanceId, Code) VALUES (%s, 0x10)",
+                                                                             instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildA(ECInstanceId, ChildProp, GrandchildAProp, Parent.Id) VALUES (%s, 0x20, 0x200, %s)",
+                                                                             instanceGrandchildAId.ToString(BeInt64Id::UseHex::Yes).c_str(),
+                                                                             instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildB(ECInstanceId, ChildProp, GrandchildBProp, Parent.Id) VALUES (%s, 0x30, 0x300, %s)",
+                                                                             instanceGrandchildBId.ToString(BeInt64Id::UseHex::Yes).c_str(),
+                                                                             instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildC(ECInstanceId, ChildProp, GrandchildCProp) VALUES (%s, 0x40, 0x400)",
+                                                                             instanceGrandchildCId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        const ECClassId classParentId = m_ecdb.Schemas().GetClass("TestSchema", "Parent")->GetId();
+        const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
+        const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY ECInstanceId"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceParentId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classParentId);
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(2), instanceGrandchildAId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(3), classGrandchildAId);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceParentId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classParentId);
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(2), instanceGrandchildBId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(3), classGrandchildBId);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
+        const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
+        const ECClassId classGrandchildCId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildC")->GetId();
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, ChildProp FROM ts.Child ORDER BY ECInstanceId"));
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceGrandchildAId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classGrandchildAId);
+        ASSERT_EQ(stmt.GetValueInt(2), 0x20);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceGrandchildBId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classGrandchildBId);
+        ASSERT_EQ(stmt.GetValueInt(2), 0x30);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceGrandchildCId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classGrandchildCId);
+        ASSERT_EQ(stmt.GetValueInt(2), 0x40);
+
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("IncrementallyMapRelationship.ecdb", SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent">
+                        <ECProperty propertyName="Code" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Child">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <JoinedTablePerDirectSubclass xmlns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        <ECProperty propertyName="ChildProp" typeName="int" />
+                     </ECEntityClass>
+                     <ECEntityClass typeName="GrandchildA" >
+                        <BaseClass>Child</BaseClass>
+                        <ECProperty propertyName="GrandchildAProp" typeName="int" />
+                        <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                     </ECEntityClass>
+                     <ECEntityClass typeName="GrandchildB" >
+                        <BaseClass>Child</BaseClass>
+                        <ECProperty propertyName="GrandchildBProp" typeName="int" />
+                        <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
+                    </ECEntityClass>
+                     <ECEntityClass typeName="GrandchildC" >
+                        <BaseClass>Child</BaseClass>
+                        <ECProperty propertyName="GrandchildCProp" typeName="int" />
+                    </ECEntityClass>
+                    <ECRelationshipClass typeName="Rel" strength="referencing" modifier="Sealed">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="Parent Has Grandchildren">
+                            <Class class="Parent" />
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="Parent Has Grandchildren (Reversed)" abstractConstraint="Child">
+                            <Class class="GrandchildA" />
+                            <Class class="GrandchildB" />
+                        </Target>
+                     </ECRelationshipClass>
+                </ECSchema>)xml")));
+    
+    ECInstanceId instanceParentId = ECInstanceId(1ULL);
+    ECInstanceId instanceGrandchildAId = ECInstanceId(2ULL);;
+    ECInstanceId instanceGrandchildBId = ECInstanceId(3ULL);;
+    ECInstanceId instanceGrandchildCId = ECInstanceId(4ULL);;
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.Parent(ECInstanceId, Code) VALUES (%s, 0x10)", 
+                                                                             instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }   
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildA(ECInstanceId, ChildProp, GrandchildAProp, Parent.Id) VALUES (%s, 0x20, 0x200, %s)",
+                                                                             instanceGrandchildAId.ToString(BeInt64Id::UseHex::Yes).c_str(),
+                                                                             instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildB(ECInstanceId, ChildProp, GrandchildBProp, Parent.Id) VALUES (%s, 0x30, 0x300, %s)",
+                                                                             instanceGrandchildBId.ToString(BeInt64Id::UseHex::Yes).c_str(),
+                                                                             instanceParentId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("INSERT INTO ts.GrandchildC(ECInstanceId, ChildProp, GrandchildCProp) VALUES (%s, 0x40, 0x400)",
+                                                                             instanceGrandchildCId.ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        const ECClassId classParentId = m_ecdb.Schemas().GetClass("TestSchema", "Parent")->GetId();
+        const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
+        const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.Rel ORDER BY ECInstanceId"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceParentId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classParentId);
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(2), instanceGrandchildAId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(3), classGrandchildAId);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceParentId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classParentId);
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(2), instanceGrandchildBId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(3), classGrandchildBId);
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        const ECClassId classGrandchildAId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildA")->GetId();
+        const ECClassId classGrandchildBId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildB")->GetId();
+        const ECClassId classGrandchildCId = m_ecdb.Schemas().GetClass("TestSchema", "GrandchildC")->GetId();
+
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, ChildProp FROM ts.Child ORDER BY ECInstanceId"));
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceGrandchildAId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classGrandchildAId);
+        ASSERT_EQ(stmt.GetValueInt(2), 0x20);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceGrandchildBId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classGrandchildBId);
+        ASSERT_EQ(stmt.GetValueInt(2), 0x30);
+
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(stmt.GetValueId<ECInstanceId>(0), instanceGrandchildCId);
+        ASSERT_EQ(stmt.GetValueId<ECClassId>(1), classGrandchildCId);
+        ASSERT_EQ(stmt.GetValueInt(2), 0x40);
+
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
