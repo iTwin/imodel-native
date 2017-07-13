@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ConcreteSchemaInternal.h"
+#include "StructuralDomainInternal.h"
+
 
 BEGIN_BENTLEY_CONCRETE_NAMESPACE
 
@@ -14,7 +15,7 @@ DOMAIN_DEFINE_MEMBERS(ConcreteDomain)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Jiang                     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConcreteDomain::ConcreteDomain() : DgnDomain(BENTLEY_CONCRETE_SCHEMA_NAME, "Bentley Concrete Domain", 1)
+ConcreteDomain::ConcreteDomain() : Dgn::DgnDomain(BENTLEY_CONCRETE_SCHEMA_NAME, "Bentley Concrete Domain", 1)
     {
     //RegisterHandler(ConcreteElementHandler::GetHandler());
 
@@ -30,9 +31,9 @@ ConcreteDomain::ConcreteDomain() : DgnDomain(BENTLEY_CONCRETE_SCHEMA_NAME, "Bent
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Jiang                     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConcreteDomain::InsertDomainCodeSpecs(DgnDbR db)
+void ConcreteDomain::InsertDomainCodeSpecs(Dgn::DgnDbR db)
     {
-    CodeSpecPtr codeSpec = CodeSpec::Create(db, BENTLEY_CONCRETE_AUTHORITY, Dgn::CodeScopeSpec::CreateModelScope());
+    Dgn::CodeSpecPtr codeSpec = Dgn::CodeSpec::Create(db, BENTLEY_CONCRETE_AUTHORITY, Dgn::CodeScopeSpec::CreateModelScope());
     if (codeSpec.IsValid())
         {
         codeSpec->Insert();
@@ -42,9 +43,9 @@ void ConcreteDomain::InsertDomainCodeSpecs(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Jiang                     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConcreteDomain::_OnSchemaImported(DgnDbR dgndb) const
+void ConcreteDomain::_OnSchemaImported(Dgn::DgnDbR dgndb) const
     {
-    DgnSubCategory::Appearance defaultApperance;
+    Dgn::DgnSubCategory::Appearance defaultApperance;
     defaultApperance.SetInvisible(false);
 
     InsertDomainCodeSpecs(dgndb);
@@ -53,7 +54,7 @@ void ConcreteDomain::_OnSchemaImported(DgnDbR dgndb) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Jiang                     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConcreteDomain::_OnDgnDbOpened(DgnDbR db) const
+void ConcreteDomain::_OnDgnDbOpened(Dgn::DgnDbR db) const
     {
     }
 

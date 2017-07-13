@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "StructuralMaterialsSchemaInternal.h"
+#include "StructuralDomainInternal.h"
+
 
 BEGIN_BENTLEY_STRUCTURAL_MATERIALS_NAMESPACE
 
@@ -14,7 +15,7 @@ DOMAIN_DEFINE_MEMBERS(StructuralMaterialsDomain)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-StructuralMaterialsDomain::StructuralMaterialsDomain() : DgnDomain(BENTLEY_STRUCTURAL_MATERIALS_SCHEMA_NAME, "Bentley Structural Materials Domain", 1)
+StructuralMaterialsDomain::StructuralMaterialsDomain() : Dgn::DgnDomain(BENTLEY_STRUCTURAL_MATERIALS_SCHEMA_NAME, "Bentley Structural Materials Domain", 1)
     {
     //RegisterHandler(ArchitecturalBaseElementHandler::GetHandler());
     }
@@ -23,9 +24,9 @@ StructuralMaterialsDomain::StructuralMaterialsDomain() : DgnDomain(BENTLEY_STRUC
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-void StructuralMaterialsDomain::InsertDomainCodeSpecs(DgnDbR db)
+void StructuralMaterialsDomain::InsertDomainCodeSpecs(Dgn::DgnDbR db)
     {
-    CodeSpecPtr codeSpec = CodeSpec::Create(db, BENTLEY_STRUCTURAL_MATERIALS_AUTHORITY, Dgn::CodeScopeSpec::CreateModelScope());
+    Dgn::CodeSpecPtr codeSpec = Dgn::CodeSpec::Create(db, BENTLEY_STRUCTURAL_MATERIALS_AUTHORITY, Dgn::CodeScopeSpec::CreateModelScope());
     if (codeSpec.IsValid())
         codeSpec->Insert();
     }
@@ -33,9 +34,9 @@ void StructuralMaterialsDomain::InsertDomainCodeSpecs(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                   Bentley.Systems
 +---------------+---------------+---------------+---------------+---------------+------*/
-void StructuralMaterialsDomain::_OnSchemaImported(DgnDbR dgndb) const
+void StructuralMaterialsDomain::_OnSchemaImported(Dgn::DgnDbR dgndb) const
     {
-    DgnSubCategory::Appearance defaultApperance;
+    Dgn::DgnSubCategory::Appearance defaultApperance;
     defaultApperance.SetInvisible(false);
     InsertDomainCodeSpecs( dgndb );
     }
@@ -44,7 +45,7 @@ void StructuralMaterialsDomain::_OnSchemaImported(DgnDbR dgndb) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Sam.Wilson      07/16
 //---------------------------------------------------------------------------------------
-void StructuralMaterialsDomain::_OnDgnDbOpened(DgnDbR db) const
+void StructuralMaterialsDomain::_OnDgnDbOpened(Dgn::DgnDbR db) const
     {
     }
 

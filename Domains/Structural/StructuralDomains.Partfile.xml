@@ -3,7 +3,9 @@
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
     <Part Name="StructuralDomains" >
-        <SubProduct ProductName="StructuralMaterialsTests"/>
+        <!--SubPart PartName="RunStructuralDomainTests"/-->
+        <SubPart PartName="StructuralDomain"/>
+        <SubProduct ProductName="StructuralDomainSDK-Winx64"/>
     </Part>
 
 
@@ -15,72 +17,50 @@
     </Part>
 
 
-    <Part Name="Concrete" BentleyBuildMakeFile="ConcreteSchema\ConcreteSchema.mke" ApiNumber="B02">
-        <SubPart PartName="ConcretePublicAPI"/>
+    <Part Name="StructuralDomain" BentleyBuildMakeFile="Structural.mke" ApiNumber="B02">
+        <SubPart PartName="StructuralPhysicalPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
         <Bindings>
-            <Libs>Delivery/$(libprefix)Concrete$(libext)</Libs>
+            <Libs>Delivery/$(libprefix)StructuralDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)StructuralDomain$(ApiNumber)$(shlibext)</Assemblies>
             <Files ProductDirectoryName="Libs" >
-                Delivery/$(libprefix)Concrete$(libext)
-                Delivery/$(shlibprefix)Concrete$(ApiNumber)$(shlibext)
+                Delivery/$(libprefix)StructuralDomain$(libext)
+                Delivery/$(shlibprefix)StructuralDomain$(ApiNumber)$(shlibext)
             </Files>
-            <Assemblies>Delivery/$(shlibprefix)Concrete$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
 
-    <Part Name="ConcretePublicAPI" BentleyBuildMakeFile="ConcreteSchema\ConcreteSchema.prewire.mke" ApiNumber="B02">
+
+    <Part Name="StructuralPhysicalPublicAPI" BentleyBuildMakeFile="Structural.prewire.mke" ApiNumber="B02">
         <Bindings>
-            <PublicAPI Domain="Concrete"/>
+            <PublicAPI Domain="StructuralDomain"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/Concrete.ecschema.xml
-            </Files>
-            <Directory SourceName="PublicAPI/Concrete" ProductDirectoryName="ConcreteIncludes" />
-        </Bindings>
-    </Part>
-
-
-    <Part Name="StructuralMaterials" BentleyBuildMakeFile="StructuralMaterials\StructuralMaterialsSchema.mke" ApiNumber="B02">
-        <SubPart PartName="StructuralMaterialsAPI"/>
-        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <Bindings>
-            <Libs>Delivery/$(libprefix)StructuralMaterials$(libext)</Libs>
-            <Files ProductDirectoryName="Libs" >
-                Delivery/$(libprefix)StructuralMaterials$(libext)
-                Delivery/$(shlibprefix)StructuralMaterials$(ApiNumber)$(shlibext)
-            </Files>
-            <Assemblies>Delivery/$(shlibprefix)StructuralMaterials$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-
-    <Part Name="StructuralMaterialsAPI" BentleyBuildMakeFile="StructuralMaterials\StructuralMaterialsSchema.prewire.mke" ApiNumber="B02">
-        <Bindings>
-            <PublicAPI Domain="StructuralMaterials"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/StructuralMaterials.ecschema.xml
             </Files>
-            <Directory SourceName="PublicAPI/StructuralMaterials" ProductDirectoryName="StructuralMaterialsIncludes" />
+
+            <Directory SourceName="PublicAPI/StructuralDomain" ProductDirectoryName="StructuralDomainIncludes" />
         </Bindings>
     </Part>
 
 
-    <Part Name="StructuralMaterialsTestsExe" DeferType="StructuralMaterialsTests" BentleyBuildMakeFile="StructuralMaterials/Tests/Tests.mke" OnlyPlatforms="x64">
+    <Part Name="StructuralDomainTestsExe" DeferType="StructuralDomainTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
         <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
         <SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" />
         <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
-        <SubPart PartName="Concrete"/>
-        <SubPart PartName="StructuralMaterials"/>
-        <SubPart PartName="ArchitecturalPhysical"/>
+        <SubPart PartName="StructuralDomain"/>
         <Bindings>
-              <Assemblies>Delivery/$(shlibprefix)StructuralMaterialsTests.exe</Assemblies>
-              <Files ProductDirectoryName="Assets">Delivery/StructuralMaterialsTests.logging.config.xml</Files>
-              <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/StructuralMaterialsTests_en-US.sqlang.db3</Files>
+              <Assemblies>Delivery/$(shlibprefix)StructuralDomainTests.exe</Assemblies>
+              <Files ProductDirectoryName="Assets">Delivery/StructuralDomainTests.logging.config.xml</Files>
+              <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/StructuralDomainTests_en-US.sqlang.db3</Files>
         </Bindings>
     </Part>
 
     <ProductDirectoryList ListName="Tests">
         <ProductDirectory Name="VendorNotices"                  Path="VendorNotices"/>
         <ProductDirectory Name="Assemblies"                     Path="Assemblies"/>
+        <ProductDirectory Name="Libs"                           Path="Libs"/>
         <ProductDirectory Name="Assets"                         Path="Assemblies/Assets"/>
         <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
         <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
@@ -89,77 +69,41 @@
         <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
     </ProductDirectoryList>
 
-    <Product Name="StructuralMaterialsTests" OnlyPlatforms="x64">
-        <SubPart PartName="StructuralMaterialsTestsExe"/>
-<!--        <Directories DirectoryListName="RevitBridgeDirectories" /> -->
+    <Product Name="StructuralDomainTests" OnlyPlatforms="x64">
+        <SubPart PartName="StructuralDomainTestsExe"/>
         <Directories DirectoryListName="Tests"/>
     </Product>
 
 
-    <Part Name="RunStructuralMaterialsTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/StructuralMaterialsTests/StructuralMaterialsTests" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubProduct ProductName="StructuralMaterialsTests" />
+    <Part Name="RunStructuralDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=StructuralDomainTests\Assemblies\  -dGTEST_NAME=StructuralDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
+        <SubProduct ProductName="StructuralDomainTests" />
         <Bindings>
-            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/StructuralMaterialsTests.log</Files>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/StructuralDomainTests.log</Files>
         </Bindings>
     </Part>
 
 
-    <Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
-        <SubPart PartName="ArchPhysPublicAPI"/>
-        <SubPart PartName="BuildingCommon"/>
-        <SubPart PartName="BuildingPhysical"/>
-        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <Bindings>
-            <Libs>Delivery/$(libprefix)ArchitecturalPhysical$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)ArchitecturalPhysical$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
+    <Product Name="StructuralDomainSDK-Winx64">
+        <Directories DirectoryListName="StructuralDomainSDK-Winx64"/>
+        <SubPart PartName="StructuralPhysicalPublicAPI"/>
 
-    <Part Name="ArchPhysPublicAPI" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.prewire.mke">
-        <Bindings>
-            <PublicAPI Domain="ArchitecturalPhysical"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
-            </Files>
-        </Bindings>
-    </Part>
+    </Product>
 
+    <ProductDirectoryList ListName="StructuralDomainSDK-Winx64">
+        <!--
+            The lib sub-directory name should match some pre-defined Visual
+            Studio variable to simplify customizing project files. Several
+            variables with the word "platform" exist. At this time,
+            PlatformTarget seems pretty reasonable, and has values "x86" and
+            "x64".
+        -->
 
-    <Part Name="BuildingCommon" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.mke" ApiNumber="B02">
-        <SubPart PartName="BuildingCommonPublicAPI"/>
-        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <Bindings>
-            <Libs>Delivery/$(libprefix)BuildingCommon$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BuildingCommon$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
+        <!-- lib/x64 -->
+        <ProductDirectory Name="Assets"                          Path="Assets"/>
+        <ProductDirectory Name="Assemblies"       Deliver="true" Path="lib/x64"/>
+        <ProductDirectory Name="Libs"             Deliver="true" Path="lib/x64"/>
+        <ProductDirectory Name="StructuralDomainIncludes"         Deliver="true" Path="Include/StructuralDomain"/>
 
-    <Part Name="BuildingCommonPublicAPI" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.prewire.mke">
-        <Bindings>
-            <PublicAPI Domain="BuildingCommon"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/BuildingCommon.ecschema.xml
-            </Files>
-        </Bindings>
-    </Part>
-
-
-    <Part Name="BuildingPhysical" BentleyBuildMakeFile="BuildingPhysicalSchema\BuildingPhysicalSchema.mke" ApiNumber="B02">
-        <SubPart PartName="BuildingPhysicalPublicAPI"/>
-        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
-        <Bindings>
-            <Libs>Delivery/$(libprefix)BuildingPhysical$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)BuildingPhysical$(ApiNumber)$(shlibext)</Assemblies>
-        </Bindings>
-    </Part>
-
-    <Part Name="BuildingPhysicalPublicAPI" BentleyBuildMakeFile="BuildingPhysicalSchema\BuildingPhysicalSchema.prewire.mke">
-        <Bindings>
-            <PublicAPI Domain="BuildingPhysical"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/BuildingPhysical.ecschema.xml
-            </Files>
-        </Bindings>
-    </Part>
+    </ProductDirectoryList>
 
 </BuildContext>
