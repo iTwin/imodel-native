@@ -23,6 +23,9 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 static UnitProxySetCP upx = nullptr;
 static int repc = 0;
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Preliminary)
     {
     LOG.infov("================  Formatting Log ===========================");
@@ -203,7 +206,9 @@ TEST(FormattingTest, Preliminary)
 
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, PhysValues)
     {
     FormattingDividers fdiv = FormattingDividers("()[]{}");
@@ -367,7 +372,9 @@ TEST(FormattingTest, PhysValues)
 
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Simple)
     {
     double testV = 1000.0 * sqrt(2.0);
@@ -584,7 +591,9 @@ TEST(FormattingTest, Simple)
 
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, DictionaryValidation)
     {
     FormatDictionary dict = FormatDictionary();
