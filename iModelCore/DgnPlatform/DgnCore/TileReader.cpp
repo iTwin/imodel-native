@@ -800,7 +800,7 @@ TileIO::ReadStatus  ReadFeatureTable(FeatureTableR featureTable)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus  ReadTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry)
+TileIO::ReadStatus  ReadTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, bool& isLeaf)
     {
     char                dgnTileMagic[4];
     uint32_t            dgnTileLength, dgnTileVersion, flags;
@@ -824,6 +824,8 @@ TileIO::ReadStatus  ReadTile(ElementAlignedBox3dR contentRange, Render::Primitiv
     if (0 != (flags & TileIO::Flags::Incomplete))
         geometry.MarkIncomplete();
 
+    isLeaf = 0 != (flags & TileIO::Flags::IsLeaf);
+
     return ReadGltf (geometry);
     }
 };  // BatchedModelReader
@@ -834,7 +836,7 @@ END_TILEREADER_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus TileIO::ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem)
+TileIO::ReadStatus TileIO::ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem, bool& isLeaf)
     {
-    return TileReader::DgnCacheTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry);
+    return TileReader::DgnCacheTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry, isLeaf);
     }

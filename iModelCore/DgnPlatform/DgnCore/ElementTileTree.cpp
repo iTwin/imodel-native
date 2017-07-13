@@ -241,7 +241,7 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::ShowBoundingVolume;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -978,7 +978,7 @@ bool Loader::IsCacheable() const
     {
     // Don't cache tiles refined for zoom...
     auto const& tile = GetElementTile();
-    if (tile.HasZoomFactor() && tile.GetZoomFactor())
+    if (tile.HasZoomFactor() && tile.GetZoomFactor() > 1.0)
         return false;
 
     return true;
@@ -1010,6 +1010,7 @@ BentleyStatus Loader::_LoadTile()
     ElementAlignedBox3d                     contentRange;
     StopWatch                               stopWatch(true);
 
+    bool isLeaf = false;
     if (!IsCacheable())
         {
         if (SUCCESS != LoadGeometryFromModel(geometry))
@@ -1018,7 +1019,7 @@ BentleyStatus Loader::_LoadTile()
     else
         {
         if (!m_tileBytes.empty() &&
-            TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem()))
+            TileTree::TileIO::ReadStatus::Success != TileTree::TileIO::ReadDgnTile (contentRange, geometry, m_tileBytes, *root.GetModel(), *GetRenderSystem(), isLeaf))
             {
             BeAssert(false);
             return ERROR;
@@ -1033,7 +1034,7 @@ BentleyStatus Loader::_LoadTile()
     // No point subdividing empty Tiles - improves performance if we don't
     // Also not much point subdividing nodes containing no curved geometry
     // NB: We cannot detect either of the above if any elements or geometry were skipped during tile generation.
-    if (geometry.IsComplete())
+    if (isLeaf || geometry.IsComplete())
         {
         if (geometry.IsEmpty() || !geometry.ContainsCurves())
             tile.SetIsLeaf();
@@ -1094,7 +1095,7 @@ BentleyStatus Loader::DoGetFromSource()
 
     if (geometry.IsEmpty() && geometry.IsComplete())
         m_tileBytes.clear();
-    else if (SUCCESS != TileTree::TileIO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter()))    // TBD -- Avoid round trip through m_tileBytes when loading from elements.
+    else if (SUCCESS != TileTree::TileIO::WriteDgnTile (m_tileBytes, tile._GetContentRange(), geometry, *root.GetModel(), tile.GetCenter(), tile.IsLeaf()))    // TBD -- Avoid round trip through m_tileBytes when loading from elements.
         return ERROR;
     
     m_saveToCache = true;
