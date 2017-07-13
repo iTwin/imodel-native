@@ -153,7 +153,6 @@ struct SchemaImportContext final
         Phase GetPhase() const { return m_phase; }
         SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
         ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
-        ClassMappingCACache* GetClassMappingCACacheP(ECN::ECClassCR) const;
         void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
         std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }
         //!@return true if @p navProp has the ForeignConstraintCA, false otherwise

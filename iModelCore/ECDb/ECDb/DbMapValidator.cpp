@@ -18,12 +18,18 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::Initialize() const
     {
+    if (SUCCESS != m_dbMap.GetDbSchema().LoadIndexDefs())
+        return ERROR;
+
     //cache indexes by their columns for later validation
-    for (DbIndex const* index : m_dbMap.GetDbSchema().GetIndexes())
+    for (DbTable const* table : m_dbMap.GetDbSchema().Tables())
         {
-        for (DbColumn const* col : index->GetColumns())
+        for (std::unique_ptr<DbIndex> const& index : table->GetIndexes())
             {
-            m_indexesByColumnCache[col->GetId()].insert(index);
+            for (DbColumn const* col : index->GetColumns())
+                {
+                m_indexesByColumnCache[col->GetId()].insert(index.get());
+                }
             }
         }
 
@@ -119,16 +125,17 @@ BentleyStatus DbMapValidator::Validate() const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateDbSchema() const
     {
-    for (DbTable const* table : GetDbSchema().GetCachedTables())
+    for (DbTable const* table : GetDbSchema().Tables())
         {
         if (SUCCESS != ValidateDbTable(*table))
             return ERROR;
-        }
 
-    for (DbIndex const* index : GetDbSchema().GetIndexes())
-        {
-        if (SUCCESS != ValidateDbIndex(*index))
-            return ERROR;
+
+        for (std::unique_ptr<DbIndex> const& index : table->GetIndexes())
+            {
+            if (SUCCESS != ValidateDbIndex(*index))
+                return ERROR;
+            }
         }
 
     return SUCCESS;

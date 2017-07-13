@@ -166,7 +166,6 @@ struct ClassMap : RefCountedBase
         ClassMappingStatus Map(SchemaImportContext& importCtx, ClassMappingInfo const& info) { ClassMappingContext ctx(importCtx, info);  return _Map(ctx); }
         BentleyStatus Save(SchemaImportContext&, DbMapSaveContext&);
         BentleyStatus Update(SchemaImportContext& ctx);
-        BentleyStatus CreateUserProvidedIndexes(SchemaImportContext&, std::vector<IndexMappingInfoPtr> const&) const;
         void SetTable(DbTable& newTable) { m_tables.clear(); AddTable(newTable); }
         void AddTable(DbTable& newTable) { BeAssert(std::find(begin(m_tables), end(m_tables), &newTable) == end(m_tables)); m_tables.push_back(&newTable); }
         BentleyStatus SetOverflowTable(DbTable& overflowTable);

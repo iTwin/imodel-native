@@ -547,6 +547,143 @@ BentleyStatus ClassMapper::SetupNavigationPropertyMap(NavigationPropertyMap& pro
 
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                   07/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMapper::MapUserDefinedIndexes(ECDbCR ecdb, ClassMap const& classMap)
+    {
+    DbIndexListCustomAttribute dbIndexListCA;
+    if (!ECDbMapCustomAttributeHelper::TryGetDbIndexList(dbIndexListCA, classMap.GetClass()))
+        return SUCCESS;
+
+    bvector<DbIndexListCustomAttribute::DbIndex> indexCAs;
+    if (SUCCESS != dbIndexListCA.GetIndexes(indexCAs))
+        return ERROR;
+
+    if (indexCAs.empty())
+        return SUCCESS;
+
+    if (classMap.GetClass().IsEntityClass() && classMap.GetClass().GetEntityClassCP()->IsMixin())
+        {
+        ecdb.GetImpl().Issues().Report("Failed to map mixin ECClass %s. Mixins cannot have user-defined indexes.", classMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+        {
+        ecdb.GetImpl().Issues().Report("Failed to map ECRelationshipClass %s. Foreign key type relationships cannot have user-defined indexes.", classMap.GetClass().GetFullName());
+        return ERROR;
+        }
+
+    for (DbIndexListCustomAttribute::DbIndex const& indexCA : indexCAs)
+        {
+        if (SUCCESS != MapUserDefinedIndex(ecdb, classMap, indexCA))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                   07/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus ClassMapper::MapUserDefinedIndex(ECDbCR ecdb, ClassMap const& classMap, DbIndexListCustomAttribute::DbIndex const& indexCA)
+    {
+    IssueReporter const& issues = ecdb.GetImpl().Issues();
+    ECClassCR ecClass = classMap.GetClass();
+
+    if (!indexCA.IsValid())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    bool addPropsAreNotNullWhereExp = false;
+    if (!indexCA.GetWhereClause().IsNull())
+        {
+        if (indexCA.GetWhereClause().Value().EqualsIAscii("IndexedColumnsAreNotNull"))
+            addPropsAreNotNullWhereExp = true;
+        else
+            {
+            issues.Report("Failed to map ECClass %s. Invalid where clause in DbIndexList::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), indexCA.GetWhereClause().Value().c_str());
+            return ERROR;
+            }
+        }
+
+    std::vector<DbColumn const*> totalColumns;
+    for (Utf8StringCR propertyAccessString : indexCA.GetProperties())
+        {
+        PropertyMap const* propertyMap = classMap.GetPropertyMaps().Find(propertyAccessString.c_str());
+        if (propertyMap == nullptr)
+            {
+            issues.Report("DbIndex custom attribute '%s' on ECClass '%s' is invalid: "
+                          "The specified ECProperty '%s' does not exist or is not mapped.",
+                          indexCA.GetName().c_str(), ecClass.GetFullName(), propertyAccessString.c_str());
+            return ERROR;
+            }
+
+        ECPropertyCR prop = propertyMap->GetProperty();
+        if (!prop.GetIsPrimitive())
+            {
+            issues.Report("DbIndex custom attribute '%s' on ECClass '%s' is invalid: "
+                          "The specified ECProperty '%s' is not of a primitive type.",
+                          indexCA.GetName().c_str(), ecClass.GetFullName(), propertyAccessString.c_str());
+            return ERROR;
+            }
+
+
+        if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId)
+            {
+            BeAssert(classMap.GetType() == ClassMap::Type::RelationshipLinkTable);
+            issues.Report("DbIndex custom attribute '%s' on ECRelationshipClass '%s' is invalid. Cannot define index on the "
+                          "system properties " ECDBSYS_PROP_SourceECClassId " or " ECDBSYS_PROP_TargetECClassId ".",
+                          indexCA.GetName().c_str(), ecClass.GetFullName());
+            return ERROR;
+            }
+
+        DbTable const& table = classMap.GetJoinedOrPrimaryTable();
+        GetColumnsPropertyMapVisitor columnVisitor(table);
+        propertyMap->AcceptVisitor(columnVisitor);
+        if (table.GetType() != DbTable::Type::Virtual && columnVisitor.GetVirtualColumnCount() > 0)
+            {
+            issues.Report("DbIndex custom attribute '%s' on ECClass '%s' is invalid: "
+                          "The specified ECProperty '%s' cannot be used in the index as it is not mapped to a column (aka virtual column).",
+                          indexCA.GetName().c_str(), ecClass.GetFullName(), propertyAccessString.c_str());
+            return ERROR;
+            }
+
+        if (columnVisitor.GetColumnCount() == 0)
+            {
+            if (classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
+                {
+                issues.Report("DbIndex custom attribute '%s' on ECClass '%s' is invalid. "
+                              "The properties that make up the index are mapped to different tables because the 'JoinedTablePerDirectSubclass' custom attribute "
+                              "is applied to this class hierarchy.",
+                              indexCA.GetName().c_str(), ecClass.GetFullName());
+                }
+            else
+                {
+                issues.Report("DbIndex custom attribute '%s' on ECClass '%s' is invalid. "
+                              "The properties that make up the index are mapped to different tables.",
+                              indexCA.GetName().c_str(), ecClass.GetFullName());
+
+                BeAssert(false && "Properties of DbIndex are mapped to different tables although JoinedTable option is not applied.");
+                }
+
+            return ERROR;
+            }
+
+        totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
+        }
+
+    if (nullptr == classMap.GetJoinedOrPrimaryTable().CreateIndex(indexCA.GetName(), indexCA.IsUnique(), totalColumns, addPropsAreNotNullWhereExp, false, ecClass.GetId()))
+        return ERROR;
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
 //static 
@@ -733,7 +870,7 @@ DbTable* ClassMapper::TableMapper::CreateTableForOtherStrategies(ClassMap const&
             return nullptr;
         }
 
-    if (SUCCESS != CreateClassIdColumn(classMap.GetDbMap().GetDbSchemaR(), *table, classIdColPersistenceType))
+    if (SUCCESS != CreateClassIdColumn(*table, classIdColPersistenceType))
         return nullptr;
 
     return table;
@@ -818,7 +955,7 @@ DbTable* ClassMapper::TableMapper::CreateTableForExistingTableStrategy(ClassMap 
         return nullptr;
         }
 
-    if (SUCCESS != CreateClassIdColumn(classMap.GetDbMap().GetDbSchemaR(), *table, classIdColPersistenceType))
+    if (SUCCESS != CreateClassIdColumn(*table, classIdColPersistenceType))
         return nullptr;
 
     table->GetEditHandleR().EndEdit(); //we do not want this table to be editable;
@@ -829,7 +966,7 @@ DbTable* ClassMapper::TableMapper::CreateTableForExistingTableStrategy(ClassMap 
 // @bsimethod                                                Krischan.Eberle       05/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus ClassMapper::TableMapper::CreateClassIdColumn(DbSchema& dbSchema, DbTable& table, PersistenceType persType)
+BentleyStatus ClassMapper::TableMapper::CreateClassIdColumn(DbTable& table, PersistenceType persType)
     {
     DbColumn* classIdColumn = table.CreateColumn(Utf8String(COL_ECClassId), DbColumn::Type::Integer, 1, DbColumn::Kind::ECClassId, persType);
     if (classIdColumn == nullptr)
@@ -844,9 +981,9 @@ BentleyStatus ClassMapper::TableMapper::CreateClassIdColumn(DbSchema& dbSchema, 
     if (persType == PersistenceType::Virtual)
         return SUCCESS;
 
-    Nullable<Utf8String> indexName("ix_");
-    indexName.ValueR().append(table.GetName()).append("_ecclassid");
-    return dbSchema.CreateIndex(table, indexName, false, {classIdColumn}, false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
+    Utf8String indexName("ix_");
+    indexName.append(table.GetName()).append("_ecclassid");
+    return table.CreateIndex(indexName, false, {classIdColumn}, false, true, ECClassId()) != nullptr ? SUCCESS : ERROR;
     }
 
 //---------------------------------------------------------------------------------------
@@ -1349,6 +1486,9 @@ BentleyStatus RelationshipClassEndTableMapper::AddIndexToRelationshipEnd(Relatio
     if (!IsPhysicalForeignKey())
         return SUCCESS; //indexes only for physical fks - even if they would be enforcing cardinality (via a unique index)
 
+    if (m_relationshipMap.GetClass().GetName().EqualsIAscii("PSAHasPSA_11"))
+        printf("Hello");
+
     //0:0 or 1:1 cardinalities imply unique index
     const bool isUniqueIndex = m_relationshipMap.GetRelationshipClass().GetSource().GetMultiplicity().GetUpperLimit() <= 1 &&
         m_relationshipMap.GetRelationshipClass().GetTarget().GetMultiplicity().GetUpperLimit() <= 1;
@@ -1361,9 +1501,9 @@ BentleyStatus RelationshipClassEndTableMapper::AddIndexToRelationshipEnd(Relatio
     DbColumn const* refClassId = info.Get(PartitionInfo::ColumnId::ECClassId);
     if (!refClassId->IsVirtual())
         {
-        Nullable<Utf8String> indexName("ix_");
-        indexName.ValueR().append(persistenceEndTable.GetName()).append("_").append(refClassId->GetName());
-        DbIndex* index = m_relationshipMap.GetDbMap().GetDbSchemaR().CreateIndex(persistenceEndTable, indexName, false, {refClassId}, true, true, m_relationshipMap.GetClass().GetId());
+        Utf8String indexName("ix_");
+        indexName.append(persistenceEndTable.GetName()).append("_").append(refClassId->GetName());
+        DbIndex* index = persistenceEndTable.CreateIndex(indexName, false, {refClassId}, true, true, m_relationshipMap.GetClass().GetId());
         if (index == nullptr)
             {
             LOG.errorv("Failed to create index on " ECDBSYS_PROP_NavPropRelECClassId " column %s on Table %s.", refClassId->GetName().c_str(), persistenceEndTable.GetName().c_str());
@@ -1373,14 +1513,16 @@ BentleyStatus RelationshipClassEndTableMapper::AddIndexToRelationshipEnd(Relatio
 
 
     // name of the index
-    Nullable<Utf8String> name(isUniqueIndex ? "uix_" : "ix_");
-    name.ValueR().append(persistenceEndTable.GetName()).append("_fk_").append(m_relationshipMap.GetClass().GetSchema().GetAlias() + "_" + m_relationshipMap.GetClass().GetName());
+    Utf8String name(isUniqueIndex ? "uix_" : "ix_");
+    name.append(persistenceEndTable.GetName()).append("_fk_").append(m_relationshipMap.GetClass().GetSchema().GetAlias() + "_" + m_relationshipMap.GetClass().GetName());
     if (m_relationshipMap.GetMapStrategy().GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable)
-        name.ValueR().append("_source");
+        name.append("_source");
     else
-        name.ValueR().append("_target");
+        name.append("_target");
 
-    m_relationshipMap.GetDbMap().GetDbSchemaR().CreateIndex(persistenceEndTable, name, isUniqueIndex, {refId}, true, true, m_relationshipMap.GetClass().GetId());
+    if (nullptr == persistenceEndTable.CreateIndex(name, isUniqueIndex, {refId}, true, true, m_relationshipMap.GetClass().GetId()))
+        return ERROR;
+
     return SUCCESS;
     }
 

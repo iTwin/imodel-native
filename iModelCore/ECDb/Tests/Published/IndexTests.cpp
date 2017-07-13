@@ -84,6 +84,26 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                      <Properties>"
+        "                          <string>Code</string>"
+        "                      </Properties>"
+        "                   </DbIndex>"
+        "                  </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "DbIndexList CA with DbIndex without Name is not supported";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
         "    <ECEntityClass typeName='Element' modifier='None'>"
@@ -2765,6 +2785,329 @@ TEST_F(IndexTests, UserDefinedUniqueIndex)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     sqlCmd = stmt.GetValueText(4);
     ASSERT_TRUE(sqlCmd.find("UNIQUE") == std::string::npos);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, DuplicateUserDefinedIndexes)
+    {
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and definition on same abstract class";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and different definition on same abstract class";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base"">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and definition on same class";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base"">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and different definition on same class";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and different definition on same class";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Cost</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="Cost" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and different definition in subclass";
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("DuplicateUserDefinedIndexes.ecdb", SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="A" >
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml")));
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="B" >
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Name</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name already exists";
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="B" >
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>AnotherIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Name</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="C" >
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>AnotherIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Cost</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Cost" typeName="double" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Two indexes with same name in same schema";
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("DuplicateUserDefinedIndexes.ecdb", SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml")));
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                    <ECEntityClass typeName="Sub" >
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Cost</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <BaseClass>TestSchema:Base</BaseClass>
+                        <ECProperty propertyName="Cost" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name already exists in same table";
+            }
     }
 
 //---------------------------------------------------------------------------------------

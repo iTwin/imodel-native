@@ -81,6 +81,10 @@ public:
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
 
     static BentleyStatus RunPragmaTableInfo(bvector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName);
+
+    static bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetTableDefNamesAndIds(ECDbCR, Utf8CP whereClause = nullptr);
+    static bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetColumnNamesAndIds(ECDbCR, DbTableId);
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

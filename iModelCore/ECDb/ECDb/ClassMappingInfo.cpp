@@ -86,14 +86,6 @@ ClassMappingStatus ClassMappingInfo::_EvaluateMapStrategy(SchemaImportContext& c
     {
     if (m_ecClass.IsCustomAttributeClass() || m_ecClass.IsStructClass())
         {
-        LogClassNotMapped(NativeLogging::LOG_DEBUG, m_ecClass, "ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.");
-        m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
-        return ClassMappingStatus::Success;
-        }
-
-    if (m_ecClass.GetSchema().IsStandardSchema() && m_ecClass.GetName().CompareTo("InstanceCount") == 0)
-        {
-        LogClassNotMapped(NativeLogging::LOG_INFO, m_ecClass, "ECClass is a standard class not supported by ECDb.");
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::NotMapped);
         return ClassMappingStatus::Success;
         }
@@ -365,9 +357,6 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema(SchemaImportContext& ctx)
             m_ecInstanceIdColumnName.assign(idColName.Value());
         }
 
-    if (SUCCESS != IndexMappingInfo::CreateFromECClass(m_dbIndexes, m_ecdb, m_ecClass, caCache.GetDbIndexListCA()))
-        return ERROR;
-
     return InitializeClassHasCurrentTimeStampProperty();
     }
 
@@ -522,16 +511,6 @@ ClassMappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBa
 // @bsimethod                                 Krischan.Eberle                06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 IssueReporter const& ClassMappingInfo::Issues() const { return m_ecdb.GetImpl().Issues(); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-void ClassMappingInfo::LogClassNotMapped(NativeLogging::SEVERITY severity, ECClassCR ecClass, Utf8CP explanation)
-    {
-    Utf8CP classTypeStr = ecClass.GetRelationshipClassCP() != nullptr ? "ECRelationshipClass" : "ECClass";
-    LOG.messagev(severity, "Skipped %s '%s' during mapping: %s", classTypeStr, ecClass.GetFullName(), explanation);
-    }
 
 
 //****************************************************************************************************
@@ -1114,82 +1093,6 @@ std::set<DbTable const*> RelationshipMappingInfo::GetTablesFromRelationshipEnd(D
         }
 
     return finalSetOfTables;
-    }
-
-
-//***************** IndexMappingInfo ****************************************
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus IndexMappingInfo::CreateFromECClass(std::vector<IndexMappingInfoPtr>& indexInfos, ECDbCR ecdb, ECClassCR ecClass, DbIndexListCustomAttribute const& dbIndexListCA)
-    {
-    if (dbIndexListCA.IsValid())
-        {
-        if (ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin())
-            {
-            ecdb.GetImpl().Issues().Report("Failed to map mixin ECClass %s. DbIndexes cannot be defined for mixins.", ecClass.GetFullName());
-            return ERROR;
-            }
-
-        bvector<DbIndexListCustomAttribute::DbIndex> indices;
-        if (SUCCESS != dbIndexListCA.GetIndexes(indices))
-            return ERROR;
-
-        for (DbIndexListCustomAttribute::DbIndex const& index : indices)
-            {
-            bool addPropsAreNotNullWhereExp = false;
-
-            if (!index.GetWhereClause().IsNull())
-                {
-                if (index.GetWhereClause().Value().EqualsIAscii("IndexedColumnsAreNotNull"))
-                    addPropsAreNotNullWhereExp = true;
-                else
-                    {
-                    ecdb.GetImpl().Issues().Report("Failed to map ECClass %s. Invalid where clause in DbIndexList::DbIndex: %s. Only 'IndexedColumnsAreNotNull' is supported by ECDb.", ecClass.GetFullName(), index.GetWhereClause().Value().c_str());
-                    return ERROR;
-                    }
-                }
-
-            indexInfos.push_back(new IndexMappingInfo(index.GetName(), index.IsUnique(), index.GetProperties(), addPropsAreNotNullWhereExp));
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus IndexMappingInfoCache::TryGetIndexInfos(std::vector<IndexMappingInfoPtr> const*& indexInfos, ClassMap const& classMap) const
-    {
-    //first look in class map info cache
-    auto classMapInfoCacheIt = m_schemaImportContext.GetClassMappingInfoCache().find(&classMap);
-    if (classMapInfoCacheIt != m_schemaImportContext.GetClassMappingInfoCache().end())
-        {
-        indexInfos = &classMapInfoCacheIt->second->GetIndexInfos();
-        return SUCCESS;
-        }
-
-    //now look in internal cache
-    auto indexInfoCacheIt = m_indexInfoCache.find(&classMap);
-    if (indexInfoCacheIt != m_indexInfoCache.end())
-        {
-        indexInfos = &indexInfoCacheIt->second;
-        return SUCCESS;
-        }
-
-    //not in internal cache, so read index info from ECClass (and cache it)
-    std::vector<IndexMappingInfoPtr>& newIndexInfos = m_indexInfoCache[&classMap];
-    ECClassCR ecClass = classMap.GetClass();
-    DbIndexListCustomAttribute dbIndexListCA;
-    ECDbMapCustomAttributeHelper::TryGetDbIndexList(dbIndexListCA, ecClass);
-    if (SUCCESS != IndexMappingInfo::CreateFromECClass(newIndexInfos, m_ecdb, ecClass, dbIndexListCA))
-        return ERROR;
-
-    indexInfos = &newIndexInfos;
-    return SUCCESS;
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

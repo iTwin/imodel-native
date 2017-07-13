@@ -1536,6 +1536,34 @@ TEST_F(ECSqlStatementTestFixture, WrapWhereClauseInParams)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                      07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, HexLiteral)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("HexLiteral.ecdb", SchemaItem(
+        R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECEntityClass typeName="Sample" modifier="None">
+                    <ECProperty propertyName="StringProp" typeName="string" />
+                </ECEntityClass>
+              </ECSchema>)xml")));
+
+    ECInstanceKey actualKey;
+    ECInstanceId expectedECInstanceId(UINT64_C(0x7FFFFFFFFFFFFFFF));
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(actualKey, "INSERT INTO ts.Sample(ECInstanceId, StringProp) VALUES (0x7FFFFFFFFFFFFFFF, '0x7FFFFFFFFFFFFFFF')"));
+    ASSERT_EQ(expectedECInstanceId, actualKey.GetInstanceId());
+
+    ECSqlStatement stmt;
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT StringProp FROM ts.Sample WHERE ECInstanceId = 0x7FFFFFFFFFFFFFFF"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_STREQ("0x7FFFFFFFFFFFFFFF", stmt.GetValueText(0));
+
+    expectedECInstanceId = ECInstanceId(UINT64_C(0x7ABCDEF) + 39421 - 0x43);
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteInsertECSql(actualKey, "INSERT INTO ts.Sample(ECInstanceId, StringProp) VALUES (0x7ABCDEF + 39421 - 0x43, '0x7ABCDEF + 39421 - 0x43')"));
+    ASSERT_EQ(expectedECInstanceId, actualKey.GetInstanceId());
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                     Muhammad Hassan                  08/15
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlStatementTestFixture, PolymorphicDelete_SharedTable)

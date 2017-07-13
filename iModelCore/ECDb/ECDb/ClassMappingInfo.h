@@ -43,9 +43,6 @@ public:
     static std::unique_ptr<ClassMappingInfo> Create(ClassMappingStatus&, SchemaImportContext&, ECDb const&, ECN::ECClassCR);
     };
 
-struct IndexMappingInfo;
-typedef RefCountedPtr<IndexMappingInfo> IndexMappingInfoPtr;
-
 //======================================================================================
 //! Info class used during schema import in order to create the mapping information for classes
 //! and relationships
@@ -63,7 +60,6 @@ protected:
 private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
-    std::vector<IndexMappingInfoPtr> m_dbIndexes;
     ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty;
 
     ClassMappingStatus EvaluateMapStrategy(SchemaImportContext&);
@@ -80,7 +76,6 @@ protected:
     BentleyStatus AssignMapStrategy(ClassMappingCACache const&);
 
     IssueReporter const& Issues() const;
-    static void LogClassNotMapped (NativeLogging::SEVERITY, ECN::ECClassCR, Utf8CP explanation);
 
 public:
     ClassMappingInfo(ECDb const&, ECN::ECClassCR);
@@ -92,7 +87,6 @@ public:
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
     DbMap const& GetDbMap() const {return m_ecdb.Schemas().GetDbMap();}
     ECN::ECClassCR GetClass() const {return m_ecClass;}
-    std::vector<IndexMappingInfoPtr> const& GetIndexInfos() const { return m_dbIndexes;}
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
     ECN::PrimitiveECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
@@ -241,53 +235,5 @@ public:
     std::set<DbTable const*> const& GetTargetTables() const { BeAssert(m_isRootClass); return m_targetTables;}
     };
 
-
-//======================================================================================
-// @bsiclass                                                Affan.Khan  02/2012
-//+===============+===============+===============+===============+===============+======
-struct IndexMappingInfo final : RefCountedBase
-    {
-    private:
-        Nullable<Utf8String> m_name;
-        bool m_isUnique = false;
-        std::vector<Utf8String> m_properties;
-        bool m_addPropsAreNotNullWhereExp;
-
-        IndexMappingInfo(Nullable<Utf8String> const& name, Nullable<bool> isUnique, std::vector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
-            : m_name(name), m_isUnique(isUnique.IsNull() ? false : isUnique.Value()), m_properties(properties), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
-            {}
-
-        IndexMappingInfo(Nullable<Utf8String> const& name, Nullable<bool> isUnique, bvector<Utf8String> const& properties, bool addPropsAreNotNullWhereExp)
-            : m_name(name), m_isUnique(isUnique.IsNull() ? false : isUnique.Value()), m_addPropsAreNotNullWhereExp(addPropsAreNotNullWhereExp)
-            {
-            m_properties.insert(m_properties.begin(), properties.begin(), properties.end());
-            }
-
-        IndexMappingInfo(Nullable<Utf8String> const& name, IndexMappingInfo const& rhs) : m_name(name), m_isUnique(rhs.m_isUnique), m_properties(rhs.m_properties), m_addPropsAreNotNullWhereExp(rhs.m_addPropsAreNotNullWhereExp) {}
-
-    public:
-        static IndexMappingInfoPtr Clone(Nullable<Utf8String> const& name, IndexMappingInfo const& rhs) { return new IndexMappingInfo(name, rhs); }
-        static BentleyStatus CreateFromECClass(std::vector<IndexMappingInfoPtr>&, ECDbCR, ECN::ECClassCR, DbIndexListCustomAttribute const&);
-
-        Nullable<Utf8String> const& GetName() const { return m_name; }
-        bool GetIsUnique() const { return m_isUnique; }
-        std::vector<Utf8String> const& GetProperties() const { return m_properties; }
-        bool IsAddPropsAreNotNullWhereExp() const { return m_addPropsAreNotNullWhereExp; }
-    };
-
-//======================================================================================
-// @bsiclass                                                Krischan.Eberle  02/2016
-//+===============+===============+===============+===============+===============+======
-struct IndexMappingInfoCache final : NonCopyableClass
-    {
-private:
-    ECDbCR m_ecdb;
-    SchemaImportContext const& m_schemaImportContext;
-    mutable bmap<ClassMap const*, std::vector<IndexMappingInfoPtr>> m_indexInfoCache;
-
-public:
-    IndexMappingInfoCache(ECDbCR ecdb, SchemaImportContext const& ctx) : m_ecdb(ecdb), m_schemaImportContext(ctx) {}
-    BentleyStatus TryGetIndexInfos(std::vector<IndexMappingInfoPtr> const*& indexInfos, ClassMap const&) const;
-    };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

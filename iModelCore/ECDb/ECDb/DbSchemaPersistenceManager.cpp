@@ -728,5 +728,59 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(bvector<SqliteColum
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+//static
+bmap<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetTableDefNamesAndIds(ECDbCR ecdb, Utf8CP whereClause)
+    {
+    bmap<Utf8String, DbTableId, CompareIUtf8Ascii> map;
+
+    CachedStatementPtr stmt = nullptr;
+    if (whereClause == nullptr)
+        stmt = ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Table");
+    else
+        {
+        Utf8String sql("SELECT Name, Id FROM ec_Table");
+        sql.append(" WHERE ").append(whereClause);
+        stmt = ecdb.GetCachedStatement(sql.c_str());
+        }
+
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return map;
+        }
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        map[stmt->GetValueText(0)] = stmt->GetValueId<DbTableId>(1);
+        }
+
+    return map;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+//static
+bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetColumnNamesAndIds(ECDbCR ecdb, DbTableId tableId)
+    {
+    bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> map;
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Column WHERE TableId=?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return map;
+        }
+
+    stmt->BindId(1, tableId);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        map[stmt->GetValueText(0)] = stmt->GetValueId<DbColumnId>(1);
+        }
+
+    return map;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

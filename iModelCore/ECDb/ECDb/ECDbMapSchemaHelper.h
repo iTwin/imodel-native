@@ -190,26 +190,59 @@ struct DbIndexListCustomAttribute final
             friend struct DbIndexListCustomAttribute;
 
             private:
-                Nullable<Utf8String> m_name;
-                Nullable<bool> m_isUnique;
+                Utf8String m_name;
+                bool m_isUnique = false;
+                std::vector<Utf8String> m_properties;
                 Nullable<Utf8String> m_whereClause;
-                bvector<Utf8String> m_properties;
 
-                DbIndex(Nullable<Utf8String> const& name, Nullable<bool> isUnique, Nullable<Utf8String> const& whereClause) : m_name(name), m_isUnique(isUnique), m_whereClause(whereClause) {}
+                DbIndex(Utf8StringCR name, bool isUnique, Nullable<Utf8String> const& whereClause) : m_name(name), m_isUnique(isUnique), m_whereClause(whereClause) {}
 
             public:
+                DbIndex() {}
+                DbIndex(Utf8StringCR name, bool isUnique, std::vector<Utf8String> const& props, Nullable<Utf8String> const& whereClause) : m_name(name), m_isUnique(isUnique), m_properties(props), m_whereClause(whereClause) {}
+                DbIndex(DbIndex const& rhs) : m_name(rhs.m_name), m_isUnique(rhs.m_isUnique), m_properties(rhs.m_properties), m_whereClause(rhs.m_whereClause){}
+                DbIndex(DbIndex&& rhs) : m_name(std::move(rhs.m_name)), m_isUnique(std::move(rhs.m_isUnique)), m_properties(std::move(rhs.m_properties)), m_whereClause(std::move(rhs.m_whereClause)) {}
+
+                bool IsValid() const { return !m_name.empty(); }
+
+                DbIndex& operator=(DbIndex const& rhs)
+                    {
+                    if (this != &rhs)
+                        {
+                        m_name.assign(rhs.m_name);
+                        m_isUnique = rhs.m_isUnique;
+                        m_properties = rhs.m_properties;
+                        m_whereClause = rhs.m_whereClause;
+                        }
+
+                    return *this;
+                    }
+
+                DbIndex& operator=(DbIndex&& rhs)
+                    {
+                    if (this != &rhs)
+                        {
+                        m_name = std::move(rhs.m_name);
+                        m_isUnique = std::move(rhs.m_isUnique);
+                        m_properties = std::move(rhs.m_properties);
+                        m_whereClause = std::move(rhs.m_whereClause);
+                        }
+
+                    return *this;
+                    }
+
                 //! Gets the index name.
-                //! @return Index name. (If IsNull, it indicates that the name of the index should be auto-generated)
-                Nullable<Utf8String> const& GetName() const { return m_name; }
+                //! @return Index name.
+                Utf8StringCR GetName() const { return m_name; }
                 //! Gets a value indicating whether the index is a unique index or not.
                 //! @return true if the index is a unique index. false otherwise
-                Nullable<bool> IsUnique() const { return m_isUnique; }
+                bool IsUnique() const { return m_isUnique; }
                 //! Gets the where clause if the index a partial index.
                 //! @return Where clause or nullptr if the index is not partial
                 Nullable<Utf8String> const& GetWhereClause() const { return m_whereClause; }
                 //! Gets the list of property names on which the index is to be defined.
                 //! @return Properties on which the index is defined.
-                bvector<Utf8String> const& GetProperties() const { return m_properties; }
+                std::vector<Utf8String> const& GetProperties() const { return m_properties; }
             };
 
     private:

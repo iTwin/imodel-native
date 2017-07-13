@@ -15,14 +15,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // SchemaImportContext
 //*************************************************************************************
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-ClassMappingCACache const* SchemaImportContext::GetClassMappingCACache(ECClassCR ecclass) const
-    {
-    return GetClassMappingCACacheP(ecclass);
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan       06/2017
 //--------------------------------------------------------------------------------------
 SchemaImportContext::SchemaImportContext(SchemaManager::SchemaImportOptions options) :m_relCol(new RelationshipClassEndTableMapperCollection(*this)), m_options(options) {}
@@ -30,7 +22,7 @@ SchemaImportContext::SchemaImportContext(SchemaManager::SchemaImportOptions opti
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
-ClassMappingCACache* SchemaImportContext::GetClassMappingCACacheP(ECClassCR ecclass) const
+ClassMappingCACache const* SchemaImportContext::GetClassMappingCACache(ECClassCR ecclass) const
     {
     auto it = m_classMappingCACache.find(&ecclass);
     if (it != m_classMappingCACache.end())

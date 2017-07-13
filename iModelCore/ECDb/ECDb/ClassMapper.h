@@ -32,7 +32,7 @@ struct ClassMapper final
                 static DbTable* FindOrCreateTable(ClassMap const&, ClassMappingInfo const&, DbTable::Type, DbTable const* primaryTable);
                 static DbTable* CreateTableForExistingTableStrategy(ClassMap const&, Utf8StringCR existingTableName, Utf8StringCR primaryKeyColName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId);
                 static DbTable* CreateTableForOtherStrategies(ClassMap const&, Utf8StringCR tableName, DbTable::Type, Utf8StringCR primaryKeyColumnName, PersistenceType classIdColPersistenceType, ECN::ECClassId exclusiveRootClassId, DbTable const* primaryTable);
-                static BentleyStatus CreateClassIdColumn(DbSchema&, DbTable&, PersistenceType);
+                static BentleyStatus CreateClassIdColumn(DbTable&, PersistenceType);
                 static bool IsExclusiveRootClassOfTable(ClassMappingInfo const&);
                 static BentleyStatus DetermineTablePrefix(Utf8StringR tablePrefix, ECN::ECClassCR);
 
@@ -69,6 +69,9 @@ struct ClassMapper final
         static PropertyMap* MapProperty(ClassMap&, ECN::ECPropertyCR);
         static PropertyMap* LoadPropertyMap(ClassMap&, ECN::ECPropertyCR, DbClassMapLoadContext const&);
         static BentleyStatus SetupNavigationPropertyMap(NavigationPropertyMap&);
+
+        static BentleyStatus MapUserDefinedIndexes(ECDbCR, ClassMap const&);
+        static BentleyStatus MapUserDefinedIndex(ECDbCR, ClassMap const&, DbIndexListCustomAttribute::DbIndex const&);
 
         //! Rules:
         //! If MapStrategy != TPH: NotInherited

@@ -359,99 +359,6 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
     return ClassMappingStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Affan.Khan                           09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImportContext, std::vector<IndexMappingInfoPtr> const& indexInfoList) const
-    {
-    if (m_type == ClassMap::Type::RelationshipEndTable && !indexInfoList.empty())
-        {
-        Issues().Report("Failed to map ECRelationshipClass %s. DbIndexes cannot be defined for foreign-key type relationships.", GetClass().GetFullName());
-        return ERROR;
-        }
-
-    int i = 0;
-    for (IndexMappingInfoPtr const& indexInfo : indexInfoList)
-        {
-        i++;
-
-        std::vector<DbColumn const*> totalColumns;
-        NativeSqlBuilder whereExpression;
-
-        for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
-            {
-            PropertyMap const* propertyMap = GetPropertyMaps().Find(propertyAccessString.c_str());
-            if (propertyMap == nullptr)
-                {
-                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                   "The specified ECProperty '%s' does not exist or is not mapped.",
-                              i, GetClass().GetFullName(), propertyAccessString.c_str());
-                return ERROR;
-                }
-
-            ECPropertyCR prop = propertyMap->GetProperty();
-            if (!prop.GetIsPrimitive())
-                {
-                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                              "The specified ECProperty '%s' is not of a primitive type.",
-                              i, GetClass().GetFullName(), propertyAccessString.c_str());
-                return ERROR;
-                }
-
-            
-            if (propertyMap->GetType() == PropertyMap::Type::ConstraintECClassId)
-                {
-                BeAssert(m_type == ClassMap::Type::RelationshipLinkTable);
-                Issues().Report("DbIndex custom attribute #%d on ECRelationshipClass '%s' is invalid. Cannot define index on the "
-                                "system properties " ECDBSYS_PROP_SourceECClassId " or " ECDBSYS_PROP_TargetECClassId ".",
-                                i, GetClass().GetFullName());
-                return ERROR;
-                }
-
-            DbTable const& table = GetJoinedOrPrimaryTable();
-            GetColumnsPropertyMapVisitor columnVisitor(table);
-            propertyMap->AcceptVisitor(columnVisitor);
-            if (table.GetType() != DbTable::Type::Virtual && columnVisitor.GetVirtualColumnCount() > 0)
-                {
-                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                                "The specified ECProperty '%s' cannot be used in the index as it is not mapped to a column (aka virtual column).",
-                                i, GetClass().GetFullName(), propertyAccessString.c_str());
-                return ERROR;
-                }
-
-            if (columnVisitor.GetColumnCount() == 0)
-                {
-                if (m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
-                    {
-                    Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid. "
-                                    "The properties that make up the index are mapped to different tables because the 'JoinedTablePerDirectSubclass' custom attribute "
-                                    "is applied to this class hierarchy.",
-                                    i, GetClass().GetFullName());
-                    }
-                else
-                    {
-                    Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid. "
-                                    "The properties that make up the index are mapped to different tables.",
-                                    i, GetClass().GetFullName());
-
-                    BeAssert(false && "Properties of DbIndex are mapped to different tables although JoinedTable option is not applied.");
-                    }
-
-                return ERROR;
-                }
-
-            totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
-            }
-
-        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(GetJoinedOrPrimaryTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
-                                                                      totalColumns, indexInfo->IsAddPropsAreNotNullWhereExp(), false, GetClass().GetId()))
-            {
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                           07/2012
@@ -666,7 +573,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
             //! ECSchema update added new property for which we need to save property map
             DbMapSaveContext ctx(m_ecdb);
             //First make sure table is updated on disk. The table must already exist for this operation to work.
-            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
+            if (GetDbMap().GetDbSchema().UpdateTableInDb(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
                 {
                 BeAssert(false && "Failed to save table");
                 return ERROR;

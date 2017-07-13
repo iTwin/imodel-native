@@ -20,8 +20,6 @@ RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECN::ECC
     BeAssert(ecRelClass.IsRelationshipClass());
     }
 
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
 //---------------------------------------------------------------------------------------
@@ -1021,19 +1019,19 @@ void RelationshipClassLinkTableMap::AddIndices(ClassMappingContext& ctx, bool al
 void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportContext, RelationshipIndexSpec spec, bool isUniqueIndex)
     {
     // Setup name of the index
-    Nullable<Utf8String> name(isUniqueIndex ? "uix_" : "ix_");
-    name.ValueR().append(GetClass().GetSchema().GetAlias()).append("_").append(GetClass().GetName()).append("_");
+    Utf8String name(isUniqueIndex ? "uix_" : "ix_");
+    name.append(GetClass().GetSchema().GetAlias()).append("_").append(GetClass().GetName()).append("_");
 
     switch (spec)
         {
             case RelationshipIndexSpec::Source:
-                name.ValueR().append("source");
+                name.append("source");
                 break;
             case RelationshipIndexSpec::Target:
-                name.ValueR().append("target");
+                name.append("target");
                 break;
             case RelationshipIndexSpec::SourceAndTarget:
-                name.ValueR().append("sourcetarget");
+                name.append("sourcetarget");
                 break;
             default:
                 BeAssert(false);
@@ -1064,8 +1062,7 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    GetDbMap().GetDbSchemaR().CreateIndex(GetPrimaryTable(), name, isUniqueIndex, columns, false,
-                                            true, GetClass().GetId(),
+    GetPrimaryTable().CreateIndex(name, isUniqueIndex, columns, false, true, GetClass().GetId(),
                                             //if a partial index is created, it must only apply to this class,
                                             //not to subclasses, as constraints are not inherited by relationships
                                             false);
