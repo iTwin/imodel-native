@@ -2567,16 +2567,18 @@ struct FeatureSymbologyOverrides
         friend struct FeatureSymbologyOverrides;
 
         ColorDef        m_color;
-        uint32_t        m_weight;
+        uint8_t         m_weight;
+        LinePixels      m_linePixels;
         struct
             {
             uint32_t        m_rgb:1;
             uint32_t        m_alpha:1;
             uint32_t        m_weight:1;
+            uint32_t        m_linePixels:1;
             }           m_flags;
     public:
         Appearance() { Init(); }
-        void Init() { m_weight=0; m_flags.m_rgb = m_flags.m_alpha = m_flags.m_weight = 0;  }
+        void Init() { m_weight=0; m_flags.m_rgb = m_flags.m_alpha = m_flags.m_weight = m_flags.m_linePixels = 0;  }
         void InitFrom(DgnSubCategory::Override const& ovr);
 
         //! Override transparency
@@ -2586,7 +2588,9 @@ struct FeatureSymbologyOverrides
         //! Override RGB and transparency
         void SetRgba(ColorDef color) { SetRgb(color); SetAlpha(color.GetAlpha()); }
         //! Override line weight
-        void SetWeight(uint32_t weight) { m_flags.m_weight = true; m_weight = weight; }
+        void SetWeight(uint8_t weight) { m_flags.m_weight = true; m_weight = weight; }
+        //! Override line code
+        void SetLinePixels(LinePixels pix) { m_flags.m_linePixels = true; m_linePixels = pix; }
         //! Override RGB (alpha component of color is ignored)
         void SetRgb(ColorDef color)
             {
@@ -2604,7 +2608,9 @@ struct FeatureSymbologyOverrides
         //! Get the transparency override as a float value from 0.0 (transparent) to 1.0 (opaque)
         double GetTransparency() const { return (255 - GetAlpha()) / 255.0; }
         //! Get the line weight override
-        uint32_t GetWeight() const { return m_weight; }
+        uint8_t GetWeight() const { return m_weight; }
+        //! Get the line code override
+        LinePixels GetLinePixels() const { return m_linePixels; }
 
         //! Returns true if any aspect of symbology is overridden.
         bool OverridesSymbology() const { return OverridesAlpha() || OverridesRgb() || OverridesWeight(); }
@@ -2614,6 +2620,8 @@ struct FeatureSymbologyOverrides
         bool OverridesRgb() const { return m_flags.m_rgb; }
         //! Returns true if line weight is overridden. If it is not, the return value of GetWeight() is meaningless
         bool OverridesWeight() const { return m_flags.m_weight; }
+        //! Returns true if line code is overridden. If it is not, the return value of GetLinePixels() is meaningless
+        bool OverridesLinePixels() const { return m_flags.m_linePixels; }
 
         //! Apply any overrides from this Appearance to the base Appearance, if the base Appearance does not already override them.
         Appearance Extend(Appearance const& base) const;

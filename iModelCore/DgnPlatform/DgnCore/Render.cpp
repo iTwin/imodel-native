@@ -688,6 +688,9 @@ FeatureSymbologyOverrides::Appearance FeatureSymbologyOverrides::Appearance::Ext
     if (m_flags.m_weight && !app.m_flags.m_weight)
         app.SetWeight(GetWeight());
 
+    if (m_flags.m_linePixels && !app.m_flags.m_linePixels)
+        app.SetLinePixels(GetLinePixels());
+
     return app;
     }
 
