@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired /*= Required::No*/, DgnDomain::Readonly isReadonly /*= Readonly::No*/)
+BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired /*= Required::No*/, DgnDomain::Readonly isReadonly /*= Readonly::No*/, BeFileNameCP schemaRootDir)
     {
     auto& domains = T_HOST.RegisteredDomains();
     for (DgnDomainCP it : domains)
@@ -19,11 +19,13 @@ BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required 
             return SUCCESS;
         }
 
-    if (!domain.ValidateSchemaPathname())
-        return ERROR;
-
     domain.SetRequired(isRequired);
     domain.SetReadonly(isReadonly);
+    if (schemaRootDir)
+        domain.SetSchemaRootDir(*schemaRootDir);
+
+    if (!domain.ValidateSchemaPathname())
+        return ERROR;
 
     domains.push_back(&domain);
     return SUCCESS;
@@ -48,7 +50,7 @@ DgnDomainCP DgnDomains::FindDomain(Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName DgnDomain::GetSchemaPathname() const
     {
-    BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    BeFileName schemaPathname = m_schemaRootDir.IsEmpty() ? T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory() : m_schemaRootDir;
     schemaPathname.AppendToPath(_GetSchemaRelativePath());
     return schemaPathname;
     }

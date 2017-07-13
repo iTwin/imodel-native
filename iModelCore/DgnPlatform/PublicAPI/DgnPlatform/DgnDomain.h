@@ -375,9 +375,12 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
 private:
     Readonly m_isReadonly;
     Required m_isRequired;
+    BeFileName m_schemaRootDir;
 
+    void SetSchemaRootDir(BeFileNameCR schemaRootDir) { m_schemaRootDir = schemaRootDir; }
     BeFileName GetSchemaPathname() const;
     bool ValidateSchemaPathname() const;
+
     ECN::ECSchemaPtr ReadSchema(ECN::ECSchemaReadContextR schemaContext) const;
     SchemaStatus ValidateSchema(ECN::ECSchemaCR schema, DgnDbCR dgndb) const;
 
@@ -407,8 +410,9 @@ protected:
     //! @param[in] db The DgnDb that is about to be closed.
     virtual void _OnDgnDbClose(DgnDbR db) const {}
 
-    //! Implemented by the domain to provide the path of the schema on disk relative to the DgnPlatform assets directory
-    //! @see T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory()
+    //! Implemented by the domain to provide the path of the schema on disk relative to the assets directory for the domain. 
+    //! Note that the assets directory for the domain can be specified when the domain is registered, but typically defaults to 
+    //! the location specified by the host application (@see DgnDomains::RegisterDomain()).
     virtual WCharCP _GetSchemaRelativePath() const = 0;
 
 public:
@@ -416,7 +420,7 @@ public:
     //! @param[in] name Domain name. Must match filename of ECSchema this domain handles.
     //! @param[in] descr A description of this domain. For information purposes only, not used internally.
     //! @param[in] version The version of this DgnDomain API.
-    DgnDomain(Utf8CP name, Utf8CP descr, uint32_t version) : m_domainName(name), m_domainDescr(descr), m_isRequired(DgnDomain::Required::No), m_isReadonly(DgnDomain::Readonly::No) {m_version=version;}
+    DgnDomain(Utf8CP name, Utf8CP descr, uint32_t version) : m_domainName(name), m_domainDescr(descr), m_isRequired(DgnDomain::Required::No), m_isReadonly(DgnDomain::Readonly::No) {m_version = version; }
 
     //! Get the name of this DgnDomain.
     Utf8CP GetDomainName() const {return m_domainName.c_str();}
@@ -491,7 +495,7 @@ private:
     DomainList    m_domains;
     Handlers      m_handlers;
     SchemaUpgradeOptions m_schemaUpgradeOptions;
-
+ 
     void LoadDomain(DgnDomainR);
     void AddHandler(DgnClassId id, DgnDomain::Handler* handler) {m_handlers.Insert(id, handler);}
     BeSQLite::DbResult InsertHandler(DgnDomain::Handler& handler);
@@ -534,6 +538,10 @@ public:
     //! session have this domain enabled. Pass false if the domain is optional. 
     //! @param[in] isReadonly Pass true to use the domain only for reading instances, or false to allow
     //! all CRUD operations (assuming the DgnDb itself is writable)
+    //! @param[in] schemaRootDir Optional root directory of Directory in which the assets for the domain are delivered. If not specified, 
+    //! the directory provided by the DgnPlatform host is used (@see DgnPlatformLib::Host::IKnownLocationsAdmin::_GetDgnPlatformAssetsDirectory()). 
+    //! Note that ECSchema-s for the domain may actually reside in some path relative to this assets directory, and this
+    //! relative path is specified by the author of the domain (@see DgnDomain::_GetSchemaRelativePath()). 
     //! @remarks
     //! <ul>
     //! <li> If isRequired=Required::Yes, newly created DgnDb-s will have the ECSchema of the domain (and any dependencies)
@@ -551,7 +559,7 @@ public:
     //! the schema for the domain has been explicitly imported. Once that's done, the domain must be registered
     //! to access that DgnDb.
     //! </ul>
-    DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired = DgnDomain::Required::No, DgnDomain::Readonly isReadonly = DgnDomain::Readonly::No);
+    DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired = DgnDomain::Required::No, DgnDomain::Readonly isReadonly = DgnDomain::Readonly::No, BeFileNameCP assetsDir = nullptr);
 
     //! Look up a domain by name.
     //! @param[in] name The name of the domain to find.

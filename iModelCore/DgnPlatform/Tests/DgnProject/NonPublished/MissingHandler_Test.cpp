@@ -349,8 +349,7 @@ TEST_F(MissingHandlerTest, HandlerRestrictions)
         fullDgnDbFileName = db->GetFileName();
 
         // register domain and handlers
-        MissingHandlerDomain domain;
-        DgnDomains::RegisterDomain(domain, DgnDomain::Required::No, DgnDomain::Readonly::No);
+        DgnDomains::RegisterDomain(MissingHandlerDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
 		
 		MissingHandlerDomain::GetDomain().ImportSchema(*db);
 
