@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/printf_test2.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    <Bentley/BeTest.h>
@@ -960,7 +960,10 @@ static void test_vsnwprintf(void)
      ok(ret == 10, L"got %d, expected 10\n", ret);
      ok(!memcmp(buf, out, sizeof(out)), L"buf = %ls\n", (buf));
  }
- 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                Sam.Wilson                          08/2011
++---------------+---------------+---------------+---------------+---------------+------*/
  TEST(printf_test,MoreTests)
  {
      test_sprintf();
