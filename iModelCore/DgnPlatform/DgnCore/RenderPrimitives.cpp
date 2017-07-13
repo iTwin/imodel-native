@@ -216,7 +216,11 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
                 }
 
             if (m_material.IsNull() || !m_material->HasTextures()) // textures baked into material...
+                {
                 m_resolved = !m_materialId.IsValid() && m_gradient.IsNull();
+                if (m_resolved)
+                    m_hasRegionOutline = ComputeHasRegionOutline();
+                }
 
             break;
         case Type::Linear:
@@ -261,12 +265,20 @@ DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DisplayParams::HasRegionOutline() const
+bool DisplayParams::ComputeHasRegionOutline() const
     {
     if (m_gradient.IsValid())
         return m_gradient->GetIsOutlined();
     else
         return !NeverRegionOutline() && m_fillColor != m_lineColor;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DisplayParams::HasRegionOutline() const
+    {
+    return m_resolved ? m_hasRegionOutline : ComputeHasRegionOutline();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -306,6 +318,7 @@ void DisplayParams::Resolve(DgnDbR db, System& sys)
             }
         }
 
+    m_hasRegionOutline = ComputeHasRegionOutline();
     m_resolved = true;
     }
 
@@ -348,6 +361,7 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
     TEST_LESS_THAN(GetMaterialId());
     TEST_LESS_THAN(GetLinePixels());
     TEST_LESS_THAN(GetFillFlags());
+    TEST_LESS_THAN(HasRegionOutline());
 
     if (m_resolved && rhs.m_resolved)
         {
@@ -393,6 +407,7 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
     TEST_EQUAL(GetMaterialId().GetValueUnchecked());
     TEST_EQUAL(GetLinePixels());
     TEST_EQUAL(GetFillFlags());
+    TEST_EQUAL(HasRegionOutline());
 
     if (m_resolved && rhs.m_resolved)
         {
@@ -1931,6 +1946,8 @@ bool PolylineArgs::Init(MeshCR mesh)
     m_is2d = mesh.Is2d();
     m_isPlanar = mesh.IsPlanar();
     m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
+    m_isEdge = mesh.GetDisplayParams().HasRegionOutline();
+
     m_polylines.reserve(mesh.Polylines().size());
 
     for (auto const& polyline : mesh.Polylines())

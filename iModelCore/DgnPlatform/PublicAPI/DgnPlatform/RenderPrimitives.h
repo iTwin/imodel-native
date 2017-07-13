@@ -109,6 +109,7 @@ private:
     DgnGeometryClass    m_class = DgnGeometryClass::Primary;
     bool                m_ignoreLighting = false; // always true for text and linear geometry; true for meshes only if normals not desired
     bool                m_resolved = true;
+    bool                m_hasRegionOutline = false;
 
     virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0x7fffffff; }
 
@@ -118,6 +119,7 @@ private:
     DGNPLATFORM_EXPORT DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, DgnMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys);
     DisplayParams(DisplayParamsCR rhs) = default;
     void Resolve(DgnDbR, System&);
+    bool ComputeHasRegionOutline() const;
 public:
     Type GetType() const { return m_type; }
     ColorDef GetFillColorDef() const { return m_fillColor; }
