@@ -8,6 +8,9 @@
 #ifndef __SCALABLEMESH_SCHEMAINTERNAL_H__
 #define __SCALABLEMESH_SCHEMAINTERNAL_H__
 
+
+#include <sstream>
+
 #include <Bentley/Bentley.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform\DgnDb.h>
