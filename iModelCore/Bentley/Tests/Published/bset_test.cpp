@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/bset_test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -17,6 +17,9 @@
 // Copyright (C) 1999, 2000, 2001, 2002, 2003, 2009
 // Free Software Foundation, Inc.
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST(bset_test, Basic)
     {
     bset<char> s;
@@ -26,6 +29,9 @@ TEST(bset_test, Basic)
     ASSERT_TRUE( s.size() == 1 );
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 // A few tests for insert with hint, in the occasion of libstdc++/19422
 // and libstdc++/19433.
 TEST(bset_test, ModifiersInsert01)
@@ -81,6 +87,9 @@ TEST(bset_test, ModifiersInsert01)
   VERIFY( s0 == s1 );
 }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 // A few tests for equal_range, in the occasion of libstdc++/29385.
 TEST(bset_test, EqualRange)
 {
@@ -161,7 +170,9 @@ TEST(bset_test, EqualRange)
   VERIFY( *pp0.first == 1 );
   VERIFY( *pp0.second == 2 );  
 }
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 // A few tests for equal_range, in the occasion of libstdc++/29385.
 TEST(bstdset_test, EqualRange)
 {
@@ -292,6 +303,9 @@ TEST(bstdset_test, EqualRange)
 //    wprintf (L"    %s = %d\n", title, msec);
 //    }
 //
+//---------------------------------------------------------------------------------------
+// @bsimethod                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 //TEST(bset_test, AllocatorPerformance)
 //    {
 //    int nitems = 1000;

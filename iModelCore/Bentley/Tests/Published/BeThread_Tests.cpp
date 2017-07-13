@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/Published/BeThread_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
@@ -76,6 +76,9 @@ static void decrementSharedInt ()
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Sam.Wilson      12/13
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BeThreadUtilities, IncrementSharedInt)
     {
     std::thread t1 = std::thread (incrementSharedInt);

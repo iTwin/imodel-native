@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/Tasks/CancellationTokenTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "CancellationTokenTests.h"
@@ -14,6 +14,10 @@
 #include "MockCancellationListener.h"
 
 #ifdef USE_GTEST
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_ListenerPassed_TakesByWeakPointer)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -23,6 +27,9 @@ TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_ListenerPassed_
     EXPECT_TRUE (listener.unique ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_NotCanceledToken_DoesNotCallOnCanceled)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -33,6 +40,9 @@ TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_NotCanceledToke
     token->Register (listener);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_CanceledToken_CallsOnCanceledWhenRegistering)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -44,6 +54,9 @@ TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_CanceledToken_C
     token->Register (listener);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_CanceledTokenAndNullListener_DoesNothing)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -53,6 +66,9 @@ TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_CanceledTokenAn
     token->Register (std::shared_ptr<ICancellationListener> ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_TokenCanceledAfterRegistration_CallsOnCanceled)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -64,6 +80,9 @@ TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_TokenCanceledAf
     token->SetCanceled ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_TokenCanceledAfterRegistrationButListenerDestroyed_DoesNothing)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -75,6 +94,9 @@ TEST_F (CancellationTokenTests, SimpleCancellationToken_Register_TokenCanceledAf
     token->SetCanceled ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, MergeCancellationToken_Register_ListenerPassed_TakesByWeakPointer)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -86,6 +108,9 @@ TEST_F (CancellationTokenTests, MergeCancellationToken_Register_ListenerPassed_T
     EXPECT_TRUE (listener.unique ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, MergeCancellationToken_Register_NotCanceledToken_DoesNotCallOnCanceled)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -98,6 +123,9 @@ TEST_F (CancellationTokenTests, MergeCancellationToken_Register_NotCanceledToken
     token->Register (listener);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, MergeCancellationToken_Register_CanceledToken_CallsOnCanceledWhenRegistering)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -111,6 +139,9 @@ TEST_F (CancellationTokenTests, MergeCancellationToken_Register_CanceledToken_Ca
     token->Register (listener);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, MergeCancellationToken_Register_CanceledTokenAndNullListener_DoesNothing)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -122,6 +153,9 @@ TEST_F (CancellationTokenTests, MergeCancellationToken_Register_CanceledTokenAnd
     token->Register (std::shared_ptr<ICancellationListener> ());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, MergeCancellationToken_Register_TokenCanceledAfterRegistration_CallsOnCanceled)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -135,6 +169,9 @@ TEST_F (CancellationTokenTests, MergeCancellationToken_Register_TokenCanceledAft
     a->SetCanceled ();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (CancellationTokenTests, MergeCancellationToken_Register_TokenCanceledAfterRegistrationButListenerDestroyed_DoesNothing)
     {
     auto listener = std::make_shared<MockCancellationListener> ();
@@ -147,6 +184,7 @@ TEST_F (CancellationTokenTests, MergeCancellationToken_Register_TokenCanceledAft
     listener = nullptr;
     a->SetCanceled ();
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                          Farhad.Kabir                  11/16
 //-----------------------------------------------------------------------------------------
@@ -161,6 +199,7 @@ TEST_F(CancellationTokenTests, SimpleCancellationToken_Register_CanceledToken_Is
 
     token->Register(listener);
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                          Farhad.Kabir                  11/16
 //-----------------------------------------------------------------------------------------
@@ -173,6 +212,7 @@ TEST_F(CancellationTokenTests, MergeCancellationToken_Register_CanceledTokens_Is
     EXPECT_FALSE(1 == token->IsCanceled());
     token->Register(listener);
     }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                          Farhad.Kabir                  11/16
 //-----------------------------------------------------------------------------------------

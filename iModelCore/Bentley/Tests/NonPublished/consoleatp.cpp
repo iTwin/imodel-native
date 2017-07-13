@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/NonPublished/consoleatp.cpp $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (_MSC_VER)
@@ -16,7 +16,9 @@
 
 USING_NAMESPACE_BENTLEY_LOGGING;
 
-
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (ConsoleLogger, configSUCCESS)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -26,6 +28,9 @@ TEST (ConsoleLogger, configSUCCESS)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (ConsoleLogger, SetOptionSUCCESS)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -42,6 +47,9 @@ TEST (ConsoleLogger, SetOptionSUCCESS)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (ConsoleLogger, SetOptionFAILURE)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -54,6 +62,9 @@ TEST (ConsoleLogger, SetOptionFAILURE)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (ConsoleLogger, SetSeveritySUCCESS)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -70,6 +81,9 @@ TEST (ConsoleLogger, SetSeveritySUCCESS)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (ConsoleLogger, SetSeverityFAILURE)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );
@@ -87,6 +101,9 @@ TEST (ConsoleLogger, SetSeverityFAILURE)
         ASSERT_TRUE ( SUCCESS == LoggingConfig::DeactivateProvider() );
         }
 
+//---------------------------------------------------------------------------------------
+// @betest                                      Sam.Wilson                    4/13
+//---------------------------------------------------------------------------------------
 TEST (ConsoleLogger, SetMaxMessageSize)
         {
         ASSERT_TRUE ( false == LoggingConfig::IsProviderActive() );

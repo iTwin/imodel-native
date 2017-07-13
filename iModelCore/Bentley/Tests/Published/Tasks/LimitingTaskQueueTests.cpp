@@ -10,6 +10,9 @@
 #include <Bentley/Tasks/WorkerThread.h>
 #include "TasksTestsHelper.h"
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPushed)
     {
     auto thread1 = WorkerThread::Create ("TestThread");
@@ -44,6 +47,9 @@ TEST_F (LimitingTaskQueueTests, Push_LimitSetToZeroAndTwoTasks_RunsTasksWhenPush
     t2->WaitFor (22);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfterFirstFinishes)
     {
     auto thread1 = WorkerThread::Create ("TestThread");
@@ -85,6 +91,9 @@ TEST_F (LimitingTaskQueueTests, Push_LimitSetToOneAndTwoTasks_RunsSecondTaskAfte
     EXPECT_EQ (2, number);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LimitingTaskQueueTests, Push_TaskReturnsValue_SameValueReturned)
     {
     auto thread = WorkerThread::Create ("TestThread");
@@ -103,6 +112,9 @@ TEST_F (LimitingTaskQueueTests, Push_TaskReturnsValue_SameValueReturned)
     EXPECT_EQ (42, result);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LimitingTaskQueueTests, Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancelationEvent)
     {
     auto thread1 = WorkerThread::Create ("TestThread");
@@ -151,6 +163,9 @@ TEST_F (LimitingTaskQueueTests, Push_QueuedTaskIsCanceled_RunsQuenedTaskOnCancel
     EXPECT_EQ (2, number);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (LimitingTaskQueueTests, Push_TaskAddedToQueueWithinOtherAsyncTask_OuterAsyncTaskIsBlockedUntilTaskGetsFinished)
     {
     auto thread1 = WorkerThread::Create ("TestThread");

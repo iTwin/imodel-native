@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/Published/Tasks/AsyncTaskTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,12 +17,18 @@
 
 #include <atomic>
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, IsCompleted_TaskNotExecuted_False)
     {
     auto task = std::make_shared<PackagedAsyncTask<void>>([] { });
     EXPECT_FALSE(task->IsCompleted());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, IsCompleted_TaskExecuted_True)
     {
     auto task = std::make_shared<PackagedAsyncTask<void>>([] {});
@@ -30,6 +36,9 @@ TEST_F(AsyncTaskTests, IsCompleted_TaskExecuted_True)
     EXPECT_TRUE(task->IsCompleted());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, Wait_TaskPushedToScheduler_BlocksUntilTaskIsExecuted)
     {
     bool executed = false;
@@ -42,6 +51,9 @@ TEST_F(AsyncTaskTests, Wait_TaskPushedToScheduler_BlocksUntilTaskIsExecuted)
     EXPECT_TRUE(executed);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, Wait_OnExecutedTask_DoesNotBlock)
     {
     bool executed = false;
@@ -56,18 +68,27 @@ TEST_F(AsyncTaskTests, Wait_OnExecutedTask_DoesNotBlock)
     EXPECT_TRUE(executed);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, GetPriority_ConstructedWithoutPriority_PriorityNormal)
     {
     auto task = std::make_shared<PackagedAsyncTask<void>>([] {});
     EXPECT_TRUE(task->GetPriority() == AsyncTask::Priority::Normal);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, GetPriority_Constructed_PriorityNormalByDefault)
     {
     auto task = std::make_shared<PackagedAsyncTask<void>>([] {});
     EXPECT_TRUE(task->GetPriority() == AsyncTask::Priority::Normal);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, Then_ThenCallbackAdded_ExecutedAfterOriginalTaskWasExecuted)
     {
     BeAtomic<int> result (0);
@@ -85,6 +106,9 @@ TEST_F(AsyncTaskTests, Then_ThenCallbackAdded_ExecutedAfterOriginalTaskWasExecut
     EXPECT_TRUE(result == 2);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, Then_MultipleThensChained_AllExecutedInCorrectOrder)
     {
     BeAtomic<int> lastCompletedThenTask (0);
@@ -115,6 +139,9 @@ TEST_F(AsyncTaskTests, Then_MultipleThensChained_AllExecutedInCorrectOrder)
     EXPECT_TRUE(lastCompletedThenTask == 3);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, Then_MultipleChildrenAdded_ThenExecutedAfterAllChildrenTasksCompleted)
     {
     BeAtomic<int> childrenCompleted (0);
@@ -147,6 +174,9 @@ TEST_F(AsyncTaskTests, Then_MultipleChildrenAdded_ThenExecutedAfterAllChildrenTa
     EXPECT_TRUE(thenExecuted);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, WhenAll_MultipleTasksAdded_ThenExecutedAfterAllTasksCompleted)
     {
     BeAtomic<int> tasksCompleted (0);
@@ -173,6 +203,9 @@ TEST_F(AsyncTaskTests, WhenAll_MultipleTasksAdded_ThenExecutedAfterAllTasksCompl
     EXPECT_TRUE(thenExecuted);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, WhenAll_MultipleTasksInVectorAdded_ThenExecutedAfterAllTasksCompleted)
     {
     BeAtomic<int> tasksCompleted(0);
@@ -199,6 +232,9 @@ TEST_F(AsyncTaskTests, WhenAll_MultipleTasksInVectorAdded_ThenExecutedAfterAllTa
     EXPECT_TRUE(thenExecuted);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(AsyncTaskTests, WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResultWorksOnThem)
     {
     bvector<std::shared_ptr<PackagedAsyncTask<int>>> tasks;
@@ -215,6 +251,9 @@ TEST_F(AsyncTaskTests, WhenAll_MultipleTasksInSetAddedWithReturnValues_GetResult
         EXPECT_EQ(++i, task->GetResult());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Benediktas.Lipnickas               03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AsyncTaskTests, Then_MultipleThenCallbackAdded_AllThenCallbacksExecuted)
     {
     auto task = std::make_shared<PackagedAsyncTask<void>> ([&]

@@ -20,6 +20,9 @@ void BeSystemInfoTests::SetUp()
 #endif
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Grigas.Petraitis                07/15
+//---------------------------------------------------------------------------------------
 TEST_F (BeSystemInfoTests, GetDeviceId_CalledMultipleTimes_ReturnsSameNonEmptyValue)
     {
     auto id1 = BeSystemInfo::GetDeviceId ();
