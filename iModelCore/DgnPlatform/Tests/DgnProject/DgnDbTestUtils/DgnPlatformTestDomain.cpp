@@ -1,12 +1,12 @@
     /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/DgnProject/BackDoor/DgnPlatformTestDomain.cpp $
+|     $Source: Tests/DgnProject/DgnDbTestUtils/DgnPlatformTestDomain.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
-#include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include <DgnPlatform/GeomPart.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <ECDb/ECDbApi.h>

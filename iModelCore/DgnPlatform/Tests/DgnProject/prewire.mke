@@ -24,6 +24,9 @@ $(BuildContext)Delivery/UnitTests/ScopedDgnHost.h : $(DgnPlatformAPISrc)UnitTest
 $(BuildContext)Delivery/UnitTests/DgnDbTestUtils.h : $(DgnPlatformAPISrc)UnitTests/DgnDbTestUtils.h
     $(LinkFirstDepToFirstTarget)
 
+$(BuildContext)Delivery/UnitTests/DgnPlatformTestDomain.h : $(DgnPlatformAPISrc)UnitTests/DgnPlatformTestDomain.h
+    $(LinkFirstDepToFirstTarget)
+
 #------------------------------------------------------------------------------------------
 #   Deliver CompatibilityTestFiles for use by unit tests
 #------------------------------------------------------------------------------------------
