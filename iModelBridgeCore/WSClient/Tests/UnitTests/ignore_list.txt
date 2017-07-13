@@ -368,3 +368,11 @@ ECInstanceKeyFilterTests.SetLimit_OnLabelFilter_ReturnsLimitedInstances
 
 # WIP_MERGE_Vincas - large number of failures, likely caused by the hard-coded schema in ECDbAdapterTests.cpp.
 ECDbAdapterTests.*
+
+UrlProviderTests.GetUrl_ValidateAllGetters
+    # bim0200holdouts, x64, NDEBUG, random PRG failure
+    # [ RUN      ] UrlProviderTests.GetUrl_ValidateAllGetters
+    # e:\Builds\dcsdk02000157\Source\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(88): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    #          Expected: to be called once
+    #            Actual: never called - unsatisfied and active
+    # [  FAILED  ] UrlProviderTests.GetUrl_ValidateAllGetters (893 ms)
