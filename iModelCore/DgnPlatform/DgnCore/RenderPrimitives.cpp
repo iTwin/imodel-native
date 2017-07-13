@@ -834,54 +834,63 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/16
+* @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderingAssetCP renderingAsset, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, RenderingAssetCP renderingAsset, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
-    auto const&       points = visitor.Point();
-    BeAssert(3 == points.size());
-
-    if (doVertexCluster)
+    auto const&     points = visitor.Point();
+    bool const*     visitorVisibility = visitor.GetVisibleCP();
+    size_t          nTriangles = points.size() - 2;
+    
+    // The face represented by this visitor should be convex (we request that in facet options) - so we do a simple fan triangulation.
+    for (size_t iTriangle =0; iTriangle < nTriangles; iTriangle++)
         {
-        DVec3d      cross;
-
-        cross.CrossProductToPoints (points[0], points[1], points[3]);
-        if (cross.MagnitudeSquared() < m_areaTolerance)
-            return;
-        }
-
-    Triangle            newTriangle(!visitor.GetTwoSided());
-    bvector<DPoint2d>   params = visitor.Param();
-
-    bool haveParams = includeParams && !params.empty();
-    newTriangle.SetEdgeFlags(visitor.GetVisibleCP());
-    if (haveParams && nullptr != renderingAsset)
-        {
-        auto const&         patternMap = renderingAsset->GetPatternMap();
-        bvector<DPoint2d>   computedParams;
-
-        if (patternMap.IsValid())
+        if (doVertexCluster)
             {
-            BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
-            if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
-                params = computedParams;
+            DVec3d      cross;
+
+            cross.CrossProductToPoints (points.at(0), points.at(iTriangle+1), points.at(iTriangle+2));
+            if (cross.MagnitudeSquared() < m_areaTolerance)
+                return;
             }
+
+        Triangle            newTriangle(!visitor.GetTwoSided());
+        bvector<DPoint2d>   params = visitor.Param();
+        bool                visibility[3];
+
+        visibility[0] = (0 == iTriangle) ? visitorVisibility[0] : false;
+        visibility[1] = visitorVisibility[iTriangle+1];
+        visibility[2] = (iTriangle == nTriangles-1) ? visitorVisibility[iTriangle+2] : false;
+
+        bool haveParams = includeParams && !params.empty();
+        newTriangle.SetEdgeFlags(visibility);
+        if (haveParams && nullptr != renderingAsset)
+            {
+            auto const&         patternMap = renderingAsset->GetPatternMap();
+            bvector<DPoint2d>   computedParams;
+
+            if (patternMap.IsValid())
+                {
+                BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
+                if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
+                    params = computedParams;
+                }
+            }
+                
+        bool haveNormals = !visitor.Normal().empty();
+
+        for (size_t i = 0; i < 3; i++)
+            {
+            size_t      index = (0 == i) ? 0 : iTriangle + i; 
+            VertexKey   vertex(points[index], feature, fillColor, m_mesh->Verts().GetParams(), haveNormals ? &visitor.Normal()[index] : nullptr, haveParams ? &params[index] : nullptr);
+
+            newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
+            if (m_currentPolyface.IsValid())
+                m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[index]);
+            }
+
+        AddTriangle(newTriangle);
         }
-            
-    bool haveNormals = !visitor.Normal().empty();
-    for (size_t i = 0; i < 3; i++)
-        {
-        VertexKey vertex(points[i], feature, fillColor, m_mesh->Verts().GetParams(), haveNormals ? &visitor.Normal()[i] : nullptr, haveParams ? &params[i] : nullptr);
-        newTriangle[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
-
-        if (m_currentPolyface.IsValid())
-            m_currentPolyface->m_vertexIndexMap.Insert(newTriangle[i], visitor.ClientPointIndex()[i]);
-        }
-
-    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Verts().size());
-    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Verts().size());
-
-    AddTriangle(newTriangle);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1061,7 +1070,8 @@ IFacetOptionsPtr Geometry::CreateFacetOptions(double chordTolerance)
 
     opts->SetChordTolerance(chordTolerance);
     opts->SetAngleTolerance(s_defaultAngleTolerance);
-    opts->SetMaxPerFace(3);
+    opts->SetMaxPerFace(100);
+    opts->SetConvexFacetsRequired(true);             // Defer triangulation of facets to simple fans.
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
     opts->SetNormalsRequired(true);
@@ -1418,12 +1428,6 @@ bool GeometryAccumulator::Add(RefCountedMSBsplineSurface& surface, DisplayParams
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometryAccumulator::Add(PolyfaceHeaderR polyface, bool filled, DisplayParamsCR displayParams, TransformCR transform)
     {
-    if (!polyface.IsTriangulated() && SUCCESS != polyface.Triangulate())
-        {
-        BeAssert(false && "Failed to triangulate...");
-        return false;
-        }
-
     if (m_haveTransform)
         polyface.Transform(Transform::FromProduct(m_transform, transform));
     else if (!transform.IsIdentity())
@@ -1512,7 +1516,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 
             meshBuilder->BeginPolyface(*polyface, tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges);
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder->AddTriangle(*visitor, displayParams->GetRenderingAsset(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+                meshBuilder->AddFromPolyfaceVisitor(*visitor, displayParams->GetRenderingAsset(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
 
             meshBuilder->EndPolyface();
             }

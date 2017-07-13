@@ -976,11 +976,6 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::IsCacheable() const
     {
-    static bool s_useRealityCache = false;   // Still WIP.
-
-    if (!s_useRealityCache)
-        return false;
-
     // Don't cache tiles refined for zoom...
     auto const& tile = GetElementTile();
     if (tile.HasZoomFactor() && tile.GetZoomFactor())
@@ -1869,7 +1864,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
             {
             anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
-            builder.AddTriangle(*visitor, displayParams.GetRenderingAsset(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
+            builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetRenderingAsset(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
             m_contentRange.Extend(visitor->Point());
             }
         }
