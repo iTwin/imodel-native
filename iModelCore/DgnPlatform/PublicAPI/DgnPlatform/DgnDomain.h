@@ -559,7 +559,7 @@ public:
     //! the schema for the domain has been explicitly imported. Once that's done, the domain must be registered
     //! to access that DgnDb.
     //! </ul>
-    DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired = DgnDomain::Required::No, DgnDomain::Readonly isReadonly = DgnDomain::Readonly::No, BeFileNameCP scheamRootDir = nullptr);
+    DGNPLATFORM_EXPORT static BentleyStatus RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired = DgnDomain::Required::No, DgnDomain::Readonly isReadonly = DgnDomain::Readonly::No, BeFileNameCP schemaRootDir = nullptr);
 
     //! Look up a domain by name.
     //! @param[in] name The name of the domain to find.
