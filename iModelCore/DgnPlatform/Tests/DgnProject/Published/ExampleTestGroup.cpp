@@ -3,7 +3,7 @@
 //  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //-------------------------------------------------------------------------------------- 
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include "../TestFixture/DgnPlatformSeedManager.h"
 
 USING_NAMESPACE_BENTLEY_DGN

@@ -1748,21 +1748,128 @@ void DgnElement::RemapAutoHandledNavigationproperties(DgnImportContext& importer
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::GetCustomHandledPropertiesAsJson(Json::Value& json) const
     {
-    AutoHandledPropertiesCollection customprops(*GetElementClass(), GetDgnDb(), ECSqlClassParams::StatementType::Select, true);
+    AutoHandledPropertiesCollection customprops(*GetElementClass(), GetDgnDb(), ECSqlClassParams::StatementType::All, true);
     for (auto i = customprops.begin(); i != customprops.end(); ++i)
         {
-        Utf8String propName = (*i)->GetName();
+        ECN::ECPropertyCP prop = *i;
+        Utf8String propName = prop->GetName();
+
         ECN::ECValue value;
         if (DgnDbStatus::Success != GetPropertyValue(value, propName.c_str()))
             continue;
+        
         Json::Value propJson;
-        // *** WIP "BeGuid"
-        // *** WIP "GeometryStream"
-        // *** WIP "URL"
-        if ((*i)->GetAsPrimitiveProperty()->GetExtendedTypeName().EqualsI("Json"))
-            Json::Reader::Parse(value.GetUtf8CP(), propJson);
+        if (prop->GetIsNavigation())
+            {
+            JsonUtils::NavigationPropertyToJson(propJson, value.GetNavigationInfo());
+            }
+        else if (prop->GetIsPrimitive())
+            {
+            // *** WIP_EXTENDEDTYPE "BeGuid"
+            // *** WIP_EXTENDEDTYPE "GeometryStream"
+            // *** WIP_EXTENDEDTYPE "URL"
+            if (prop->GetAsPrimitiveProperty()->GetExtendedTypeName().EqualsI("Json"))
+                Json::Reader::Parse(value.GetUtf8CP(), propJson);
+            else
+                ECUtils::ConvertECValueToJson(propJson, value);
+            }
         else
-            ECUtils::ConvertECValueToJson(propJson, value);
+            {
+            BeAssert(false && "unrecognized type for custom-handled property");
+            propJson = value.ToString();
+            }
         json[propName] = propJson;
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsonUtils::NavigationPropertyToJson(JsonValueR json, ECValue::NavigationInfo const& navValue)
+    {
+    json = Json::objectValue;
+    
+    JsonUtils::IdToJson(json["ecinstanceid"], navValue.GetId<DgnElementId>());
+    
+    auto relClass = navValue.GetRelationshipClass();
+    if (nullptr != relClass)
+        {
+        json["ecclass"] = relClass->GetName();
+        json["ecschema"] = relClass->GetSchema().GetName();
+        }
+
+#ifndef NDEBUG
+    auto ee = JsonUtils::IdFromJson<DgnElementId>(json["ecinstanceid"]);
+    BeAssert(ee == navValue.GetId<DgnElementId>());
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void JsonUtils::NavigationPropertyFromJson(ECN::ECValue& navValue, JsonValueCR json, DgnDbR db)
+    {
+    if (!json.isMember("ecinstanceid"))
+        {
+        BeDataAssert(false);
+        navValue.SetToNull();
+        return;
+        }
+    auto eid = IdFromJson<DgnElementId>(json["ecinstanceid"]);
+    
+    DgnClassId relClassId;
+    if (json.isMember("ecclass") && json.isMember("eschema"))
+        relClassId = db.Schemas().GetClassId(json["eschema"].asCString(), json["ecclass"].asCString());
+
+    navValue = ECValue(eid, relClassId);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Sam.Wilson     06/16
+//---------------------------------------------------------------------------------------
+void JsonUtils::UInt64ToJson(JsonValueR outValue, uint64_t value)
+    {
+    if (value <= (uint64_t)(int64_t)std::numeric_limits<double>::max())
+        {
+        outValue = (double)value;
+        return;
+        }
+
+    // *** NEEDS WORK: 
+    outValue = Json::arrayValue;
+    uint32_t lo = (uint32_t)(0xffffffff & value);
+    uint32_t hi = (uint32_t)(value >> 32);
+    outValue[0] = hi; 
+    outValue[1] = lo; 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+uint64_t JsonUtils::UInt64FromJson(JsonValueCR json)
+    {
+    if (json.isArray())
+        {
+        return (((uint64_t)json[0].asUInt()) << 32) | (uint32_t)json[1].asUInt();
+        }
+
+    if (json.isIntegral())
+        {
+        return json.asUInt64();
+        }
+
+    if (json.isDouble())
+        {
+        return (uint64_t)(int64_t)json.asDouble();
+        }
+
+    if (json.isString())
+        {
+        uint64_t v = 0;
+        BeStringUtilities::ParseUInt64(v, json.asCString());
+        return v;
+        }
+
+    BeAssert(false);
+    return 0;
     }

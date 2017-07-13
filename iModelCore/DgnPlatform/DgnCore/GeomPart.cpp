@@ -48,6 +48,14 @@ void DgnGeometryPart::_BindWriteParams(ECSqlStatement& statement, ForInsert forI
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnGeometryPart::_OnInsert()
+    {
+    return m_geometry.HasGeometry() ? T_Super::_OnInsert() : DgnDbStatus::BadElement; // can't insert a DgnGeometryPart without geometry
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnGeometryPart::_InsertInDb()
