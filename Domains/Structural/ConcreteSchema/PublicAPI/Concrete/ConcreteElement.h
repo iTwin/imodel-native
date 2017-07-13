@@ -18,7 +18,7 @@ BEGIN_BENTLEY_CONCRETE_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE ConcreteElement : Dgn::PhysicalElement
     {
     DGNELEMENT_DECLARE_MEMBERS(CONCRETE_CLASS_ConcreteElement, Dgn::PhysicalElement);
-    friend struct ConcreteElementHandler;
+    //friend struct ConcreteElementHandler;
 
     protected:
         explicit ConcreteElement(CreateParams const& params) : T_Super(params) {}
@@ -41,10 +41,10 @@ struct EXPORT_VTABLE_ATTRIBUTE ConcreteElement : Dgn::PhysicalElement
 //=======================================================================================
 // @bsiclass                                    BentleySystems
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ConcreteElementHandler : Dgn::dgn_ElementHandler::Physical
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(CONCRETE_CLASS_ConcreteElement, ConcreteElement, ConcreteElementHandler, Dgn::dgn_ElementHandler::Physical, CONCRETE_EXPORT)
-    };
+//struct EXPORT_VTABLE_ATTRIBUTE ConcreteElementHandler : Dgn::dgn_ElementHandler::Physical
+//    {
+//    ELEMENTHANDLER_DECLARE_MEMBERS(CONCRETE_CLASS_ConcreteElement, ConcreteElement, ConcreteElementHandler, Dgn::dgn_ElementHandler::Physical, CONCRETE_EXPORT)
+//    };
 
 
 END_BENTLEY_CONCRETE_NAMESPACE

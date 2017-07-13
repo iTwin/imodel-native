@@ -18,7 +18,7 @@ BEGIN_BENTLEY_CONCRETE_NAMESPACE
 struct EXPORT_VTABLE_ATTRIBUTE Slab : SurfaceElement
     {
     DGNELEMENT_DECLARE_MEMBERS(CONCRETE_CLASS_Slab, SurfaceElement);
-    friend struct SlabHandler;
+    //friend struct SlabHandler;
 
     protected:
         explicit Slab(CreateParams const& params) : T_Super(params) {}
@@ -30,10 +30,10 @@ struct EXPORT_VTABLE_ATTRIBUTE Slab : SurfaceElement
 //=======================================================================================
 // @bsiclass                                    BentleySystems
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE SlabHandler : Dgn::dgn_ElementHandler::Physical
-    {
-    ELEMENTHANDLER_DECLARE_MEMBERS(CONCRETE_CLASS_Slab, Slab, SlabHandler, Dgn::dgn_ElementHandler::Physical, CONCRETE_EXPORT)
-    };
+//struct EXPORT_VTABLE_ATTRIBUTE SlabHandler : Dgn::dgn_ElementHandler::Physical
+//    {
+//    ELEMENTHANDLER_DECLARE_MEMBERS(CONCRETE_CLASS_Slab, Slab, SlabHandler, Dgn::dgn_ElementHandler::Physical, CONCRETE_EXPORT)
+//    };
 
 
 END_BENTLEY_CONCRETE_NAMESPACE

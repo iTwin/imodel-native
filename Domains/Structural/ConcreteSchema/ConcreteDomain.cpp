@@ -16,15 +16,15 @@ DOMAIN_DEFINE_MEMBERS(ConcreteDomain)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConcreteDomain::ConcreteDomain() : DgnDomain(BENTLEY_CONCRETE_SCHEMA_NAME, "Bentley Concrete Domain", 1)
     {
-    RegisterHandler(ConcreteElementHandler::GetHandler());
+    //RegisterHandler(ConcreteElementHandler::GetHandler());
 
-    RegisterHandler(FrameElementHandler::GetHandler());
-    RegisterHandler(BeamHandler::GetHandler());
-    RegisterHandler(ColumnHandler::GetHandler());
+    //RegisterHandler(FrameElementHandler::GetHandler());
+    //RegisterHandler(BeamHandler::GetHandler());
+    //RegisterHandler(ColumnHandler::GetHandler());
 
-    RegisterHandler(SurfaceElementHandler::GetHandler());
-    RegisterHandler(SlabHandler::GetHandler());
-    RegisterHandler(WallHandler::GetHandler());
+    //RegisterHandler(SurfaceElementHandler::GetHandler());
+    //RegisterHandler(SlabHandler::GetHandler());
+    //RegisterHandler(WallHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**

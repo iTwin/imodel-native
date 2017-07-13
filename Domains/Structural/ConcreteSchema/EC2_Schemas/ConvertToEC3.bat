@@ -1,10 +1,12 @@
 @echo off
 
 rem *-------- Schema file name constants ----------*
-set EC2_SCHEMA_NAME=Concrete.01.00.ecschema.xml
+set SCHEMA_NAME=Concrete
 
-set EC3_SCHEMA_NAME_AUTO=Concrete.01.00.00.ecschema.xml
-set EC3_SCHEMA_NAME_FINAL=Concrete.ecschema.xml
+set EC2_SCHEMA_NAME=%SCHEMA_NAME%.01.00.ecschema.xml
+
+set EC3_SCHEMA_NAME_AUTO=%SCHEMA_NAME%.01.00.00.ecschema.xml
+set EC3_SCHEMA_NAME_FINAL=%SCHEMA_NAME%.ecschema.xml
 
 rem *-------- Machine-specific locations ----------*
 set BSIOUT=D:\sourcetrees\bim0200dev\out
