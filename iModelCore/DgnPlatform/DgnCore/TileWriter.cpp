@@ -2058,7 +2058,7 @@ void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AddTile(TileTree::TileP tile)
+void AddTile(TileTree::TileP tile)
     {
     folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
         {                                
@@ -2389,6 +2389,8 @@ BentleyStatus EndBatchedTable(uint32_t startPosition, uint32_t lengthDataPositio
 TileIO::WriteStatus WriteTile(TileTree::TileCR tile)
     {
     uint32_t    startPosition = 0, lengthDataPosition = 0;
+
+    AddTile(const_cast<TileTree::TileP> (&tile));
 
     return TileIO::WriteStatus::Success;
     }

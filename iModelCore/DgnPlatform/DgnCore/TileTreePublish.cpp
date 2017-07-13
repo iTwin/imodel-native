@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnPlatformInternal.h"
+#include <DgnPlatform/TileIO.h>
 #include <folly/BeFolly.h>
 
 USING_NAMESPACE_BENTLEY_RENDER
@@ -240,16 +241,14 @@ static TileGenerator::FutureGenerateTileResult generateParentTile (Context conte
     RenderSystem*   renderSystem = new RenderSystem(context);
 
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
-        {                                
-        TileTree::TileLoadStatePtr          loadState;
-
-        return context.m_inputTile->IsNotLoaded() ? context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem) : SUCCESS;
+        {  
+        return context.m_inputTile->IsNotLoaded() ? TileTree::TileIO::WriteCesiumTile(BeFileName(), *context.m_inputTile, *context.m_model) : TileTree::TileIO::WriteStatus::Success;
         })
-    .then([=](BentleyStatus status)
+    .then([=](TileTree::TileIO::WriteStatus status)
         {
         delete renderSystem;
 
-        if (SUCCESS != status || (!context.m_outputTile->GeometryExists() && !context.m_inputTile->_HasChildren()))
+        if (TileTree::TileIO::WriteStatus::Success != status || (!context.m_outputTile->GeometryExists() && !context.m_inputTile->_HasChildren()))
             return folly::makeFuture(TileGenerator::GenerateTileResult(TileGeneratorStatus::NoGeometry, nullptr));
 
         if (context.m_outputTile->GetTolerance() > context.m_leafTolerance && context.m_inputTile->_HasChildren())

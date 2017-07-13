@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/Render.h>
+#include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/DgnTexture.h>
 #include <DgnPlatform/DgnMaterial.h>
 
@@ -37,6 +38,7 @@ struct TileIO
     enum class WriteStatus
         {
         Success = 0,
+        NoGeometry,
         UnableToOpenFile,
         };
 
