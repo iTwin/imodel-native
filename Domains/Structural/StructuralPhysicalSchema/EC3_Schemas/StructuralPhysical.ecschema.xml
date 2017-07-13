@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="StructuralPhysical" alias="StructPhys" version="01.00.00" description="Structural Physical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <SchemaFullNameAtEditingStart>Concrete.01.00</SchemaFullNameAtEditingStart>
+            <TrackingEnabled>True</TrackingEnabled>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECEntityClass typeName="StructuralPhysicalModel" displayLabel="Structural Physical Model">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="StructuralTypeDefinitionModel" displayLabel="Structural Type Definition Model">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+    </ECEntityClass>
+</ECSchema>
