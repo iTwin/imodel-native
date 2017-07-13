@@ -12,13 +12,6 @@ JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 #TFS 520654
 SchemaUpgradeTestFixture.UpdateECDbMapCA_DbIndexChanges
 
-#TFS 718499
-SchemaUpgradeTestFixture.RemoveKindOfQuantityFromECProperty
-SchemaUpgradeTestFixture.RemoveKindOfQuantityFromECArrayProperty
-
-#TFS 718009
-SchemaUpgradeTestFixture.DeleteNavigationProperty
-
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 

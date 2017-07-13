@@ -1448,7 +1448,9 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
     if (propertyChange.GetKindOfQuantity().IsValid())
         {
-        if (propertyChange.GetKindOfQuantity().GetState() == ChangeState::Deleted)
+        StringChange& change = propertyChange.GetKindOfQuantity();
+        sqlUpdateBuilder.AddSetToNull("KindOfQuantityId");
+        if (change.GetNew().IsNull())
             sqlUpdateBuilder.AddSetToNull("KindOfQuantityId");
         else
             {
@@ -1461,7 +1463,12 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
             KindOfQuantityId id = m_ecdb.Schemas().GetReader().GetKindOfQuantityId(*koqCP);
             if (!id.IsValid())
-                return ERROR;
+                {
+                if (ImportKindOfQuantity(*koqCP) != SUCCESS)
+                    return ERROR;
+
+                id = koqCP->GetId();
+                }
 
             sqlUpdateBuilder.AddSetExp("KindOfQuantityId", id.GetValue());
             }
@@ -1469,13 +1476,14 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
     if (propertyChange.GetCategory().IsValid())
         {
-        if (propertyChange.GetCategory().GetState() == ChangeState::Deleted)
-            {
-            sqlUpdateBuilder.AddSetToNull("CategoryId"); //set to null;
-            }
+        StringChange& change = propertyChange.GetCategory();
+        sqlUpdateBuilder.AddSetToNull("CategoryId");
+        if (change.GetNew().IsNull())
+            sqlUpdateBuilder.AddSetToNull("CategoryId");
         else
             {
             PropertyCategoryCP cat = newProperty.GetCategory();
+  
             if (cat == nullptr)
                 {
                 BeAssert(false);
@@ -1484,7 +1492,12 @@ BentleyStatus SchemaWriter::UpdateProperty(ECPropertyChange& propertyChange, ECP
 
             PropertyCategoryId id = m_ecdb.Schemas().GetReader().GetPropertyCategoryId(*cat);
             if (!id.IsValid())
-                return ERROR;
+                {
+                if (ImportPropertyCategory(*cat) != SUCCESS)
+                    return ERROR;
+
+                id = cat->GetId();
+                }
 
             sqlUpdateBuilder.AddSetExp("CategoryId", id.GetValue());
             }
@@ -2243,13 +2256,23 @@ BentleyStatus SchemaWriter::DeleteCustomAttributes(ECContainerId id, SchemaPersi
 BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECPropertyCR deletedProperty)
     {
     ECClassCR ecClass = deletedProperty.GetClass();
-
+    
     if (!IsMajorChangeAllowedForSchema(deletedProperty.GetClass().GetSchema().GetId()) && m_ctx.GetOptions() != SchemaManager::SchemaImportOptions::Poisoning)
         {
         Issues().Report("ECSchema Upgrade failed. ECSchema %s: Deleting ECProperty '%s.%s' means a major schema change, but the schema's MajorVersion is not incremented. Bump up the major version and try again.",
                         ecClass.GetSchema().GetFullSchemaName().c_str(), ecClass.GetName().c_str(), deletedProperty.GetName().c_str());
         return ERROR;
         }
+
+    if (deletedProperty.GetIsNavigation())
+        {
+        //Blanket error. We do not check if relationship was also deleted. In that case we would allo nav deletion for shared column/ logical relationships
+        //Fail we do not want to delete a sql column right now
+        Issues().Report("ECSchema Upgrade failed. ECClass %s: Deleting Navigation ECProperty '%s' from an ECClass is not supported.",
+                        ecClass.GetFullName(), deletedProperty.GetName().c_str());
+        return ERROR;
+        }
+
 
     ClassMapCP classMap = m_ecdb.Schemas().GetDbMap().GetClassMap(ecClass);
     if (classMap == nullptr)
@@ -2476,7 +2499,8 @@ BentleyStatus SchemaWriter::UpdatePropertyCategories(PropertyCategoryChanges& ch
                 return ERROR;
                 }
 
-            return ImportPropertyCategory(*cat);
+            if (ImportPropertyCategory(*cat) != SUCCESS)
+                return ERROR;
             }
         else if (change.GetState() == ChangeState::Modified)
             {
@@ -2785,6 +2809,9 @@ BentleyStatus SchemaWriter::UpdateSchema(SchemaChange& schemaChange, ECSchemaCR 
         return ERROR;
 
     if (UpdateKindOfQuantities(schemaChange.KindOfQuantities(), oldSchema, newSchema) == ERROR)
+        return ERROR;
+
+    if (UpdatePropertyCategories(schemaChange.PropertyCategories(), oldSchema, newSchema) == ERROR)
         return ERROR;
 
     if (UpdateClasses(schemaChange.Classes(), oldSchema, newSchema) == ERROR)
