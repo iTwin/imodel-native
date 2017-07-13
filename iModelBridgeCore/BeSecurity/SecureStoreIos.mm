@@ -2,7 +2,7 @@
  |
  |     $Source: SecureStoreIos.mm $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #include <BeSecurity/SecureStore.h>
@@ -32,11 +32,11 @@ NSString* CreateAccessGroup (Utf8CP postfix)
     {
     if (nil == g_accessGroupPrefix)
          {
-         BeAssert (false && "Keychain access group prefix not initialized");
+         BeAssert (false && "Keychain access group prefix not initialized for iOS - call SecureStore::Initialize()");
          // Return invalid access group
          return @"";
          }
-         
+
     return [g_accessGroupPrefix stringByAppendingString:[NSString stringWithUTF8String:postfix]];
     }
 
@@ -45,8 +45,8 @@ NSString* CreateAccessGroup (Utf8CP postfix)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BEKeychainItem* CreateKeychainItem (Utf8CP accessGroupPostfix, Utf8CP identifier)
     {
-    return [[BEKeychainItem alloc] 
-                initWithIdentifier:[NSString stringWithUTF8String:identifier] 
+    return [[BEKeychainItem alloc]
+                initWithIdentifier:[NSString stringWithUTF8String:identifier]
                 accessGroup:CreateAccessGroup (accessGroupPostfix)];
     }
 
@@ -147,7 +147,7 @@ Utf8String SecureStore::Encrypt(Utf8CP valueStr)
         valueStr = empty;
         }
 
-    Utf8String keyStr = GetKeyBytesStr(*this, true);    
+    Utf8String keyStr = GetKeyBytesStr(*this, true);
     if (keyStr.empty())
         {
         BeAssert(false);
@@ -180,7 +180,7 @@ Utf8String SecureStore::Encrypt(Utf8CP valueStr)
         cryptBuffer, cryptBufferSize, &resultSize
         );
 
-    if (kCCSuccess != cryptStatus) 
+    if (kCCSuccess != cryptStatus)
         {
         BeAssert(false);
         return nullptr;
@@ -228,7 +228,7 @@ Utf8String SecureStore::Decrypt(Utf8CP valueStr)
         output.get(), outputSize, &resultSize
         );
 
-    if (kCCSuccess != cryptStatus) 
+    if (kCCSuccess != cryptStatus)
         {
         BeAssert(false);
         return nullptr;
