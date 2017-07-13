@@ -211,11 +211,16 @@
     </xs:attributeGroup>
     <xs:element name="ContentModifier">
         <xs:complexType mixed="true">
-            <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" />
-                <xs:element name="HiddenProperties" type="HiddenPropertiesDef" />
-            </xs:choice>
-            <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
+            <xs:sequence>
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <!-- Not supported yet
+                    <xs:element name="DisplayRelatedItems" type="DisplayRelatedItemsDef" />
+                    -->
+                    <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" />
+                    <xs:element name="HiddenProperties" type="HiddenPropertiesDef" />
+                </xs:choice>
+                <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
             <xs:attribute name="SchemaName" type="xs:string" use="required"/>
             <xs:attribute name="ClassName" type="xs:string" use="required"/>
         </xs:complexType>
