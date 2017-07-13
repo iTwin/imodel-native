@@ -16,7 +16,7 @@
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct DbMap;
- //=======================================================================================
+//=======================================================================================
 // @bsiclass                                                Krischan.Eberle      01/2016
 //+===============+===============+===============+===============+===============+======
 struct ClassMapLoadContext : NonCopyableClass
@@ -116,7 +116,6 @@ struct ClassMap : RefCountedBase
         BentleyStatus CreateCurrentTimeStampTrigger(ECN::PrimitiveECPropertyCR);
 
         ClassMap(ECDb const& ecdb, ECN::ECClassCR ecClass, MapStrategyExtendedInfo const& mapStrat) : ClassMap(ecdb, Type::Class, ecClass, mapStrat) {}
-        ClassMappingStatus MapNavigationProperty(SchemaImportContext&, NavigationPropertyMap&);
 
     protected:
         ClassMap(ECDb const&, Type, ECN::ECClassCR, MapStrategyExtendedInfo const&);

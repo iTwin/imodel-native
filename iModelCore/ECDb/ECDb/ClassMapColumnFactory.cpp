@@ -209,6 +209,19 @@ BentleyStatus ColumnMapContext::QueryLocalColumnMaps(ColumnMaps& columnMaps, Cla
     return SUCCESS;
     }
 
+//*****************************************************************************************
+//ClassMapColumnFactory
+//*****************************************************************************************
+// ------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap) : m_classMap(classMap), m_primaryOrJoinedTable(&m_classMap.GetJoinedOrPrimaryTable())
+    {
+    m_useSharedColumnStrategy = (classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes);
+    if (m_useSharedColumnStrategy && m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow().IsValid())
+        m_maxSharedColumnCount = m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow();
+    }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
@@ -250,12 +263,7 @@ uint32_t ClassMapColumnFactory::MaxColumnsRequiredToPersistProperty(ECN::ECPrope
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-ECDbCR ClassMapColumnFactory::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
+DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     std::function<ECN::ECClassId(ECN::ECPropertyCR, Utf8StringCR)> getPersistenceClassId = [&] (ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString)
         {
@@ -295,7 +303,7 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
             return;
             }
 
-        DbColumn const* existingColumn = GetEffectiveTable()->FindColumnP(requestedColumnName.c_str());
+        DbColumn const* existingColumn = GetEffectiveTable(ctx)->FindColumnP(requestedColumnName.c_str());
         if (existingColumn != nullptr && IsColumnInUse(*existingColumn))
             {
             Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
@@ -307,11 +315,19 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
         };
 
 
-    DbColumn* existingColumn = GetEffectiveTable()->FindColumnP(params.GetColumnName().c_str());
+    DbTable* effectiveTableP = GetEffectiveTable(ctx);
+    if (effectiveTableP == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    DbTable& effectiveTable = *effectiveTableP;
+
+    DbColumn* existingColumn = effectiveTable.FindColumnP(params.GetColumnName().c_str());
     if (existingColumn != nullptr && !IsColumnInUse(*existingColumn) &&
         DbColumn::IsCompatible(existingColumn->GetType(), colType))
         {
-        if (GetEffectiveTable()->GetType() == DbTable::Type::Existing || 
+        if (effectiveTable.GetType() == DbTable::Type::Existing ||
             (existingColumn->GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
                                                       existingColumn->GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
                                                       existingColumn->GetConstraints().GetCollation() == params.GetCollation()))
@@ -319,16 +335,16 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
             return existingColumn;
             }
 
-        GetECDb().GetImpl().Issues().Report("Column %s in table %s is used by multiple property maps where property name and data type matches,"
+        ctx.Issues().Report("Column %s in table %s is used by multiple property maps where property name and data type matches,"
                                                            " but where one of the constraints NOT NULL, UNIQUE, or COLLATE differs.",
-                                                           existingColumn->GetName().c_str(), GetEffectiveTable()->GetName().c_str());
+                                                           existingColumn->GetName().c_str(), effectiveTable.GetName().c_str());
         return nullptr;
         }
 
 
     BeAssert(!params.GetColumnName().empty() && "Column name must not be null for default strategy");
     bool effectiveNotNullConstraint = params.AddNotNullConstraint();
-    if (params.AddNotNullConstraint() && (GetEffectiveTable()->HasExclusiveRootECClass() && GetEffectiveTable()->GetExclusiveRootECClassId() != m_classMap.GetClass().GetId()))
+    if (params.AddNotNullConstraint() && (effectiveTable.HasExclusiveRootECClass() && effectiveTable.GetExclusiveRootECClassId() != m_classMap.GetClass().GetId()))
         {
         LOG.warningv("For the ECProperty '%s' on ECClass '%s' a NOT NULL constraint is defined. The constraint cannot be enforced though because "
                      "the ECProperty has base ECClasses mapped to the same table.",
@@ -347,14 +363,14 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
     resolveColumnName(tmp, params.GetColumnName(), classId, retryCount);
 
     resolvedColumnName = tmp;
-    while (GetEffectiveTable()->FindColumnP(resolvedColumnName.c_str()) != nullptr)
+    while (effectiveTable.FindColumnP(resolvedColumnName.c_str()) != nullptr)
         {
         retryCount++;
         resolvedColumnName = tmp;
         resolveColumnName(resolvedColumnName, params.GetColumnName(), classId, retryCount);
         }
 
-    DbColumn* newColumn = GetEffectiveTable()->CreateColumn(resolvedColumnName, colType, DbColumn::Kind::Default, PersistenceType::Physical);
+    DbColumn* newColumn = effectiveTable.CreateColumn(resolvedColumnName, colType, DbColumn::Kind::Default, PersistenceType::Physical);
     if (newColumn == nullptr)
         return nullptr;
 
@@ -373,12 +389,12 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(ECN::ECPropertyCR prop, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
+DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(SchemaImportContext& ctx, ECN::ECPropertyCR prop, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     //Defining a col name for a shared column is a DB thing and DB CAs are taken strictly.
     if (params.IsColumnNameFromPropertyMapCA())
         {
-        GetECDb().GetImpl().Issues().Report("Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a value for 'ColumnName'. "
+        ctx.Issues().Report("Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a value for 'ColumnName'. "
                                                            "'ColumnName' must not be specified for this ECProperty because it is mapped to a column shared with other ECProperties.",
                                                            prop.GetClass().GetFullName(), prop.GetName().c_str());
         return nullptr;
@@ -387,7 +403,7 @@ DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(ECN::ECPropertyCR prop, D
     //Defining a collation which is not doable is an error because this is a DB thing and DB CAs are taken strictly.
     if (params.GetCollation() != DbColumn::Constraints::Collation::Unset)
         {
-        GetECDb().GetImpl().Issues().Report("Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a Collation constraint "
+        ctx.Issues().Report("Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a Collation constraint "
                                                            "which cannot be created because the ECProperty is mapped to a column shared with other ECProperties.",
                                                            prop.GetClass().GetFullName(), prop.GetName().c_str());
         return nullptr;
@@ -403,7 +419,7 @@ DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(ECN::ECPropertyCR prop, D
 
         }
 
-    return RegisterColumnMap(accessString, ReuseOrCreateSharedColumn());
+    return RegisterColumnMap(accessString, ReuseOrCreateSharedColumn(ctx));
     }
 
 //------------------------------------------------------------------------------------------
@@ -479,24 +495,7 @@ void ClassMapColumnFactory::ReserveSharedColumns(uint32_t columnsRequired) const
         m_areSharedColumnsReserved = true;
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-DbTable* ClassMapColumnFactory::GetEffectiveTable() const
-    {
-    if (m_areSharedColumnsReserved)
-        return GetOrCreateOverflowTable();
 
-    return m_primaryOrJoinedTable;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-bool ClassMapColumnFactory::IsColumnInUse(DbColumn const& column) const
-    {
-    return GetColumnMaps()->IsColumnInUsed(column);
-    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
@@ -510,7 +509,7 @@ DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8StringCR accessString, Db
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum) const
+DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum) const
     {
     if (DbColumn* column = GetColumnMaps()->FindP(accessString.c_str()))
         {
@@ -519,46 +518,55 @@ DbColumn* ClassMapColumnFactory::Allocate(ECN::ECPropertyCR property, DbColumn::
         }
 
     if (m_useSharedColumnStrategy && !forcePhysicalColum)
-        return AllocatedSharedColumn(property, param, accessString);
+        return AllocatedSharedColumn(ctx, property, param, accessString);
 
-    return AllocateColumn(property, type, param, accessString);
+    return AllocateColumn(ctx, property, type, param, accessString);
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable() const
+DbTable* ClassMapColumnFactory::GetEffectiveTable(SchemaImportContext& ctx) const
+    {
+    if (m_areSharedColumnsReserved)
+        return GetOrCreateOverflowTable(ctx);
+
+    return m_primaryOrJoinedTable;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+bool ClassMapColumnFactory::IsColumnInUse(DbColumn const& column) const { return GetColumnMaps()->IsColumnInUsed(column); }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable(SchemaImportContext& ctx) const
     {
     if (m_overflowTable != nullptr)
         return m_overflowTable;
 
     if (m_primaryOrJoinedTable->GetLinkNode().GetChildren().empty())
         {
-        DbTable* overflowTable = m_classMap.GetDbMap().GetDbSchemaR().CreateOverflowTable(*m_primaryOrJoinedTable);
+        DbTable* overflowTable = DbMappingManager::Tables::CreateOverflowTable(ctx, *m_primaryOrJoinedTable);
         const_cast<ClassMap&>(m_classMap).SetOverflowTable(*overflowTable);
-        return m_overflowTable = overflowTable;
-
+        m_overflowTable = overflowTable;
+        return m_overflowTable;
         }
     else if (m_primaryOrJoinedTable->GetLinkNode().GetChildren().size() == 1)
         {
         DbTable::LinkNode const* overflowTable = m_primaryOrJoinedTable->GetLinkNode().GetChildren()[0];
         if (overflowTable->GetType() == DbTable::Type::Overflow)
-            return  m_overflowTable = &overflowTable->GetTableR();
+            {
+            m_overflowTable = &overflowTable->GetTableR();
+            return m_overflowTable;
+            }
         }
 
     BeAssert(false && "Cannot create overflow table");
     return nullptr;
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap) : m_classMap(classMap), m_primaryOrJoinedTable(&m_classMap.GetJoinedOrPrimaryTable())
-    {
-    m_useSharedColumnStrategy = (classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes);
-    if (m_useSharedColumnStrategy && m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow().IsValid())
-        m_maxSharedColumnCount = m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow();
-    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
@@ -575,15 +583,15 @@ ColumnMaps* ClassMapColumnFactory::GetColumnMaps() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::ReuseOrCreateSharedColumn() const
+DbColumn* ClassMapColumnFactory::ReuseOrCreateSharedColumn(SchemaImportContext& ctx) const
     {
-    for (DbColumn const* column : GetEffectiveTable()->GetColumns())
+    for (DbColumn const* column : GetEffectiveTable(ctx)->GetColumns())
         {
         if (column->IsShared() && !GetColumnMaps()->IsColumnInUsed(*column))
             return const_cast<DbColumn*>(column);
         }
 
-    return GetEffectiveTable()->CreateSharedColumn();
+    return GetEffectiveTable(ctx)->CreateSharedColumn();
     }
 
 //------------------------------------------------------------------------------------------
@@ -605,6 +613,10 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
     return false;
     }
 
+
+//***************************************************************************************
+// ClassMapColumnFactory::ColumnResolutionScope
+//***************************************************************************************
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
@@ -617,21 +629,6 @@ ClassMapColumnFactory::ColumnResolutionScope::ColumnResolutionScope(ClassMap con
         }
 
     m_classMap.GetColumnFactory().m_columnResolutionScope = this;
-    }
-
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-ColumnMaps& ClassMapColumnFactory::ColumnResolutionScope::GetColumnMaps()
-    {
-    if (!m_init)
-        {
-        _Fill(m_columnMaps);
-        m_init = true;
-        }
-
-    return m_columnMaps;
     }
 
 //------------------------------------------------------------------------------------------
@@ -656,6 +653,27 @@ ClassMapColumnFactory::ColumnResolutionScope::~ColumnResolutionScope()
 #endif
     m_classMap.GetColumnFactory().m_columnResolutionScope = nullptr;
     }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+ColumnMaps& ClassMapColumnFactory::ColumnResolutionScope::GetColumnMaps()
+    {
+    if (!m_init)
+        {
+        _Fill(m_columnMaps);
+        m_init = true;
+        }
+
+    return m_columnMaps;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+ECDbCR ClassMapColumnFactory::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
+
+
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017

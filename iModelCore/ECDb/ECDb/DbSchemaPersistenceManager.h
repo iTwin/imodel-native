@@ -74,6 +74,8 @@ private:
     static BentleyStatus GenerateIndexWhereClause(Utf8StringR ddl, ECDbCR, DbIndex const&);
 
 public:
+    static BentleyStatus CreateOrReplaceIndex(ECDbCR, DbIndex const&, Utf8StringCR ddl);
+
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
 
     static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);

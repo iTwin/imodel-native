@@ -9,7 +9,6 @@
 #include "ECDbInternalTypes.h"
 #include "ClassMap.h"
 #include "SystemPropertyMap.h"
-#include <string>
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 

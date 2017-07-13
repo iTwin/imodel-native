@@ -184,60 +184,6 @@ BentleyStatus DbSchema::SaveOrUpdateTables() const
     return SUCCESS;
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        04/2017
-//---------------------------------------------------------------------------------------
-DbTable* DbSchema::CreateOverflowTable(DbTable const& baseTable)
-    {
-    if (!(baseTable.GetType() == DbTable::Type::Primary ||
-          baseTable.GetType() == DbTable::Type::Joined))
-        {
-        BeAssert(false && "Base table must be primary or joined table");
-        return nullptr;
-        }
-
-    if (baseTable.GetType() == DbTable::Type::Virtual)
-        {
-        BeAssert(false && "Base table must not be virtual");
-        return nullptr;
-        }
-
-    if (!baseTable.GetLinkNode().GetChildren().empty())
-        {
-        BeAssert(false && "Base table must not have any secondary table at this time");
-        return nullptr;
-        }
-
-    if (SUCCESS != baseTable.GetLinkNode().Validate())
-        return nullptr;
-
-    Utf8String name = baseTable.GetName();
-    name.append("_Overflow");
-    DbTable* table = FindTableP(name.c_str());
-    if (table != nullptr)
-        return table;
-
-    table = CreateTable(name, DbTable::Type::Overflow, ECClassId(), &baseTable);
-    if (!table)
-        return nullptr;
-
-    DbColumn const* pk = baseTable.FindFirst(DbColumn::Kind::ECInstanceId);
-    DbColumn const* cl = baseTable.FindFirst(DbColumn::Kind::ECClassId);
-    
-    DbColumn * npk = table->CreateColumn(pk->GetName(), pk->GetType(), DbColumn::Kind::ECInstanceId, pk->GetPersistenceType());
-    DbColumn * ncl = table->CreateColumn(cl->GetName(), cl->GetType(), DbColumn::Kind::ECClassId, pk->GetPersistenceType());
-    ncl->GetConstraintsR().SetNotNullConstraint();
-
-    table->CreatePrimaryKeyConstraint({npk});
-    table->CreateForeignKeyConstraint(*npk, *pk, ForeignKeyDbConstraint::ActionType::Cascade, ForeignKeyDbConstraint::ActionType::NoAction);
-    Utf8String indexName("ix_");
-    indexName.append(table->GetName()).append("_ecclassid");
-    table->CreateIndex(indexName, false, {ncl}, false, false, ECClassId());
-    return table;
-    }
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
 //---------------------------------------------------------------------------------------
@@ -368,124 +314,7 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
     }
 
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle  08/2015
-//---------------------------------------------------------------------------------------
-BentleyStatus DbSchema::CreateOrUpdateIndexes() const
-    {
-    if (SUCCESS != LoadIndexDefs())
-        return ERROR;
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM " TABLE_ECIndex);
-    if (stmt == nullptr)
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    if (stmt->Step() != BE_SQLITE_DONE)
-        return ERROR;
-
-    stmt = nullptr;
-
-    bmap<Utf8String, DbIndex const*, CompareIUtf8Ascii> comparableIndexDefs;
-    bset<Utf8CP, CompareIUtf8Ascii> usedIndexNames;
-
-    for (DbTable const* table : m_tables)
-        {
-        for (std::unique_ptr<DbIndex> const& indexPtr : table->GetIndexes())
-            {
-            DbIndex const& index = *indexPtr;
-            if (index.GetColumns().empty())
-                {
-                BeAssert(false && "Index definition is not valid");
-                return ERROR;
-                }
-
-            //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
-            Utf8String dropIndexSql;
-            dropIndexSql.Sprintf("DROP INDEX [%s]", index.GetName().c_str());
-            m_ecdb.TryExecuteSql(dropIndexSql.c_str());
-
-            if (usedIndexNames.find(index.GetName().c_str()) != usedIndexNames.end())
-                {
-                m_ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. An index with the same name already exists", index.GetName().c_str(), index.GetTable().GetName().c_str());
-                return ERROR;
-                }
-            else
-                usedIndexNames.insert(index.GetName().c_str());
-
-            //indexes on virtual tables are ignored
-            if (index.GetTable().GetType() != DbTable::Type::Virtual)
-                {
-                Utf8String ddl, comparableIndexDef;
-                if (SUCCESS != DbSchemaPersistenceManager::BuildCreateIndexDdl(ddl, comparableIndexDef, m_ecdb, index))
-                    return ERROR;
-
-                auto it = comparableIndexDefs.find(comparableIndexDef);
-                if (it != comparableIndexDefs.end())
-                    {
-                    Utf8CP errorMessage = "Index '%s'%s on table '%s' has the same definition as the already existing index '%s'%s. ECDb does not create this index.";
-
-                    Utf8String provenanceStr;
-                    if (index.HasClassId())
-                        {
-                        ECClassCP provenanceClass = m_ecdb.Schemas().GetClass(index.GetClassId());
-                        if (provenanceClass == nullptr)
-                            {
-                            BeAssert(false);
-                            return ERROR;
-                            }
-                        provenanceStr.Sprintf(" [Created for ECClass %s]", provenanceClass->GetFullName());
-                        }
-
-                    DbIndex const* existingIndex = it->second;
-                    Utf8String existingIndexProvenanceStr;
-                    if (existingIndex->HasClassId())
-                        {
-                        ECClassCP provenanceClass = m_ecdb.Schemas().GetClass(existingIndex->GetClassId());
-                        if (provenanceClass == nullptr)
-                            {
-                            BeAssert(false);
-                            return ERROR;
-                            }
-                        existingIndexProvenanceStr.Sprintf(" [Created for ECClass %s]", provenanceClass->GetFullName());
-                        }
-
-                    if (!index.IsAutoGenerated())
-                        LOG.warningv(errorMessage, index.GetName().c_str(), provenanceStr.c_str(), index.GetTable().GetName().c_str(),
-                                     existingIndex->GetName().c_str(), existingIndexProvenanceStr.c_str());
-                    else
-                        {
-                        if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
-                            LOG.debugv(errorMessage,
-                                       index.GetName().c_str(), provenanceStr.c_str(), index.GetTable().GetName().c_str(),
-                                       existingIndex->GetName().c_str(), existingIndexProvenanceStr.c_str());
-                        }
-
-                    continue;
-                    }
-
-                comparableIndexDefs[comparableIndexDef] = &index;
-
-                if (BE_SQLITE_OK != m_ecdb.ExecuteSql(ddl.c_str()))
-                    {
-                    m_ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
-                                                     m_ecdb.GetLastError().c_str());
-
-                    return ERROR;
-                    }
-                }
-
-            //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
-            //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
-            if (SUCCESS != PersistIndexDef(index))
-                return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014
@@ -743,7 +572,7 @@ BentleyStatus DbSchema::LoadIndexDefs() const
     if (m_indexDefsAreLoaded)
         return SUCCESS;
 
-    CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT I.Id, T.Name, I.Name, I.IsUnique, I.AddNotNullWhereExp, I.IsAutoGenerated, I.ClassId, I.AppliesToSubclassesIfPartial FROM " TABLE_ECIndex " I INNER JOIN ec_Table T ON T.Id = I.TableId");
+    CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT I.Id, T.Name, I.Name, I.IsUnique, I.AddNotNullWhereExp, I.IsAutoGenerated, I.ClassId, I.AppliesToSubclassesIfPartial FROM " TABLE_Index " I INNER JOIN ec_Table T ON T.Id = I.TableId");
     if (stmt == nullptr)
         return ERROR;
 
@@ -765,7 +594,7 @@ BentleyStatus DbSchema::LoadIndexDefs() const
             return ERROR;
             }
 
-        CachedStatementPtr indexColStmt = GetECDb().GetCachedStatement("SELECT C.Name FROM " TABLE_ECIndexColumn " I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal");
+        CachedStatementPtr indexColStmt = GetECDb().GetCachedStatement("SELECT C.Name FROM " TABLE_IndexColumn " I INNER JOIN ec_Column C ON C.Id = I.ColumnId WHERE I.IndexId = ? ORDER BY I.Ordinal");
         if (indexColStmt == nullptr)
             return ERROR;
 
@@ -794,7 +623,7 @@ BentleyStatus DbSchema::LoadIndexDefs() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
     {
-    CachedStatementPtr stmt = GetECDb().GetCachedStatement("INSERT INTO " TABLE_ECIndex "(Id,TableId,Name,IsUnique,AddNotNullWhereExp,IsAutoGenerated,ClassId,AppliesToSubclassesIfPartial) VALUES(?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = GetECDb().GetCachedStatement("INSERT INTO " TABLE_Index "(Id,TableId,Name,IsUnique,AddNotNullWhereExp,IsAutoGenerated,ClassId,AppliesToSubclassesIfPartial) VALUES(?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -819,7 +648,7 @@ BentleyStatus DbSchema::PersistIndexDef(DbIndex const& index) const
 
     stmt = nullptr; //free resources
 
-    CachedStatementPtr indexColStmt = GetECDb().GetCachedStatement("INSERT INTO " TABLE_ECIndexColumn "(Id,IndexId,ColumnId,Ordinal) VALUES(?,?,?,?)");
+    CachedStatementPtr indexColStmt = GetECDb().GetCachedStatement("INSERT INTO " TABLE_IndexColumn "(Id,IndexId,ColumnId,Ordinal) VALUES(?,?,?,?)");
     if (indexColStmt == nullptr)
         return ERROR;
 
@@ -917,6 +746,8 @@ DbTable const* DbSchema::GetNullTable() const
     BeAssert(m_nullTable != nullptr);
     return m_nullTable;
     }
+
+
 
 //****************************************************************************************
 //DbSchema::TableCollection
@@ -1090,29 +921,7 @@ std::vector<DbConstraint const*> DbTable::GetConstraints() const
     return constraints;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan        09/2014
-//---------------------------------------------------------------------------------------
-DbIndex* DbTable::CreateIndex(Utf8StringCR indexName, bool isUnique, std::vector<DbColumn const*> const& columns, bool addIsNotNullWhereExp, bool isAutoGenerated, ECN::ECClassId classId, bool applyToSubclassesIfPartial)
-    {
-    if (indexName.EqualsIAscii("ix_root_ts2_Sub"))
-        printf("Hellpo");
 
-    if (indexName.empty() || columns.empty())
-        {
-        BeAssert(false && "Index name and column list must not be empty. Should have been caught before");
-        return nullptr;
-        }
-
-    DbIndexId id;
-    if (BE_SQLITE_OK != m_ecdb.GetImpl().GetSequence(IdSequences::Key::IndexId).GetNextValue(id))
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return AddIndexDef(id, indexName, isUnique, columns, addIsNotNullWhereExp, isAutoGenerated, classId, applyToSubclassesIfPartial);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan        09/2014

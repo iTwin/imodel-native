@@ -14,10 +14,10 @@
     <ClCompile Include="ChangeSummaryImpl.cpp" />
     <ClCompile Include="ClassMap.cpp" />
     <ClCompile Include="ClassMapColumnFactory.cpp" />
-    <ClCompile Include="ClassMapper.cpp" />
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
     <ClCompile Include="DbMap.cpp" />
+    <ClCompile Include="DbMappingManager.cpp" />
     <ClCompile Include="DbMapValidator.cpp" />
     <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="DbSchemaPersistenceManager.cpp" />
@@ -134,10 +134,10 @@
     <ClInclude Include="ChangeSummaryImpl.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapColumnFactory.h" />
-    <ClInclude Include="ClassMapper.h" />
     <ClInclude Include="ClassMapPersistenceManager.h" />
     <ClInclude Include="ClassMappingInfo.h" />
     <ClInclude Include="DbMap.h" />
+    <ClInclude Include="DbMappingManager.h" />
     <ClInclude Include="DbMapValidator.h" />
     <ClInclude Include="DbSchema.h" />
     <ClInclude Include="DbSchemaPersistenceManager.h" />

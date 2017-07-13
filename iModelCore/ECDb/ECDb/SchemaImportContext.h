@@ -8,6 +8,7 @@
 #pragma once
 #include <ECDb/SchemaManager.h>
 #include "ClassMap.h"
+#include "DbMappingManager.h"
 #include "DbSchemaPersistenceManager.h"
 #include "SchemaComparer.h"
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
@@ -119,7 +120,6 @@ struct SchemaPolicies final
         bool IsOptedIn(SchemaPolicy const*&, SchemaPolicy::Type) const;
     };
 
-struct RelationshipClassEndTableMapperCollection;
 //=======================================================================================
 // @bsiclass                                                Krischan.Eberle      05/2014
 //+===============+===============+===============+===============+===============+======
@@ -134,7 +134,9 @@ struct SchemaImportContext final
         MappingRelationships,
         CreatingUserDefinedIndexes
         };
+
     private:
+        ECDbCR m_ecdb;
         SchemaManager::SchemaImportOptions m_options;
         Phase m_phase = Phase::ImportingSchemas;
 
@@ -144,14 +146,15 @@ struct SchemaImportContext final
         std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
         bmap<ECN::ECClassId, ForeignKeyConstraintCustomAttribute> m_fkConstraintCACache;
         ForeignKeyConstraintCustomAttribute m_emptyFkConstraintCA;
-        std::unique_ptr<RelationshipClassEndTableMapperCollection> m_relCol;
+        DbMappingManager::FkRelationships::Collection m_fkRelInfos;
         SchemaPolicies m_schemaPolicies;
 
     public:
-        explicit SchemaImportContext(SchemaManager::SchemaImportOptions options);
-        void SetPhase(Phase phase) { BeAssert(Enum::ToInt(m_phase) < Enum::ToInt(phase)); m_phase = phase; }
-        Phase GetPhase() const { return m_phase; }
+        SchemaImportContext(ECDbCR ecdb, SchemaManager::SchemaImportOptions options) : m_ecdb(ecdb), m_options(options) {}
         SchemaManager::SchemaImportOptions GetOptions() const { return m_options; }
+        Phase GetPhase() const { return m_phase; }
+        void SetPhase(Phase phase) { BeAssert(Enum::ToInt(m_phase) < Enum::ToInt(phase)); m_phase = phase; }
+
         ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
         void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
         std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }
@@ -165,13 +168,18 @@ struct SchemaImportContext final
 
             return it->second;
             }
-        ClassMappingStatus MapNavigationProperty(NavigationPropertyMap& navPropMap);
-        ClassMappingStatus FinishEndTableMapping();
+
+        DbMappingManager::FkRelationships::Collection const& GetFkRelationshipInfos() { return m_fkRelInfos; }
+
         ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
         void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
         bool ClassMapNeedsSaving(ECN::ECClassId classId) const { return m_classMapsToSave.find(classId) != m_classMapsToSave.end(); }
-    SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
-    SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
+
+        SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
+        SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
+
+        IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
+        ECDbCR GetECDb() const { return m_ecdb; }
     };
 
 //=======================================================================================

@@ -66,7 +66,7 @@ ClassMappingStatus ClassMappingInfo::EvaluateMapStrategy(SchemaImportContext& ct
     if (m_tableName.empty())
         {
         // if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
-        if (SUCCESS != ClassMapper::TableMapper::DetermineTableName(m_tableName, m_ecClass))
+        if (SUCCESS != DbMappingManager::Tables::DetermineTableName(m_tableName, m_ecClass))
             return ClassMappingStatus::Error;
         }
 
@@ -203,7 +203,7 @@ BentleyStatus ClassMappingInfo::EvaluateTablePerHierarchyMapStrategy(SchemaImpor
         if (baseClassMap.GetMapStrategy().GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::ParentOfJoinedTable)
             {
             //Joined tables are named after the class which becomes the root class of classes in the joined table
-            if (SUCCESS != ClassMapper::TableMapper::DetermineTableName(m_tableName, m_ecClass))
+            if (SUCCESS != DbMappingManager::Tables::DetermineTableName(m_tableName, m_ecClass))
                 return ERROR;
 
             //For classes in the joined table the id column name is determined like this:

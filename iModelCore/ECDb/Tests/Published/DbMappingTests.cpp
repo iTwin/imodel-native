@@ -52,10 +52,10 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
                      </ECRelationshipClass>
                 </ECSchema>)xml")));
 
-    ECInstanceId instanceParentId = ECInstanceId(1ULL);
-    ECInstanceId instanceGrandchildAId = ECInstanceId(2ULL);;
-    ECInstanceId instanceGrandchildBId = ECInstanceId(3ULL);;
-    ECInstanceId instanceGrandchildCId = ECInstanceId(4ULL);;
+    ECInstanceId instanceParentId(UINT64_C(1));
+    ECInstanceId instanceGrandchildAId(UINT64_C(2));
+    ECInstanceId instanceGrandchildBId(UINT64_C(3));
+    ECInstanceId instanceGrandchildCId(UINT64_C(4));
 
     if (true)
         {
@@ -185,10 +185,10 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH)
                      </ECRelationshipClass>
                 </ECSchema>)xml")));
 
-    ECInstanceId instanceParentId = ECInstanceId(1ULL);
-    ECInstanceId instanceGrandchildAId = ECInstanceId(2ULL);;
-    ECInstanceId instanceGrandchildBId = ECInstanceId(3ULL);;
-    ECInstanceId instanceGrandchildCId = ECInstanceId(4ULL);;
+    ECInstanceId instanceParentId(UINT64_C(1));
+    ECInstanceId instanceGrandchildAId(UINT64_C(2));
+    ECInstanceId instanceGrandchildBId(UINT64_C(3));
+    ECInstanceId instanceGrandchildCId(UINT64_C(4));
 
     if (true)
         {
@@ -319,10 +319,10 @@ TEST_F(DbMappingTestFixture, MultiConstraintRelationship_TPH_JoinedTable)
                      </ECRelationshipClass>
                 </ECSchema>)xml")));
     
-    ECInstanceId instanceParentId = ECInstanceId(1ULL);
-    ECInstanceId instanceGrandchildAId = ECInstanceId(2ULL);;
-    ECInstanceId instanceGrandchildBId = ECInstanceId(3ULL);;
-    ECInstanceId instanceGrandchildCId = ECInstanceId(4ULL);;
+    ECInstanceId instanceParentId(UINT64_C(1));
+    ECInstanceId instanceGrandchildAId(UINT64_C(2));
+    ECInstanceId instanceGrandchildBId(UINT64_C(3));
+    ECInstanceId instanceGrandchildCId(UINT64_C(4));
 
     if (true)
         {

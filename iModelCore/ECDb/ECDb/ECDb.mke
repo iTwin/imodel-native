@@ -41,12 +41,12 @@ ECDbAllHeaders = \
                 $(baseDir)ECDbSqlFunctions.h \
                 $(baseDir)DbMap.h \
                 $(baseDir)DbMapValidator.h \
+                $(baseDir)DbMappingManager.h \
                 $(baseDir)ClassMap.h \
                 $(baseDir)RelationshipClassMap.h \
                 $(baseDir)PropertyMap.h \
                 $(baseDir)SystemPropertyMap.h \
                 $(baseDir)PropertyMapVisitor.h \
-                $(baseDir)ClassMapper.h \
                 $(baseDir)ClassMapPersistenceManager.h \
                 $(baseDir)SchemaPersistenceHelper.h \
                 $(baseDir)SchemaReader.h \
@@ -158,6 +158,8 @@ $(o)ECDbLogger$(oext):                                        $(baseDir)ECDbLogg
 
 $(o)DbMap$(oext):                                             $(baseDir)DbMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
+$(o)DbMappingManager$(oext):                                  $(baseDir)DbMappingManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
+
 $(o)DbMapValidator$(oext):                                    $(baseDir)DbMapValidator.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)LightweightCache$(oext):                                  $(baseDir)LightweightCache.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
@@ -175,8 +177,6 @@ $(o)PropertyMap$(oext):                                       $(baseDir)Property
 $(o)SystemPropertyMap$(oext):                                 $(baseDir)SystemPropertyMap.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)PropertyMapVisitor$(oext):                                $(baseDir)PropertyMapVisitor.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
-
-$(o)ClassMapper$(oext):                                       $(baseDir)ClassMapper.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
 
 $(o)ClassMapPersistenceManager$(oext):                        $(baseDir)ClassMapPersistenceManager.cpp $(ECDbAllHeaders) ${MultiCompileDepends}
  

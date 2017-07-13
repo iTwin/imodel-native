@@ -111,7 +111,7 @@ ClassMappingStatus ClassMap::_Map(ClassMappingContext& ctx)
 //---------------------------------------------------------------------------------------
 ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
     {
-    if (SUCCESS != ClassMapper::TableMapper::MapToTable(*this, ctx.GetClassMappingInfo()))
+    if (SUCCESS != DbMappingManager::Tables::MapToTable(ctx.GetImportCtx(), *this, ctx.GetClassMappingInfo()))
         return ClassMappingStatus::Error;
     
     if (SUCCESS != MapSystemColumns())
@@ -235,23 +235,14 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     return table.CreateTrigger(triggerName.c_str(), DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan           06/2015
-//---------------------------------------------------------------------------------------
-ClassMappingStatus ClassMap::MapNavigationProperty(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap)
-    {
-    return ctx.MapNavigationProperty(navPropMap);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
 ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
     {
     bvector<ClassMap const*> tphBaseClassMaps;
-    ClassMapper::PropertyMapInheritanceMode inheritanceMode = ClassMapper::GetPropertyMapInheritanceMode(m_mapStrategyExtInfo);
-    if (inheritanceMode != ClassMapper::PropertyMapInheritanceMode::NotInherited)
+    DbMappingManager::Classes::PropertyMapInheritanceMode inheritanceMode = DbMappingManager::Classes::GetPropertyMapInheritanceMode(m_mapStrategyExtInfo);
+    if (inheritanceMode != DbMappingManager::Classes::PropertyMapInheritanceMode::NotInherited)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
@@ -296,7 +287,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             }
 
         if (&property->GetClass() == &m_ecClass ||
-            inheritanceMode == ClassMapper::PropertyMapInheritanceMode::NotInherited)
+            inheritanceMode == DbMappingManager::Classes::PropertyMapInheritanceMode::NotInherited)
             {
             //Property map that should not be inherited -> must be mapped
             propertiesToMap.push_back(property);
@@ -331,27 +322,28 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             NavigationPropertyMap const& navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
             if (!navPropertyMap.IsComplete())
                 {
-                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
-                if (navMapStatus != ClassMappingStatus::Success)
-                    return navMapStatus;
+                ClassMappingStatus stat = DbMappingManager::Classes::MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
+                if (ClassMappingStatus::Success != stat)
+                    return stat;
                 }
             }
         }
 
     for (ECPropertyCP property : propertiesToMap)
         {
-        PropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
+        PropertyMap* propMap = DbMappingManager::Classes::MapProperty(ctx.GetImportCtx(), *this, *property);
         if (propMap == nullptr)
             return ClassMappingStatus::Error;
 
         if (property->GetIsNavigation())
             {
+            //WIP_CLEANUP code redundant to a few lines above.
             NavigationPropertyMap const& navPropertyMap = propMap->GetAs<NavigationPropertyMap>();
             if (!navPropertyMap.IsComplete())
                 {
-                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
-                if (navMapStatus != ClassMappingStatus::Success)
-                    return navMapStatus;
+                ClassMappingStatus stat = DbMappingManager::Classes::MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
+                if (ClassMappingStatus::Success != stat)
+                    return stat;
                 }
             }
         }
@@ -487,8 +479,8 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
 BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbCtx)
     {
     bvector<ClassMap const*> tphBaseClassMaps;
-    ClassMapper::PropertyMapInheritanceMode inheritanceMode = ClassMapper::GetPropertyMapInheritanceMode(m_mapStrategyExtInfo);
-    if (inheritanceMode != ClassMapper::PropertyMapInheritanceMode::NotInherited)
+    DbMappingManager::Classes::PropertyMapInheritanceMode inheritanceMode = DbMappingManager::Classes::GetPropertyMapInheritanceMode(m_mapStrategyExtInfo);
+    if (inheritanceMode != DbMappingManager::Classes::PropertyMapInheritanceMode::NotInherited)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
@@ -508,7 +500,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
         DataPropertyMap const*  tphBaseClassPropMap = nullptr;
-        if (&property->GetClass() != &m_ecClass && inheritanceMode == ClassMapper::PropertyMapInheritanceMode::Clone)
+        if (&property->GetClass() != &m_ecClass && inheritanceMode == DbMappingManager::Classes::PropertyMapInheritanceMode::Clone)
             {
             for (ClassMap const* baseClassMap : tphBaseClassMaps)
                 {
@@ -523,7 +515,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
         if (tphBaseClassPropMap == nullptr)
             {
-            if (ClassMapper::LoadPropertyMap(*this, *property, dbCtx) == nullptr)
+            if (DbMappingManager::Classes::LoadPropertyMap(dbCtx, *this, *property) == nullptr)
                 m_failedToLoadProperties.push_back(property);
 
             continue;
@@ -552,7 +544,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
         UpdateColumnResolutionScope columnResolutionScope(*this);
         for (ECPropertyCP property : m_failedToLoadProperties)
             {
-            PropertyMap const* propMap = ClassMapper::MapProperty(*this, *property);
+            PropertyMap const* propMap = DbMappingManager::Classes::MapProperty(ctx, *this, *property);
             if (propMap == nullptr)
                 return ERROR;
 
@@ -565,8 +557,8 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
             //Nav property maps cannot be saved here as they are not yet mapped.
             if (propMap->GetType() == PropertyMap::Type::Navigation)
                 {
-                NavigationPropertyMap & navPropMap = const_cast<NavigationPropertyMap&>(propMap->GetAs<NavigationPropertyMap>());
-                if (MapNavigationProperty(ctx, navPropMap) != ClassMappingStatus::Success)
+                NavigationPropertyMap& navPropMap = const_cast<NavigationPropertyMap&>(propMap->GetAs<NavigationPropertyMap>());
+                if (ClassMappingStatus::Success != DbMappingManager::Classes::MapNavigationProperty(ctx, navPropMap))
                     return ERROR;
                 }
 
@@ -767,7 +759,6 @@ ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
     return *m_columnFactory;
     }
 
-//************************** ClassMapLoadContext ***************************************************
 //************************** NotMappedClassMap ***************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014

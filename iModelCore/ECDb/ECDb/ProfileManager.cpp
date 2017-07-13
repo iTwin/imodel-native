@@ -517,7 +517,7 @@ if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_Index
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_ECIndex  "("
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_Index  "("
                            "Id INTEGER PRIMARY KEY,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "TableId INTEGER NOT NULL REFERENCES ec_Table(Id) ON DELETE CASCADE,"
@@ -529,23 +529,23 @@ if (BE_SQLITE_OK != stat)
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Index_TableId ON " TABLE_ECIndex "(TableId);"
-                           "CREATE INDEX ix_ec_Index_ClassId ON " TABLE_ECIndex "(ClassId)");
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Index_TableId ON " TABLE_Index "(TableId);"
+                           "CREATE INDEX ix_ec_Index_ClassId ON " TABLE_Index "(ClassId)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
     //ec_IndexColumn
-    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_ECIndexColumn "("
+    stat = ecdb.ExecuteSql("CREATE TABLE " TABLE_IndexColumn "("
                            "Id INTEGER PRIMARY KEY,"
-                           "IndexId INTEGER NOT NULL REFERENCES " TABLE_ECIndex " (Id) ON DELETE CASCADE,"
+                           "IndexId INTEGER NOT NULL REFERENCES " TABLE_Index " (Id) ON DELETE CASCADE,"
                            "ColumnId INTEGER NOT NULL REFERENCES ec_Column (Id) ON DELETE CASCADE,"
                            "Ordinal INTEGER NOT NULL)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
-    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_IndexColumn_IndexId_ColumnId_Ordinal ON " TABLE_ECIndexColumn "(IndexId,ColumnId,Ordinal);"
-                           "CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON " TABLE_ECIndexColumn "(IndexId,Ordinal);"
-                           "CREATE INDEX ix_ec_IndexColumn_ColumnId ON " TABLE_ECIndexColumn "(ColumnId)");
+    stat = ecdb.ExecuteSql("CREATE UNIQUE INDEX uix_ec_IndexColumn_IndexId_ColumnId_Ordinal ON " TABLE_IndexColumn "(IndexId,ColumnId,Ordinal);"
+                           "CREATE INDEX ix_ec_IndexColumn_IndexId_Ordinal ON " TABLE_IndexColumn "(IndexId,Ordinal);"
+                           "CREATE INDEX ix_ec_IndexColumn_ColumnId ON " TABLE_IndexColumn "(ColumnId)");
 
     if (BE_SQLITE_OK != stat)
         return stat;

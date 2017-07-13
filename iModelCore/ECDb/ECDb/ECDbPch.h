@@ -32,6 +32,7 @@
 #include "ECDbSqlFunctions.h"
 
 #include "DbMap.h"
+#include "DbMappingManager.h"
 #include "DbMapValidator.h"
 #include "MapStrategy.h"
 #include "DbSchema.h"
@@ -45,7 +46,6 @@
 #include "ClassMappingInfo.h"
 #include "ClassMapPersistenceManager.h"
 #include "ClassMapPersistenceManager.h"
-#include "ClassMapper.h"
 #include "SchemaComparer.h"
 #include "LightweightCache.h"
 #include "ClassMapColumnFactory.h"

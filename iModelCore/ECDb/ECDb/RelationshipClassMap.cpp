@@ -576,7 +576,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     //End table relationship is always mapped to virtual table.
     //we use nav properties to generate views dynamically
-    if (SUCCESS != ClassMapper::TableMapper::MapToTable(*this, ctx.GetClassMappingInfo()))
+    if (SUCCESS != DbMappingManager::Tables::MapToTable(ctx.GetImportCtx(), *this, ctx.GetClassMappingInfo()))
         return ClassMappingStatus::Error;
 
     if (SUCCESS != MapSystemColumns())
@@ -1037,9 +1037,9 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 BeAssert(false);
                 break;
         }
-    
+
     auto sourceECInstanceIdColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-    auto sourceECClassIdColumn =  GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
+    auto sourceECClassIdColumn = GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
     auto targetECInstanceIdColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
     auto targetECClassIdColumn = GetTargetECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetTargetECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
 
@@ -1062,10 +1062,13 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    GetPrimaryTable().CreateIndex(name, isUniqueIndex, columns, false, true, GetClass().GetId(),
-                                            //if a partial index is created, it must only apply to this class,
-                                            //not to subclasses, as constraints are not inherited by relationships
-                                            false);
+    if (SUCCESS != DbMappingManager::Tables::CreateIndex(schemaImportContext, GetPrimaryTable(), name, isUniqueIndex, columns, false, true, GetClass().GetId(),
+                                                         //if a partial index is created, it must only apply to this class,
+                                                         //not to subclasses, as constraints are not inherited by relationships
+                                                         false))
+        {
+        BeAssert(false && "Failed to create index for link table relationship");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
