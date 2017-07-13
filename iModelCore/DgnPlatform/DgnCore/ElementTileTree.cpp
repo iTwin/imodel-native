@@ -1692,7 +1692,9 @@ private:
     void AddStrokes(StrokesList& strokes, GeometryR geom, double rangePixels, bool isContained);
     void AddStrokes(StrokesR strokes, GeometryR geom, double rangePixels, bool isContained) { AddStrokes(strokes, geom, geom.GetDisplayParams(), rangePixels, isContained); }
     void AddStrokes(StrokesR, GeometryR, DisplayParamsCR, double rangePixels, bool isContained);
-    Strokes ClipStrokes(StrokesCR strokes) const;
+    Strokes ClipSegments(StrokesCR strokes) const;
+    void ClipStrokes(StrokesR strokes) const;
+    void ClipPoints(StrokesR strokes) const;
 public:
     MeshGenerator(TileCR tile, GeometryOptionsCR options, LoadContextCR loadContext);
 
@@ -1728,7 +1730,7 @@ MeshBuilderR MeshGenerator::GetMeshBuilder(MeshMergeKey& key)
         return *found->second;
 
     bool is2d = m_tile.GetElementRoot().Is2d();
-    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_tileRange, is2d);
+    MeshBuilderPtr builder = MeshBuilder::Create(*key.m_params, m_vertexTolerance, m_facetAreaTolerance, &m_featureTable, key.m_primitiveType, m_tileRange, is2d, key.m_isPlanar);
     m_builderMap[key] = builder;
     return *builder;
     }
@@ -1847,7 +1849,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     DgnDbR db = m_tile.GetElementRoot().GetDgnDb();
     bool hasTexture = displayParams.IsTextured();
 
-    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh);
+    MeshMergeKey key(displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     bool doDecimate = !m_tile.IsLeaf() && geom.DoDecimate() && polyface->GetPointCount() > GetDecimatePolyfacePointCount();
@@ -1859,7 +1861,6 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     bool                    anyContributed = false;
     uint32_t                fillColor = displayParams.GetFillColor();
 
-    
 //  BeAssert (displayParams.IgnoresLighting() || 0 != tilePolyface.m_polyface->GetNormalCount());
     builder.BeginPolyface(*polyface, MeshEdgeCreationOptions(tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges));
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
@@ -1872,7 +1873,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
             m_contentRange.Extend(visitor->Point());
             }
         }
-    DRange3d        polyfaceRange = polyface->PointRange();
+
     builder.EndPolyface();
 
     if (anyContributed)
@@ -1887,12 +1888,25 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::ClipStrokes(StrokesR strokes) const
+    {
+    if (strokes.m_disjoint)
+        ClipPoints(strokes);
+    else
+        strokes = ClipSegments(strokes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
+Strokes MeshGenerator::ClipSegments(StrokesCR input) const
     {
     // Might be more efficient to modify input in-place.
-    Strokes output(*input.m_displayParams, input.m_disjoint);
+    BeAssert(!input.m_disjoint);
+
+    Strokes output(*input.m_displayParams, input.m_disjoint, input.m_isPlanar);
     enum    State { kInside, kOutside, kCrossedOutside };
 
     output.m_strokes.reserve(input.m_strokes.size());
@@ -1954,6 +1968,20 @@ Strokes MeshGenerator::ClipStrokes(StrokesCR input) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void MeshGenerator::ClipPoints(StrokesR strokes) const
+    {
+    BeAssert(strokes.m_disjoint);
+
+    for (auto& stroke : strokes.m_strokes)
+        {
+        auto eraseAt = std::remove_if(stroke.m_points.begin(), stroke.m_points.end(), [&](DPoint3dCR pt) { return !m_tileRange.IsContained(pt); });
+        stroke.m_points.erase(eraseAt);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void MeshGenerator::AddStrokes(GeometryR geom, double rangePixels, bool isContained)
@@ -1980,16 +2008,12 @@ void MeshGenerator::AddStrokes(StrokesR strokes, GeometryR geom, DisplayParamsCR
         return;
 
     if (!isContained)
-        {
-        Strokes clippedStrokes = ClipStrokes(strokes);
-        AddStrokes(clippedStrokes, geom, rangePixels, true);
-        return;
-        }
+        ClipStrokes(strokes);
 
     if (strokes.m_strokes.empty())
         return; // avoid potentially creating the builder below...
 
-    MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
+    MeshMergeKey key(displayParams, false, strokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, strokes.m_isPlanar);
     MeshBuilderR builder = GetMeshBuilder(key);
 
     uint32_t fillColor = displayParams.GetLineColor();

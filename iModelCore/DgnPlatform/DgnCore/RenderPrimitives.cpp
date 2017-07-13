@@ -1140,6 +1140,9 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
     ISolidPrimitivePtr  solidPrimitive = curveVector.IsNull() ? m_geometry->GetAsISolidPrimitive() : nullptr;
     MSBsplineSurfacePtr bsplineSurface = solidPrimitive.IsNull() && curveVector.IsNull() ? m_geometry->GetAsMSBsplineSurface() : nullptr;
 
+    // According to Brien we should not even bother checking planar.
+    // The planar flag exists to allow us to address z-fighting when shapes are sketched onto surfaces (e.g. for push-pull modeling)
+    bool isPlanar = curveVector.IsValid();
     if (curveVector.IsValid())
         polyfaceBuilder->AddRegion(*curveVector);
     else if (solidPrimitive.IsValid())
@@ -1159,8 +1162,8 @@ PolyfaceList PrimitiveGeometry::_GetPolyfaces(IFacetOptionsR facetOptions)
         // If there is no region outline, and never should be one, don't generate edges
         // See: text background (or anything else with blanking fill)
         DisplayParamsCR params = GetDisplayParams();
-        bool wantEdges = curveVector.IsValid() && !params.HasBlankingFill() && !params.HasRegionOutline();
-        polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, wantEdges));
+        bool wantEdges = curveVector.IsNull() || (!params.HasBlankingFill() && !params.HasRegionOutline());
+        polyfaces.push_back(Polyface(GetDisplayParams(), *polyface, wantEdges, isPlanar));
         }
 
     return polyfaces;
@@ -1208,7 +1211,11 @@ StrokesList PrimitiveGeometry::_GetStrokes (IFacetOptionsR facetOptions)
             }
 
         if (!strokePoints.empty())
-            tileStrokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), disjoint));
+            {
+            bool isPlanar = curveVector->IsAnyRegionType();
+            BeAssert(isPlanar == GetDisplayParams().HasRegionOutline());
+            tileStrokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), disjoint, isPlanar));
+            }
         }
 
     return tileStrokes;
@@ -1492,18 +1499,22 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
             DisplayParamsCPtr displayParams = tilePolyface.m_displayParams;
             bool hasTexture = displayParams.IsValid() && displayParams->IsTextured();
 
-            MeshMergeKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh);
+            MeshMergeKey key(*displayParams, nullptr != polyface->GetNormalIndexCP(), Mesh::PrimitiveType::Mesh, tilePolyface.m_isPlanar);
 
             MeshBuilderPtr meshBuilder;
             auto found = builderMap.find(key);
             if (builderMap.end() != found)
                 meshBuilder = found->second;
             else
-                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh, range, is2d);
+                builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, Mesh::PrimitiveType::Mesh, range, is2d, tilePolyface.m_isPlanar);
 
             uint32_t fillColor = displayParams->GetFillColor();
+
+            meshBuilder->BeginPolyface(*polyface, tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges);
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
                 meshBuilder->AddTriangle(*visitor, displayParams->GetRenderingAsset(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+
+            meshBuilder->EndPolyface();
             }
 
         if (!options.WantSurfacesOnly())
@@ -1512,14 +1523,14 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
             for (auto& tileStrokes : tileStrokesArray)
                 {
                 DisplayParamsCPtr displayParams = tileStrokes.m_displayParams;
-                MeshMergeKey key(*displayParams, false, tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline);
+                MeshMergeKey key(*displayParams, false, tileStrokes.m_disjoint ? Mesh::PrimitiveType::Point : Mesh::PrimitiveType::Polyline, tileStrokes.m_isPlanar);
 
                 MeshBuilderPtr meshBuilder;
                 auto found = builderMap.find(key);
                 if (builderMap.end() != found)
                     meshBuilder = found->second;
                 else
-                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType, range, is2d);
+                    builderMap[key] = meshBuilder = MeshBuilder::Create(*displayParams, vertexTolerance, facetAreaTolerance, nullptr, key.m_primitiveType, range, is2d, tileStrokes.m_isPlanar);
 
                 uint32_t fillColor = displayParams->GetLineColor();
                 for (auto& strokePoints : tileStrokes.m_strokes)
@@ -1675,7 +1686,7 @@ PolyfaceList TextStringGeometry::_GetPolyfaces(IFacetOptionsR facetOptionsIn)
     if (polyface.IsValid() && polyface->HasFacets())
         {
         polyface->Transform(Transform::FromProduct (GetTransform(), m_text->ComputeTransform()));
-        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface, false));
+        polyfaces.push_back (Polyface(GetDisplayParams(), *polyface, false, true));
         }
 
     return polyfaces;
@@ -1701,7 +1712,7 @@ StrokesList TextStringGeometry::_GetStrokes (IFacetOptionsR facetOptions)
             collectCurveStrokes(strokePoints, *glyphCurve, facetOptions, transform);
 
     if (!strokePoints.empty())
-        strokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), false));
+        strokes.push_back(Strokes(GetDisplayParams(), std::move(strokePoints), false, true));
 
     return strokes;
     }
@@ -1775,6 +1786,7 @@ bool MeshArgs::Init(MeshCR mesh)
     m_texture = mesh.GetDisplayParams().GetTexture();
     m_material = mesh.GetDisplayParams().GetMaterial();
     m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
+    m_isPlanar = mesh.IsPlanar();
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
 
     mesh.ToFeatureIndex(m_features);
@@ -1794,6 +1806,7 @@ void MeshArgs::Clear()
     m_normals = nullptr;
     m_textureUV = nullptr;
     m_texture = nullptr;
+    m_isPlanar = false;
 
     m_colors.Reset();
     m_colorTable.clear();
@@ -1825,6 +1838,7 @@ bool  ElementMeshEdgeArgs::Init(MeshCR mesh)
     m_points    = mesh.Points().data();
     m_edges     = meshEdges->m_visible.data();
     m_numEdges  = meshEdges->m_visible.size();
+    m_isPlanar  = mesh.IsPlanar();
     
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
@@ -1849,6 +1863,7 @@ bool  ElementSilhouetteEdgeArgs::Init(MeshCR mesh)
     m_normals   = meshEdges->m_silhouetteNormals.data();
     m_edges     = meshEdges->m_silhouette.data();
     m_numEdges  = meshEdges->m_silhouette.size();
+
     mesh.GetColorTable().ToColorIndex(m_colors, m_colorTable, mesh.Colors());
     mesh.ToFeatureIndex(m_features);
 
@@ -1872,6 +1887,7 @@ bool  ElementPolylineEdgeArgs::Init(MeshCR mesh)
     m_disjoint = false;
     m_isEdge = true;
     m_is2d = mesh.Is2d();
+    m_isPlanar  = mesh.IsPlanar();
 
     m_polylines.reserve(meshEdges->m_polylines.size());
 
@@ -1892,7 +1908,7 @@ bool  ElementPolylineEdgeArgs::Init(MeshCR mesh)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PolylineArgs::Reset()
     {
-    m_disjoint = m_is2d = false;
+    m_disjoint = m_is2d = m_isPlanar = false;
     m_numPoints = m_numLines = 0;
     m_points = nullptr;
     m_lines = nullptr;
@@ -1913,6 +1929,7 @@ bool PolylineArgs::Init(MeshCR mesh)
     initLinearGraphicParams(*this, mesh);
 
     m_is2d = mesh.Is2d();
+    m_isPlanar = mesh.IsPlanar();
     m_disjoint = Mesh::PrimitiveType::Point == mesh.GetType();
     m_polylines.reserve(mesh.Polylines().size());
 
@@ -1993,6 +2010,7 @@ GraphicPtr System::_CreateTile(TextureCR tile, GraphicBuilder::TileCorners const
     rasterTile.m_textureUV = textUV;
     rasterTile.m_texture = const_cast<Render::Texture*>(&tile);
     rasterTile.m_material = params.GetMaterial(); // not likely...
+    rasterTile.m_isPlanar = true;
 
     return _CreateTriMesh(rasterTile, db);
     }

@@ -2268,6 +2268,7 @@ virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
  
     primitiveJson["colorTable"] = CreateColorTable(mesh.GetColorTable());
     primitiveJson["type"] = (uint32_t) mesh.GetType();
+    primitiveJson["isPlanar"] = mesh.IsPlanar();
 
     if ((!mesh.Triangles().Empty() && SUCCESS == CreateTriMesh(primitiveJson, mesh, idStr)) ||
         (!mesh.Polylines().empty() && SUCCESS == CreatePolylines(primitiveJson, mesh, idStr)))

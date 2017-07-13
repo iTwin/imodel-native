@@ -8,7 +8,7 @@
 
 #include "DgnPlatformSeedManager.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE

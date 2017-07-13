@@ -198,6 +198,7 @@ struct UpdatePlan
 
     bool m_hasSubRect = false;
     mutable bool m_wantWait = false;
+    bool m_wantDecorators = true;
     uint32_t m_priority = 0;
     BeTimePoint m_sceneQuitTime; // don't allow scene creation past this timepoint
     BeTimePoint m_quitTime; // don't allow this update to continue past this timepoint
@@ -221,6 +222,8 @@ public:
     void SetSceneQuitTime(BeTimePoint end) {m_sceneQuitTime = end;}
     BeTimePoint GetSceneQuitTime () const {return m_sceneQuitTime;}
     void SetSubRect(DRange3dCR rect) {m_subRect=rect; m_hasSubRect=true;}
+    bool WantDecorators() const {return m_wantDecorators;}
+    void SetWantDecorators(bool want) {m_wantDecorators=want;}
 };
 
 //=======================================================================================

@@ -53,6 +53,8 @@ protected:
     
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(DgnElementCR, BeSQLite::EC::ECCrudWriteToken const*) override;
     DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(DgnElementCR) override;
+    DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, PropertyArrayIndex const&) const override {return DgnDbStatus::NotEnabled;}
+    DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, PropertyArrayIndex const&) override {return DgnDbStatus::NotEnabled;}
     
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_TextAnnotationData); }

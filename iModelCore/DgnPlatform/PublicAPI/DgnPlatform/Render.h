@@ -2117,6 +2117,7 @@ struct TriMeshArgs
     QPoint3d::Params    m_pointParams;
     MaterialPtr         m_material;
     FillFlags           m_fillFlags = FillFlags::None;
+    bool                m_isPlanar = false;
 
     DGNPLATFORM_EXPORT PolyfaceHeaderPtr ToPolyface() const;
 };
@@ -2151,10 +2152,11 @@ struct IndexedPolylineArgs
     bool                m_disjoint = false;
     bool                m_isEdge = false;
     bool                m_is2d = false;
+    bool                m_isPlanar = false;
 
     IndexedPolylineArgs() { }
-    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams, bool is2d)
-        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams), m_is2d(is2d) { }
+    IndexedPolylineArgs(QPoint3dCP points, uint32_t numPoints, Polyline const* lines, uint32_t numLines, QPoint3d::ParamsCR pointParams, bool is2d, bool isPlanar)
+        : m_points(points), m_lines(lines), m_numPoints(numPoints), m_numLines(numLines), m_pointParams(pointParams), m_is2d(is2d), m_isPlanar(isPlanar) { }
 };
 
 //=======================================================================================
@@ -2212,7 +2214,7 @@ struct MeshEdges : RefCountedBase
     bvector<MeshPolyline>       m_polylines;
     OctEncodedNormalPairList    m_silhouetteNormals;
 
-    MeshEdges() {}
+    MeshEdges() { }
 };
 
 //=======================================================================================
@@ -2228,8 +2230,9 @@ struct MeshEdgeArgs
     QPoint3d::Params            m_pointParams;
     uint32_t                    m_width = 0;
     LinePixels                  m_linePixels = LinePixels::Solid;
+    bool                        m_isPlanar = false;
 
-    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams);
+    DGNPLATFORM_EXPORT bool Init(MeshEdgesCR meshEdges, QPoint3dCP points, QPoint3d::ParamsCR pointParams, bool isPlanar);
 }; 
 
 //=======================================================================================
