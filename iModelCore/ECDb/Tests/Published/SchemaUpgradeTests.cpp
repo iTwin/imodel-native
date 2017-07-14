@@ -8430,4 +8430,383 @@ TEST_F(SchemaUpgradeTestFixture, PropertyCategoryAddUpdateDelete)
                                         </ECEntityClass>
                                     </ECSchema>)xml")));
     }
+
+    
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPC)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("multisession_si.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECEntityClass typeName='TestClassA' >
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts1.TestClassA (ECInstanceId, L1) VALUES(1, 101)"));
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName='TestSchema2' alias='ts2' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECSchemaReference name='TestSchema1' version='01.00.00' alias='ts1'/>
+        <ECEntityClass typeName='TestClassB' >
+            <BaseClass>ts1:TestClassA</BaseClass>
+            <ECProperty propertyName='L2' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts2.TestClassB (ECInstanceId, L1, L2) VALUES(2, 102, 202)"));
+
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName='TestSchema3' alias='ts3' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECSchemaReference name='TestSchema2' version='01.00.00' alias='ts2'/>
+        <ECEntityClass typeName='TestClassC' >
+            <BaseClass>ts2:TestClassB</BaseClass>
+            <ECProperty propertyName='L3' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts3.TestClassC (ECInstanceId, L1, L2, L3) VALUES(3, 103, 203, 303)"));
+
+
+    const ECClassCP classTestClassA = m_ecdb.Schemas().GetClass("TestSchema1", "TestClassA");
+    const ECClassCP classTestClassB = m_ecdb.Schemas().GetClass("TestSchema2", "TestClassB");
+    const ECClassCP classTestClassC = m_ecdb.Schemas().GetClass("TestSchema3", "TestClassC");
+
+    ASSERT_NE(nullptr, classTestClassA);
+    ASSERT_NE(nullptr, classTestClassB);
+    ASSERT_NE(nullptr, classTestClassC);
+    //L1=====================================================
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=1 AND ECClassId=%s AND L1=101",
+                                                                             classTestClassA->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102",
+                                                                             classTestClassB->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103",
+                                                                             classTestClassC->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    //L2=====================================================
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=1")));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102 AND L2=202",
+                                                                             classTestClassB->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203",
+                                                                             classTestClassC->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    //L3=====================================================
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=1")));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=2 ")));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203 AND L3=303",
+                                                                             classTestClassC->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+    }
+
+// -------------------------------------------------------------------------------------- -
+// @bsimethod                                   Affan Khan                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("multisession_si.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECEntityClass typeName='TestClassA' >
+
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts1.TestClassA (ECInstanceId, L1) VALUES(1, 101)"));
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName='TestSchema2' alias='ts2' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECSchemaReference name='TestSchema1' version='01.00.00' alias='ts1'/>
+        <ECEntityClass typeName='TestClassB' >
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+             <JoinedTablePerDirectSubclass xmlns = "ECDbMap.02.00" / >
+            </ECCustomAttributes>
+            <BaseClass>ts1:TestClassA</BaseClass>
+            <ECProperty propertyName='L2' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts2.TestClassB (ECInstanceId, L1, L2) VALUES(2, 102, 202)"));
+
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName='TestSchema3' alias='ts3' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECSchemaReference name='TestSchema2' version='01.00.00' alias='ts2'/>
+        <ECEntityClass typeName='TestClassC' >
+            <BaseClass>ts2:TestClassB</BaseClass>
+            <ECProperty propertyName='L3' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts3.TestClassC (ECInstanceId, L1, L2, L3) VALUES(3, 103, 203, 303)"));
+    ReopenECDb();
+
+    const ECClassCP classTestClassA = m_ecdb.Schemas().GetClass("TestSchema1", "TestClassA");
+    const ECClassCP classTestClassB = m_ecdb.Schemas().GetClass("TestSchema2", "TestClassB");
+    const ECClassCP classTestClassC = m_ecdb.Schemas().GetClass("TestSchema3", "TestClassC");
+
+    ASSERT_NE(nullptr, classTestClassA);
+    ASSERT_NE(nullptr, classTestClassB);
+    ASSERT_NE(nullptr, classTestClassC);
+    //L1=====================================================
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=1 AND ECClassId=%s AND L1=101",
+                                                                             classTestClassA->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102",
+                                                                             classTestClassB->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103",
+                                                                             classTestClassC->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    //L2=====================================================
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=1")));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102 AND L2=202",
+                                                                             classTestClassB->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203",
+                                                                             classTestClassC->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    //L3=====================================================
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=1")));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=2 ")));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203 AND L3=303",
+                                                                             classTestClassC->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Affan Khan                     12/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_OnDerivedClass)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("multisession_si.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
+    <ECSchema schemaName='TestSchema1' alias='ts1' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECEntityClass typeName='TestClassA' >
+
+            <ECProperty propertyName='L1' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts1.TestClassA (ECInstanceId, L1) VALUES(1, 101)"));
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName='TestSchema2' alias='ts2' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECSchemaReference name='TestSchema1' version='01.00.00' alias='ts1'/>
+        <ECEntityClass typeName='TestClassB' >
+            <ECCustomAttributes>
+                <ClassMap xmlns="ECDbMap.02.00">
+                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                </ClassMap>
+            </ECCustomAttributes>
+            <BaseClass>ts1:TestClassA</BaseClass>
+            <ECProperty propertyName='L2' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts2.TestClassB (ECInstanceId, L1, L2) VALUES(2, 102, 202)"));
+
+
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8" ?>
+    <ECSchema schemaName='TestSchema3' alias='ts3' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
+        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+        <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>
+        <ECSchemaReference name='TestSchema2' version='01.00.00' alias='ts2'/>
+        <ECEntityClass typeName='TestClassC' >
+            <BaseClass>ts2:TestClassB</BaseClass>
+            <ECProperty propertyName='L3' typeName='double'/>
+        </ECEntityClass>
+    </ECSchema>)xml")));
+
+    ASSERT_EQ(BE_SQLITE_DONE, GetHelper().ExecuteNonSelectECSql("INSERT INTO ts3.TestClassC (ECInstanceId, L1, L2, L3) VALUES(3, 103, 203, 303)"));
+
+
+    const ECClassCP classTestClassA = m_ecdb.Schemas().GetClass("TestSchema1", "TestClassA");
+    const ECClassCP classTestClassB = m_ecdb.Schemas().GetClass("TestSchema2", "TestClassB");
+    const ECClassCP classTestClassC = m_ecdb.Schemas().GetClass("TestSchema3", "TestClassC");
+
+    ASSERT_NE(nullptr, classTestClassA);
+    ASSERT_NE(nullptr, classTestClassB);
+    ASSERT_NE(nullptr, classTestClassC);
+    //L1=====================================================
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=1 AND ECClassId=%s AND L1=101",
+                                                                             classTestClassA->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102",
+                                                                             classTestClassB->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts1.TestClassA WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103",
+                                                                             classTestClassC->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    //L2=====================================================
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=1")));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=2 AND ECClassId=%s AND L1=102 AND L2=202",
+                                                                             classTestClassB->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts2.TestClassB WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203",
+                                                                             classTestClassC->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+
+    //L3=====================================================
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=1")));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=2 ")));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step()) << "Not Expecting Row : " << stmt.GetECSql();
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, SqlPrintfString("SELECT 1 FROM ts3.TestClassC WHERE ECInstanceId=3 AND ECClassId=%s AND L1=103 AND L2=203 AND L3=303",
+                                                                             classTestClassC->GetId().ToString(BeInt64Id::UseHex::Yes).c_str())));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << "Expect Row : " << stmt.GetECSql();
+        }
+    }
 END_ECDBUNITTESTS_NAMESPACE

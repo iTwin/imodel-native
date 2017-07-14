@@ -118,6 +118,17 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::ParseSingleSelectStatement(std::unique_ptr<SingleSelectStatementExp>& exp, OSQLParseNode const* parseNode) const
     {
+    if (SQL_ISRULE(parseNode, values_or_query_spec))
+        {
+        //values_or_query_spec
+        std::unique_ptr<ValueExpListExp> valueExpList;
+        if (ParseRowValueConstructorCommalist(valueExpList, parseNode->getChild(2)) != SUCCESS)
+            return ERROR;
+
+        exp = std::unique_ptr<SingleSelectStatementExp>(new SingleSelectStatementExp(std::move(valueExpList)));
+        return SUCCESS;
+        }
+
     SqlSetQuantifier opt_all_distinct;
     if (SUCCESS != ParseAllOrDistinctToken(opt_all_distinct, parseNode->getChild(1)))
         return ERROR;

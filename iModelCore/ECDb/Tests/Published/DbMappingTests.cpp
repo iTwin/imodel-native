@@ -15,6 +15,249 @@ struct DbMappingTestFixture : ECDbTestFixture {};
 //---------------------------------------------------------------------------------------
 // @bsimethod                                  Affan.Khan                          05/17
 //+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, ECSql_RowConstructorSyntaxSupport)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("emptydb.ecdb"));
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(1) UNION VALUES(1)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(0xfffff)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_Long, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_EQ(0xfffff, stmt.GetValueInt(0));
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(-1222)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_Double, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_EQ(-1222, stmt.GetValueInt(0));
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(12334234234)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_Long, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_EQ(12334234234, stmt.GetValueInt64(0));
+        }
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(-12334234234)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_Double, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_EQ(-12334234234, stmt.GetValueInt64(0));
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES('Sample Test')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_String, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_STREQ("Sample Test", stmt.GetValueText(0));
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(true)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_Boolean, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_EQ(true, stmt.GetValueBoolean(0));
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(False)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_Boolean, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_EQ(false, stmt.GetValueBoolean(0));
+        }
+
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(TIMESTAMP '2013-02-09T12:00:00')"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_DateTime, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_EQ(DateTime(DateTime::Kind::Unspecified, 2013, 2, 9, 12, 0), stmt.GetValueDateTime(0));
+        }
+
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(2333.1212)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_Double, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_EQ(2333.1212, stmt.GetValueDouble(0));
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(-2333.1212)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_EQ(PRIMITIVETYPE_Double, stmt.GetColumnInfo(0).GetProperty()->GetAsPrimitiveProperty()->GetType());
+        ASSERT_EQ(-2333.1212, stmt.GetValueDouble(0));
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(0xfffff, -1222, 12334234234, -12334234234, 'Sample Test', true , false, TIMESTAMP '2013-02-09T12:00:00', 2333.1212,-2333.1212)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_STREQ("column1", stmt.GetColumnInfo(0).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("column2", stmt.GetColumnInfo(1).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("column3", stmt.GetColumnInfo(2).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("column4", stmt.GetColumnInfo(3).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("column5", stmt.GetColumnInfo(4).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("column6", stmt.GetColumnInfo(5).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("column7", stmt.GetColumnInfo(6).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("column8", stmt.GetColumnInfo(7).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("column9", stmt.GetColumnInfo(8).GetProperty()->GetName().c_str());
+        ASSERT_STREQ("column10", stmt.GetColumnInfo(9).GetProperty()->GetName().c_str());
+        ASSERT_EQ(10, stmt.GetColumnCount());
+        ASSERT_EQ(0xfffff, stmt.GetValueInt(0));
+        ASSERT_EQ(-1222, stmt.GetValueInt(1));
+        ASSERT_EQ(12334234234, stmt.GetValueInt64(2));
+        ASSERT_EQ(-12334234234, stmt.GetValueInt64(3));
+        ASSERT_STREQ("Sample Test", stmt.GetValueText(4));
+        ASSERT_EQ(true, stmt.GetValueBoolean(5));
+        ASSERT_EQ(false, stmt.GetValueBoolean(6));
+        ASSERT_EQ(DateTime(DateTime::Kind::Unspecified, 2013, 2, 9, 12, 0), stmt.GetValueDateTime(7));
+        ASSERT_EQ(2333.1212, stmt.GetValueDouble(8));
+        ASSERT_EQ(-2333.1212, stmt.GetValueDouble(9));
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(1) UNION VALUES(1)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());       
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(1) UNION ALL VALUES(1)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(1, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(1 + 1, 11.2 + 1.8, 'A' || 'B', TIMESTAMP '2013-02-09T12:00:00',true) UNION VALUES(2, 13.0, 'AB', TIMESTAMP '2013-02-09T12:00:00',true)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+        ASSERT_EQ(13.0, stmt.GetValueDouble(1));
+        ASSERT_STREQ("AB", stmt.GetValueText(2));
+        ASSERT_EQ(DateTime(DateTime::Kind::Unspecified, 2013, 2, 9, 12, 0), stmt.GetValueDateTime(3));
+        ASSERT_EQ(true, stmt.GetValueBoolean(4));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(1 + 1, 11.2 + 1.8, 'A' || 'B', TIMESTAMP '2013-02-09T12:00:00',true) UNION ALL VALUES(2, 13.0, 'AB', TIMESTAMP '2013-02-09T12:00:00',true)"));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+        ASSERT_EQ(13.0, stmt.GetValueDouble(1));
+        ASSERT_STREQ("AB", stmt.GetValueText(2));
+        ASSERT_EQ(DateTime(DateTime::Kind::Unspecified, 2013, 2, 9, 12, 0), stmt.GetValueDateTime(3));
+        ASSERT_EQ(true, stmt.GetValueBoolean(4));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(2, stmt.GetValueInt(0));
+        ASSERT_EQ(13.0, stmt.GetValueDouble(1));
+        ASSERT_STREQ("AB", stmt.GetValueText(2));
+        ASSERT_EQ(DateTime(DateTime::Kind::Unspecified, 2013, 2, 9, 12, 0), stmt.GetValueDateTime(3));
+        ASSERT_EQ(true, stmt.GetValueBoolean(4));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(?+10000)"));
+        stmt.BindInt(1, 10000);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(20000, stmt.GetValueInt(0));
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(?) UNION  VALUES(?)"));
+        stmt.BindInt(1, 10000);
+        stmt.BindInt(2, 10000);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(10000, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+    
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(?) UNION ALL VALUES(?)"));
+        stmt.BindInt(1, 10000);
+        stmt.BindInt(2, 10000);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(10000, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(10000, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+    if (true)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "VALUES(?) UNION VALUES(?)"));
+        stmt.BindInt(1, 10000);
+        stmt.BindInt(2, 20000);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(10000, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_EQ(20000, stmt.GetValueInt(0));
+        ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
+        }
+
+     }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Affan.Khan                          05/17
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, MultiConstraintRelationship)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("IncrementallyMapRelationship.ecdb", SchemaItem(

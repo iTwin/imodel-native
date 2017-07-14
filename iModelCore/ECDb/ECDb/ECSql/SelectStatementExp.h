@@ -263,14 +263,13 @@ struct SingleSelectStatementExp final : QueryExp
         int m_havingClauseIndex;
         int m_limitOffsetClauseIndex;
         int m_optionsClauseIndex;
-
         RangeClassInfo::List m_finalizeParsingArgCache;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
-
+        static std::unique_ptr<SelectClauseExp> ConvertToSelectClauseExp(std::unique_ptr<ValueExpListExp>& valueExpList);
     protected:
         DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
         SelectClauseExp const* _GetSelection() const override { return GetChild<SelectClauseExp>(m_selectClauseIndex); }
@@ -278,6 +277,9 @@ struct SingleSelectStatementExp final : QueryExp
     public:
         SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp>, std::unique_ptr<FromExp>, std::unique_ptr<WhereExp>,
                                  std::unique_ptr<OrderByExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
+
+        SingleSelectStatementExp(std::unique_ptr<ValueExpListExp>);
+        bool IsRowConstructor() const;
 
         FromExp const* GetFrom() const { return GetChild<FromExp>(m_fromClauseIndex); }
 
