@@ -1191,7 +1191,7 @@ TEST_F(SchemaUpgradeTestFixture, UnsealingClasses)
                     <ECEntityClass typeName="Base" modifier="None">
                             <ECCustomAttributes>
                                 <ClassMap xmlns="ECDbMap.02.00">
-                                    <MapStrategy>TablePerHierarchy</MapStragegy>
+                                    <MapStrategy>TablePerHierarchy</MapStrategy>
                                 </ClassMap>
                             </ECCustomAttributes>
                         <ECProperty propertyName="Prop" typeName="int" />
@@ -1208,7 +1208,7 @@ TEST_F(SchemaUpgradeTestFixture, UnsealingClasses)
                     <ECEntityClass typeName="Base" modifier="None">
                             <ECCustomAttributes>
                                 <ClassMap xmlns="ECDbMap.02.00">
-                                    <MapStrategy>TablePerHierarchy</MapStragegy>
+                                    <MapStrategy>TablePerHierarchy</MapStrategy>
                                 </ClassMap>
                             </ECCustomAttributes>
                         <ECProperty propertyName="Prop" typeName="int" />
