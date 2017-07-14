@@ -13,7 +13,7 @@
 #include "../TestFixture/GenericDgnModelTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <Bentley/BeTimeUtilities.h>

@@ -30,7 +30,7 @@ enum class LightType
     Ambient = 2, //!< ambient light
     Flash = 3,   //!< flash bulb at camera
     Portrait = 4, //!< over the shoulder (left and right)
-    Point = 5, //<! non directional point light source
+    Point = 5, //!< non directional point light source
     Spot = 6,
     Area = 7,
     Distant = 8,

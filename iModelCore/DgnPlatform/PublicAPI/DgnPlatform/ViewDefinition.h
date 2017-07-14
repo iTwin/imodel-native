@@ -303,7 +303,7 @@ public:
     //! @return true if the model was dropped, false if it was not previously in this ModelSelector
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
 
-    //! Create a DgnCode for a CategorySelector given a name that is meant to be unique within the scope of the specified DefinitionModel
+    //! Create a DgnCode for a ModelSelector given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_ModelSelector, scope, name);}
 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
@@ -345,7 +345,7 @@ public:
     DgnCategoryIdSet& GetCategoriesR() {return m_categories;}//!< @private
     void SetCategories(DgnCategoryIdSet const& categories) {m_categories = categories;}//!< @private
 
-    //! Determine whether this CateggorySelector includes the specified category
+    //! Determine whether this CategorySelector includes the specified category
     bool IsCategoryViewed(DgnCategoryId categoryId) const {return m_categories.Contains(categoryId);}
 
     //! Add a category to this CategorySelector
@@ -454,6 +454,7 @@ public:
     BE_JSON_NAME(gridSpaceY)
     BE_JSON_NAME(gridPerRef)
     BE_JSON_NAME(acs)
+    BE_JSON_NAME(aspectSkew)
 
     DGNPLATFORM_EXPORT ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
 
@@ -623,6 +624,12 @@ public:
 
     //! Get the aspect ratio (width/height) of this view
     double GetAspectRatio() const {auto extents=GetExtents(); return extents.x/extents.y;}
+
+    //! Get the aspect ratio skew (x/y, usually 1.0) that can be used to exaggerate one axis of the view.
+    double GetAspectRatioSkew() const {return GetDetail(json_aspectSkew()).asDouble(1.0);}
+
+    //! Change the aspect ratio skew (x/y) of this view.
+    void SetAspectRatioSkew(double val) {if (val == 1.0) {RemoveDetail(json_aspectSkew());} else {SetDetail(json_aspectSkew(), Json::Value(val));}}
 
     //! Set the extents of this view
     void SetExtents(DVec3dCR delta) {_SetExtents(delta);}
@@ -1184,8 +1191,6 @@ protected:
     explicit DrawingViewDefinition(CreateParams const& params) : T_Super(params) {}
 
 public:
-    BE_JSON_NAME(aspectSkew)
-
     //! Construct a DrawingViewDefinition subclass in the specified DefinitionModel prior to inserting it
     DrawingViewDefinition(DefinitionModelR model, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
         T_Super(model, name, classId, baseModelId, categories, displayStyle) {}
@@ -1198,7 +1203,6 @@ public:
 
     //! Look up the ECClass Id used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition));}
-    DGNPLATFORM_EXPORT double GetAspectRatioSkew() const;
 };
 
 //=======================================================================================

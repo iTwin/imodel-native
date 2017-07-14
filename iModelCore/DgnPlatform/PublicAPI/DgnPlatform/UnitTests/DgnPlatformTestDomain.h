@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|  $Source: Tests/DgnProject/BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h $
+|  $Source: PublicAPI/DgnPlatform/UnitTests/DgnPlatformTestDomain.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -52,6 +52,8 @@
 #define DPTEST_CLASS_TestPhysicalType "TestPhysicalType"
 #define DPTEST_CLASS_TestGraphicalType2d "TestGraphicalType2d"
 #define DPTEST_CLASS_TestInformationRecord "TestInformationRecord"
+#define DPTEST_CLASS_TestUniqueAspectNoHandler "TestUniqueAspectNoHandler"
+#define DPTEST_CLASS_TestMultiAspectNoHandler "TestMultiAspectNoHandler"
 
 #define DPTEST_TEST_ELEMENT_WITHOUT_HANDLER_CLASS_NAME   "TestElementWithNoHandler"
 #define DPTEST_TEST_ELEMENT_CLASS_OVERRIDE_AUTOHADLEPROPERTIES "TestOverrideAutohadledProperties"
@@ -63,6 +65,7 @@
 #endif
 #define DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME             "TestUniqueAspect"
 #define DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty "TestUniqueAspectProperty"
+#define DPTEST_TEST_UNIQUE_ASPECT_LengthProperty         "Length"
 #define DPTEST_TEST_MULTI_ASPECT_CLASS_NAME              "TestMultiAspect"
 #define DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty "TestMultiAspectProperty"
 #define DPTEST_TEST_ELEMENT_DRIVES_ELEMENT_CLASS_NAME    "TestElementDrivesElement"
@@ -488,11 +491,14 @@ private:
     friend struct TestUniqueAspectHandler;
 
     Utf8String m_testUniqueAspectProperty;
+    double m_length;
 
     explicit TestUniqueAspect(Utf8CP prop) : m_testUniqueAspectProperty(prop) {;}
 
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
+    Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, Dgn::PropertyArrayIndex const&) const override;
+    Dgn::DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, Dgn::PropertyArrayIndex const&) override;
 
 public:
     static RefCountedPtr<TestUniqueAspect> Create(Utf8CP prop) {return new TestUniqueAspect(prop);}
@@ -534,6 +540,8 @@ private:
 
     Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
     Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
+    Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, Dgn::PropertyArrayIndex const&) const override;
+    Dgn::DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, Dgn::PropertyArrayIndex const&) override;
 
 public:
     static RefCountedPtr<TestMultiAspect> Create(Utf8CP prop) {return new TestMultiAspect(prop);}

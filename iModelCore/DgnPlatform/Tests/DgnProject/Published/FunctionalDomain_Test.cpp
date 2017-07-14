@@ -181,9 +181,10 @@ struct FunctionalDomainTests : public DgnDbTestFixture
 //---------------------------------------------------------------------------------------
 void FunctionalDomainTests::SetupFunctionalTestDomain()
     {
-    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-
+    BeFileName schemaRootDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory(); // Note: We just pass the default schemaRootDir to test the option out - we really don't have to. 
+    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No, &schemaRootDir);
+    DgnDomains::RegisterDomain(FunctionalTestDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No, &schemaRootDir);
+        
     SchemaStatus status = FunctionalDomain::GetDomain().ImportSchema(*m_db);
     ASSERT_EQ(SchemaStatus::Success, status);
 

@@ -645,7 +645,9 @@ BentleyStatus DgnECInstanceTests::SetECInstanceId(ECN::IECInstanceR instance, EC
         const auto ecstat = instance.SetInstanceId(instanceIdStr);
     return ecstat == ECOBJECTS_STATUS_Success ? SUCCESS : ERROR;
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                   Carole.MacDonald                   01/15
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DgnECInstanceTests, InstancesAndRelationships)
     {
     ScopedDgnHost host;

@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/Polyface_Test.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnHandlersTests.h"
@@ -265,6 +265,9 @@ TEST_F (PolyfaceTest, MeshCone)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/09
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (PolyfaceTest, MeshEllipse)
     {
     EditElementHandle source;
@@ -275,8 +278,9 @@ TEST_F (PolyfaceTest, MeshEllipse)
     SaveFile (L"MeshEllipse.dgn");
     }
 
-
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/09
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (PolyfaceTest, MeshShape)
     {
     bvector<DPoint3d> points;
@@ -303,6 +307,9 @@ TEST_F (PolyfaceTest, MeshShape)
     SaveFile (L"MeshShape.dgn");
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/09
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (PolyfaceTest, Mesh_ComplexShape_HalfCircleOnSquare)
     {
     bvector<DPoint3d> points;
@@ -347,6 +354,9 @@ size_t CountFaces (PolyfaceHeaderPtr header)
     return numFace;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    EarlinLutz      04/09
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (PolyfaceTest, Grid)
     {
     size_t nx = 3;

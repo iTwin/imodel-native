@@ -9,7 +9,7 @@
 #include <DgnPlatform/DgnChangeSummary.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <array>
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 
 // #define DEBUG_REVISION_TEST_MANUAL 1
 #ifdef DEBUG_REVISION_TEST_MANUAL 

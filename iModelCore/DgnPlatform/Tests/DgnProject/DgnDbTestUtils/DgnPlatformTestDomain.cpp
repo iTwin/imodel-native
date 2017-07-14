@@ -1,12 +1,12 @@
     /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Tests/DgnProject/BackDoor/DgnPlatformTestDomain.cpp $
+|     $Source: Tests/DgnProject/DgnDbTestUtils/DgnPlatformTestDomain.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/BeTest.h>
-#include "PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include <DgnPlatform/GeomPart.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <ECDb/ECDbApi.h>
@@ -395,6 +395,46 @@ DgnDbStatus TestUniqueAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::E
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestUniqueAspect::_GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, PropertyArrayIndex const&) const
+    {
+    if (0 == strcmp(propertyName, DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty))
+        {
+        value.SetUtf8CP(m_testUniqueAspectProperty.c_str());
+        return DgnDbStatus::Success;
+        }
+
+    if (0 == strcmp(propertyName, DPTEST_TEST_UNIQUE_ASPECT_LengthProperty))
+        {
+        value.SetDouble(m_length);
+        return DgnDbStatus::Success;
+        }
+
+    return DgnDbStatus::BadArg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestUniqueAspect::_SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, PropertyArrayIndex const&)
+    {
+    if (0 == strcmp(propertyName, DPTEST_TEST_UNIQUE_ASPECT_TestUniqueAspectProperty))
+        {
+        m_testUniqueAspectProperty = value.ToString();
+        return DgnDbStatus::Success;
+        }
+
+    if (0 == strcmp(propertyName, DPTEST_TEST_UNIQUE_ASPECT_LengthProperty))
+        {
+        m_length = value.GetDouble();
+        return DgnDbStatus::Success;
+        }
+
+    return DgnDbStatus::BadArg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus TestMultiAspect::_LoadProperties(DgnElementCR el)
@@ -416,6 +456,34 @@ DgnDbStatus TestMultiAspect::_UpdateProperties(DgnElementCR el, BeSQLite::EC::EC
     stmt->BindText(1, m_testMultiAspectProperty.c_str(), BeSQLite::EC::IECSqlBinder::MakeCopy::No);
     stmt->BindId(2, GetAspectInstanceId());
     return (BE_SQLITE_DONE != stmt->Step())? DgnDbStatus::WriteError: DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestMultiAspect::_GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, PropertyArrayIndex const&) const
+    {
+    if (0 == strcmp(propertyName, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty))
+        {
+        value.SetUtf8CP(m_testMultiAspectProperty.c_str());
+        return DgnDbStatus::Success;
+        }
+
+    return DgnDbStatus::BadArg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus TestMultiAspect::_SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, PropertyArrayIndex const&)
+    {
+    if (0 == strcmp(propertyName, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty))
+        {
+        m_testMultiAspectProperty = value.ToString();
+        return DgnDbStatus::Success;
+        }
+
+    return DgnDbStatus::BadArg;
     }
 
 /*---------------------------------------------------------------------------------**//**
