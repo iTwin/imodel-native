@@ -2360,7 +2360,7 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
 TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
     {
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="Sealed">
@@ -2407,7 +2407,75 @@ TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                 </ECCustomAttributes>
+                <ECProperty propertyName="Prop" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_foo</Name>
+                               <Properties>
+                                  <string>Code</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Code" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on sealed subclass (TPH)";
+
+            EXPECT_TRUE(GetHelper().TableExists("ts_Base"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Base", "Code").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
+
+
+            EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                 </ECCustomAttributes>
+                <ECProperty propertyName="Prop" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_foo</Name>
+                               <Properties>
+                                  <string>Code</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Code" typeName="int" />
+            </ECEntityClass>
+            </ECSchema>)xml"))) << "Unsealed subclass (TPH) -> index still valid";
+            EXPECT_TRUE(GetHelper().TableExists("ts_Base"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Base", "Code").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
+
+            }
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo" modifier="Abstract">
                 <ECProperty propertyName="Prop" typeName="int" />
@@ -2437,7 +2505,7 @@ TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
             }
 
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECEntityClass typeName="Foo" modifier="None">
                 <ECProperty propertyName="Prop" typeName="int" />

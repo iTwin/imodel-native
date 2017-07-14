@@ -1159,6 +1159,70 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECClassModifierFromAbstract)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UnsealingClasses)
+    {
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UnsealingClasses.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on sealed class";
+
+            EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="None">
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub" modifier="None">
+                    <BaseClass>Foo</BaseClass>
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"))) << "Class modifier changed from Sealed to None";
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UnsealingClasses.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="None">
+                            <ECCustomAttributes>
+                                <ClassMap xmlns="ECDbMap.02.00">
+                                    <MapStrategy>TablePerHierarchy</MapStragegy>
+                                </ClassMap>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Prop" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" modifier="Sealed">
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "sealed sub class (TPH)";
+
+            EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="None">
+                            <ECCustomAttributes>
+                                <ClassMap xmlns="ECDbMap.02.00">
+                                    <MapStrategy>TablePerHierarchy</MapStragegy>
+                                </ClassMap>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Prop" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" modifier="None">
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Unsealing subclass (TPH)";
+            }
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, DeleteProperty_OwnTable)
