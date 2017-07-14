@@ -132,6 +132,87 @@ TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TwoRequestsSentInPara
     t2->Wait();
     }
 
+TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_DefaultAuthenticationHandler_SendsWithAuthorizationString)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    Credentials creds("Foo", "Boo");
+    SamlTokenPtr identityToken = StubSamlToken();
+    SamlTokenPtr delegationToken = StubSamlToken();
+
+    EXPECT_CALL(*imsClient, RequestToken(creds, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken))));
+    ASSERT_TRUE(manager->SignInWithCredentials(creds)->GetResult().IsSuccess());
+
+    GetHandler().ForAnyRequest([&] (Http::RequestCR request)
+        {
+        EXPECT_FALSE(delegationToken->ToAuthorizationString().empty());
+        EXPECT_STREQ(delegationToken->ToAuthorizationString().c_str(), request.GetHeaders().GetAuthorization());
+        return StubHttpResponse();
+        });
+
+    auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr()); // HeaderPrefix::Token defaulted
+
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(delegationToken))));
+
+    Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync()->Wait();
+    }
+
+TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TokenAuthenticationHandler_SendsWithAuthorizationString)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    Credentials creds("Foo", "Boo");
+    SamlTokenPtr identityToken = StubSamlToken();
+    SamlTokenPtr delegationToken = StubSamlToken();
+
+    EXPECT_CALL(*imsClient, RequestToken(creds, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken))));
+    ASSERT_TRUE(manager->SignInWithCredentials(creds)->GetResult().IsSuccess());
+
+    GetHandler().ForAnyRequest([&] (Http::RequestCR request)
+        {
+        EXPECT_FALSE(delegationToken->ToAuthorizationString().empty());
+        EXPECT_STREQ(delegationToken->ToAuthorizationString().c_str(), request.GetHeaders().GetAuthorization());
+        return StubHttpResponse();
+        });
+
+    auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr(), ConnectSignInManager::HeaderPrefix::Token);
+
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(delegationToken))));
+
+    Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync()->Wait();
+    }
+
+TEST_F(ConnectSignInManagerTests, GetAuthenticationHandler_TokenAuthenticationHandler_SendsWithSAMLAuthorizationString)
+    {
+    auto imsClient = std::make_shared<MockImsClient>();
+    auto manager = ConnectSignInManager::Create(imsClient, &m_localState, m_secureStore);
+
+    Credentials creds("Foo", "Boo");
+    SamlTokenPtr identityToken = StubSamlToken();
+    SamlTokenPtr delegationToken = StubSamlToken();
+
+    EXPECT_CALL(*imsClient, RequestToken(creds, _, _)).WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(identityToken))));
+    ASSERT_TRUE(manager->SignInWithCredentials(creds)->GetResult().IsSuccess());
+
+    GetHandler().ForAnyRequest([&] (Http::RequestCR request)
+        {
+        EXPECT_FALSE(delegationToken->ToSAMLAuthorizationString().empty());
+        EXPECT_STREQ(delegationToken->ToSAMLAuthorizationString().c_str(), request.GetHeaders().GetAuthorization());
+        return StubHttpResponse();
+        });
+
+    auto authHandler = manager->GetAuthenticationHandler("https://foo.com", GetHandlerPtr(), ConnectSignInManager::HeaderPrefix::Saml);
+
+    EXPECT_CALL(*imsClient, RequestToken(*identityToken, _, _)).Times(1)
+        .WillOnce(Return(CreateCompletedAsyncTask(SamlTokenResult::Success(delegationToken))));
+
+    Http::Request("https://foo.com/a", "GET", authHandler).PerformAsync()->Wait();
+    }
+
 TEST_F(ConnectSignInManagerTests, GetUserInfo_NotSignedIn_ReturnsEmpty)
     {
     auto manager = ConnectSignInManager::Create(m_imsClient, &m_localState, m_secureStore);
