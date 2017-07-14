@@ -7,22 +7,23 @@ import android.widget.TextView;
 import java.util.HashMap;
 
 enum ProjectPropertyIds {
-            PROJECT_ULTIMATEREFID   (1), /**< \b UltimateRefId. */
-            PROJECT_ISRBACENABLED   (2), /**< \b IsRbacEnabled. */
-            PROJECT_NAME            (3), /**< \b Name. */
-            PROJECT_NUMBER          (4), /**< \b Number. */
-            PROJECT_INDUSTRY        (5), /**< \b Industry. */
-            PROJECT_ASSETTYPE       (6), /**< \b AssetType. */
-            PROJECT_LASTMODIFIED    (7), /**< \b LastModified. */
-            PROJECT_LOCATION        (8), /**< \b Location. */
-            PROJECT_LATITUDE        (9), /**< \b Latitude. */
-            PROJECT_LONGITUDE       (10), /**< \b Longitude. */
-            PROJECT_LOCATIONISUSINGLATLONG (11), /**< \b LocationIsUsingLatLong. */
-            PROJECT_REGISTEREDDATE  (12), /**< \b RegisteredDate. */
-            PROJECT_TIMEZONELOCATION(13), /**< \b TimeZoneLocation. */
-            PROJECT_STATUS          (14), /**< \b Status. */
-            PROJECT_DATA_LOCATION_GUID   (15), /**< \b Data_Location_Guid. */
-            PROJECT_COUNTRY_CODE    (16); /**< \b Country_Code. */
+            PROJECT_OBJECTID        (1), /**< \b ObjectId. */
+            PROJECT_ULTIMATEREFID   (2), /**< \b UltimateRefId. */
+            PROJECT_ISRBACENABLED   (3), /**< \b IsRbacEnabled. */
+            PROJECT_NAME            (4), /**< \b Name. */
+            PROJECT_NUMBER          (5), /**< \b Number. */
+            PROJECT_INDUSTRY        (6), /**< \b Industry. */
+            PROJECT_ASSETTYPE       (7), /**< \b AssetType. */
+            PROJECT_LASTMODIFIED    (8), /**< \b LastModified. */
+            PROJECT_LOCATION        (9), /**< \b Location. */
+            PROJECT_LATITUDE        (10), /**< \b Latitude. */
+            PROJECT_LONGITUDE       (11), /**< \b Longitude. */
+            PROJECT_LOCATIONISUSINGLATLONG (12), /**< \b LocationIsUsingLatLong. */
+            PROJECT_REGISTEREDDATE  (13), /**< \b RegisteredDate. */
+            PROJECT_TIMEZONELOCATION(14), /**< \b TimeZoneLocation. */
+            PROJECT_STATUS          (15), /**< \b Status. */
+            PROJECT_DATA_LOCATION_GUID   (16), /**< \b Data_Location_Guid. */
+            PROJECT_COUNTRY_CODE    (17); /**< \b Country_Code. */
 
             private final int id;
             ProjectPropertyIds(int id) { this.id = id; }

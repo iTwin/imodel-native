@@ -116,7 +116,7 @@ int ConnectInterfaceNative::GetProjects(std::map<wstring, wstring>* idToNameMap)
         //TODO: However, the generated code does not include a way to access that, nor does it store it in the buffer anywhere.
         //TODO: So we will have to address that later. For now I will put the "Name" where I expect the InstanceId to be. But that is just for a stub
         wchar_t id[4096];
-        status = ConnectWebServicesClientC_DataBufferGetStringProperty(m_apiHandle, projects, PROJECT_V4_BUFF_NAME, i, 4096, id);
+        status = ConnectWebServicesClientC_DataBufferGetStringProperty(m_apiHandle, projects, PROJECT_V4_BUFF_OBJECTID, i, 4096, id);
 
         wchar_t name[4096];
         status = ConnectWebServicesClientC_DataBufferGetStringProperty(m_apiHandle, projects, PROJECT_V4_BUFF_NAME, i, 4096, name);

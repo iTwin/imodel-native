@@ -66,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
                     int itemPosition =  position;
                     Object obj = projectListView.getItemAtPosition(position);
                     //ListView clicked item value
+                    String itemKey  = (String) ((Map.Entry) projectListView.getItemAtPosition(position)).getKey();
                     String itemValue = (String) ((Map.Entry) projectListView.getItemAtPosition(position)).getValue();
                     //Show Alert
                     Toast.makeText(
@@ -76,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
                     Intent intent = new Intent(getApplicationContext(), ProjectDetailsActivity.class);
                     //pass the "id" to the next activity
                     //Since there is no real way to get the instance id from the data in CWSCC currently, just pass one we know is there - for sample purposes.
-                    intent.putExtra("projid", "a8835f81-3f33-4457-bdea-79795aeb09fe");
+                    intent.putExtra("projid", itemKey);
                     startActivity(intent);
                 }
             });
