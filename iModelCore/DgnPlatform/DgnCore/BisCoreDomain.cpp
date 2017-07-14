@@ -9,7 +9,6 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/LinkElement.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
-#include <DgnPlatform/AnnotationTable.h>
 #if defined (NEEDSWORK_DIMENSION)
 #include <DgnPlatform/Dimension/Dimension.h>
 #endif
@@ -159,7 +158,6 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation2dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalType::GetHandler());
     RegisterHandler(dgn_ElementHandler::TemplateRecipe3d::GetHandler());
     RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
