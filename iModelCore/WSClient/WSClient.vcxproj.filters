@@ -1169,6 +1169,8 @@
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\Bentley_SP_V3Conversion.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\PW_WSG_V3Conversion.02.02.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.03.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\PW_WSG_V3Conversion.02.03.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />
