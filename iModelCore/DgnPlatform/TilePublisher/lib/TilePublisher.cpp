@@ -3343,6 +3343,9 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     for (auto const& kvp : m_modelRanges)
         rootRange.Extend(kvp.second);
 
+#ifdef CLASSIFIER_SUPPORT
+#endif    
+
     return Status::Success;
     }
 
