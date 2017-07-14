@@ -34,14 +34,16 @@
         <SubPart PartName="BePointCloud" PartFile="BePointCloud" Repository="BePointCloud" />
 	    <SubPart PartName="ThreeMxReaderLegacy" PartFile="RealityModeling" Repository="DgnDomains-RealityModeling" />          
         <SubPart PartName="FreeImage"           PartFile="${SrcRoot}bsicommon/CvsPartfiles/freeimage" Repository="Bin-FreeImage"/>
-        <SdkSource>V8_InternalSDK</SdkSource>        
+
+        <!--Not required until we support importing .dgn element as terrain data-->
+        <!--<SdkSource>V8_InternalSDK</SdkSource>-->
         <!-- For Importer-->
         <!--<SubPart PartName="DgnView"         PartFile="DgnDisplay"                           Repository="DgnDisplay"/>
         <SubPart PartName="DgnGeoCoord"     PartFile="GeoCoord"                             Repository="GeoCoord" />
         <SubPart PartName="RasterCore"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>  -->
         <!--<SubPart PartName="ElementHandler"         PartFile="TerrainModelElement"                         Repository="TerrainModel"/>    -->
         <Bindings>
-          <Directory SourceName="SdkSources/V8_InternalSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />
+          <!--<Directory SourceName="SdkSources/V8_InternalSDK/Dlls" ProductDirectoryName="ScalableMeshV8SDK" Required="true" />-->
           <Libs ProductDirectoryName="ScalableMeshLibs">delivery/$(shlibprefix)ScalableMesh$(libext)</Libs>    
             <Assemblies>delivery/$(shlibprefix)ScalableMesh$(ApiNumber)$(shlibext)</Assemblies>             
             <PublicAPI Domain="ScalableMesh" />
