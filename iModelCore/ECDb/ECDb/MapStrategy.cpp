@@ -166,7 +166,6 @@ BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
     if (ecClass.IsEntityClass())
         m_hasJoinedTablePerDirectSubclassOption = ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(*ecClass.GetEntityClassCP());
 
-    ECDbMapCustomAttributeHelper::TryGetDbIndexList(m_dbIndexListCA, ecClass);
     return SUCCESS;
     }
 

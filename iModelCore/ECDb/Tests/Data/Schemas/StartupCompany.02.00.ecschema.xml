@@ -134,7 +134,7 @@
         <ECArrayProperty propertyName="point2dArrayProp" typeName="point2d" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="point3dArrayProp" typeName="point3d" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
-    <ECEntityClass typeName="ClassWithPrimitiveProperties">
+    <ECEntityClass typeName="ClassWithPrimitiveProperties" modifier="Sealed">
         <ECCustomAttributes>
             <DbIndexList xmlns="ECDbMap.02.00">
                 <Indexes>

@@ -226,8 +226,7 @@ BentleyStatus DbIndexListCustomAttribute::GetIndexes(bvector<DbIndex>& indices) 
         ECValue indexVal;
         if (ECObjectsStatus::Success != m_ca->GetValue(indexVal, propIx, i))
             {
-            LOG.errorv("DbIndex #%d in custom attribute %s on ECClass %s could not be retrieved.",
-                       i, m_ca->GetClass().GetName().c_str(), m_class->GetFullName());
+            LOG.errorv("DbIndex #%d on ECClass %s could not be retrieved.", i, m_class->GetFullName());
             return ERROR;
             }
 
@@ -235,10 +234,15 @@ BentleyStatus DbIndexListCustomAttribute::GetIndexes(bvector<DbIndex>& indices) 
         if (dbIndexCA == nullptr)
             continue;
 
-        //optional
         Nullable<Utf8String> indexName;
         if (SUCCESS != CustomAttributeReader::TryGetTrimmedValue(indexName, *dbIndexCA, "Name"))
             return ERROR;
+
+        if (indexName.IsNull() || indexName.Value().empty())
+            {
+            LOG.errorv("Invalid DbIndex #%d on ECClass %s. A Name must always be specified for a DbIndex.", i, m_class->GetFullName());
+            return ERROR;
+            }
 
         Nullable<Utf8String> whereClause;
         if (SUCCESS != CustomAttributeReader::TryGetTrimmedValue(whereClause, *dbIndexCA, "Where"))
@@ -269,7 +273,7 @@ BentleyStatus DbIndexListCustomAttribute::GetIndexes(bvector<DbIndex>& indices) 
             return ERROR;
             }
 
-        DbIndex dbIndex(indexName, isUnique, whereClause);
+        DbIndex dbIndex(indexName.Value(), isUnique.IsNull() ? false : isUnique.Value(), whereClause);
         for (uint32_t j = 0; j < propertiesCount; j++)
             {
             Nullable<Utf8String> propName;

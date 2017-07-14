@@ -118,15 +118,15 @@ struct ClassMapColumnFactory : NonCopyableClass
         mutable bool m_areSharedColumnsReserved = false;
         mutable ColumnResolutionScope* m_columnResolutionScope = nullptr;
 
-        DbTable* GetEffectiveTable() const;
-        DbTable* GetOrCreateOverflowTable() const;
-        DbColumn* ReuseOrCreateSharedColumn() const;
+        DbTable* GetEffectiveTable(SchemaImportContext&) const;
+        DbTable* GetOrCreateOverflowTable(SchemaImportContext&) const;
+        DbColumn* ReuseOrCreateSharedColumn(SchemaImportContext&) const;
         ColumnMaps* GetColumnMaps() const;
         ECDbCR GetECDb() const;
         DbColumn* RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const;
         bool IsCompatible(DbColumn const&, DbColumn::Type, DbColumn::CreateParams const&) const;
-        DbColumn* AllocateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR) const;
-        DbColumn* AllocatedSharedColumn(ECN::ECPropertyCR, DbColumn::CreateParams const&, Utf8StringCR) const;
+        DbColumn* AllocateColumn(SchemaImportContext&, ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR) const;
+        DbColumn* AllocatedSharedColumn(SchemaImportContext&, ECN::ECPropertyCR, DbColumn::CreateParams const&, Utf8StringCR) const;
 
         static uint32_t MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR);
 
@@ -145,7 +145,7 @@ struct ClassMapColumnFactory : NonCopyableClass
         void ReserveSharedColumns(Utf8StringCR propertyName) const;
         void ReserveSharedColumns(uint32_t columnsRequired) const;
         void ReleaseSharedColumnReservation() const { m_areSharedColumnsReserved = false; }
-        DbColumn* Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum = false) const;
+        DbColumn* Allocate(SchemaImportContext&, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum = false) const;
     };
 
 //======================================================================================

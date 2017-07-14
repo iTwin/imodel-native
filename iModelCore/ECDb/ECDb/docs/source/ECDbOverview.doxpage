@@ -252,7 +252,9 @@
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier"
-            - from @b Sealed to @b None
+            - from @b Sealed to @b None, but only if 
+                - the class is no ECRelationshipClass 
+                - the class is mapped as 'TablePerHierarchy'
             - from @b None to @b Sealed (for leaf classes only, of course)
 
     - @b ECProperties
@@ -351,9 +353,8 @@
     - @ref BentleyApi::ECN::ECProperty "ECProperties" must not have these names which are used by ECSQL system properties: @b Id, @b ECInstanceId,
     @b ECClassId, @b SourceECInstanceId, @b SourceId, @b SourceECClassId, @b TargetECInstanceId, @b TargetId, @b TargetECClassId 
     - @ref BentleyApi::ECN::ECProperty "ECProperties" may not be of the same type as its @ref BentleyApi::ECN::ECClass "ECClass".
-    - An %ECClass cannot have more than one @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperties" that are defined with the same
-    @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass" (or a subclass of it) and with the same @ref BentleyApi::ECN::ECRelatedInstanceDirection "direction"
-       
+    - For @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperties" see @ref ECDbNavigationProperties
+    -
     @see @ref ECDbOverview
     */
 
@@ -528,6 +529,14 @@
     Likewise ECDb's referential integrity does not clean up the RelECClassId values. If for an ECRelationshipClass with OnDelete action 'SetNull', a parent is deleted,
     the navigation property's Id value is set to NULL, but the RelECClassId's value is not changed.
     
+    ### Rules
+    - A @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" must always be defined on the root @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass".
+    Consequently, it cannot be defined on subclasses of an ECRelationshipClass.
+    - A @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" can only be defined on the foreign key end of an ECRelationshipClass (see @ref ECDbForeignKeyMapping)
+    - An %ECClass cannot have more than one @ref BentleyApi::ECN::NavigationECProperty "NavigationECProperty" defined for the same
+    @ref BentleyApi::ECN::ECRelationshipClass "ECRelationshipClass"
+    
+       
     @see BentleyApi::BeSQLite::EC::ECSqlStatement::BindNavigationValue
 
     @see @ref ECDbRelationshipRules
@@ -636,7 +645,7 @@
 
     #### Creating database indexes on ECProperties
 
-        <ECEntityClass typeName="Person">
+        <ECEntityClass typeName="Person" modifier="Sealed">
             <ECCustomAttributes>
                 <DbIndexList xmlns="ECDbMap.02.00">
                     <Indexes>

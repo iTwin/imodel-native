@@ -215,7 +215,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
                  SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
                 <ECSchema schemaName="Workspace" nameSpacePrefix="WS" version="02.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.0">
                     <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
-                    <ECEntityClass typeName="Repository">
+                    <ECEntityClass typeName="Repository" modifier="Sealed">
                         <ECCustomAttributes>
                             <DbIndexList xmlns="ECDbMap.02.00">
                                 <Indexes>
@@ -233,7 +233,7 @@ TEST_F(ECSqlNavigationPropertyTestFixture, RelECClassId)
                         <ECProperty propertyName="Alias" typeName="string"/>
                         <ECProperty propertyName="Label" typeName="string"/>
                     </ECEntityClass>
-                    <ECEntityClass typeName="View"  modified="Sealed">
+                    <ECEntityClass typeName="View" modifier="Sealed">
                         <ECCustomAttributes>
                             <DbIndexList xmlns="ECDbMap.02.00">
                                 <Indexes>

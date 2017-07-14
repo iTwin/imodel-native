@@ -651,6 +651,30 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                    </ECSchema>)xml"))) << "A nav prop can only be defined from FK end to referenced end and not vice versa";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Person" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MySibling" relationshipName="RelSub" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="None" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Person"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="Person"/>
+                        </Target>
+                     </ECRelationshipClass>
+                     <ECRelationshipClass typeName="RelSub" modifier="Sealed" strength="Referencing">
+                        <BaseClass>Rel</BaseClass>
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Person"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="Person"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "A navigation property must be on the relationship root class, not on relationship sub classes";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -668,6 +692,22 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                         </Target>
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "A class cannot have two navigation properties for the same relationship";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema4" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Person" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MySibling1" relationshipName="Rel" direction="Backward" />
+                       <ECNavigationProperty propertyName="MySibling2" relationshipName="Rel" direction="Forward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Person"/>
+                        </Source>
+                        <Target multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                            <Class class="Person"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "A class cannot have two navigation properties for the same relationship, even if direction differs";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema5" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -856,7 +896,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                             <Class class="ChildSub1"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "Navigation property must not the abstract constraint class";
+                   </ECSchema>)xml"))) << "Navigation property must not be on the abstract constraint class";
 
     ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema11" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />

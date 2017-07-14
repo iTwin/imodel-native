@@ -13,8 +13,8 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-#define TABLE_ECIndex "ec_Index"
-#define TABLE_ECIndexColumn "ec_IndexColumn"
+#define TABLE_Index "ec_Index"
+#define TABLE_IndexColumn "ec_IndexColumn"
 #define TABLE_ClassHasBaseClasses "ec_ClassHasBaseClasses"
 #define TABLE_CustomAttribute "ec_CustomAttribute"
 #define TABLE_Class "ec_Class"
@@ -73,6 +73,10 @@ static_assert(2 == (int) DbTable::Type::Existing, "Persisted enum DbTable::Type 
 static_assert(3 == (int) DbTable::Type::Overflow, "Persisted enum DbTable::Type has changed");
 #define SQLVAL_DbTable_Type_Virtual "4"
 static_assert(4 == (int) DbTable::Type::Virtual, "Persisted enum DbTable::Type has changed");
+
+//** Enum ECClassModifier
+#define SQLVAL_ECClassModifier_Sealed "2"
+static_assert(2 == (int) ECN::ECClassModifier::Sealed, "Persisted enum ECN::ECClassModifier has changed");
 
 //** Enum ECClassType
 #define SQLVAL_ECClassType_Entity "0"

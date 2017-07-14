@@ -48,7 +48,7 @@ void TableMap::Initialize(Utf8StringCR tableName)
     m_tableName = tableName;
 
     DbTable const* dbTable = dbSchema.FindTable(tableName.c_str());
-    if (!dbTable || !dbTable->IsValid() || dbTable->IsNullTable())
+    if (!dbTable || !dbTable->IsValid() || dbSchema.IsNullTable(*dbTable))
         {
         m_isMapped = false;
         return;

@@ -1159,6 +1159,70 @@ TEST_F(SchemaUpgradeTestFixture, ModifyECClassModifierFromAbstract)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaUpgradeTestFixture, UnsealingClasses)
+    {
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UnsealingClasses.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECProperty propertyName="Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on sealed class";
+
+            EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="None">
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+                <ECEntityClass typeName="Sub" modifier="None">
+                    <BaseClass>Foo</BaseClass>
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"))) << "Class modifier changed from Sealed to None";
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UnsealingClasses.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="None">
+                            <ECCustomAttributes>
+                                <ClassMap xmlns="ECDbMap.02.00">
+                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                </ClassMap>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Prop" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" modifier="Sealed">
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "sealed sub class (TPH)";
+
+            EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="None">
+                            <ECCustomAttributes>
+                                <ClassMap xmlns="ECDbMap.02.00">
+                                    <MapStrategy>TablePerHierarchy</MapStrategy>
+                                </ClassMap>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Prop" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" modifier="None">
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="SubProp" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Unsealing subclass (TPH)";
+            }
+
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaUpgradeTestFixture, DeleteProperty_OwnTable)
@@ -3524,7 +3588,7 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "   <ECEntityClass typeName='Base' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
@@ -3537,8 +3601,8 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='GD' typeName='double' />"
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None'>"
-        "       <BaseClass>Goo</BaseClass>"
+        "   <ECEntityClass typeName='Sub' modifier='None'>"
+        "       <BaseClass>Base</BaseClass>"
         "       <ECProperty propertyName='FS' typeName='string' />"
         "       <ECProperty propertyName='FD' typeName='double' />"
         "       <ECProperty propertyName='FL' typeName='long' />"
@@ -3548,28 +3612,28 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
     ASSERT_EQ(SUCCESS, SetupECDb("schemaupdate.ecdb", schemaItem));
 
     //following table should exist.
-    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
-    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
+    ASSERT_TRUE(GetHelper().TableExists("ts_Base"));
+    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Base"), nullptr);
 
     //Following table should not exist
-    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
+    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Sub"), nullptr);
+    ASSERT_FALSE(GetHelper().TableExists("ts_Sub"));
 
-    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo"));
-    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo_Overflow"));
+    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Base"));
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Base_Overflow"));
 
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
     //Delete Foo ===================================================================================================
-    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
     ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='2.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "   <ECEntityClass typeName='Base' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
@@ -3585,40 +3649,47 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "</ECSchema>"))) << "Delete derived class should be successful";
 
     //Following should not exist
-    ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
+    ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Sub"), nullptr);
+    ASSERT_FALSE(GetHelper().TableExists("ts_Sub"));
 
     //Following should exist
-    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
-    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
-    m_ecdb.SaveChanges();
+    ASSERT_TRUE(GetHelper().TableExists("ts_Base"));
+    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Base"), nullptr);
 
-    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo")) << "After deleting subclass Foo";
+    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Base")) << "After deleting subclass Foo";
 
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Foo");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::InvalidECSql, BE_SQLITE_ERROR, "SELECT FS, FD, FL FROM ts.Sub");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Base");
 
-    //Delete Goo ===================================================================================================
-    //Deleting Class with SharedTable:SharedColumns is expected to be supported
-    m_ecdb.SaveChanges();
-    SchemaItem deleteGoo(
+    //Delete Base ===================================================================================================
+    //test that the index definitions in ec_Index are cleaned up when a table is deleted
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT count(*) FROM ec_Index i JOIN ec_Table t ON i.TableId=t.Id WHERE t.Name LIKE 'ts_Base' COLLATE NOCASE"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
+    ASSERT_EQ(1, stmt.GetValueInt(0)) << stmt.GetSql();
+    stmt.Reset();
+
+    //Deleting Class with ShareColumns is expected to be supported
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='3.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(deleteGoo)) << "Delete class containing ECDbMap CA should be successful";
+        "</ECSchema>"))) << "Delete class containing ECDbMap CA should be successful";
 
     //Following should not exist
-    ASSERT_FALSE(GetHelper().TableExists("ts_Goo"));
+    ASSERT_FALSE(GetHelper().TableExists("ts_Base"));
 
-    //Add Goo Again===================================================================================================
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
+    ASSERT_EQ(0, stmt.GetValueInt(0)) << stmt.GetSql();
+    stmt.Finalize();
+
+    //Add Base Again===================================================================================================
     //Add Class with SharedTable:SharedColumns is expected to be supported
-    m_ecdb.SaveChanges();
-    SchemaItem addGoo(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='4.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "   <ECEntityClass typeName='Base' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
@@ -3631,30 +3702,29 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='GD' typeName='double' />"
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(addGoo)) << "Add New Class with ECDbMap CA is expected to be successful";
+        "</ECSchema>"))) << "Add New Class with ECDbMap CA is expected to be successful";
 
     //Following should not exist
-    ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
-    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
+    ASSERT_EQ(m_ecdb.Schemas().GetClass("TestSchema", "Sub"), nullptr);
+    ASSERT_FALSE(GetHelper().TableExists("ts_Sub"));
 
     //Following should exist
-    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
-    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
+    ASSERT_TRUE(GetHelper().TableExists("ts_Base"));
+    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Base"), nullptr);
 
-    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo")) << "After deleting all classes and readding base class";
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Base")) << "After deleting all classes and readding base class";
     
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Goo(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
-
-    //Add Foo Again===============================================================================================
-    //Adding new derived entity class is expected to be supported
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test3', 44.32, 3344)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Base(GS,GD,GL) VALUES ('test4', 13.3, 2345)");
     m_ecdb.SaveChanges();
-    SchemaItem addFoo(
+
+    //Add Sub Again===============================================================================================
+    //Adding new derived entity class is expected to be supported
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='5.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "   <ECSchemaReference name = 'ECDbMap' version='02.00' prefix = 'ecdbmap' />"
-        "   <ECEntityClass typeName='Goo' modifier='None'>"
+        "   <ECEntityClass typeName='Base' modifier='None'>"
         "        <ECCustomAttributes>"
         "         <ClassMap xmlns='ECDbMap.02.00'>"
         "             <MapStrategy>TablePerHierarchy</MapStrategy>"
@@ -3667,32 +3737,32 @@ TEST_F(SchemaUpgradeTestFixture, Delete_Add_ECEntityClass_TPH_ShareColumns)
         "       <ECProperty propertyName='GD' typeName='double' />"
         "       <ECProperty propertyName='GL' typeName='long' />"
         "   </ECEntityClass>"
-        "   <ECEntityClass typeName='Foo' modifier='None'>"
-        "       <BaseClass>Goo</BaseClass>"
+        "   <ECEntityClass typeName='Sub' modifier='None'>"
+        "       <BaseClass>Base</BaseClass>"
         "       <ECProperty propertyName='FS' typeName='string' />"
         "       <ECProperty propertyName='FD' typeName='double' />"
         "       <ECProperty propertyName='FL' typeName='long' />"
         "       <ECProperty propertyName='FI' typeName='int' />"
         "   </ECEntityClass>"
-        "</ECSchema>");
-    ASSERT_EQ(SUCCESS, ImportSchema(addFoo)) << "New derived entity class is expected to be supported";
+        "</ECSchema>"))) << "New derived entity class is expected to be supported";
 
     //Table should not exist
-    ASSERT_FALSE(GetHelper().TableExists("ts_Foo"));
-    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Foo"), nullptr);
+    ASSERT_FALSE(GetHelper().TableExists("ts_Sub"));
+    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Sub"), nullptr);
 
     //Table should exist
-    ASSERT_TRUE(GetHelper().TableExists("ts_Goo"));
-    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Goo"), nullptr);
+    ASSERT_TRUE(GetHelper().TableExists("ts_Base"));
+    ASSERT_NE(m_ecdb.Schemas().GetClass("TestSchema", "Base"), nullptr);
 
-    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Goo")) << "After readding subclass";
-    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Goo_Overflow")) << "After readding subclass";
+    ASSERT_EQ(6, GetHelper().GetColumnCount("ts_Base")) << "After readding subclass";
+    ASSERT_EQ(5, GetHelper().GetColumnCount("ts_Base_Overflow")) << "After readding subclass";
 
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Foo");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Goo");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "SELECT FS, FD, FL FROM ts.Sub");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_ROW, "SELECT GS, GD, GL FROM ts.Base");
 
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
-    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Foo(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test1', 1.3, 334, 1)");
+    ASSERT_ECSQL(m_ecdb, ECSqlStatus::Success, BE_SQLITE_DONE, "INSERT INTO ts.Sub(FS,FD,FL,FI) VALUES ('test2', 23.3, 234, 2)");
+    m_ecdb.SaveChanges();
     }
 
 //---------------------------------------------------------------------------------------
@@ -4940,7 +5010,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECDbMapCA_DbIndexChanges)
         "    <ECEntityClass typeName='A'>"
         "        <ECProperty propertyName='PA' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B'>"
+        "    <ECEntityClass typeName='B' modifier='Sealed'>"
         "       <ECCustomAttributes>"
         "           <DbIndexList xmlns='ECDbMap.02.00'>"
         "               <Indexes>"
@@ -4994,7 +5064,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateECDbMapCA_DbIndexChanges)
         "    <ECEntityClass typeName='A'>"
         "        <ECProperty propertyName='PA' typeName='int' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B'>"
+        "    <ECEntityClass typeName='B' modifier='Sealed'>"
         "       <ECCustomAttributes>"
         "           <DbIndexList xmlns='ECDbMap.02.00'>"
         "               <Indexes>"

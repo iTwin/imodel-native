@@ -340,6 +340,34 @@ bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& tabl
 
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle 07/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus DbSchemaPersistenceManager::CreateOrReplaceIndex(ECDbCR ecdb, DbIndex const& index, Utf8StringCR ddl)
+    {
+    if (index.GetTable().GetType() == DbTable::Type::Virtual)
+        {
+        BeAssert(false && "Must not call this method for indexes on virtual tables");
+        return ERROR;
+        }
+
+    //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
+    Utf8String dropIndexSql;
+    dropIndexSql.Sprintf("DROP INDEX [%s]", index.GetName().c_str());
+    ecdb.TryExecuteSql(dropIndexSql.c_str());
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
+        {
+        ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
+                                       ecdb.GetLastError().c_str());
+
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle 10/2015
 //---------------------------------------------------------------------------------------
 //static
@@ -728,5 +756,59 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(bvector<SqliteColum
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+//static
+bmap<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetTableDefNamesAndIds(ECDbCR ecdb, Utf8CP whereClause)
+    {
+    bmap<Utf8String, DbTableId, CompareIUtf8Ascii> map;
+
+    CachedStatementPtr stmt = nullptr;
+    if (whereClause == nullptr)
+        stmt = ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Table");
+    else
+        {
+        Utf8String sql("SELECT Name, Id FROM ec_Table");
+        sql.append(" WHERE ").append(whereClause);
+        stmt = ecdb.GetCachedStatement(sql.c_str());
+        }
+
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return map;
+        }
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        map[stmt->GetValueText(0)] = stmt->GetValueId<DbTableId>(1);
+        }
+
+    return map;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+//static
+bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetColumnNamesAndIds(ECDbCR ecdb, DbTableId tableId)
+    {
+    bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> map;
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Column WHERE TableId=?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return map;
+        }
+
+    stmt->BindId(1, tableId);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        map[stmt->GetValueText(0)] = stmt->GetValueId<DbColumnId>(1);
+        }
+
+    return map;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

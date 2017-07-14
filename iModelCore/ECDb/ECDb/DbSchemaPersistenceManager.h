@@ -74,6 +74,8 @@ private:
     static BentleyStatus GenerateIndexWhereClause(Utf8StringR ddl, ECDbCR, DbIndex const&);
 
 public:
+    static BentleyStatus CreateOrReplaceIndex(ECDbCR, DbIndex const&, Utf8StringCR ddl);
+
     static BentleyStatus BuildCreateIndexDdl(Utf8StringR ddl, Utf8StringR comparableIndexDef, ECDbCR, DbIndex const&);
 
     static CreateOrUpdateTableResult CreateOrUpdateTable(ECDbCR, DbTable const&);
@@ -81,6 +83,10 @@ public:
     static BentleyStatus RepopulateClassHasTableCacheTable(ECDbCR);
 
     static BentleyStatus RunPragmaTableInfo(bvector<SqliteColumnInfo>& colInfos, ECDbCR, Utf8StringCR tableName);
+
+    static bmap<Utf8String, DbTableId, CompareIUtf8Ascii> GetTableDefNamesAndIds(ECDbCR, Utf8CP whereClause = nullptr);
+    static bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> GetColumnNamesAndIds(ECDbCR, DbTableId);
+
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

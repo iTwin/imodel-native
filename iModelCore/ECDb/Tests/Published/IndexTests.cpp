@@ -22,7 +22,7 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "    <ECEntityClass typeName='Element' modifier='Sealed'>"
         "        <ECCustomAttributes>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
@@ -37,7 +37,7 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "    <ECEntityClass typeName='Element' modifier='Sealed'>"
         "        <ECCustomAttributes>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "            </DbIndexList>"
@@ -50,7 +50,7 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "    <ECEntityClass typeName='Element' modifier='Sealed'>"
         "        <ECCustomAttributes>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
@@ -67,7 +67,7 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "    <ECEntityClass typeName='Element' modifier='Sealed'>"
         "        <ECCustomAttributes>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
@@ -84,9 +84,29 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+        "    <ECEntityClass typeName='Element' modifier='Sealed'>"
+        "        <ECCustomAttributes>"
+        "            <DbIndexList xmlns='ECDbMap.02.00'>"
+        "                 <Indexes>"
+        "                   <DbIndex>"
+        "                      <Properties>"
+        "                          <string>Code</string>"
+        "                      </Properties>"
+        "                   </DbIndex>"
+        "                  </Indexes>"
+        "            </DbIndexList>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='Code' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "DbIndexList CA with DbIndex without Name is not supported";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "    <ECEntityClass typeName='Element' modifier='Sealed'>"
         "        <ECCustomAttributes>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
@@ -113,14 +133,8 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "        <ECProperty propertyName='Namespace' typeName='string' />"
         "        <ECProperty propertyName='Val' typeName='string' />"
         "    </ECStructClass>"
-        "    <ECEntityClass typeName='Element' modifier='None'>"
+        "    <ECEntityClass typeName='Element' modifier='Sealed'>"
         "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
         "                   <DbIndex>"
@@ -146,14 +160,8 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "        <ECProperty propertyName='Namespace' typeName='string' />"
         "        <ECProperty propertyName='Val' typeName='string' />"
         "    </ECStructClass>"
-        "    <ECEntityClass typeName='Element' modifier='None' >"
+        "    <ECEntityClass typeName='Element' modifier='Sealed' >"
         "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
-        "            <ShareColumns xmlns='ECDbMap.02.00'>"
-        "              <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>"
-        "            </ShareColumns>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
         "                   <DbIndex>"
@@ -177,11 +185,8 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "    <ECEntityClass typeName='DgnModel' modifier='None' >"
         "        <ECProperty propertyName='Name' typeName='string' />"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='DgnElement' modifier='None' >"
+        "    <ECEntityClass typeName='DgnElement' modifier='Sealed' >"
         "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "            </ClassMap>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
         "                   <DbIndex>"
@@ -210,21 +215,8 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='Element' modifier='None' >"
+        "    <ECEntityClass typeName='Element' modifier='Sealed' >"
         "        <ECCustomAttributes>"
-        "            <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "                 <Indexes>"
-        "                   <DbIndex>"
-        "                       <IsUnique>True</IsUnique>"
-        "                       <Name>uix_element_code</Name>"
-        "                       <Properties>"
-        "                          <string>Codes</string>"
-        "                       </Properties>"
-        "                   </DbIndex>"
-        "                 </Indexes>"
-        "            </ClassMap>"
-        "            </ShareColumns>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
         "                   <DbIndex>"
@@ -272,7 +264,7 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-        "    <ECEntityClass typeName='A' modifier='None' >"
+        "    <ECEntityClass typeName='A' modifier='Sealed' >"
         "        <ECCustomAttributes>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
@@ -288,7 +280,7 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='Code' typeName='string'/>"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B' modifier='None' >"
+        "    <ECEntityClass typeName='B' modifier='Sealed' >"
         "        <ECCustomAttributes>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
@@ -319,7 +311,7 @@ TEST_F(IndexTests, InvalidUserDefinedIndexes)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='AProp' typeName='string'/>"
         "    </ECEntityClass>"
-        "    <ECEntityClass typeName='B' modifier='None' >"
+        "    <ECEntityClass typeName='B' modifier='Sealed' >"
         "        <ECCustomAttributes>"
         "            <DbIndexList xmlns='ECDbMap.02.00'>"
         "                 <Indexes>"
@@ -442,7 +434,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
                 R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-        <ECEntityClass typeName="Foo" modifier="None">
+        <ECEntityClass typeName="Foo" modifier="Sealed">
             <ECCustomAttributes>
                 <DbIndexList xmlns="ECDbMap.02.00">
                     <Indexes>
@@ -468,7 +460,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
                <ECEntityClass typeName="Parent" modifier="None">
                     <ECProperty propertyName="Code" typeName="string" />
                 </ECEntityClass>
-                <ECEntityClass typeName="Child" modifier="None">
+                <ECEntityClass typeName="Child" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -547,7 +539,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
                <ECEntityClass typeName="Parent" modifier="None">
                     <ECProperty propertyName="Code" typeName="string" />
                 </ECEntityClass>
-                <ECEntityClass typeName="Child" modifier="None">
+                <ECEntityClass typeName="Child" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -580,7 +572,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
                <ECEntityClass typeName="Parent" modifier="None">
                     <ECProperty propertyName="Code" typeName="string" />
                 </ECEntityClass>
-                <ECEntityClass typeName="Child" modifier="None">
+                <ECEntityClass typeName="Child" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -616,7 +608,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
                <ECEntityClass typeName="Parent" modifier="None">
                     <ECProperty propertyName="Code" typeName="string" />
                 </ECEntityClass>
-                <ECEntityClass typeName="Child" modifier="None">
+                <ECEntityClass typeName="Child" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -701,7 +693,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
                <ECEntityClass typeName="Parent" modifier="None">
                     <ECProperty propertyName="Code" typeName="string" />
                 </ECEntityClass>
-                <ECEntityClass typeName="Child" modifier="None">
+                <ECEntityClass typeName="Child" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -738,7 +730,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
                <ECEntityClass typeName="Parent" modifier="None">
                     <ECProperty propertyName="Code" typeName="string" />
                 </ECEntityClass>
-                <ECEntityClass typeName="Child" modifier="None">
+                <ECEntityClass typeName="Child" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -778,7 +770,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
                <ECEntityClass typeName="Parent" modifier="None">
                     <ECProperty propertyName="Code" typeName="string" />
                 </ECEntityClass>
-                <ECEntityClass typeName="Child" modifier="None">
+                <ECEntityClass typeName="Child" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -828,7 +820,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnEntityClassSystemProperties)
                     ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnSystemProperties_points.ecdb", SchemaItem(R"xml(<?xml version='1.0' encoding='utf-8'?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-                <ECEntityClass typeName="Foo" modifier="None">
+                <ECEntityClass typeName="Foo" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -953,7 +945,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnFKRelSystemProperties)
                     <ECProperty propertyName="Name" typeName="string" />
                     <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
                 </ECEntityClass>
-                <ECRelationshipClass typeName="Rel" modifier="None">
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -985,7 +977,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnFKRelSystemProperties)
                     <ECProperty propertyName="Name" typeName="string" />
                     <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
                 </ECEntityClass>
-                <ECRelationshipClass typeName="Rel" modifier="None">
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -1017,7 +1009,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnFKRelSystemProperties)
                     <ECProperty propertyName="Name" typeName="string" />
                     <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
                 </ECEntityClass>
-                <ECRelationshipClass typeName="Rel" modifier="None">
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -1049,7 +1041,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnFKRelSystemProperties)
                     <ECProperty propertyName="Name" typeName="string" />
                     <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
                 </ECEntityClass>
-                <ECRelationshipClass typeName="Rel" modifier="None">
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -1081,7 +1073,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnFKRelSystemProperties)
                     <ECProperty propertyName="Name" typeName="string" />
                     <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
                 </ECEntityClass>
-                <ECRelationshipClass typeName="Rel" modifier="None">
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -1113,7 +1105,7 @@ TEST_F(IndexTests, UserDefinedIndexesOnFKRelSystemProperties)
                     <ECProperty propertyName="Name" typeName="string" />
                     <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward"/>
                 </ECEntityClass>
-                <ECRelationshipClass typeName="Rel" modifier="None">
+                <ECRelationshipClass typeName="Rel" modifier="Sealed">
                     <ECCustomAttributes>
                         <DbIndexList xmlns="ECDbMap.02.00">
                             <Indexes>
@@ -1882,7 +1874,74 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
                          <Indexes>
                            <DbIndex>
                                <IsUnique>True</IsUnique>
-                               <Name>uix_root</Name>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract class";
+
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="None">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>True</IsUnique>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on non-sealed class";
+
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>True</IsUnique>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub_A">
+               <BaseClass>Root</BaseClass>
+               <ECProperty propertyName="PropA" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract base class with single subclasses";
+
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>True</IsUnique>
+                               <Name>ix_root</Name>
                                <Properties>
                                   <string>RootProp</string>
                                </Properties>
@@ -1900,7 +1959,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
                <BaseClass>Root</BaseClass>
                <ECProperty propertyName="PropB" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "unique index on abstract base class with multiple subclasses";
+        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
 
     EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -1911,7 +1970,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
                          <Indexes>
                            <DbIndex>
                                <IsUnique>True</IsUnique>
-                               <Name>uix_root</Name>
+                               <Name>ix_root</Name>
                                <Properties>
                                   <string>RootProp</string>
                                </Properties>
@@ -1929,7 +1988,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
                <BaseClass>Sub</BaseClass>
                <ECProperty propertyName="PropB" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "unique index on abstract base class with multiple subclasses";
+        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
 
     EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -1943,7 +2002,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
                          <Indexes>
                            <DbIndex>
                                <IsUnique>True</IsUnique>
-                               <Name>uix_sub</Name>
+                               <Name>ix_sub</Name>
                                <Properties>
                                   <string>SubProp</string>
                                </Properties>
@@ -1962,7 +2021,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
                <BaseClass>SubSub</BaseClass>
                <ECProperty propertyName="PropB" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "unique index on abstract base class with multiple subclasses";
+        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
 
     EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -1976,7 +2035,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
                          <Indexes>
                            <DbIndex>
                                <IsUnique>True</IsUnique>
-                               <Name>uix_sub</Name>
+                               <Name>ix_sub</Name>
                                <Properties>
                                   <string>SubProp</string>
                                </Properties>
@@ -1995,119 +2054,79 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
                <BaseClass>Sub</BaseClass>
                <ECProperty propertyName="PropB" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "unique index on abstract base class with multiple subclasses";
-
-            {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb",SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="Root" modifier="Abstract">
-                <ECCustomAttributes>
-                    <DbIndexList xmlns="ECDbMap.02.00">
-                         <Indexes>
-                           <DbIndex>
-                               <IsUnique>True</IsUnique>
-                               <Name>uix_root</Name>
-                               <Properties>
-                                  <string>RootProp</string>
-                               </Properties>
-                           </DbIndex>
-                         </Indexes>
-                    </DbIndexList>
-                </ECCustomAttributes>
-                <ECProperty propertyName="RootProp" typeName="int" />
-            </ECEntityClass>
-        </ECSchema>)xml"))) << "unique index on abstract class, no subclasses";
-
-            ASSERT_FALSE(GetHelper().TableExists("ts_Root")) << "unique index on abstract class, no subclasses";
-            ASSERT_FALSE(GetHelper().IndexExists("uix_root")) << "unique index on abstract class, no subclasses";
-            }
-
-            //multi-session import
-
-            {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="Root" modifier="Abstract">
-                <ECCustomAttributes>
-                    <DbIndexList xmlns="ECDbMap.02.00">
-                         <Indexes>
-                           <DbIndex>
-                               <IsUnique>True</IsUnique>
-                               <Name>uix_root</Name>
-                               <Properties>
-                                  <string>RootProp</string>
-                               </Properties>
-                           </DbIndex>
-                         </Indexes>
-                    </DbIndexList>
-                </ECCustomAttributes>
-                <ECProperty propertyName="RootProp" typeName="int" />
-            </ECEntityClass>
-        </ECSchema>)xml"))) << "unique index on abstract class, no subclasses";
-
-            ASSERT_FALSE(GetHelper().TableExists("ts_Root")) << "unique index on abstract class, no subclasses";
-            ASSERT_FALSE(GetHelper().IndexExists("uix_root")) << "unique index on abstract class, no subclasses";
-
-            ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
-            <ECEntityClass typeName="Sub">
-               <BaseClass>ts:Root</BaseClass>
-               <ECProperty propertyName="SubProp" typeName="int" />
-            </ECEntityClass>
-        </ECSchema>)xml"))) << "Adding single subclass to abstract base class";
-
-            ASSERT_TRUE(GetHelper().TableExists("ts2_Sub")) << "unique index on abstract class with single subclasses";
-            Utf8CP indexName = "uix_root_ts2_Sub";
-            ASSERT_STRCASEEQ(IndexInfo(indexName, true, "ts2_Sub", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl(indexName).c_str()) << "unique index on abstract class with single subclasses";
-
-            ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema3" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
-            <ECEntityClass typeName="Sub2">
-               <BaseClass>ts:Root</BaseClass>
-               <ECProperty propertyName="SubProp" typeName="int" />
-            </ECEntityClass>
-        </ECSchema>)xml"))) << "Adding second subclass to abstract base class";
-            }
-
+        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
 
     {
     ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="Root" modifier="Abstract">
-                <ECProperty propertyName="RootProp" typeName="int" />
-            </ECEntityClass>
-            <ECEntityClass typeName="Sub" modifier="None">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
                 <ECCustomAttributes>
                     <DbIndexList xmlns="ECDbMap.02.00">
                          <Indexes>
                            <DbIndex>
                                <IsUnique>True</IsUnique>
-                               <Name>uix_sub</Name>
+                               <Name>ix_foo</Name>
                                <Properties>
-                                  <string>SubProp</string>
+                                  <string>Prop</string>
                                </Properties>
                            </DbIndex>
                          </Indexes>
                     </DbIndexList>
                 </ECCustomAttributes>
-               <BaseClass>Root</BaseClass>
-               <ECProperty propertyName="SubProp" typeName="int" />
+                <ECProperty propertyName="Prop" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "Unique index on base class which doesn't have subclasses yet";
+        </ECSchema>)xml"))) << "index on sealed class";
+
+    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
+    ASSERT_STRCASEEQ(IndexInfo("ix_foo", true, "ts_Foo", "Prop").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
+    }
+
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="Sealed">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>True</IsUnique>
+                               <Name>ix_foo</Name>
+                               <Properties>
+                                  <string>Prop</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on sealed class";
+
+    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
+    ASSERT_STRCASEEQ(IndexInfo("ix_foo", true, "ts_Foo", "Prop").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
 
     ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-            <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />    
-            <ECEntityClass typeName="SubSub">
-               <BaseClass>ts:Sub</BaseClass>
-               <ECProperty propertyName="SubSubProp" typeName="int" />
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_foo</Name>
+                               <Properties>
+                                  <string>Prop</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="Prop" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "unique index would now span two tables";
+        </ECSchema>)xml"))) << "Class modifier changed from Sealed to None";
     }
     }
 
@@ -2116,42 +2135,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndexesOnNonTph)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
     {
-            {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedNonUniqueIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-        <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-        <ECEntityClass typeName="Root" modifier="Abstract">
-            <ECCustomAttributes>
-                <DbIndexList xmlns="ECDbMap.02.00">
-                        <Indexes>
-                        <DbIndex>
-                            <Name>ix_root</Name>
-                            <Properties>
-                                <string>RootProp</string>
-                            </Properties>
-                        </DbIndex>
-                        </Indexes>
-                </DbIndexList>
-            </ECCustomAttributes>
-            <ECProperty propertyName="RootProp" typeName="int" />
-        </ECEntityClass>
-        <ECEntityClass typeName="Sub_A">
-            <BaseClass>Root</BaseClass>
-            <ECProperty propertyName="PropA" typeName="int" />
-        </ECEntityClass>
-        <ECEntityClass typeName="Sub_B">
-            <BaseClass>Root</BaseClass>
-            <ECProperty propertyName="PropB" typeName="int" />
-        </ECEntityClass>
-        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
-
-            EXPECT_FALSE(GetHelper().TableExists("ts_Root"));
-            EXPECT_STRCASEEQ(IndexInfo("ix_root_ts_Sub_A", false, "ts_Sub_A", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts_Sub_A").c_str());
-            EXPECT_STRCASEEQ(IndexInfo("ix_root_ts_Sub_B", false, "ts_Sub_B", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts_Sub_B").c_str());
-            }
-
-            {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedNonUniqueIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Root" modifier="Abstract">
@@ -2159,6 +2143,103 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
                     <DbIndexList xmlns="ECDbMap.02.00">
                          <Indexes>
                            <DbIndex>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract class";
+
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="None">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on non-sealed class";
+
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub_A">
+               <BaseClass>Root</BaseClass>
+               <ECProperty propertyName="PropA" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract base class with single subclasses";
+
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_root</Name>
+                               <Properties>
+                                  <string>RootProp</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <ECProperty propertyName="RootProp" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub_A">
+               <BaseClass>Root</BaseClass>
+               <ECProperty propertyName="PropA" typeName="int" />
+            </ECEntityClass>
+            <ECEntityClass typeName="Sub_B">
+               <BaseClass>Root</BaseClass>
+               <ECProperty propertyName="PropB" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
+
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="Root" modifier="Abstract">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>False</IsUnique>
                                <Name>ix_root</Name>
                                <Properties>
                                   <string>RootProp</string>
@@ -2179,13 +2260,7 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
             </ECEntityClass>
         </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
 
-            EXPECT_FALSE(GetHelper().TableExists("ts_Root"));
-            EXPECT_STRCASEEQ(IndexInfo("ix_root_ts_Sub", false, "ts_Sub", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts_Sub").c_str());
-            EXPECT_STRCASEEQ(IndexInfo("ix_root_ts_SubSub", false, "ts_SubSub", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts_SubSub").c_str());
-            }
-
-            {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedNonUniqueIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Root" modifier="Abstract">
@@ -2196,6 +2271,7 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
                     <DbIndexList xmlns="ECDbMap.02.00">
                          <Indexes>
                            <DbIndex>
+                               <IsUnique>False</IsUnique>
                                <Name>ix_sub</Name>
                                <Properties>
                                   <string>SubProp</string>
@@ -2217,14 +2293,7 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
             </ECEntityClass>
         </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
 
-            EXPECT_FALSE(GetHelper().TableExists("ts_Root"));
-            EXPECT_FALSE(GetHelper().TableExists("ts_Sub"));
-            EXPECT_STRCASEEQ(IndexInfo("ix_sub_ts_SubSub", false, "ts_SubSub", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts_SubSub").c_str());
-            EXPECT_STRCASEEQ(IndexInfo("ix_sub_ts_SubSubSub", false, "ts_SubSubSub", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts_SubSubSub").c_str());
-            }
-
-            {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedNonUniqueIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Root" modifier="Abstract">
@@ -2235,6 +2304,7 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
                     <DbIndexList xmlns="ECDbMap.02.00">
                          <Indexes>
                            <DbIndex>
+                               <IsUnique>False</IsUnique>
                                <Name>ix_sub</Name>
                                <Properties>
                                   <string>SubProp</string>
@@ -2255,128 +2325,213 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
                <ECProperty propertyName="PropB" typeName="int" />
             </ECEntityClass>
         </ECSchema>)xml"))) << "index on abstract base class with multiple subclasses";
-            EXPECT_FALSE(GetHelper().TableExists("ts_Root"));
-            EXPECT_FALSE(GetHelper().TableExists("ts_Sub"));
-            EXPECT_STRCASEEQ(IndexInfo("ix_sub_ts_SubSub_A", false, "ts_SubSub_A", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts_SubSub_A").c_str());
-            EXPECT_STRCASEEQ(IndexInfo("ix_sub_ts_SubSub_B", false, "ts_SubSub_B", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts_SubSub_B").c_str());
-            }
 
-            {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="Root" modifier="Abstract">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
                 <ECCustomAttributes>
                     <DbIndexList xmlns="ECDbMap.02.00">
                          <Indexes>
                            <DbIndex>
-                               <Name>ix_root</Name>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_foo</Name>
                                <Properties>
-                                  <string>RootProp</string>
+                                  <string>Prop</string>
                                </Properties>
                            </DbIndex>
                          </Indexes>
                     </DbIndexList>
                 </ECCustomAttributes>
-                <ECProperty propertyName="RootProp" typeName="int" />
+                <ECProperty propertyName="Prop" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "index on abstract class, no subclasses";
+        </ECSchema>)xml"))) << "index on sealed class";
 
-            ASSERT_FALSE(GetHelper().TableExists("ts_Root")) << "index on abstract class, no subclasses";
-            ASSERT_FALSE(GetHelper().IndexExists("ix_root")) << "index on abstract class, no subclasses";
-            }
+    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
+    ASSERT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Foo", "Prop").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
+    }
+    
+    }
 
-            //multi-session import
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
+    {
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="Root" modifier="Abstract">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
                 <ECCustomAttributes>
                     <DbIndexList xmlns="ECDbMap.02.00">
                          <Indexes>
                            <DbIndex>
-                               <Name>ix_root</Name>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_foo</Name>
                                <Properties>
-                                  <string>RootProp</string>
+                                  <string>Prop</string>
                                </Properties>
                            </DbIndex>
                          </Indexes>
                     </DbIndexList>
                 </ECCustomAttributes>
-                <ECProperty propertyName="RootProp" typeName="int" />
+                <ECProperty propertyName="Prop" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "index on abstract class, no subclasses";
+        </ECSchema>)xml"))) << "index on sealed class";
 
-            ASSERT_FALSE(GetHelper().TableExists("ts_Root")) << "index on abstract class, no subclasses";
-            ASSERT_FALSE(GetHelper().IndexExists("ix_root")) << "index on abstract class, no subclasses";
+            EXPECT_TRUE(GetHelper().TableExists("ts_Foo"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Foo", "Prop").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
 
-            ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
-            <ECEntityClass typeName="Sub">
-               <BaseClass>ts:Root</BaseClass>
-               <ECProperty propertyName="SubProp" typeName="int" />
-            </ECEntityClass>
-        </ECSchema>)xml"))) << "Adding single subclass to abstract base class";
-
-            ASSERT_TRUE(GetHelper().TableExists("ts2_Sub")) << "index on abstract class with single subclasses";
-            ASSERT_STRCASEEQ(IndexInfo("ix_root_ts2_Sub", false, "ts2_Sub", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts2_Sub").c_str()) << "index on abstract class with single subclasses";
-
-            ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema3" alias="ts3" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
-            <ECEntityClass typeName="Sub2">
-               <BaseClass>ts:Root</BaseClass>
-               <ECProperty propertyName="SubProp" typeName="int" />
-            </ECEntityClass>
-        </ECSchema>)xml"))) << "Adding second subclass to abstract base class";
-
-            ASSERT_TRUE(GetHelper().TableExists("ts3_Sub2")) << "index on abstract class with single subclasses";
-            ASSERT_STRCASEEQ(IndexInfo("ix_root_ts3_Sub2", false, "ts3_Sub2", "RootProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_root_ts3_Sub2").c_str()) << "index on abstract class with single subclasses";
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <IsUnique>False</IsUnique>
+                                    <Name>ix_foo</Name>
+                                    <Properties>
+                                        <string>Prop</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"))) << "Class modifier changed from Sealed to None -> index should not be allowed anymore";
             }
 
-
             {
-            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="Root" modifier="Abstract">
-                <ECProperty propertyName="RootProp" typeName="int" />
+            <ECEntityClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                 </ECCustomAttributes>
+                <ECProperty propertyName="Prop" typeName="int" />
             </ECEntityClass>
-            <ECEntityClass typeName="Sub" modifier="None">
+            <ECEntityClass typeName="Foo" modifier="Sealed">
                 <ECCustomAttributes>
                     <DbIndexList xmlns="ECDbMap.02.00">
                          <Indexes>
                            <DbIndex>
-                               <Name>ix_sub</Name>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_foo</Name>
                                <Properties>
-                                  <string>SubProp</string>
+                                  <string>Code</string>
                                </Properties>
                            </DbIndex>
                          </Indexes>
                     </DbIndexList>
                 </ECCustomAttributes>
-               <BaseClass>Root</BaseClass>
-               <ECProperty propertyName="SubProp" typeName="int" />
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Code" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "index on base class which doesn't have subclasses yet";
+        </ECSchema>)xml"))) << "index on sealed subclass (TPH)";
 
-            ASSERT_TRUE(GetHelper().TableExists("ts_Sub")) << "index on abstract class with single subclasses";
-            ASSERT_STRCASEEQ(IndexInfo("ix_sub", false, "ts_Sub", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub").c_str()) << "index on concrete class";
+            EXPECT_TRUE(GetHelper().TableExists("ts_Base"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Base", "Code").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
 
-            ASSERT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-            <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />    
-            <ECEntityClass typeName="SubSub">
-               <BaseClass>ts:Sub</BaseClass>
-               <ECProperty propertyName="SubSubProp" typeName="int" />
+
+            EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                 </ECCustomAttributes>
+                <ECProperty propertyName="Prop" typeName="int" />
             </ECEntityClass>
-        </ECSchema>)xml"))) << "Index property now spans two tables -> replication of index expected";
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECCustomAttributes>
+                    <DbIndexList xmlns="ECDbMap.02.00">
+                         <Indexes>
+                           <DbIndex>
+                               <IsUnique>False</IsUnique>
+                               <Name>ix_foo</Name>
+                               <Properties>
+                                  <string>Code</string>
+                               </Properties>
+                           </DbIndex>
+                         </Indexes>
+                    </DbIndexList>
+                </ECCustomAttributes>
+                <BaseClass>Base</BaseClass>
+                <ECProperty propertyName="Code" typeName="int" />
+            </ECEntityClass>
+            </ECSchema>)xml"))) << "Unsealed subclass (TPH) -> index still valid";
+            EXPECT_TRUE(GetHelper().TableExists("ts_Base"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Base", "Code").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
 
-            ASSERT_TRUE(GetHelper().TableExists("ts2_SubSub")) << "index on abstract class with single subclasses";
-            ASSERT_STRCASEEQ(IndexInfo("ix_sub_ts2_SubSub", false, "ts2_SubSub", "SubProp").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_sub_ts2_SubSub").c_str()) << "replicated index on sub class table";
+            }
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Abstract">
+                <ECProperty propertyName="Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "Abstract class w/o index";
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="Sealed">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <IsUnique>False</IsUnique>
+                                    <Name>ix_foo</Name>
+                                    <Properties>
+                                        <string>Prop</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"))) << "Class modifier changed from Abstract is generally not supported.";
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexWhenClassModifierIsUpgraded.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "Abstract class w/o index";
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="Sealed">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <IsUnique>False</IsUnique>
+                                    <Name>ix_foo</Name>
+                                    <Properties>
+                                        <string>Prop</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"))) << "DbIndexes cannot be added during schema upgrade";
             }
     }
 
@@ -2548,7 +2703,7 @@ TEST_F(IndexTests, UserDefinedIndexWithWhereClauseAndPropertyMapCAIsNullable)
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts1' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-            "    <ECEntityClass typeName='B' modifier='None'>"
+            "    <ECEntityClass typeName='B' modifier='Sealed'>"
             "        <ECCustomAttributes>"
             "            <DbIndexList xmlns='ECDbMap.02.00'>"
             "               <Indexes>"
@@ -2582,7 +2737,7 @@ TEST_F(IndexTests, UserDefinedIndexWithWhereClauseAndPropertyMapCAIsNullable)
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts2' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-            "    <ECEntityClass typeName='B' modifier='None'>"
+            "    <ECEntityClass typeName='B' modifier='Sealed'>"
             "        <ECCustomAttributes>"
             "            <DbIndexList xmlns='ECDbMap.02.00'>"
             "               <Indexes>"
@@ -2617,7 +2772,7 @@ TEST_F(IndexTests, UserDefinedIndexWithWhereClauseAndPropertyMapCAIsNullable)
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts3' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-            "    <ECEntityClass typeName='B' modifier='None'>"
+            "    <ECEntityClass typeName='B' modifier='Sealed'>"
             "        <ECCustomAttributes>"
             "            <DbIndexList xmlns='ECDbMap.02.00'>"
             "               <Indexes>"
@@ -2661,7 +2816,7 @@ TEST_F(IndexTests, UserDefinedIndexWithWhereIsNotNull)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                      "   <ECSchemaReference name='ECDbMap' version='02.00' prefix ='ecdbmap' />"
-                                                                     "   <ECEntityClass typeName = 'IndexClass' >"
+                                                                     "   <ECEntityClass typeName = 'IndexClass' modifier='Sealed'>"
                                                                      "       <ECCustomAttributes>"
                                                                      "       <DbIndexList xmlns='ECDbMap.02.00'>"
                                                                      "           <Indexes>"
@@ -2725,7 +2880,7 @@ TEST_F(IndexTests, UserDefinedUniqueIndex)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("ecdbmapindextest.ecdb", SchemaItem("<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"ts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.0\">"
                                                                      "   <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
-                                                                     "<ECEntityClass typeName='IndexClass2' >"
+                                                                     "<ECEntityClass typeName='IndexClass2' modifier='Sealed'>"
                                                                      "   <ECCustomAttributes>"
                                                                      "       <DbIndexList xmlns='ECDbMap.02.00'>"
                                                                      "           <Indexes>"
@@ -2765,6 +2920,273 @@ TEST_F(IndexTests, UserDefinedUniqueIndex)
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     sqlCmd = stmt.GetValueText(4);
     ASSERT_TRUE(sqlCmd.find("UNIQUE") == std::string::npos);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, DuplicateUserDefinedIndexes)
+    {
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Sealed">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and definition on same class";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Sealed">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and different definition on same class";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Sealed">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                  <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and different definition on same class";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="Sub" >
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Cost</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <BaseClass>Base</BaseClass>
+                        <ECProperty propertyName="Cost" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name and different definition in subclass";
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("DuplicateUserDefinedIndexes.ecdb", SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="A" modifier="Sealed">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml")));
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="B" modifier="Sealed">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Name</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name already exists";
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="B" modifier="Sealed">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>AnotherIndex</Name>
+                                    <IsUnique>False</IsUnique>
+                                    <Properties>
+                                        <string>Name</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Name" typeName="string" />
+                    </ECEntityClass>
+                    <ECEntityClass typeName="C"modifier="Sealed" >
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>AnotherIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Cost</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Cost" typeName="double" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Two indexes with same name in same schema";
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("DuplicateUserDefinedIndexes.ecdb", SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Base" modifier="Abstract">
+                        <ECCustomAttributes>
+                            <ClassMap xmlns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Type</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <ECProperty propertyName="Type" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml")));
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(
+                R"xml(<?xml version="1.0" encoding="utf-8"?>
+                <ECSchema schemaName="TestSchema2" alias="ts2" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECSchemaReference name="TestSchema" version="01.00" alias="ts" />
+                    <ECEntityClass typeName="Sub" modifier="Sealed">
+                        <ECCustomAttributes>
+                            <DbIndexList xmlns="ECDbMap.02.00">
+                                 <Indexes>
+                                    <DbIndex>
+                                    <Name>MyFunnyIndex</Name>
+                                    <IsUnique>True</IsUnique>
+                                    <Properties>
+                                        <string>Cost</string>
+                                    </Properties>
+                                 </DbIndex>
+                                 </Indexes>
+                               </DbIndexList>
+                            </ECCustomAttributes>
+                        <BaseClass>TestSchema:Base</BaseClass>
+                        <ECProperty propertyName="Cost" typeName="int" />
+                    </ECEntityClass>
+                </ECSchema>)xml"))) << "Index with same name already exists in same table";
+            }
     }
 
 //---------------------------------------------------------------------------------------

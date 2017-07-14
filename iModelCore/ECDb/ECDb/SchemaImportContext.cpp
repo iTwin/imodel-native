@@ -14,23 +14,11 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //*************************************************************************************
 // SchemaImportContext
 //*************************************************************************************
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   07/2015
 //---------------------------------------------------------------------------------------
 ClassMappingCACache const* SchemaImportContext::GetClassMappingCACache(ECClassCR ecclass) const
-    {
-    return GetClassMappingCACacheP(ecclass);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan       06/2017
-//--------------------------------------------------------------------------------------
-SchemaImportContext::SchemaImportContext(SchemaManager::SchemaImportOptions options) :m_relCol(new RelationshipClassEndTableMapperCollection(*this)), m_options(options) {}
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-ClassMappingCACache* SchemaImportContext::GetClassMappingCACacheP(ECClassCR ecclass) const
     {
     auto it = m_classMappingCACache.find(&ecclass);
     if (it != m_classMappingCACache.end())
@@ -46,15 +34,6 @@ ClassMappingCACache* SchemaImportContext::GetClassMappingCACacheP(ECClassCR eccl
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan       06/2017
-//---------------------------------------------------------------------------------------
-ClassMappingStatus SchemaImportContext::MapNavigationProperty(NavigationPropertyMap& navPropMap) { return m_relCol->Map(navPropMap); }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Affan.Khan       06/2017
-//---------------------------------------------------------------------------------------
-ClassMappingStatus SchemaImportContext::FinishEndTableMapping() { return m_relCol->FinishMapping(); }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   08/2015
 //---------------------------------------------------------------------------------------
 void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMappingInfo>& info)
@@ -62,7 +41,15 @@ void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::uniqu
     m_classMappingInfoCache[&classMap] = std::move(info);
 
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-        m_relCol->RegisterContext(classMap.GetAs<RelationshipClassEndTableMap>());
+        {
+        ECN::ECClassCP rootClass = DbMappingManager::Classes::GetRootClass(classMap.GetClass());
+        BeAssert(rootClass != nullptr);
+        ECClassId rootClassId = rootClass->GetId();
+        if (m_fkRelInfos.Contains(rootClassId))
+            return;
+
+        m_fkRelInfos.Add(*this, classMap.GetAs<RelationshipClassEndTableMap>(), rootClassId);
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -81,6 +68,7 @@ bool SchemaImportContext::CacheFkConstraintCA(ECN::NavigationECPropertyCR navPro
     m_fkConstraintCACache[relClassId] = ca;
     return true;
     }
+
 
 //****************************************************************************************** 
 //ECSchemaCompareContext

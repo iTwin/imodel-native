@@ -310,7 +310,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
             return ERROR;
         }
 
-    if (ctx.FinishEndTableMapping() != ClassMappingStatus::Success)
+    if (SUCCESS != DbMappingManager::FkRelationships::FinishMapping(ctx))
         return ERROR;
 
     PERFLOG_FINISH("ECDb", "Schema import> Map relationships");
@@ -318,7 +318,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
     ctx.SetPhase(SchemaImportContext::Phase::CreatingUserDefinedIndexes);
     for (auto& kvpair : ctx.GetClassMappingInfoCache())
         {
-        if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(ctx, kvpair.second->GetIndexInfos()))
+        if (SUCCESS != DbMappingManager::Classes::MapUserDefinedIndexes(ctx, *kvpair.first))
             return ERROR;
         }
 
@@ -423,7 +423,7 @@ BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
     int nUpdated = 0;
     int nWasUpToDate = 0;
 
-    for (DbTable const* table : GetDbSchemaR().GetCachedTables())
+    for (DbTable const* table : GetDbSchema().Tables().GetTablesInDependencyOrder())
         {
         const DbSchemaPersistenceManager::CreateOrUpdateTableResult result = DbSchemaPersistenceManager::CreateOrUpdateTable(m_ecdb, *table);
         switch (result)
@@ -449,7 +449,7 @@ BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
             }
         }
 
-    LOG.debugv("Created %d tables, updated %d tables, and %d tables were up-to-date.", nCreated, nUpdated, nWasUpToDate);
+    LOG.debugv("Schema Import>CreateOrUpdateRequiredTables> Created %d tables, updated %d tables, and %d tables were up-to-date.", nCreated, nUpdated, nWasUpToDate);
     return SUCCESS;
     }
 
@@ -458,115 +458,124 @@ BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
     {
-    std::vector<DbIndex const*> indexes;
-    for (std::unique_ptr<DbIndex> const& indexPtr : m_dbSchema.GetIndexes())
+    if (SUCCESS != m_dbSchema.LoadIndexDefs())
+        return ERROR;
+
+    if (BE_SQLITE_OK != m_ecdb.ExecuteSql("DELETE FROM " TABLE_Index))
+        return ERROR;
+
+    bmap<Utf8String, DbIndex const*, CompareIUtf8Ascii> comparableIndexDefs;
+    bset<Utf8CP, CompareIUtf8Ascii> usedIndexNames;
+
+    for (DbTable const* table : m_dbSchema.Tables())
         {
-        indexes.push_back(indexPtr.get());
-        }
-
-    //replicate indexes for other tables to which subclasses map (only for non-unique indexes or for unique indexes if no more than one non-virtual table is involved)
-    IndexMappingInfoCache indexInfoCache(m_ecdb, ctx);
-    for (DbIndex const* index : indexes)
-        {
-        const ECClassId classId = index->GetClassId();
-        if (!classId.IsValid())
-            continue;
-
-        ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId);
-        if (ecClass == nullptr)
+        for (std::unique_ptr<DbIndex> const& indexPtr : table->GetIndexes())
             {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        ClassMap const* classMap = nullptr;
-        if (SUCCESS != TryGetClassMap(classMap, ctx.GetClassMapLoadContext(), *ecClass))
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        StorageDescription const& storageDesc = classMap->GetStorageDescription();
-        if (index->GetIsUnique() && storageDesc.HasMultipleNonVirtualHorizontalPartitions())
-            {
-            Issues().Report("Failed to map ECClass '%s'. The unique index '%s' defined on it spans multiple tables which is not supported. Consider applying the 'TablePerHierarchy' strategy to the ECClass.",
-                            ecClass->GetFullName(), index->GetName().c_str());
-            return ERROR;
-            }
-
-        std::vector<IndexMappingInfoPtr> const* baseClassIndexInfos = nullptr;
-        if (SUCCESS != indexInfoCache.TryGetIndexInfos(baseClassIndexInfos, *classMap))
-            return ERROR;
-
-        BeAssert(baseClassIndexInfos != nullptr);
-
-        DbTable const& indexTable = index->GetTable();
-        for (Partition const& horizPartition : storageDesc.GetHorizontalPartitions())
-            {
-            if (&indexTable == &horizPartition.GetTable())
-                continue;
-
-            bset<DbTable const*> alreadyProcessedTables;
-            //table of index doesn't need to be processed again either, so put it in the set, too
-            alreadyProcessedTables.insert(&indexTable);
-
-            bset<ECClassId> horizPartitionClassIds;
-            horizPartitionClassIds.insert(horizPartition.GetClassIds().begin(), horizPartition.GetClassIds().end());
-            for (ECClassId derivedClassId : horizPartition.GetClassIds())
+            DbIndex const& index = *indexPtr;
+            if (index.GetColumns().empty())
                 {
-                ECClassCP derivedClass = m_ecdb.Schemas().GetClass(derivedClassId);
-                if (derivedClass == nullptr)
-                    {
-                    BeAssert(false);
-                    return ERROR;
-                    }
-
-                bool needsSeparateIndex = true;
-                for (ECClassCP baseClass : derivedClass->GetBaseClasses())
-                    {
-                    //if derivedClass is a subclass of another class of this horiz partition
-                    //we will not create an index for it. Indexes apply to subclasses implicitly, so 
-                    //no need to create a separate index per subclass
-                    if (horizPartitionClassIds.find(baseClass->GetId()) != horizPartitionClassIds.end())
-                        {
-                        needsSeparateIndex = false;
-                        break;
-                        }
-                    }
-                
-                if (!needsSeparateIndex)
-                    continue;
-
-                ClassMap const* derivedClassMap = nullptr;
-                if (SUCCESS != TryGetClassMap(derivedClassMap, ctx.GetClassMapLoadContext(), *derivedClass))
-                    {
-                    BeAssert(false);
-                    return ERROR;
-                    }
-
-                DbTable const& joinedOrSingleTable = derivedClassMap->GetJoinedOrPrimaryTable();
-                if (alreadyProcessedTables.find(&joinedOrSingleTable) != alreadyProcessedTables.end())
-                    continue;
-
-                std::vector<IndexMappingInfoPtr> indexMappingInfos;
-                for (IndexMappingInfoPtr const& indexMappingInfo : *baseClassIndexInfos)
-                    {
-                    Utf8String indexName;
-                    if (!indexMappingInfo->GetName().IsNull())
-                        indexName.append(indexMappingInfo->GetName().Value()).append("_").append(joinedOrSingleTable.GetName());
-
-                    indexMappingInfos.push_back(IndexMappingInfo::Clone(Nullable<Utf8String>(indexName), *indexMappingInfo));
-                    }
-
-                if (SUCCESS != derivedClassMap->CreateUserProvidedIndexes(ctx, indexMappingInfos))
-                    return ERROR;
-
-                alreadyProcessedTables.insert(&joinedOrSingleTable);
+                BeAssert(false && "Index definition is not valid");
+                return ERROR;
                 }
+
+            if (!index.IsAutoGenerated() && index.HasClassId())
+                {
+                ECClassCP ecClass = m_ecdb.Schemas().GetClass(index.GetClassId());
+                if (ecClass == nullptr)
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
+
+                ClassMap const* classMap = nullptr;
+                if (SUCCESS != TryGetClassMap(classMap, ctx.GetClassMapLoadContext(), *ecClass))
+                    {
+                    BeAssert(false);
+                    return ERROR;
+                    }
+
+                StorageDescription const& storageDesc = classMap->GetStorageDescription();
+                if (storageDesc.HasMultipleNonVirtualHorizontalPartitions())
+                    {
+                    Issues().Report("Failed to map ECClass '%s'. The index '%s' defined on it spans multiple tables which is not supported. Consider applying the 'TablePerHierarchy' strategy to the ECClass.",
+                                    ecClass->GetFullName(), index.GetName().c_str());
+                    return ERROR;
+                    }
+                }
+
+            if (usedIndexNames.find(index.GetName().c_str()) != usedIndexNames.end())
+                {
+                Issues().Report("Failed to create index %s on table %s. An index with the same name already exists.", index.GetName().c_str(), index.GetTable().GetName().c_str());
+                return ERROR;
+                }
+            else
+                usedIndexNames.insert(index.GetName().c_str());
+
+            //indexes on virtual tables are ignored
+            if (index.GetTable().GetType() != DbTable::Type::Virtual)
+                {
+                Utf8String ddl, comparableIndexDef;
+                if (SUCCESS != DbSchemaPersistenceManager::BuildCreateIndexDdl(ddl, comparableIndexDef, m_ecdb, index))
+                    return ERROR;
+
+                auto it = comparableIndexDefs.find(comparableIndexDef);
+                if (it != comparableIndexDefs.end())
+                    {
+                    Utf8CP errorMessage = "Index '%s'%s on table '%s' has the same definition as the already existing index '%s'%s. ECDb does not create this index.";
+
+                    Utf8String provenanceStr;
+                    if (index.HasClassId())
+                        {
+                        ECClassCP provenanceClass = m_ecdb.Schemas().GetClass(index.GetClassId());
+                        if (provenanceClass == nullptr)
+                            {
+                            BeAssert(false);
+                            return ERROR;
+                            }
+                        provenanceStr.Sprintf(" [Created for ECClass %s]", provenanceClass->GetFullName());
+                        }
+
+                    DbIndex const* existingIndex = it->second;
+                    Utf8String existingIndexProvenanceStr;
+                    if (existingIndex->HasClassId())
+                        {
+                        ECClassCP provenanceClass = m_ecdb.Schemas().GetClass(existingIndex->GetClassId());
+                        if (provenanceClass == nullptr)
+                            {
+                            BeAssert(false);
+                            return ERROR;
+                            }
+                        existingIndexProvenanceStr.Sprintf(" [Created for ECClass %s]", provenanceClass->GetFullName());
+                        }
+
+                    if (!index.IsAutoGenerated())
+                        LOG.warningv(errorMessage, index.GetName().c_str(), provenanceStr.c_str(), index.GetTable().GetName().c_str(),
+                                     existingIndex->GetName().c_str(), existingIndexProvenanceStr.c_str());
+                    else
+                        {
+                        if (LOG.isSeverityEnabled(NativeLogging::LOG_DEBUG))
+                            LOG.debugv(errorMessage,
+                                       index.GetName().c_str(), provenanceStr.c_str(), index.GetTable().GetName().c_str(),
+                                       existingIndex->GetName().c_str(), existingIndexProvenanceStr.c_str());
+                        }
+
+                    continue;
+                    }
+
+                comparableIndexDefs[comparableIndexDef] = &index;
+
+                if (SUCCESS != DbSchemaPersistenceManager::CreateOrReplaceIndex(m_ecdb, index, ddl))
+                    return ERROR;
+                }
+
+            //populates the ec_Index table (even for indexes on virtual tables, as they might be necessary
+            //if further schema imports introduce subclasses of abstract classes (which map to virtual tables))
+            if (SUCCESS != m_dbSchema.PersistIndexDef(index))
+                return ERROR;
             }
         }
 
-    return m_dbSchema.CreateOrUpdateIndexes();
+    return SUCCESS;
     }
 
 //----------------------------------------------------------------------------------------
@@ -609,9 +618,9 @@ BentleyStatus DbMap::PurgeOrphanTables() const
         return ERROR;
         }
 
-    for (Utf8StringCR table : tablesToDrop)
+    for (Utf8StringCR tableName : tablesToDrop)
         {
-        GetDbSchema().RemoveCacheTable(table);
+        GetDbSchema().Tables().Remove(tableName);
         }
 
     stmt.Finalize();
@@ -777,7 +786,7 @@ BentleyStatus DbMap::SaveDbSchema(SchemaImportContext& ctx) const
 void DbMap::ClearCache() const
     {
     m_classMapDictionary.clear();
-    m_dbSchema.Reset();
+    m_dbSchema.ClearCache();
     m_lightweightCache.Reset();
     }
 

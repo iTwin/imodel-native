@@ -3921,6 +3921,335 @@ TEST_F(RelationshipMappingTestFixture, PhysicalForeignKeyWithoutTph)
     stmt.Finalize();
     }
 
+
+//-------------------------------------------------------------------------------------- 
+// @bsimethod                                 Krischan.Eberle                       07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, UpgradeModifierFromSealed)
+    {
+    //*** Physical FK
+        {
+            Utf8CP schema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="%s">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
+                    <Class class ="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                    <Class class ="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+        Utf8String schemaV1;
+        schemaV1.Sprintf(schema, "Sealed");
+
+        ASSERT_EQ(SUCCESS, SetupECDb("UpgradeModifierFromSealed.ecdb", SchemaItem(schemaV1))) << "Rel is sealed";
+
+        Utf8String schemaV2;
+        schemaV2.Sprintf(schema, "Abstract");
+        EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Abstract";
+
+        schemaV2.Sprintf(schema, "None");
+        EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to None should fail because RelECClassId would have to be added";
+        }
+
+        //*** Logical FK
+        {
+        Utf8CP schema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="%s">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
+                    <Class class ="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                    <Class class ="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+        Utf8String schemaV1;
+        schemaV1.Sprintf(schema, "Sealed");
+
+        ASSERT_EQ(SUCCESS, SetupECDb("UpgradeModifierFromSealed.ecdb", SchemaItem(schemaV1))) << "Rel is sealed";
+
+        Utf8String schemaV2;
+        schemaV2.Sprintf(schema, "Abstract");
+        EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Abstract";
+
+        schemaV2.Sprintf(schema, "None");
+        EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to None should fail because RelECClassId would have to be added";
+        }
+
+        //*** Link Table
+        {
+        Utf8CP schema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="%s">
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
+                    <Class class ="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                    <Class class ="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+        Utf8String schemaV1;
+        schemaV1.Sprintf(schema, "Sealed");
+
+        ASSERT_EQ(SUCCESS, SetupECDb("UpgradeModifierFromSealed.ecdb", SchemaItem(schemaV1))) << "Rel is sealed";
+
+        Utf8String schemaV2;
+        schemaV2.Sprintf(schema, "Abstract");
+        EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Abstract never supported";
+
+        schemaV2.Sprintf(schema, "None");
+        EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaV2)));
+        }
+    }
+
+//-------------------------------------------------------------------------------------- 
+// @bsimethod                                 Krischan.Eberle                       07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, UpgradeModifierFromNone)
+    {
+        //*** Physical FK
+                {
+                Utf8CP schema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="%s">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
+                    <Class class ="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                    <Class class ="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+                Utf8String schemaV1;
+                schemaV1.Sprintf(schema, "None");
+
+                ASSERT_EQ(SUCCESS, SetupECDb("UpgradeModifierFromNone.ecdb", SchemaItem(schemaV1))) << "None";
+
+                Utf8String schemaV2;
+                schemaV2.Sprintf(schema, "Abstract");
+                EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Abstract";
+
+                schemaV2.Sprintf(schema, "Sealed");
+                EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Sealed should fail because RelECClassId is no longer needed";
+                }
+
+                //*** Logical FK
+                {
+                Utf8CP schema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="%s">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
+                    <Class class ="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                    <Class class ="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+                Utf8String schemaV1;
+                schemaV1.Sprintf(schema, "None");
+
+                ASSERT_EQ(SUCCESS, SetupECDb("UpgradeModifierFromNone.ecdb", SchemaItem(schemaV1))) << "Rel is sealed";
+
+                Utf8String schemaV2;
+                schemaV2.Sprintf(schema, "Abstract");
+                EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Abstract";
+
+                schemaV2.Sprintf(schema, "Sealed");
+                EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Sealed should fail because RelECClassId is no longer needed";
+                }
+
+                //*** Link Table
+                {
+                Utf8CP schema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="%s">
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
+                    <Class class ="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                    <Class class ="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+                Utf8String schemaV1;
+                schemaV1.Sprintf(schema, "None");
+
+                ASSERT_EQ(SUCCESS, SetupECDb("UpgradeModifierFromNone.ecdb", SchemaItem(schemaV1))) << "Rel is sealed";
+
+                Utf8String schemaV2;
+                schemaV2.Sprintf(schema, "Abstract");
+                EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Abstract never supported";
+
+                schemaV2.Sprintf(schema, "Sealed");
+                EXPECT_EQ(SUCCESS, GetHelper().ImportSchema(SchemaItem(schemaV2)));
+                }
+        }
+
+
+//-------------------------------------------------------------------------------------- 
+// @bsimethod                                 Krischan.Eberle                       07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, UpgradeModifierFromAbstract)
+    {
+    //*** Physical FK
+            {
+            Utf8CP schema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward">
+                    <ECCustomAttributes>
+                        <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+                    </ECCustomAttributes>
+                </ECNavigationProperty>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="%s">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
+                    <Class class ="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                    <Class class ="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+            Utf8String schemaV1;
+            schemaV1.Sprintf(schema, "Abstract");
+
+            ASSERT_EQ(SUCCESS, SetupECDb("UpgradeModifierFromAbstract.ecdb", SchemaItem(schemaV1))) << "None";
+
+            Utf8String schemaV2;
+            schemaV2.Sprintf(schema, "None");
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "To None: Upgrading from Abstract is generally not supported";
+
+            schemaV2.Sprintf(schema, "Sealed");
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Sealed should fail because RelECClassId is no longer needed";
+            }
+
+            //*** Logical FK
+            {
+            Utf8CP schema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+                <ECNavigationProperty propertyName="A" relationshipName="AHasB" direction="Backward"/>
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="%s">
+                <Source multiplicity="(0..1)" polymorphic="True" roleLabel="A">
+                    <Class class ="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                    <Class class ="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+            Utf8String schemaV1;
+            schemaV1.Sprintf(schema, "Abstract");
+
+            ASSERT_EQ(SUCCESS, SetupECDb("UpgradeModifierFromAbstract.ecdb", SchemaItem(schemaV1))) << "Rel is sealed";
+
+            Utf8String schemaV2;
+            schemaV2.Sprintf(schema, "None");
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "To None: Upgrading from Abstract is generally not supported";
+
+            schemaV2.Sprintf(schema, "Sealed");
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "Upgrading to Sealed should fail because RelECClassId is no longer needed";
+            }
+
+            //*** Link Table
+            {
+            Utf8CP schema = R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="A">
+                <ECProperty propertyName="Price" typeName="double" />
+            </ECEntityClass>
+            <ECEntityClass typeName="B">
+                <ECProperty propertyName="Name" typeName="string" />
+            </ECEntityClass>
+            <ECRelationshipClass typeName="AHasB" strength="Referencing" modifier="%s">
+                <Source multiplicity="(0..*)" polymorphic="True" roleLabel="A">
+                    <Class class ="A" />
+                </Source>
+                <Target multiplicity="(0..*)" polymorphic="True" roleLabel="B">
+                    <Class class ="B" />
+                </Target>
+            </ECRelationshipClass>
+        </ECSchema>)xml";
+
+            Utf8String schemaV1;
+            schemaV1.Sprintf(schema, "Abstract");
+
+            ASSERT_EQ(SUCCESS, SetupECDb("UpgradeModifierFromAbstract.ecdb", SchemaItem(schemaV1))) << "Rel is sealed";
+
+            Utf8String schemaV2;
+            schemaV2.Sprintf(schema, "None");
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "To None: Upgrading from Abstract is generally not supported";
+
+            schemaV2.Sprintf(schema, "Sealed");
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(schemaV2))) << "To Sealed: Upgrading from Abstract is generally not supported";
+            }
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Zaighum                  02/16
 //+---------------+---------------+---------------+---------------+---------------+------
