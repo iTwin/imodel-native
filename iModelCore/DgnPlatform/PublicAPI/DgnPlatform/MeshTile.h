@@ -1057,6 +1057,7 @@ struct IGetTileTreeForPublishing
 {
     virtual ClipVectorPtr       _GetPublishingClip () const { return nullptr; }
     virtual TileTree::RootCPtr  _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const = 0;
+    virtual BentleyStatus       _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return ERROR; }
 
 };  // IGetTileTreeForPublishing
 

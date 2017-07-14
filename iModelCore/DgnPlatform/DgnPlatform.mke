@@ -363,6 +363,8 @@ $(CoreObjs)ExternalReference$(oext) :               $(DgnCoreDir)ExternalReferen
 
 $(CoreObjs)RevisionComparisonViewController$(oext): $(DgnCoreDir)RevisionComparisonViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
+$(CoreObjs)ModelSpatialClassifier$(oext) :                 $(DgnCoreDir)ModelSpatialClassifier.cpp $(DgnPlatformAPISrc)ModelSpatialClassifier.h  ${MultiCompileDepends}
+
 # NEEDSWORK: disabling this until we can settle schema issues
 #
 #$(CoreObjs)DimensionStyle$(oext) :                  $(DgnCoreDir)Dimension/DimensionStyle.cpp $(DgnPlatformAPISrc)Dimension/Dimension.h ${MultiCompileDepends}
@@ -376,6 +378,7 @@ $(o)ECUtils$(oext) :                                $(DgnCoreDir)ECUtils.cpp $(D
 $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.cpp $(DgnPlatformAPISrc)RenderMaterial.h ${MultiCompileDepends}
 
 $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
+
 
 #----------------------------------------------------------------------
 #   DgnBRep

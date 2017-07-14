@@ -752,11 +752,7 @@ PublisherContext::Status TilePublisher::Publish()
     
     static double s_minClassHeight = 1.0E3;
 
-    if (m_tile.DoVectorTiles())
-        {
-        WriteVector(outputFile, publishableGeometry);
-        }
-    else if (publishableGeometry.Parts().empty())
+    if (publishableGeometry.Parts().empty())
         {
         BeAssert (publishableGeometry.PointClouds().empty() || publishableGeometry.Meshes().empty());   // We don't expect point clouds with meshes (although these could be handled as a composite if necessary).
         if (!publishableGeometry.PointClouds().empty())
@@ -782,7 +778,6 @@ PublisherContext::Status TilePublisher::Publish()
         FWriteValue(compositeSize, outputFile);
         }
     std::fclose(outputFile);
-
 
     return PublisherContext::Status::Success;
     }
