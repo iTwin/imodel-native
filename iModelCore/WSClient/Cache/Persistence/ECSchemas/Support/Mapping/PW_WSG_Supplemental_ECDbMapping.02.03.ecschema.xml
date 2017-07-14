@@ -6,7 +6,7 @@
         <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.12">
             <PrimarySchemaName>PW_WSG</PrimarySchemaName>
             <PrimarySchemaMajorVersion>2</PrimarySchemaMajorVersion>
-            <PrimarySchemaMinorVersion>2</PrimarySchemaMinorVersion>
+            <PrimarySchemaMinorVersion>3</PrimarySchemaMinorVersion>
             <Precedence>10</Precedence>
             <Purpose>ECDbMapping</Purpose>
             <IsUserSpecific>False</IsUserSpecific>
