@@ -228,10 +228,20 @@ BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadConte
     if (SupplementedSchemaStatus::Success != builder.UpdateSchema(schema, supplSchemas))
         return ERROR;
 
+    if (!schema.IsSupplemented())
+        {
+        LOG.errorv(
+            "Failed to supplement schema. Check if supplemental schema '%s' is properly configured for schema '%s'.",
+            supplName.c_str(),
+            schema.GetFullSchemaName().c_str());
+        return SUCCESS;
+        }
+
     LOG.warningv(
-        "Adjustements for server schema '%s' were applied due to compatibility issues to 06xx ECv3 ECDb. "
+        "Adjustements for server schema '%s' were applied due to compatibility issues to 06xx ECv3 ECDb by supplementing with '%s'. "
         "Some data may not be possible to cache - consider verifying required functionality.",
-        schema.GetFullSchemaName().c_str());
+        schema.GetFullSchemaName().c_str(),
+        supplName.c_str());
 
     return SUCCESS;
     }

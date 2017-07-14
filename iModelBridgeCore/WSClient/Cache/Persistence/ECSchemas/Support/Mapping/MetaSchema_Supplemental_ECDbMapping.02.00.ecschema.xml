@@ -5,7 +5,7 @@
     <ECCustomAttributes>
         <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.12">
             <PrimarySchemaName>MetaSchema</PrimarySchemaName>
-            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMajorVersion>2</PrimarySchemaMajorVersion>
             <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
             <Precedence>10</Precedence>
             <Purpose>ECDbMapping</Purpose>
