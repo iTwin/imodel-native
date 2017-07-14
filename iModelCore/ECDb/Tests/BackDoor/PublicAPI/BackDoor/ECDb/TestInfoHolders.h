@@ -396,6 +396,8 @@ struct MapStrategyInfo
         bool Exists() const { return m_exists; }
         MapStrategy GetStrategy() const { return m_strategy; }
         TablePerHierarchyInfo const& GetTphInfo() const { return m_tphInfo; }
+
+        static Utf8CP MapStrategyToString(MapStrategy strat);
     };
 
 void PrintTo(MapStrategy, std::ostream*);
