@@ -159,7 +159,13 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! Will configure each request to validate TLS certificate depending on UrlProvider environment.
         //! @param serverUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough
-        WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) override;
+        //! @param prefix optional custom header prefix to use. Some services require different header format
+        WSCLIENT_EXPORT AuthenticationHandlerPtr GetAuthenticationHandler
+            (
+            Utf8StringCR serverUrl, 
+            IHttpHandlerPtr httpHandler = nullptr,
+            HeaderPrefix prefix = HeaderPrefix::Token
+            ) override;
 
         //! Get delegation token provider when signed in. Delegation tokens are short lived.
         //! Only use this if AuthenticationHandlerPtr cannot be used.

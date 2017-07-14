@@ -307,7 +307,12 @@ void ConnectSignInManager::SetUserSignOutHandler(std::function<void()> handler)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler)
+AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler
+(
+Utf8StringCR serverUrl,
+IHttpHandlerPtr httpHandler,
+HeaderPrefix prefix
+)
     {
     BeMutexHolder lock(m_cs);
 
@@ -315,7 +320,14 @@ AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8Stri
     Utf8String rpUri = "https://connect-wsg20.bentley.com";
 
     auto handler = UrlProvider::GetSecurityConfigurator(httpHandler);
-    return std::make_shared<ConnectAuthenticationHandler>(serverUrl, GetTokenProvider(rpUri), handler);
+
+    return std::make_shared<ConnectAuthenticationHandler>
+        (
+        serverUrl,
+        GetTokenProvider(rpUri),
+        handler,
+        HeaderPrefix::Saml == prefix
+        );
     }
 
 /*--------------------------------------------------------------------------------------+
