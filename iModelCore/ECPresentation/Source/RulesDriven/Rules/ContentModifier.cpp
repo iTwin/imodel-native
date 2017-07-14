@@ -21,7 +21,8 @@ ContentModifier::ContentModifier() : m_schemaName(""), m_className("") {}
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifier::ContentModifier(Utf8String schemaName, Utf8String className)
-    : m_schemaName(schemaName), m_className(className), m_relatedProperties(), m_hiddenProperties(), m_calculatedProperties() {}
+    : m_schemaName(schemaName), m_className(className)
+    {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017
@@ -30,7 +31,7 @@ ContentModifier::ContentModifier(ContentModifierCR other)
     : CustomizationRule(other), m_className(other.m_className), m_schemaName(other.m_schemaName)
     {
     CommonTools::CopyRules(m_relatedProperties, other.m_relatedProperties);
-    CommonTools::CopyRules(m_hiddenProperties, other.m_hiddenProperties);
+    CommonTools::CopyRules(m_propertiesDisplaySpecification, other.m_propertiesDisplaySpecification);
     CommonTools::CopyRules(m_calculatedProperties, other.m_calculatedProperties);
     }
 
@@ -40,7 +41,7 @@ ContentModifier::ContentModifier(ContentModifierCR other)
 ContentModifier::~ContentModifier()
     {
     CommonTools::FreePresentationRules(m_relatedProperties);
-    CommonTools::FreePresentationRules(m_hiddenProperties);
+    CommonTools::FreePresentationRules(m_propertiesDisplaySpecification);
     CommonTools::FreePresentationRules(m_calculatedProperties);
     }
 
@@ -61,7 +62,8 @@ bool ContentModifier::_ReadXml(BeXmlNodeP xmlNode)
           m_className = "";
 
       CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(xmlNode, m_relatedProperties, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-      CommonTools::LoadSpecificationsFromXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList>(xmlNode, m_hiddenProperties, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+      CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(xmlNode, m_propertiesDisplaySpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+      CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(xmlNode, m_propertiesDisplaySpecification, DISPLAYED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
       BeXmlNodeP xmlPropertyNode = xmlNode->SelectSingleNode(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
       if (xmlPropertyNode)
           CommonTools::LoadSpecificationsFromXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(xmlPropertyNode, m_calculatedProperties, CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME);
@@ -79,7 +81,7 @@ void ContentModifier::_WriteXml(BeXmlNodeP parentXmlNode) const
     contentModifierNode->AddAttributeStringValue(CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str());
 
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(contentModifierNode, m_relatedProperties);
-    CommonTools::WriteRulesToXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList>(contentModifierNode, m_hiddenProperties);
+    CommonTools::WriteRulesToXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(contentModifierNode, m_propertiesDisplaySpecification);
     if (!m_calculatedProperties.empty())
         {
         BeXmlNodeP calculatedPropertiesNode = contentModifierNode->AddEmptyElement(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
@@ -120,14 +122,14 @@ RelatedPropertiesSpecificationList const& ContentModifier::GetRelatedProperties(
 RelatedPropertiesSpecificationList&  ContentModifier::GetRelatedPropertiesR()  {return m_relatedProperties;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                 05/2017
+* @bsimethod                                    Saulius.Skliutas                 07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-HiddenPropertiesSpecificationList const& ContentModifier::GetHiddenProperties() const {return m_hiddenProperties;}
+PropertiesDisplaySpecificationList const& ContentModifier::GetPropertiesDisplaySpecifications() const {return m_propertiesDisplaySpecification;}
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                 05/2017
+* @bsimethod                                    Saulius.Skliutas                 07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-HiddenPropertiesSpecificationList&  ContentModifier::GetHiddenPropertiesR() {return m_hiddenProperties;}
+PropertiesDisplaySpecificationList&  ContentModifier::GetPropertiesDisplaySpecificationsR() {return m_propertiesDisplaySpecification;}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017
