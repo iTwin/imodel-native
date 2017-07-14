@@ -8651,7 +8651,7 @@ TEST_F(SchemaUpgradeTestFixture, MultiSessionSchemaImport_TPH_Joined_OnDerivedCl
                 <ClassMap xmlns="ECDbMap.02.00">
                     <MapStrategy>TablePerHierarchy</MapStrategy>
                 </ClassMap>
-             <JoinedTablePerDirectSubclass xmlns = "ECDbMap.02.00" / >
+             <JoinedTablePerDirectSubclass xmlns = "ECDbMap.02.00" />
             </ECCustomAttributes>
             <BaseClass>ts1:TestClassA</BaseClass>
             <ECProperty propertyName='L2' typeName='double'/>
