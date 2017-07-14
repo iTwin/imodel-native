@@ -486,7 +486,6 @@ void Converter::Initialize(BentleyApi::BeFileNameCR libraryDir, BentleyApi::BeFi
     ConvertV8TextToDgnDbExtension::Register();
     ConvertV8TagToDgnDbExtension::Register();
     ConvertV8Lights::Register();
-    ConvertV8TextTableToDgnDbExtension::Register();
     ConvertThreeMxAttachment::Register();
     ConvertDetailingSymbolExtension::Register();
 

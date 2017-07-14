@@ -126,8 +126,6 @@ $(o)DgnV8Tags$(oext): $(baseDir)DgnV8Tags.cpp $(DgnV8Depends) $(DgnDbSyncDepends
 
 $(o)ConvertLights$(oext): $(baseDir)ConvertLights.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
-$(o)DgnV8TextTable$(oext): $(baseDir)DgnV8TextTable.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
-
 $(o)LinkConverter$(oext): $(baseDir)LinkConverter.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)DwgDgnV8Host$(oext): $(baseDir)DwgDgnV8Host.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}

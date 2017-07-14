@@ -2607,19 +2607,6 @@ struct ConvertV8TagToDgnDbExtension : ConvertToDgnDbElementExtension
 };
 
 //=======================================================================================
-// Handles conversion from DgnV8 TextTable element to DgnDb AnnotationTable.
-// @bsiclass
-//=======================================================================================
-struct ConvertV8TextTableToDgnDbExtension : ConvertToDgnDbElementExtension
-{
-    static void Register();
-    BisConversionRule _DetermineBisConversionRule(DgnV8EhCR v8eh, DgnDbR dgndb, bool isModel3d) override;
-    void _DetermineElementParams(DgnClassId&, DgnCode&, DgnCategoryId&, DgnV8EhCR, Converter&, ECObjectsV8::IECInstance const* primaryV8Instance, ResolvedModelMapping const&) override;
-    void _ProcessResults(ElementConversionResults&, DgnV8EhCR, ResolvedModelMapping const&, Converter&) override;
-    bool _GetBasisTransform(Bentley::Transform&, DgnV8EhCR, Converter&) override;
-};
-
-//=======================================================================================
 // A DgnV8 element handler. Exists only so it can be extended with ConverThreeMxAttachment
 // @bsiclass                                                    Keith.Bentley   04/16
 //=======================================================================================
