@@ -2351,7 +2351,13 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
     ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
     ASSERT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Foo", "Prop").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
     }
+    
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                     07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(IndexTests, UserDefinedIndexWhenSealedIsUpdatedToNone)
     {
     ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
@@ -2377,28 +2383,26 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
     ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
     ASSERT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Foo", "Prop").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
 
- /* TODO   ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
-        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-            <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
-            <ECEntityClass typeName="Foo" modifier="None">
-                <ECCustomAttributes>
-                    <DbIndexList xmlns="ECDbMap.02.00">
-                         <Indexes>
-                           <DbIndex>
-                               <IsUnique>False</IsUnique>
-                               <Name>ix_foo</Name>
-                               <Properties>
-                                  <string>Prop</string>
-                               </Properties>
-                           </DbIndex>
-                         </Indexes>
-                    </DbIndexList>
-                </ECCustomAttributes>
-                <ECProperty propertyName="Prop" typeName="int" />
-            </ECEntityClass>
-        </ECSchema>)xml"))) << "Class modifier changed from Sealed to None";
-        */
-    }
+    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="None">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <IsUnique>False</IsUnique>
+                                    <Name>ix_foo</Name>
+                                    <Properties>
+                                        <string>Prop</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"))) << "Class modifier changed from Sealed to None -> index should not be allowed anymore";
     }
 
 //---------------------------------------------------------------------------------------
