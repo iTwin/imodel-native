@@ -1,0 +1,53 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ECSchema schemaName="PW_WSG" nameSpacePrefix="bsca" version="02.03" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00" prefix="V2ToV3" />
+    <ECClass typeName="Set">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does deriving abstract from domain class -->
+          <ForceInstantiable xmlns="ECv3ConversionAttributes.01.00" />
+          <ForceEntityClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECClass>
+    <ECRelationshipClass typeName="ItemAddress">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SavedSearchParent">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SavedSearchDirectParent">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SavedSearchResult">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SpatialObjectLocation">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ItemState">
+        <ECCustomAttributes>
+            <!-- ECv3.1 does not support relationships with multiple unrelated classes at the ends -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ElementIdentifier">
+        <ECCustomAttributes>
+            <!-- ECDb does not property "Id" -->
+            <DropClass xmlns="ECv3ConversionAttributes.01.00" />
+        </ECCustomAttributes>
+    </ECRelationshipClass>
+</ECSchema>
