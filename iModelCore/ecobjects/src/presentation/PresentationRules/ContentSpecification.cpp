@@ -33,7 +33,7 @@ ContentSpecification::ContentSpecification(ContentSpecificationCR other)
     : m_priority(other.m_priority), m_showImages(other.m_showImages)
     {
     CommonTools::CopyRules(m_relatedPropertiesSpecification, other.m_relatedPropertiesSpecification);
-    CommonTools::CopyRules(m_hiddenPropertiesSpecification, other.m_hiddenPropertiesSpecification);
+    CommonTools::CopyRules(m_propertiesDisplaySpecification, other.m_propertiesDisplaySpecification);
     CommonTools::CopyRules(m_displayRelatedItemsSpecification, other.m_displayRelatedItemsSpecification);
     CommonTools::CopyRules(m_calculatedPropertiesSpecification, other.m_calculatedPropertiesSpecification);
     }
@@ -44,7 +44,7 @@ ContentSpecification::ContentSpecification(ContentSpecificationCR other)
 ContentSpecification::~ContentSpecification ()
     {
     CommonTools::FreePresentationRules (m_relatedPropertiesSpecification);
-    CommonTools::FreePresentationRules (m_hiddenPropertiesSpecification);
+    CommonTools::FreePresentationRules (m_propertiesDisplaySpecification);
     CommonTools::FreePresentationRules (m_displayRelatedItemsSpecification);
     CommonTools::FreePresentationRules (m_calculatedPropertiesSpecification);
     }
@@ -60,9 +60,10 @@ bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
 
     if (BEXML_Success != xmlNode->GetAttributeBooleanValue(m_showImages, CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES))
         m_showImages = false;
-    
+
     CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (xmlNode, m_relatedPropertiesSpecification, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-    CommonTools::LoadSpecificationsFromXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList> (xmlNode, m_hiddenPropertiesSpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (xmlNode, m_propertiesDisplaySpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (xmlNode, m_propertiesDisplaySpecification, DISPLAYED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     CommonTools::LoadSpecificationsFromXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (xmlNode, m_displayRelatedItemsSpecification, DISPLAYRELATEDITEMS_SPECIFICATION_XML_NODE_NAME);
     BeXmlNodeP xmlPropertyNode = xmlNode->SelectSingleNode(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     if (xmlPropertyNode)
@@ -82,7 +83,7 @@ void ContentSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
     specificationNode->AddAttributeBooleanValue(CONTENT_SPECIFICATION_XML_ATTRIBUTE_SHOWIMAGES, m_showImages);
 
     CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList> (specificationNode, m_relatedPropertiesSpecification);
-    CommonTools::WriteRulesToXmlNode<HiddenPropertiesSpecification, HiddenPropertiesSpecificationList> (specificationNode, m_hiddenPropertiesSpecification);
+    CommonTools::WriteRulesToXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList> (specificationNode, m_propertiesDisplaySpecification);
     CommonTools::WriteRulesToXmlNode<DisplayRelatedItemsSpecification, DisplayRelatedItemsSpecificationList> (specificationNode, m_displayRelatedItemsSpecification);
     if (!m_calculatedPropertiesSpecification.empty())
         {

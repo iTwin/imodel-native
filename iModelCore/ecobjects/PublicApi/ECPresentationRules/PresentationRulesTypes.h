@@ -49,7 +49,7 @@ EC_TYPEDEFS (StringQuerySpecification);
 EC_TYPEDEFS (ECPropertyValueQuerySpecification);
 EC_TYPEDEFS (ContentSpecification);
 EC_TYPEDEFS (RelatedPropertiesSpecification);
-EC_TYPEDEFS (HiddenPropertiesSpecification);
+EC_TYPEDEFS (PropertiesDisplaySpecification);
 EC_TYPEDEFS (CalculatedPropertiesSpecification);
 EC_TYPEDEFS (ContentInstancesOfSpecificClassesSpecification);
 EC_TYPEDEFS (ContentRelatedInstancesSpecification);
