@@ -645,7 +645,7 @@
 
     #### Creating database indexes on ECProperties
 
-        <ECEntityClass typeName="Person">
+        <ECEntityClass typeName="Person" modifier="Sealed">
             <ECCustomAttributes>
                 <DbIndexList xmlns="ECDbMap.02.00">
                     <Indexes>

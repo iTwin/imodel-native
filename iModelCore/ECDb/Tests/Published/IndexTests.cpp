@@ -2357,9 +2357,10 @@ TEST_F(IndexTests, UserDefinedNonUniqueIndexesOnNonTph)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                     07/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(IndexTests, UserDefinedIndexWhenSealedIsUpdatedToNone)
+TEST_F(IndexTests, UserDefinedIndexWhenClassModifierIsUpgraded)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
             <ECEntityClass typeName="Foo" modifier="Sealed">
@@ -2380,10 +2381,10 @@ TEST_F(IndexTests, UserDefinedIndexWhenSealedIsUpdatedToNone)
             </ECEntityClass>
         </ECSchema>)xml"))) << "index on sealed class";
 
-    ASSERT_TRUE(GetHelper().TableExists("ts_Foo"));
-    ASSERT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Foo", "Prop").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
+            EXPECT_TRUE(GetHelper().TableExists("ts_Foo"));
+            EXPECT_STRCASEEQ(IndexInfo("ix_foo", false, "ts_Foo", "Prop").ToDdl().c_str(), GetHelper().GetIndexDdl("ix_foo").c_str()) << "index on sealed class";
 
-    ASSERT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
             <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                 <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
                 <ECEntityClass typeName="Foo" modifier="None">
@@ -2403,6 +2404,67 @@ TEST_F(IndexTests, UserDefinedIndexWhenSealedIsUpdatedToNone)
                     <ECProperty propertyName="Prop" typeName="int" />
                 </ECEntityClass>
             </ECSchema>)xml"))) << "Class modifier changed from Sealed to None -> index should not be allowed anymore";
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="Abstract">
+                <ECProperty propertyName="Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "Abstract class w/o index";
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="Sealed">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <IsUnique>False</IsUnique>
+                                    <Name>ix_foo</Name>
+                                    <Properties>
+                                        <string>Prop</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"))) << "Class modifier changed from Abstract is generally not supported.";
+            }
+
+            {
+            ASSERT_EQ(SUCCESS, SetupECDb("UserDefinedIndexesOnNonTph.ecdb", SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="None">
+                <ECProperty propertyName="Prop" typeName="int" />
+            </ECEntityClass>
+        </ECSchema>)xml"))) << "Abstract class w/o index";
+
+            EXPECT_EQ(ERROR, GetHelper().ImportSchema(SchemaItem(R"xml(<?xml version="1.0" encoding="utf-8"?>
+            <ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                <ECEntityClass typeName="Foo" modifier="Sealed">
+                    <ECCustomAttributes>
+                        <DbIndexList xmlns="ECDbMap.02.00">
+                            <Indexes>
+                                <DbIndex>
+                                    <IsUnique>False</IsUnique>
+                                    <Name>ix_foo</Name>
+                                    <Properties>
+                                        <string>Prop</string>
+                                    </Properties>
+                                </DbIndex>
+                            </Indexes>
+                        </DbIndexList>
+                    </ECCustomAttributes>
+                    <ECProperty propertyName="Prop" typeName="int" />
+                </ECEntityClass>
+            </ECSchema>)xml"))) << "DbIndexes cannot be added during schema upgrade";
+            }
     }
 
 //---------------------------------------------------------------------------------------
