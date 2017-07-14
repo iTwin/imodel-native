@@ -2333,3 +2333,48 @@ TEST_F(iModelManagerTests, CodesStatesResponseTest)
     auto codeState = *response.CodeStates().begin();
     EXPECT_EQ(briefcase1->GetBriefcaseId(), codeState.GetReservedBy());
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas        07/2017
+//---------------------------------------------------------------------------------------
+/* WIP - uncomment with next DgnClientSDK build
+TEST_F(iModelManagerTests, CodeIdsTest)
+    {
+    //Prapare imodel and acquire briefcases
+    auto briefcase1 = AcquireBriefcase();
+    DgnDbR db1 = briefcase1->GetDgnDb();
+
+    CodeSpecPtr codeSpec1 = CodeSpec::Create(db1, "CodeSpec1");
+    auto partition1_1 = CreateAndInsertModeledElement("Model1-1", db1);
+    db1.SaveChanges();
+
+    // Create two codes
+    DgnCodeSet codeSet;
+    DgnCode code1 = DgnCode(codeSpec1->GetCodeSpecId(), codeSpec1->GetScopeElementId(*partition1_1), "PMP-0010");
+    codeSet.insert(code1);
+    BeSQLite::BeGuid codeGuid;
+    codeGuid.Create();
+    DgnCode code2 = DgnCode(codeSpec1->GetCodeSpecId(), codeGuid, "PMP-0020");
+    codeSet.insert(code2);
+
+    // Reserve codes
+    auto response = db1.BriefcaseManager().ReserveCodes(codeSet, IBriefcaseManager::ResponseOptions::CodeState);
+    EXPECT_EQ(RepositoryStatus::Success, response.Result());
+
+    LockableIdSet locks; 
+    DgnCodeSet codes;
+    codes.insert(code1);
+    codes.insert(code2);
+    auto result = briefcase1->GetiModelConnection().QueryCodesLocksById(codes, locks)->GetResult();
+    EXPECT_SUCCESS(result);
+
+    auto codeStatesIterator = result.GetValue().GetCodes().begin();
+    auto code1Result = *codeStatesIterator;
+    codeStatesIterator++;
+    auto code2Result = *codeStatesIterator;
+
+    // Check if scope requirements were properly parsed
+    EXPECT_EQ(DgnCode::ScopeRequirement::ElementId, code1Result.GetScopeRequirement());
+    EXPECT_EQ(DgnCode::ScopeRequirement::FederationGuid, code2Result.GetScopeRequirement());
+    }
+*/
