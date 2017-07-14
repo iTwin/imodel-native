@@ -32,5 +32,14 @@
     <ClCompile Include="StructuralMaterials\StructuralMaterialsDomain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="StructuralPhysicalSchema\StructuralPhysicalDomain.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralPhysicalSchema\StructuralPhysicalModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralPhysicalSchema\StructuralTypeDefinitionModel.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

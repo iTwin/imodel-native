@@ -1,0 +1,15 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: StructuralPhysicalSchema/StructuralPhysicalSchema.prewire.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+$(targetAPIDir)StructuralPhysical : $(_MakeFilePath)StructuralPhysicalSchema/PublicAPI/StructuralPhysical
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(targetSchemasDir)StructuralPhysical.ecschema.xml : $(_MakeFilePath)StructuralPhysicalSchema\EC3_Schemas\StructuralPhysical.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+    

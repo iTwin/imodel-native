@@ -16,6 +16,7 @@
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnModel.h>
 
+
 #ifdef __STRUCTURAL_DOMAIN_BUILD__
     #define CONCRETE_EXPORT EXPORT_ATTRIBUTE
 #else

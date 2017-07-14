@@ -14,6 +14,9 @@ CompileOptionsMki   = $(SrcRoot)DgnDomains/Structural/StructuralCompileOptions.m
 ConcreteSrc       = $(_MakeFilePath)ConcreteSchema/
 ConcretePublicApi = $(ConcreteSrc)PublicAPI/Concrete/
 
+StructPhysSrc       = $(_MakeFilePath)StructuralPhysicalSchema/
+StructPhysPublicApi = $(StructPhysSrc)PublicAPI/StructuralPhysical/
+
 StructMatSrc       = $(_MakeFilePath)StructuralMaterials/
 StructMatPublicApi = $(StructMatSrc)PublicAPI/StructuralMaterials/
 
@@ -54,6 +57,12 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 %include MultiCppCompileRule.mki
 
 $(o)ConcreteDomain$(oext) : $(ConcreteSrc)ConcreteDomain.cpp ${MultiCompileDepends} $(ConcretePublicApi)ConcreteDomain.h
+
+$(o)StructuralPhysicalDomain$(oext) : $(StructPhysSrc)StructuralPhysicalDomain.cpp ${MultiCompileDepends} $(StructPhysPublicApi)StructuralPhysicalDomain.h
+
+$(o)StructuralPhysicalModel$(oext) : $(StructPhysSrc)StructuralPhysicalModel.cpp ${MultiCompileDepends} $(StructPhysPublicApi)StructuralPhysicalModel.h
+
+$(o)StructuralTypeDefinitionModel$(oext) : $(StructPhysSrc)StructuralTypeDefinitionModel.cpp ${MultiCompileDepends} $(StructPhysPublicApi)StructuralTypeDefinitionModel.h
 
 $(o)StructuralMaterialsDomain$(oext) : $(StructMatSrc)StructuralMaterialsDomain.cpp ${MultiCompileDepends} $(StructMatPublicApi)StructuralMaterialsDomain.h
 

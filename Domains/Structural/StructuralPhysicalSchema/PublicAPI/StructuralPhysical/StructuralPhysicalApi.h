@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/StructuralDomain/StructuralDomainApi.h $
+|     $Source: StructuralPhysicalSchema/PublicAPI/StructuralPhysical/StructuralPhysicalApi.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,9 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 
-#include "Concrete\ConcreteApi.h"
-#include "StructuralPhysical\StructuralPhysicalApi.h"
-#include "StructuralMaterials\StructuralMaterialsApi.h"
-
-#include "StructuralDomainUtilities.h"
-
+#include "StructuralPhysicalDefinitions.h"
+#include "StructuralPhysicalDomain.h"
+#include "StructuralPhysicalModel.h"
+#include "StructuralTypeDefinitionModel.h"

@@ -26,6 +26,9 @@
     <ClCompile Include="StructuralDomainInternal.cpp" />
     <ClCompile Include="StructuralDomainUtilities.cpp" />
     <ClCompile Include="StructuralMaterials\StructuralMaterialsDomain.cpp" />
+    <ClCompile Include="StructuralPhysicalSchema\StructuralPhysicalDomain.cpp" />
+    <ClCompile Include="StructuralPhysicalSchema\StructuralPhysicalModel.cpp" />
+    <ClCompile Include="StructuralPhysicalSchema\StructuralTypeDefinitionModel.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7317B658-8A6E-4A68-857A-2DFA99B98479}</ProjectGuid>
@@ -110,7 +113,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_MBCS;%(PreprocessorDefinitions);__STRUCTURAL_DOMAIN_BUILD__;BENTLEY_WIN32;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SRCROOT)DgnDomains\Structural\ArchitecturalPhysicalSchema\PublicAPI\ArchitecturalPhysical;$(SRCROOT)DgnDomains\Structural\PublicAPI\StructuralDomain;$(SRCROOT)DgnDomains\Structural;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\VendorAPI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SRCROOT)DgnDomains\Structural\PublicAPI\StructuralDomain;$(SRCROOT)DgnDomains\Structural;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\VendorAPI;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <SDLCheck>true</SDLCheck>
     </ClCompile>
     <Link>
