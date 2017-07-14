@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Connect/IConnectAuthenticationProvider.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -20,13 +20,27 @@ USING_NAMESPACE_BENTLEY_HTTP
 struct EXPORT_VTABLE_ATTRIBUTE IConnectAuthenticationProvider
     {
     public:
+        //! Prefix to use in Authorization header
+        enum class HeaderPrefix
+            {
+            Token,
+            Saml
+            };
+
+    public:
         virtual ~IConnectAuthenticationProvider()
             {};
 
         //! Get authentication handler for specific service server
         //! @param serverUrl should contain server URL without any directories
         //! @param httpHandler optional custom HTTP handler to send all requests trough
-        virtual AuthenticationHandlerPtr GetAuthenticationHandler(Utf8StringCR serverUrl, IHttpHandlerPtr httpHandler = nullptr) = 0;
+        //! @param prefix optional custom header prefix to use. Some services require different header format
+        virtual AuthenticationHandlerPtr GetAuthenticationHandler
+            (
+            Utf8StringCR serverUrl,
+            IHttpHandlerPtr httpHandler = nullptr,
+            HeaderPrefix prefix = HeaderPrefix::Token
+            ) = 0;
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

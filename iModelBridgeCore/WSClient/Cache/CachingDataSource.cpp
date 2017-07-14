@@ -408,12 +408,18 @@ AsyncTaskPtr<CachingDataSource::Result> CachingDataSource::UpdateSchemas(ICancel
 
                 for (ObjectId schemaId : schemaIds)
                     {
-                    SchemaKey schemaKey = ReadSchemaKey(txn, schemaId);
-                    if (ECSchema::IsStandardSchema(schemaKey.m_schemaName) || schemaKey.m_schemaName == SCHEMA_MetaSchema)
+                    Json::Value schemaDef;
+                    if (CacheStatus::OK != txn.GetCache().ReadInstance(schemaId, schemaDef))
+                        {
+                        result->SetError(Status::InternalCacheError);
+                        return;
+                        }
+
+                    if (!IsServerSchemaSupported(schemaDef))
                         continue;
 
                     Utf8String eTag = txn.GetCache().ReadFileCacheTag(schemaId);
-                    TempFilePtr schemaFile = GetTempFileForSchema(schemaKey);
+                    TempFilePtr schemaFile = GetTempFileForSchema(ExtractSchemaKey(schemaDef));
 
                     temporaryFiles->push_back(schemaFile);
 
@@ -552,16 +558,24 @@ TempFilePtr CachingDataSource::GetTempFileForSchema(SchemaKeyCR schemaKey)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-SchemaKey CachingDataSource::ReadSchemaKey(CacheTransactionCR txn, ObjectIdCR schemaId)
+bool CachingDataSource::IsServerSchemaSupported(JsonValueCR schemaDef)
     {
-    Json::Value schemaDef;
-    if (CacheStatus::OK != txn.GetCache().ReadInstance(schemaId, schemaDef))
-        {
-        BeAssert(false && "ECSchemaDef should be cached before calling this functions");
-        return SchemaKey();
-        }
+    Utf8String name = schemaDef[CLASS_ECSchemaDef_PROPERTY_Name].asString();
+    Utf8String prefix = schemaDef[CLASS_ECSchemaDef_PROPERTY_NameSpacePrefix].asString();
 
-    return ExtractSchemaKey(schemaDef);
+    if (ECSchema::IsStandardSchema(name))
+        return false; // Avoid downgrading standard schemas. // TODO: import if standard schema version is higher than local, but not lower
+
+    if (name == SCHEMA_MetaSchema)
+        return false; // Use WSCacheMetaSchema instead
+
+    if (name == "Contents" && prefix == "rest_cnt")
+        return false; // Deprecated, incompatible schema
+
+    if (name == "Views" && prefix == "rest_view")
+        return false; // Deprecated, incompatible schema
+
+    return true;
     }
 
 /*--------------------------------------------------------------------------------------+
