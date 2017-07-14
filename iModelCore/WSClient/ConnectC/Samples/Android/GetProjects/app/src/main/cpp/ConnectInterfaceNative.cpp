@@ -155,7 +155,7 @@ int ConnectInterfaceNative::InsertPropertyIntoMap(CWSCCDATABUFHANDLE project, in
                 int status = ConnectWebServicesClientC_DataBufferGetDoubleProperty(m_apiHandle, project, propertyId, mapIndex, &val);
                 wchar_t stringBuf[4096];
                 memset(stringBuf, 0, 4096);
-                BeStringUtilities::Snwprintf(stringBuf, 4096, L"%0.7E", val);
+                BeStringUtilities::Snwprintf(stringBuf, 4096, L"%0.7G", val);
                 map->insert(std::make_pair ((int)propertyId, stringBuf));
                 break;
                 }
