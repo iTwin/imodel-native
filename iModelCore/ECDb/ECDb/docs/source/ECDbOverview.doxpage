@@ -252,7 +252,9 @@
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
         - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier"
-            - from @b Sealed to @b None
+            - from @b Sealed to @b None, but only if 
+                - the class is no ECRelationshipClass 
+                - the class is mapped as 'TablePerHierarchy'
             - from @b None to @b Sealed (for leaf classes only, of course)
 
     - @b ECProperties
