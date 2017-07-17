@@ -84,6 +84,8 @@ $(o)EventParser$(oext)                     : $(iModelHubClientMkiSourceDir)Event
 
 $(o)LockEvent$(oext)                       : $(iModelHubClientMkiSourceDir)Events/LockEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
+$(o)VersionEvent$(oext)                    : $(iModelHubClientMkiSourceDir)Events/VersionEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
 $(o)ChangeSetPostPushEvent$(oext)          : $(iModelHubClientMkiSourceDir)Events/ChangeSetPostPushEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ChangeSetPrePushEvent$(oext)           : $(iModelHubClientMkiSourceDir)Events/ChangeSetPrePushEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
