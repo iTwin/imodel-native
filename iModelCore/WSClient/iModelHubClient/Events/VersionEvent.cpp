@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <WebServices\iModelHub\Events\VersionEvent.h>
+#include <WebServices/iModelHub/Events/VersionEvent.h>
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 
