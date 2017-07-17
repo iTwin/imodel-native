@@ -80,7 +80,7 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
     ECSqlStatus status;
     if (exp.IsRowConstructor())
         {
-        sqlGenerator.Append("VALUES (");
+        sqlGenerator.Append("VALUES(");
         status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *exp.GetSelection(), referenceSelectClauseSqlSnippetCounts);
         if (!status.IsSuccess())
             return status;

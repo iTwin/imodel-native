@@ -101,6 +101,18 @@ void PropertyNameListExp::_ToECSql(ECSqlRenderContext& ctx) const
 
 
 //*************************** ValueListExp ******************************************
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+ValueExpListExp::ValueExpListExp(std::vector<std::unique_ptr<ValueExp>>& valueExpList) : ValueExpListExp()
+    {
+    for (std::unique_ptr<ValueExp>& valueExp : valueExpList)
+        {
+        AddValueExp(valueExp);
+        }
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------

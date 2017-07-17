@@ -274,7 +274,6 @@ struct Exp : NonCopyableClass
                     BeAssert(child == nullptr || dynamic_cast<TExp const*> (child) != nullptr);
                     return static_cast<TExp const*> (child);
                     }
-                std::unique_ptr<Exp>  Move(size_t i) { return std::move(m_collection[i]); }
 
                 bool Replace(Exp const& replacee, std::vector<std::unique_ptr<Exp>>& replaceWith);
 

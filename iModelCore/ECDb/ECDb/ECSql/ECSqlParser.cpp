@@ -118,14 +118,15 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::ParseSingleSelectStatement(std::unique_ptr<SingleSelectStatementExp>& exp, OSQLParseNode const* parseNode) const
     {
+    BeAssert(parseNode != nullptr);
     if (SQL_ISRULE(parseNode, values_or_query_spec))
         {
         //values_or_query_spec
-        std::unique_ptr<ValueExpListExp> valueExpList;
-        if (ParseRowValueConstructorCommalist(valueExpList, parseNode->getChild(2)) != SUCCESS)
+        std::vector<std::unique_ptr<ValueExp>> valueExpList;
+        if (SUCCESS != ParseValuesOrQuerySpec(valueExpList, *parseNode))
             return ERROR;
 
-        exp = std::unique_ptr<SingleSelectStatementExp>(new SingleSelectStatementExp(std::move(valueExpList)));
+        exp = std::make_unique<SingleSelectStatementExp>(valueExpList);
         return SUCCESS;
         }
 
@@ -279,12 +280,19 @@ BentleyStatus ECSqlParser::ParseInsertStatement(std::unique_ptr<InsertStatementE
     if (SUCCESS != stat)
         return stat;
 
-    std::unique_ptr<ValueExpListExp> valuesOrQuerySpecExp = nullptr;
-    stat = ParseValuesOrQuerySpec(valuesOrQuerySpecExp, parseNode.getChild(4));
+    OSQLParseNode const* valuesOrQuerySpecNode = parseNode.getChild(4);
+    if (valuesOrQuerySpecNode == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    std::vector<std::unique_ptr<ValueExp>> valueExpList;
+    stat = ParseValuesOrQuerySpec(valueExpList, *valuesOrQuerySpecNode);
     if (SUCCESS != stat)
         return stat;
 
-    insertExp = std::make_unique<InsertStatementExp>(classNameExp, insertPropertyNameListExp, valuesOrQuerySpecExp);
+    insertExp = std::make_unique<InsertStatementExp>(classNameExp, insertPropertyNameListExp, valueExpList);
     return SUCCESS;
     }
 
@@ -2019,26 +2027,31 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                04/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseRowValueConstructorCommalist(std::unique_ptr<ValueExpListExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseRowValueConstructorCommalist(std::vector<std::unique_ptr<ValueExp>>& valueExpList, OSQLParseNode const& parseNode) const
     {
-    if (!SQL_ISRULE(parseNode, row_value_constructor_commalist))
+    if (!SQL_ISRULE(&parseNode, row_value_constructor_commalist))
         {
         BeAssert(false && "Invalid grammar. Expecting row_value_constructor_commalist");
         return ERROR;
         }
 
-    std::unique_ptr<ValueExpListExp> valueListExp = std::make_unique<ValueExpListExp>();
-    const size_t childCount = parseNode->count();
+    const size_t childCount = parseNode.count();
     for (size_t i = 0; i < childCount; i++)
         {
+        OSQLParseNode const* childNode = parseNode.getChild(i);
+        if (childNode == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
         std::unique_ptr<ValueExp> valueExp = nullptr;
-        if (SUCCESS != ParseRowValueConstructor(valueExp, parseNode->getChild(i)))
+        if (SUCCESS != ParseRowValueConstructor(valueExp, childNode))
             return ERROR;
 
-        valueListExp->AddValueExp(valueExp);
+        valueExpList.push_back(std::move(valueExp));
         }
 
-    exp = std::move(valueListExp);
     return SUCCESS;
     }
 
@@ -2567,18 +2580,24 @@ BentleyStatus ECSqlParser::ParseValueExpCommalist(std::unique_ptr<ValueExpListEx
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseValuesOrQuerySpec(std::unique_ptr<ValueExpListExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>& valeExpList, OSQLParseNode const& parseNode) const
     {
-    if (!SQL_ISRULE(parseNode, values_or_query_spec))
+    if (!SQL_ISRULE(&parseNode, values_or_query_spec))
         {
         BeAssert(false && "Invalid grammar. Expecting values_or_query_spec");
         return ERROR;
         }
 
     //1st: VALUES, 2nd:(, 3rd: row_value_constructor_commalist, 4th:)
-    BeAssert(parseNode->count() == 4);
-    OSQLParseNode const* listNode = parseNode->getChild(2);
-    return ParseRowValueConstructorCommalist(exp, listNode);
+    BeAssert(parseNode.count() == 4);
+    OSQLParseNode const* listNode = parseNode.getChild(2);
+    if (listNode == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return ParseRowValueConstructorCommalist(valeExpList, *listNode);
     }
 
 //-----------------------------------------------------------------------------------------

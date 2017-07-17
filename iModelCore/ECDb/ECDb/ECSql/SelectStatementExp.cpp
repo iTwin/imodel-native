@@ -676,10 +676,10 @@ void SelectClauseExp::_ToECSql(ECSqlRenderContext& ctx) const
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp> optionsExp)
-    : QueryExp(Type::SingleSelect), m_selectionType(selectionType), m_whereClauseIndex(UNSET_CHILDINDEX), m_orderByClauseIndex(UNSET_CHILDINDEX), m_groupByClauseIndex(UNSET_CHILDINDEX), m_havingClauseIndex(UNSET_CHILDINDEX), m_limitOffsetClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
+    : QueryExp(Type::SingleSelect), m_selectionType(selectionType)
     {
     //WARNING: Do not change the order of following
-    m_fromClauseIndex = AddChild(std::move(from));
+    m_fromClauseIndex = (int) AddChild(std::move(from));
     m_selectClauseIndex = AddChild(std::move(selection));
 
     if (where != nullptr)
@@ -701,40 +701,21 @@ SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionTyp
         m_optionsClauseIndex = (int) AddChild(std::move(optionsExp));
     }
 
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2017
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<SelectClauseExp> SingleSelectStatementExp::ConvertToSelectClauseExp(std::unique_ptr<ValueExpListExp>& valueExpList)
+SingleSelectStatementExp::SingleSelectStatementExp(std::vector<std::unique_ptr<ValueExp>>& valueExpList) : QueryExp(Type::SingleSelect)
     {
-    std::unique_ptr<SelectClauseExp> selectClauseExp = std::unique_ptr<SelectClauseExp>(new SelectClauseExp());;
-    for (size_t idx = 0; idx < valueExpList->GetChildrenCount(); idx++)
+    std::unique_ptr<SelectClauseExp> selectClauseExp = std::make_unique<SelectClauseExp>();
+    int expIx = 0;
+    for (std::unique_ptr<ValueExp>& valueExp : valueExpList)
         {
-        std::unique_ptr<Exp> temp = valueExpList->GetChildrenR().Move(idx);
-        //! unique_ptr cannot be up casted and there for it need to be released and reallocated for derived type.
-        std::unique_ptr<ValueExp> valueExp = std::unique_ptr<ValueExp>(static_cast<ValueExp*>(temp.release()));
-        std::unique_ptr<DerivedPropertyExp> derivedPropertyExp = std::unique_ptr<DerivedPropertyExp>(new DerivedPropertyExp(std::move(valueExp), SqlPrintfString("column%d", static_cast<int>(idx) + 1)));
+        expIx++;
+        std::unique_ptr<DerivedPropertyExp> derivedPropertyExp = std::make_unique<DerivedPropertyExp>(std::move(valueExp), nullptr /* SqlPrintfString("Column%d", expIx)*/);
         selectClauseExp->AddProperty(std::move(derivedPropertyExp));
         }
 
-    return selectClauseExp;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-SingleSelectStatementExp::SingleSelectStatementExp(std::unique_ptr<ValueExpListExp> valueExpList)
-    : QueryExp(Type::SingleSelect), m_selectionType(SqlSetQuantifier::NotSpecified), m_whereClauseIndex(UNSET_CHILDINDEX), m_orderByClauseIndex(UNSET_CHILDINDEX), m_groupByClauseIndex(UNSET_CHILDINDEX), m_havingClauseIndex(UNSET_CHILDINDEX), m_limitOffsetClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX), m_fromClauseIndex(UNSET_CHILDINDEX)
-    {
-    m_selectClauseIndex = AddChild(ConvertToSelectClauseExp(valueExpList));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-bool SingleSelectStatementExp::IsRowConstructor() const
-    {
-    return  m_fromClauseIndex == UNSET_CHILDINDEX;
+    m_selectClauseIndex = AddChild(std::move(selectClauseExp));
     }
 
 //-----------------------------------------------------------------------------------------

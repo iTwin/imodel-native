@@ -160,7 +160,7 @@ private:
 
     BentleyStatus ParseResult(std::unique_ptr<ValueExp>& exp, connectivity::OSQLParseNode const* node) const { return ParseValueExp(exp, node); }
     BentleyStatus ParseRowValueConstructor(std::unique_ptr<ValueExp>& exp, connectivity::OSQLParseNode const* node) const { return ParseValueExp(exp, node); }
-    BentleyStatus ParseRowValueConstructorCommalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseRowValueConstructorCommalist(std::vector<std::unique_ptr<ValueExp>>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseRTreeMatchPredicate(std::unique_ptr<BooleanExp>&, connectivity::OSQLParseNode const*) const;
 
     BentleyStatus ParseSelectCompoundOperator(SelectStatementExp::CompoundOperator&, connectivity::OSQLParseNode const*) const;
@@ -180,7 +180,7 @@ private:
     BentleyStatus ParseValueExp(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExpCommalist(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
     BentleyStatus ParseValueExpPrimary(std::unique_ptr<ValueExp>&, connectivity::OSQLParseNode const*) const;
-    BentleyStatus ParseValuesOrQuerySpec(std::unique_ptr<ValueExpListExp>&, connectivity::OSQLParseNode const*) const;
+    BentleyStatus ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>&, connectivity::OSQLParseNode const&) const;
     BentleyStatus ParseWhereClause(std::unique_ptr<WhereExp>&, connectivity::OSQLParseNode const*) const;
 
     IssueReporter const& GetIssueReporter() const { BeAssert(m_context != nullptr); return m_context->Issues(); }

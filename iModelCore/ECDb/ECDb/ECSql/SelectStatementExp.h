@@ -254,22 +254,22 @@ struct QueryExp : Exp
 struct SingleSelectStatementExp final : QueryExp
     {
     private:
-        SqlSetQuantifier m_selectionType;
-        size_t m_fromClauseIndex;
+        SqlSetQuantifier m_selectionType = SqlSetQuantifier::NotSpecified;
         size_t m_selectClauseIndex;
-        int m_whereClauseIndex;
-        int m_orderByClauseIndex;
-        int m_groupByClauseIndex;
-        int m_havingClauseIndex;
-        int m_limitOffsetClauseIndex;
-        int m_optionsClauseIndex;
+        int m_fromClauseIndex = UNSET_CHILDINDEX;
+        int m_whereClauseIndex = UNSET_CHILDINDEX;
+        int m_orderByClauseIndex = UNSET_CHILDINDEX;
+        int m_groupByClauseIndex = UNSET_CHILDINDEX;
+        int m_havingClauseIndex = UNSET_CHILDINDEX;
+        int m_limitOffsetClauseIndex = UNSET_CHILDINDEX;
+        int m_optionsClauseIndex = UNSET_CHILDINDEX;
         RangeClassInfo::List m_finalizeParsingArgCache;
 
         FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
 
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override;
-        static std::unique_ptr<SelectClauseExp> ConvertToSelectClauseExp(std::unique_ptr<ValueExpListExp>& valueExpList);
+
     protected:
         DerivedPropertyExp const* _FindProperty(Utf8CP propertyName) const override;
         SelectClauseExp const* _GetSelection() const override { return GetChild<SelectClauseExp>(m_selectClauseIndex); }
@@ -278,10 +278,18 @@ struct SingleSelectStatementExp final : QueryExp
         SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp>, std::unique_ptr<FromExp>, std::unique_ptr<WhereExp>,
                                  std::unique_ptr<OrderByExp>, std::unique_ptr<GroupByExp>, std::unique_ptr<HavingExp>, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp>);
 
-        SingleSelectStatementExp(std::unique_ptr<ValueExpListExp>);
-        bool IsRowConstructor() const;
+        explicit SingleSelectStatementExp(std::vector<std::unique_ptr<ValueExp>>&);
+        bool IsRowConstructor() const { return  m_fromClauseIndex == UNSET_CHILDINDEX;}
 
-        FromExp const* GetFrom() const { return GetChild<FromExp>(m_fromClauseIndex); }
+        SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
+
+        FromExp const* GetFrom() const 
+            { 
+            if (m_fromClauseIndex < 0)
+                return nullptr;
+
+            return GetChild<FromExp>((size_t) m_fromClauseIndex); 
+            }
 
         WhereExp const* GetWhere() const
             {
@@ -331,8 +339,7 @@ struct SingleSelectStatementExp final : QueryExp
             return GetChild<OptionsExp>((size_t) m_optionsClauseIndex);
             }
         
-        bool IsCoreSelect() const { return GetLimitOffset() == nullptr && GetOrderBy() == nullptr; }
-        SqlSetQuantifier GetSelectionType() const { return m_selectionType; }
+        bool IsCoreSelect() const { return m_limitOffsetClauseIndex == UNSET_CHILDINDEX && m_optionsClauseIndex == UNSET_CHILDINDEX; }
     };
 
 //********* QueryExp subclasses ***************************
