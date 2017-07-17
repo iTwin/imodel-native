@@ -840,7 +840,6 @@ protected:
     uint32_t _GetExcessiveRefCountThreshold() const override {return 0x00ffffff;} // A deep tree can trigger this assertion erroneously.
 
 public:
-    bool DoVectorTiles() const { return false; } // { GetModel().GetModelId().GetValue() == 30; }
     DgnModelCR GetModel() const { return *m_model; }
     DRange3dCR GetDgnRange() const { return m_dgnRange; }
     DRange3d GetTileRange() const { DRange3d range = m_dgnRange; m_transformFromDgn.Multiply(range, range); return range; }
@@ -908,7 +907,7 @@ protected:
     DGNPLATFORM_EXPORT PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool surfacesOnly, ITileGenerationFilterCP filter) const override;
     TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
     void _ClearGeometry() override { m_geometries.clear(); }
-    WString _GetFileExtension() const override { return DoVectorTiles() ? L"vctr" : (m_containsParts ? L"cmpt" : L"b3dm"); }
+    WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
 
 public:
     static ElementTileNodePtr Create(DgnModelCR model, TransformCR transformFromDgn) { return new ElementTileNode(model, transformFromDgn); }
@@ -1069,7 +1068,7 @@ struct TileUtil
 {
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
     DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
-    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelCR model);
+    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId, bool asClassifier = false);
 
 };  // TileUtil
 

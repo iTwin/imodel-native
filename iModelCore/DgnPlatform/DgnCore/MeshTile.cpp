@@ -3159,12 +3159,12 @@ BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString TileUtil::GetRootNameForModel(DgnModelCR model)
+WString TileUtil::GetRootNameForModel(DgnModelId modelId, bool asClassifier)
     {
-    WString name(model.GetName().c_str(), BentleyCharEncoding::Utf8);
+    WString name = asClassifier ? L"Classifier" : L"Model";
     name.append(1, '_');
     WChar idBuf[17];
-    BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), model.GetModelId().GetValue(), HexFormatOptions::None);
+    BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), modelId.GetValue(), HexFormatOptions::None);
     name.append(idBuf);
     return name;
     }

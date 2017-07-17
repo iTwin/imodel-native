@@ -57,20 +57,21 @@ struct ModelSpatialClassifier
         Json::Value ToJson() const;
         };
 
-
 private:
     DgnModelId      m_modelId;
     Flags           m_flags;
     double          m_expandDistance;
+    Utf8String      m_name;
 
 public:
     ModelSpatialClassifier() { }
-    ModelSpatialClassifier(DgnModelId modelId, Flags flags, double expandDistance) : m_modelId(modelId), m_flags(flags), m_expandDistance(expandDistance) { }
+    ModelSpatialClassifier(DgnModelId modelId, Flags flags, Utf8StringCR name, double expandDistance) : m_modelId(modelId), m_name(name), m_flags(flags), m_expandDistance(expandDistance) { }
 
     DgnModelId GetModelId()  const { return m_modelId; }
+    Utf8String  GetName() const { return m_name; }
 
-    Json::Value ToJson() const;
-    BentleyStatus FromJson(Json::Value const& value);
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+    DGNPLATFORM_EXPORT BentleyStatus FromJson(Json::Value const& value);
 
 };
 
