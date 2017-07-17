@@ -10,6 +10,7 @@
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
 #include <WebServices/iModelHub/Events/CodeEvent.h>
 #include <WebServices/iModelHub/Events/DeletedEvent.h>
+#include <WebServices/iModelHub/Events/VersionEvent.h>
 #include "../Utils.h"
 #include <WebServices/iModelHub/Events/ChangeSetPrePushEvent.h>
 
@@ -93,6 +94,18 @@ std::shared_ptr<Json::Value> CheckForEventProperties(Utf8String jsonString, Even
 			    isSuccess = true;
 		    break;
 	        }
+		case BentleyB0200::iModel::Hub::Event::VersionEvent:
+		    {
+		    if (
+			    data.isMember(Event::EventTopic) &&
+			    data.isMember(Event::FromEventSubscriptionId) &&
+			    data.isMember(Event::VersionEventProperties::VersionId) &&
+			    data.isMember(Event::VersionEventProperties::VersionName) &&
+			    data.isMember(Event::VersionEventProperties::ChangeSetId)
+			    )
+			    isSuccess = true;
+            break;
+		    }
 	    case BentleyB0200::iModel::Hub::Event::UnknownEventType:
 	    default:
 	        {
@@ -219,6 +232,24 @@ EventPtr ParseIntoDeletedEvent(Utf8String jsonString, Event::EventType deletedEv
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                 Viktorija.Adomauskaite               06/2016
+//---------------------------------------------------------------------------------------
+EventPtr ParseIntoVersionEvent(Utf8String jsonString)
+    {
+    std::shared_ptr < Json::Value> data = CheckForEventProperties(jsonString, Event::VersionEvent);
+    if (data == nullptr)
+        return nullptr;
+    return VersionEvent::Create
+        (
+        (*data)[Event::EventTopic].asString(),
+        (*data)[Event::FromEventSubscriptionId].asString(),
+        (*data)[Event::VersionEventProperties::VersionId].asString(),
+        (*data)[Event::VersionEventProperties::VersionName].asString(),
+        (*data)[Event::VersionEventProperties::ChangeSetId].asString()
+        );
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                 Arvind.Venkateswaran	              06/2016
 //---------------------------------------------------------------------------------------
 EventPtr EventParser::ParseEvent
@@ -245,6 +276,7 @@ Utf8String responseString
 	    case Event::EventType::CodeEvent:                   return ParseIntoCodeEvent(actualJsonPart);
 	    case Event::EventType::AllLocksDeletedEvent:
 	    case Event::EventType::AllCodesDeletedEvent:        return ParseIntoDeletedEvent(actualJsonPart, eventType);
+        case Event::EventType::VersionEvent:                return ParseIntoVersionEvent(actualJsonPart);
 	    default:
 	    case Event::EventType::UnknownEventType:            return nullptr;
 	    }
@@ -333,4 +365,21 @@ RefCountedPtr<struct DeletedEvent> EventParser::GetDeletedEvent(EventPtr eventPt
 	    {
 		return nullptr;
 	    }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                 Viktorija.Adomauskaite               06/2016
+//---------------------------------------------------------------------------------------
+RefCountedPtr<struct VersionEvent> EventParser::GetVersionEvent(EventPtr eventPtr)
+    {
+    try
+        {
+        if (eventPtr == nullptr)
+            return nullptr;
+        return new VersionEvent(dynamic_cast<VersionEvent&>(*eventPtr));
+        }
+    catch (const std::bad_cast&)
+        {
+        return nullptr;
+        }
     }

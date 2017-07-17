@@ -183,6 +183,7 @@
     <ClCompile Include="iModelHubClient\Events\EventManager.cpp" />
     <ClCompile Include="iModelHubClient\Events\EventParser.cpp" />
     <ClCompile Include="iModelHubClient\Events\LockEvent.cpp" />
+    <ClCompile Include="iModelHubClient\Events\VersionEvent.cpp" />
     <ClCompile Include="iModelHubClient\FileInfo.cpp" />
     <ClCompile Include="iModelHubClient\iModelAdmin.cpp" />
     <ClCompile Include="iModelHubClient\iModelConnection.cpp" />
@@ -330,6 +331,7 @@
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\EventParser.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\EventSubscription.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\LockEvent.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\VersionEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\Ims\SolrQuery.h" />
     <ClInclude Include="PublicAPI\WebServices\Ims\SolrClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h" />

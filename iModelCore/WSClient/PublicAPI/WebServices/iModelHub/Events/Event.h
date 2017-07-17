@@ -48,6 +48,12 @@ namespace Event
         static Utf8CP AllCodesDeletedEvent = "AllCodesDeletedEvent";
         static Utf8CP BriefcaseId = "BriefcaseId";
         }
+    namespace VersionEventProperties
+        {
+        static Utf8CP VersionId = "VersionId";
+        static Utf8CP VersionName = "VersionName";
+        static Utf8CP ChangeSetId = "ChangeSetId";
+        }
 
     enum EventType
         {
@@ -57,7 +63,8 @@ namespace Event
         CodeEvent,
         AllLocksDeletedEvent,
         AllCodesDeletedEvent,
-        UnknownEventType
+        UnknownEventType,
+        VersionEvent
         };
 
     /*--------------------------------------------------------------------------------------+
@@ -76,6 +83,7 @@ namespace Event
                     case EventType::CodeEvent:               return "CodeEvent";
                     case EventType::AllLocksDeletedEvent:    return "AllLocksDeletedEvent";
                     case EventType::AllCodesDeletedEvent:    return "AllCodesDeletedEvent";
+                    case EventType::VersionEvent:            return "VersionEvent";
                     case EventType::UnknownEventType:
                     default:                                 return "UnknownEventType";
                 }
@@ -95,6 +103,8 @@ namespace Event
                 return EventType::AllLocksDeletedEvent;
             if (0 == (BeStringUtilities::Stricmp("AllCodesDeletedEvent", eventName)))
                 return EventType::AllCodesDeletedEvent;
+            if (0 == (BeStringUtilities::Stricmp("VersionEvent", eventName)))
+                return EventType::VersionEvent;
         
             return EventType::UnknownEventType;
             }
