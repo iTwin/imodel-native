@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicApi/EcPresentationRules/ContentSpecification.h $
+|     $Source: PublicApi/ECPresentationRules/ContentSpecification.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,9 +13,9 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
-typedef bvector<RelatedPropertiesSpecificationP>   RelatedPropertiesSpecificationList;
-typedef bvector<DisplayRelatedItemsSpecificationP> DisplayRelatedItemsSpecificationList;
-typedef bvector<HiddenPropertiesSpecificationP>    HiddenPropertiesSpecificationList;
+typedef bvector<RelatedPropertiesSpecificationP>    RelatedPropertiesSpecificationList;
+typedef bvector<DisplayRelatedItemsSpecificationP>  DisplayRelatedItemsSpecificationList;
+typedef bvector<PropertiesDisplaySpecificationP>    PropertiesDisplaySpecificationList;
 typedef bvector<CalculatedPropertiesSpecificationP> CalculatedPropertiesSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
@@ -28,7 +28,7 @@ private:
     int                                  m_priority;
     bool                                 m_showImages;
     RelatedPropertiesSpecificationList   m_relatedPropertiesSpecification;
-    HiddenPropertiesSpecificationList    m_hiddenPropertiesSpecification;
+    PropertiesDisplaySpecificationList    m_propertiesDisplaySpecification;
     CalculatedPropertiesSpecificationList m_calculatedPropertiesSpecification;
     DisplayRelatedItemsSpecificationList m_displayRelatedItemsSpecification;
 
@@ -85,11 +85,11 @@ public:
     //! Related properties of acceptable ECInstances, that will be shown next to ECInstance proerties (the same row for example).
     ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&   GetRelatedPropertiesR(void);
 
-    //! Hidden properties that will not be displayed.
-    HiddenPropertiesSpecificationList const& GetHiddenProperties() const {return m_hiddenPropertiesSpecification;}
+    //! Properties that will be displayed or hidden.
+    PropertiesDisplaySpecificationList const& GetPropertiesDisplaySpecifications() const {return m_propertiesDisplaySpecification;}
     
-    //! Hidden properties that will not be displayed.
-    HiddenPropertiesSpecificationList& GetHiddenPropertiesR() {return m_hiddenPropertiesSpecification;}
+    //! Properties that will be displayed or hidden.
+    PropertiesDisplaySpecificationList& GetPropertiesDisplaySpecificationsR() {return m_propertiesDisplaySpecification;}
 
     //! Additional calculated properties included in the content
     CalculatedPropertiesSpecificationList const& GetCalculatedProperties() const {return m_calculatedPropertiesSpecification;}

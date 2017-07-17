@@ -57,6 +57,7 @@ PresentationRuleSet::~PresentationRuleSet ()
     CommonTools::FreePresentationRules (m_checkBoxRules);
     CommonTools::FreePresentationRules (m_renameNodeRules);
     CommonTools::FreePresentationRules (m_sortingRules);
+    CommonTools::FreePresentationRules (m_contentModifiers);
     }
 
 /*---------------------------------------------------------------------------------**//**

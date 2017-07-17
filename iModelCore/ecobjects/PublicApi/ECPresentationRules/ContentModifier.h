@@ -23,7 +23,7 @@ struct ContentModifier : public CustomizationRule
         Utf8String                              m_schemaName;
         Utf8String                              m_className;
         RelatedPropertiesSpecificationList      m_relatedProperties;
-        HiddenPropertiesSpecificationList       m_hiddenProperties;
+        PropertiesDisplaySpecificationList      m_propertiesDisplaySpecification;
         CalculatedPropertiesSpecificationList   m_calculatedProperties;
 
     protected:
@@ -67,11 +67,11 @@ struct ContentModifier : public CustomizationRule
         //! Returns related properties
         ECOBJECTS_EXPORT RelatedPropertiesSpecificationList&  GetRelatedPropertiesR();
 
-        //! Returns hidden properties
-        ECOBJECTS_EXPORT HiddenPropertiesSpecificationList const& GetHiddenProperties() const;
+        //! Returns displayed/hidden properties
+        ECOBJECTS_EXPORT PropertiesDisplaySpecificationList const& GetPropertiesDisplaySpecifications() const;
 
-        //! Returns hidden properties
-        ECOBJECTS_EXPORT HiddenPropertiesSpecificationList&  GetHiddenPropertiesR() ;
+        //! Returns displayed/hidden properties
+        ECOBJECTS_EXPORT PropertiesDisplaySpecificationList&  GetPropertiesDisplaySpecificationsR() ;
 
         //! Returns calculated properties
         ECOBJECTS_EXPORT CalculatedPropertiesSpecificationList const& GetCalculatedProperties() const;

@@ -64,7 +64,7 @@
     <ClCompile Include="ECJsonUtilities.cpp" />
     <ClCompile Include="ECObjectsPch.cpp" />
     <ClCompile Include="ECProperty.cpp" />
-	<ClCompile Include="ECQuantityFormatting.cpp" />
+    <ClCompile Include="ECQuantityFormatting.cpp" />
     <ClCompile Include="ecprovider.cpp" />
     <ClCompile Include="ECRelationshipPath.cpp" />
     <ClCompile Include="ECSchema.cpp" />
@@ -86,6 +86,7 @@
     <ClCompile Include="presentation\PresentationRules\ChildNodeSpecification.cpp" />
     <ClCompile Include="presentation\PresentationRules\CommonTools.cpp" />
     <ClCompile Include="presentation\PresentationRules\ContentInstancesOfSpecificClassesSpecification.cpp" />
+    <ClCompile Include="presentation\PresentationRules\ContentModifier.cpp" />
     <ClCompile Include="presentation\PresentationRules\ContentRelatedInstancesSpecification.cpp" />
     <ClCompile Include="presentation\PresentationRules\ContentRule.cpp" />
     <ClCompile Include="presentation\PresentationRules\ContentSpecification.cpp" />
@@ -98,6 +99,7 @@
     <ClCompile Include="presentation\PresentationRules\LocalizationResourceKeyDefinition.cpp" />
     <ClCompile Include="presentation\PresentationRules\PresentationRule.cpp" />
     <ClCompile Include="presentation\PresentationRules\PresentationRuleSet.cpp" />
+    <ClCompile Include="presentation\PresentationRules\PropertiesDisplaySpecification.cpp" />
     <ClCompile Include="presentation\PresentationRules\RelatedInstanceNodesSpecification.cpp" />
     <ClCompile Include="presentation\PresentationRules\RelatedPropertiesSpecification.cpp" />
     <ClCompile Include="presentation\PresentationRules\RenameNodeRule.cpp" />
@@ -132,7 +134,7 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECObjects.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPI.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECObjectsAPIOverview.h" />
-	<ClInclude Include="..\PublicApi\ECObjects\ECQuantityFormatting.h" />
+    <ClInclude Include="..\PublicApi\ECObjects\ECQuantityFormatting.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECRelationshipPath.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaConverter.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h" />
@@ -153,13 +155,14 @@
     <ClInclude Include="..\PublicApi\EcPresentationRules\ChildNodeSpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\CommonTools.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\ContentInstancesOfSpecificClassesSpecification.h" />
+    <ClInclude Include="..\PublicApi\ECPresentationRules\ContentModifier.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\ContentRelatedInstancesSpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\ContentRule.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\ContentSpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\CustomNodeSpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\DisplayRelatedItemsSpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\GroupingRule.h" />
-    <ClInclude Include="..\PublicApi\EcPresentationRules\HiddenPropertiesSpecification.h" />
+    <ClInclude Include="..\PublicApi\EcPresentationRules\PropertiesDisplaySpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\ImageIdOverride.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\InstanceNodesOfSpecificClassesSpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\LabelOverride.h" />
