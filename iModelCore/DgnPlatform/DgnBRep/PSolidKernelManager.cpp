@@ -2563,6 +2563,14 @@ void PSolidKernelManager::StopSession()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PSolidKernelManager::IsSessionStarted()
+    {
+    return TO_BOOL(s_parasolidInitialized);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool PSolidKernelManager::SetExternalFrustrum(bool isActive)

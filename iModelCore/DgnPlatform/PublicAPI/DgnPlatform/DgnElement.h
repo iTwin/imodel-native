@@ -1171,7 +1171,9 @@ protected:
     //! @see ElementProperties
     virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) {return DgnDbStatus::Success;}
 
-    DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR) const;
+    //! Convert this DgnElement to a Json::Value.
+    //! @note If you override this method, you @em must call T_Super::_ToJson()
+    DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const;
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -1929,7 +1931,8 @@ public:
     //! @see GetPropertyIndex
     DGNPLATFORM_EXPORT DgnDbStatus ClearPropertyArray(uint32_t propertyIndex);
 
-    Json::Value ToJson() const {Json::Value val; _ToJson(val); return val;}
+    //! Create a Json::Value that represents the state of this element.
+    Json::Value ToJson(JsonValueCR opts) const {Json::Value val; _ToJson(val, opts); return val;}
 
     //! @private
     DGNPLATFORM_EXPORT void GetCustomHandledPropertiesAsJson(Json::Value& json) const;
@@ -1963,6 +1966,10 @@ protected:
     ElementAlignedBox3d m_boundingBox;
 
 public:
+    BE_JSON_NAME(origin)
+    BE_JSON_NAME(angles)
+    BE_JSON_NAME(bbox)
+
     Placement3d() : m_origin(DPoint3d::FromZero())  {}
     Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box = ElementAlignedBox3d()): m_origin(origin), m_angles(angles), m_boundingBox(box) {}
     Placement3d(Placement3d const& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
@@ -2028,6 +2035,10 @@ protected:
     ElementAlignedBox2d m_boundingBox;
 
 public:
+    BE_JSON_NAME(origin)
+    BE_JSON_NAME(angle)
+    BE_JSON_NAME(bbox)
+
     Placement2d() : m_origin(DPoint2d::FromZero()) {}
     Placement2d(DPoint2dCR origin, AngleInDegrees const& angle, ElementAlignedBox2dCR box = ElementAlignedBox2d()) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
     Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
@@ -2209,17 +2220,24 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         //! @return 
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) {}
     };
+
+    BE_JSON_NAME(placement)
+    BE_JSON_NAME(typeDefintion)
+    BE_JSON_NAME(category)
+    BE_JSON_NAME(geom)
+
 protected:
-    DgnCategoryId               m_categoryId;
-    GeometryStream              m_geom;
-    mutable Render::GraphicSet  m_graphics;
-    mutable bool                m_multiChunkGeomStream;
+    DgnCategoryId m_categoryId;
+    GeometryStream m_geom;
+    mutable Render::GraphicSet m_graphics;
+    mutable bool m_multiChunkGeomStream;
 
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
 
     virtual bool _IsPlacementValid() const = 0;
     virtual Utf8CP _GetGeometryColumnClassName() const = 0;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
@@ -2285,6 +2303,7 @@ public:
             : T_Super(params, category), m_placement(placement) {}
     };
 protected:
+
     Placement3d m_placement;
     DgnElementId m_typeDefinitionId;
     ECN::ECClassId m_typeDefinitionRelClassId;
@@ -2306,6 +2325,7 @@ protected:
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
@@ -2384,6 +2404,7 @@ protected:
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
@@ -2792,6 +2813,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     bool m_isPrivate = false;
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
 
@@ -2801,6 +2823,7 @@ protected:
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    BE_JSON_NAME(isPrivate)
     bool IsPrivate() const {return m_isPrivate;} //!< Test if this definition is private (should not be listed in the GUI, for example)
     void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this definition is private (should not appear in the GUI, for example)
 

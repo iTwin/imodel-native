@@ -261,7 +261,7 @@ public:
     BE_JSON_NAME(scope)
     BE_JSON_NAME(value)
     DGNPLATFORM_EXPORT Json::Value ToJson2() const; //!< Convert to json, format 2
-    DGNPLATFORM_EXPORT bool FromJson2(JsonValueCR value); //!< Attempt to initialize from json, format 2
+    DGNPLATFORM_EXPORT static DgnCode FromJson2(JsonValueCR value); //!< Attempt to initialize from json, format 2
 };
 
 typedef bset<DgnCode> DgnCodeSet;
