@@ -511,12 +511,13 @@ Json::Value DgnCode::ToJson2() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnCode::FromJson2(JsonValueCR value)
+DgnCode DgnCode::FromJson2(JsonValueCR value)
     {
-    m_specId = CodeSpecId(value[json_spec()].asUInt64());
-    m_scopeElementId = DgnElementId(value[json_scope()].asUInt64());
-    m_value = value[json_value()].asString();
-    return IsValid();
+    DgnCode val;
+    val.m_specId = CodeSpecId(value[json_spec()].asUInt64());
+    val.m_scopeElementId = DgnElementId(value[json_scope()].asUInt64());
+    val.m_value = value[json_value()].asString();
+    return val;
     }
 
 /*---------------------------------------------------------------------------------**//**

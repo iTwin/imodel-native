@@ -355,6 +355,15 @@ DgnDbStatus DefinitionElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClas
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DefinitionElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_isPrivate()] = m_isPrivate;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DefinitionElement::_CopyFrom(DgnElementCR el)
@@ -1199,7 +1208,7 @@ DgnDbStatus DgnElement::_LoadFromDb()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnElement::_ToJson(JsonValueR val) const
+void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     val[json_id()] = m_elementId.ToString(BeInt64Id::UseHex::Yes);
 
@@ -3603,6 +3612,21 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_category()] = m_categoryId.ToString(BeInt64Id::UseHex::Yes);
+
+    if (opts["noGeometry"].asBool(false))
+        return;
+
+    // load geometry
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
@@ -3802,6 +3826,15 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
@@ -3829,6 +3862,16 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
                               ElementAlignedBox3d(boxLow.x, boxLow.y, boxLow.z, boxHi.x, boxHi.y, boxHi.z));
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
