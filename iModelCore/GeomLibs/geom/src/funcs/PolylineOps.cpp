@@ -1385,13 +1385,17 @@ double endFraction
 * Test if pointA is on line of origin..pointB and can be ignored.
 * @bsimethod                                                    EarlinLutz      12/2012
 +--------------------------------------------------------------------------------------*/
-static bool IsColinearPointToEliminate (DPoint3dCR origin, DPoint3dCR pointA, DPoint3dCR pointB, double tol2, bool eliminateOverdraw)
+static bool IsColinearPointToEliminate (DPoint3dCR origin, DPoint3dCR pointA, DPoint3dCR pointB, double tol2, bool eliminateOverdraw, bool xyOnly)
     {
     DVec3d vectorA, vectorB;
     vectorA.DifferenceOf (pointA, origin);
+    if (xyOnly)
+        vectorA.z = 0.0;
     if (vectorA.MagnitudeSquared () < tol2)
         return true;
     vectorB.DifferenceOf (pointB, origin);
+    if (xyOnly)
+        vectorB.z = 0.0;
     double dot = vectorA.DotProduct (vectorB);
     double fraction;
     DVec3d perpendicularPart, parallelPart;
@@ -1414,7 +1418,8 @@ void PolylineOps::CompressColinearPoints
 bvector <DPoint3d> &points,
 double absTol,
 bool eliminateOverdraw,
-bool wrap
+bool wrap,
+bool xyOnly
 )
     {
         
@@ -1436,7 +1441,7 @@ bool wrap
         size_t k = j + 1;
         if (k < n)
             {
-            if (IsColinearPointToEliminate (lastAcceptedPoint, points[j], points[k], tol2, eliminateOverdraw))
+            if (IsColinearPointToEliminate (lastAcceptedPoint, points[j], points[k], tol2, eliminateOverdraw, xyOnly))
                 {
                 // and leave lastAcceptedPoint alone ...
                 }
@@ -1455,7 +1460,7 @@ bool wrap
         {
         double d0 = points[n - 1].DistanceSquared(points[0]);
         if (d0 <= tol2 && numAccepted > 1
-            && IsColinearPointToEliminate (lastAcceptedPoint, points[0], points[1], tol2, eliminateOverdraw)
+            && IsColinearPointToEliminate (lastAcceptedPoint, points[0], points[1], tol2, eliminateOverdraw, xyOnly)
             )
             {
             // move point[0] back to lastAcceptedPoint ...

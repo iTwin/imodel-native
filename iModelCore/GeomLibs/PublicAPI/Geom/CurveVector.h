@@ -956,11 +956,12 @@ GEOMDLLIMPEXP void ConsolidateAdjacentPrimitives ();
 //! Adjacent lines and linestrings become a single linestring.
 //! Adjacent and compatible arcs become single arc.
 //! @param [in] doSimplifyLinestrings true to eliminate colinear interior points of linestrings.
-GEOMDLLIMPEXP void ConsolidateAdjacentPrimitives (bool doSimplifyLinestrings);
+//! @param [in] xyOnly true to use only xy parts for point comparisons.
+GEOMDLLIMPEXP void ConsolidateAdjacentPrimitives (bool doSimplifyLinestrings, bool xyOnly = false);
 
 //! Inplace update to consolidate colinear interior points of linestrings.
 //! If distance tolerance is nonpositive a tolerance will be assigned from the range.
-GEOMDLLIMPEXP void SimplifyLinestrings (double distanceTol, bool eliminateOverdraw, bool wrap);
+GEOMDLLIMPEXP void SimplifyLinestrings (double distanceTol, bool eliminateOverdraw, bool wrap, bool xyOnly = false);
 
 //! Update order, boundary type, and direction of contained loops.
 //! Loop A is considered "inside" loop B if (a) loop A has smaller area and (b) the start point of loop A is inside loop B.

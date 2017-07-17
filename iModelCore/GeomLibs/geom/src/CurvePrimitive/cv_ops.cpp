@@ -2,7 +2,7 @@
 |
 |     $Source: geom/src/CurvePrimitive/cv_ops.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <bsibasegeomPCH.h>
@@ -198,7 +198,7 @@ static bool CompatiblePrimitiveRange (CurveVectorCR source, size_t baseIndex, Co
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-void CurveVector::SimplifyLinestrings (double distanceTolerance, bool eliminateOverdraw, bool wrap)
+void CurveVector::SimplifyLinestrings (double distanceTolerance, bool eliminateOverdraw, bool wrap, bool xyOnly)
     {
     if (distanceTolerance < 0.0)
         distanceTolerance = DoubleOps::ComputeTolerance (FastMaxAbs (), 0.0, Angle::SmallAngle ());
@@ -207,7 +207,7 @@ void CurveVector::SimplifyLinestrings (double distanceTolerance, bool eliminateO
         && IsClosedPath ()
         && at(0).IsValid ()
         &&  NULL != (points = at(0)->GetLineStringP ()))
-        PolylineOps::CompressColinearPoints (*points, distanceTolerance, eliminateOverdraw, true);
+        PolylineOps::CompressColinearPoints (*points, distanceTolerance, eliminateOverdraw, true, xyOnly);
     else
         {
         for (size_t i = 0; i < size (); i++)
@@ -218,9 +218,9 @@ void CurveVector::SimplifyLinestrings (double distanceTolerance, bool eliminateO
             CurveVectorP childVector;
 
             if (NULL != (childVector = const_cast <CurveVectorP> (at(i)->GetChildCurveVectorCP ())))
-                childVector->SimplifyLinestrings (distanceTolerance, eliminateOverdraw, wrap);
+                childVector->SimplifyLinestrings (distanceTolerance, eliminateOverdraw, wrap, xyOnly);
             else if (NULL != (points = at(i)->GetLineStringP ()))
-                PolylineOps::CompressColinearPoints (*points, distanceTolerance, eliminateOverdraw, false);
+                PolylineOps::CompressColinearPoints (*points, distanceTolerance, eliminateOverdraw, false, xyOnly);
             }
         }
     }
@@ -228,9 +228,13 @@ void CurveVector::SimplifyLinestrings (double distanceTolerance, bool eliminateO
 /*--------------------------------------------------------------------------------**//**
 * @bsimethod                                                    EarlinLutz      04/2012
 +--------------------------------------------------------------------------------------*/
-void CurveVector::ConsolidateAdjacentPrimitives (bool doSimplifyLinestrings)
+void CurveVector::ConsolidateAdjacentPrimitives (bool doSimplifyLinestrings, bool xyOnly)
     {
-    double tolerance = DoubleOps::ComputeTolerance (FastMaxAbs (), 0.0, Angle::SmallAngle ());
+    double tolerance = DoubleOps::MaxAbs (
+        DoubleOps::ComputeTolerance (FastMaxAbs (), 0.0, Angle::SmallAngle ()),
+        DoubleOps::SmallMetricDistance ()
+        );
+
     if (size () > 1)
         {
         size_t baseIndex = 0;
@@ -317,7 +321,7 @@ void CurveVector::ConsolidateAdjacentPrimitives (bool doSimplifyLinestrings)
         }
 
     if (doSimplifyLinestrings)
-        SimplifyLinestrings (tolerance, true, true);
+        SimplifyLinestrings (tolerance, true, true, xyOnly);
     }
 
 /*--------------------------------------------------------------------------------**//**

@@ -1184,7 +1184,8 @@ double endFraction = 1.0
 //!     180 degree turn is elmiinated.  (Hence the range of the compressed polygon can be smaller)
 //! @param [in] closed If false, the first point always remains even if it is "within" colinear first and last segments.
 //!       If true, this point can be eliminated.
-public: static GEOMDLLIMPEXP void CompressColinearPoints (bvector<DPoint3d> &points, double absTol, bool eliminateOverdraw, bool closed);
+//! @param [in] xyOnly if true, use only xy coordinates in comparisons.
+public: static GEOMDLLIMPEXP void CompressColinearPoints (bvector<DPoint3d> &points, double absTol, bool eliminateOverdraw, bool closed, bool xyOnly = false);
 
 
 //! Simple linestring offset -- miter joints, no loop removal.

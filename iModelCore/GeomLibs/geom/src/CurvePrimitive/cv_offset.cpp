@@ -370,7 +370,7 @@ void AppendResolvedJoint (CurveVectorR collector, OffsetItem &dataA, OffsetItem 
         }
     }
 
-CurveVectorPtr OutputWithSimpleJoints (CurveVector::BoundaryType btype)
+CurveVectorPtr OutputWithSimpleJoints (CurveVector::BoundaryType btype, bool xyOnly)
     {
     CurveVectorPtr result = CurveVector::Create (btype);
     bool closed =  btype == CurveVector::BOUNDARY_TYPE_Outer
@@ -393,7 +393,7 @@ CurveVectorPtr OutputWithSimpleJoints (CurveVector::BoundaryType btype)
     if (numBase < numPrimitive)
         OffsetItem::AppendSimplePrimitive (*result, m_simpleOffsets[numBase]);
     if (result.IsValid ())
-        result->ConsolidateAdjacentPrimitives ();        
+        result->ConsolidateAdjacentPrimitives (true, xyOnly);        
     return result;
     }
 
@@ -450,7 +450,7 @@ CurveVectorPtr CurveVector::CloneOffsetCurvesXY (CurveOffsetOptionsCR options) c
             }
         PathOffsetContext context (options);
         context.LoadSimpleOffsets (*this);
-        return context.OutputWithSimpleJoints(btype);
+        return context.OutputWithSimpleJoints(btype, true);
         }
     else
         {

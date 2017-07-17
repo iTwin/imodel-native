@@ -273,6 +273,82 @@ void GetOffsets (CurveVectorPtr pathA, double offsetDistance, double arcAngle, C
         }
     }
 
+TEST(CircleChords,TriplePointsA)
+    {
+    bvector<DPoint3d> points{
+           DPoint3d::From (299700.15037042351,256513.87138485495,152.19232662650333),
+           DPoint3d::From (299703.51244670496,256512.38272162498,152.19316990035730),
+           DPoint3d::From (299706.94521635934,256511.06523627986,152.19457535678063),
+           DPoint3d::From (299710.43997044861,256509.92227128040,152.19654299577331),
+           DPoint3d::From (299713.98784278031,256508.95672632931,152.19907281733526),
+           DPoint3d::From (299717.57983240084,256508.17105101451,152.20216482146657),
+           DPoint3d::From (299721.20682643115,256507.56723859458,152.20581900816720),
+           DPoint3d::From (299724.85962318594,256507.14682094182,152.21003537743712)
+   };
+   DVec3d shift = DVec3d::From (points[0]);
+   for (auto &point : points)
+    point = point - shift;
+   auto cvA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+   cvA->push_back(
+    ICurvePrimitive::CreateLineString (points));
+    double offset = -0.20812;
+            CurveOffsetOptions options (offset);
+        CurveVectorPtr cvB = cvA->CloneOffsetCurvesXY(options);
+    Check::SaveTransformed (*cvA);
+    Check::SaveTransformed (*cvB);
+    Check::ClearGeometry ("CircleChords.TriplePointsA");
+    }
+
+TEST(CircleChords,TriplePointsB)
+    {
+    bvector<DPoint3d> points{
+            DPoint3d::From (0,0),
+            DPoint3d::From (10, 0),
+            DPoint3d::From (10,10),
+            DPoint3d::From (20,10),
+            DPoint3d::From (30, 10.1),
+            DPoint3d::From (40, 10.1),
+            DPoint3d::From (50, 10.11),
+            DPoint3d::From (60,10.11),
+            DPoint3d::From (70,12)
+            };
+
+    // transform to create some slope . .
+    double dzdx = 0.01;
+    double dy = 20.0;
+    for (auto transform : bvector<Transform>
+        {
+        Transform::FromIdentity (),
+        Transform::FromRowValues (
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                dzdx, 0, 1, 0),
+        Transform::FromRowValues (
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                10.0 * dzdx, 0, 1, 0),
+        Transform::FromRowValues (
+                1, 0, 0, 0,
+                0, 1, 0, 0,
+                100.0 * dzdx, 0, 1, 0)
+
+        })
+        {
+        SaveAndRestoreCheckTransform shifter (0, dy,0);
+
+        auto cvA = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+        cvA->push_back(
+        ICurvePrimitive::CreateLineString (points));
+        cvA->TransformInPlace (transform);
+        double offset = -0.20812;
+                CurveOffsetOptions options (offset);
+            CurveVectorPtr cvB = cvA->CloneOffsetCurvesXY(options);
+        Check::SaveTransformed (*cvA);
+        Check::SaveTransformed (*cvB);
+        }
+    Check::ClearGeometry ("CircleChords.TriplePointsB");
+    }
+
 TEST(CloneOffset, RectangleOffset)
     {
     bvector<DPoint3d> points;
@@ -2284,4 +2360,103 @@ TEST(CurveVector,ConstructArcs_PointTangentCurveTangent_Sandy)
             }
         }
     Check::ClearGeometry ("CurveVector.ConstructArcs_PointTangentCurveTangent_Sandy");
+    }
+
+struct MatrixWeightedBezier2d
+{
+bvector<DVec3d> m_cp;
+bvector<RotMatrix> m_matrix;
+
+void AddCP (double x, double y, double tangentRadians, double w, double mu)
+    {
+    double c = cos (tangentRadians);
+    double s = sin (tangentRadians);
+    double nx = -s;
+    double ny = c;
+    m_cp.push_back(DVec3d::From (x,y,0));
+
+    m_matrix.push_back (RotMatrix::FromRowValues(
+        w * (1.0 + mu * nx * nx), w * mu * nx * ny, 0,
+        w * mu * nx * ny, w * (1.0 + mu * ny * ny), 0,
+        0,                0,                        1)); 
+    }
+
+void AppendBezcoffs2d (bvector<double> &coffs, DVec3dCR xy, RotMatrixCR matrix)
+    {
+        DVec3d Q = matrix * xy;
+        coffs.push_back (Q.x);
+        coffs.push_back (Q.y);
+        coffs.push_back (matrix.form3d[0][0]);
+        coffs.push_back (matrix.form3d[0][1]);
+        coffs.push_back (matrix.form3d[1][0]);
+        coffs.push_back (matrix.form3d[1][1]);
+    }
+void FormBezcoffs2d (bvector<double> &bezcoffs)
+    {
+    bezcoffs.clear ();
+    size_t order = m_cp.size ();
+    for (size_t i = 0; i < order; i++)
+        {
+        AppendBezcoffs2d (bezcoffs, m_cp[i], m_matrix[i]);
+        }
+    }
+
+void EvaluateBezcoffs2d (bvector<double> &bezcoffs, int n, bvector<DPoint3d> &points)
+    {
+    if (n < 2)
+        n = 2;
+    double bezval[6];
+    int order = (int)bezcoffs.size() / 6;
+    for (int i = 0; i <= n; i++)
+        {
+        double f = (double)i / (double) n;
+        bsiBezier_evaluate (bezval, &bezcoffs[0], order, 6, f);
+        DVec3d Q = DVec3d::From (bezval[0], bezval[1], 0.0);
+        RotMatrix M = RotMatrix::FromRowValues (
+            bezval[2], bezval[3], 0,
+            bezval[4], bezval[5], 0,
+            0,         0,         1
+            );
+        DVec3d P;
+        if (M.Solve (P, Q))
+            points.push_back (P);
+        }
+    }
+};
+
+TEST (MatrixWeightedBezier,HelloWorld)
+    {
+    for (int order = 2; order < 5; order++)
+        {
+        SaveAndRestoreCheckTransform shifter (5,0,0);
+        double mu = 1.0;    // balance between constant and normal weights.   1.0 seems best
+        for (double alpha = 0.25; alpha < 1.1; alpha *= 2.0)
+            {
+            SaveAndRestoreCheckTransform shifter (0.1,0.1,0);
+            MatrixWeightedBezier2d bezier;
+            double degreeStep = alpha * 30.0 / (double)(order - 1.0);
+            double w = 1.0;
+            bvector<DPoint3d> circlePoints;
+            for (int i = 0; i < order; i++)
+                {
+                double degrees = i * degreeStep;
+                double radians = Angle::DegreesToRadians (degrees);
+                double tangentRadians = Angle::DegreesToRadians (degrees + 90.0);
+                bezier.AddCP (cos(radians), sin(radians), tangentRadians, w, mu);
+                circlePoints.push_back (DPoint3d::From (cos(radians), sin(radians),0));
+                }
+            bvector<double> coffs;
+            bezier.FormBezcoffs2d (coffs);
+            bvector<DPoint3d> points;
+            bezier.EvaluateBezcoffs2d (coffs, 4 * order, points);
+            double eMax = 0.0;
+            for (auto &xyz : points)
+                eMax = DoubleOps::Max (eMax, 1.0 - xyz.MagnitudeXY ());
+            GEOMAPI_PRINTF ("(order %d) (degreeSweep %g) (eMax %.2g)\n", order, degreeStep, eMax);
+            Check::SaveTransformed (points);
+            Check::SaveTransformed (circlePoints);
+            Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0,0,0), 1.0));
+            }
+        }
+    Check::ClearGeometry ("MatrixWeightedBezier.HelloWorld");
     }
