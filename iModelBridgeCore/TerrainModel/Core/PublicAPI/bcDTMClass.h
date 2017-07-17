@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 
+//__BENTLEY_INTERNAL_ONLY__
 //__PUBLISH_SECTION_START__
 #ifndef __bcDTMClassH__
 #define __bcDTMClassH__
