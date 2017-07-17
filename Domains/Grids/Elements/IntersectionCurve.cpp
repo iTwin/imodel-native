@@ -172,8 +172,13 @@ ICurvePrimitivePtr                  IntersectionCurve::GetCurve
 ) const
     {
     GeometryCollection geomData = *ToGeometrySource ();
-    ICurvePrimitivePtr curve = (*(geomData.begin ())).GetGeometryPtr ()->GetAsICurvePrimitive ();
-    curve->TransformInPlace ((*geomData.begin ()).GetGeometryToWorld ());
+    ICurvePrimitivePtr curve = nullptr;
+    GeometricPrimitivePtr geometricPrimitivePtr = (*(geomData.begin ())).GetGeometryPtr ();
+    if (geometricPrimitivePtr.IsValid())
+        {
+        curve = geometricPrimitivePtr->GetAsICurvePrimitive ();
+        curve->TransformInPlace ((*geomData.begin ()).GetGeometryToWorld ());
+        }
 
     return curve;
     }
