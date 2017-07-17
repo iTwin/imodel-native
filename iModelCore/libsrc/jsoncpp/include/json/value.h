@@ -485,6 +485,7 @@ class JSON_API Value
         }
 
       static Value From(Utf8StringCR document) {Value val; Reader reader; return reader.parse(document, val) ? val : GetNull();}
+      static Value From(Utf8CP beginDoc, Utf8CP endDoc) {Value val; Reader reader; return reader.parse(beginDoc, endDoc, val) ? val : GetNull();}
 
       JsonValueR operator= (JsonValueCR other) {Value temp(other); swap(temp); return *this;}
       JsonValueR operator= (Value&& other) {swap(other); return *this;}

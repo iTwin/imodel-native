@@ -275,7 +275,8 @@ Value::UInt64 Value::asUInt64(UInt64 defaultVal) const
    case stringValue:
         {
         UInt64 val = defaultVal;
-        int stat = sscanf(value_.string_, "%" PRIu64, &val);
+        auto fmt = (value_.string_[0] == '0' && (value_.string_[1] == 'X' || value_.string_[1] == 'x')) ? "%" SCNx64 : "%" SCNu64;
+        int stat = sscanf(value_.string_, fmt, &val);
         BeAssert(stat == 1);
         UNUSED_VARIABLE(stat);;
         return val;
