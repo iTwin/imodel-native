@@ -218,6 +218,9 @@ struct WSRepositoryClient : public IWSRepositoryClient
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
+        
+        // Taken from WebServices team .NET implementation
+        static Utf8String UrlDecode(Utf8String url);
 
     public:
         struct Timeout
@@ -250,6 +253,12 @@ struct WSRepositoryClient : public IWSRepositoryClient
             IWSSchemaProviderPtr schemaProvider = nullptr,
             IHttpHandlerPtr customHandler = nullptr
             );
+
+        //! Parses repository URL to WSRepository. Includes server URL, repository ID, location and plugin ID.
+        //! @param[in] url - URL to repository
+        //! @param[out] remainingPathOut - remaining URL path and/or query after repository identifier
+        //! @return parsed WSRepository or invalid if there was an error
+        WSCLIENT_EXPORT static WSRepository ParseRepositoryUrl(Utf8StringCR url, Utf8StringP remainingPathOut = nullptr);
 
         //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple
         //! file downloads at once.

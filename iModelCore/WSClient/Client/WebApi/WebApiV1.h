@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WebApi/WebApiV1.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -61,8 +61,8 @@ struct WebApiV1 : public WebApi
 
         HttpRequest CreateGetRepositoriesRequest(const bvector<Utf8String>& types, const bvector<Utf8String>& providerIds) const;
 
-        static BentleyStatus ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut);
-        static WSRepositoriesResult ResolveGetRepositoriesResponse(HttpResponse& response);
+        static BentleyStatus ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut, Utf8StringCR serverUrl);
+        static WSRepositoriesResult ResolveGetRepositoriesResponse(HttpResponse& response, Utf8StringCR serverUrl);
         static WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response, ObjectIdCR newObjectId, ObjectIdCR relObjectId, ObjectIdCR parentObjectId);
         static WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response);
         static WSObjectsResult ResolveObjectsResponse(HttpResponse& response, Utf8StringCR schemaName, Utf8StringCR objectClassName = "");
