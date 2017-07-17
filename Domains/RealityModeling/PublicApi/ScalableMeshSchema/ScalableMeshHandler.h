@@ -134,7 +134,7 @@ struct SMNode : Dgn::TileTree::Tile
         SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileLoader("", tile, loads, tile._GetTileCacheKey(), renderSys) {}
         BentleyStatus _LoadTile() override 
             { 
-            return static_cast<SMNodeR>(*m_tile).Read3SMTile(m_tileBytes, (SMSceneR)m_tile->GetRootR(), GetRenderSystem());
+            return static_cast<SMNodeR>(*m_tile).Read3SMTile(m_tileBytes, (SMSceneR)m_tile->GetRootR(), GetRenderSystem(), true);
             };
 
         virtual folly::Future<BentleyStatus> _GetFromSource() override
@@ -154,8 +154,8 @@ private:
     //Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
     bool ReadHeader(DPoint3d& centroid);
-    BentleyStatus Read3SMTile(Dgn::TileTree::StreamBuffer&, SMSceneR, Dgn::Render::SystemP renderSys);    
-    BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys);
+    BentleyStatus Read3SMTile(Dgn::TileTree::StreamBuffer&, SMSceneR, Dgn::Render::SystemP renderSys, bool loadChildren);
+    BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren);
 
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
@@ -280,6 +280,8 @@ struct ScalableMeshModel : IMeshSpatialModel //, Dgn::Render::IGenerateMeshTiles
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         
         SCALABLEMESH_SCHEMA_EXPORT void _AddTerrainGraphics(TerrainContextR context) const override;
+        SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
+        SCALABLEMESH_SCHEMA_EXPORT void _OnFitView(FitContextR context) override;
                         
         
     public:

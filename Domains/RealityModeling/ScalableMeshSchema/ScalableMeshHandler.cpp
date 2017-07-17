@@ -461,7 +461,7 @@ SMGeometry::SMGeometry(IGraphicBuilder::TriMeshArgs const& args, SMSceneR scene,
         }
     }
 
-    if (nullptr == renderSys || !args.m_texture.IsValid())
+    if (nullptr == renderSys /*|| !args.m_texture.IsValid()*/)
         return;
 
     auto graphic = renderSys->_CreateGraphic(Graphic::CreateParams());
@@ -542,7 +542,6 @@ void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
     _GetGraphics(args.m_graphics, depth);
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * Draw this node.
 * @bsimethod                                    Keith.Bentley                   05/16
@@ -580,11 +579,11 @@ void SMNode::_PickGraphics(PickArgsR args, int depth) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys)
+BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
     {
     BeAssert(!IsReady());
 
-    if (SUCCESS != DoRead(in, scene, renderSys))
+    if (SUCCESS != DoRead(in, scene, renderSys, loadChildren))
         {
         SetNotFound();
         BeAssert(false);
@@ -607,6 +606,7 @@ bool SMNode::ReadHeader(DPoint3d& centroid)
 
     m_range.low.Subtract(centroid);
     m_range.high.Subtract(centroid);    
+
         
 /*
     JsonValueCR val = pt["maxScreenDiameter"];
@@ -652,14 +652,15 @@ bool SMNode::ReadHeader(DPoint3d& centroid)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys)
-    {
-#if 0 
-    BeAssert(IsQueued());
+BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
+    {    
+    BeAssert(IsQueued() || ((m_parent != nullptr) && (m_parent->GetLoadStatus() == LoadStatus::Loading)));
+    
     m_loadStatus.store(LoadStatus::Loading);
 
     BeAssert(m_children.empty());
 
+#if 0 
     bmap<Utf8String, int> textureIds, nodeIds;
     bmap<Utf8String, Utf8String> geometryNodeCorrespondence;
     int nodeCount = 0;
@@ -832,12 +833,20 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
         if (!nodeptr->ReadHeader(centroid))
             return ERROR;
-    
+
+        if (loadChildren)
+            {            
+            nodeptr->Read3SMTile(in, scene, renderSys, false);            
+            }
+
         m_children.push_back(nodeptr);
         }
         
     IScalableMeshMeshFlagsPtr loadFlagsPtr(IScalableMeshMeshFlags::Create(true, false));
     IScalableMeshMeshPtr smMeshPtr(m_scalableMeshNodePtr->GetMesh(loadFlagsPtr));    
+
+    if (!smMeshPtr.IsValid())
+        return SUCCESS;
             
     const PolyfaceQuery* polyfaceQuery(smMeshPtr->GetPolyfaceQuery());    
     
@@ -848,9 +857,16 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
                 
     for (size_t pointInd = 0; pointInd < smMeshPtr->GetNbPoints(); pointInd++)
         {
+
         points[pointInd].x = (float)polyfaceQuery->GetPointCP()[pointInd].x - centroid.x;
         points[pointInd].y = (float)polyfaceQuery->GetPointCP()[pointInd].y - centroid.y;
         points[pointInd].z = (float)polyfaceQuery->GetPointCP()[pointInd].z - centroid.z;
+
+/*
+        points[pointInd].x = (float)polyfaceQuery->GetPointCP()[pointInd].x;
+        points[pointInd].y = (float)polyfaceQuery->GetPointCP()[pointInd].y;
+        points[pointInd].z = (float)polyfaceQuery->GetPointCP()[pointInd].z;
+*/
         }
 
     trimesh.m_points = points;
@@ -866,6 +882,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     trimesh.m_vertIndex = vertIndex;
 
     m_geometry.push_front(scene._CreateGeometry(trimesh, renderSys));
+    assert(!m_geometry.empty());
 
     delete [] trimesh.m_points;
     delete [] trimesh.m_vertIndex;
@@ -891,6 +908,66 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     return SUCCESS;
     }
 
+
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   04/16
+//=======================================================================================
+struct ScalableMeshProgressive : ProgressiveTask
+    {
+    SMSceneR m_scene;
+    DrawArgs::MissingNodes m_missing;
+    BeTimePoint m_nextShow;
+    TileLoadStatePtr m_loads;
+    ClipVectorCPtr m_clip;
+
+    ScalableMeshProgressive(SMSceneR scene, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads, ClipVectorCP clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
+    ~ScalableMeshProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
+    Completion _DoProgressive(RenderListContext& context, WantShow&) override;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/16
++---------------+---------------+---------------+---------------+---------------+------*/
+ProgressiveTask::Completion ScalableMeshProgressive::_DoProgressive(RenderListContext& context, WantShow& wantShow)
+    {
+    auto now = BeTimePoint::Now();
+    DrawArgs args(context, m_scene.GetLocation(), m_scene, now, now-m_scene.GetExpirationTime(), m_clip.get());
+
+    //DEBUG_PRINTF("3SM progressive %d missing, ", m_missing.size());
+
+    for (auto const& node: m_missing)
+        {
+        auto stat = node.second->GetLoadStatus();
+        if (stat == Tile::LoadStatus::Ready)
+            node.second->Draw(args, node.first);        // now ready, draw it (this potentially generates new missing nodes)
+        else if (stat != Tile::LoadStatus::NotFound)
+            args.m_missing.Insert(node.first, node.second);     // still not ready, put into new missing list
+        }
+
+    args.RequestMissingTiles(m_scene, m_loads);
+    args.DrawGraphics();     // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
+
+    m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
+
+    //DEBUG_PRINTF("3SM after progressive still %d missing", m_missing.size());
+    if (m_missing.empty()) // when we have no missing tiles, the progressive task is done.
+        {
+        m_loads = nullptr; // for debugging
+        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
+        return Completion::Finished;
+        }
+
+    if (now > m_nextShow)
+        {
+        m_nextShow = now + BeDuration::Seconds(1); // once per second
+        wantShow = WantShow::Yes;
+        }
+
+    return Completion::Aborted;
+    }
+
+
 //SMScene
 
 /*---------------------------------------------------------------------------------**//**
@@ -898,10 +975,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTaskPtr SMScene::_CreateProgressiveTask(DrawArgsR args, TileLoadStatePtr loads)
     {    
-    //MST_TODO
-    ProgressiveTaskPtr progressive; 
-    return progressive;
-    //return new ThreeMxProgressive(*this, args.m_missing, loads, args.m_clip);
+    return new ScalableMeshProgressive(*this, args.m_missing, loads, args.m_clip);        
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1269,6 +1343,33 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
 #endif
     }                 
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshModel::_PickTerrainGraphics(Dgn::PickContextR context) const
+    {
+    if (!m_scene.IsValid())
+        return;
+
+    //MST_TODO
+    Dgn::ClipVectorCPtr clip;
+
+    PickContext::ActiveDescription descr(context, GetName());
+    m_scene->Pick(context, m_scene->GetLocation(), clip.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshModel::_OnFitView(FitContextR context)
+    {
+    Load(nullptr);
+    if (!m_scene.IsValid())
+        return;
+
+    ElementAlignedBox3d rangeWorld = m_scene->ComputeRange();
+    context.ExtendFitRange(rangeWorld, m_scene->GetLocation());
+    }
 
 void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bvector<IMeshSpatialModelP>& models)
     {
