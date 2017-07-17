@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSRepository.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -91,4 +91,31 @@ Utf8StringCR WSRepository::GetPluginId() const
 void WSRepository::SetPluginId(Utf8String pluginId)
     {
     m_pluginId = std::move(pluginId);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Vilius.Kazlauskas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8StringCR WSRepository::GetServerUrl() const
+    {
+    return m_serverUrl;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Vilius.Kazlauskas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSRepository::SetServerUrl(Utf8String url)
+    {
+    m_serverUrl = url;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                               Vilius.Kazlauskas    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool WSRepository::IsValid() const
+    {
+    if (m_serverUrl.empty() || m_id.empty())
+        return false;
+
+    return true;
     }

@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSClientTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <WebServices/Client/WSClient.h>
@@ -383,6 +383,7 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1Format_ParsesDefaultFie
     EXPECT_EQ("A", dataSource.GetLabel());
     EXPECT_EQ("B", dataSource.GetDescription());
     EXPECT_EQ("D", dataSource.GetPluginId());
+    EXPECT_EQ("https://srv.com/ws", dataSource.GetServerUrl());
     }
 
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1FormatWithType_ParsesLocationFromId)
@@ -481,6 +482,7 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV1AndIdIsNotKnownFormat_R
     EXPECT_EQ("A", dataSource.GetLabel());
     EXPECT_EQ("B", dataSource.GetDescription());
     EXPECT_EQ("D", dataSource.GetPluginId());
+    EXPECT_EQ("https://srv.com/ws", dataSource.GetServerUrl());
 
     EXPECT_EQ("", dataSource.GetLocation());
     }
@@ -620,6 +622,7 @@ TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV2Format_ReturnsParsedDat
     EXPECT_EQ("testDescription", dataSource.GetDescription());
     EXPECT_EQ("testLocation", dataSource.GetLocation());
     EXPECT_EQ("testPluginId", dataSource.GetPluginId());
+    EXPECT_EQ("https://srv.com/ws", dataSource.GetServerUrl());
     }
 
 TEST_F(WSClientTests, SendGetRepositoriesRequest_WebApiV2FormatWithWrongSchema_ReturnsErrorNotSupported)
