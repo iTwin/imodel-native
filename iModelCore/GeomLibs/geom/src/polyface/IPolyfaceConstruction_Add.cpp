@@ -177,10 +177,20 @@ static void AddRuleLineNormals(IPolyfaceConstructionR builder,
     DPoint3dCR point1, DVec3dCR tangent1,
     size_t &normalIndexA, size_t &normalIndexB)
     {
+    static double s_magnitudeTolerance = 1.0e-8;
     DVec3d ruleVector = DVec3d::FromStartEnd (point1, point0);
     DVec3d normalA, normalB;
+    double magT0 = tangent0.Magnitude ();
+    double magT1 = tangent1.Magnitude ();
+    double magRule = ruleVector.Magnitude ();
     normalA.NormalizedCrossProduct (tangent0, ruleVector);
     normalB.NormalizedCrossProduct (tangent1, ruleVector);
+    // If just one of the tangents is near zero, this pulls the other normal ....
+    if (magT0 < s_magnitudeTolerance * magRule)
+        normalA = normalB;
+    if (magT1 < s_magnitudeTolerance * magRule)
+        normalB = normalA;
+
     normalA.Negate ();
     normalB.Negate ();
     normalIndexA = builder.FindOrAddNormal (normalA);
