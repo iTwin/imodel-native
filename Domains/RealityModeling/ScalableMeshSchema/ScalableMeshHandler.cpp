@@ -464,11 +464,13 @@ SMGeometry::SMGeometry(IGraphicBuilder::TriMeshArgs const& args, SMSceneR scene,
     if (nullptr == renderSys /*|| !args.m_texture.IsValid()*/)
         return;
 
+    m_texture = args.m_texture;
+
     auto graphic = renderSys->_CreateGraphic(Graphic::CreateParams());
     graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
     graphic->AddTriMesh(args);
     graphic->Close();
-
+    
     m_graphic = graphic;
 }
 
@@ -528,7 +530,7 @@ TileLoaderPtr SMNode::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Sys
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
     {
-    static bool s_debugRange = false;
+    static bool s_debugRange = true;
     if (s_debugRange)
         {
         GraphicParams params;
@@ -539,7 +541,42 @@ void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
         graphic->AddRangeBox(m_range);
         args.m_graphics.m_graphics.Add(*graphic);
         }
-    _GetGraphics(args.m_graphics, depth);
+
+    static bool s_debugTexture = true;
+
+    if (!s_debugTexture)
+        _GetGraphics(args.m_graphics, depth);
+    else
+        {        
+        for (auto& geom : m_geometry)
+            {
+            Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic();
+
+            IGraphicBuilder::TileCorners corners;
+
+            DPoint3d rangeCorners[8];
+        
+            m_range.Get8Corners(rangeCorners);
+
+            memcpy(&corners.m_pts[0], &rangeCorners[4], sizeof(DPoint3d));
+            memcpy(&corners.m_pts[1], &rangeCorners[5], sizeof(DPoint3d));
+            memcpy(&corners.m_pts[2], &rangeCorners[6], sizeof(DPoint3d));
+            memcpy(&corners.m_pts[3], &rangeCorners[7], sizeof(DPoint3d));
+            
+
+            GraphicParams params;
+            params.SetLineColor(ColorDef::Blue());
+            graphic->ActivateGraphicParams(params);
+            graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
+            graphic->AddTile(*geom->m_texture, corners);
+
+            auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
+            BeAssert(SUCCESS == stat);
+            UNUSED_VARIABLE(stat);
+                                    
+            args.m_graphics.m_graphics.Add(*graphic);            
+            }
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -652,9 +689,11 @@ bool SMNode::ReadHeader(DPoint3d& centroid)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
+static bool s_applyTexture = true;
+
 BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
     {    
-    BeAssert(IsQueued() || ((m_parent != nullptr) && (m_parent->GetLoadStatus() == LoadStatus::Loading)));
+    //BeAssert(IsQueued() || ((m_parent != nullptr) && (m_parent->GetLoadStatus() == LoadStatus::Loading)));
     
     m_loadStatus.store(LoadStatus::Loading);
 
@@ -873,19 +912,46 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     trimesh.m_numIndices = polyfaceQuery->GetPointIndexCount();
     int* vertIndex = new int[trimesh.m_numIndices];
-    
-    for (size_t faceInd = 0; faceInd < polyfaceQuery->GetPointIndexCount(); faceInd++)
+
+    _fPoint2d* textureUv;
+    textureUv = new _fPoint2d[trimesh.m_numIndices];
+            
+    for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
         {
-        vertIndex[faceInd] = polyfaceQuery->GetPointIndexCP()[faceInd] - 1;
+        vertIndex[faceVerticeInd] = polyfaceQuery->GetPointIndexCP()[faceVerticeInd] - 1;
+                
+        const DPoint2d* uv = &polyfaceQuery->GetParamCP()[polyfaceQuery->GetParamIndexCP()[faceVerticeInd]];
+
+        textureUv[faceVerticeInd].x = uv->x;
+        textureUv[faceVerticeInd].y = uv->y;
         }
 
     trimesh.m_vertIndex = vertIndex;
+
+if (s_applyTexture)
+{
+    trimesh.m_textureUV = textureUv;
+
+    //IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
+
+    IScalableMeshTexturePtr compressedTexturePtr(m_scalableMeshNodePtr->GetTextureCompressed());
+    Image jpegImage(Image::FromJpeg(compressedTexturePtr->GetData(), compressedTexturePtr->GetSize(), Image::Format::Rgb));
+    //ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
+
+    ImageSource imageSource(jpegImage, ImageSource::Format::Jpeg);
+
+    trimesh.m_texture =  renderSys->_CreateTexture(imageSource, Image::Format::Rgb, Image::BottomUp::Yes);                    
+}
 
     m_geometry.push_front(scene._CreateGeometry(trimesh, renderSys));
     assert(!m_geometry.empty());
 
     delete [] trimesh.m_points;
     delete [] trimesh.m_vertIndex;
+    delete [] trimesh.m_textureUV;
+    
+    
+
         
 #if 0 
     Render::IGraphicBuilder::TriMeshArgs trimesh;

@@ -105,7 +105,7 @@ protected:
     bvector<FPoint3d> m_normals;
     bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
-    Dgn::Render::GraphicPtr m_graphic;
+    Dgn::Render::GraphicPtr m_graphic;    
 
 public:
     SMGeometry() {}
@@ -116,6 +116,9 @@ public:
     void ClearGraphic() { m_graphic = nullptr; }
     bvector<FPoint3d> const& GetPoints() const { return m_points; }
     bool IsEmpty() const { return m_points.empty(); }
+
+
+    BentleyB0200::RefCountedPtr<BentleyB0200::Dgn::Render::Texture> m_texture;
 };
 
 
