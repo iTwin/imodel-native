@@ -11,6 +11,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/MeshTile.h>
+#include <DgnPlatform/ModelSpatialClassifier.h>
 #include <forward_list>
 
 #define BEGIN_BENTLEY_THREEMX_NAMESPACE      BEGIN_BENTLEY_NAMESPACE namespace ThreeMx {
@@ -205,11 +206,14 @@ struct ThreeMxModel : Dgn::SpatialModel, Dgn::Render::IGetTileTreeForPublishing
     BE_JSON_NAME(sceneFile)
     BE_JSON_NAME(location)
     BE_JSON_NAME(clip)
+    BE_JSON_NAME(classifiers)
 private:
-    Utf8String m_sceneFile;
-    Transform m_location;
-    mutable Dgn::ClipVectorCPtr m_clip;
-    mutable ScenePtr m_scene;
+    Utf8String                              m_sceneFile;
+    Transform                               m_location;
+
+    mutable Dgn::ClipVectorCPtr             m_clip;
+    mutable ScenePtr                        m_scene;
+    mutable Dgn::ModelSpatialClassifiers    m_classifiers;;
 
     DRange3d GetSceneRange();
     void Load(Dgn::Render::SystemP) const;
@@ -227,6 +231,7 @@ public:
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
     THREEMX_EXPORT Dgn::TileTree::RootCPtr _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const override;
     THREEMX_EXPORT Dgn::ClipVectorPtr _GetPublishingClip() const override;
+    THREEMX_EXPORT BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override;
 
 
 
@@ -243,6 +248,9 @@ public:
     //! @note To save this value for future sessions, you must call this model's Update method.
     void SetClip(Dgn::ClipVectorCP clip) {m_clip = clip;}
 
+    //! Set the spatial classifiers for this reality model.
+    void SetClassifiers(Dgn::ModelSpatialClassifiersCR classifiers) { m_classifiers = classifiers; }
+
     //! Set the location for this ThreeMxModel from the Spatial Reference System (SRS) data in the scene (.3mx) file.
     //! Generally, this should be called once when the model is first created. On success, the location transformation of the model
     //! is established to position the scene's geolocation into the BIM's GCS. 
@@ -257,7 +265,7 @@ public:
 struct ModelHandler :  Dgn::dgn_ModelHandler::Spatial
 {
     MODELHANDLER_DECLARE_MEMBERS ("ThreeMxModel", ThreeMxModel, ModelHandler, Dgn::dgn_ModelHandler::Spatial, THREEMX_EXPORT)
-    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::RepositoryLinkCR modeledElement, Utf8CP sceneFile, TransformCP, Dgn::ClipVectorCP);
+    THREEMX_EXPORT static Dgn::DgnModelId CreateModel(Dgn::RepositoryLinkCR modeledElement, Utf8CP sceneFile, TransformCP, Dgn::ClipVectorCP, Dgn::ModelSpatialClassifiersCP classifiers = nullptr);
 };
 
 END_BENTLEY_THREEMX_NAMESPACE

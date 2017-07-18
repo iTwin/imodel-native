@@ -211,7 +211,7 @@ void ThreeMxModel::Load(SystemP renderSys) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnModelId ModelHandler::CreateModel(RepositoryLinkCR modeledElement, Utf8CP sceneFile, TransformCP trans, ClipVectorCP clip)
+DgnModelId ModelHandler::CreateModel(RepositoryLinkCR modeledElement, Utf8CP sceneFile, TransformCP trans, ClipVectorCP clip, ModelSpatialClassifiersCP classifiers)
     {
     DgnDbR db = modeledElement.GetDgnDb();
     DgnClassId classId(db.Schemas().GetClassId(THREEMX_SCHEMA_NAME, "ThreeMxModel"));
@@ -225,6 +225,9 @@ DgnModelId ModelHandler::CreateModel(RepositoryLinkCR modeledElement, Utf8CP sce
     
     if (clip)
         model->SetClip(ClipVector::CreateCopy(*clip).get());
+
+    if (nullptr != classifiers)
+        model->SetClassifiers(*classifiers);
 
     model->Insert();
     return model->GetModelId();
@@ -266,6 +269,7 @@ void ThreeMxModel::_AddTerrainGraphics(TerrainContextR context) const
     if (m_scene.IsValid())
         m_scene->DrawInView(context, m_scene->GetLocation(), m_clip.get());
     }
+                                                                  
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
@@ -307,6 +311,9 @@ void ThreeMxModel::_OnSaveJsonProperties()
     if (m_clip.IsValid())
         val[json_clip()] = m_clip->ToJson();
 
+    if (!m_classifiers.empty())
+        val[json_classifiers()] = m_classifiers.ToJson();
+
     SetJsonProperties(json_threemx(), val);
     }
 
@@ -327,6 +334,9 @@ void ThreeMxModel::_OnLoadedJsonProperties()
 
     if (val.isMember(json_clip()))
         m_clip = ClipVector::FromJson(val[json_clip()]);
+
+    if (val.isMember(json_classifiers()))
+        m_classifiers.FromJson(val[json_classifiers()]);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -359,5 +369,14 @@ Dgn::TileTree::RootCPtr ThreeMxModel::_GetPublishingTileTree(Dgn::Render::System
 Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip () const
     {
     return m_clip.IsValid() ? m_clip->Clone(nullptr) : nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ray.Bentley                     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ThreeMxModel::_GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const 
+    {
+    classifiers = m_classifiers;
+    return SUCCESS;
     }
 
