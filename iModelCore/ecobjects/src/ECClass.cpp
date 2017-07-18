@@ -2919,7 +2919,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP a
             if (!baseConstraint.SupportsClass(*constraint) && baseConstraint.GetAbstractConstraint() == abstractConstraint && resolveIssues)
                 {
                 ECEntityClassCP commonClass = nullptr;
-                FindCommonBaseClass(commonClass, abstractConstraint, GetConstraintClasses());
+                FindCommonBaseClass(commonClass, abstractConstraint->GetEntityClassCP(), GetConstraintClasses());
 
                 if (nullptr != commonClass && ECObjectsStatus::Success == baseConstraint.ValidateAbstractConstraint(commonClass))
                     {
