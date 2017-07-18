@@ -63,11 +63,9 @@ struct iModelManagerTests: public IntegrationTestsBase
         return IntegrationTestsBase::AcquireBriefcase(*m_client, *m_imodel);
         }
 
-    Utf8String GetScopeString(CodeSpecPtr codeSpec)
+    Utf8String GetScopeString(CodeSpecPtr codeSpec, DgnElementCR scopeElement)
         {
-        Utf8String scopeString;
-        scopeString.Sprintf("%d", codeSpec->GetScope().GetType());
-        return scopeString;
+        return codeSpec->GetScopeElementId(scopeElement).ToString(BeInt64Id::UseHex::Yes);
         }
     };
 
@@ -173,7 +171,7 @@ RepositoryStatus DemoteLock (DgnModelCR model, LockLevel level = LockLevel::None
 //---------------------------------------------------------------------------------------
 void SetLastPulledChangeSetId (Briefcase& briefcase, Utf8StringCR changeSetId)
     {
-    briefcase.GetDgnDb ().SaveBriefcaseLocalValue ("ParentRevisionId", changeSetId);
+    briefcase.GetDgnDb ().SaveBriefcaseLocalValue ("ParentChangeSetId", changeSetId);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1530,20 +1528,10 @@ TEST_F(iModelManagerTests, GetCodeMaximumIndex)
     codes.insert(code2);
     EXPECT_STATUS(Success, db1.BriefcaseManager().ReserveCodes(codes).Result());
 
-    // Check first template value is set
-    auto imodelConnection = briefcase1->GetiModelConnection().QueryCodeMaximumIndex(*codeSpec1)->GetResult();
-    CodeSequence resultTemplate = imodelConnection.GetValue();
-    EXPECT_EQ("0020", resultTemplate.GetValue());
-    
-    // Check second template value empty
-    imodelConnection = briefcase1->GetiModelConnection().QueryCodeMaximumIndex(*codeSpec2)->GetResult();
-    resultTemplate = imodelConnection.GetValue();
-    EXPECT_EQ("", resultTemplate.GetValue());
-
     // Try with CodeSequence class
-    auto codeSequence = CodeSequence(codeSpec1->GetCodeSpecId(), GetScopeString(codeSpec1), "PMP-####");
-    imodelConnection = briefcase1->GetiModelConnection().QueryCodeMaximumIndex(codeSequence)->GetResult();
-    resultTemplate = imodelConnection.GetValue();
+    auto codeSequence = CodeSequence(codeSpec1->GetCodeSpecId(), GetScopeString(codeSpec1, *partition1_1), "PMP-####");
+    auto codeResult = briefcase1->GetiModelConnection().QueryCodeMaximumIndex(codeSequence)->GetResult();
+    auto resultTemplate = codeResult.GetValue();
     EXPECT_EQ("0020", resultTemplate.GetValue());
     }
 
@@ -1590,21 +1578,11 @@ TEST_F(iModelManagerTests, GetCodeNextAvailable)
     codes.insert(code1);
     codes.insert(code2);
     EXPECT_STATUS(Success, db1.BriefcaseManager().ReserveCodes(codes).Result());
-
-    // Check first template value is set
-    auto templatesResult = briefcase1->GetiModelConnection().QueryCodeNextAvailable(*codeSpec1)->GetResult();
-    CodeSequence resultTemplate = templatesResult.GetValue();
-    EXPECT_EQ("0015", resultTemplate.GetValue());
-
-    // Check second template value
-    templatesResult = briefcase1->GetiModelConnection().QueryCodeNextAvailable(*codeSpec2)->GetResult();
-    resultTemplate = templatesResult.GetValue();
-    EXPECT_EQ("0010", resultTemplate.GetValue());
     
     // Try with CodeSequence class
-    auto codeSequence = CodeSequence(codeSpec1->GetCodeSpecId(), GetScopeString(codeSpec1), "PMP-####");
-    templatesResult = briefcase1->GetiModelConnection().QueryCodeNextAvailable(codeSequence, 10, 5)->GetResult();
-    resultTemplate = templatesResult.GetValue();
+    auto codeSequence = CodeSequence(codeSpec1->GetCodeSpecId(), GetScopeString(codeSpec1, *partition1_1), "PMP-####");
+    auto templatesResult = briefcase1->GetiModelConnection().QueryCodeNextAvailable(codeSequence, 10, 5)->GetResult();
+    auto resultTemplate = templatesResult.GetValue();
     EXPECT_EQ("0015", resultTemplate.GetValue());
     }
 
