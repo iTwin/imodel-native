@@ -199,15 +199,30 @@ size_t FormattingTestFixture::FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8
     }
 
 
-void ShowTextSectionsByDividers(Utf8CP txt, Utf8CP divDef)
+void FormattingTestFixture::ShowSplitByDividers(Utf8CP txt, Utf8CP divDef)
     {
     FormattingDividers div = FormattingDividers(divDef);
     LOG.infov("Examining:|%s|", txt);
-    for (Utf8CP p = txt; *p != '\0'; p++)
+    Utf8Char buf[64];
+    memset(buf, '\0', sizeof(buf));
+    size_t len;
+    Utf8CP s = txt, e = txt;
+    for (Utf8CP p = txt, s = txt; *p != '\0'; p++)
         {
-        if(div.IsDivider(*p))
-            LOG.infov("Stopper:|%c| at %d", *p, (p - txt));
+        if (div.IsDivider(*p))
+            {
+            len = p - s;
+            memcpy(buf, s, len);
+            buf[len] = '\0';
+            LOG.infov("segment:|%s| at %d len %d", buf, (p - txt), len);
+            s = p + 1;
+            }
+        e = p;
         }
+    len = e - s + 1;
+    if(len > 0)
+        LOG.infov("last segment:|%s| at %d len %d", e, (e - txt), len);
+
     return;
     }
 
@@ -278,6 +293,124 @@ bool FormattingTestFixture::GetNextLine(Utf8P buf, int bufLen)
         }
 #endif
     return false;
+    }
+
+void FormattingTestFixture::DecomposeString(Utf8CP str, bool revers)
+    {
+    size_t n = strlen(str);
+    CursorScanPoint csp(str, revers? n:0, revers);
+    LOG.infov("CSP: |%s|", csp.ToText().c_str());
+
+    while (!csp.IsEndOfLine() && n > 0)
+        {
+        csp.Iterate(str, revers);
+        LOG.infov("CSP: |%s|", csp.ToText().c_str());
+        --n;
+        }
+    }
+
+void FormattingTestFixture::TestScanPointVector(Utf8CP str)
+    {
+
+    FormatParseVector forw(str, false);
+    bvector<CursorScanPoint> fvect = forw.GetArray();
+    LOG.info("============= Forward Vector scan =================");
+    for (CursorScanPointP csp = fvect.begin(); csp != fvect.end(); csp++)
+        {
+        LOG.infov("->CSP: |%s|", csp->ToText().c_str());
+        }
+    LOG.infov("->Pattern: |%s|", forw.GetPattern().c_str());
+    LOG.info("============= Reversed Vector scan =================");
+    FormatParseVector cont(str, true);
+    bvector<CursorScanPoint> vect = cont.GetArray();
+
+    for(CursorScanPointP csp = vect.begin(); csp != vect.end(); csp++)
+        { 
+        LOG.infov("<-CSP: |%s|", csp->ToText().c_str());
+        }
+    LOG.infov("<-Pattern: |%s|", cont.GetPattern().c_str());
+    LOG.info("============= Vector Scan complete =================\n");
+    }
+
+void FormattingTestFixture::TestScanTriplets(Utf8CP str)
+    {
+    LOG.info("============= Triplet Scan =================\n");
+    LOG.infov("Input: |%s|", str);
+     FormatParseVector forw(str, false);
+     LOG.infov("->Signature: |%s|", forw.GetSignature().c_str());
+     do {
+         LOG.infov("->Triplet at %d |%s|", forw.GetTripletIndex(), forw.GetTriplet().c_str());
+         } while(forw.MoveFrame());
+
+    FormatParseVector revs(str, true);
+    LOG.infov("<-Signature: |%s|", revs.GetSignature().c_str());
+    do {
+        LOG.infov("<-Triplet at %d |%s|", revs.GetTripletIndex(), revs.GetTriplet().c_str());
+        } while (revs.MoveFrame());
+    LOG.info("============= Triplet Scan complete =================\n");
+    }
+
+
+Utf8CP FormattingTestFixture::TestGrabber(Utf8CP input, size_t start)
+    {
+    LOG.infov("=========== Numeric Grabber test |%s| from %d", input, start);
+    NumberGrabber ng = NumberGrabber(input, start);
+    int repet = 100000;
+    FormatStopWatch wat = FormatStopWatch();
+    size_t len = ng.Grab();
+    for (int i = 0; i < repet; i++)
+        {
+         len = ng.Grab();
+        }
+    LOG.info(wat.LastIntervalMetrics(repet).c_str());
+    size_t ti = ng.GetNextIndex();
+    if (ng.GetType() == ParsingSegmentType::Real)
+        {
+        LOG.infov("Real %.6f Integer %d  Tail |%s| nextInd %d", ng.GetReal(), ng.GetInteger(), ng.GetTail(), ti);
+        }
+    else if (ng.GetType() == ParsingSegmentType::Integer)
+        {
+        LOG.infov("Integer %d Real %.6f Tail |%s| nextInd %d", ng.GetInteger(), ng.GetReal(), ng.GetTail(), ng.GetNextIndex());
+        }
+    else
+        LOG.infov("Cannot interpret input. Tail |%s| nextInd %d", ng.GetTail(), ng.GetNextIndex());
+    input = ng.GetTail();
+    return input;
+    }
+
+void FormattingTestFixture::TestSegments(Utf8CP input, size_t start, Utf8CP unitName)
+    {
+    LOG.infov("=========== TestSegments |%s| from %d", input, start);
+    FormatParsingSet fps = FormatParsingSet(input, start, unitName);
+    bvector<FormatParsingSegment> segs = fps.GetSegments();
+    int n = 0;
+    for (FormatParsingSegmentP s = segs.begin(); s != segs.end(); s++)
+        {
+        LOG.info(s->ToText(n++).c_str());
+        }
+    LOG.infov("Signature: %s reduced %s", fps.GetSignature(true).c_str(), fps.GetSignature(false).c_str());
+    LOG.info("=========== TestSegments End =============");
+    }
+
+
+void FormattingTestFixture::ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName)
+    {
+    LOG.infov("=========== Parsing To Quantity |%s| from %d", input, start);
+    FormatParsingSet fps = FormatParsingSet(input, start, unitName);
+    BEU::Quantity qty = fps.GetQuantity();
+    if(qty.IsNullQuantity())
+        LOG.info("Parsing failed");
+    else
+        {
+        LOG.infov("Unit: %s Magnitude %.6f", qty.GetUnitName(), qty.GetMagnitude());
+        BEU::UnitCP un1 = BEU::UnitRegistry::Instance().LookupUnit(unitName);
+        BEU::Quantity q1 = qty.ConvertTo(un1);
+        if (q1.IsNullQuantity())
+            LOG.infov("Invalid alternative Unit: %s", unitName);
+        else
+            LOG.infov("Unit: %s Magnitude %.6f", q1.GetUnitName(), q1.GetMagnitude());
+        }
+    LOG.info("=========== Parsing To Quantity End =============");
     }
 
 bool FormattingTestFixture::GetNextInstruction(Utf8P buf, int bufLen, Utf8P com, int comLen)

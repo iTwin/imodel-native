@@ -40,7 +40,7 @@ struct FormattingTestFixture
         static NumericAccumulator* NumericAccState(NumericAccumulator* nacc, Utf8CP txt);
         static void TestFUSQuantity(double dval, Utf8CP uom, Utf8CP fusDesc, Utf8CP space);
         static int FindLastDividerPos(Utf8CP txt, Utf8Char div);
-        static void ShowTextSectionsByDividers(Utf8CP txt, Utf8CP divDef);
+        static void ShowSplitByDividers(Utf8CP txt, Utf8CP divDef);
         static size_t FindDividerPos(Utf8CP txt, bvector<int>* pos, Utf8Char div);
         static bool OpenTestData();
         static void CloseTestData();
@@ -50,6 +50,12 @@ struct FormattingTestFixture
         static size_t CopyTextSecure(Utf8P dest, size_t destSize, Utf8CP src);
         static size_t ExtractArgs(Utf8CP desc, Utf8P buf, size_t bufL, bvector<Utf8CP>* parts, Utf8Char div);
         static size_t GetNextArguments(Utf8P buf, int bufLen, bvector<Utf8CP>* parts, Utf8Char div);
+        static void DecomposeString(Utf8CP str, bool revers);
+        static void TestScanPointVector(Utf8CP str);
+        static void TestScanTriplets(Utf8CP str);
+        static Utf8CP TestGrabber(Utf8CP input, size_t start= 0);
+        static void TestSegments(Utf8CP input, size_t start, Utf8CP unitName);
+        static void ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName = nullptr);
     };
 
 END_BENTLEY_FORMATTEST_NAMESPACE

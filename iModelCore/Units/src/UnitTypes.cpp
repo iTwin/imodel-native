@@ -348,3 +348,7 @@ bool Phenomenon::IsCompatible(UnitCR unit) const
     {
     return Expression::ShareSignatures(*this, unit);
     }
+
+bool Phenomenon::IsLength() const { return m_name.Equals(LENGTH); }
+bool Phenomenon::IsTime() const { return m_name.Equals(TIME); }
+bool Phenomenon::IsAngle() const { return m_name.Equals(ANGLE); }

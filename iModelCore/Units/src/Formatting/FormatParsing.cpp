@@ -10,9 +10,6 @@
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
 
-
-
-
 //===================================================
 //
 // FormattingScannerCursorMethods
@@ -930,6 +927,9 @@ AccumulatorState NumericAccumulator::SetDecimalPoint()
     return m_stat = AccumulatorState::Failure;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 AccumulatorState NumericAccumulator::SetExponentMark()
     {
     if((m_stat == AccumulatorState::Integer|| m_stat == AccumulatorState::Fraction) && (m_count[0] + m_count[1] > 0) && m_expMark == false)
@@ -980,6 +980,9 @@ AccumulatorState NumericAccumulator::AddSymbol(size_t symb)
         return m_stat;
     }
 
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 AccumulatorState NumericAccumulator::SetComplete() 
     { 
     if (HasFailed() || IsComplete())
@@ -1027,7 +1030,9 @@ AccumulatorState NumericAccumulator::SetComplete()
 
     return m_stat = AccumulatorState::Complete; 
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 Utf8String NumericAccumulator::ToText()
     {
     Utf8String str;
@@ -1042,7 +1047,9 @@ Utf8String NumericAccumulator::ToText()
 // UnitProxy Methods
 //
 //===================================================
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 UnitProxy::UnitProxy(Utf8CP name, Utf8CP label)
     {
     m_unitLabel = nullptr;
@@ -1055,7 +1062,9 @@ UnitProxy::UnitProxy(Utf8CP name, Utf8CP label)
             m_unitLabel = Utf8String(label);
         }
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 bool UnitProxy::SetName(Utf8CP name)
     {
     m_unit = BEU::UnitRegistry::Instance().LookupUnit(name);
@@ -1066,7 +1075,9 @@ bool UnitProxy::SetName(Utf8CP name)
         }
     return false;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 bool UnitProxy::SetUnit(BEU::UnitCP unit)
     {
     if (nullptr != unit)
@@ -1077,7 +1088,9 @@ bool UnitProxy::SetUnit(BEU::UnitCP unit)
         }
     return false;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 bool UnitProxy::Reset() const
     {
     if (m_unitName.empty())
@@ -1085,7 +1098,9 @@ bool UnitProxy::Reset() const
     m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_unitName.c_str());
     return !(nullptr == m_unit);
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 bool UnitProxySet::IsConsistent()
     {
     BEU::UnitCP un1;
@@ -1104,7 +1119,9 @@ bool UnitProxySet::IsConsistent()
         }
     return consist;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 int UnitProxySet::Validate() const
     {
     BEU::UnitRegistry* reg = &BEU::UnitRegistry::Instance();
@@ -1113,7 +1130,9 @@ int UnitProxySet::Validate() const
     for (int i = 0; i < m_proxys.size(); m_proxys[i++].Reset());
     return m_resetCount++;
     }
-
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//----------------------------------------------------------------------------------------
 size_t UnitProxySet::UnitCount()
     {
     for (size_t n = 0; IsIndexCorrect(n); ++n)
@@ -1123,6 +1142,868 @@ size_t UnitProxySet::UnitCount()
         }
     return 0;
     }
+
+//===================================================
+//
+// CursorScanPoint Methods
+//
+//============================================
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+// the caller is responsible for keeping the index inside the allowable range
+//----------------------------------------------------------------------------------------
+ScannerCursorStatus CursorScanPoint::AppendTrailingByte(Utf8CP txt)
+    {
+    if (ScannerCursorStatus::Success == m_status && m_len < sizeof(m_bytes))
+        {
+        char bits = 0;
+        unsigned char c = txt[m_indx];
+        if (FormatConstant::GetTrailingBits(c, &bits)) // this validates the byte and extracts trailing bits
+            {
+            m_uniCode <<= FormatConstant::GetTrailingShift();
+            m_uniCode |= bits;
+            m_bytes[m_len++] = c;
+            m_indx++;
+            return ScannerCursorStatus::Success;
+            }
+        else
+            return ScannerCursorStatus::IncompleteSequence;
+        }
+    return m_status;
+    }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+// the caller is responsible for keeping the index inside the allowable range
+//----------------------------------------------------------------------------------------
+CursorScanPoint::CursorScanPoint(Utf8CP input, size_t indx, bool revers)
+    {
+    m_indx = indx;
+    if (revers)
+      ProcessPrevious(input);
+    else
+      ProcessNext(input);
+    }
+
+void CursorScanPoint::Iterate(Utf8CP input, bool revers)
+    {
+    if (revers)
+        ProcessPrevious(input);
+    else
+        ProcessNext(input);
+    }
+
+void CursorScanPoint::ProcessASCII(unsigned char c)
+    {
+    m_bytes[m_len++] = c;
+    m_uniCode = FormatConstant::ASCIIcode(c);
+    m_patt = 'a';
+    if (isspace(c))
+        m_patt = FormatConstant::SpaceSymbol();
+    else if (isdigit(c))
+        m_patt = FormatConstant::NumberSymbol();
+    else if (c == '+' || c == '-')
+        m_patt = FormatConstant::SignSymbol();
+    else if (c == 'e' || c == 'E')
+        m_patt = 'x';     // a suspicion of exponent - TBD later
+    else if (c == '.' || c == ',' || c == '/' || c == '_')
+    m_patt = c;
+    }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
+void CursorScanPoint::ProcessNext(Utf8CP input)
+    {
+    if (nullptr == input)
+        {
+        input = FormatConstant::EmptyString();
+        m_indx = 0;
+        }
+    m_uniCode = 0;
+    m_len = 0;
+    memset(m_bytes, '\0', sizeof(m_bytes));
+    m_patt = FormatConstant::EndOfLine();
+    m_status = ScannerCursorStatus::Success;
+
+    unsigned char c = input[m_indx];
+    size_t seqLen = FormatConstant::GetSequenceLength(c);
+    while (ScannerCursorStatus::Success == m_status)
+        {
+        if (FormatConstant::IsEndOfLine(c))    // detected end of line
+            break;
+        if (seqLen == 1)
+            {
+            ProcessASCII(c);
+            //m_bytes[m_len++] = c;
+            //m_uniCode = FormatConstant::ASCIIcode(c);
+            //m_patt = 'a';
+            //if (isspace(c))
+            //    m_patt = FormatConstant::SpaceSymbol();
+            //else if (isdigit(c))
+            //    m_patt = FormatConstant::NumberSymbol();
+            //else if (c == '+' || c == '-')
+            //    m_patt = FormatConstant::SignSymbol();
+            //else if (c == 'e' || c == 'E')
+            //    m_patt = 'x';     // a suspicion of exponent - TBD later
+            //else if (c == '.' || c == ',' || c == '/' || c == '_')
+            //   m_patt = c;
+            m_indx++;
+            break;
+            }
+        if (seqLen == 2)
+            {
+            m_bytes[m_len++] = c;
+            m_uniCode = (size_t)(c &  ~FormatConstant::UTF_2ByteMask());
+            m_indx++;
+            AppendTrailingByte(input);
+            m_patt = 'b';
+            break;
+            }
+        if (seqLen == 3)
+            {
+            m_bytes[m_len++] = c;
+            m_uniCode = (size_t)(c &  ~FormatConstant::UTF_3ByteMask());
+            m_indx++;
+            AppendTrailingByte(input);
+            AppendTrailingByte(input);
+            m_patt = 'c';
+            break;
+            }
+        if (seqLen == 4)
+            {
+            m_bytes[m_len++] = c;
+            m_uniCode = (size_t)(c &  ~FormatConstant::UTF_4ByteMask());
+            m_indx++;
+            AppendTrailingByte(input);
+            AppendTrailingByte(input);
+            AppendTrailingByte(input);
+            m_patt = 'd';
+            break;
+            }
+
+        m_status = ScannerCursorStatus::InvalidSymbol;
+        break;
+        }
+    }
+
+void CursorScanPoint::Init()
+    {
+    m_uniCode = 0;
+    m_indx = 0;
+    m_len = 0;
+    memset(m_bytes, 0, sizeof(m_bytes));
+    m_patt = '\0';
+    m_status = ScannerCursorStatus::Success;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
+void CursorScanPoint::ProcessPrevious(Utf8CP input)
+    {
+    if (nullptr == input)
+        {
+        input = FormatConstant::EmptyString();
+        m_indx = 0;
+        }
+    m_uniCode = 0;
+    m_len = 0;
+    memset(m_bytes, '\0', sizeof(m_bytes));
+    m_patt = FormatConstant::EndOfLine();
+    m_status = ScannerCursorStatus::Success;
+    unsigned char c = GetPrecedingByte(input);
+    while (ScannerCursorStatus::Success == m_status)
+        {
+        if (FormatConstant::EndOfLine() == c)    // detected end of line
+            break;
+        if (FormatConstant::IsASCIIChar(c))  // it's the simplest case - we done
+            {
+            ProcessASCII(c);
+            //m_bytes[m_len++] = c;
+            //m_uniCode = FormatConstant::ASCIIcode(c);
+            //m_patt = 'a';
+            //if (isspace(c))
+            //    m_patt = FormatConstant::SpaceSymbol();
+            //else if (isdigit(c))
+            //    m_patt = FormatConstant::NumberSymbol();
+            //else if (c == '+' || c == '-')
+            //    m_patt = FormatConstant::SignSymbol();
+            //else if (c == 'e' || c == 'E')
+            //    m_patt = 'x';     // a suspicion of exponent - TBD later
+            //else if (c == '.' || c == ',' || c == '/'|| c== '_')
+            //    m_patt = c;
+            break;
+            }
+        // need to find the head byte by moving backward
+        int n = 0;
+        while (FormatConstant::IsTrailingByteValid(c) && m_indx > 0 && n < 3)
+            {
+            c = GetPrecedingByte(input);
+            ++n;
+            }
+        size_t seqLen = FormatConstant::GetSequenceLength(c); // it must be 2, 3 or 4
+       
+        if (seqLen == 2)
+            {
+            m_bytes[m_len++] = c;
+            m_uniCode = (size_t)(c &  FormatConstant::UTF_2ByteSelector());
+            m_bytes[m_len] = input[m_indx + 1];
+            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
+            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
+            m_patt = 'b';
+            break;
+            }
+         if (seqLen == 3)
+            {
+            m_bytes[m_len] = c;
+            m_uniCode = (size_t)(m_bytes[m_len++] & FormatConstant::UTF_3ByteSelector());
+
+            m_bytes[m_len] = input[m_indx + 1];
+            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
+            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
+            m_bytes[m_len] = input[m_indx + 2];
+            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
+            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
+            m_patt = 'c';
+            break;
+            }
+          if (seqLen == 4)
+            {
+            m_bytes[m_len] = c;
+            m_uniCode = (size_t)(m_bytes[m_len++] & FormatConstant::UTF_4ByteSelector());
+            m_bytes[m_len] = input[m_indx + 1];
+            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
+            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
+            m_bytes[m_len] = input[m_indx + 2];
+            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
+            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
+            m_bytes[m_len] = input[m_indx + 3];
+            m_uniCode <<= FormatConstant::UTF_UpperBitShift();
+            m_uniCode |= (size_t)(m_bytes[m_len++] & FormatConstant::UTF_TrailingBitsMask());
+            m_patt = 'd';
+            break;
+            }
+
+            m_status = ScannerCursorStatus::InvalidSymbol;
+            break;
+        }// end of While
+    }
+
+
+Utf8PrintfString CursorScanPoint::ToText()
+    {
+    Utf8CP asc = IsAscii() ? Utf8PrintfString("(ASCII %c)", m_bytes[0]).c_str() : FormatConstant::EmptyString();
+
+    Utf8PrintfString txt("Ucode: %d[0x%x] %s indx %d byteLen %d bytes(0x%x 0x%x 0x%x 0x%x) patt %c",
+        m_uniCode, m_uniCode, asc, m_indx, m_len, m_bytes[0], m_bytes[1], m_bytes[2], m_bytes[3],
+        (IsEndOfLine() ? 'z' : m_patt));
+    return txt;
+    }
+
+//===================================================
+//
+// FormatParseVector Methods
+//
+//===================================================
+size_t FormatParseVector::ExtractTriplet()
+    {
+    m_patt.word = 0;
+    m_bufIndex = 0; // it is also the actual number of bytes in the triplet
+    for (size_t i = m_tripletIndx; m_bufIndex < 3 && i < m_vect.size(); m_bufIndex++, i++)
+        {
+        m_patt.byte[m_bufIndex] = m_vect[i].GetPattern();
+        }
+    return m_bufIndex;
+    }
+
+bool FormatParseVector::MoveFrame(bool forw)
+    {
+    bool mov = false;
+    if (forw)
+    {
+        if (m_tripletIndx + 3 < m_vect.size())
+            {
+            ++m_tripletIndx;
+            mov = true;
+            }
+    }
+    else
+    {
+        if (m_tripletIndx > 0)
+            {
+            --m_tripletIndx;
+            mov = true;
+            }
+    }
+    if(mov)
+       ExtractTriplet();
+    return mov;
+    }
+
+FormatParseVector::FormatParseVector(Utf8CP input, bool revers)
+    {
+    m_patt.word = 0;
+    m_tripletIndx = 0;
+    size_t n = strlen(input);
+    CursorScanPoint csp(input, revers ? n : 0, revers);
+    while (!csp.IsEndOfLine() && n > 0)
+        {
+        m_vect.push_back(csp);
+        csp.Iterate(input, revers);
+        }
+    ExtractTriplet();
+    }
+
+size_t FormatParseVector::AddPoint(CursorScanPointCR pnt)
+    {
+     //CursorScanPointCP last = m_vect.empty() ? nullptr : &m_vect.back();
+    m_vect.push_back(pnt);
+    return m_vect.size();
+    }
+
+Utf8String FormatParseVector::GetPattern()
+    {
+    Utf8Char last, foll;
+    size_t blen = m_vect.size() + 2;
+    Utf8P buf = (Utf8P)alloca(blen);
+    memset((void*)buf, 0, blen);
+    size_t i = 0;
+    last = '\0';
+    for (CursorScanPointP csp = m_vect.begin(); csp != m_vect.end(); csp++)
+        {
+        foll = csp->GetPattern();
+        if (foll != last)
+            {
+            buf[i++] = foll;
+            last = foll;
+            }
+        }
+    return Utf8String(buf);
+    }
+
+Utf8String FormatParseVector::GetSignature()
+    {
+    size_t blen = m_vect.size() + 2;
+    Utf8P buf = (Utf8P)alloca(blen);
+    memset((void*)buf, 0, blen);
+    size_t i = 0;
+    for (CursorScanPointP csp = m_vect.begin(); csp != m_vect.end(); csp++)
+        {
+        buf[i++] = csp->GetPattern();
+        }
+    return Utf8String(buf);
+    }
+//===================================================
+//
+// CursorScanTriplet Methods
+//
+//============================================
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
+void CursorScanTriplet::Init(bool rev)
+    {
+    m_strInd = 0;
+    m_revers = rev;
+    m_tripInd = m_revers? 3 : 0;
+    memset(m_triple, 0, sizeof(m_triple));
+    memset(m_patt, '\0', sizeof(m_patt));
+    }
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
+CursorScanTriplet::CursorScanTriplet()
+    {
+    Init(false);
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 06/17
+//----------------------------------------------------------------------------------------
+bool CursorScanTriplet::SetReverse(bool rev) 
+    {
+    Init(rev);
+    return m_revers;
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 05/17
+//   this method creates a "sliding" cursor that exposes three consequtive symbols from
+//   the input string the "reading head" is always at the current position in the string
+//     
+//----------------------------------------------------------------------------------------
+void CursorScanTriplet::PushSymbol(size_t symb) 
+    {
+    if (m_revers)
+        {
+        if (m_tripInd == 0)
+            {
+            m_triple[2] = m_triple[1];
+            m_triple[1] = m_triple[0];
+            m_triple[0] = symb;
+            }
+        else
+            m_triple[--m_tripInd] = symb;
+        }
+    else
+        {
+        if(m_tripInd < 2)
+          m_triple[m_tripInd++] = symb;
+        else
+            {
+            m_triple[0] = m_triple[1];
+            m_triple[1] = m_triple[2];
+            m_triple[2] = symb;
+            }
+        }
+    }
+//===================================================
+//
+// NumberGrabber Methods
+//
+//===================================================
+
+size_t NumberGrabber::Grab(Utf8CP input, size_t start)
+    {
+    if (!Utils::IsNameNullOrEmpty(input))
+        {
+        m_input = input;
+        m_start = start;
+        }
+    m_next = m_start;
+    m_ival = 0;
+    m_dval = 0;  
+    bool revs = false;
+    CursorScanPoint csp = CursorScanPoint(m_input, m_next, revs);
+    if (csp.IsEndOfLine())
+        {
+        m_type = ParsingSegmentType::EndOfLine;
+        return 0;
+        }
+
+    m_type = ParsingSegmentType::NotNumber;
+    int ival = 0;
+    int fval = 0;
+    int eval = 0;
+    int denom = 0;
+    double dval = 0.0;
+    int iCount = 0;
+    int fCount = 0;
+    int eCount = 0;
+    int dCount = 0;  // denominator
+    int sign = 0;
+    bool point = false;
+    bool  expMark = false;
+
+    int expSign = 0;
+    bool num = false;
+
+    Utf8Char c;
+
+    while (csp.IsSpace()) { m_next++; csp.Iterate(m_input, revs); }
+    if (csp.IsSign())  // the sign character can be expected at the start
+        {
+        c = csp.GetAscii();
+        sign = (c == '-') ? -1 : 1;
+        ++m_next;
+        csp.Iterate(m_input, revs);
+        }
+    while (csp.IsDigit())    // if there any digits - they will be accumulated in the int part
+        {
+        int d = (int)(csp.GetAscii() - '0');
+        ival = ival * 10 + d;
+        iCount++;
+        ++m_next;
+        csp.Iterate(m_input, revs);
+        }
+
+    if (csp.IsBar())  // a very special case of a fraction 
+        {
+        if (iCount > 0)
+            {
+            ++m_next;
+            csp.Iterate(m_input, revs);
+            while (csp.IsDigit())    // if there any digits - they will be accumulated in the int part
+                {
+                int d = (int)(csp.GetAscii() - '0');
+                denom = denom * 10 + d;
+                dCount++;
+                ++m_next;
+                csp.Iterate(m_input, revs);
+                }
+            if (dCount > 0 && denom > 0)
+                {
+                dval = (double)ival / (double)denom;
+                m_dval = (sign < 0) ? -dval : dval;
+                m_ival = (int)m_dval;    // regardless of what we collected there it should be refreshed
+                m_type = ParsingSegmentType::Fraction;
+                }
+            else
+                m_next = m_start;
+            }
+        else
+           m_next = m_start;    // the sequence cannot be recognized 
+        return m_next - m_start;
+        }
+
+
+    if (csp.IsPoint()) // we can expect a decimal point which can actually come by itself
+        {              // or can be followed by more digits
+        point = true;
+        ++m_next;
+        csp.Iterate(m_input, revs);
+        while (csp.IsDigit())    // if there any digits - they will be accumulated in the fraction
+            {
+            int d = (int)(csp.GetAscii() - '0');
+            fval = fval * 10 + d;
+            fCount++;
+            ++m_next;
+            csp.Iterate(m_input, revs);
+            }
+        }
+    if (csp.IsExponent())
+        {
+        expMark = true;
+        ++m_next;
+        csp.Iterate(m_input, revs);
+        if (csp.IsSign())  // the sign character can be expected at the start
+            {
+            c = csp.GetAscii();
+            expSign = (c == '-') ? -1 : 1;
+            ++m_next;
+            csp.Iterate(m_input, revs);
+            }
+        while (csp.IsDigit())    // if there any digits - they will be accumulated in the fraction
+            {
+            int d = (int)(csp.GetAscii() - '0');
+            eval = eval * 10 + d;
+            eCount++;
+            ++m_next;
+            csp.Iterate(m_input, revs);
+            }
+        }
+    // it's time to validate the number
+    if (iCount > 0 || fCount > 0) num = true; // at least some digits
+ 
+   /* if ((sign != 0 && !num) || (!num && expMark) || (expMark && eCount == 0))
+        {
+        m_next = m_start;
+        }*/
+    if(num && (point || expMark))
+        {
+        m_type = ParsingSegmentType::Real;
+        double f = (double)fval;
+        for (int i = 0; i < fCount; ++i) { f *= 0.1; }
+        dval = (double)ival + f;
+             
+        if (expMark && eCount > 0)
+            {
+            double f = 1.0;
+            double mult = (expSign < 0) ? 0.1 : 10.0;
+
+            for (int i = 0; i < eval; ++i) { f *= mult; }
+            dval *= f;
+            }
+        m_dval = (sign < 0)? -dval : dval;
+        m_ival = (int)dval;    // regardless of what we collected there it should be refreshed
+        }
+    else if(iCount > 0)
+        {
+        m_type = ParsingSegmentType::Integer;
+        m_ival = (sign < 0) ? -ival : ival;
+        m_dval = (double)m_ival;
+        }
+    else
+        m_next = m_start;
+
+    return m_next - m_start;
+    }
+
+Utf8CP NumberGrabber::GetTail() 
+    { 
+    return &m_input[m_next]; 
+    }
+
+//===================================================
+//
+// FormatParsingSegment Methods
+//
+//===================================================
+
+void FormatParsingSegment::Init(size_t start)
+    {
+    m_start = start;
+    m_byteCount = 0;
+    m_vect.clear();
+    m_type = ParsingSegmentType::NotNumber;
+    m_ival = 0;
+    m_dval = 0.0;
+    m_unit = nullptr;
+    m_name = "";
+    }
+
+FormatParsingSegment::FormatParsingSegment(NumberGrabberCR ng)
+    {
+    if (ng.GetType() == ParsingSegmentType::NotNumber)
+        Init(ng.GetStartIndex());
+    else
+        {
+        m_start = ng.GetStartIndex();
+        m_byteCount = ng.GetLength();
+        m_vect.clear();
+        m_type = ng.GetType();
+        m_ival = ng.GetInteger();
+        m_dval = ng.GetReal();
+        }
+    }
+FormatParsingSegment::FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit)
+    {
+    Init(s);
+    size_t bufL = vect.size() * 4 + 2;
+    Utf8Char* buf = (Utf8Char*)alloca(bufL);
+    memset(buf, 0, bufL);
+    int i = 0;
+    unsigned char* ptr;
+    for (CursorScanPointP vp = vect.begin(); vp != vect.end(); vp++)
+        {
+        m_byteCount += vp->GetLength();
+        m_vect.push_back(*vp);
+        for (ptr = vp->GetBytes(); *ptr != '\0'; ptr++)
+            {
+            buf[i++] = *ptr;
+            }
+        }
+    if (i > 0) // something in the buffer
+        {
+        if (buf[0] == '_') // special case of prpending the unit name by underscore
+            m_name = Utf8String(buf + 1);
+        else
+            m_name = Utf8String(buf);
+        m_unit = BEU::UnitRegistry::Instance().LookupUnit(m_name.c_str());
+        if (nullptr == m_unit && nullptr != refUnit)  // last attempt to resolve the unit name
+            {
+            BEU::PhenomenonCP ph = (nullptr == refUnit) ? nullptr : refUnit->GetPhenomenon();
+            Utf8CP un = nullptr;
+            if (nullptr != ph)
+                {
+                if (ph->IsLength())
+                    un = FormatConstant::SpecialLengthSymbol(m_name);
+                else if (ph->IsAngle())
+                    un = FormatConstant::SpecialAngleSymbol(m_name);
+                }
+            if (nullptr != un)
+                m_unit = BEU::UnitRegistry::Instance().LookupUnit(un);
+            }
+        }
+    }
+
+
+Utf8PrintfString FormatParsingSegment::ToText(int n)
+    {
+     Utf8PrintfString head("start %d bytes %d ", m_start, m_byteCount);
+     if (m_type == ParsingSegmentType::Real)
+         {
+         return Utf8PrintfString("Segment[%d] %s Real %.5f Int %d", n, head.c_str(), m_dval, m_ival);
+         }
+     else if (m_type == ParsingSegmentType::Integer)
+         {
+         return Utf8PrintfString("Segment[%d] %s Int %d Real %.5f", n, head.c_str(), m_ival, m_dval);
+         }
+     else if (m_type == ParsingSegmentType::Fraction)
+         {
+         return Utf8PrintfString("Segment[%d] %s Fraction %.5f Int %d ", n, head.c_str(), m_dval, m_ival);
+         }
+     else
+         {
+         //size_t bufL = 4 * m_vect.size() + 2;
+         //Utf8Char* buf = (Utf8Char*)alloca(bufL);
+         //memset(buf, 0, bufL);
+         //int i = 0;
+         //unsigned char* ptr;
+
+        /* for (CursorScanPointP vp = m_vect.begin(); vp != m_vect.end(); vp++)
+             {
+             for (ptr = vp->GetBytes(); *ptr != '\0'; ptr++)
+                 {
+                 buf[i++] = *ptr;
+                 }
+             }*/
+
+         return Utf8PrintfString("Segment[%d] %s Text %s %s", n, head.c_str(), m_name.c_str(),
+                        ((nullptr == m_unit)? "(not a Unit)" : "(Unit)"));
+
+         }
+    }
+//===================================================
+//
+// FormatParsingSet Methods
+//
+//===================================================
+
+FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName)
+    {
+     m_input = input;
+     m_start = start;
+     m_unit = (nullptr == unitName)? nullptr :  BEU::UnitRegistry::Instance().LookupUnit(unitName);
+     FormatParsingSegment fps;
+     //Utf8CP tail = input;
+     NumberGrabber ng;
+     bvector<CursorScanPoint> m_symbs;
+     bool revs = false;
+     CursorScanPoint csp = CursorScanPoint();
+     size_t ind = start;
+     size_t ind0 = start;
+     bool initVect = true;
+
+     if (!Utf8String::IsNullOrEmpty(input))
+         {
+         ng = NumberGrabber();
+         while (!ng.IsEndOfLine())
+             {
+             ng.Grab(m_input, ind);
+             if (ng.GetLength() > 0)  // a number is detected
+                 {
+                 if (m_symbs.size() > 0)
+                     {
+                     fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+                     m_segs.push_back(fps);
+                     m_symbs.clear();
+                     }
+
+                 fps = FormatParsingSegment(ng);
+                 m_segs.push_back(fps);
+                 ind = ng.GetNextIndex();
+                 initVect = true;
+                 }
+             else
+                 {
+                 if (initVect) ind0 = ind;
+                 initVect = false;
+                 csp = CursorScanPoint(m_input, ind, revs);
+                 if(csp.IsSpace())
+                     {
+                     if (m_symbs.size() > 0)
+                         {
+                         fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+                         m_segs.push_back(fps);
+                         m_symbs.clear();
+                         ind = csp.GetIndex();
+                         ind0 = ind;
+                         }
+                     while (csp.IsSpace()) { csp.Iterate(m_input, revs); }
+                     ind = csp.GetIndex();
+                     ind0 = ind;
+                     }                 
+                 if (csp.IsEndOfLine())
+                     break;
+                 m_symbs.push_back(csp);
+                 ind = csp.GetIndex();
+                 }
+             }
+         if (m_symbs.size() > 0)
+             {
+             fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+             m_segs.push_back(fps);
+             }
+         }
+    }
+
+Utf8String FormatParsingSet::GetSignature(bool distinct)
+    {
+    Utf8String txt = "";
+    if (m_segs.size() == 0)
+        return txt; 
+    ParsingSegmentType type;
+    size_t bufL = m_segs.size() * 4 + 2;
+    Utf8Char* buf = (Utf8Char*)alloca(bufL);
+    memset(buf, 0, bufL);
+    int i = 0;
+
+    for (FormatParsingSegmentP fps = m_segs.begin(); fps != m_segs.end(); fps++)
+        {
+        type = fps->GetType();
+        if (type == ParsingSegmentType::Real)
+            buf[i++] = distinct? 'R': 'N';
+        else if (type == ParsingSegmentType::Integer)
+            buf[i++] = distinct ? 'I' : 'N';
+        else if (type == ParsingSegmentType::Fraction)
+            buf[i++] = 'F';
+        else
+            {
+            if (nullptr == fps->GetUnit())
+                buf[i++] = 'W';
+            else
+                buf[i++] = 'U';
+            }
+        }
+    return Utf8String(buf);
+    }
+
+BEU::Quantity  FormatParsingSet::GetQuantity()
+    {
+    BEU::Quantity qty = BEU::Quantity();
+    BEU::Quantity tmp = BEU::Quantity();
+    Utf8String sig = GetSignature(false);
+    // only a limited number of signatures will be recognized in this particular context
+    // reduced version: NU, NFU, NUNU, NUNFU NUNUNU NUNUNFU
+    //   3 FT - NU
+    //  1/3 FT  FU
+    BEU::UnitCP majP, midP;
+    //double mu, su;
+    Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
+    switch (cod)
+        {
+        case Formatting::FormatSpecialCodes::SignatureNU:
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNFU:
+            majP = m_segs[2].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetReal() + m_segs[1].GetReal(), *majP);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNUNU:
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            midP = m_segs[3].GetUnit();
+            tmp = BEU::Quantity(m_segs[2].GetReal(), *midP);
+            qty = qty.Add(tmp);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNUNFU:
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            midP = m_segs[4].GetUnit();
+            tmp = BEU::Quantity(m_segs[2].GetReal() + m_segs[3].GetReal(), *midP);
+            qty = qty.Add(tmp);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNUNUNU:
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            midP = m_segs[3].GetUnit();
+            tmp = BEU::Quantity(m_segs[2].GetReal(), *midP);
+            qty = qty.Add(tmp);
+            midP = m_segs[5].GetUnit();
+            tmp = BEU::Quantity(m_segs[4].GetReal(), *midP);
+            qty = qty.Add(tmp);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNUNUNFU:
+            majP = m_segs[1].GetUnit();
+            qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
+            midP = m_segs[3].GetUnit();
+            tmp = BEU::Quantity(m_segs[2].GetReal(), *midP);
+            qty = qty.Add(tmp);
+            midP = m_segs[6].GetUnit();
+            tmp = BEU::Quantity(m_segs[4].GetReal() + m_segs[5].GetReal(), *midP);
+            qty = qty.Add(tmp);
+            break;
+
+        default:
+            break;
+        }
+
+    if (nullptr != m_unit)
+        qty = qty.ConvertTo(m_unit);
+    return qty;
+    }
+
 
 //===================================================
 //

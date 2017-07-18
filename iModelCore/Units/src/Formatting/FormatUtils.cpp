@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <UnitsPCH.h>
+#include <map>
 #include <Formatting/FormattingApi.h>
 
 BEGIN_BENTLEY_FORMATTING_NAMESPACE
@@ -112,6 +113,54 @@ const size_t* FormatConstant::FractionCodes()
     static size_t cod[16] = {188, 189, 190, 8531, 8532, 8533, 8534, 8535, 8536, 8537, 8538, 8539, 8540, 8541, 8542 };
     return cod;
     }
+
+const FormatSpecialCodes FormatConstant::SpecialtyMap(Utf8CP name)
+    {
+    static bmap<Utf8String, FormatSpecialCodes> map;
+    if (map.empty())
+        {
+        map[Utf8String("NU")] = FormatSpecialCodes::SignatureNU;
+        map[Utf8String("NFU")] = FormatSpecialCodes::SignatureNFU;
+        map[Utf8String("NUNU")] = FormatSpecialCodes::SignatureNUNU;
+        map[Utf8String("NUNFU")] = FormatSpecialCodes::SignatureNUNFU;
+        map[Utf8String("NUNUNU")] = FormatSpecialCodes::SignatureNUNUNU;
+        map[Utf8String("NUNUNFU")] = FormatSpecialCodes::SignatureNUNUNFU;
+        }    
+    return Utf8String::IsNullOrEmpty(name) ? FormatSpecialCodes::SignatureNull : map[name];
+    }
+
+const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
+    {
+    if(Utf8String::IsNullOrEmpty(name)) return FormatSpecialCodes::SignatureNull;
+    if(strcmp("NU", name) == 0) return FormatSpecialCodes::SignatureNU;
+    if (strcmp("FU", name) == 0) return FormatSpecialCodes::SignatureNU;
+    if (strcmp("NFU", name) == 0) return FormatSpecialCodes::SignatureNFU;
+    if (strcmp("NUNU", name) == 0) return FormatSpecialCodes::SignatureNUNU;
+    if (strcmp("FUNU", name) == 0) return FormatSpecialCodes::SignatureNUNU;
+    if (strcmp("NUFU", name) == 0) return FormatSpecialCodes::SignatureNUNU;
+    if (strcmp("NUNFU", name) == 0) return FormatSpecialCodes::SignatureNUNFU;
+    if (strcmp("NUNUNU", name) == 0) return FormatSpecialCodes::SignatureNUNUNU;
+    if (strcmp("NUNUNFU", name) == 0) return FormatSpecialCodes::SignatureNUNUNFU;
+    if (strcmp("NUNUFU", name) == 0) return FormatSpecialCodes::SignatureNUNUNU;
+    return FormatSpecialCodes::SignatureInvalid;
+    }
+
+const Utf8CP FormatConstant::SpecialAngleSymbol(Utf8String name)
+    {
+    if (name.EqualsI("^")) return "ARC_DEG";
+    if (name.EqualsI(u8"°")) return "ARC_DEG";
+    if (name.EqualsI("'")) return "ARC_MINUTE";
+    if (name.EqualsI("\"")) return "ARC_SECOND";     
+    return nullptr;
+    }
+
+const Utf8CP FormatConstant::SpecialLengthSymbol(Utf8String name)
+    {
+    if (name.EqualsI("'")) return "FT";
+    if (name.EqualsI("\"")) return "IN";
+    return nullptr;
+    }
+
 
 //===================================================
 //
@@ -1117,6 +1166,13 @@ bool FormatUnitSet::IsComparable(BEU::QuantityCR qty)
     {
     return Utils::AreUnitsComparable(qty.GetUnit(), m_unit);
     }
+
+bool FormatUnitSet::IsUnitComparable(Utf8CP unitName)
+    {
+     BEU::UnitCP unit =  BEU::UnitRegistry::Instance().LookupUnit(unitName);
+     return Utils::AreUnitsComparable(unit, m_unit);
+    }
+
 
 BEU::UnitCP FormatUnitSet::ResetUnit()
     {

@@ -23,6 +23,9 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 static UnitProxySetCP upx = nullptr;
 static int repc = 0;
 
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     David Fox-Rabinovitz             02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST(FormattingTest, Preliminary)
     {
     LOG.infov("================  Formatting Log ===========================");
@@ -115,7 +118,43 @@ TEST(FormattingTest, Preliminary)
         n++;
         }*/
 
-    FormattingScannerCursor tc = FormattingScannerCursor(u8"ЯA型号   sautéςερ", -1);
+    LOG.infov("NUNFU = %d", FormatConstant::SpecialtyMap("NUNFU"));
+    LOG.infov("NUNU = %d", FormatConstant::SpecialtyMap("NUNU"));
+    LOG.infov("null = %d", FormatConstant::SpecialtyMap(nullptr));
+
+    FormattingTestFixture::ParseToQuantity("-23.45E-03_M", 0, "MM");
+    FormattingTestFixture::ParseToQuantity("30 1/2 IN", 0, "FT");
+    FormattingTestFixture::ParseToQuantity("3 FT 6 IN", 0, "FT");
+    FormattingTestFixture::ParseToQuantity("3 FT 6 IN", 0, "IN");
+    FormattingTestFixture::ParseToQuantity("3 FT 6 IN", 0, "CM");
+    FormattingTestFixture::ParseToQuantity("3 1/2 FT", 0, "CM");
+    FormattingTestFixture::ParseToQuantity("3 1/2FT", 0, "CM");
+    FormattingTestFixture::ParseToQuantity("3 1/2_FT", 0, "CM");
+    FormattingTestFixture::ParseToQuantity("2/3_FT", 0, "IN");
+    FormattingTestFixture::ParseToQuantity("3_FT 1/2IN", 0, "IN");
+    FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "ARC_DEG");
+    FormattingTestFixture::ParseToQuantity(u8"135°11'30 1/4\" ", 0, "RAD");
+
+    //FormattingScannerCursor tc = FormattingScannerCursor(u8"ЯA型号   sautéςερ", -1);
+    FormattingTestFixture::TestScanPointVector(u8"ЯA型号   sautéςερ135°11'30-1/4\"");
+    FormattingTestFixture::TestScanPointVector("-23.45E-03_MM");
+    FormattingTestFixture::TestScanPointVector("1+512.15m");
+    FormattingTestFixture::TestScanTriplets("1+512.15m");
+    FormattingTestFixture::TestScanTriplets("-23.45E-03_MM");
+    LOG.info("============= End of scan test =================");
+
+    FormattingTestFixture::TestGrabber("23.451e03_MM");
+    Utf8CP tail = FormattingTestFixture::TestGrabber("1+512.15m");
+    FormattingTestFixture::TestGrabber(tail, 1);
+    FormattingTestFixture::TestGrabber("-23.45E-03_MM");
+    FormattingTestFixture::TestGrabber("--A23.45E-03_MM");
+
+    FormattingTestFixture::TestSegments("--A23.45E-03_MM", 0, "MM");
+    FormattingTestFixture::TestSegments(u8"135°11'30-1/4\" ", 0, "ARC_DEG");
+                                         //01234567890123
+    FormattingTestFixture::TestSegments("  -22 FT 3 1/2 IN", 0, "FT");
+    FormattingTestFixture::TestSegments("  -22FT 3 1/2IN", 0, "FT");
+    FormattingTestFixture::TestSegments("-22' 3 1/2\"", 0, "FT");
     /*size_t nc = tc.GetNextSymbol();
     do {
         LOG.infov("Next code %d scanLen %d inferredLen %d", nc, tc.GetLastLength(), Utils::NumberOfUtf8Bytes(nc));
@@ -213,7 +252,8 @@ TEST(FormattingTest, PhysValues)
     EXPECT_TRUE(fdiv.IsDivider(' '));
     EXPECT_FALSE(fdiv.IsDivider('A'));
 
-    FormattingTestFixture::ShowTextSectionsByDividers("sample of [text] separated {by stoppers}", "()[]{} ");
+    FormattingTestFixture::ShowSplitByDividers("sample of [text] separated {by stoppers}", "()[]{}");
+    FormattingTestFixture::ShowSplitByDividers(u8"135°11'30-1/4\"", "()[]{} ");
 
     FormattingTestFixture::TestFUS("MM", "MM(DefaultReal)","MM(real)");
     FormattingTestFixture::TestFUS("MM|fract8", "MM(Fractional8)", "MM(fract8)");

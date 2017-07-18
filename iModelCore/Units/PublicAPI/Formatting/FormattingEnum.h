@@ -290,8 +290,18 @@ enum class AccumulatorState
     Fraction = 2,
     Exponent = 3,
     Complete = 4,
-    Failure = 5,
-    RejectedSymbol = 10
+    Real = 5,
+    Failure = 10,
+    RejectedSymbol = 11
+    };
+
+enum class ParsingSegmentType
+    {
+    Integer = 1,
+    Real = 2,
+    Fraction = 3,
+    NotNumber = 10,
+    EndOfLine = 11
     };
 
 enum class CursorSectionState
@@ -309,6 +319,19 @@ enum class CursorSectionType
     Word = 1,
     Numeric = 2
     };
+
+enum class FormatSpecialCodes
+    {
+    SignatureNull = 0,
+    SignatureNU = 1,
+    SignatureNFU = 2,
+    SignatureNUNU = 3,
+    SignatureNUNFU = 4,
+    SignatureNUNUNU= 5,
+    SignatureNUNUNFU = 6,
+    SignatureInvalid = 100
+    };
+
 
 struct FormatProblemDetail
     {
@@ -450,6 +473,7 @@ struct FormatConstant
         static const Utf8CP EmptyString() { return ""; }
         static const Utf8CP BlankString() { return " "; }
         static const Utf8Char EndOfLine() { return '\0'; }
+        static const bool IsEndOfLine(Utf8Char c) { return ('\0' == c); }
         static const Utf8Char NumberSymbol() { return '0'; }
         static const Utf8Char SpaceSymbol() { return 's'; }
         static const Utf8Char WordSymbol() { return 'a'; }
@@ -486,12 +510,14 @@ struct FormatConstant
         static const unsigned char UTF_UpperBitShift() { return  6; }
         static const unsigned char ASCIImask() { return  0x7F; }
         static const bool IsASCII(size_t symbol) { return (symbol <= ASCIImask()); }
+        static const bool IsASCIIChar(Utf8Char c) { return (c & FormatConstant::UTF_NonASCIIMark()) == 0; }
         static const Utf8Char ASCIIcode(size_t symbol) { return (Utf8Char)(symbol & ASCIImask()); }
         static const int DigitValue(Utf8Char dig) { return (int)(dig - '0'); }
         static const  int GetTrailingShift() { return UTF_UpperBitShift(); }
         UNITS_EXPORT static const bool IsLittleEndian();
         UNITS_EXPORT static const size_t GetSequenceLength(unsigned char c);
-        static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }
+        static bool IsTrailingByteValid(unsigned char c) { return (UTF_TrailingByteMark() == (c & UTF_TrailingByteMask())); }     
+        
         UNITS_EXPORT static bool GetTrailingBits(unsigned char c, Utf8P outBits);
         UNITS_EXPORT static size_t ExtractTrailingBits(unsigned char c, size_t shift);
         UNITS_EXPORT static bool GetCodeBits(unsigned char c, size_t seqLength, size_t index, size_t* outBits);
@@ -522,7 +548,7 @@ struct FormatConstant
             // the array of codes holds integer codes of several special unicode characters that could be used in a specific
             //   context for denoting units Of Measurement. two characters 'degC' and 'degF' are included for the future growth
             //     they represent a special case of degrees of Celsius and degrees of Fahrenheit that could be used with Chinese characters
-            // "      $     %    '     ^    deg    degC    degF
+            //                        "     $     %     '     ^    deg    degC    degF
             static size_t cod[9] = { 0x22, 0x24, 0x25, 0x27, 0x5e, 0xB0, 0x2103, 0x2109, 0x0};
             return cod;
             }
@@ -538,6 +564,10 @@ struct FormatConstant
                 }
             return false;
             }
+        UNITS_EXPORT const static FormatSpecialCodes SpecialtyMap(Utf8CP name);
+        UNITS_EXPORT const static FormatSpecialCodes ParsingPatternCode(Utf8CP name);
+        UNITS_EXPORT const static Utf8CP SpecialAngleSymbol(Utf8String name);
+        UNITS_EXPORT const static Utf8CP SpecialLengthSymbol(Utf8String name);
     };
 
 END_BENTLEY_FORMATTING_NAMESPACE

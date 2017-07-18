@@ -19,7 +19,175 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingDividers)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingWord)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingScannerCursor)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(FormattingCursorSection)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(CursorScanPoint)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(NumericAccumulator)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(NumberGrabber)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(FormatParsingSegment)
 
+struct CursorScanPoint
+    {
+    private:
+        size_t m_uniCode;             // this is a Unicode codePoint of the selected string position
+        size_t m_indx;                // index in the input string pointing to the first byte of the sequence
+        size_t m_len;                 // the actual length of the sequence (for ASCII = 1)
+        unsigned char m_bytes[4];     // the actual sequence of bytes containing a Unicode Symbol un UTF8
+        Utf8Char m_patt;              // a "pattern" symbol 
+        ScannerCursorStatus m_status; // constructor status
+
+        UNITS_EXPORT void Init();
+        void ProcessASCII(unsigned char c);
+        //UNITS_EXPORT size_t CursorScanPoint::DetectHeadByte(Utf8CP input);
+    public:
+        CursorScanPoint() { Init(); }
+        UNITS_EXPORT CursorScanPoint(Utf8CP input, size_t indx, bool revers);
+        UNITS_EXPORT void ProcessNext(Utf8CP input);
+        UNITS_EXPORT void ProcessPrevious(Utf8CP input);
+        UNITS_EXPORT void Iterate(Utf8CP input, bool revers);
+        bool IsAscii() { return m_len == 1; }
+        bool IsDigit() { return (m_len == 1) && (m_patt == FormatConstant::NumberSymbol()); }
+        bool IsSign() { return (m_len == 1) && (m_patt == FormatConstant::SignSymbol()); }
+        bool IsSpace() { return (m_len == 1) && (m_patt == FormatConstant::SpaceSymbol()); }
+        bool IsPoint() { return (m_len == 1) && (m_patt == '.'); }
+        bool IsBar() { return (m_len == 1) && (m_patt == '/'); }
+        bool IsUline() { return (m_len == 1) && (m_patt == '_'); }
+        bool IsExponent() {return (m_len == 1) && (m_patt == 'x'); }
+
+        UNITS_EXPORT ScannerCursorStatus AppendTrailingByte(Utf8CP txt);
+        Utf8Char GetPrecedingByte(Utf8CP txt) { return (m_indx > 0) ? txt[--m_indx] : FormatConstant::EndOfLine(); }
+
+        size_t GetIndex() const { return m_indx; }
+        size_t GetCode() const { return m_uniCode; }
+        size_t GetLength() const { return m_len; }
+        Utf8Char GetAscii(){ return FormatConstant::ASCIIcode(m_uniCode); }
+        Utf8Char GetPattern() { return m_patt; }
+        unsigned char* GetBytes() { return m_bytes; }
+        bool IsEndOfLine() { return m_len == 0; }
+        UNITS_EXPORT Utf8PrintfString ToText();
+    };
+
+struct FormatParseVector
+    {
+    private:
+        bvector<CursorScanPoint> m_vect;
+        size_t m_tripletIndx;
+        size_t m_bufIndex;
+        union {
+            size_t word;
+            Utf8Char byte[4];
+            } m_patt;
+        UNITS_EXPORT size_t ExtractTriplet();
+
+    public:
+        UNITS_EXPORT FormatParseVector(Utf8CP input, bool revers);
+        UNITS_EXPORT size_t AddPoint(CursorScanPointCR pnt);
+        bvector<CursorScanPoint> GetArray() { return m_vect; }
+        UNITS_EXPORT Utf8String GetPattern();
+        UNITS_EXPORT Utf8String GetSignature();
+        UNITS_EXPORT bool MoveFrame(bool forw = true);
+        Utf8String GetTriplet() { return Utf8String(m_patt.byte); }
+        size_t GetTripletIndex() { return m_tripletIndx; }
+        Utf8Char GetFrameChar() { return m_patt.byte[0]; }
+    };
+
+struct CursorScanTriplet
+    {
+    private:
+        size_t m_strInd;      // index to the text location
+        size_t m_tripInd;     // index to the triplet
+        bool m_revers;        // indicator that symbols must be inserted in a reverse order
+        size_t m_triple[3];  // Unicode code points of 3 consequtive symbols
+        Utf8Char m_patt[3];  // A pattern of the triple
+
+        UNITS_EXPORT void Init(bool rev);
+
+    public:
+        UNITS_EXPORT CursorScanTriplet();
+
+        size_t SetTextIndex(size_t ind) { return m_strInd = ind; }
+        UNITS_EXPORT void PushSymbol(size_t symb); // returns remaining capacity
+        UNITS_EXPORT bool SetReverse(bool rev);   // resetting the direction destroys current state
+
+    };
+
+
+struct NumberGrabber
+    {
+private:
+    Utf8CP m_input;   // the text to explore
+    size_t m_start;   // the starting position in the input string
+    size_t m_next;    // the offset to the character following the numeric sequence
+    int m_ival;
+    double m_dval;
+    ParsingSegmentType m_type;
+
+    void Init(Utf8CP input, size_t start)
+        {
+        m_input = input;
+        m_start = start;
+        m_next = start;
+        m_type = ParsingSegmentType::NotNumber;
+        }
+public:
+    NumberGrabber() { Init(nullptr, 0); }
+    NumberGrabber(Utf8CP input, size_t start = 0) { Init(input, start); }
+    UNITS_EXPORT  size_t Grab(Utf8CP input=nullptr, size_t start = 0);
+    ParsingSegmentType GetType() const { return m_type; }
+    size_t GetStartIndex() const { return m_start; }
+    size_t GetNextIndex() const { return m_next; }
+    UNITS_EXPORT Utf8CP GetTail();
+    bool IsComplete() const { return (m_type == ParsingSegmentType::Integer) || (m_type == ParsingSegmentType::Real); }
+    bool IsReal() { return (m_type == ParsingSegmentType::Real); }
+    int GetInteger() const { return m_ival; }
+    double GetReal() const { return m_dval; }
+    bool IsEndOfLine() const { return (m_type == ParsingSegmentType::EndOfLine); }
+    size_t GetLength() const { return (m_type == ParsingSegmentType::NotNumber)? 0 : m_next - m_start; }
+    size_t AdvanceStart(size_t inc) { m_start += inc;  return m_start; }
+    };
+
+struct FormatParsingSegment
+    {
+    private:
+        size_t m_start;         // start index to the input string
+        size_t m_byteCount;     // byte length 
+        bvector<CursorScanPoint> m_vect;
+        Utf8String m_name;
+        BEU::UnitCP m_unit;
+        ParsingSegmentType m_type;
+        int m_ival;
+        double m_dval;
+
+        UNITS_EXPORT void Init(size_t start);
+    public:
+        FormatParsingSegment() { Init(0); }
+        UNITS_EXPORT FormatParsingSegment(NumberGrabberCR ng);
+        UNITS_EXPORT FormatParsingSegment(bvector<CursorScanPoint> vect, size_t s, BEU::UnitCP refUnit = nullptr);
+        size_t SetStart(size_t s) { return m_start = s; }
+        size_t SetLength(size_t s) { return m_byteCount = s; }
+        ParsingSegmentType GetType() { return m_type; }
+        double GetReal() { return m_dval; }
+        int GetInteger() { return m_ival; }
+        BEU::UnitCP GetUnit() { return m_unit; }
+        size_t GetNextindex() { return m_start + m_byteCount; }
+        void SetBoundary(size_t s, size_t l) { m_start = s; m_byteCount = l; }
+        bool IsNumber() { return (m_type == ParsingSegmentType::Integer) || (m_type == ParsingSegmentType::Real); }
+        UNITS_EXPORT Utf8PrintfString ToText(int n);
+    };
+
+struct FormatParsingSet
+    {
+    private:
+        Utf8CP m_input;
+        size_t m_start;         // start index to the input string
+        bvector<FormatParsingSegment> m_segs;
+        BEU::UnitCP m_unit;     // optional reference to a "quantity" unit
+
+    public:
+        UNITS_EXPORT FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName = nullptr);// : m_input(input), m_start(start) { m_segs.clear(); }
+        void AddSegment(FormatParsingSegmentCR seg) { m_segs.push_back(seg); }
+        bvector<FormatParsingSegment> GetSegments() { return m_segs; }
+        UNITS_EXPORT Utf8String GetSignature(bool distinct = true);
+        UNITS_EXPORT BEU::Quantity GetQuantity();
+    };
 
 struct NumericAccumulator
     {
@@ -232,12 +400,14 @@ struct CursorSectionSet
         CursorSectionState m_stat;
 
     public:
+        UNITS_EXPORT CursorSectionSet(Utf8CP input, size_t start);
         CursorSectionSet():m_current(nullptr), m_stat(CursorSectionState::Success){}
         void Reset() { m_set.clear(); }
         CursorSectionState GetState() const { return m_stat; }
         size_t GetCount() { return m_set.size(); }
         UNITS_EXPORT CursorSectionState AddSymbol(size_t code, size_t byteLen);
     };
+
 
 //=======================================================================================
 // @bsiclass                                                    David.Fox-Rabinovitz
@@ -256,6 +426,7 @@ private:
     ScannerCursorStatus m_status;
     size_t m_effectiveBytes;
     char m_temp;
+    CursorScanTriplet m_triplet;
     FormattingSignature m_traits;
     CursorSectionSet m_sections;
 

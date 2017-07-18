@@ -10,6 +10,7 @@
 /*__PUBLISH_SECTION_START__*/
 #include <Units/Units.h>
 
+
 UNITS_TYPEDEFS(UnitsSymbol)
 UNITS_TYPEDEFS(Unit)
 UNITS_TYPEDEFS(InverseUnit)
@@ -105,6 +106,7 @@ protected:
       
 public:
     Utf8CP  GetName() const { return m_name.c_str(); }
+    Utf8StringCP GetNameSP() const { return &m_name; }
     Utf8CP  GetDefinition() const { return m_definition.c_str(); }
     double  GetFactor() const { return m_factor; }
     bool    HasOffset() const { return 0.0 != m_offset; }
@@ -204,6 +206,11 @@ public:
     bool Equals(PhenomenonCR comparePhenomenon) const {return GetPhenomenonId() == comparePhenomenon.GetPhenomenonId();}
     static bool AreEqual(PhenomenonCP phenA, PhenomenonCP phenB) 
         { return nullptr == phenA || nullptr == phenB ? false : phenA->GetId() == phenB->GetId(); }
+
+    UNITS_EXPORT bool IsLength() const;
+    UNITS_EXPORT bool IsTime() const;
+    UNITS_EXPORT bool IsAngle() const;
+
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/
