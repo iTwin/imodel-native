@@ -14,20 +14,74 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Casey.Mullen      01/2013
+// @bsimethod                                                  Krischan.Eberle     06/2017
 //---------------------------------------------------------------------------------------
-ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, Utf8CP schemaName)
+ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, Utf8CP schemaNameOrAlias, SchemaLookupMode mode)
     {
-    CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Schema WHERE Name=?");
+    Utf8CP sql = nullptr;
+    switch (mode)
+        {
+            case SchemaLookupMode::ByName:
+                sql = "SELECT Id FROM ec_Schema WHERE Name=?";
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql = "SELECT Id FROM ec_Schema WHERE Alias=?";
+                break;
+
+            default:
+                sql = "SELECT Id FROM ec_Schema WHERE (Name=?1 OR Alias=?1)";
+                break;
+        }
+
+    CachedStatementPtr stmt = db.GetCachedStatement(sql);
     if (stmt == nullptr)
         return ECSchemaId();
 
-    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
-
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
     if (BE_SQLITE_ROW != stmt->Step())
         return ECSchemaId();
 
     return stmt->GetValueId<ECSchemaId>(0);
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle     06/2017
+//---------------------------------------------------------------------------------------
+std::vector<ECSchemaId> SchemaPersistenceHelper::GetSchemaIds(ECDbCR ecdb, Utf8StringVirtualSet const& schemaNames)
+    {
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id FROM ec_Schema WHERE InVirtualSet(?,Name)");
+    if (stmt == nullptr)
+        return std::vector<ECSchemaId>();
+
+    if (BE_SQLITE_OK != stmt->BindVirtualSet(1, schemaNames))
+        return std::vector<ECSchemaId>();
+
+    std::vector<ECSchemaId> ids;
+    while (BE_SQLITE_ROW == stmt->Step())
+        {
+        ids.push_back(stmt->GetValueId<ECSchemaId>(0));
+        }
+
+    return ids;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                  Krischan.Eberle      06/2017
+//---------------------------------------------------------------------------------------
+Utf8String SchemaPersistenceHelper::GetSchemaName(ECDbCR ecdb, ECN::ECSchemaId schemaId)
+    {
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name FROM ec_Schema WHERE Id=?");
+    if (stmt == nullptr)
+        return Utf8String();
+
+    stmt->BindId(1, schemaId);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return Utf8String();
+
+    return Utf8String(stmt->GetValueText(0));
     }
 
 //---------------------------------------------------------------------------------------
@@ -67,19 +121,6 @@ bool SchemaPersistenceHelper::TryGetSchemaKeyAndId(SchemaKey& key, ECSchemaId& i
     key = SchemaKey(stmt->GetValueText(0), stmt->GetValueInt(1), stmt->GetValueInt(2), stmt->GetValueInt(3));
     id = stmt->GetValueId<ECSchemaId>(4);
     return true;
-    }
-
-/*---------------------------------------------------------------------------------------
-* @bsimethod                                                    Affan.Khan        03/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool SchemaPersistenceHelper::ContainsSchemaWithAlias(ECDbCR db, Utf8CP alias)
-    {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != db.GetCachedStatement(stmt, "SELECT NULL FROM ec_Schema WHERE Alias=?"))
-        return false;
-
-    stmt->BindText(1, alias, Statement::MakeCopy::No);
-    return stmt->Step() == BE_SQLITE_ROW;
     }
 
 //---------------------------------------------------------------------------------------
@@ -141,13 +182,28 @@ ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, Utf8CP schemaNameOrAlia
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   01/2016
 //---------------------------------------------------------------------------------------
-ECEnumerationId SchemaPersistenceHelper::GetEnumerationId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP enumName)
+ECEnumerationId SchemaPersistenceHelper::GetEnumerationId(ECDbCR ecdb, Utf8CP schemaNameOrAlias, Utf8CP enumName, SchemaLookupMode lookupMode)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Name=? AND e.Name=?");
+    Utf8CP sql = nullptr;
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql = "SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Name=? AND e.Name=?";
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql = "SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND s.Alias=? AND e.Name=?";
+                break;
+
+            default:
+                sql = "SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND e.Name=?2";
+                break;
+        }
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
     if (stmt == nullptr)
         return ECEnumerationId();
 
-    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
     stmt->BindText(2, enumName, Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != stmt->Step())
@@ -160,19 +216,69 @@ ECEnumerationId SchemaPersistenceHelper::GetEnumerationId(ECDbCR ecdb, Utf8CP sc
 // @bsimethod                                                    Krischan.Eberle 06/2016
 //---------------------------------------------------------------------------------------
 //static
-KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8CP schemaName, Utf8CP koqName)
+KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8CP schemaNameOrAlias, Utf8CP koqName, SchemaLookupMode lookupMode)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Name=? AND koq.Name=?");
+    Utf8CP sql = nullptr;
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql = "SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Name=? AND koq.Name=?";
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql = "SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND s.Alias=? AND koq.Name=?";
+                break;
+
+            default:
+                sql = "SELECT koq.Id FROM ec_KindOfQuantity koq, ec_Schema s WHERE koq.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND koq.Name=?2";
+                break;
+        }
+
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
     if (stmt == nullptr)
         return KindOfQuantityId();
 
-    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
     stmt->BindText(2, koqName, Statement::MakeCopy::No);
 
     if (BE_SQLITE_ROW != stmt->Step())
         return KindOfQuantityId();
 
     return stmt->GetValueId<KindOfQuantityId>(0);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2017
+//---------------------------------------------------------------------------------------
+//static
+PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, Utf8CP schemaNameOrAlias, Utf8CP catName, SchemaLookupMode lookupMode)
+    {
+    Utf8CP sql = nullptr;
+    switch (lookupMode)
+        {
+            case SchemaLookupMode::ByName:
+                sql = "SELECT cat.Id FROM ec_PropertyCategory cat, ec_Schema s WHERE cat.SchemaId=s.Id AND s.Name=? AND cat.Name=?";
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql = "SELECT cat.Id FROM ec_PropertyCategory cat, ec_Schema s WHERE cat.SchemaId=s.Id AND s.Alias=? AND cat.Name=?";
+                break;
+
+            default:
+                sql = "SELECT cat.Id FROM ec_PropertyCategory cat, ec_Schema s WHERE cat.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND cat.Name=?2";
+                break;
+        }
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
+    if (stmt == nullptr)
+        return PropertyCategoryId();
+
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
+    stmt->BindText(2, catName, Statement::MakeCopy::No);
+
+    if (BE_SQLITE_ROW != stmt->Step())
+        return PropertyCategoryId();
+
+    return stmt->GetValueId<PropertyCategoryId>(0);
     }
 
 //---------------------------------------------------------------------------------------
@@ -200,13 +306,29 @@ ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, ECClassId ecClass
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Affan.Khan      05/2013
 //---------------------------------------------------------------------------------------
-ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, Utf8CP schemaName, Utf8CP className, Utf8CP propertyName)
+ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, Utf8CP schemaNameOrAlias, Utf8CP className, Utf8CP propertyName, SchemaLookupMode mode)
     {
-    CachedStatementPtr stmt = db.GetCachedStatement("SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=? AND c.Name=? AND p.Name=?");
+    Utf8CP sql = nullptr;
+    switch (mode)
+        {
+            case SchemaLookupMode::ByName:
+                sql = "SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Name=?1 AND c.Name=?2 AND p.Name=?3";
+                break;
+
+            case SchemaLookupMode::ByAlias:
+                sql = "SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND s.Alias=?1 AND c.Name=?2 AND p.Name=?3";
+                break;
+
+            default:
+                sql = "SELECT p.Id FROM ec_Property p JOIN ec_Class c ON p.ClassId = c.Id JOIN ec_Schema s WHERE c.SchemaId = s.Id AND (s.Name=?1 OR s.Alias=?1) AND c.Name=?2 AND p.Name=?3";
+                break;
+        }
+
+    CachedStatementPtr stmt = db.GetCachedStatement(sql);
     if (stmt == nullptr)
         return ECPropertyId();
 
-    stmt->BindText(1, schemaName, Statement::MakeCopy::No);
+    stmt->BindText(1, schemaNameOrAlias, Statement::MakeCopy::No);
     stmt->BindText(2, className, Statement::MakeCopy::No);
     stmt->BindText(3, propertyName, Statement::MakeCopy::No);
 
@@ -328,7 +450,7 @@ BentleyStatus SchemaPersistenceHelper::SerializeKoqPresentationUnits(Utf8StringR
         {
         if (presUnit.HasProblem())
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to import KindOfQuantity '%s'. One of its presentation units is invalid: %s.", koq.GetFullName().c_str(), presUnit.GetProblemDescription().c_str());
+            ecdb.GetImpl().Issues().Report("Failed to import KindOfQuantity '%s'. One of its presentation units is invalid: %s.", koq.GetFullName().c_str(), presUnit.GetProblemDescription().c_str());
             return ERROR;
             }
 
@@ -367,7 +489,7 @@ BentleyStatus SchemaPersistenceHelper::DeserializeKoqPresentationUnits(KindOfQua
     for (rapidjson::Value const& presUnitJson : presUnitsJson.GetArray())
         {
         BeAssert(presUnitJson.IsString() && presUnitJson.GetStringLength() > 0);
-        koq.GetPresentationUnitListR().push_back(Formatting::FormatUnitSet(presUnitJson.GetString()));
+        koq.AddPresentationUnit(Formatting::FormatUnitSet(presUnitJson.GetString()));
         BeAssert(!koq.GetPresentationUnitList().back().HasProblem() && "KOQ PresentationUnit could not be read. Its format is invalid");
         }
 

@@ -93,7 +93,6 @@ struct ValueExpListExp final : ComputedExp
 
         void AddValueExp(std::unique_ptr<ValueExp>& valueExp) { AddChild(std::move(valueExp)); }
         ValueExp const* GetValueExp(size_t index) const { return GetChild<ValueExp>(index); }
-        ParameterExp* TryGetAsParameterExpP(size_t index) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

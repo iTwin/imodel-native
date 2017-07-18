@@ -18,6 +18,7 @@
     <ClCompile Include="ClassMapPersistenceManager.cpp" />
     <ClCompile Include="ClassMappingInfo.cpp" />
     <ClCompile Include="DbMap.cpp" />
+    <ClCompile Include="DbMapValidator.cpp" />
     <ClCompile Include="DbSchema.cpp" />
     <ClCompile Include="DbSchemaPersistenceManager.cpp" />
     <ClCompile Include="docs\samplecode\ECDb.sample.cpp" />
@@ -31,7 +32,6 @@
     <ClCompile Include="ECDbPch.cpp" />
     <ClCompile Include="ECDbSqlFunctions.cpp" />
     <ClCompile Include="ECDbSystemSchemaHelper.cpp" />
-    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp" />
     <ClCompile Include="ECInstanceFinder.cpp" />
     <ClCompile Include="ECSql\ArrayECSqlBinder.cpp" />
     <ClCompile Include="ECSql\ArrayECSqlField.cpp" />
@@ -131,7 +131,6 @@
     <ClInclude Include="..\PublicAPI\ECDb\IECSqlBinder.h" />
     <ClInclude Include="..\PublicAPI\ECDb\JsonAdapter.h" />
     <ClInclude Include="..\PublicAPI\ECDb\SchemaManager.h" />
-    <ClInclude Include="BeBriefcaseBasedIdSequence.h" />
     <ClInclude Include="ChangeSummaryImpl.h" />
     <ClInclude Include="ClassMap.h" />
     <ClInclude Include="ClassMapColumnFactory.h" />
@@ -139,6 +138,7 @@
     <ClInclude Include="ClassMapPersistenceManager.h" />
     <ClInclude Include="ClassMappingInfo.h" />
     <ClInclude Include="DbMap.h" />
+    <ClInclude Include="DbMapValidator.h" />
     <ClInclude Include="DbSchema.h" />
     <ClInclude Include="DbSchemaPersistenceManager.h" />
     <ClInclude Include="ECDbExpressionSymbolProvider.h" />
@@ -236,8 +236,11 @@
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDbFileInfo.02.00.00.ecschema.xml" />
-    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml" />
+    <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{1B1D0762-AF1F-447F-BBE6-749055F1C200}</ProjectGuid>

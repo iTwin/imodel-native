@@ -11,6 +11,7 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   01/2016
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -20,17 +21,28 @@ ClassMap const* DbMap::GetClassMap(ECN::ECClassCR ecClass) const
     ClassMap const* classMap = nullptr;
     if (SUCCESS != TryGetClassMap(classMap, ctx, ecClass))
         {
-        BeAssert(false && "Error during TryGetClassMap");
+        BeAssert(false);
         return nullptr;
         }
 
     if (classMap == nullptr)
         return nullptr;
 
-    if (SUCCESS != ctx.Postprocess(*this))
-        return nullptr;
-
     return classMap;
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan   06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMap::TryGetClassMap(ClassMap const*& classMap, ClassMapLoadContext& ctx, ECN::ECClassCR ecClass) const
+    {
+    ClassMapPtr classMapPtr = nullptr;
+    if (SUCCESS != TryGetClassMap(classMapPtr, ctx, ecClass))
+        return ERROR;
+
+    classMap = classMapPtr.get();
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -87,19 +99,19 @@ BentleyStatus DbMap::TryLoadClassMap(ClassMapPtr& classMap, ClassMapLoadContext&
     MapStrategyExtendedInfo const& mapStrategy = classMapLoadContext.GetMapStrategy();
     ClassMapPtr classMapTmp = nullptr;
     if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
-        classMapTmp = ClassMapFactory::CreateForLoading<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
+        classMapTmp = ClassMapFactory::CreateForLoading<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy);
     else
         {
         ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
         if (ecRelationshipClass != nullptr)
             {
             if (MapStrategyExtendedInfo::IsForeignKeyMapping(mapStrategy))
-                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassEndTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
+                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassEndTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy);
             else
-                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassLinkTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
+                classMapTmp = ClassMapFactory::CreateForLoading<RelationshipClassLinkTableMap>(m_ecdb, *ecRelationshipClass, mapStrategy);
             }
         else
-            classMapTmp = ClassMapFactory::CreateForLoading<ClassMap>(m_ecdb, ecClass, mapStrategy, classMapLoadContext.GetUpdatableViewInfo());
+            classMapTmp = ClassMapFactory::CreateForLoading<ClassMap>(m_ecdb, ecClass, mapStrategy);
         }
 
     if (ClassMappingStatus::Error == AddClassMap(classMapTmp))
@@ -126,36 +138,52 @@ BentleyStatus DbMap::MapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaC
     if (schemas.empty())
         return SUCCESS;
 
+    PERFLOG_START("ECDb", "Schema import> Map schemas");
+
     if (SUCCESS != DoMapSchemas(ctx, schemas))
         return ERROR;
 
+    PERFLOG_START("ECDb", "Schema import> Persist mappings");
     if (SUCCESS != SaveDbSchema(ctx))
         {
         ClearCache();
         return ERROR;
         }
+    PERFLOG_FINISH("ECDb", "Schema import> Persist mappings");
 
+    PERFLOG_START("ECDb", "Schema import> Create or update tables");
     if (SUCCESS != CreateOrUpdateRequiredTables())
         {
         ClearCache();
         return ERROR;
         }
-
+    PERFLOG_FINISH("ECDb", "Schema import> Create or update tables");
+    PERFLOG_START("ECDb", "Schema import> Create or update indexes");
     if (SUCCESS != CreateOrUpdateIndexesInDb(ctx))
         {
         ClearCache();
         return ERROR;
         }
-    
+    PERFLOG_FINISH("ECDb", "Schema import> Create or update indexes");
+
+    PERFLOG_START("ECDb", "Schema import> Purge orphan tables");
     if (SUCCESS != PurgeOrphanTables())
         {
         ClearCache();
         return ERROR;
         }
-    
-    const BentleyStatus stat = ValidateDbMappings(m_ecdb, ctx.GetOptions() != SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues);
+    PERFLOG_FINISH("ECDb", "Schema import> Purge orphan tables");
+
+    PERFLOG_START("ECDb", "Schema import> Validate mappings");
+
+    if (SUCCESS != DbMapValidator(*this, ctx, DbMapValidator::Mode::InMemory).Validate())
+        return ERROR;
+
+    PERFLOG_FINISH("ECDb", "Schema import> Validate mappings");
+
     ClearCache();
-    return stat;
+    PERFLOG_FINISH("ECDb", "Schema import> Map schemas");
+    return SUCCESS;
     }
 
 
@@ -204,6 +232,7 @@ void DbMap::GatherRootClasses(ECClassCR ecclass, std::set<ECClassCP>& doneList, 
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchemaCP> const& schemas) const
     {
+    ctx.SetPhase(SchemaImportContext::Phase::MappingSchemas);
     // Identify root classes/relationship-classes
     std::set<ECClassCP> doneList;
     std::set<ECClassCP> rootClassSet;
@@ -227,35 +256,44 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
 
     if (GetDbSchemaR().SynchronizeExistingTables() != SUCCESS)
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Synchronizing existing table to which classes are mapped failed.");
+        m_ecdb.GetImpl().Issues().Report("Synchronizing existing table to which classes are mapped failed.");
         return ERROR;
         }
 
     // Map mixin hierarchy before everything else. It does not map primary hierarchy and all classes map to virtual tables.
+    PERFLOG_START("ECDb", "Schema import> Map mixins");
+    ctx.SetPhase(SchemaImportContext::Phase::MappingMixins);
     for (ECEntityClassCP mixin : rootMixins)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *mixin))
             return ERROR;
         }
+    PERFLOG_FINISH("ECDb", "Schema import> Map mixins");
 
     // Starting with the root, recursively map the entire class hierarchy. 
+    PERFLOG_START("ECDb", "Schema import> Map entity classes");
+    ctx.SetPhase(SchemaImportContext::Phase::MappingEntities);
     for (ECClassCP rootClass : rootClassList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootClass))
             return ERROR;
         }
+    PERFLOG_FINISH("ECDb", "Schema import> Map entity classes");
 
-
+    PERFLOG_START("ECDb", "Schema import> Map relationships");
+    ctx.SetPhase(SchemaImportContext::Phase::MappingRelationships);
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
         if (ClassMappingStatus::Error == MapClass(ctx, *rootRelationshipClass))
             return ERROR;
         }
 
-    //NavigationPropertyMaps can only be finished after all relationships have been mapped
-    if (SUCCESS != ctx.GetClassMapLoadContext().Postprocess(*this))
+    if (ctx.FinishEndTableMapping() != ClassMappingStatus::Success)
         return ERROR;
 
+    PERFLOG_FINISH("ECDb", "Schema import> Map relationships");
+
+    ctx.SetPhase(SchemaImportContext::Phase::CreatingUserDefinedIndexes);
     for (auto& kvpair : ctx.GetClassMappingInfoCache())
         {
         if (SUCCESS != kvpair.first->CreateUserProvidedIndexes(ctx, kvpair.second->GetIndexInfos()))
@@ -283,9 +321,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
              return status;
 
          BeAssert(classMapInfo != nullptr);
-
          MapStrategyExtendedInfo const& mapStrategy = classMapInfo->GetMapStrategy();
-
          ClassMapPtr classMap = nullptr;
          if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
              classMap = ClassMapFactory::CreateForMapping<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy);
@@ -309,20 +345,18 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
 
          ctx.AddClassMapForSaving(ecClass.GetId());
          status = classMap->Map(ctx, *classMapInfo);
-         ctx.CacheClassMapInfo(*classMap, classMapInfo);
-
-         //error
+         ctx.CacheClassMapInfo(*classMap, classMapInfo);         
          if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
              return status;
-
+          
          }
      else
          {
-         existingClassMap->Update();
+         if (existingClassMap->Update(ctx) == ERROR)
+             return ClassMappingStatus::Error;
          }
 
      const bool isCurrentIsMixin = ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin();
-
      for (ECClassCP childClass : ecClass.GetDerivedClasses())
          {
          const bool isChildIsMixin = childClass->IsEntityClass() && childClass->GetEntityClassCP()->IsMixin();
@@ -362,7 +396,6 @@ ClassMappingStatus DbMap::AddClassMap(ClassMapPtr& classMap) const
 BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
     {
     m_ecdb.GetStatementCache().Empty();
-    StopWatch timer(true);
 
     int nCreated = 0;
     int nUpdated = 0;
@@ -394,8 +427,7 @@ BentleyStatus DbMap::CreateOrUpdateRequiredTables() const
             }
         }
 
-    timer.Stop();
-    LOG.debugv("Created %d tables, updated %d tables, and %d tables were up-to-date (%.4f seconds).", nCreated, nUpdated, nWasUpToDate, timer.GetElapsedSeconds());
+    LOG.debugv("Created %d tables, updated %d tables, and %d tables were up-to-date.", nCreated, nUpdated, nWasUpToDate);
     return SUCCESS;
     }
 
@@ -516,7 +548,7 @@ BentleyStatus DbMap::PurgeOrphanTables() const
     {
     //skip ExistingTable and NotMapped
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Name, t.IsVirtual FROM ec_Table t "
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT t.Id, t.Name, t.Type= " SQLVAL_DbTable_Type_Virtual " FROM ec_Table t "
                                      "WHERE t.Type<> " SQLVAL_DbTable_Type_Existing " AND t.Name<>'" DBSCHEMA_NULLTABLENAME "' AND t.Id NOT IN ("
                                      "SELECT DISTINCT ec_Table.Id FROM ec_PropertyMap "
                                      "INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id = ec_PropertyMap.PropertyPathId "
@@ -528,47 +560,42 @@ BentleyStatus DbMap::PurgeOrphanTables() const
         return ERROR;
         }
 
-    std::vector<Utf8String> nonVirtualTables;
-    std::vector<Utf8String> virtualTables;
+    IdSet<DbTableId> orphanTables;
+    std::vector<Utf8String> tablesToDrop;
     while (stmt.Step() == BE_SQLITE_ROW)
         {
-        if (stmt.GetValueBoolean(1))
-            virtualTables.push_back(stmt.GetValueText(0));
-        else
-            nonVirtualTables.push_back(stmt.GetValueText(0));
+        orphanTables.insert(stmt.GetValueId<DbTableId>(0));
+        if (!stmt.GetValueBoolean(2))
+            tablesToDrop.push_back(stmt.GetValueText(1));
         }
-
-    if (nonVirtualTables.empty() && virtualTables.empty())
-        return SUCCESS;
-
     stmt.Finalize();
 
-    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE Name=?"))
+    if (orphanTables.empty())
+        return SUCCESS;
+
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "DELETE FROM ec_Table WHERE InVirtualSet(?,Id)") ||
+        BE_SQLITE_OK != stmt.BindVirtualSet(1, orphanTables) ||
+        BE_SQLITE_DONE != stmt.Step())
         {
-        BeAssert(false && "ECDb profile changed");
+        BeAssert(false);
         return ERROR;
         }
 
-    for (Utf8StringCR name : virtualTables)
+    for (Utf8StringCR table : tablesToDrop)
         {
-        stmt.Reset();
-        stmt.ClearBindings();
-        stmt.BindText(1, name, Statement::MakeCopy::No);
-        if (stmt.Step() != BE_SQLITE_DONE)
-            {
-            BeAssert(false && "constraint violation");
-            return ERROR;
-            }
+        GetDbSchema().RemoveCacheTable(table);
         }
 
-    if (nonVirtualTables.empty())
+    stmt.Finalize();
+
+    if (tablesToDrop.empty())
         return SUCCESS;
 
-    if (!m_ecdb.GetECDbImplR().GetSettings().AllowChangesetMergingIncompatibleSchemaImport())
+    if (!m_ecdb.GetImpl().GetSettings().AllowChangesetMergingIncompatibleSchemaImport())
         {
         Utf8String tableNames;
         bool isFirstTable = true;
-        for (Utf8StringCR tableName : nonVirtualTables)
+        for (Utf8StringCR tableName : tablesToDrop)
             {
             if (!isFirstTable)
                 tableNames.append(",");
@@ -577,12 +604,12 @@ BentleyStatus DbMap::PurgeOrphanTables() const
             isFirstTable = false;
             }
 
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report(
+        m_ecdb.GetImpl().Issues().Report(
             "Failed to import schemas: it would change the database schema in a changeset-merging incompatible way. ECDb would have to delete these tables: %s", tableNames.c_str());
         return ERROR;
         }
 
-    for (Utf8StringCR name : nonVirtualTables)
+    for (Utf8StringCR name : tablesToDrop)
         {
         if (m_ecdb.DropTable(name.c_str()) != BE_SQLITE_OK)
             {
@@ -590,51 +617,43 @@ BentleyStatus DbMap::PurgeOrphanTables() const
             return ERROR;
             }
 
-        stmt.Reset();
-        stmt.ClearBindings();
-        stmt.BindText(1, name, Statement::MakeCopy::No);
-        if (stmt.Step() != BE_SQLITE_DONE)
-            {
-            BeAssert(false && "constraint violation");
-            return ERROR;
-            }
         }
 
     return SUCCESS;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Gets the count of tables at the specified end of a relationship class.
-* @param  relationshpEnd [in] Constraint at the end of the relationship
-* @return Number of tables at the specified end of the relationship. Returns
-*         UINT_MAX if the end is AnyClass.
-* @bsimethod                                 Ramanujam.Raman                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
+//---------------------------------------------------------------------------------------
+// Gets the count of tables at the specified end of a relationship class.
+// @param  relationshpEnd [in] Constraint at the end of the relationship
+// @return Number of tables at the specified end of the relationship. Returns
+//         std::numeric_limits<size_t>::max() if the end is AnyClass.
+// @bsimethod                                 Ramanujam.Raman                05/2012
+//---------------------------------------------------------------------------------------
 size_t DbMap::GetTableCountOnRelationshipEnd(SchemaImportContext& ctx, ECRelationshipConstraintCR relationshipEnd) const
     {
     bool hasAnyClass = false;
     std::set<ClassMap const*> classMaps = GetClassMapsFromRelationshipEnd(ctx, relationshipEnd, &hasAnyClass);
 
     if (hasAnyClass)
-        return SIZE_MAX;
+        return std::numeric_limits<size_t>::max();
 
-    std::map<PersistenceType, std::set<DbTable const*>> tables;
-    bool abstractEndPoint = relationshipEnd.GetConstraintClasses().size() == 1 && relationshipEnd.GetConstraintClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
+    const bool abstractEndPoint = relationshipEnd.GetConstraintClasses().size() == 1 && relationshipEnd.GetConstraintClasses().front()->GetClassModifier() == ECClassModifier::Abstract;
+    
+    std::set<DbTable const*> nonVirtualTables;
+    bool hasAtLeastOneVirtualTable = false;
     for (ClassMap const* classMap : classMaps)
         {
-        if (abstractEndPoint)
-            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetJoinedOrPrimaryTable());
+        DbTable const* table = abstractEndPoint ? &classMap->GetJoinedOrPrimaryTable() : &classMap->GetPrimaryTable();
+        if (classMap->GetPrimaryTable().GetType() == DbTable::Type::Virtual)
+            hasAtLeastOneVirtualTable = true;
         else
-            tables[classMap->GetPrimaryTable().GetPersistenceType()].insert(&classMap->GetPrimaryTable());
+            nonVirtualTables.insert(table);
         }
 
-    if (tables[PersistenceType::Physical].size() > 0)
-        return tables[PersistenceType::Physical].size();
+    if (!nonVirtualTables.empty())
+        return nonVirtualTables.size();
 
-    if (tables[PersistenceType::Virtual].size() > 0)
-        return 1;
-
-    return 0;
+    return hasAtLeastOneVirtualTable ? 1 : 0;
     }
 
 //---------------------------------------------------------------------------------------
@@ -711,7 +730,6 @@ BentleyStatus DbMap::GetClassMapsFromRelationshipEnd(SchemaImportContext& ctx, s
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMap::SaveDbSchema(SchemaImportContext& ctx) const
     {
-    StopWatch stopWatch(true);
     if (m_dbSchema.SaveOrUpdateTables() != SUCCESS)
         {
         BeAssert(false);
@@ -730,61 +748,15 @@ BentleyStatus DbMap::SaveDbSchema(SchemaImportContext& ctx) const
             Issues().Report("Failed to save mapping for ECClass %s: %s", classMap.GetClass().GetFullName(), m_ecdb.GetLastError().c_str());
             return ERROR;
             }
+
+        if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+            classMap.GetAs<RelationshipClassEndTableMap>().ResetPartitionCache();
         }
 
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(GetECDb()))
         return ERROR;
 
     m_lightweightCache.Reset();
-    stopWatch.Stop();
-
-    LOG.debugv("Saving EC-DB mapping took %.4lf msecs.", stopWatch.GetElapsedSeconds() * 1000.0);
-    return SUCCESS;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                    02/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus DbMap::ValidateDbMappings(ECDb const& ecdb, bool failOnError)
-    {
-    NativeLogging::ILogger* diagLogger = NativeLogging::LoggingManager::GetLogger(L"InvalidDbMappings");
-    const NativeLogging::SEVERITY diagSeverity = NativeLogging::LOG_INFO;
-
-    Utf8CP ecdbFileName = ecdb.GetDbFileName();
-
-    PERFLOG_START("ECDb", "ValidateDbMappings");
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(ecdb, SQL_ValidateDbMapping))
-        {
-        LOG.errorv("Preparing db mapping validation SQL failed: %s", ecdb.GetLastError().c_str());
-        BeAssert(false);
-        return ERROR;
-        }
-
-    bool hasIssues = false;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        hasIssues = true;
-        Utf8CP schemaName = stmt.GetValueText(0);
-        Utf8CP schemaAlias = stmt.GetValueText(1);
-        Utf8CP className = stmt.GetValueText(2);
-        Utf8CP tableName = stmt.GetValueText(3);
-        const int issueType = stmt.GetValueInt(4);
-        Utf8CP issueTypeDesc = stmt.GetValueText(5);
-        Utf8CP issue = stmt.GetValueText(6);
-        diagLogger->messagev(diagSeverity, "\"%s\",%s,%s,%s,%s,%d,%s,\"%s\"",
-                             ecdbFileName, schemaName, schemaAlias,
-                             className, tableName, issueType, issueTypeDesc, issue);
-
-        ecdb.GetECDbImplR().GetIssueReporter().Report("ECClass with invalid DB mapping resulting in data corruption: %s:%s - Issue type: %s - Table: %s - Corrupted mapping: %s",
-                     schemaName, className, issueTypeDesc, tableName, issue);
-        }
-
-    PERFLOG_FINISH("ECDb", "ValidateDbMappings");
-    if (hasIssues && failOnError)
-        return ERROR;
-
     return SUCCESS;
     }
 
@@ -799,4 +771,3 @@ void DbMap::ClearCache() const
     }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
-

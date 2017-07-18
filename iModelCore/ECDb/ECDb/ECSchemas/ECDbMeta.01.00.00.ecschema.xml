@@ -92,6 +92,19 @@
         <ECProperty propertyName="RelativeError" typeName="double"/>
         <ECArrayProperty propertyName="PresentationUnits" typeName="string"/>
     </ECEntityClass>
+    <ECEntityClass typeName="PropertyCategoryDef" description="PropertyCategory" displayLabel="PropertyCategory" modifier="Sealed">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>ExistingTable</MapStrategy>
+                <TableName>ec_PropertyCategory</TableName>
+            </ClassMap>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Schema" relationshipName="SchemaOwnsPropertyCategories" direction="backward"/>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECProperty propertyName="Priority" typeName="int"/>
+    </ECEntityClass>
     <ECEntityClass typeName="ECPropertyDef" description="ECProperty" displayLabel="ECProperty" modifier="Sealed">
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
@@ -104,13 +117,19 @@
         <ECProperty propertyName="DisplayLabel" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
         <ECProperty propertyName="IsReadonly" typeName="boolean"/>
+        <ECProperty propertyName="Priority" typeName="int"/>
         <ECProperty propertyName="Ordinal" typeName="int" description="Position of the ECProperty in its ECClass"/>
         <ECProperty propertyName="Kind" typeName="ECPropertyKind"/>
         <ECProperty propertyName="PrimitiveType" typeName="PrimitiveType" description="ECPropertyKind::Primitive: data type. ECPropertyKind::PrimitiveArray: data type of array elements."/>
+        <ECProperty propertyName="PrimitiveTypeMinLength" typeName="int" description="Minimum length of strings or blobs."/>
+        <ECProperty propertyName="PrimitiveTypeMaxLength" typeName="int" description="Maximum length of strings or blobs."/>
+        <ECProperty propertyName="PrimitiveTypeMinValue" typeName="double" description="Minimum value of numeric primitives."/>
+        <ECProperty propertyName="PrimitiveTypeMaxValue" typeName="double" description="Maximum value of numeric primitives."/>
         <ECNavigationProperty propertyName="Enumeration" description="ECPropertyKind::Primitive: Id of this property's ECEnumerationDef." relationshipName="PropertyHasEnumeration" direction="forward"/>
         <ECProperty propertyName="ExtendedTypeName" typeName="string" description="ECPropertyKind::Primitive or ECPropertyKind::PrimitiveArray: Extended type name further describing PrimitiveType."/>
         <ECNavigationProperty propertyName="StructClass" description="ECPropertyKind::Struct: ECClassId of property's struct type. ECPropertyKind::StructArray: ECClassId of array element struct type." relationshipName="PropertyHasStructType" direction="forward"/>
         <ECNavigationProperty propertyName="KindOfQuantity" description="ECPropertyKind::Primitive or ECPropertyKind::PrimitiveArray: Id of this property's KindOfQuantityDef." relationshipName="PropertyHasKindOfQuantity" direction="forward"/>
+        <ECNavigationProperty propertyName="Category" description="Id of this property's PropertyCategoryDef." relationshipName="PropertyHasCategory" direction="forward"/>
         <ECProperty propertyName="ArrayMinOccurs" typeName="int" description="ECPropertyKind::PrimitiveArray or ECPropertyKind::StructArray"/>
         <ECProperty propertyName="ArrayMaxOccurs" typeName="int" description="ECPropertyKind::PrimitiveArray or ECPropertyKind::StructArray"/>
         <ECNavigationProperty propertyName="NavigationRelationshipClass" description="ECPropertyKind::Navigation: ECClassId of property's relationship class." relationshipName="PropertyHasNavigationRelationshipClassId" direction="forward"/>
@@ -220,6 +239,14 @@
             <Class class="KindOfQuantityDef"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsPropertyCategories" modifier="Sealed" strength="embedding">
+        <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="false">
+            <Class class="ECSchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="is defined in" polymorphic="false">
+            <Class class="PropertyCategoryDef"/>
+        </Target>
+    </ECRelationshipClass>
     <ECRelationshipClass typeName="PropertyHasEnumeration" description="ECPropertyKind::Enumeration: relates the property to its ECEnumeration." modifier="Sealed" strength="referencing">
         <Source multiplicity="(0..*)" roleLabel="is of type" polymorphic="false">
             <Class class="ECPropertyDef"/>
@@ -245,11 +272,19 @@
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="PropertyHasKindOfQuantity" description="ECPropertyKind::Primitive or ECPropertyKind::PrimitiveArray: relates the property to its KindOfQuantity." modifier="Sealed" strength="referencing">
-        <Source multiplicity="(0..*)" roleLabel="defines" polymorphic="false">
+        <Source multiplicity="(0..*)" roleLabel="has" polymorphic="false">
             <Class class="ECPropertyDef"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="false">
             <Class class="KindOfQuantityDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PropertyHasCategory" description="Relates the property to its PropertyCategory." modifier="Sealed" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="false">
+            <Class class="ECPropertyDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is used by" polymorphic="false">
+            <Class class="PropertyCategoryDef"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="RelationshipHasConstraints" modifier="Sealed" strength="referencing">

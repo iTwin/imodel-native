@@ -361,9 +361,6 @@
     <ClInclude Include="ChangeSummaryImpl.h">
       <Filter>ChangeSummary</Filter>
     </ClInclude>
-    <ClInclude Include="BeBriefcaseBasedIdSequence.h">
-      <Filter>ECDb</Filter>
-    </ClInclude>
     <ClInclude Include="ECDbMapSchemaHelper.h">
       <Filter>SchemaManager</Filter>
     </ClInclude>
@@ -402,6 +399,9 @@
       <Filter>Profile</Filter>
     </ClInclude>
     <ClInclude Include="DbMap.h">
+      <Filter>DbMap</Filter>
+    </ClInclude>
+    <ClInclude Include="DbMapValidator.h">
       <Filter>DbMap</Filter>
     </ClInclude>
   </ItemGroup>
@@ -698,9 +698,6 @@
     <ClCompile Include="ChangeSummaryImpl.cpp">
       <Filter>ChangeSummary</Filter>
     </ClCompile>
-    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp">
-      <Filter>ECDb</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbMapSchemaHelper.cpp">
       <Filter>SchemaManager</Filter>
     </ClCompile>
@@ -741,6 +738,9 @@
     <ClCompile Include="DbMap.cpp">
       <Filter>DbMap</Filter>
     </ClCompile>
+    <ClCompile Include="DbMapValidator.cpp">
+      <Filter>DbMap</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml">
@@ -750,6 +750,9 @@
       <Filter>ECSchemas</Filter>
     </Xml>
     <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml">
+      <Filter>ECSchemas</Filter>
+    </Xml>
+    <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
   </ItemGroup>

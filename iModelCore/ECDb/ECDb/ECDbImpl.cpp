@@ -215,7 +215,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
         ECClassCP ownerClass = Schemas().GetClass(ownerClassId);
         if (ownerClass == nullptr)
             {
-            GetIssueReporter().Report("FileInfo owner ECClass not found for " ECDBSYS_PROP_ECClassId " %s.", ownerClassId.ToString().c_str());
+            m_issueReporter.Report("FileInfo owner ECClass not found for " ECDBSYS_PROP_ECClassId " %s.", ownerClassId.ToString().c_str());
             return ERROR;
             }
 
@@ -268,7 +268,7 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
     Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(m_ecdb, writable, writeToken));
     if (!policy.IsSupported())
         {
-        GetIssueReporter().Report(policy.GetNotSupportedMessage().c_str());
+        m_issueReporter.Report(policy.GetNotSupportedMessage().c_str());
         return ERROR;
         }
 

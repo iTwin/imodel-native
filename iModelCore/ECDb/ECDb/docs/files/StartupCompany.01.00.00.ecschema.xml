@@ -23,6 +23,7 @@
         <ECProperty propertyName="JobTitle" typeName="string" displayLabel="Job Title" />
         <ECArrayProperty propertyName="WorkPhones" typeName="string" displayLabel="Work Phone(s)" minOccurs="0" maxOccurs="unbounded" />
         <ECArrayProperty propertyName="MobilePhones" typeName="string" displayLabel="Mobile Phone(s)" minOccurs="0" maxOccurs="unbounded" />
+        <ECNavigationProperty propertyName="Manager" relationshipName="ManagerReports" direction="Backward" />
         <ECStructArrayProperty propertyName="Certifications" typeName="Certification" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructProperty propertyName="Address" typeName="Location" />
         <ECProperty propertyName="LastModified" typeName="dateTime" displayLabel="Last Modified">
@@ -57,10 +58,8 @@
             </ClassMap>
         </ECCustomAttributes>
     
-        <ECProperty propertyName="AssetID" typeName="string" displayLabel="Asset ID" />
         <ECProperty propertyName="AssetOwner" typeName="string" />
         <ECProperty propertyName="BarCode" typeName="string" displayLabel="Bar Code" />
-        <ECProperty propertyName="AssetUserID" typeName="string" />
         <ECProperty propertyName="Cost" typeName="double" />
         <ECProperty propertyName="Room" typeName="string" displayLabel="Room/Cubicle" />
     </ECEntityClass>
@@ -137,28 +136,28 @@
     </ECEntityClass>
       
     <ECRelationshipClass typeName="ManagerReports" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(0..1)" roleLabel="Manager" polymorphic="True">
+        <Source multiplicity="(0..1)" roleLabel="manages" polymorphic="True">
             <Class class="Employee" />
         </Source>
-        <Target multiplicity="(0..N)" roleLabel="Report" polymorphic="True">
+        <Target multiplicity="(0..*)" roleLabel="reports to" polymorphic="True">
             <Class class="Employee" />
         </Target>
     </ECRelationshipClass>  
     
     <ECRelationshipClass typeName="CompanyHasEmployees" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(1..1)" roleLabel="Employee of Company" polymorphic="True">
+        <Source multiplicity="(1..1)" roleLabel="employs" polymorphic="True">
             <Class class="Company" />
         </Source>
-        <Target multiplicity="(1..N)" roleLabel="Employee working for the Company" polymorphic="True">
+        <Target multiplicity="(1..*)" roleLabel="works for" polymorphic="True">
             <Class class="Employee" />
         </Target>
     </ECRelationshipClass>
         
     <ECRelationshipClass typeName="HardwareUsedByEmployee" strength="referencing" modifier="Sealed">
-        <Source multiplicity="(0..N)" roleLabel="Employee using hardware" polymorphic="True">
+        <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="True">
             <Class class="Employee" />
         </Source>
-        <Target multiplicity="(0..N)" roleLabel="Hardware assigned to employee" polymorphic="True">
+        <Target multiplicity="(0..*)" roleLabel="is used by" polymorphic="True">
             <Class class="Hardware" />
         </Target>
     </ECRelationshipClass>

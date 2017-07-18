@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="StartupCompany" alias="stco" version="02.00.00" description="My Startup Company" displayLabel="My Startup Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
     <ECSchemaReference name="CoreCustomAttributes" version="01.00.00" alias="CoreCA"/>
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
     <ECSchemaReference name="ECDbMap" version="02.00.00" alias="ecdbmap"/>
     <ECCustomAttributes>
         <SchemaMap xmlns="ECDbMap.02.00">
@@ -51,17 +50,6 @@
         <ECArrayProperty propertyName="arrayOfpoint3dAAFoo" typeName="point3d" minOccurs="1" maxOccurs="unbounded"/>
         <ECStructArrayProperty propertyName="arrayOfAnglesStructsAAFoo" typeName="AnglesStruct" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
-    <ECEntityClass typeName="Widget">
-        <ECProperty propertyName="stringOfWidget" typeName="string"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="AAFoo_references_Widget_11" modifier="Sealed" strength="referencing">
-        <Source multiplicity="(0..1)" roleLabel="refers to" polymorphic="true">
-            <Class class="AAFoo"/>
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="is referred to by" polymorphic="true">
-            <Class class="Widget"/>
-        </Target>
-    </ECRelationshipClass>
     <ECEntityClass typeName="ABFoo">
         <ECProperty propertyName="stringABFoo" typeName="string"/>
     </ECEntityClass>
@@ -123,14 +111,6 @@
         <ECProperty propertyName="FloorCode" typeName="string" displayLabel="Floor Code"/>
         <ECProperty propertyName="RecordKey" typeName="int" displayLabel="Record Key"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="BuildingFloorRelationship" modifier="Sealed" strength="referencing">
-        <Source multiplicity="(0..1)" roleLabel="Floor" polymorphic="true">
-            <Class class="Building"/>
-        </Source>
-        <Target multiplicity="(1..*)" roleLabel="Building containing floor" polymorphic="true">
-            <Class class="BuildingFloor"/>
-        </Target>
-    </ECRelationshipClass>
     <ECEntityClass typeName="Furniture">
         <BaseClass>Asset</BaseClass>
         <ECProperty propertyName="Condition" typeName="Furniture_Condition"/>
@@ -218,6 +198,7 @@
         <ECProperty propertyName="Logo" typeName="string"/>
         <ECProperty propertyName="Manager" typeName="int" displayLabel="Project Manager"/>
         <ECProperty propertyName="ProjectRecordKey" typeName="int" displayLabel="Record Key"/>
+        <ECNavigationProperty propertyName="Company" relationshipName="CompanyProject" direction="Backward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="CompanyProject" modifier="Sealed" strength="referencing">
         <Source multiplicity="(0..1)" roleLabel="CompanyProject" polymorphic="true">
@@ -243,6 +224,7 @@
         <ECProperty propertyName="Type" typeName="Computer_Type"/>
     </ECEntityClass>
     <ECEntityClass typeName="Cubicle" displayLabel="Office Room/Cubicle">
+        <ECNavigationProperty propertyName="Floor" relationshipName="FloorCubicle" direction="Backward"/>
         <ECProperty propertyName="Bay" typeName="string"/>
         <ECProperty propertyName="IsOccupied" typeName="boolean"/>
         <ECProperty propertyName="BuildingFloor" typeName="int"/>
@@ -258,14 +240,7 @@
         <BaseClass>Furniture</BaseClass>
         <ECProperty propertyName="DeskFootPrint" typeName="string"/>
         <ECProperty propertyName="NumberOfCabinets" typeName="int" displayLabel="Number Of Cabinets"/>
-        <ECProperty propertyName="Size" typeName="string">
-            <ECCustomAttributes>
-                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
-                    <ECExpression>&quot;(&quot; &amp; this.Length &amp; &quot;, &quot; &amp; this.Breadth &amp; &quot;)&quot;</ECExpression>
-                    <FailureValue>-</FailureValue>
-                </CalculatedECPropertySpecification>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="Size" typeName="string"/>
         <ECProperty propertyName="Type" typeName="string"/>
         <ECProperty propertyName="Length" typeName="double"/>
         <ECProperty propertyName="Breadth" typeName="double"/>
@@ -288,20 +263,13 @@
         <ECProperty propertyName="Project" typeName="string" displayLabel="Department/Project"/>
         <ECArrayProperty propertyName="WorkPhone" typeName="string" displayLabel="Work Phone (s)" minOccurs="0" maxOccurs="unbounded"/>
         <ECArrayProperty propertyName="MobilePhone" typeName="string" displayLabel="Mobile Phone (s)" minOccurs="0" maxOccurs="unbounded"/>
-        <ECProperty propertyName="FullName" typeName="string" displayLabel="Full Name">
-            <ECCustomAttributes>
-                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
-                    <ECExpression>this.LastName &amp; &quot; &quot; &amp; this.FirstName</ECExpression>
-                    <FailureValue> - </FailureValue>
-                    <ParserRegularExpression/>
-                </CalculatedECPropertySpecification>
-            </ECCustomAttributes>
-        </ECProperty>
+        <ECProperty propertyName="FullName" typeName="string" displayLabel="Full Name"/>
         <ECStructArrayProperty propertyName="Certifications" typeName="EmployeeCertification" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructProperty propertyName="Location" typeName="Location" displayLabel="Office Location"/>
         <ECProperty propertyName="EmployeeType" typeName="Employee_EmployeeType" displayLabel="Employee Type"/>
         <ECStructProperty propertyName="Address" typeName="Location"/>
         <ECProperty propertyName="EmployeeRecordKey" typeName="dateTime" displayLabel="Record Key"/>
+        <ECNavigationProperty propertyName="Company" relationshipName="EmployeeCompany" direction="Forward"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="EmployeeCompany" modifier="Sealed" strength="referencing" strengthDirection="backward">
         <Source multiplicity="(1..*)" roleLabel="Employee working for the Company" polymorphic="true">
@@ -309,17 +277,6 @@
         </Source>
         <Target multiplicity="(0..1)" roleLabel="Employee of Company" polymorphic="true">
             <Class class="Company"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="EmployeeFurniture" modifier="Sealed" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
-        <Source multiplicity="(0..1)" roleLabel="Employee using furniture" polymorphic="true">
-            <Class class="Employee"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="Furniture assigned to employee" polymorphic="true">
-            <Class class="Furniture"/>
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="EmployeeHardware" modifier="Sealed" strength="referencing">
@@ -352,14 +309,16 @@
     </ECRelationshipClass>
     <ECEntityClass typeName="Phone">
         <BaseClass>Asset</BaseClass>
+        <ECNavigationProperty propertyName="Employee" relationshipName="EmployeePhone" direction="Backward">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+            </ECCustomAttributes>
+        </ECNavigationProperty>
         <ECProperty propertyName="Number" typeName="string"/>
         <ECProperty propertyName="Owner" typeName="string"/>
         <ECProperty propertyName="User" typeName="int"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="EmployeePhone" modifier="Sealed" strength="referencing">
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="Phone used by employee" polymorphic="true">
             <Class class="Employee"/>
         </Source>
@@ -409,22 +368,6 @@
         <ECArrayProperty propertyName="arrayOfIntsFoo" typeName="int" minOccurs="0" maxOccurs="unbounded"/>
         <ECStructArrayProperty propertyName="arrayOfAnglesStructsFoo" typeName="AnglesStruct" minOccurs="0" maxOccurs="unbounded"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="Foo_has_Bars" modifier="Sealed" strength="embedding">
-        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
-            <Class class="Foo"/>
-        </Source>
-        <Target multiplicity="(1..*)" roleLabel="is owned by" polymorphic="true">
-            <Class class="Bar"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="Foo_has_Bars_hint" modifier="Sealed" strength="embedding">
-        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
-            <Class class="Foo"/>
-        </Source>
-        <Target multiplicity="(1..*)" roleLabel="is owned by" polymorphic="true">
-            <Class class="Bar"/>
-        </Target>
-    </ECRelationshipClass>
     <ECEntityClass typeName="Monitor">
         <BaseClass>Hardware</BaseClass>
         <ECProperty propertyName="Size" typeName="int"/>

@@ -26,24 +26,23 @@ struct ColumnMaps
     typedef std::unique_ptr<ColumnMaps> Ptr;
     private:
         bmap<Utf8CP, DbColumn const*, CompareIUtf8Ascii> m_maps;
-        bset< DbColumn const*> n_columns;
-        bset< Utf8CP, CompareIUtf8Ascii> m_newMappedColumns;
+        bset<DbColumn const*> n_columns;
+        bset<Utf8CP, CompareIUtf8Ascii> m_newMappedColumns;
         bset<Utf8String, CompareIUtf8Ascii> m_strings;
 
-    private:
-        void Assert(Utf8CP accessString) const { BeAssert(m_maps.find(accessString) == m_maps.end()); }
-        Utf8CP Copy(Utf8CP);
+        Utf8StringCR Copy(Utf8StringCR);
 
     public:
         ColumnMaps() {}
         ~ColumnMaps() {}
+
         bool IsNew(Utf8CP accessString) const { return m_newMappedColumns.find(accessString) != m_newMappedColumns.end(); }
         bmap<Utf8CP, DbColumn const*, CompareIUtf8Ascii> const& GetEntries() const { return m_maps; }
         bset< Utf8CP, CompareIUtf8Ascii>  const& GetNewlyAddedAccessStrings() const { return m_newMappedColumns; }
         bool IsColumnInUsed(DbColumn const& column) const;
-        void Insert(Utf8CP accessString, DbColumn const& column, bool newlyMappedColumn = false);
+        void Insert(Utf8StringCR accessString, DbColumn const& column, bool newlyMappedColumn = false);
         void Insert(SingleColumnDataPropertyMap const& propertyMap);
-        DbColumn * FindP(Utf8CP accessString) const
+        DbColumn* FindP(Utf8CP accessString) const
             {
             auto itor = m_maps.find(accessString);
             if (itor != m_maps.end())
@@ -75,11 +74,6 @@ struct ColumnMapContext
         static BentleyStatus QueryLocalColumnMaps(ColumnMaps&, ClassMap const&);
         static BentleyStatus QueryInheritedColumnMaps(ColumnMaps&, ClassMap const&);
         static BentleyStatus QueryDerivedColumnMaps(ColumnMaps&, ClassMap const&);
-        static BentleyStatus QueryEndTableRelationshipMaps(ColumnMaps&, ClassMap const&, RelationshpFilter);
-        static BentleyStatus QueryMixinColumnMaps(ColumnMaps&, ClassMap const&, std::vector<ECN::ECClassCP> const*);
-        static BentleyStatus FindMixins(std::vector<ECN::ECClassCP>&, ECDbCR, ECN::ECClassId);
-        static ClassMap const*  FindMixinImplementation(ECDbCR, ECN::ECClassCR, DbTableId, ECN::ECClassId);
-        static void AppendRelationshipColumnMaps(ColumnMaps& columnMaps, ClassMap const& classMap, ECN::ECClassId relationshipClassId);
 
         ColumnMapContext();
         static BentleyStatus Query(ColumnMaps&, ClassMap const&, Filter, ClassMap const* base);
@@ -127,13 +121,12 @@ struct ClassMapColumnFactory : NonCopyableClass
         DbTable* GetEffectiveTable() const;
         DbTable* GetOrCreateOverflowTable() const;
         DbColumn* ReuseOrCreateSharedColumn() const;
-        bool IsColumnInUse(DbColumn const& column) const;
         ColumnMaps* GetColumnMaps() const;
         ECDbCR GetECDb() const;
-        DbColumn* RegisterColumnMap(Utf8CP accessString, DbColumn* column) const;
+        DbColumn* RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const;
         bool IsCompatible(DbColumn const&, DbColumn::Type, DbColumn::CreateParams const&) const;
-        DbColumn* AllocateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8CP) const;
-        DbColumn* AllocatedSharedColumn(ECN::ECPropertyCR, DbColumn::CreateParams const&, Utf8CP) const;
+        DbColumn* AllocateColumn(ECN::ECPropertyCR, DbColumn::Type, DbColumn::CreateParams const&, Utf8StringCR) const;
+        DbColumn* AllocatedSharedColumn(ECN::ECPropertyCR, DbColumn::CreateParams const&, Utf8StringCR) const;
 
         static uint32_t MaxColumnsRequiredToPersistProperty(ECN::ECPropertyCR);
 
@@ -141,10 +134,18 @@ struct ClassMapColumnFactory : NonCopyableClass
         explicit ClassMapColumnFactory(ClassMap const& classMap);
         ~ClassMapColumnFactory() {};
         bool UsesSharedColumnStrategy() const { return m_useSharedColumnStrategy; }
+        bool IsColumnInUse(DbColumn const& column) const;
+        bool MarkNavPropertyMapColumnUsed(NavigationPropertyMap const& map) const
+            {
+            PRECONDITION(map.IsComplete(), false);
+            GetColumnMaps()->Insert(map.GetIdPropertyMap());
+            GetColumnMaps()->Insert(map.GetRelECClassIdPropertyMap());
+            return true;
+            }
         void ReserveSharedColumns(Utf8StringCR propertyName) const;
         void ReserveSharedColumns(uint32_t columnsRequired) const;
         void ReleaseSharedColumnReservation() const { m_areSharedColumnsReserved = false; }
-        DbColumn* Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8CP accessString) const;
+        DbColumn* Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum = false) const;
     };
 
 //======================================================================================
@@ -174,20 +175,4 @@ struct UpdateColumnResolutionScope final : public  ClassMapColumnFactory::Column
         ~UpdateColumnResolutionScope() {}
     };
 
-//======================================================================================
-// @bsiclass                                                     Affan.Khan      01/2015
-//===============+===============+===============+===============+===============+======
-struct EndTableRelationshipColumnResolutionScope final : public  ClassMapColumnFactory::ColumnResolutionScope
-    {
-    private:
-        std::vector<ClassMap const*> m_relevantMaps;
-
-        void _Fill(ColumnMaps&) override;
-
-    public:
-        EndTableRelationshipColumnResolutionScope(ClassMap const& classMap, std::vector<ClassMap const*> classMaps)
-            : ClassMapColumnFactory::ColumnResolutionScope(classMap), m_relevantMaps(classMaps) {}
-
-        ~EndTableRelationshipColumnResolutionScope() {}
-    };
 END_BENTLEY_SQLITE_EC_NAMESPACE

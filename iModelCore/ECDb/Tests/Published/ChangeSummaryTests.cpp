@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPublishedTests.h"
-#include "SchemaImportTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 
 // #define DUMP_CHANGE_SUMMARY 1
@@ -17,7 +16,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================
 // @bsiclass                                                 Ramanujam.Raman   12/16
 //=======================================================================================
-struct ChangeSummaryTestFixture : public SchemaImportTestFixture
+struct ChangeSummaryTestFixture : public ECDbTestFixture
     {
     protected:
         void DumpChangeSummary(ChangeSummary const& changeSummary, Utf8CP label);
@@ -88,33 +87,30 @@ bool ChangeSummaryTestFixture::ChangeSummaryContainsInstance(ECDbCR ecdb, Change
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, InvalidSummary)
     {
-    ECDbR ecdb = SetupECDb("invalidsummarytest.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("invalidsummarytest.ecdb"));
 
     // Test1: Change to be_Prop table - should cause empty change summary without errors
-    TestChangeTracker tracker(ecdb);
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
-    DbResult result = ecdb.SavePropertyString(PropertySpec("TestName", "TestNamespace"), "TestValue");
+    DbResult result = m_ecdb.SavePropertyString(PropertySpec("TestName", "TestNamespace"), "TestValue");
     ASSERT_EQ(BE_SQLITE_OK, result);
 
     TestChangeSet changeSet;
     result = changeSet.FromChangeTrack(tracker);
     ASSERT_EQ(BE_SQLITE_OK, result);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeSet);
     ASSERT_EQ(SUCCESS, status);
 
     // Test2: Change to ec_ tables - should cause an error creating a change summary
     tracker.Restart();
 
-    bool asserted = false;
-    AssertSchemaImport(asserted, ecdb, SchemaItem(
+    ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'> "
-        "</ECSchema>"));
-    ASSERT_FALSE(asserted) << "Schema import failed";
+        "</ECSchema>")));
 
     changeSet.Free();
     result = changeSet.FromChangeTrack(tracker);
@@ -132,7 +128,7 @@ TEST_F(ChangeSummaryTestFixture, InvalidSummary)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -156,21 +152,18 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
         "        <ECProperty propertyName='DT' typeName='dateTime'/>"
         "        <ECProperty propertyName='B' typeName='boolean'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    TestChangeTracker tracker(ecdb);
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B) VALUES ('C1', 'Str', 123, 12345, 23.5453, TIMESTAMP '2013-02-09T12:00:00', true)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, S, I, L, D, DT, B) VALUES ('C1', 'Str', 123, 12345, 23.5453, TIMESTAMP '2013-02-09T12:00:00', true)"));
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
@@ -178,7 +171,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
     auto rc = changeset.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeset);
     ASSERT_TRUE(SUCCESS == status);
 
@@ -208,7 +201,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_PrimitiveProperties)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -231,24 +224,21 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
         "        <BaseClass>Element</BaseClass>"
         "        <ECStructProperty propertyName='SP' typeName='StructProp'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    TestChangeTracker tracker(ecdb);
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, SP) VALUES ('C1', ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, SP) VALUES ('C1', ?)"));
 
     IECSqlBinder& Binder = stmt.GetBinder(1);
     ASSERT_EQ(ECSqlStatus::Success, Binder["S"].BindText("TestVal", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, Binder["I"].BindInt(123));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
@@ -256,7 +246,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
     auto rc = changeset.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeset);
     ASSERT_TRUE(SUCCESS == status);
 
@@ -278,7 +268,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_StructProperty)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -297,17 +287,14 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
         "        <BaseClass>Element</BaseClass>"
         "        <ECArrayProperty propertyName='ArrayProp' typeName='double' minOccurs='0' maxOccurs='unbounded'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    TestChangeTracker tracker(ecdb);
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
     double Array[] = { 123.3434, 345.223,-532.123 };
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, ArrayProp) VALUES ('C1', ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, ArrayProp) VALUES ('C1', ?)"));
 
     IECSqlBinder& Binder = stmt.GetBinder(1).AddArrayElement();
     for (size_t i = 0; i < 3; i++)
@@ -316,7 +303,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
         }
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
@@ -324,7 +311,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
     auto rc = changeset.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeset);
     ASSERT_TRUE(SUCCESS == status);
 
@@ -345,7 +332,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayProperty)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -367,19 +354,16 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
         "        <ECProperty propertyName='BIN' typeName='binary'/>"
         "        <ECProperty propertyName='Geom' typeName='Bentley.Geometry.Common.IGeometry'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    TestChangeTracker tracker(ecdb);
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
     std::vector<Utf8Char> bin = { 'H', 'e', 'l','l', 'o' };
     IGeometryPtr geom = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, P2D, P3D, Bin, Geom) VALUES ('C1', ?, ?, ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, P2D, P3D, Bin, Geom) VALUES ('C1', ?, ?, ?, ?)"));
 
     //Binding Point 2d & 3d
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindPoint2d(1, DPoint2d::From(-21, 22.1)));
@@ -391,7 +375,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
@@ -399,7 +383,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
     auto rc = changeset.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeset);
     ASSERT_TRUE(SUCCESS == status);
 
@@ -425,7 +409,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ComplexPropertyTypes)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -445,12 +429,9 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
         "        <ECArrayProperty propertyName='arrayOfP2d' typeName='point2d' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    TestChangeTracker tracker(ecdb);
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
@@ -458,7 +439,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
     DPoint2d ArrayOfP2d[] = { DPoint2d::From(-21, 22.1),DPoint2d::From(-85.34, 35.36),DPoint2d::From(-31.34, 12.35) };
     DPoint3d ArrayOfP3d[] = { DPoint3d::From(-41.33, 41.13, -12.25), DPoint3d::From(-23.37, 53.54, -34.31), DPoint3d::From(-33.41, 11.13, -99.11) };
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, arrayOfP2d, arrayOfP3d) VALUES ('C1', ?, ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, arrayOfP2d, arrayOfP3d) VALUES ('C1', ?, ?)"));
 
     //Binding Array of Point2d
     IECSqlBinder& arrayOfP2d = stmt.GetBinder(1);
@@ -476,7 +457,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
@@ -484,7 +465,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
     auto rc = changeset.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeset);
     ASSERT_TRUE(SUCCESS == status);
 
@@ -500,7 +481,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfPoints)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -528,12 +509,9 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
         "        <BaseClass>Element</BaseClass>"
         "        <ECStructArrayProperty propertyName='arrayOfST1' typeName='ST1' minOccurs='0' maxOccurs='unbounded'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    TestChangeTracker tracker(ecdb);
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
@@ -544,7 +522,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
     double ArrayOfST1_D2[] = { 12.3, -45.72, -31.11 };
     DPoint3d ArrayOfST1_P3D[] = { DPoint3d::From(-12.11, -74.1, 12.3),DPoint3d::From(-12.53, 21.76, -32.22),DPoint3d::From(-41.14, -22.45, -31.16) };
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.TestElement (Code, arrayOfST1) VALUES ('C1', ?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.TestElement (Code, arrayOfST1) VALUES ('C1', ?)"));
 
     //Binding Array of Struct
     IECSqlBinder& arrayOfST1 = stmt.GetBinder(1);
@@ -560,7 +538,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
@@ -568,7 +546,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
     auto rc = changeset.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeset);
     ASSERT_TRUE(SUCCESS == status);
 
@@ -584,7 +562,7 @@ TEST_F(ChangeSummaryTestFixture, Overflow_ArrayOfStructs)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
     {
-    ECDbR ecdb = SetupECDb("overflowProperties.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowProperties.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -614,12 +592,9 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
         "        <ECArrayProperty propertyName='arrayOfP3d' typeName='point3d' minOccurs='0' maxOccurs='unbounded'/>"
         "        <ECStructArrayProperty propertyName='arrayOfST2' typeName='ST2' minOccurs='0' maxOccurs='unbounded'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    TestChangeTracker tracker(ecdb);
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     int idx = 1;
@@ -643,7 +618,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
 
     ECSqlStatement stmt;
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.Element (S, I, L, D, DT, B, P2D, P3D, BIN, Geom, StructProp, ArrayProp , arrayOfP2d, arrayOfP3d, arrayOfST2) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.Element (S, I, L, D, DT, B, P2D, P3D, BIN, Geom, StructProp, ArrayProp , arrayOfP2d, arrayOfP3d, arrayOfST2) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(idx++, String, IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt(idx++, Integer));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindInt64(idx++, Long));
@@ -694,7 +669,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
@@ -702,7 +677,7 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
     auto rc = changeset.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeset);
     ASSERT_TRUE(SUCCESS == status);
 
@@ -718,9 +693,8 @@ TEST_F(ChangeSummaryTestFixture, PropertiesWithRegularColumns)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     {
-    ECDb& ecdb = SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    TestChangeTracker tracker(ecdb);
+    ASSERT_EQ(SUCCESS, SetupECDb("RelationshipChangesFromCurrentTransaction.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     // Insert Employee - FirstName, LastName
@@ -730,31 +704,31 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     // Insert EmployeeHardware - Link Table relationship
 
     ECSqlStatement statement;
-    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Employee (FirstName,LastName) VALUES('John','Doe')");
+    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Employee (FirstName,LastName) VALUES('John','Doe')");
     ECInstanceKey employeeKey;
     DbResult stepStatus = statement.Step(employeeKey);
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
-    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Company (Name) VALUES('AcmeWorks')");
+    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Company (Name) VALUES('AcmeWorks')");
     ECInstanceKey companyKey1;
     stepStatus = statement.Step(companyKey1);
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
-    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Company (Name) VALUES('CmeaWorks')");
+    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Company (Name) VALUES('CmeaWorks')");
     ECInstanceKey companyKey2;
     stepStatus = statement.Step(companyKey2);
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
-    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Tesla', 'Model-S')");
+    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Tesla', 'Model-S')");
     ECInstanceKey hardwareKey1;
     stepStatus = statement.Step(hardwareKey1);
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
-    statement.Prepare(ecdb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Toyota', 'Prius')");
+    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.Hardware (Make,Model) VALUES('Toyota', 'Prius')");
     ECInstanceKey hardwareKey2;
     stepStatus = statement.Step(hardwareKey2);
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
@@ -763,7 +737,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
     DbResult result = changeSet.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == result);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeSet);
     ASSERT_TRUE(SUCCESS == status);
 
@@ -788,28 +762,17 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
                 Model;NULL;"Prius"
     */
     EXPECT_EQ(5, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(companyKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(companyKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(hardwareKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(hardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(employeeKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Employee", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(companyKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(companyKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Company", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(hardwareKey1.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(hardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "Hardware", DbOpcode::Insert));
 
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
     tracker.Restart();
 
     statement.Finalize();
-    statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetClassId());
-    statement.BindId(2, employeeKey.GetInstanceId());
-    statement.BindId(3, companyKey1.GetClassId());
-    statement.BindId(4, companyKey1.GetInstanceId());
-
-    ECInstanceKey employeeCompanyKey;
-    stepStatus = statement.Step(employeeCompanyKey);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
     statement.BindId(1, employeeKey.GetClassId());
     statement.BindId(2, employeeKey.GetInstanceId());
     statement.BindId(3, hardwareKey1.GetClassId());
@@ -834,41 +797,29 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
         ChangeSummary after inserting relationships:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
-        0:1;StartupCompany:EmployeeCompany:1099511627845;Insert;No
-                SourceECClassId;NULL;StartupCompany:Employee:1099511627843
-                SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;StartupCompany:Company:1099511627836
-                TargetECInstanceId;NULL;0:2
         0:6;StartupCompany:EmployeeHardware:1099511627847;Insert;No
                 SourceECClassId;NULL;StartupCompany:Employee:1099511627843
                 SourceECInstanceId;NULL;0:1
                 TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
                 TargetECInstanceId;NULL;0:4
     */
-    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Insert));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
 
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
     tracker.Restart();
 
     /* 
     * Note: ECDb doesn't support updates of relationships directly. Can only delete and re-insert relationships
     */
     statement.Finalize();
-    statement.Prepare(ecdb, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
+    statement.Prepare(m_ecdb, "DELETE FROM StartupCompany.EmployeeHardware WHERE EmployeeHardware.ECInstanceId=?");
     statement.BindId(1, employeeHardwareKey.GetInstanceId());
     stepStatus = statement.Step();
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     statement.Finalize();
-    statement.Prepare(ecdb, "DELETE FROM StartupCompany.EmployeeCompany WHERE EmployeeCompany.ECInstanceId=?");
-    statement.BindId(1, employeeCompanyKey.GetInstanceId());
-    stepStatus = statement.Step();
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
+    statement.Prepare(m_ecdb, "INSERT INTO StartupCompany.EmployeeHardware (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
     statement.BindId(1, employeeKey.GetClassId());
     statement.BindId(2, employeeKey.GetInstanceId());
     statement.BindId(3, hardwareKey2.GetClassId());
@@ -876,17 +827,6 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 
     ECInstanceKey employeeHardwareKey2;
     stepStatus = statement.Step(employeeHardwareKey2);
-    ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
-
-    statement.Finalize();
-    statement.Prepare(ecdb, "INSERT INTO StartupCompany.EmployeeCompany (SourceECClassId,SourceECInstanceId,TargetECClassId,TargetECInstanceId) VALUES(?,?,?,?)");
-    statement.BindId(1, employeeKey.GetClassId());
-    statement.BindId(2, employeeKey.GetInstanceId());
-    statement.BindId(3, companyKey2.GetClassId());
-    statement.BindId(4, companyKey2.GetInstanceId());
-
-    ECInstanceKey employeeCompanyKey2;
-    stepStatus = statement.Step(employeeCompanyKey2);
     ASSERT_TRUE(stepStatus == BE_SQLITE_DONE);
 
     changeSummary.Free();
@@ -914,17 +854,10 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
                 SourceECInstanceId;NULL;0:1
                 TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
                 TargetECInstanceId;NULL;0:5
-        0:1;StartupCompany:EmployeeCompany:1099511627845;Update;No
-                SourceECClassId;StartupCompany:Employee:1099511627843;StartupCompany:Employee:1099511627843
-                SourceECInstanceId;0:1;0:1
-                TargetECClassId;StartupCompany:Company:1099511627836;StartupCompany:Company:1099511627836
-                TargetECInstanceId;0:2;0:3
     */
-    EXPECT_EQ(3, changeSummary.MakeInstanceIterator().QueryCount());
-    EXPECT_TRUE(employeeCompanyKey.GetInstanceId() == employeeCompanyKey2.GetInstanceId());
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeCompanyKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeCompany", DbOpcode::Update));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
-    EXPECT_TRUE(ChangeSummaryContainsInstance(ecdb, changeSummary, ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
+    EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
+    EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(employeeHardwareKey.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Delete));
+    EXPECT_TRUE(ChangeSummaryContainsInstance(m_ecdb, changeSummary, ECInstanceId(employeeHardwareKey2.GetInstanceId().GetValueUnchecked()), "StartupCompany", "EmployeeHardware", DbOpcode::Insert));
     }
 
 //---------------------------------------------------------------------------------------
@@ -932,7 +865,7 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
 //---------------------------------------------------------------------------------------
 TEST_F(ChangeSummaryTestFixture, OverflowTables)
     {
-    ECDbR ecdb = SetupECDb("overflowTables.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("overflowTables.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?> "
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'> "
         "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
@@ -981,20 +914,18 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
         "        <ECProperty propertyName='S' typeName='string'/>"
         "        <ECProperty propertyName='T' typeName='string'/>"
         "    </ECEntityClass>"
-        "</ECSchema>"));
+        "</ECSchema>")));
 
-    ASSERT_TRUE(ecdb.IsDbOpen());
-
-    TestChangeTracker tracker(ecdb);
+    TestChangeTracker tracker(m_ecdb);
     tracker.EnableTracking(true);
 
     ECSqlStatement stmt;
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.GrandChild (A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T) VALUES ('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.GrandChild (A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T) VALUES ('A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T')"));
 
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ASSERT_TRUE(tracker.HasChanges());
 
@@ -1002,7 +933,7 @@ TEST_F(ChangeSummaryTestFixture, OverflowTables)
     auto rc = changeset.FromChangeTrack(tracker);
     ASSERT_TRUE(BE_SQLITE_OK == rc);
 
-    ChangeSummary changeSummary(ecdb);
+    ChangeSummary changeSummary(m_ecdb);
     BentleyStatus status = changeSummary.FromChangeSet(changeset);
     ASSERT_TRUE(SUCCESS == status);
 

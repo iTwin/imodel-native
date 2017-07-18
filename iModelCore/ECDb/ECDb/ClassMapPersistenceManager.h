@@ -20,7 +20,6 @@ struct DbClassMapLoadContext final : public NonCopyableClass
     private:
         bool m_isValid;
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
-        ClassMap::UpdatableViewInfo m_updatableViewInfo;
         std::map<Utf8String, std::vector<DbColumn const*>> m_columnByAccessString;
 
         static BentleyStatus ReadPropertyMaps(DbClassMapLoadContext&, ECDbCR, ECN::ECClassId);
@@ -32,7 +31,6 @@ struct DbClassMapLoadContext final : public NonCopyableClass
         static BentleyStatus Load(DbClassMapLoadContext&, ClassMapLoadContext&, ECDbCR, ECN::ECClassCR);
 
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
-        ClassMap::UpdatableViewInfo const& GetUpdatableViewInfo() const { return m_updatableViewInfo; }
         bool HasMappedProperties() const { return !m_columnByAccessString.empty(); }
         std::map<Utf8String, std::vector<DbColumn const*>> const& GetPropertyMaps() const { return m_columnByAccessString; }
         std::vector<DbColumn const*> const* FindColumnByAccessString(Utf8StringCR accessString) const;

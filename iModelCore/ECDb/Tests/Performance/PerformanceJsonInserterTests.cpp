@@ -18,8 +18,7 @@ struct PerformanceJsonInserter : ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     {
-    ECDbR ecdb = SetupECDb("performancejsoninserter.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("performancejsoninserter.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -30,9 +29,9 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
     // Parse JSON value using JsonCpp
     Json::Value jsonInput;
     ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
-    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
+    ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
-    JsonInserter inserter(ecdb, *documentClass, nullptr);
+    JsonInserter inserter(m_ecdb, *documentClass, nullptr);
     const int repetitionCount = 10000;
 
     //----------------------------------------------------------------------------------- 
@@ -46,10 +45,10 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
         ASSERT_TRUE(key.IsValid());
         }
     timer.Stop();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT COUNT(*) FROM jt.Document"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT COUNT(*) FROM jt.Document"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(repetitionCount, statement.GetValueInt(0)) << "Expected Number of Instances not inserted in Db";
 
@@ -62,8 +61,7 @@ TEST_F(PerformanceJsonInserter, InsertJsonCppUsingPresistanceAPI)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     {
-    ECDbR ecdb = SetupECDb("performancejsoninserter.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("performancejsoninserter.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -80,9 +78,9 @@ TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE(parseSuccessful);
 
-    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
+    ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
-    JsonInserter inserter(ecdb, *documentClass, nullptr);
+    JsonInserter inserter(m_ecdb, *documentClass, nullptr);
 
     const int repetitionCount = 10000;
     //-----------------------------------------------------------------------------------
@@ -96,11 +94,11 @@ TEST_F(PerformanceJsonInserter, InsertRapidJsonUsingPresistanceAPI)
         ASSERT_TRUE(ecInstanceKey.IsValid());
         }
     timer.Stop();
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT COUNT(*) FROM jt.Document"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT COUNT(*) FROM jt.Document"));
+    ASSERT_EQ(BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(repetitionCount, statement.GetValueInt(0)) << "Expected Number of Instances not inserted in Db";
 
     LOG.infov("Inserting RapidJson JSON objects into ECDb %d times took %.4f msecs.", repetitionCount, timer.GetElapsedSeconds() * 1000.0);

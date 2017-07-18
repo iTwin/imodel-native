@@ -25,6 +25,7 @@ struct ECPropertyValueChange;
 struct ECObjectChange;
 struct ClassTypeChange;
 struct KindOfQuantityChange;
+struct PropertyCategoryChange;
 
 //=======================================================================================
 // @bsienum                                                Affan.Khan            03/2016
@@ -88,8 +89,10 @@ enum class SystemId
     KoqRelativeError,
     KoqPersistenceUnit,
     KoqPresentationUnitList,
+    MaximumLength,
     MaximumValue,
     MaxOccurs,
+    MinimumLength,
     MinimumValue,
     MinOccurs,
     Multiplicity,
@@ -97,6 +100,10 @@ enum class SystemId
     Navigation,
     Properties,
     Property,
+    PropertyCategories,
+    PropertyCategory,
+    PropertyCategoryPriority,
+    PropertyPriority,
     PropertyType,
     PropertyValue,
     PropertyValues,
@@ -390,6 +397,20 @@ struct KindOfQuantityChanges final: ECChangeArray<KindOfQuantityChange>
             BeAssert(systemId == GetSystemId());
             }
         ~KindOfQuantityChanges() {}
+    };
+
+//=======================================================================================
+// @bsiclass                                                Krischan.Eberle       06/2017
+//+===============+===============+===============+===============+===============+======
+struct PropertyCategoryChanges final : ECChangeArray<PropertyCategoryChange>
+    {
+    public:
+        PropertyCategoryChanges(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECChangeArray<PropertyCategoryChange>(state, SystemId::PropertyCategories, parent, customId, SystemId::PropertyCategory)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~PropertyCategoryChanges() {}
     };
 
 //=======================================================================================
@@ -823,6 +844,20 @@ struct ClassTypeChange final :ECPrimitiveChange<ECN::ECClassType>
     };
 
 //=======================================================================================
+// @bsiclass                                               Krischan.Eberle         06/2017
+//+===============+===============+===============+===============+===============+======
+struct MinMaxValueChange final :ECPrimitiveChange<ECN::ECValue>
+    {
+    private:
+        Utf8String _ToString(ValueId id) const override;
+    public:
+        MinMaxValueChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECPrimitiveChange<ECN::ECValue>(state, systemId, parent, customId)
+            {}
+        ~MinMaxValueChange() {}
+    };
+
+//=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
 struct SchemaChange final : ECObjectChange
@@ -847,6 +882,7 @@ struct SchemaChange final : ECObjectChange
         ECEnumerationChanges& Enumerations() { return Get<ECEnumerationChanges>(SystemId::Enumerations); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
         KindOfQuantityChanges& KindOfQuantities() { return Get<KindOfQuantityChanges>(SystemId::KindOfQuantities); }
+        PropertyCategoryChanges& PropertyCategories() { return Get<PropertyCategoryChanges>(SystemId::PropertyCategories); }
     };
 
 //=======================================================================================
@@ -1019,6 +1055,24 @@ struct KindOfQuantityChange final :ECObjectChange
     };
 
 //=======================================================================================
+// @bsiclass                                                Krischan.Eberle       06/2017
+//+===============+===============+===============+===============+===============+======
+struct PropertyCategoryChange final : ECObjectChange
+    {
+    public:
+        PropertyCategoryChange(ChangeState state, SystemId systemId, ECChange const* parent = nullptr, Utf8CP customId = nullptr)
+            : ECObjectChange(state, SystemId::PropertyCategory, parent, customId)
+            {
+            BeAssert(systemId == GetSystemId());
+            }
+        ~PropertyCategoryChange() {}
+        StringChange& GetName() { return Get<StringChange>(SystemId::Name); }
+        StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
+        StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
+        UInt32Change& GetPriority() { return Get<UInt32Change>(SystemId::PropertyCategoryPriority); }
+    };
+
+//=======================================================================================
 // @bsiclass                                                Affan.Khan            03/2016
 //+===============+===============+===============+===============+===============+======
 struct ECRelationshipConstraintClassChange final :ECObjectChange
@@ -1142,8 +1196,10 @@ struct ECPropertyChange final :ECObjectChange
         StringChange& GetDisplayLabel() { return Get<StringChange>(SystemId::DisplayLabel); }
         StringChange& GetDescription() { return Get<StringChange>(SystemId::Description); }
         StringChange& GetTypeName() { return Get<StringChange>(SystemId::TypeName); }
-        //StringChange& GetMaximumValue() { return Get<StringChange>(SystemId::MAXIMUMVALUE); }
-        //StringChange& GetMinimumValue() { return Get<StringChange>(SystemId::MINIMUMVALUE); }
+        MinMaxValueChange& GetMinimumValue() { return Get<MinMaxValueChange>(SystemId::MinimumValue); }
+        MinMaxValueChange& GetMaximumValue() { return Get<MinMaxValueChange>(SystemId::MaximumValue); }
+        UInt32Change& GetMinimumLength() { return Get<UInt32Change>(SystemId::MinimumLength); }
+        UInt32Change& GetMaximumLength() { return Get<UInt32Change>(SystemId::MaximumLength); }
         BooleanChange& IsStruct() { return Get<BooleanChange>(SystemId::IsStrict); }
         BooleanChange& IsStructArray() { return Get<BooleanChange>(SystemId::IsStructArray); }
         BooleanChange& IsPrimitive() { return Get<BooleanChange>(SystemId::IsPrimitive); }
@@ -1153,9 +1209,11 @@ struct ECPropertyChange final :ECObjectChange
         NavigationChange& GetNavigation() { return Get<NavigationChange>(SystemId::Navigation); }
         StringChange& GetExtendedTypeName() { return Get<StringChange>(SystemId::ExtendedTypeName); }
         BooleanChange& IsReadonly() { return Get<BooleanChange>(SystemId::IsReadonly); }
+        Int32Change& GetPriority() { return Get<Int32Change>(SystemId::PropertyPriority); }
         ECInstanceChanges& CustomAttributes() { return Get<ECInstanceChanges>(SystemId::CustomAttributes); }
         StringChange& GetKindOfQuantity() { return Get<StringChange>(SystemId::KindOfQuantity); }
         StringChange& GetEnumeration() { return Get<StringChange>(SystemId::Enumeration); }
+        StringChange& GetCategory() { return Get<StringChange>(SystemId::PropertyCategory); }
     };
 
 //=======================================================================================
@@ -1221,13 +1279,15 @@ private :
     BentleyStatus AppendKindOfQuantity(KindOfQuantityChanges&, ECN::KindOfQuantityCR, ValueId appendType);
     BentleyStatus CompareKindOfQuantity(KindOfQuantityChange&, ECN::KindOfQuantityCR, ECN::KindOfQuantityCR);
     BentleyStatus CompareKindOfQuantities(KindOfQuantityChanges&, ECN::KindOfQuantityContainerCR, ECN::KindOfQuantityContainerCR);
+    BentleyStatus AppendPropertyCategory(PropertyCategoryChanges&, ECN::PropertyCategoryCR, ValueId appendType);
+    BentleyStatus ComparePropertyCategory(PropertyCategoryChange&, ECN::PropertyCategoryCR, ECN::PropertyCategoryCR);
+    BentleyStatus ComparePropertyCategories(PropertyCategoryChanges&, ECN::PropertyCategoryContainerCR, ECN::PropertyCategoryContainerCR);
 
 public:
     SchemaComparer(){}
 
     BentleyStatus Compare(SchemaChanges&, bvector<ECN::ECSchemaCP> const& existingSet, bvector<ECN::ECSchemaCP> const& newSet, Options options = Options());
     static std::vector<Utf8String> Split(Utf8StringCR path, bool stripArrayIndex = false);
-    static Utf8String Join(std::vector<Utf8String> const& paths, Utf8CP delimiter);
     };
 
 //=======================================================================================

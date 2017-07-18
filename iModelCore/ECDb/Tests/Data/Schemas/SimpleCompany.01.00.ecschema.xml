@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ECSchema schemaName="SimpleCompany" alias="sico" version="01.00" description="A Simple Company" displayLabel="A Simple Company" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.12" alias="bsca"/>
     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
     <ECCustomAttributes>
         <SchemaMap xmlns="ECDbMap.02.00">
@@ -17,9 +16,6 @@
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
-            <SyncIDSpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <Property>EmployeeId</Property>
-            </SyncIDSpecification>
         </ECCustomAttributes>
         <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
         <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
@@ -33,11 +29,6 @@
         <BaseClass>Employee</BaseClass>
     </ECEntityClass>
     <ECEntityClass typeName="SubContractor" modifier="None">
-        <ECCustomAttributes>
-            <SyncIDSpecification xmlns="Bentley_Standard_CustomAttributes.01.12">
-                <Property>SubContractorId</Property>
-            </SyncIDSpecification>
-        </ECCustomAttributes>
         <ECProperty propertyName="FirstName" typeName="string" displayLabel="First Name" readOnly="false"/>
         <ECProperty propertyName="LastName" typeName="string" displayLabel="Last Name" readOnly="false"/>
         <ECProperty propertyName="CompanyName" typeName="string" displayLabel="Company Name" readOnly="false"/>

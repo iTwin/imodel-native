@@ -64,7 +64,6 @@ private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     std::vector<IndexMappingInfoPtr> m_dbIndexes;
-    bool m_mapsToVirtualTable = false;
     ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty;
 
     ClassMappingStatus EvaluateMapStrategy(SchemaImportContext&);
@@ -97,8 +96,111 @@ public:
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
     ECN::PrimitiveECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
-    //! Virtual tables are not persisted   
-    bool MapsToVirtualTable () const { return m_mapsToVirtualTable; }
+    };
+
+//======================================================================================
+// @bsiclass                                                 Krischan.Eberle     06/2017
+//+===============+===============+===============+===============+===============+======
+struct RelationshipMappingType
+    {
+    enum class Type
+        {
+        PhysicalForeignKey,
+        LogicalForeignKey,
+        LinkTable
+        };
+
+    private:
+        Type m_type;
+
+    protected:
+        explicit RelationshipMappingType(Type type) : m_type(type) {}
+
+    public:
+        virtual ~RelationshipMappingType() {}
+        Type GetType() const { return m_type; }
+
+        bool IsLinkTable() const { return m_type == Type::LinkTable; }
+
+        template<typename T>
+        T const& GetAs() const
+            {
+            BeAssert(dynamic_cast<T const*> (this) != nullptr);
+            return static_cast<T const&> (*this);
+            }
+    };
+
+//======================================================================================
+// @bsiclass                                                 Krischan.Eberle     06/2017
+//+===============+===============+===============+===============+===============+======
+struct ForeignKeyMappingType : RelationshipMappingType
+    {
+private:
+    ECN::ECRelationshipEnd m_fkEnd;
+
+protected:
+    ForeignKeyMappingType(Type type, ECN::ECRelationshipEnd fkEnd) : RelationshipMappingType(type), m_fkEnd(fkEnd) {}
+
+public:
+    static std::unique_ptr<ForeignKeyMappingType> Create(ECN::ECRelationshipClassCR, ECN::ECRelationshipEnd, ForeignKeyConstraintCustomAttribute const&, IssueReporter const&);
+
+    virtual ~ForeignKeyMappingType() {}
+    ECN::ECRelationshipEnd GetFkEnd() const { return m_fkEnd; }
+    };
+
+//======================================================================================
+// @bsiclass                                                 Krischan.Eberle     06/2017
+//+===============+===============+===============+===============+===============+======
+struct LogicalForeignKeyMappingType final : ForeignKeyMappingType
+    {
+    public:
+        explicit LogicalForeignKeyMappingType(ECN::ECRelationshipEnd fkEnd) : ForeignKeyMappingType(Type::LogicalForeignKey, fkEnd) {}
+        ~LogicalForeignKeyMappingType() {}
+    };
+
+//======================================================================================
+// @bsiclass                                                 Krischan.Eberle     06/2017
+//+===============+===============+===============+===============+===============+======
+struct PhysicalForeignKeyMappingType final : ForeignKeyMappingType
+    {
+    private:
+        ForeignKeyDbConstraint::ActionType m_onDeleteAction = ForeignKeyDbConstraint::ActionType::NotSpecified;
+        ForeignKeyDbConstraint::ActionType m_onUpdateAction = ForeignKeyDbConstraint::ActionType::NotSpecified;
+
+    public:
+        PhysicalForeignKeyMappingType(ECN::ECRelationshipEnd fkEnd, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction)
+            : ForeignKeyMappingType(Type::PhysicalForeignKey, fkEnd), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
+            {}
+
+        ~PhysicalForeignKeyMappingType() {}
+        
+        ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { return m_onDeleteAction; }
+        ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { return m_onUpdateAction; }
+    };
+
+//======================================================================================
+// @bsiclass                                                 Krischan.Eberle     06/2017
+//+===============+===============+===============+===============+===============+======
+struct LinkTableMappingType final : RelationshipMappingType
+    {
+    private:
+        Nullable<Utf8String> m_sourceIdColumnName;
+        Nullable<Utf8String> m_targetIdColumnName;
+        bool m_createForeignKeyConstraints = true;
+        bool m_allowDuplicateRelationships = false;
+
+        LinkTableMappingType() : RelationshipMappingType(Type::LinkTable) {}
+        LinkTableMappingType(Nullable<Utf8String> const& sourceIdColName, Nullable<Utf8String> const& targetIdColName, bool createFkConstraints, bool allowDuplicateRelationships) : RelationshipMappingType(Type::LinkTable), m_sourceIdColumnName(sourceIdColName), m_targetIdColumnName(targetIdColName), m_createForeignKeyConstraints(createFkConstraints), m_allowDuplicateRelationships(allowDuplicateRelationships) {}
+
+    public:
+        ~LinkTableMappingType() {}
+
+        static std::unique_ptr<LinkTableMappingType> Create(LinkTableRelationshipMapCustomAttribute const&);
+
+        Nullable<Utf8String> const& GetSourceIdColumnName() const { return m_sourceIdColumnName; }
+        Nullable<Utf8String> const& GetTargetIdColumnName() const { return m_targetIdColumnName; }
+        bool GetCreateForeignKeyConstraintsFlag() const { return m_createForeignKeyConstraints; }
+        bool AllowDuplicateRelationships() const { return m_allowDuplicateRelationships; }
     };
 
 //======================================================================================
@@ -106,59 +208,9 @@ public:
 //+===============+===============+===============+===============+===============+======
 struct RelationshipMappingInfo final : public ClassMappingInfo
     {
-public:
-    struct FkMappingInfo final : NonCopyableClass
-        {
-        private:
-            ECN::ECRelationshipEnd m_fkEnd;
-            bool m_useECInstanceIdAsFk;
-            bool m_isPhysicalFk = false;
-            ForeignKeyDbConstraint::ActionType m_onDeleteAction = ForeignKeyDbConstraint::ActionType::NotSpecified;
-            ForeignKeyDbConstraint::ActionType m_onUpdateAction = ForeignKeyDbConstraint::ActionType::NotSpecified;
-
-        public:
-            FkMappingInfo(ECN::ECRelationshipEnd fkEnd, bool usePkAsFk) : m_fkEnd(fkEnd), m_useECInstanceIdAsFk(usePkAsFk) {}
-
-            FkMappingInfo(ECN::ECRelationshipEnd fkEnd, ForeignKeyDbConstraint::ActionType onDeleteAction, ForeignKeyDbConstraint::ActionType onUpdateAction, bool usePkAsFk)
-                : m_fkEnd(fkEnd), m_useECInstanceIdAsFk(usePkAsFk), m_isPhysicalFk(true), m_onDeleteAction(onDeleteAction), m_onUpdateAction(onUpdateAction)
-                {}
-
-            ECN::ECRelationshipEnd GetFkEnd() const { return m_fkEnd; }
-            bool UseECInstanceIdAsFk() const { return m_useECInstanceIdAsFk; }
-            bool IsPhysicalFk() const { return m_isPhysicalFk; }
-            ForeignKeyDbConstraint::ActionType GetOnDeleteAction() const { BeAssert(IsPhysicalFk()); return m_onDeleteAction; }
-            ForeignKeyDbConstraint::ActionType GetOnUpdateAction() const { BeAssert(IsPhysicalFk()); return m_onUpdateAction; }
-        };
-
-    struct LinkTableMappingInfo final : NonCopyableClass
-        {
-    private:
-        Nullable<Utf8String> m_sourceIdColumnName;
-        Nullable<Utf8String> m_targetIdColumnName;
-        bool m_createForeignKeyConstraints = true;
-        bool m_allowDuplicateRelationships = false;
-    
-    public:
-        LinkTableMappingInfo() {}
-        LinkTableMappingInfo(Nullable<Utf8String> const& sourceIdColname, Nullable<Utf8String> const& targetIdColName, Nullable<bool> createForeignKeyConstraints, Nullable<bool> allowDuplicateRelationships)
-            : m_sourceIdColumnName(sourceIdColname), m_targetIdColumnName(targetIdColName)
-            {
-            if (!createForeignKeyConstraints.IsNull())
-                m_createForeignKeyConstraints = createForeignKeyConstraints.Value();
-
-            if (!allowDuplicateRelationships.IsNull())
-                m_allowDuplicateRelationships = allowDuplicateRelationships.Value();
-            }
-
-        Nullable<Utf8String> const& GetSourceIdColumnName() const { return m_sourceIdColumnName; }
-        Nullable<Utf8String> const& GetTargetIdColumnName() const { return m_targetIdColumnName; }
-        bool GetCreateForeignKeyConstraintsFlag() const { return m_createForeignKeyConstraints; }
-        bool AllowDuplicateRelationships() const { return m_allowDuplicateRelationships; }
-        };
 private:
     bool m_isRootClass = false;
-    std::unique_ptr<FkMappingInfo> m_fkMappingInfo;
-    std::unique_ptr<LinkTableMappingInfo> m_linkTableMappingInfo;
+    std::unique_ptr<RelationshipMappingType> m_mappingType;
     std::set<DbTable const*> m_sourceTables;
     std::set<DbTable const*> m_targetTables;
 
@@ -166,9 +218,14 @@ private:
     ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&) override;
 
     BentleyStatus EvaluateLinkTableStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
-    BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&);
 
-    std::set<DbTable const*> GetTablesFromRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) const;
+    BentleyStatus FailIfConstraintClassIsNotMapped() const;
+
+    //! Determines whether the specified ECRelationship requires to be mapped to a link table.
+    static BentleyStatus TryDetermineMappingType(std::unique_ptr<RelationshipMappingType>&, ECDbCR, SchemaImportContext const&, ECN::ECRelationshipClassCR);
+
+    static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
 
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) 
@@ -176,18 +233,12 @@ public:
 
     ~RelationshipMappingInfo() {}
 
-    bool IsRootClass() const { return m_isRootClass; }
-    //only available for root classes. Subclasses just inherit from their base class
-    FkMappingInfo const* GetFkMappingInfo() const { BeAssert(IsRootClass() && m_fkMappingInfo != nullptr); return m_fkMappingInfo.get(); }
-    //only available for root classes. Subclasses just inherit from their base class
-    LinkTableMappingInfo const* GetLinkTableMappingInfo() const { BeAssert(IsRootClass() && m_linkTableMappingInfo != nullptr); return m_linkTableMappingInfo.get(); }
-    std::set<DbTable const*> const& GetSourceTables() const { BeAssert(IsRootClass()); return m_sourceTables; }
-    std::set<DbTable const*> const& GetTargetTables() const { BeAssert(IsRootClass()); return m_targetTables;}
+    static std::set<DbTable const*> GetTablesFromRelationshipEnd(DbMap const&  dbMap, SchemaImportContext&, ECN::ECRelationshipConstraintCR, bool ignoreJoinedTables) ;
 
-    //! Determines whether the specified ECRelationship requires to be mapped to a link table.
-    static bool RequiresLinkTableMapping(ECN::ECRelationshipClassCR, bool considerLinkTableRelationshipMapCA = true);
-    static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
-
+    //only available for root classes. Subclasses just inherit from their base class
+    RelationshipMappingType const& GetMappingType() const { BeAssert(m_isRootClass); return *m_mappingType; }
+    std::set<DbTable const*> const& GetSourceTables() const { BeAssert(m_isRootClass); return m_sourceTables; }
+    std::set<DbTable const*> const& GetTargetTables() const { BeAssert(m_isRootClass); return m_targetTables;}
     };
 
 
@@ -216,7 +267,7 @@ struct IndexMappingInfo final : RefCountedBase
 
     public:
         static IndexMappingInfoPtr Clone(Nullable<Utf8String> const& name, IndexMappingInfo const& rhs) { return new IndexMappingInfo(name, rhs); }
-        static BentleyStatus CreateFromECClass(std::vector<IndexMappingInfoPtr>&, ECDbCR, ECN::ECClassCR, DbIndexList const&);
+        static BentleyStatus CreateFromECClass(std::vector<IndexMappingInfoPtr>&, ECDbCR, ECN::ECClassCR, DbIndexListCustomAttribute const&);
 
         Nullable<Utf8String> const& GetName() const { return m_name; }
         bool GetIsUnique() const { return m_isUnique; }

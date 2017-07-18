@@ -50,7 +50,7 @@ public:
 
     int TrackECSqlParameter(ParameterExp& parameterExp);
 
-    IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
+    IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
     SchemaManager const& Schemas() const { return m_ecdb.Schemas(); }
     ECDbCR GetECDb() const { return m_ecdb; }
     };

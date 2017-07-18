@@ -7,9 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
 
-#include "ClassRefExp.h"
-#include "SelectStatementExp.h"
-
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //****************************** ClassNameExp *****************************************
@@ -24,14 +21,6 @@ Exp::FinalizeParseStatus ClassNameExp::_FinalizeParsing(ECSqlParseContext& ctx, 
         if (m_info == nullptr)
             {
             BeAssert(false);
-            return FinalizeParseStatus::Error;
-            }
-
-        const bool useECSqlType = FindParent(Exp::Type::SingleSelect) != nullptr;
-        Policy policy = PolicyManager::GetPolicy(useECSqlType ? ClassIsValidInECSqlPolicyAssertion(m_info->GetMap(), ECSqlType::Select) : ClassIsValidInECSqlPolicyAssertion(m_info->GetMap()));
-        if (!policy.IsSupported())
-            {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
             return FinalizeParseStatus::Error;
             }
 
@@ -97,12 +86,12 @@ Utf8String ClassNameExp::GetFullName() const
     {
     Utf8String fullName;
     if (!m_catalogName.empty())
-        fullName.append(m_catalogName).append(".");
+        fullName.append("[").append(m_catalogName).append("].");
 
     if (!m_schemaAlias.empty())
-        fullName.append(m_schemaAlias).append(".");
+        fullName.append("[").append(m_schemaAlias).append("].");
 
-    fullName.append(m_className);
+    fullName.append("[").append(m_className).append("]");
 
     return fullName;
     }

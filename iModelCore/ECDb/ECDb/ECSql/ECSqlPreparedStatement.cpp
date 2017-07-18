@@ -28,7 +28,7 @@ ECSqlStatus IECSqlPreparedStatement::Prepare(ECSqlPrepareContext& ctx, Exp const
 
     //capture current clear cache counter so that we can invalidate the statement if another clear cache call 
     //occurred in the lifetime of the statement
-    m_preparationClearCacheCounter = m_ecdb.GetECDbImplR().GetClearCacheCounter();
+    m_preparationClearCacheCounter = m_ecdb.GetImpl().GetClearCacheCounter();
     m_ecsql.assign(ecsql);
     return _Prepare(ctx, exp);
     }
@@ -100,7 +100,7 @@ ECSqlStatus IECSqlPreparedStatement::ClearBindings()
 //---------------------------------------------------------------------------------------
 BentleyStatus IECSqlPreparedStatement::AssertIsValid() const
     {
-    if (m_preparationClearCacheCounter != m_ecdb.GetECDbImplR().GetClearCacheCounter())
+    if (m_preparationClearCacheCounter != m_ecdb.GetImpl().GetClearCacheCounter())
         {
         LOG.errorv("The ECSqlStatement '%s' can no longer be used because an ECSchema import took place. ECSqlStatements are invalidated after an ECSchema import.",
                    m_ecsql.c_str());
@@ -133,7 +133,7 @@ ECSqlStatus SingleECSqlPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     DbResult nativeSqlStat = m_sqliteStatement.TryPrepare(m_ecdb, nativeSql.c_str());
     if (nativeSqlStat != BE_SQLITE_OK)
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare: %s %s", GetECSql(), nativeSql.c_str(),
+        GetECDb().GetImpl().Issues().Report("Preparing the ECSQL '%s' failed. Underlying SQLite statement '%s' failed to prepare: %s %s", GetECSql(), nativeSql.c_str(),
                                                         ECDb::InterpretDbResult(nativeSqlStat), m_ecdb.GetLastError().c_str());
 
         //even if this is a SQLite error, we want this to be an InvalidECSql error as the reason usually
@@ -455,10 +455,10 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     PrepareInfo prepareInfo(ctx, exp.GetAs<InsertStatementExp>());
 
     ClassMap const& classMap = prepareInfo.GetClassNameExp().GetInfo().GetMap();
-    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type));
+    Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type, false /* INSERT is always non-polymorphic*/));
     if (!policy.IsSupported())
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        m_ecdb.GetImpl().Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -467,7 +467,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
         {
         if (!prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::SourceECInstanceId()) && !prepareInfo.GetPropertyNameListExp().GetSpecialTokenExpIndexMap().Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()))
             {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report("In an ECSQL INSERT statement against an ECRelationship class " ECDBSYS_PROP_SourceECInstanceId " and " ECDBSYS_PROP_TargetECInstanceId " must always be specified.");
+            m_ecdb.GetImpl().Issues().Report("In an ECSQL INSERT statement against an ECRelationship class " ECDBSYS_PROP_SourceECInstanceId " and " ECDBSYS_PROP_TargetECInstanceId " must always be specified.");
             return ECSqlStatus::InvalidECSql;
             }
         }
@@ -630,7 +630,7 @@ ECSqlStatus ECSqlInsertPreparedStatement::PopulateProxyBinders(PrepareInfo const
     for (bpair<int, Exp::ECSqlRenderContext::ParameterNameInfo> const& parameterNameMapping : prepareInfo.GetECSqlRenderContext().GetParameterIndexNameMap())
         {
         const uint32_t paramIndex = (uint32_t) parameterNameMapping.first;
-        BeAssert(paramIndex >= 0 && paramIndex <= (uint32_t) m_proxyBinders.size());
+        BeAssert(paramIndex <= (uint32_t) m_proxyBinders.size());
         Utf8StringCR paramName = parameterNameMapping.second.m_name;
         if (!parameterNameMapping.second.m_isSystemGeneratedName)
             m_parameterNameMap[paramName] = paramIndex;
@@ -692,7 +692,7 @@ DbResult ECSqlInsertPreparedStatement::Step(ECInstanceKey& instanceKey)
         BeAssert(idBinder != nullptr);
 
         ECInstanceId generatedId;
-        const DbResult dbStat = GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::InstanceId).GetNextValue(generatedId);
+        const DbResult dbStat = GetECDb().GetImpl().GetSequence(IdSequences::Key::InstanceId).GetNextValue(generatedId);
         if (BE_SQLITE_OK != dbStat)
             {
             ECDbLogger::LogSqliteError(GetECDb(), dbStat, "ECSqlStatement::Step failed: Could not generate an ECInstanceId.");
@@ -753,7 +753,7 @@ DbResult ECSqlInsertPreparedStatement::StepForEndTableRelationship(ECInstanceKey
         //this can with inserting an end table relationship, as the INSERT really is an update. The SQLite update has a where exp
         //which checks that the FK of the row to be update is NULL. Therefore if the update doesn't affect anything it most likely
         //means that this ECSQL attempts to overwrite the FK which is not supported.
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Could not insert the ECRelationship (%s). Either the source or target constraint's " ECDBSYS_PROP_ECInstanceId " does not exist or the source or target constraint's cardinality is violated.", GetECSql());
+        GetECDb().GetImpl().Issues().Report("Could not insert the ECRelationship (%s). Either the source or target constraint's " ECDBSYS_PROP_ECInstanceId " does not exist or the source or target constraint's cardinality is violated.", GetECSql());
         return BE_SQLITE_CONSTRAINT_UNIQUE;
         }
 
@@ -871,7 +871,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(prepareInfo.GetClassNameExp().GetInfo().GetMap(), m_type, prepareInfo.GetClassNameExp().IsPolymorphic()));
     if (!policy.IsSupported())
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        m_ecdb.GetImpl().Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 
@@ -882,7 +882,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     SystemPropertyExpIndexMap const& specialTokenExpIndexMap = prepareInfo.GetAssignmentListExp().GetSpecialTokenExpIndexMap();
     if (specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECInstanceId()) || specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::ECClassId()))
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.",
+        m_ecdb.GetImpl().Issues().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_ECInstanceId " or " ECDBSYS_PROP_ECClassId " are not allowed in SET clause of ECSQL UPDATE statement. ECDb does not support to modify those.",
                                                         prepareInfo.GetExp().ToECSql().c_str());
         return ECSqlStatus::InvalidECSql;
         }
@@ -894,7 +894,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECInstanceId()) ||
             specialTokenExpIndexMap.Contains(ECSqlSystemPropertyInfo::TargetECClassId()))
             {
-            m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId 
+            m_ecdb.GetImpl().Issues().Report("Failed to prepare ECSQL '%s'. " ECDBSYS_PROP_SourceECInstanceId ", " ECDBSYS_PROP_SourceECClassId ", " ECDBSYS_PROP_TargetECInstanceId 
                                                             ", or " ECDBSYS_PROP_TargetECClassId " are not allowed in the SET clause of ECSQL UPDATE statement. "
                                                             "ECDb does not support to modify those as they are keys of the relationship. Instead delete the relationship and insert the desired new one.",
                                                             prepareInfo.GetExp().ToECSql().c_str());
@@ -934,7 +934,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
 
             if (getTablesVisitor.GetTables().find(&table) == getTablesVisitor.GetTables().end())
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
+                m_ecdb.GetImpl().Issues().Report("Failed to prepare ECSQL '%s'. The expression '%s' in the SET clause refers to different tables. This is not yet supported.",
                                                                 prepareInfo.GetExp().ToECSql().c_str(), assignmentExp.ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
@@ -1241,7 +1241,7 @@ ECSqlStatus ECSqlUpdatePreparedStatement::CheckForReadonlyProperties(PrepareInfo
 
             if (prop.IsReadOnlyFlagSet() && prop.GetIsReadOnly() && !prop.IsCalculated())
                 {
-                m_ecdb.GetECDbImplR().GetIssueReporter().Report("The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
+                m_ecdb.GetImpl().Issues().Report("The ECProperty '%s' is read-only. Read-only ECProperties cannot be modified by an ECSQL UPDATE statement. %s",
                                                                        prop.GetName().c_str(), prepareInfo.GetExp().ToECSql().c_str());
                 return ECSqlStatus::InvalidECSql;
                 }
@@ -1266,7 +1266,7 @@ ECSqlStatus ECSqlDeletePreparedStatement::_Prepare(ECSqlPrepareContext& ctx, Exp
     Policy policy = PolicyManager::GetPolicy(ClassIsValidInECSqlPolicyAssertion(classMap, m_type, classNameExp->IsPolymorphic()));
     if (!policy.IsSupported())
         {
-        m_ecdb.GetECDbImplR().GetIssueReporter().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
+        m_ecdb.GetImpl().Issues().Report("Invalid ECClass in ECSQL: %s", policy.GetNotSupportedMessage().c_str());
         return ECSqlStatus::InvalidECSql;
         }
 

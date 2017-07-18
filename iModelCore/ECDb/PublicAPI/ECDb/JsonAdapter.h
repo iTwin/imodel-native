@@ -161,6 +161,7 @@ struct JsonECSqlSelectAdapter final: NonCopyableClass
         bool JsonFromCell(JsonValueR, IECSqlValue const&) const;
 
         bool JsonFromPrimitive(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR, bool isArrayMember) const;
+        bool JsonFromNavigation(JsonValueR, IECSqlValue const&) const;
         bool JsonFromStruct(JsonValueR, IECSqlValue const&) const;
         bool JsonFromArray(JsonValueR, IECSqlValue const&, ECN::ECPropertyCR) const;
         bool JsonFromStructArray(JsonValueR, IECSqlValue const&) const;

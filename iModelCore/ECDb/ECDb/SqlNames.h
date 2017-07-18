@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 #define TABLE_CustomAttribute "ec_CustomAttribute"
 #define TABLE_Class "ec_Class"
 #define TABLE_Schema "ec_Schema"
-
+#define TABLE_ClassMap "ec_ClassMap"
 #define TABLE_ClassHierarchyCache "ec_cache_ClassHierarchy"
 #define TABLE_ClassHasTablesCache "ec_cache_ClassHasTables"
 
@@ -53,26 +53,14 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //when enum values are changed
 
 //** Enum DbColumn::Kind
-#define SQLVAL_DbColumn_Kind_Unknown "0"
-static_assert(0 == (int) DbColumn::Kind::Unknown, "Persisted enum DbColumn::Kind has changed");
+#define SQLVAL_DbColumn_Kind_Default "0"
+static_assert(0 == (int) DbColumn::Kind::Default, "Persisted enum DbColumn::Kind has changed");
 #define SQLVAL_DbColumn_Kind_ECInstanceId "1"
 static_assert(1 == (int) DbColumn::Kind::ECInstanceId, "Persisted enum DbColumn::Kind has changed");
 #define SQLVAL_DbColumn_Kind_ECClassId "2"
 static_assert(2 == (int) DbColumn::Kind::ECClassId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_SourceECInstanceId "4"
-static_assert(4 == (int) DbColumn::Kind::SourceECInstanceId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_SourceECClassId "8"
-static_assert(8 == (int) DbColumn::Kind::SourceECClassId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_TargetECInstanceId "16"
-static_assert(16 == (int) DbColumn::Kind::TargetECInstanceId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_TargetECClassId "32"
-static_assert(32 == (int) DbColumn::Kind::TargetECClassId, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_DataColumn "64"
-static_assert(64 == (int) DbColumn::Kind::DataColumn, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_SharedDataColumn "128"
-static_assert(128 == (int) DbColumn::Kind::SharedDataColumn, "Persisted enum DbColumn::Kind has changed");
-#define SQLVAL_DbColumn_Kind_RelECClassId "256"
-static_assert(256 == (int) DbColumn::Kind::RelECClassId, "Persisted enum DbColumn::Kind has changed");
+#define SQLVAL_DbColumn_Kind_SharedData "4"
+static_assert(4 == (int) DbColumn::Kind::SharedData, "Persisted enum DbColumn::Kind has changed");
 
 //** Enum DbTable::Type
 #define SQLVAL_DbTable_Type_Primary "0"
@@ -83,6 +71,8 @@ static_assert(1 == (int) DbTable::Type::Joined, "Persisted enum DbTable::Type ha
 static_assert(2 == (int) DbTable::Type::Existing, "Persisted enum DbTable::Type has changed");
 #define SQLVAL_DbTable_Type_Overflow "3"
 static_assert(3 == (int) DbTable::Type::Overflow, "Persisted enum DbTable::Type has changed");
+#define SQLVAL_DbTable_Type_Virtual "4"
+static_assert(4 == (int) DbTable::Type::Virtual, "Persisted enum DbTable::Type has changed");
 
 //** Enum ECClassType
 #define SQLVAL_ECClassType_Entity "0"
@@ -201,35 +191,5 @@ static_assert((int) ECN::PrimitiveType::PRIMITIVETYPE_Binary == 0x101 &&
 
 //The SQL returns the issues as JSON string. JSON in a CSV file means that the double quotes must be escaped by preceding
 //them with another double quote
-
-#define SQL_ValidateDbMapping R"sql(SELECT ec_Schema.Name, ec_Schema.Alias, ec_Class.Name, ec_Table.Name, 1, 'Multiple ECProperties mapped to same column',
-        'Column: ' || ec_Column.Name || ' Properties: ' || GROUP_CONCAT(mappedpropertyschema.Alias || ':' || mappedpropertyclass.Name || '.' || ec_PropertyPath.AccessString)
-        FROM ec_PropertyMap
-        INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
-        INNER JOIN ec_Class ON ec_Class.Id=ec_PropertyMap.ClassId
-        INNER JOIN ec_Schema ON ec_Schema.Id=ec_Class.SchemaId
-        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
-        INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
-        INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId
-        WHERE ec_Column.IsVirtual=)sql" SQLVAL_False " AND (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") " \
-        R"sql(GROUP BY ec_PropertyMap.ClassId, ec_PropertyMap.ColumnId HAVING COUNT(*)>1
-
-        UNION ALL
-
-        SELECT mappedpropertyschema.Name, mappedpropertyschema.Alias, mappedpropertyclass.Name, ec_Table.Name, 2, 'ECProperty mapped to multiple columns',
-            'Property: ' || ec_PropertyPath.AccessString || ' Columns: ' || GROUP_CONCAT(DISTINCT ec_Column.Name)
-        FROM ec_PropertyMap
-        INNER JOIN ec_Column ON ec_Column.Id=ec_PropertyMap.ColumnId
-        INNER JOIN ec_PropertyPath ON ec_PropertyPath.Id=ec_PropertyMap.PropertyPathId
-        INNER JOIN ec_Table ON ec_Table.Id=ec_Column.TableId
-        INNER JOIN ec_Property ON ec_Property.Id=ec_PropertyPath.RootPropertyId
-        INNER JOIN ec_Class mappedpropertyclass ON mappedpropertyclass.Id=ec_Property.ClassId
-        INNER JOIN ec_Schema mappedpropertyschema ON mappedpropertyschema.Id=mappedpropertyclass.SchemaId)sql" \
-        " WHERE ec_Column.IsVirtual=" SQLVAL_False " AND " \
-        "(ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_SharedDataColumn "=" SQLVAL_DbColumn_Kind_SharedDataColumn ") AND " \
-        "mappedpropertyschema.Alias<>'" ECSCHEMA_ALIAS_ECDbSystem "' " \
-        "GROUP BY ec_Table.Id, ec_PropertyPath.Id HAVING COUNT(DISTINCT ec_Column.Id) > 1"
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

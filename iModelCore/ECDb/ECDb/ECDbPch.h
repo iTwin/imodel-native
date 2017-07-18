@@ -12,6 +12,7 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/PerformanceLogger.h>
 #include <Bentley/CatchNonPortable.h>
+#include <Bentley/Nullable.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
@@ -33,6 +34,7 @@
 #include "ECDbSqlFunctions.h"
 
 #include "DbMap.h"
+#include "DbMapValidator.h"
 #include "MapStrategy.h"
 #include "DbSchema.h"
 #include "SqlNames.h"

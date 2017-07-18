@@ -65,6 +65,7 @@ struct ViewGenerator final
 
             ECSqlPrepareContext const& GetPrepareCtx() const { return m_prepareCtx; }
             bool IsPolymorphicQuery() const { return m_isPolymorphicQuery; }
+            void SetPolymorphicQuery(bool isPolymorphic) { m_isPolymorphicQuery = isPolymorphic; }
             bool IsECClassIdFilterEnabled() const;
             bool IsInSelectClause(Utf8StringCR exp) const;
             };
@@ -136,7 +137,7 @@ struct ViewGenerator final
                 ColumnAliasMode m_columnAliasMode = ColumnAliasMode::NoAlias;
                 mutable bmap<Utf8CP, size_t, CompareIUtf8Ascii> m_resultSetByAccessString;
                 mutable std::vector<Result> m_resultSet;
-
+                bool m_doNotAddColumnAliasForComputedExpression;
                 BentleyStatus _Visit(SingleColumnDataPropertyMap const& propertyMap) const override;
                 BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
@@ -153,6 +154,7 @@ struct ViewGenerator final
                 ~ToSqlVisitor() {}
                 std::vector<Result> const& GetResultSet() const { return m_resultSet; }
                 void Reset() const { m_resultSetByAccessString.clear(); m_resultSet.clear(); }
+                void DoNotAddColumnAliasForComputedExpression() { m_doNotAddColumnAliasForComputedExpression = true; }
             };
 
         ViewGenerator();
@@ -171,7 +173,8 @@ struct ViewGenerator final
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
         static BentleyStatus RenderEntityClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap, DbTable const& contextTable, ClassMapCP castAs = nullptr);
         static BentleyStatus RenderNullView(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
-
+        static BentleyStatus RenderMixinClassMap(NativeSqlBuilder& viewSql, Context&, ClassMap const& classMap);
+        static BentleyStatus RenderMixinClassMap(bmap<Utf8String, bpair<DbTable const*, bvector<ECN::ECClassId>>, CompareIUtf8Ascii>& selectClauses, Context& ctx, ClassMap const& mixInClassMap, ClassMap const& derivedClassMap);
         static BentleyStatus GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const&, DbTable const&, DbColumn const& classIdColumn, bool polymorphic);
 
         static BentleyStatus GenerateUpdateTriggerSetClause(NativeSqlBuilder& sql, ClassMap const& baseClassMap, ClassMap const& derivedClassMap);

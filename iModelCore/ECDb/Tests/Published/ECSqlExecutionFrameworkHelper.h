@@ -175,7 +175,7 @@ struct ECSqlStatementHelper
         private:
             ECSqlStatementHelper& m_parent;
         public:
-            Bindings (ECSqlStatementHelper& parent)
+            explicit Bindings (ECSqlStatementHelper& parent)
                 :m_parent (parent)
                 {}
 

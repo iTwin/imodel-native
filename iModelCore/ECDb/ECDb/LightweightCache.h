@@ -138,8 +138,8 @@ struct StorageDescription final : NonCopyableClass
         Partition const* GetPartition(DbTable const&) const;
 
         std::vector<Partition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
-        bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
-        bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
+        bool HasNonVirtualHorizontalPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
+        bool HasMultipleNonVirtualHorizontalPartitions() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId() const { return m_classId; }
     };
 

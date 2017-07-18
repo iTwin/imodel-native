@@ -6,7 +6,6 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECDbPch.h"
-#include "SqlNames.h"
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
@@ -98,9 +97,9 @@ struct ProfileUpgradeContext final: NonCopyableClass
 
         //! Be default the upgrade transaction is rolled back when the context is destroyed.
         //! Be calling this method, the transaction is committed when the context is destroyed.
-        void SetCommitAfterUpgrade() { m_rollbackOnDestruction = false; }
+       // void SetCommitAfterUpgrade() { m_rollbackOnDestruction = false; }
 
-        DbResult GetBeginTransError() const { return m_beginTransError; }
+     //   DbResult GetBeginTransError() const { return m_beginTransError; }
     };
 
 //--------------------------------------------------------------------------------------
@@ -111,9 +110,6 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
     {
     if (!ecdb.GetDefaultTransaction()->IsActive())
         {
-        //we always need a transaction to execute SQLite statements. If ECDb was opened in no-default-trans mode, we need to
-        //begin a transaction ourselves (just use BeSQLite's default transaction which is always there even in no-default-trans mode,
-        //except that in that case, it is not active).
         BeAssert(false && "Programmer Error. ECDb expects that BeSqlite::OpenBeSQliteDb keeps the default transaction active when it is called to upgrade its profile.");
         return BE_SQLITE_ERROR_NoTxnActive;
         }
@@ -124,7 +120,7 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
     if (!runProfileUpgrade)
         return stat;
 
-    PERFLOG_START("ECDb", "profile upgrade");
+    PERFLOG_START("ECDb", "Profile upgrade");
 
     //if ECDb file is readonly, reopen it in read-write mode
     if (!openParams._ReopenForProfileUpgrade(ecdb))
@@ -166,7 +162,7 @@ DbResult ProfileManager::UpgradeProfile(ECDbR ecdb, Db::OpenParams const& openPa
                   actualProfileVersion.ToString().c_str(), GetExpectedVersion().ToString().c_str(), ecdb.GetDbFileName());
         }
 
-    PERFLOG_FINISH("ECDb", "profile upgrade");
+    PERFLOG_FINISH("ECDb", "Profile upgrade");
     return BE_SQLITE_OK;
     }
 
@@ -339,6 +335,22 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
     if (BE_SQLITE_OK != stat)
         return stat;
 
+    //ec_PropertyCategory
+    stat = ecdb.ExecuteSql("CREATE TABLE ec_PropertyCategory("
+                           "Id INTEGER PRIMARY KEY,"
+                           "SchemaId INTEGER NOT NULL REFERENCES ec_Schema(Id) ON DELETE CASCADE,"
+                           "Name TEXT NOT NULL COLLATE NOCASE,"
+                           "DisplayLabel TEXT,"
+                           "Description TEXT,"
+                           "Priority INTEGER)");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
+    stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_PropertyCategory_SchemaId ON ec_PropertyCategory(SchemaId);"
+                           "CREATE INDEX ix_ec_PropertyCategory_Name ON ec_PropertyCategory(Name);");
+    if (BE_SQLITE_OK != stat)
+        return stat;
+
     //ec_Property
     stat = ecdb.ExecuteSql("CREATE TABLE ec_Property("
                            "Id INTEGER PRIMARY KEY,"
@@ -347,13 +359,19 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "DisplayLabel TEXT,"
                            "Description TEXT,"
                            "IsReadonly BOOLEAN NOT NULL CHECK (IsReadonly IN (" SQLVAL_False "," SQLVAL_True ")),"
-                           "Kind INTEGER NOT NULL,"
+                           "Priority INTEGER,"
                            "Ordinal INTEGER NOT NULL,"
+                           "Kind INTEGER NOT NULL,"
                            "PrimitiveType INTEGER,"
+                           "PrimitiveTypeMinLength INTEGER,"
+                           "PrimitiveTypeMaxLength INTEGER,"
+                           "PrimitiveTypeMinValue NUMERIC,"
+                           "PrimitiveTypeMaxValue NUMERIC,"
                            "EnumerationId INTEGER REFERENCES ec_Enumeration(Id) ON DELETE CASCADE,"
                            "StructClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
                            "ExtendedTypeName TEXT,"
                            "KindOfQuantityId INTEGER REFERENCES ec_KindOfQuantity(Id) ON DELETE CASCADE,"
+                           "CategoryId INTEGER REFERENCES ec_PropertyCategory(Id) ON DELETE CASCADE,"
                            "ArrayMinOccurs INTEGER,"
                            "ArrayMaxOccurs INTEGER,"
                            "NavigationRelationshipClassId INTEGER REFERENCES ec_Class(Id) ON DELETE CASCADE,"
@@ -368,6 +386,7 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "CREATE INDEX ix_ec_Property_EnumerationId ON ec_Property(EnumerationId);"
                            "CREATE INDEX ix_ec_Property_StructClassId ON ec_Property(StructClassId);"
                            "CREATE INDEX ix_ec_Property_KindOfQuantityId ON ec_Property(KindOfQuantityId);"
+                           "CREATE INDEX ix_ec_Property_CategoryId ON ec_Property(CategoryId);"
                            "CREATE INDEX ix_ec_Property_NavigationRelationshipClassId ON ec_Property(NavigationRelationshipClassId);");
     if (BE_SQLITE_OK != stat)
         return stat;
@@ -439,8 +458,7 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "MapStrategy INTEGER NOT NULL,"
                            "ShareColumnsMode INTEGER,"
                            "MaxSharedColumnsBeforeOverflow INTEGER,"
-                           "JoinedTableInfo INTEGER,"
-                           "UpdatableViewInfo TEXT)");
+                           "JoinedTableInfo INTEGER)");
     if (BE_SQLITE_OK != stat)
         return stat;
 
@@ -465,11 +483,9 @@ DbResult ProfileManager::CreateProfileTables(ECDbCR ecdb)
                            "ParentTableId INTEGER REFERENCES ec_Table(Id) ON DELETE CASCADE,"
                            "Name TEXT UNIQUE NOT NULL COLLATE NOCASE,"
                            "Type INTEGER NOT NULL,"
-                           "IsVirtual BOOLEAN NOT NULL CHECK (IsVirtual IN (" SQLVAL_False "," SQLVAL_True ")),"
-                           "ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL)"
-
-    );
-    if (BE_SQLITE_OK != stat)
+                           "ExclusiveRootClassId INTEGER REFERENCES ec_Class(Id) ON DELETE SET NULL,"
+                           "UpdatableViewName TEXT)");
+if (BE_SQLITE_OK != stat)
         return stat;
 
     stat = ecdb.ExecuteSql("CREATE INDEX ix_ec_Table_ParentTableId ON ec_Table(ParentTableId);"
