@@ -33,8 +33,8 @@ TEST_F(PerformanceECDbTests, CreateECDb)
         filePaths.push_back(filePath.GetNameUtf8());
         }
     StopWatch timer(true);
-    printf("Attach to profiler"); getchar();
-        for (int i = 0; i < opCount; i++)
+    //printf("Attach to profiler"); getchar();
+    for (int i = 0; i < opCount; i++)
         {
         Utf8CP filePath = filePaths[(size_t) i].c_str();
 
