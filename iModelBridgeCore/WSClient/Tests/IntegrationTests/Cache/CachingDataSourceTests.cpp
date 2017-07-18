@@ -310,7 +310,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyMarkupV2_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds_KnownIssue)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
