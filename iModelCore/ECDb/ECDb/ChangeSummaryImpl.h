@@ -50,11 +50,9 @@ struct TableMap final : RefCounted<NonCopyableClass>
         DbTable const* m_dbTable = nullptr;
         Utf8String m_tableName;
         bmap<Utf8String, int> m_columnIndexByName;
-        bvector<ECN::ECClassId> m_fkeyRelClassIds;
         ECN::ECClassId m_primaryClassId;
         mutable bmap<ECN::ECClassId, TableClassMapPtr> m_tableClassMapsById;
 
-        ColumnMap m_emptyColumnMap;
         ColumnMap m_classIdColumnMap;
         ColumnMap m_instanceIdColumnMap;
 
@@ -111,8 +109,6 @@ struct TableMap final : RefCounted<NonCopyableClass>
 
         int GetColumnIndexByName(Utf8StringCR columnName) const;
 
-        bvector<ECN::ECClassId> const& GetMappedForeignKeyRelationshipClasses() const { return m_fkeyRelClassIds; }
-
         bool QueryInstance(ECInstanceId instanceId) const;
 
         TableClassMap const* GetTableClassMap(ECN::ECClassCR ecClass) const;
@@ -124,19 +120,28 @@ struct TableMap final : RefCounted<NonCopyableClass>
 //=======================================================================================
 struct TableClassMap final : RefCounted<NonCopyableClass>
     {
+    struct EndTableRelationshipMap
+        {
+        ECN::ECClassId m_relationshipClassId;
+        ColumnMap m_relationshipClassIdColumnMap;
+        ColumnMap m_relatedInstanceIdColumnMap;
+        };
+
     private:
         ECDbCR m_ecdb;
         TableMap const& m_tableMap;
         ECN::ECClassCR m_class;
         ClassMapCP m_classMap = nullptr;
-
+       
         bmap<Utf8String, ColumnMap*> m_columnMapByAccessString;
- 
+        bvector<EndTableRelationshipMap*> m_endTableRelMaps;
+
         TableClassMap(ECDbCR ecdb, TableMap const& tableMap, ECN::ECClassCR ecClass);
         void Initialize();
         void InitPropertyColumnMaps();
-        void AddColumnMapsForProperty(SingleColumnDataPropertyMap const&);
         void FreeColumnMaps();
+        void InitEndTableRelationshipMaps();
+        void FreeEndTableRelationshipMaps();
 
     public:
         ~TableClassMap();
@@ -148,7 +153,6 @@ struct TableClassMap final : RefCounted<NonCopyableClass>
         //! Returns true if the class is really mapped
         bool IsMapped() const { return m_classMap != nullptr; }
 
-
         //! Returns true if the table contains a column for the specified property (access string)
         bool ContainsColumn(Utf8CP propertyAccessString) const;
 
@@ -157,6 +161,8 @@ struct TableClassMap final : RefCounted<NonCopyableClass>
         TableMap const& GetTableMap() const { return m_tableMap; }
 
         ClassMapCP GetClassMap() const { return m_classMap; }
+
+        bvector<EndTableRelationshipMap*> const& GetEndTableRelationshipMaps() const { return m_endTableRelMaps; }
 
         bmap<Utf8String, ColumnMap*> const& GetColumnMapByAccessString() const { return m_columnMapByAccessString; }
     };
@@ -300,6 +306,7 @@ struct ChangeExtractor final : NonCopyableClass
 
         void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;
         ECN::ECClassId GetRelEndClassId(ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const;
+        ECN::ECClassId GetClassIdFromColumn(TableMap const& tableMap, DbColumn const& classIdColumn, ECInstanceId instanceId) const;
         static ECN::ECClassId GetRelEndClassIdFromRelClass(ECN::ECRelationshipClassCP relClass, ECN::ECRelationshipEnd relEnd);
         int GetFirstColumnIndex(PropertyMap const* propertyMap, ChangeIterator::RowEntry const& rowEntry) const;
 
@@ -309,11 +316,10 @@ struct ChangeExtractor final : NonCopyableClass
 
         void ExtractRelInstances(ChangeIterator::RowEntry const& rowEntry);
         void ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassLinkTableMap const& relClassMap);
-        void ExtractRelInstanceInEndTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassEndTableMap const& relClassMap);
+        void ExtractRelInstanceInEndTable(ChangeIterator::RowEntry const& rowEntry, TableClassMap::EndTableRelationshipMap const& endTableRelMap);
         bool ClassIdMatchesConstraint(ECN::ECClassId relClassId, ECN::ECRelationshipEnd end, ECN::ECClassId candidateClassId) const;
         bool RecordRelInstance(ChangeSummary::InstanceCR instance, ChangeIterator::RowEntry const& rowEntry, ECInstanceKeyCR oldSourceKey, ECInstanceKeyCR newSourceKey, ECInstanceKeyCR oldTargetKey, ECInstanceKeyCR newTargetKey);
 
-        static ECN::ECClassId ExtractClassId(ChangeIterator::RowEntry const& rowEntry, ClassMapCR classMap, ECInstanceId instanceId);
     public:
         ChangeExtractor(ChangeSummaryCR changeSummary, InstancesTable& instancesTable, ValuesTable& valuesTable);
         BentleyStatus FromChangeSet(IChangeSet& changeSet, bool includeRelationshipInstances);
