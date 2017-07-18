@@ -715,7 +715,14 @@ TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
             "</ChildNodeRule>"
             "<StyleOverride Priority=\"7\" ForeColor=\"Blue\" BackColor=\"Red\" FontStyle=\"Bold\" Condition=\"TestCondition7\" OnlyIfNotHandled=\"false\"/>"
         "</PresentationRuleSet>";
+
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
+    for (int i = 0; i < customizationRules.size(); i++)
+        {
+        delete customizationRules[i];
+        }
+    delete nestedChildNodeRule->GetCustomizationRulesR()[0];
+    delete rootNodeRule->GetCustomizationRulesR()[0];
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -777,6 +784,7 @@ TEST_F(PresentationRulesTests, TestContentModifierWriteToXml)
             "</ContentModifier>"
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
+    delete modifier;
     }
 
 /*---------------------------------------------------------------------------------**//**
