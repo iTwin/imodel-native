@@ -574,16 +574,6 @@ public:
     IMODELHUBCLIENT_EXPORT CodeLockSetTaskPtr QueryUnavailableCodesLocks(BeSQLite::BeBriefcaseId const briefcaseId, Utf8StringCR lastChangeSetId, ICancellationTokenPtr cancellationToken = nullptr) const;
     
     //! Returns maximum used code value by the given pattern.
-    //! @param[in] codeSpec
-    //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeMaximumIndex(CodeSpecCR codeSpec, ICancellationTokenPtr cancellationToken = nullptr) const;
-
-    //! Returns next available code by the given pattern, index start and increment by value.
-    //! @param[in] codeSpec
-    //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeNextAvailable(CodeSpecCR codeSpec, ICancellationTokenPtr cancellationToken=nullptr) const;
-
-    //! Returns maximum used code value by the given pattern.
     //! @param[in] codeSequence
     //! @param[in] cancellationToken
     IMODELHUBCLIENT_EXPORT CodeSequenceTaskPtr QueryCodeMaximumIndex(CodeSequenceCR codeSequence, ICancellationTokenPtr cancellationToken = nullptr) const;
