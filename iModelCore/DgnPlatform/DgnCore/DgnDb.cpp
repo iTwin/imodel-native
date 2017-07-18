@@ -206,18 +206,6 @@ DbResult DgnDb::_OnDbOpening()
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     {
-#ifdef NEEDS_WORK
-    // Note: I'm temporarily commenting this assertion out for some existing workflows
-    // supported by the imodelHub Client. 
-    // There really shouldn't be a need to convert a briefcase to a master copy, but it 
-    // seems we are not ready to enforce that just yet.  
-    if (newBriefcaseId.IsMasterId())
-        {
-        BeAssert(false && "Can only change Master -> Briefcase");
-        return BE_SQLITE_ERROR;
-        }
-#endif
-
     DbResult result = T_Super::_OnBriefcaseIdAssigned(newBriefcaseId);
     if (result != BE_SQLITE_OK)
         return result;
@@ -226,8 +214,13 @@ DbResult DgnDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     if (result != BE_SQLITE_OK)
         return result;
 
-    Txns().EnableTracking(true);
-    return Txns().InitializeTableHandlers(); // Note: The briefcase id can be changed only once from master->briefcase
+    if (!newBriefcaseId.IsMasterId())
+        {
+        Txns().EnableTracking(true);
+        result = Txns().InitializeTableHandlers();
+        }
+
+    return result;
     }
 
 //--------------------------------------------------------------------------------------

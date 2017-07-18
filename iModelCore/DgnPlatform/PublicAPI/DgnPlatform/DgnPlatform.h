@@ -409,12 +409,12 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 BEBRIEFCASEBASED_ID_CLASS(DgnElementId)       //!< An Id that is assigned to an Element. @ingroup GROUP_DgnElement
 BEBRIEFCASEBASED_ID_CLASS(DgnModelId)         //!< An Id that is assigned to a DgnModel.  A DgnModel is a container for DgnElements. @ingroup GROUP_DgnModel
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnGeometryPartId, DgnElementId) //!< A DgnElementId that identifies a DgnGeometryPart.
-BEBRIEFCASEBASED_ID_SUBCLASS(DgnMaterialId, DgnElementId) //!< An element Id that refers to a material.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnTextureId, DgnElementId) //!< An element Id that refers to a named texture.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnStyleId, DgnElementId) //!< An Id that is assigned to a style. See DgnDb#LineStyles.
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnCategoryId, DgnElementId) //!< An element Id that refers to a DgnCategory. @ingroup GROUP_DgnCategory
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnSubCategoryId, DgnElementId) //!< An element Id that refers to a DgnSubCategory. @ingroup GROUP_DgnCategory
 BEBRIEFCASEBASED_ID_SUBCLASS(DgnViewId, DgnElementId) //!< An element Id that refers to a ViewDefinition.
+BEBRIEFCASEBASED_ID_SUBCLASS(RenderMaterialId, DgnElementId) //!< An element Id that refers to a RenderMaterial.
 
 BESERVER_ISSUED_ID_CLASS(CodeSpecId)
 BESERVER_ISSUED_ID_CLASS(DgnFontId)
@@ -430,11 +430,11 @@ typedef struct dgn_CodeSpecHandler::CodeSpec* CodeSpecHandlerP;
 typedef struct dgn_CodeSpecHandler::CodeSpec& CodeSpecHandlerR;
 typedef Byte const* ByteCP;
 
-typedef BeSQLite::IdSet<DgnElementId> DgnElementIdSet;            //!< IdSet with DgnElementId members. @ingroup GROUP_DgnElement
-typedef BeSQLite::IdSet<DgnModelId> DgnModelIdSet;                //!< IdSet with DgnModelId members. @ingroup GROUP_DgnModel
-typedef BeSQLite::IdSet<DgnCategoryId> DgnCategoryIdSet;          //!< IdSet with DgnCategoryId members. @ingroup GROUP_DgnCategory
-typedef BeSQLite::IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;    //!< IdSet with DgnSubCategoryId members. @ingroup GROUP_DgnCategory
-typedef BeSQLite::IdSet<DgnMaterialId> DgnMaterialIdSet;          //!< IdSet with DgnMaterialId members.
+typedef BeSQLite::IdSet<DgnElementId> DgnElementIdSet;          //!< IdSet with DgnElementId members. @ingroup GROUP_DgnElement
+typedef BeSQLite::IdSet<DgnModelId> DgnModelIdSet;              //!< IdSet with DgnModelId members. @ingroup GROUP_DgnModel
+typedef BeSQLite::IdSet<DgnCategoryId> DgnCategoryIdSet;        //!< IdSet with DgnCategoryId members. @ingroup GROUP_DgnCategory
+typedef BeSQLite::IdSet<DgnSubCategoryId> DgnSubCategoryIdSet;  //!< IdSet with DgnSubCategoryId members. @ingroup GROUP_DgnCategory
+typedef BeSQLite::IdSet<RenderMaterialId> RenderMaterialIdSet;  //!< IdSet with RenderMaterialId members.
 
 typedef ECN::ECClassId DgnClassId;
 

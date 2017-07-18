@@ -49,7 +49,7 @@ protected:
     void ExtractCodesFromRevision(DgnCodeSet& assigned, DgnCodeSet& discarded);
     void MergeSchemaRevision(DgnRevisionCR revision);
 
-    static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%" PRIu64 ":%s\n", code.GetScopeElementId().GetValue(), code.GetValueCP()); }
+    static Utf8String CodeToString(DgnCodeCR code) { return Utf8PrintfString("%s:%s\n", code.GetScopeString().c_str(), code.GetValueCP()); }
     static void ExpectCode(DgnCodeCR code, DgnCodeSet const& codes) { EXPECT_FALSE(codes.end() == codes.find(code)) << CodeToString(code).c_str(); }
     static void ExpectCodes(DgnCodeSet const& exp, DgnCodeSet const& actual)
         {

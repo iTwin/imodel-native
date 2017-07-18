@@ -29,7 +29,6 @@ struct ScopedDgnHost
     DGNPLATFORM_EXPORT explicit ScopedDgnHost();
     DGNPLATFORM_EXPORT ~ScopedDgnHost();
 
-    DGNPLATFORM_EXPORT void SetCodeAdmin(DgnPlatformLib::Host::CodeAdmin*);
     DGNPLATFORM_EXPORT void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin);
     DGNPLATFORM_EXPORT DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin();
 

@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/SolidKernel.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -26,7 +26,7 @@ private:
     bool            m_useMaterial:1;    //!< true - material does not follow sub-category appearance.
     ColorDef        m_color;
     double          m_transparency;
-    DgnMaterialId   m_material;
+    RenderMaterialId m_material;
     DPoint2d        m_uv;
 
     mutable bool m_haveGraphicParams = false;

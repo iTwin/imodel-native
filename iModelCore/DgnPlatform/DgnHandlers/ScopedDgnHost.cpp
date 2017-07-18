@@ -113,7 +113,6 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
     L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 
-    void SetCodeAdmin(DgnPlatformLib::Host::CodeAdmin* admin) {delete m_codeAdmin; m_codeAdmin = admin;}
     void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin) {((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl = admin;}
     DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin() {return ((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl;}
 };
@@ -133,14 +132,6 @@ ScopedDgnHost::ScopedDgnHost()
 ScopedDgnHost::~ScopedDgnHost() 
     {
     delete m_pimpl;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ScopedDgnHost::SetCodeAdmin(DgnPlatformLib::Host::CodeAdmin* admin)
-    {
-    m_pimpl->SetCodeAdmin(admin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -220,7 +211,7 @@ void TestDataManager::MustBeBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
 
     BeFileName name(db->GetFileName());
 
-    db->AssignBriefcaseId(BeBriefcaseId(BeBriefcaseId::Standalone()));
+    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
     db->SaveChanges();
     db->CloseDb();
 

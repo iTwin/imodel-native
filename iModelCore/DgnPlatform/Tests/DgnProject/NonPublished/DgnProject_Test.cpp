@@ -268,7 +268,7 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
     SchemaStatus schemaStatus = DgnPlatformTestDomain::GetDomain().ImportSchema(*dgndb);
     ASSERT_TRUE(schemaStatus == SchemaStatus::Success);
 
-    dgndb->AssignBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    dgndb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     dgndb->Txns().EnableTracking(true);
 
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*dgndb, "TestPartition");
@@ -291,6 +291,20 @@ TEST_F(DgnDbTest, CreateTrackedDgnDb)
     ASSERT_TRUE(el.IsValid());
 
     dgndb->SaveChanges();
+
+    // Check that we can turn the Briefcase -> Master
+    BeGuid oldGuid = dgndb->QueryProjectGuid();
+    result = dgndb->SetAsMaster();
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    BeGuid newGuid = dgndb->QueryProjectGuid();
+    ASSERT_TRUE(oldGuid != newGuid && "A new GUID has to be assigned when turning a briefcase into a master copy");
+
+    // Check that we can turn the Master -> Briefcase again
+    result = dgndb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    ASSERT_TRUE(result == BE_SQLITE_OK);
+    oldGuid = newGuid;
+    newGuid = dgndb->QueryProjectGuid();
+    ASSERT_TRUE(oldGuid == newGuid);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -651,18 +665,17 @@ TEST_F(DgnProjectPackageTest, EnforceLinkTableFor11Relationship)
     ecSchemaPath.AppendToPath(L"Schemas");
     ecSchemaPath.AppendToPath(L"SampleDgnDbEditor.01.00.ecschema.xml");
 
-    ECSchemaCachePtr schemaCache = ECSchemaCache::Create();
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaLocater(m_db->GetSchemaLocater());
     WString schemaPath = BeFileName::GetDirectoryName(ecSchemaPath);
     schemaContext->AddSchemaPath(schemaPath.c_str());
 
     ECSchemaPtr schema;
-    ECSchema::ReadFromXmlFile(schema, ecSchemaPath, *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlFile(schema, ecSchemaPath, *schemaContext));
     ASSERT_TRUE(schema.IsValid());
 
-    ASSERT_EQ(SUCCESS, ImportSchema(*schema, *m_db));
-
+    ASSERT_EQ(SchemaStatus::Success, m_db->ImportSchemas(schemaContext->GetCache().GetSchemas()));
+    
     ASSERT_TRUE(m_db->TableExists("sdde_ArchStoreyWithElements"));
     ASSERT_TRUE(m_db->TableExists("sdde_ArchWithHVACStorey"));
     }

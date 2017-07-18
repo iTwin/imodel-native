@@ -139,7 +139,7 @@ DbResult DgnDomain::LoadHandlers(DgnDbR dgndb) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool DgnDomain::IsSchemaImported(DgnDbCR dgndb) const
     {
-    return dgndb.Schemas().ContainsSchema(GetDomainName());
+    return dgndb.Schemas().ContainsSchema(m_domainName);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -517,9 +517,18 @@ ECSchemaReadContextPtr DgnDomains::PrepareSchemaReadContext() const
     {
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext(false/*=acceptLegacyImperfectLatestCompatibleMatch*/, true/*=includeFilesWithNoVerExt*/);
 
-    BeFileName standardSchemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
-    standardSchemaPath.AppendToPath(L"ECSchemas/Standard");
-    context->AddSchemaPath(standardSchemaPath);
+    BeFileName schemaPath = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    schemaPath.AppendToPath(L"ECSchemas");
+
+    BeFileName standardSchemasPath(schemaPath);
+    standardSchemasPath.AppendToPath(L"Standard");
+    context->AddSchemaPath(standardSchemasPath);
+
+    //Not all ECDb schemas are always included in the ECDb file, e.g. ECDbSchemaPolicies. Therefore make those locatable
+    //from the assets dir
+    BeFileName ecdbSchemasPath(schemaPath);
+    ecdbSchemasPath.AppendToPath(L"ECDb");
+    context->AddSchemaPath(ecdbSchemasPath);
 
     context->SetFinalSchemaLocater(GetDgnDb().GetSchemaLocater()); // Schemas must first be located in disk (i.e., domain schemas) before finding them in the Db.
     return context;
@@ -685,6 +694,12 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
         {
         BeAssert(false && "Unable to obtain the schema lock");
         return SchemaStatus::SchemaLockFailed;
+        }
+
+    if (RepositoryStatus::Success != dgndb.BriefcaseManager().LockCodeSpecs().Result()) // the best practice is to import CodeSpecs via _OnSchemaImported, so acquire that lock now to prevent problems later
+        {
+        BeAssert(false && "Unable to obtain the CodeSpecs lock");
+        return SchemaStatus::CouldNotAcquireLocksOrCodes;
         }
 
     if (LOG.isSeverityEnabled(SEVERITY::LOG_DEBUG))

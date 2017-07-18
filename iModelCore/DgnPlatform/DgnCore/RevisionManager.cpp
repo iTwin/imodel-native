@@ -12,15 +12,17 @@
 
 USING_NAMESPACE_BENTLEY_SQLITE
 
-#define REVISION_LZMA_MARKER    "RevLzma"
-#define CURRENT_REV_END_TXN_ID  "CurrentRevisionEndTxnId"
-#define INITIAL_PARENT_REV_ID   "InitialParentRevisionId"
-#define PARENT_REV_ID           "ParentRevisionId"
-#define REVERSED_REV_ID         "ReversedRevisionId"
+#define CHANGESET_LZMA_MARKER   "ChangeSetLzma"
+#define CURRENT_CS_END_TXN_ID   "CurrentChangeSetEndTxnId"
+#define INITIAL_PARENT_CS_ID    "InitialParentChangeSetId"
+#define PARENT_CS_ID           "ParentChangeSetId"
+#define REVERSED_CS_ID         "ReversedChangeSetId"
 #define CONTAINS_SCHEMA_CHANGES "ContainsSchemaChanges"
 #define REVISION_FORMAT_VERSION  0x10
 #define JSON_PROP_DDL                   "DDL"
 #define JSON_PROP_ContainsSchemaChanges "ContainsSchemaChanges"
+#define CHANGESET_REL_DIR L"DgnDbChangeSets"
+#define CHANGESET_FILE_EXT L"cs"
 
 // #define DEBUG_REVISION_KEEP_FILES 1
 
@@ -55,7 +57,7 @@ struct RevisionLzmaHeader
 {
 private:
     uint16_t m_sizeOfHeader;
-    char    m_idString[10];
+    char    m_idString[15];
     uint16_t m_formatVersionNumber;
     uint16_t m_compressionType;
 
@@ -68,7 +70,7 @@ public:
 
     RevisionLzmaHeader()
         {
-        CharCP idString = REVISION_LZMA_MARKER;
+        CharCP idString = CHANGESET_LZMA_MARKER;
         BeAssert((strlen(idString) + 1) <= sizeof(m_idString));
         memset(this, 0, sizeof(*this));
         m_sizeOfHeader = (uint16_t)sizeof(RevisionLzmaHeader);
@@ -84,7 +86,7 @@ public:
         if (m_sizeOfHeader != sizeof(RevisionLzmaHeader))
             return false;
 
-        if (strcmp(m_idString, REVISION_LZMA_MARKER))
+        if (strcmp(m_idString, CHANGESET_LZMA_MARKER))
             return false;
 
         if (formatVersionNumber != m_formatVersionNumber)
@@ -630,10 +632,10 @@ DgnRevision::~DgnRevision()
 BeFileName DgnRevision::BuildRevisionChangesPathname(Utf8String revisionId)
     {
     BeFileName tempPathname;
-    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev");
+    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, CHANGESET_REL_DIR);
     BeAssert(SUCCESS == status && "Cannot get temporary directory");
     tempPathname.AppendToPath(WString(revisionId.c_str(), true).c_str());
-    tempPathname.AppendExtension(L"rev");
+    tempPathname.AppendExtension(CHANGESET_FILE_EXT);
     return tempPathname;
     }
 
@@ -738,23 +740,27 @@ static DgnModelId GetModelIdFromChangeOrDb(ChangeIterator::ColumnIterator const&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    12/2017
 //---------------------------------------------------------------------------------------
-static DgnCode GetCodeFromChangeOrDb(ChangeIterator::ColumnIterator const& columnIter, Changes::Change::Stage stage)
+static DgnCode GetCodeFromChangeOrDb(DgnDbCR db, ChangeIterator::ColumnIterator const& columnIter, Changes::Change::Stage stage)
     {
     DbDupValue codeSpecId = GetValueFromChangeOrDb(columnIter, "CodeSpec.Id", stage);
-    DbDupValue scope = GetValueFromChangeOrDb(columnIter, "CodeScope.Id", stage);
+    DbDupValue scopeElementId = GetValueFromChangeOrDb(columnIter, "CodeScope.Id", stage);
     DbDupValue value = GetValueFromChangeOrDb(columnIter, "CodeValue", stage);
 
-    DgnCode code;
-    if (codeSpecId.IsValid() && scope.IsValid() && value.IsValid())
-        code.From(codeSpecId.GetValueId<CodeSpecId>(), scope.GetValueId<DgnElementId>(), value.GetValueText());
+    CodeSpecCPtr codeSpec = db.CodeSpecs().GetCodeSpec(codeSpecId.GetValueId<CodeSpecId>());
+    if (!codeSpec.IsValid())
+        return DgnCode();
 
-    return code;
+    DgnElementCPtr scopeElement = db.Elements().GetElement(scopeElementId.GetValueId<DgnElementId>());
+    if (!scopeElement.IsValid())
+        return DgnCode();
+
+    return codeSpec->CreateCode(*scopeElement, value.GetValueText());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Paul.Connelly   12/15
 //---------------------------------------------------------------------------------------
-static void insertCode(DgnCodeSet& into, DgnCode const& code, DgnCodeSet& ifNotIn)
+static void insertCode(DgnCodeSet& into, DgnCodeCR code, DgnCodeSet& ifNotIn)
     {
     if (code.IsEmpty() || !code.IsValid())
         return;
@@ -801,8 +807,8 @@ void DgnRevision::ExtractCodes(DgnCodeSet& assignedCodes, DgnCodeSet& discardedC
         DbOpcode dbOpcode = entry.GetDbOpcode();
         ChangeIterator::ColumnIterator columnIter = entry.MakeColumnIterator(*primaryClass); // Note: ColumnIterator needs to be in the stack to access column
 
-        DgnCode oldCode = (dbOpcode == DbOpcode::Insert) ? DgnCode() : GetCodeFromChangeOrDb(columnIter, Changes::Change::Stage::Old);
-        DgnCode newCode = (dbOpcode == DbOpcode::Delete) ? DgnCode() : GetCodeFromChangeOrDb(columnIter, Changes::Change::Stage::New);
+        DgnCode oldCode = (dbOpcode == DbOpcode::Insert) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::Old);
+        DgnCode newCode = (dbOpcode == DbOpcode::Delete) ? DgnCode() : GetCodeFromChangeOrDb(dgndb, columnIter, Changes::Change::Stage::New);
 
         if (oldCode == newCode)
             continue;
@@ -823,6 +829,8 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
     BeAssert(elemClass != nullptr);
     ECClassCP modelClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_Model);
     BeAssert(modelClass != nullptr);
+    ECClassCP codeSpecClass = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, BIS_CLASS_CodeSpec);
+    BeAssert(codeSpecClass != nullptr);
 
     RevisionChangesFileReader changeStream(m_revChangesFile, dgndb);
     ChangeIterator changeIter(dgndb, changeStream);
@@ -861,7 +869,7 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         lockRequest.InsertLock(LockableId(DgnElementId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
         }
 
-    // Any models directly changed?
+    // Any models or CodeSpecs directly changed?
     for (ChangeIterator::RowEntry const& entry : changeIter)
         {
         if (!entry.IsMapped())
@@ -870,10 +878,13 @@ void DgnRevision::ExtractLocks(DgnLockSet& usedLocks, DgnDbCR dgndb) const
         ECClassCP primaryClass = entry.GetPrimaryClass();
         BeAssert(primaryClass != nullptr);
 
-        if (!entry.IsPrimaryTable() || !primaryClass->Is(modelClass))
+        if (!entry.IsPrimaryTable())
             continue;
 
-        lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        if (primaryClass->Is(modelClass))
+            lockRequest.InsertLock(LockableId(LockableType::Model, DgnModelId(entry.GetPrimaryInstanceId().GetValueUnchecked())), LockLevel::Exclusive);
+        else if (primaryClass->Is(codeSpecClass))
+            lockRequest.InsertCodeSpecsLock(dgndb);
         }
 
     // Anything changed at all?
@@ -918,7 +929,7 @@ RevisionStatus RevisionManager::SaveParentRevisionId(Utf8StringCR revisionId)
     {
     BeAssert(revisionId.length() == SHA1::HashBytes * 2);
 
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(PARENT_REV_ID, revisionId);
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(PARENT_CS_ID, revisionId);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -935,7 +946,7 @@ RevisionStatus RevisionManager::SaveReversedRevisionId(Utf8StringCR revisionId)
     {
     BeAssert(revisionId.length() == SHA1::HashBytes * 2);
 
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(REVERSED_REV_ID, revisionId);
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(REVERSED_CS_ID, revisionId);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -950,7 +961,7 @@ RevisionStatus RevisionManager::SaveReversedRevisionId(Utf8StringCR revisionId)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DeleteReversedRevisionId()
     {
-    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(REVERSED_REV_ID);
+    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(REVERSED_CS_ID);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -966,7 +977,7 @@ RevisionStatus RevisionManager::DeleteReversedRevisionId()
 bool RevisionManager::HasReversedRevisions() const
     {
     Utf8String reversedParentId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(reversedParentId, REVERSED_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(reversedParentId, REVERSED_CS_ID);
     return (result == BE_SQLITE_ROW);
     }
 
@@ -976,7 +987,7 @@ bool RevisionManager::HasReversedRevisions() const
 Utf8String RevisionManager::GetParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, PARENT_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, PARENT_CS_ID);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -986,7 +997,7 @@ Utf8String RevisionManager::GetParentRevisionId() const
 Utf8String RevisionManager::GetReversedRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, REVERSED_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, REVERSED_CS_ID);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -995,7 +1006,7 @@ Utf8String RevisionManager::GetReversedRevisionId() const
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::UpdateInitialParentRevisionId()
     {
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(INITIAL_PARENT_REV_ID, GetParentRevisionId());
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(INITIAL_PARENT_CS_ID, GetParentRevisionId());
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1036,7 +1047,7 @@ bool RevisionManager::QueryContainsSchemaChanges() const
 Utf8String RevisionManager::QueryInitialParentRevisionId() const
     {
     Utf8String revisionId;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, INITIAL_PARENT_REV_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(revisionId, INITIAL_PARENT_CS_ID);
     return (BE_SQLITE_ROW == result) ? revisionId : "";
     }
 
@@ -1045,7 +1056,7 @@ Utf8String RevisionManager::QueryInitialParentRevisionId() const
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId txnId)
     {
-    DbResult result = m_dgndb.SaveBriefcaseLocalValue(CURRENT_REV_END_TXN_ID, txnId.GetValue());
+    DbResult result = m_dgndb.SaveBriefcaseLocalValue(CURRENT_CS_END_TXN_ID, txnId.GetValue());
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1067,7 +1078,7 @@ RevisionStatus RevisionManager::SaveCurrentRevisionEndTxnId(TxnManager::TxnId tx
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
     {
-    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(CURRENT_REV_END_TXN_ID);
+    DbResult result = m_dgndb.DeleteBriefcaseLocalValue(CURRENT_CS_END_TXN_ID);
     if (BE_SQLITE_DONE != result)
         {
         BeAssert(false);
@@ -1090,7 +1101,7 @@ RevisionStatus RevisionManager::DeleteCurrentRevisionEndTxnId()
 TxnManager::TxnId RevisionManager::QueryCurrentRevisionEndTxnId() const
     {
     uint64_t val;
-    DbResult result = m_dgndb.QueryBriefcaseLocalValue(val, CURRENT_REV_END_TXN_ID);
+    DbResult result = m_dgndb.QueryBriefcaseLocalValue(val, CURRENT_CS_END_TXN_ID);
     return (BE_SQLITE_ROW == result) ? TxnManager::TxnId(val) : TxnManager::TxnId();
     }
 
@@ -1264,7 +1275,7 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
 
     return pathname.DoesPathExist() ? RevisionStatus::Success : RevisionStatus::NoTransactions;
     }
-
+	
 //---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    10/2015
 //---------------------------------------------------------------------------------------
@@ -1272,10 +1283,10 @@ RevisionStatus RevisionManager::WriteChangesToFile(BeFileNameCR pathname, DbSche
 BeFileName RevisionManager::BuildTempRevisionPathname()
     {
     BeFileName tempPathname;
-    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, L"DgnDbRev");
+    BentleyStatus status = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectory(tempPathname, CHANGESET_REL_DIR);
     BeAssert(SUCCESS == status && "Cannot get temporary directory");
-    tempPathname.AppendToPath(L"CurrentRevision").c_str();
-    tempPathname.AppendExtension(L"rev");
+    tempPathname.AppendToPath(L"CurrentChangeSet").c_str();
+    tempPathname.AppendExtension(CHANGESET_FILE_EXT);
     return tempPathname;
     }
 

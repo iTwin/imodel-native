@@ -140,39 +140,27 @@ void BimConsole::Setup()
     WriteLine();
     WriteLine("    .help for help, .exit to exit program");
     WriteLine();
-
     auto helpCommand = std::make_shared<HelpCommand>(m_commands);
     AddCommand(helpCommand);
     AddCommand(".h", helpCommand); //add same command with alternative command name
-
     AddCommand(std::make_shared<OpenCommand>());
     AddCommand(std::make_shared<CloseCommand>());
     AddCommand(std::make_shared<CreateCommand>());
     AddCommand(std::make_shared<FileInfoCommand>());
-
     AddCommand(std::make_shared<ECSqlCommand>());
-
     auto metadataCommand = std::make_shared<MetadataCommand>();
     AddCommand(metadataCommand);
     AddCommand(".meta", metadataCommand); //add same command with alternative command name
-
     AddCommand(std::make_shared<CommitCommand>());
     AddCommand(std::make_shared<RollbackCommand>());
-
     AddCommand(std::make_shared<ImportCommand>());
     AddCommand(std::make_shared<ExportCommand>());
-
     AddCommand(std::make_shared<ParseCommand>());
     AddCommand(std::make_shared<CreateClassViewsCommand>());
-
     AddCommand(std::make_shared<SqliteCommand>());
     AddCommand(std::make_shared<DbSchemaCommand>());
-
     AddCommand(std::make_shared<SchemaStatsCommand>());
-    AddCommand(std::make_shared<ValidateCommand>());
-
     AddCommand(std::make_shared<DebugCommand>());
-
     auto exitCommand = std::make_shared<ExitCommand>();
     AddCommand(exitCommand);
     AddCommand(".quit", exitCommand); //add same command with alternative command name

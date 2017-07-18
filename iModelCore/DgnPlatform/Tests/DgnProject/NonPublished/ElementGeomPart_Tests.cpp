@@ -205,18 +205,19 @@ TEST_F(ElementGeomPartTests, GeomPart2d)
     DgnGeometryPartId existingPartId = DgnGeometryPart::QueryGeometryPartId(GetGeomPartModel(), GetGeomPartName());
     EXPECT_TRUE(existingPartId.IsValid());
 
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "MyDrawingCategory");
     DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "DrawingListModel");
     DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "TestDrawing");
     DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
     DgnModelId modelId = drawingModel->GetModelId();
 
     //Add two elements using this GeometryPart
-    DgnElementId elementId1 = InsertElementUsingGeometryPart2d(geomPartPtr->GetCode(), modelId, m_defaultCategoryId);
+    DgnElementId elementId1 = InsertElementUsingGeometryPart2d(geomPartPtr->GetCode(), modelId, categoryId);
     EXPECT_TRUE(elementId1.IsValid());
 
-    DgnElementId elementId2 = InsertElementUsingGeometryPart2d(geomPartPtr->GetCode(), modelId, m_defaultCategoryId);
+    DgnElementId elementId2 = InsertElementUsingGeometryPart2d(geomPartPtr->GetCode(), modelId, categoryId);
     EXPECT_TRUE(elementId2.IsValid());
 
-    DgnElementId elementId3 = InsertElement2d(modelId, m_defaultCategoryId);
+    DgnElementId elementId3 = InsertElement2d(modelId, categoryId);
     EXPECT_TRUE(elementId3.IsValid());
     }
