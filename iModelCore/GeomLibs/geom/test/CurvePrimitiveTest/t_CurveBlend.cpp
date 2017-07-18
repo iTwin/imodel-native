@@ -2569,10 +2569,7 @@ TEST (MatrixWeightedBezier,EllipseSections)
 
 TEST (MatrixWeightedBezier,WobbleStress)
     {
-    int order = 2;
-    double radiusA = 1.0;
     double xB = 1.0;
-    double radiansA = 0.0;
     double radiansB = Angle::DegreesToRadians (90.0);
     int numEval = 40;
     double tickSize = 0.1;
