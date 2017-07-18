@@ -92,7 +92,7 @@ ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRu
                                 $(ecpresentationRulesPublicAPISrc)CalculatedPropertySpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)RelatedInstanceSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)CustomizationRules.h \
-				$(ecpresentationRulesPublicAPISrc)ContentModifier.h \
+                                $(ecpresentationRulesPublicAPISrc)ContentModifier.h \
                                 $(ECPresentationHeaders)
 
 
