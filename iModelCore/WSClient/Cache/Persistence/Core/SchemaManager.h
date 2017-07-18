@@ -29,6 +29,7 @@ struct SchemaManager
         BentleyStatus FixLegacySchemaRelationshipCardinalities(ECSchema& schema);
         Utf8String ToFullNameListString(const std::vector<ECSchemaPtr>& schemas);
         BentleyStatus ImportSchemas(const std::vector<ECSchemaPtr>& schemas);
+        BentleyStatus RemoveReferences(ECSchema& schema, SchemaKeyCR referencedSchemaKey);
 
     public:
         SchemaManager(ObservableECDb& m_db);
