@@ -15,6 +15,7 @@ static const char s_b3dmMagic[]              = "b3dm";
 static const char s_compositeTileMagic[]     = "cmpt";
 static const char s_instanced3dMagic[]       = "i3dm";
 static const char s_pointCloudMagic[]        = "pnts";
+static const char s_vectorMagic[]            = "vctr";
 
 static const uint32_t s_b3dmVersion          = 1;
 static const uint32_t s_gltfVersion          = 1;
@@ -22,6 +23,7 @@ static const uint32_t s_gltfSceneFormat      = 0;
 static const uint32_t s_compositeTileVersion = 1; 
 static const uint32_t s_instanced3dVersion   = 1;
 static const uint32_t s_pointCloudVersion    = 1;
+static const uint32_t s_vectorVersion        = 1;
 
 
 #define GLTF_LINES 1
@@ -202,7 +204,7 @@ static std::string s_computeLighting = R"RAW_STRING(
         {
         vec3 normal = normalize(normalIn);
         vec3 toEye = normalize (position);
-        normal = faceforward(normal, vec3(0.0, 0.0, 1.0), -normal);
+        normal = faceforward(normal, toEye, normal);
 
         float ambient = 0.2;
         vec3 lightPos1 = vec3(-500, -200.0, 0.0);
