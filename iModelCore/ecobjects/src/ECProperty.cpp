@@ -26,7 +26,8 @@ void ECProperty::SetErrorHandling (bool doAssert)
  @bsimethod                                                 
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECProperty::ECProperty (ECClassCR ecClass) : m_class(ecClass), m_readOnly(false), m_baseProperty(nullptr), m_forSupplementation(false),
-                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0), m_kindOfQuantity(nullptr)
+                                                m_cachedTypeAdapter(nullptr), m_maximumLength(0), m_minimumLength(0), m_kindOfQuantity(nullptr), m_propertyCategory(nullptr),
+                                                m_priority(0), m_priorityExplicitlySet(false)
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -154,7 +155,7 @@ bool ResolvePrimitiveType(ECPropertyCP prop, PrimitiveType& type)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetMinimumValue(ECValueCR min)
     {
-    if (min.IsNull() || min.IsStruct())
+    if (min.IsNull() || !min.IsPrimitive())
         return ECObjectsStatus::DataTypeNotSupported;
 
     PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
@@ -212,7 +213,7 @@ ECObjectsStatus ECProperty::GetMinimumValue(ECValueR value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECProperty::SetMaximumValue(ECValueCR max)
     {
-    if (max.IsNull() || max.IsStruct())
+    if (max.IsNull() || !max.IsPrimitive())
         return ECObjectsStatus::DataTypeNotSupported;
 
     PrimitiveType pt = PrimitiveType::PRIMITIVETYPE_Integer;
@@ -341,6 +342,21 @@ void ECProperty::_AdjustMinMaxAfterTypeChange()
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+int32_t ECProperty::GetPriority() const
+    {
+    if (m_priorityExplicitlySet)
+        return m_priority;
+
+    ECPropertyCP baseProp = GetBaseProperty();
+    if (nullptr != baseProp)
+        return baseProp->GetPriority();
+
+    return m_priority;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -443,10 +459,34 @@ bool ECProperty::HasExtendedType () const
     return this->_HasExtendedType();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+PropertyCategoryCP ECProperty::GetCategory() const
+    {
+    if (m_propertyCategory == nullptr)
+        {
+        ECPropertyCP baseProperty = GetBaseProperty();
+        if (nullptr != baseProperty)
+            return baseProperty->GetCategory();
+        }
+
+    return m_propertyCategory;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                      06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+ECObjectsStatus ECProperty::SetCategory(PropertyCategoryCP propertyCategory)
+    {
+    m_propertyCategory = propertyCategory;
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
  @bsimethod                                                     
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool                    ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
+bool ECProperty::SetCalculatedPropertySpecification (IECInstanceP spec)
     {
     bool wasCalculated = IsCalculated();
     bool set = _SetCalculatedPropertySpecification (spec);
@@ -500,6 +540,29 @@ ECObjectsStatus resolveKindOfQuantityType(KindOfQuantityCP& kindOfQuantity, Utf8
     return ECObjectsStatus::Success;
     }
 
+ECObjectsStatus resolvePropertyCategory(PropertyCategoryCP& propertyCategory, Utf8StringCR typeName, ECSchemaCR parentSchema)
+    {
+    // typeName may potentially be qualified so we must parse into an alias and short class name
+    Utf8String alias;
+    Utf8String propertyCategoryName;
+    if (ECObjectsStatus::Success != ECXml::ParseFullyQualifiedName(alias, propertyCategoryName, typeName))
+        {
+        LOG.warningv("Cannot resolve the type name '%s'.", typeName.c_str());
+        return ECObjectsStatus::ParseError;
+        }
+
+    ECSchemaCP resolvedSchema = parentSchema.GetSchemaByAliasP(alias);
+    if (nullptr == resolvedSchema)
+        return ECObjectsStatus::SchemaNotFound;
+
+    auto result = resolvedSchema->GetPropertyCategoryCP(propertyCategoryName.c_str());
+    if (nullptr == result)
+        return ECObjectsStatus::DataTypeNotSupported;
+
+    propertyCategory = result;
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -511,28 +574,10 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
     // OPTIONAL attributes - If these attributes exist they MUST be valid    
     READ_OPTIONAL_XML_ATTRIBUTE(propertyNode, DESCRIPTION_ATTRIBUTE, this, Description)
 
-    Utf8String minValue;
-    if (propertyNode.GetAttributeStringValue(minValue, MINIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
+    uint32_t priority;
+    if (propertyNode.GetAttributeUInt32Value(priority, PRIORITY_ATTRIBUTE) == BEXML_Success)
         {
-        m_minimumValue.SetUtf8CP(minValue.c_str(), true); //TODO: cast type
-        }
-
-    Utf8String maxValue;
-    if (propertyNode.GetAttributeStringValue(maxValue, MAXIMUM_VALUE_ATTRIBUTE) == BEXML_Success)
-        {
-        m_maximumValue.SetUtf8CP(maxValue.c_str(), true); //TODO: cast type
-        }
-
-    uint32_t minLength;
-    if (propertyNode.GetAttributeUInt32Value(minLength, MINIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
-        {
-        SetMinimumLength(minLength);
-        }
-
-    uint32_t maxLength;
-    if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
-        {
-        SetMaximumLength(maxLength);
+        SetPriority(priority);
         }
 
     READ_OPTIONAL_XML_ATTRIBUTE (propertyNode, DISPLAY_LABEL_ATTRIBUTE,       this, DisplayLabel)
@@ -558,6 +603,22 @@ SchemaReadStatus ECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaReadCont
             }
 
         SetKindOfQuantity(kindOfQuantity);
+        }
+
+    if (BEXML_Success == propertyNode.GetAttributeStringValue(value, CATEGORY_ATTRIBUTE))
+        {
+        PropertyCategoryCP propertyCategory;
+        if (resolvePropertyCategory(propertyCategory, value, GetClass().GetSchema()) != ECObjectsStatus::Success)
+            {
+            LOG.errorv("Could not resolve PropertyCategory '%s' found on property '%s.%s'.",
+                value.c_str(),
+                GetClass().GetFullName(),
+                GetName().c_str());
+
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+
+        SetCategory(propertyCategory);
         }
 
     if(CustomAttributeReadStatus::InvalidCustomAttributes == ReadCustomAttributes (propertyNode, context, GetClass().GetSchema()))
@@ -674,7 +735,10 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         Utf8String minValue;
         if (m_minimumValue.ConvertPrimitiveToString(minValue))
             {
-            xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, minValue.c_str());
+            if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
+                xmlWriter.WriteAttribute("MinimumValue", minValue.c_str());
+            else
+                xmlWriter.WriteAttribute(MINIMUM_VALUE_ATTRIBUTE, minValue.c_str());
             }
         }
         
@@ -683,7 +747,10 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
         Utf8String maxValue;
         if (m_maximumValue.ConvertPrimitiveToString(maxValue))
             {
-            xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, maxValue.c_str());
+            if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
+                xmlWriter.WriteAttribute("MaximumValue", maxValue.c_str());
+            else
+                xmlWriter.WriteAttribute(MAXIMUM_VALUE_ATTRIBUTE, maxValue.c_str());
             }
         }
 
@@ -695,6 +762,16 @@ SchemaWriteStatus ECProperty::_WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementN
     if (IsMinimumLengthDefined())
         {
         xmlWriter.WriteAttribute(MINIMUM_LENGTH_ATTRIBUTE, m_minimumLength);
+        }
+
+    // Only serialize for 3.1 or newer
+    if (ECVersion::V3_1 <= ecXmlVersion)
+        {
+        if (IsCategoryDefinedLocally())
+            xmlWriter.WriteAttribute(CATEGORY_ATTRIBUTE, GetCategory()->GetQualifiedName(GetClass().GetSchema()).c_str());
+
+        if (IsPriorityLocallyDefined())
+            xmlWriter.WriteAttribute(PRIORITY_ATTRIBUTE, GetPriority());
         }
     
     if (nullptr != additionalAttributes && !additionalAttributes->empty())
@@ -736,8 +813,11 @@ SchemaReadStatus PrimitiveECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchem
         this->SetExtendedTypeName(value.c_str());
         }
 
-    _AdjustMinMaxAfterTypeChange();
-    return SchemaReadStatus::Success;
+    status = ReadMinMaxXml(propertyNode);
+    if (SchemaReadStatus::Success != status)
+        return status;
+
+    return status;
     }
 
 void getExtendedTypeAndKindOfQuantityAttributes(bvector<bpair<Utf8CP, Utf8CP>>& attributes, ECPropertyCP ecProperty, ECVersion ecXmlVersion)
@@ -1166,6 +1246,77 @@ ECObjectsStatus StructECProperty::SetType (ECStructClassCR structType)
     return ECObjectsStatus::Success;
     }
 
+SchemaReadStatus ECProperty::ReadMinMaxXml(BeXmlNodeR propertyNode)
+    {
+    uint32_t minLength;
+    if (propertyNode.GetAttributeUInt32Value(minLength, MINIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+        {
+        if (ECObjectsStatus::Success != SetMinimumLength(minLength) && GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+            {
+            LOG.errorv("Cannot set the minimum length attribute on ECProperty, %s.%s, because the datatype is not supported. Minimum length can only be set on a property with a primitive type of string and binary.",
+                    GetClass().GetFullName(), GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
+    uint32_t maxLength;
+    if (propertyNode.GetAttributeUInt32Value(maxLength, MAXIMUM_LENGTH_ATTRIBUTE) == BEXML_Success)
+        {
+        if (ECObjectsStatus::Success != SetMaximumLength(maxLength) && GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+            {
+            LOG.errorv("Cannot set the maximum length attribute on ECProperty, %s.%s, because the datatype is not supported. Maximum length can only be set on a property with a primitive type of string and binary.",
+                GetClass().GetFullName(), GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
+    Utf8String minValue;
+    BeXmlStatus status;
+    if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
+        status = propertyNode.GetAttributeStringValue(minValue, "MinimumValue");
+    else
+        status = propertyNode.GetAttributeStringValue(minValue, MINIMUM_VALUE_ATTRIBUTE);
+
+    if (BEXML_Success == status)
+        {
+        ECValue minECValue(minValue.c_str());
+        PrimitiveType pt;
+        ResolvePrimitiveType(this, pt);
+        
+        if ((!minECValue.ConvertToPrimitiveType(pt) || ECObjectsStatus::Success != SetMinimumValue(minECValue)) && 
+            GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+            {
+            LOG.errorv("Cannot set the minimum value attribute on ECProperty, %s.%s, because the datatype is not supported. Minimum value can only be set on a property with a primitive type of double, int, or long.",
+                GetClass().GetFullName(), GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
+    Utf8String maxValue;
+    if (GetClass().GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_0))
+        status = propertyNode.GetAttributeStringValue(maxValue, "MaximumValue");
+    else
+        status = propertyNode.GetAttributeStringValue(maxValue, MAXIMUM_VALUE_ATTRIBUTE);
+
+    if (BEXML_Success == status)
+        {
+        PrimitiveType pt;
+        ResolvePrimitiveType(this, pt);
+
+        ECValue maxECValue(maxValue.c_str());
+
+        if ((!maxECValue.ConvertToPrimitiveType(pt) || ECObjectsStatus::Success != SetMaximumValue(maxECValue)) && 
+            GetContainerSchema()->OriginalECXmlVersionAtLeast(ECVersion::V3_0))
+            {
+            LOG.errorv("Cannot set the maximum value attribute on ECProperty, %s.%s, because the datatype is not supported. Maximum value can only be set on a property with a primitive type of double, int, or long.",
+                GetClass().GetFullName(), GetName().c_str());
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+
+    return SchemaReadStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1184,6 +1335,10 @@ SchemaReadStatus ArrayECProperty::_ReadXml (BeXmlNodeR propertyNode, ECSchemaRea
 
     // For Primitive & Array properties we ignore parse errors and default to string.  Struct properties will require a resolvable typename.
     READ_REQUIRED_XML_ATTRIBUTE_IGNORING_SET_ERRORS (propertyNode, TYPE_NAME_ATTRIBUTE, this, TypeName, propertyNode.GetName())  
+
+    status = ReadMinMaxXml(propertyNode);
+    if (SchemaReadStatus::Success != status)
+        return status;
 
     if (ECObjectsStatus::Success != setterStatus)
         {
@@ -1657,6 +1812,13 @@ bool NavigationECProperty::Verify()
     if (nullptr == m_relationshipClass)
         return false;
 
+    if (m_relationshipClass->HasBaseClasses()) 
+        {
+        LOG.errorv("The referenced relationship '%s' used in NavigationECProperty %s.%s is not the root relationship.",
+            m_relationshipClass->GetFullName(), GetClass().GetFullName(), GetName().c_str());
+        return false;
+        }
+
     ECRelationshipConstraintCP thisConstraint;
     ECRelationshipConstraintCP thatConstraint;
     if (ECRelatedInstanceDirection::Forward == m_direction)
@@ -1670,6 +1832,26 @@ bool NavigationECProperty::Verify()
         thatConstraint = &m_relationshipClass->GetSource();
         }
 
+    if (nullptr != thatConstraint->GetAbstractConstraint() && thatConstraint->GetAbstractConstraint()->IsRelationshipClass())
+        return false;
+
+    bool concreteClass = false;
+    for (auto constraintClass : thisConstraint->GetConstraintClasses())
+        {
+        if (ECClass::ClassesAreEqualByName(&GetClass(), constraintClass))
+            {
+            concreteClass = true;
+            break;
+            }
+        }
+
+    if (!concreteClass)
+        {
+        LOG.errorv("The navigation property '%s.%s' cannot be added to '%s' because the class is not a constraint class in the referenced relationship '%s'",
+            GetClass().GetFullName(), GetName().c_str(), GetClass().GetFullName(), m_relationshipClass->GetFullName());
+        return false;
+        }
+
     bool supportsClass = thisConstraint->SupportsClass(GetClass());
     if (!supportsClass)
         {
@@ -1680,7 +1862,7 @@ bool NavigationECProperty::Verify()
     if (1 == thatConstraint->GetMultiplicity().GetUpperLimit())
         m_valueKind = ValueKind::VALUEKIND_Primitive;
     else
-        m_valueKind = ValueKind::VALUEKIND_Array;
+        return false;
 
     return true;
     }
@@ -1744,17 +1926,15 @@ bool NavigationECProperty::_CanOverride(ECPropertyCR baseProperty) const
         return false;
         }
 
-    // Following the example of StructECProperty we will allow override if the current relationship has not het been set.
+    // Following the example of StructECProperty we will allow override if the current relationship has not yet been set.
     if (nullptr == m_relationshipClass)
         return true;
 
     ECRelationshipClassCP baseRelClass = baseNavProperty->GetRelationshipClass();
-    if (!m_relationshipClass->Is(baseRelClass))
+    if (!ECClass::ClassesAreEqualByName(m_relationshipClass, baseRelClass))
         {
-        LOG.errorv("The NavigationECProperty %s:%s cannot be overridden by %s:%s because the relationship %s on property %s:%s is not derived from the relationship %s on property %s:%s.",
-                   baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str(),
-                   m_relationshipClass->GetFullName(), GetClass().GetFullName(), GetName().c_str(),
-                   baseRelClass->GetFullName(), baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str());
+        LOG.errorv("The NavigationECProperty %s:%s cannot be overridden by %s:%s because the relationship was changed. A derived property cannot change the referenced relationship.",
+            baseNavProperty->GetClass().GetFullName(), baseNavProperty->GetName().c_str(), GetClass().GetFullName(), GetName().c_str());
         return false;
         }
 

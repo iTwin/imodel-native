@@ -2234,7 +2234,7 @@ ECValue::NavigationInfo const& ECValue::GetNavigationInfo() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValueAccessor::ECValueAccessor(IECInstanceCR instance, int newPropertyIndex, int newArrayIndex) : m_isAdhoc(false)
+ECValueAccessor::ECValueAccessor(IECInstanceCR instance, int newPropertyIndex, int newArrayIndex) : m_isAdHoc(false)
     {
     PushLocation(instance, newPropertyIndex, newArrayIndex);
     }
@@ -2242,7 +2242,7 @@ ECValueAccessor::ECValueAccessor(IECInstanceCR instance, int newPropertyIndex, i
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECValueAccessor::ECValueAccessor(ECEnablerCR enabler, int newPropertyIndex, int newArrayIndex) : m_isAdhoc(false)
+ECValueAccessor::ECValueAccessor(ECEnablerCR enabler, int newPropertyIndex, int newArrayIndex) : m_isAdHoc(false)
     {
     PushLocation(enabler, newPropertyIndex, newArrayIndex);
     }
@@ -2251,7 +2251,7 @@ ECValueAccessor::ECValueAccessor(ECEnablerCR enabler, int newPropertyIndex, int 
 * @bsimethod                                                    Dylan Rush      11/10
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECValueAccessor::ECValueAccessor(ECValueAccessorCR accessor)
-    : m_locationVector(accessor.GetLocationVector()), m_isAdhoc(accessor.IsAdhocProperty())
+    : m_locationVector(accessor.GetLocationVector()), m_isAdHoc(accessor.IsAdHocProperty())
     {}
 
 /*---------------------------------------------------------------------------------**//**
@@ -2359,7 +2359,7 @@ void                                            ECValueAccessor::PopLocation()
 void                                            ECValueAccessor::Clear()
     {
     m_locationVector.clear();
-    m_isAdhoc = false;
+    m_isAdHoc = false;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2723,21 +2723,21 @@ ECObjectsStatus ECValueAccessor::PopulateValueAccessor(ECValueAccessor& va, ECEn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECValueAccessor::PopulateValueAccessor(ECValueAccessor& va, IECInstanceCR instance, Utf8CP accessor, bool includeAdhocs)
+ECObjectsStatus ECValueAccessor::PopulateValueAccessor(ECValueAccessor& va, IECInstanceCR instance, Utf8CP accessor, bool includeAdHocs)
     {
     auto status = PopulateValueAccessor(va, instance, accessor);
-    if (ECObjectsStatus::PropertyNotFound == status && includeAdhocs)
+    if (ECObjectsStatus::PropertyNotFound == status && includeAdHocs)
         {
         // Find the array index of the ad-hoc property value with the specified name
         va.Clear();
-        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection(instance.GetEnabler()))
+        for (auto const& containerIndex : AdHocContainerPropertyIndexCollection(instance.GetEnabler()))
             {
-            AdhocPropertyQuery adhoc(instance, containerIndex);
+            AdHocPropertyQuery adHoc(instance, containerIndex);
             uint32_t arrayIndex;
-            if (adhoc.GetPropertyIndex(arrayIndex, accessor))
+            if (adHoc.GetPropertyIndex(arrayIndex, accessor))
                 {
-                va.PushLocation(instance.GetEnabler(), adhoc.GetContainerPropertyIndex(), arrayIndex);
-                va.m_isAdhoc = true;
+                va.PushLocation(instance.GetEnabler(), adHoc.GetContainerPropertyIndex(), arrayIndex);
+                va.m_isAdHoc = true;
                 return ECObjectsStatus::Success;
                 }
             }
@@ -3881,8 +3881,8 @@ bool ECValue::ApplyDotNetFormatting(Utf8StringR out, Utf8CP fmt) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyQuery::AdhocPropertyQuery(IECInstanceCR host, Utf8CP accessString)
-    : AdhocPropertyMetadata(host.GetEnabler(), accessString), m_host(host)
+AdHocPropertyQuery::AdHocPropertyQuery(IECInstanceCR host, Utf8CP accessString)
+    : AdHocPropertyMetadata(host.GetEnabler(), accessString), m_host(host)
     {
     //
     }
@@ -3890,8 +3890,8 @@ AdhocPropertyQuery::AdhocPropertyQuery(IECInstanceCR host, Utf8CP accessString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyQuery::AdhocPropertyQuery(IECInstanceCR host, uint32_t propertyIndex)
-    : AdhocPropertyMetadata(host.GetEnabler(), propertyIndex), m_host(host)
+AdHocPropertyQuery::AdHocPropertyQuery(IECInstanceCR host, uint32_t propertyIndex)
+    : AdHocPropertyMetadata(host.GetEnabler(), propertyIndex), m_host(host)
     {
     //
     }
@@ -3899,25 +3899,25 @@ AdhocPropertyQuery::AdhocPropertyQuery(IECInstanceCR host, uint32_t propertyInde
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::IsSupported(ECEnablerCR enabler, Utf8CP accessString)
+bool AdHocPropertyMetadata::IsSupported(ECEnablerCR enabler, Utf8CP accessString)
     {
-    AdhocPropertyMetadata meta(enabler, accessString, false);
+    AdHocPropertyMetadata meta(enabler, accessString, false);
     return meta.IsSupported();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::IsSupported(ECEnablerCR enabler, uint32_t propIdx)
+bool AdHocPropertyMetadata::IsSupported(ECEnablerCR enabler, uint32_t propIdx)
     {
-    AdhocPropertyMetadata meta(enabler, propIdx, false);
+    AdHocPropertyMetadata meta(enabler, propIdx, false);
     return meta.IsSupported();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyMetadata::AdhocPropertyMetadata(ECEnablerCR enabler, Utf8CP containerAccessString, bool loadMetadata)
+AdHocPropertyMetadata::AdHocPropertyMetadata(ECEnablerCR enabler, Utf8CP containerAccessString, bool loadMetadata)
     : m_containerIndex(0)
     {
     uint32_t containerIndex = 0;
@@ -3928,7 +3928,7 @@ AdhocPropertyMetadata::AdhocPropertyMetadata(ECEnablerCR enabler, Utf8CP contain
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyMetadata::AdhocPropertyMetadata(ECEnablerCR enabler, uint32_t propIdx, bool loadMetadata)
+AdHocPropertyMetadata::AdHocPropertyMetadata(ECEnablerCR enabler, uint32_t propIdx, bool loadMetadata)
     : m_containerIndex(0)
     {
     Init(enabler, propIdx, loadMetadata);
@@ -3937,8 +3937,8 @@ AdhocPropertyMetadata::AdhocPropertyMetadata(ECEnablerCR enabler, uint32_t propI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyMetadata::AdhocPropertyMetadata(ECEnablerCR enabler, Utf8CP containerAccessString)
-    : AdhocPropertyMetadata(enabler, containerAccessString, true)
+AdHocPropertyMetadata::AdHocPropertyMetadata(ECEnablerCR enabler, Utf8CP containerAccessString)
+    : AdHocPropertyMetadata(enabler, containerAccessString, true)
     {
     //
     }
@@ -3946,8 +3946,8 @@ AdhocPropertyMetadata::AdhocPropertyMetadata(ECEnablerCR enabler, Utf8CP contain
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyMetadata::AdhocPropertyMetadata(ECEnablerCR enabler, uint32_t propIdx)
-    : AdhocPropertyMetadata(enabler, propIdx, true)
+AdHocPropertyMetadata::AdHocPropertyMetadata(ECEnablerCR enabler, uint32_t propIdx)
+    : AdHocPropertyMetadata(enabler, propIdx, true)
     {
     //
     }
@@ -3955,7 +3955,7 @@ AdhocPropertyMetadata::AdhocPropertyMetadata(ECEnablerCR enabler, uint32_t propI
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::Init(ECEnablerCR enabler, uint32_t containerIndex, bool loadMetadata)
+bool AdHocPropertyMetadata::Init(ECEnablerCR enabler, uint32_t containerIndex, bool loadMetadata)
     {
     // find struct array property
     ECPropertyCP prop = enabler.LookupECProperty(containerIndex);
@@ -4003,13 +4003,13 @@ bool AdhocPropertyMetadata::Init(ECEnablerCR enabler, uint32_t containerIndex, b
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::IsRequiredMetadata(Index index)
+bool AdHocPropertyMetadata::IsRequiredMetadata(Index index)
     {
     return Index::Name == index || Index::Value == index;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* From managed...See ECAdhocProperties::GetKnownTypeForCode
+* From managed...See ECAdHocProperties::GetKnownTypeForCode
 * @bsistruct                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 enum class PrimitiveTypeCode
@@ -4028,7 +4028,7 @@ enum class PrimitiveTypeCode
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::PrimitiveTypeForCode(PrimitiveType& type, int32_t code)
+bool AdHocPropertyMetadata::PrimitiveTypeForCode(PrimitiveType& type, int32_t code)
     {
     switch (code)
         {
@@ -4047,7 +4047,7 @@ bool AdhocPropertyMetadata::PrimitiveTypeForCode(PrimitiveType& type, int32_t co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::CodeForPrimitiveType(int32_t& code, PrimitiveType type)
+bool AdHocPropertyMetadata::CodeForPrimitiveType(int32_t& code, PrimitiveType type)
     {
     switch (type)
         {
@@ -4066,7 +4066,7 @@ bool AdhocPropertyMetadata::CodeForPrimitiveType(int32_t& code, PrimitiveType ty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyMetadata::IsSupported() const
+bool AdHocPropertyMetadata::IsSupported() const
     {
     return 0 != m_containerIndex;
     }
@@ -4074,7 +4074,7 @@ bool AdhocPropertyMetadata::IsSupported() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8CP AdhocPropertyMetadata::GetPropertyName(Index index) const
+Utf8CP AdHocPropertyMetadata::GetPropertyName(Index index) const
     {
     auto const& name = m_metadataPropertyNames[static_cast<size_t> (index)];
     return !name.empty() ? name.c_str() : nullptr;
@@ -4083,7 +4083,7 @@ Utf8CP AdhocPropertyMetadata::GetPropertyName(Index index) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-IECInstancePtr AdhocPropertyQuery::GetEntry(uint32_t index) const
+IECInstancePtr AdHocPropertyQuery::GetEntry(uint32_t index) const
     {
     if (!IsSupported())
         return nullptr;
@@ -4103,7 +4103,7 @@ IECInstancePtr AdhocPropertyQuery::GetEntry(uint32_t index) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetValue(ECValueR v, uint32_t index, Utf8CP accessor) const
+ECObjectsStatus AdHocPropertyQuery::GetValue(ECValueR v, uint32_t index, Utf8CP accessor) const
     {
     auto entry = GetEntry(index);
     return entry.IsValid() ? entry->GetValue(v, accessor) : ECObjectsStatus::PropertyNotFound;
@@ -4112,7 +4112,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue(ECValueR v, uint32_t index, Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocPropertyQuery::GetPropertyIndex(uint32_t& index, Utf8CP accessString) const
+bool AdHocPropertyQuery::GetPropertyIndex(uint32_t& index, Utf8CP accessString) const
     {
     if (!IsSupported())
         return false;
@@ -4140,7 +4140,7 @@ bool AdhocPropertyQuery::GetPropertyIndex(uint32_t& index, Utf8CP accessString) 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t AdhocPropertyQuery::GetCount() const
+uint32_t AdHocPropertyQuery::GetCount() const
     {
     ECValue v;
     if (IsSupported() && ECObjectsStatus::Success == m_host.GetValue(v, GetContainerPropertyIndex()) && v.IsArray())
@@ -4152,14 +4152,14 @@ uint32_t AdhocPropertyQuery::GetCount() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetName(Utf8StringR name, uint32_t index) const { return GetString(name, index, Index::Name); }
-ECObjectsStatus AdhocPropertyQuery::GetExtendedTypeName(Utf8StringR name, uint32_t index) const { return GetString(name, index, Index::ExtendType); }
-ECObjectsStatus AdhocPropertyQuery::GetUnitName(Utf8StringR name, uint32_t index) const { return GetString(name, index, Index::Unit); }
+ECObjectsStatus AdHocPropertyQuery::GetName(Utf8StringR name, uint32_t index) const { return GetString(name, index, Index::Name); }
+ECObjectsStatus AdHocPropertyQuery::GetExtendedTypeName(Utf8StringR name, uint32_t index) const { return GetString(name, index, Index::ExtendType); }
+ECObjectsStatus AdHocPropertyQuery::GetUnitName(Utf8StringR name, uint32_t index) const { return GetString(name, index, Index::Unit); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetDisplayLabel(Utf8StringR label, uint32_t index) const
+ECObjectsStatus AdHocPropertyQuery::GetDisplayLabel(Utf8StringR label, uint32_t index) const
     {
     auto status = GetString(label, index, Index::DisplayLabel);
     if (ECObjectsStatus::Success != status)
@@ -4176,7 +4176,7 @@ ECObjectsStatus AdhocPropertyQuery::GetDisplayLabel(Utf8StringR label, uint32_t 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetPrimitiveType(PrimitiveType& type, uint32_t index) const
+ECObjectsStatus AdHocPropertyQuery::GetPrimitiveType(PrimitiveType& type, uint32_t index) const
     {
     auto entry = GetEntry(index);
     if (entry.IsNull())
@@ -4205,7 +4205,7 @@ ECObjectsStatus AdhocPropertyQuery::GetPrimitiveType(PrimitiveType& type, uint32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetValue(ECValueR propertyValue, uint32_t index) const
+ECObjectsStatus AdHocPropertyQuery::GetValue(ECValueR propertyValue, uint32_t index) const
     {
     // avoid looking up the struct instance repeatedly.
     auto entry = GetEntry(index);
@@ -4247,7 +4247,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue(ECValueR propertyValue, uint32_t in
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::IsReadOnly(bool& isReadOnly, uint32_t index) const
+ECObjectsStatus AdHocPropertyQuery::IsReadOnly(bool& isReadOnly, uint32_t index) const
     {
     ECValue v;
     auto status = GetValue(v, index, Index::IsReadOnly);
@@ -4261,7 +4261,7 @@ ECObjectsStatus AdhocPropertyQuery::IsReadOnly(bool& isReadOnly, uint32_t index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::IsHidden(bool& isHidden, uint32_t index) const
+ECObjectsStatus AdHocPropertyQuery::IsHidden(bool& isHidden, uint32_t index) const
     {
     ECValue v;
     auto status = GetValue(v, index, Index::IsHidden);
@@ -4275,7 +4275,7 @@ ECObjectsStatus AdhocPropertyQuery::IsHidden(bool& isHidden, uint32_t index) con
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetString(Utf8StringR str, uint32_t index, Index which) const
+ECObjectsStatus AdHocPropertyQuery::GetString(Utf8StringR str, uint32_t index, Index which) const
     {
     auto entry = GetEntry(index);
     return entry.IsValid() ? GetString(str, *entry, which) : ECObjectsStatus::PropertyNotFound;
@@ -4284,7 +4284,7 @@ ECObjectsStatus AdhocPropertyQuery::GetString(Utf8StringR str, uint32_t index, I
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetString(Utf8StringR str, IECInstanceCR instance, Index which) const
+ECObjectsStatus AdHocPropertyQuery::GetString(Utf8StringR str, IECInstanceCR instance, Index which) const
     {
     ECValue v;
     v.SetAllowsPointersIntoInstanceMemory(true);
@@ -4301,7 +4301,7 @@ ECObjectsStatus AdhocPropertyQuery::GetString(Utf8StringR str, IECInstanceCR ins
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetValue(ECValueR v, uint32_t index, Index which) const
+ECObjectsStatus AdHocPropertyQuery::GetValue(ECValueR v, uint32_t index, Index which) const
     {
     auto entry = GetEntry(index);
     return entry.IsValid() ? GetValue(v, *entry, which) : ECObjectsStatus::PropertyNotFound;
@@ -4310,7 +4310,7 @@ ECObjectsStatus AdhocPropertyQuery::GetValue(ECValueR v, uint32_t index, Index w
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyQuery::GetValue(ECValueR v, IECInstanceCR instance, Index which) const
+ECObjectsStatus AdHocPropertyQuery::GetValue(ECValueR v, IECInstanceCR instance, Index which) const
     {
     Utf8CP propName = GetPropertyName(which);
     if (nullptr == propName)
@@ -4328,8 +4328,8 @@ ECObjectsStatus AdhocPropertyQuery::GetValue(ECValueR v, IECInstanceCR instance,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyEdit::AdhocPropertyEdit(IECInstanceR host, Utf8CP accessString)
-    : AdhocPropertyQuery(host, accessString)
+AdHocPropertyEdit::AdHocPropertyEdit(IECInstanceR host, Utf8CP accessString)
+    : AdHocPropertyQuery(host, accessString)
     {
     //
     }
@@ -4337,8 +4337,8 @@ AdhocPropertyEdit::AdhocPropertyEdit(IECInstanceR host, Utf8CP accessString)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocPropertyEdit::AdhocPropertyEdit(IECInstanceR host, uint32_t propIdx)
-    : AdhocPropertyQuery(host, propIdx)
+AdHocPropertyEdit::AdHocPropertyEdit(IECInstanceR host, uint32_t propIdx)
+    : AdHocPropertyQuery(host, propIdx)
     {
     //
     }
@@ -4346,7 +4346,7 @@ AdhocPropertyEdit::AdhocPropertyEdit(IECInstanceR host, uint32_t propIdx)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::SetValue(uint32_t index, Utf8CP accessor, ECValueCR v)
+ECObjectsStatus AdHocPropertyEdit::SetValue(uint32_t index, Utf8CP accessor, ECValueCR v)
     {
     auto entry = GetEntry(index);
     return entry.IsValid() ? entry->SetValue(accessor, v) : ECObjectsStatus::PropertyNotFound;
@@ -4355,7 +4355,7 @@ ECObjectsStatus AdhocPropertyEdit::SetValue(uint32_t index, Utf8CP accessor, ECV
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::SetName(uint32_t index, Utf8CP name)
+ECObjectsStatus AdHocPropertyEdit::SetName(uint32_t index, Utf8CP name)
     {
     if (!ECNameValidation::IsValidName(name))
         return ECObjectsStatus::Error;
@@ -4370,7 +4370,7 @@ ECObjectsStatus AdhocPropertyEdit::SetName(uint32_t index, Utf8CP name)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::SetDisplayLabel(uint32_t index, Utf8CP label, bool andSetName)
+ECObjectsStatus AdHocPropertyEdit::SetDisplayLabel(uint32_t index, Utf8CP label, bool andSetName)
     {
     auto entry = GetEntry(index);
     if (entry.IsNull())
@@ -4402,7 +4402,7 @@ ECObjectsStatus AdhocPropertyEdit::SetDisplayLabel(uint32_t index, Utf8CP label,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::SetValue(uint32_t index, ECValueCR inputV)
+ECObjectsStatus AdHocPropertyEdit::SetValue(uint32_t index, ECValueCR inputV)
     {
     PrimitiveType type;
     auto status = GetPrimitiveType(type, index);
@@ -4424,7 +4424,7 @@ ECObjectsStatus AdhocPropertyEdit::SetValue(uint32_t index, ECValueCR inputV)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::SetIsReadOnly(uint32_t index, bool isReadOnly)
+ECObjectsStatus AdHocPropertyEdit::SetIsReadOnly(uint32_t index, bool isReadOnly)
     {
     auto entry = GetEntry(index);
     if (entry.IsNull())
@@ -4440,7 +4440,7 @@ ECObjectsStatus AdhocPropertyEdit::SetIsReadOnly(uint32_t index, bool isReadOnly
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::SetIsHidden(uint32_t index, bool isHidden)
+ECObjectsStatus AdHocPropertyEdit::SetIsHidden(uint32_t index, bool isHidden)
     {
     auto entry = GetEntry(index);
     if (entry.IsNull())
@@ -4456,15 +4456,15 @@ ECObjectsStatus AdhocPropertyEdit::SetIsHidden(uint32_t index, bool isHidden)
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct RevertAdhocProperty
+struct RevertAdHocProperty
     {
     private:
-        AdhocPropertyEdit&  m_edit;
+        AdHocPropertyEdit&  m_edit;
         uint32_t            m_index;
         bool                m_revert;
     public:
-        RevertAdhocProperty(AdhocPropertyEdit& edit) : m_edit(edit), m_index(edit.GetCount()), m_revert(true) {}
-        ~RevertAdhocProperty()
+        RevertAdHocProperty(AdHocPropertyEdit& edit) : m_edit(edit), m_index(edit.GetCount()), m_revert(true) {}
+        ~RevertAdHocProperty()
             {
             if (m_revert)
                 m_edit.Remove(m_index);
@@ -4476,7 +4476,7 @@ struct RevertAdhocProperty
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECClassCP AdhocPropertyQuery::GetStructClass() const
+ECClassCP AdHocPropertyQuery::GetStructClass() const
     {
     auto prop = GetHost().GetEnabler().LookupECProperty(GetContainerPropertyIndex());
     auto arrayProp = nullptr != prop ? prop->GetAsStructArrayProperty() : nullptr;
@@ -4490,7 +4490,7 @@ ECClassCP AdhocPropertyQuery::GetStructClass() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-StandaloneECEnablerPtr AdhocPropertyQuery::GetStructEnabler() const
+StandaloneECEnablerPtr AdHocPropertyQuery::GetStructEnabler() const
     {
     auto structClass = GetStructClass();
     return GetHost().GetEnablerR().GetEnablerForStructArrayMember(structClass->GetSchema().GetSchemaKey(), structClass->GetName().c_str());
@@ -4499,7 +4499,7 @@ StandaloneECEnablerPtr AdhocPropertyQuery::GetStructEnabler() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::Swap(uint32_t propIdxA, uint32_t propIdxB)
+ECObjectsStatus AdHocPropertyEdit::Swap(uint32_t propIdxA, uint32_t propIdxB)
     {
     auto entryA = GetEntry(propIdxA), entryB = GetEntry(propIdxB);
     if (entryA.IsNull() || entryB.IsNull())
@@ -4525,7 +4525,7 @@ ECObjectsStatus AdhocPropertyEdit::Swap(uint32_t propIdxA, uint32_t propIdxB)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::Add(Utf8CP name, ECValueCR v, Utf8CP displayLabel, Utf8CP unitName, Utf8CP extendedTypeName, bool isReadOnly, bool hidden)
+ECObjectsStatus AdHocPropertyEdit::Add(Utf8CP name, ECValueCR v, Utf8CP displayLabel, Utf8CP unitName, Utf8CP extendedTypeName, bool isReadOnly, bool hidden)
     {
     if (!IsSupported())
         return ECObjectsStatus::OperationNotSupported;
@@ -4577,7 +4577,7 @@ ECObjectsStatus AdhocPropertyEdit::Add(Utf8CP name, ECValueCR v, Utf8CP displayL
     BeAssert(GetCount() > 0);
 
     // Ensure that if anything below fails, we remove the new struct array member.
-    RevertAdhocProperty revert(*this);
+    RevertAdHocProperty revert(*this);
 
     // Create a new struct array instance.
     auto enabler = GetStructEnabler();
@@ -4629,7 +4629,7 @@ ECObjectsStatus AdhocPropertyEdit::Add(Utf8CP name, ECValueCR v, Utf8CP displayL
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::Remove(uint32_t index)
+ECObjectsStatus AdHocPropertyEdit::Remove(uint32_t index)
     {
     if (!IsSupported())
         return ECObjectsStatus::OperationNotSupported;
@@ -4642,7 +4642,7 @@ ECObjectsStatus AdhocPropertyEdit::Remove(uint32_t index)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::Clear()
+ECObjectsStatus AdHocPropertyEdit::Clear()
     {
     return IsSupported() ? GetHostR().ClearArray(GetContainerPropertyIndex()) : ECObjectsStatus::OperationNotSupported;
     }
@@ -4650,7 +4650,7 @@ ECObjectsStatus AdhocPropertyEdit::Clear()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus AdhocPropertyEdit::CopyFrom(AdhocPropertyQueryCR query, bool preserveValues)
+ECObjectsStatus AdHocPropertyEdit::CopyFrom(AdHocPropertyQueryCR query, bool preserveValues)
     {
     if (!IsSupported() || !query.IsSupported())
         return ECObjectsStatus::Error;
@@ -4723,7 +4723,7 @@ ECObjectsStatus AdhocPropertyEdit::CopyFrom(AdhocPropertyQueryCR query, bool pre
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-AdhocContainerPropertyIndexCollection::const_iterator::const_iterator(ECEnablerCR enabler, bool isEnd)
+AdHocContainerPropertyIndexCollection::const_iterator::const_iterator(ECEnablerCR enabler, bool isEnd)
     : m_enabler(enabler), m_current(isEnd ? 0 : enabler.GetFirstPropertyIndex(0))
     {
     if (!ValidateCurrent())
@@ -4733,15 +4733,15 @@ AdhocContainerPropertyIndexCollection::const_iterator::const_iterator(ECEnablerC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool AdhocContainerPropertyIndexCollection::const_iterator::ValidateCurrent() const
+bool AdHocContainerPropertyIndexCollection::const_iterator::ValidateCurrent() const
     {
-    return !IsEnd() && AdhocPropertyMetadata::IsSupported(m_enabler, m_current);
+    return !IsEnd() && AdHocPropertyMetadata::IsSupported(m_enabler, m_current);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AdhocContainerPropertyIndexCollection::const_iterator::MoveNext()
+void AdHocContainerPropertyIndexCollection::const_iterator::MoveNext()
     {
     if (!IsEnd())
         {

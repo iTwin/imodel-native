@@ -12,7 +12,7 @@
 #include <iostream>
 #include <fstream>
 
-using namespace BentleyApi::ECN;
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
@@ -177,92 +177,7 @@ TEST_F(SchemaTest, TestPrimitiveEnumerationProperty)
     ASSERT_TRUE(prop->GetEnumeration() == enumeration);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaTest, CheckEnumerationBasicProperties)
-    {
-    ECSchemaPtr schema;
-    ECEnumerationP enumeration;
 
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    ASSERT_TRUE(schema.IsValid());
-
-    //Create Enumeration
-    auto status = schema->CreateEnumeration(enumeration, "Enumeration", PrimitiveType::PRIMITIVETYPE_Integer);
-    ASSERT_TRUE(enumeration != nullptr);
-    ASSERT_TRUE(status == ECObjectsStatus::Success);
-
-    EXPECT_STREQ(enumeration->GetName().c_str(), "Enumeration");
-
-    //Type
-    ASSERT_TRUE(enumeration->GetType() == PrimitiveType::PRIMITIVETYPE_Integer);
-
-    //Description
-    enumeration->SetDescription("MyDescription");
-    EXPECT_STREQ(enumeration->GetDescription().c_str(), "MyDescription");
-
-    //IsStrict
-    EXPECT_TRUE(enumeration->GetIsStrict());
-    enumeration->SetIsStrict(false);
-    EXPECT_FALSE(enumeration->GetIsStrict());
-
-    //DisplayLabel
-    ASSERT_TRUE(enumeration->GetIsDisplayLabelDefined() == false);
-    EXPECT_STREQ(enumeration->GetDisplayLabel().c_str(), "Enumeration");
-    enumeration->SetDisplayLabel("Display Label");
-    EXPECT_STREQ(enumeration->GetDisplayLabel().c_str(), "Display Label");
-    EXPECT_STREQ(enumeration->GetInvariantDisplayLabel().c_str(), "Display Label");
-
-    ECEnumeratorP enumerator;
-    status = enumeration->CreateEnumerator(enumerator, 5);
-    EXPECT_TRUE(status == ECObjectsStatus::Success);
-    EXPECT_TRUE(enumerator != nullptr);
-    EXPECT_STREQ(enumerator->GetInvariantDisplayLabel().c_str(), "5");
-    enumerator->SetDisplayLabel("DLBL");
-
-    EXPECT_STREQ(enumerator->GetDisplayLabel().c_str(), "DLBL");
-
-    EXPECT_TRUE(enumerator->GetInteger() == 5);
-    EXPECT_STREQ(enumerator->GetString().c_str(), "");
-    EXPECT_FALSE(enumerator->IsString());
-    EXPECT_TRUE(enumerator->IsInteger());
-
-    ECEnumeratorP enumerator2;
-    status = enumeration->CreateEnumerator(enumerator2, 5);
-    EXPECT_TRUE(status == ECObjectsStatus::NamedItemAlreadyExists);
-    EXPECT_TRUE(enumerator2 == nullptr);
-
-    status = enumeration->CreateEnumerator(enumerator2, 1);
-    EXPECT_TRUE(status == ECObjectsStatus::Success);
-    EXPECT_TRUE(enumerator2 != nullptr);
-    enumerator2->SetDisplayLabel("DLBL2");
-
-    EXPECT_TRUE(enumeration->GetEnumeratorCount() == 2);
-
-    int i = 0;
-    for (auto p : enumeration->GetEnumerators())
-        {
-        EXPECT_TRUE(p != nullptr);
-        if (i == 0)
-            {
-            EXPECT_TRUE(p == enumerator);
-            }
-        else if (i == 1)
-            {
-            EXPECT_TRUE(p == enumerator2);
-            }
-
-        i++;
-        }
-
-    ASSERT_TRUE(i == 2);
-
-    EXPECT_TRUE(enumeration->DeleteEnumerator(*enumerator2) == ECObjectsStatus::Success);
-    EXPECT_TRUE(enumeration->GetEnumeratorCount() == 1);
-    enumeration->Clear();
-    EXPECT_TRUE(enumeration->GetEnumeratorCount() == 0);
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
@@ -766,9 +681,8 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     kindOfQuantity->SetPersistenceUnit("CM");
     kindOfQuantity->SetRelativeError(10e-3);
     kindOfQuantity->SetDefaultPresentationUnit("FT");
-    auto& altPresUnits = kindOfQuantity->GetPresentationUnitListR();
-    altPresUnits.push_back("IN");
-    altPresUnits.push_back("MILLIINCH");
+    kindOfQuantity->AddPresentationUnit("IN");
+    kindOfQuantity->AddPresentationUnit("MILLIINCH");
 
     WString fullSchemaName;
     fullSchemaName.AssignUtf8(schema->GetFullSchemaName().c_str());
@@ -821,9 +735,8 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     kindOfQuantity->SetPersistenceUnit("CM");
     kindOfQuantity->SetRelativeError(10e-3);
     kindOfQuantity->SetDefaultPresentationUnit("FT");
-    auto& altPresUnits = kindOfQuantity->GetPresentationUnitListR();
-    altPresUnits.push_back("IN");
-    altPresUnits.push_back("MILLIINCH");
+    kindOfQuantity->AddPresentationUnit("IN");
+    kindOfQuantity->AddPresentationUnit("MILLIINCH");
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(kindOfQuantity2, "OverrideKindOfQuantity"));
     kindOfQuantity2->SetDescription("Kind of a Description here");
@@ -831,9 +744,8 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     kindOfQuantity2->SetPersistenceUnit("CM");
     kindOfQuantity2->SetRelativeError(10e-4);
     kindOfQuantity2->SetDefaultPresentationUnit("FT");
-    auto& altPresUnits2 = kindOfQuantity->GetPresentationUnitListR();
-    altPresUnits2.push_back("IN");
-    altPresUnits2.push_back("MILLIINCH");
+    kindOfQuantity2->AddPresentationUnit("IN");
+    kindOfQuantity2->AddPresentationUnit("MILLIINCH");
 
     schema->CreateEntityClass(parentEntityClass, "ParentEntity");
     parentEntityClass->SetClassModifier(ECClassModifier::Abstract);
@@ -899,98 +811,6 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ASSERT_TRUE(derivedProp3 != nullptr);
     ASSERT_TRUE(derivedProp3->IsKindOfQuantityDefinedLocally());
     ASSERT_STREQ("OverrideKindOfQuantity", derivedProp3->GetKindOfQuantity()->GetName().c_str());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedRoleLabels)
-    {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "testSchema", "ts", 1, 0, 0);
-    schema->SetDescription("Schema to test Relationship Class Role Label Inheritance serialization.");
-    schema->SetDisplayLabel("RoleLabel Inheritance Test Schema");
-
-    ECEntityClassP entityClassA;
-    ECEntityClassP entityClassB;
-    ECEntityClassP entityClassC;
-    ECRelationshipClassP classARelB;
-    ECRelationshipClassP classARelC;
-    ECRelationshipClassP classBRelC;
-
-    schema->CreateEntityClass(entityClassA, "A");
-    entityClassA->SetClassModifier(ECClassModifier::Abstract);
-    entityClassA->SetDisplayLabel("Entity A");
-    entityClassA->SetDescription("Entity A Description");
-
-    schema->CreateEntityClass(entityClassB, "B");
-    entityClassB->SetClassModifier(ECClassModifier::Abstract);
-    entityClassB->SetDisplayLabel("Entity B");
-    entityClassB->SetDescription("Entity B Description");
-    entityClassB->AddBaseClass(*entityClassA);
-
-    schema->CreateEntityClass(entityClassC, "C");
-    entityClassC->SetClassModifier(ECClassModifier::Abstract);
-    entityClassC->SetDisplayLabel("Entity C");
-    entityClassC->SetDescription("Entity C Description");
-    entityClassC->AddBaseClass(*entityClassB);
-
-    schema->CreateRelationshipClass(classARelB, "ARelB");
-    classARelB->SetClassModifier(ECClassModifier::Abstract);
-    classARelB->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classARelB->GetSource().AddClass(*entityClassA);
-    classARelB->GetSource().SetRoleLabel("testSource");
-    classARelB->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classARelB->GetTarget().AddClass(*entityClassB);
-    classARelB->GetTarget().SetRoleLabel("testTarget");
-
-    schema->CreateRelationshipClass(classARelC, "ARelC");
-    classARelC->SetClassModifier(ECClassModifier::Abstract);
-    classARelC->AddBaseClass(*classARelB);
-    classARelC->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classARelC->GetSource().AddClass(*entityClassA);
-    classARelC->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classARelC->GetTarget().AddClass(*entityClassC);
-
-    schema->CreateRelationshipClass(classBRelC, "BRelC");
-    classBRelC->SetClassModifier(ECClassModifier::Sealed);
-    classBRelC->AddBaseClass(*classARelC);
-    classBRelC->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classBRelC->GetSource().AddClass(*entityClassB);
-    classBRelC->GetSource().SetRoleLabel("overrideSource");
-    classBRelC->GetTarget().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
-    classBRelC->GetTarget().AddClass(*entityClassC);
-    classBRelC->GetTarget().SetRoleLabel("overrideTarget");
-
-    SchemaWriteStatus writeStatus = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"InheritedRoleLabel.01.00.00.ecschema.xml").c_str());
-    ASSERT_EQ(SchemaWriteStatus::Success, writeStatus);
-
-    ECSchemaPtr readSchema;
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus readStatus = ECSchema::ReadFromXmlFile(readSchema, ECTestFixture::GetTempDataPath(L"InheritedRoleLabel.01.00.00.ecschema.xml").c_str(), *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, readStatus);
-    ASSERT_TRUE(readSchema.IsValid());
-
-    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined());
-    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testSource", readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetSource().GetInvariantRoleLabel().c_str());
-    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined());
-    EXPECT_TRUE(readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testTarget", readSchema->GetClassCP("ARelB")->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel().c_str());
-
-    EXPECT_TRUE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined());
-    EXPECT_FALSE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testSource", readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetSource().GetInvariantRoleLabel().c_str());
-    EXPECT_TRUE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined());
-    EXPECT_FALSE(readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testTarget", readSchema->GetClassCP("ARelC")->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel().c_str());
-
-    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefined());
-    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("overrideSource", readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetSource().GetInvariantRoleLabel().c_str());
-    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefined());
-    EXPECT_TRUE(readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("overrideTarget", readSchema->GetClassCP("BRelC")->GetRelationshipClassCP()->GetTarget().GetInvariantRoleLabel().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1182,6 +1002,38 @@ TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithIsMixin)
     EXPECT_FALSE(mixinClass->IsMixin()) << "IsMixin returned true even though the custom attribute was successfully removed.";
 
     EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the appliesTo class could not be removed even though all references to it have been removed.";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaReferenceTest, ExpectErrorWhenTryRemoveReferencedSchemaWithPropertyCategory)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
+
+    ECEntityClassP entityClass;
+    PropertyCategoryP propertyCategory;
+    PrimitiveECPropertyP primProp;
+
+    schema->AddReferencedSchema(*refSchema);
+    EXPECT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema));
+
+    refSchema->CreatePropertyCategory(propertyCategory, "PropertyCategory");
+    
+    schema->CreateEntityClass(entityClass, "Entity");
+    entityClass->CreatePrimitiveProperty(primProp, "PrimProp");
+    primProp->SetCategory(propertyCategory);
+
+    EXPECT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the property category was removed when it shouldn't be because it is still in use within the ECProperty";
+
+    ASSERT_EQ(ECObjectsStatus::Success, primProp->SetCategory(nullptr));
+    EXPECT_FALSE(primProp->IsCategoryDefinedLocally());
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema)) << "The schema containing the propertyCateogry could not be removed even though all references to it have been removed.";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1564,6 +1416,36 @@ TEST_F(SchemaCopyTest, CopySchemaWithEnumeration)
     EXPECT_TRUE(enumeration2->GetType() == enumeration->GetType());
     EXPECT_TRUE(enumeration2 != enumeration); //ensure the object was copied and not just referenced
     EXPECT_STREQ(enumeration2->GetDisplayLabel().c_str(), enumeration->GetDisplayLabel().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, CopySchemaWithPropertyCategory)
+    {
+    ECSchemaPtr schema;
+    PropertyCategoryP propertyCategory;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+
+    auto status = schema->CreatePropertyCategory(propertyCategory, "PropertyCategory");
+    ASSERT_TRUE(propertyCategory != nullptr);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    EXPECT_TRUE(schema.IsValid());
+    propertyCategory->SetDisplayLabel("My Display Label");
+    propertyCategory->SetDescription("My Description");
+    propertyCategory->SetPriority(3);
+
+    ECSchemaPtr copiedSchema = nullptr;
+    status = schema->CopySchema(copiedSchema);
+    ASSERT_TRUE(status == ECObjectsStatus::Success);
+    EXPECT_TRUE(copiedSchema.IsValid());
+
+    PropertyCategoryCP copiedPropertyCategory = copiedSchema->GetPropertyCategoryCP("PropertyCategory");
+    ASSERT_TRUE(copiedPropertyCategory != nullptr);
+    EXPECT_TRUE(copiedPropertyCategory != propertyCategory); //ensure the object was copied and not just referenced
+    EXPECT_TRUE(copiedPropertyCategory->GetPriority() == propertyCategory->GetPriority());
+    EXPECT_STREQ(copiedPropertyCategory->GetDisplayLabel().c_str(), propertyCategory->GetDisplayLabel().c_str());
+    EXPECT_STREQ(copiedPropertyCategory->GetDescription().c_str(), propertyCategory->GetDescription().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2126,157 +2008,6 @@ TEST_F(SchemaTest, DeleteKOQ)
     schema->DebugDump();
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Robert.Schili                     07/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, SetGetMinMaxInt)
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    Utf8CP schemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEntityClass typeName='Foo' >"
-        "    </ECEntityClass>"
-        "</ECSchema>";
-
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-
-    ECClassP cp = schema->GetClassP("Foo");
-    ASSERT_NE(cp, nullptr);
-
-    PrimitiveECPropertyP primp;
-    ASSERT_EQ(cp->CreatePrimitiveProperty(primp, "Foo"), ECObjectsStatus::Success);
-    ASSERT_EQ(primp->SetType(PrimitiveType::PRIMITIVETYPE_Integer), ECObjectsStatus::Success);
-    ASSERT_EQ(primp->IsMinimumLengthDefined(), false);
-    ASSERT_EQ(primp->IsMaximumLengthDefined(), false);
-    ASSERT_EQ(primp->IsMaximumValueDefined(), false);
-    ASSERT_EQ(primp->IsMinimumValueDefined(), false);
-
-    ECValue val;
-    val.SetUtf8CP("bar");
-    ASSERT_EQ(primp->SetMaximumValue(val), ECObjectsStatus::DataTypeNotSupported);
-    val.SetInteger(42);
-    ASSERT_EQ(primp->SetMaximumValue(val), ECObjectsStatus::Success);
-    ASSERT_EQ(primp->IsMaximumValueDefined(), true);
-    val.SetToNull(); //ensure val has been copied
-    ASSERT_EQ(primp->IsMaximumValueDefined(), true);
-
-    ASSERT_EQ(primp->GetMaximumValue(val), ECObjectsStatus::Success);
-    ASSERT_EQ(val.GetInteger(), 42);
-
-    primp->ResetMaximumValue();
-    ASSERT_EQ(primp->IsMaximumValueDefined(), false);
-    ASSERT_EQ(primp->GetMaximumValue(val), ECObjectsStatus::Error);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Robert.Schili                     07/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, GetSetPropertyMinMaxLength)
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    Utf8CP schemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEntityClass typeName='Foo' >"
-        "    </ECEntityClass>"
-        "</ECSchema>";
-
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-
-    ECClassP cp = schema->GetClassP("Foo");
-    ASSERT_NE(cp, nullptr);
-
-    PrimitiveECPropertyP primp;
-    ASSERT_EQ(cp->CreatePrimitiveProperty(primp, "Foo"), ECObjectsStatus::Success);
-    ASSERT_EQ(primp->SetType(PrimitiveType::PRIMITIVETYPE_String), ECObjectsStatus::Success);
-    ASSERT_EQ(primp->IsMinimumLengthDefined(), false);
-    ASSERT_EQ(primp->IsMaximumLengthDefined(), false);
-
-    ASSERT_EQ(primp->SetMaximumLength(42), ECObjectsStatus::Success);
-    ASSERT_EQ(primp->IsMaximumLengthDefined(), true);
-    ASSERT_EQ(primp->GetMaximumLength(), 42);
-
-    primp->ResetMaximumLength();
-    ASSERT_EQ(primp->IsMaximumLengthDefined(), false);
-    ASSERT_EQ(primp->GetMaximumLength(), 0);
-
-    ASSERT_EQ(primp->SetMinimumLength(10), ECObjectsStatus::Success);
-    ASSERT_EQ(primp->IsMinimumLengthDefined(), true);
-    ASSERT_EQ(primp->GetMinimumLength(), 10);
-
-    primp->ResetMinimumLength();
-    ASSERT_EQ(primp->IsMinimumLengthDefined(), false);
-    ASSERT_EQ(primp->GetMinimumLength(), 0);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Robert.Schili                     07/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, PropertyMinMaxValueDeserialization)
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    Utf8CP schemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <ECEntityClass typeName='Foo'>"
-        "       <ECProperty propertyName='DoubleProp' typeName='double' MaximumValue='3.0' MinimumValue='42'/>"
-        "    </ECEntityClass>"
-        "</ECSchema>";
-
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-
-    ECClassP cp = schema->GetClassP("Foo");
-    ASSERT_NE(cp, nullptr);
-
-    ECPropertyP pp = cp->GetPropertyP("DoubleProp");
-    ASSERT_NE(pp, nullptr);
-
-    ECValue minVal;
-    ECValue maxVal;
-    ASSERT_EQ(pp->GetMinimumValue(minVal), ECObjectsStatus::Success);
-    ASSERT_EQ(pp->GetMaximumValue(maxVal), ECObjectsStatus::Success);
-
-    ASSERT_EQ(minVal.IsNull(), false);
-    ASSERT_EQ(maxVal.IsNull(), false);
-
-    ASSERT_EQ(minVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
-    ASSERT_EQ(maxVal.GetPrimitiveType(), PrimitiveType::PRIMITIVETYPE_Double);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                      01/17
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, PropertyMinMaxLengthDeserialization)
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    Utf8CP schemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "    <ECEntityClass typeName='Foo'>"
-        "       <ECProperty propertyName='StringProp' typeName='string' MinimumLength='3' MaximumLength='42'/>"
-        "    </ECEntityClass>"
-        "</ECSchema>";
-
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-
-    ECClassP cp = schema->GetClassP("Foo");
-    ASSERT_NE(cp, nullptr);
-
-    ECPropertyP pp = cp->GetPropertyP("StringProp");
-    ASSERT_NE(pp, nullptr);
-
-    EXPECT_TRUE(pp->IsMinimumLengthDefined());
-    EXPECT_TRUE(pp->IsMaximumLengthDefined());
-
-    EXPECT_EQ(3, pp->GetMinimumLength());
-    EXPECT_EQ(42, pp->GetMaximumLength());
-    }
-
 // This test was to illustrate a problem with the ECDiff tool.  However, we decided to not to make the fix on this branch.  The tool has been rewritten on bim0200.
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2016
@@ -2385,6 +2116,38 @@ TEST_F(SchemaVersionTest, CreateSchemaECVersionTest)
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5, ECVersion::V2_0);
     EXPECT_TRUE(schema->IsECVersion(ECVersion::V2_0)) << "The schema was created as an EC2.0 schema.";
     EXPECT_FALSE(schema->IsECVersion(ECVersion::Latest)) << "The schema was created as an EC2.0 schema so it is not the latest";
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                     06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaVersionTest, ChangeOriginalECXmlVersion)
+    {
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="utf-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+        </ECSchema>
+        )xml";
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());
+    ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(3, 1));
+    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor());
+    }
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestSchema", "ts", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(3, schema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(1, schema->GetOriginalECXmlVersionMinor());
+    ASSERT_EQ(ECObjectsStatus::Success, schema->SetOriginalECXmlVersion(2, 0));
+    EXPECT_EQ(2, schema->GetOriginalECXmlVersionMajor());
+    EXPECT_EQ(0, schema->GetOriginalECXmlVersionMinor());
     }
     }
 

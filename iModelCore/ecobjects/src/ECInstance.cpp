@@ -280,17 +280,17 @@ ECObjectsStatus     IECInstance::GetValue(ECValueR v, Utf8CP propertyAccessStrin
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus     IECInstance::GetValueOrAdhoc(ECValueR v, Utf8CP accessString) const
+ECObjectsStatus     IECInstance::GetValueOrAdHoc(ECValueR v, Utf8CP accessString) const
     {
     auto status = GetValue(v, accessString);
     if (ECObjectsStatus::PropertyNotFound == status)
         {
-        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection(GetEnabler()))
+        for (auto const& containerIndex : AdHocContainerPropertyIndexCollection(GetEnabler()))
             {
-            AdhocPropertyQuery adhocs(*this, containerIndex);
+            AdHocPropertyQuery adHocs(*this, containerIndex);
             uint32_t propertyIndex;
-            if (adhocs.GetPropertyIndex(propertyIndex, accessString))
-                status = adhocs.GetValue(v, propertyIndex);
+            if (adHocs.GetPropertyIndex(propertyIndex, accessString))
+                status = adHocs.GetValue(v, propertyIndex);
             }
         }
 
@@ -378,19 +378,19 @@ ECObjectsStatus     IECInstance::ChangeValue(Utf8CP propertyAccessString, ECValu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECInstance::ChangeValueOrAdhoc(Utf8CP propertyAccessString, ECValueCR v)
+ECObjectsStatus IECInstance::ChangeValueOrAdHoc(Utf8CP propertyAccessString, ECValueCR v)
     {
     auto status = ChangeValue(propertyAccessString, v);
     if (ECObjectsStatus::PropertyNotFound == status)
         {
-        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection(GetEnabler()))
+        for (auto const& containerIndex : AdHocContainerPropertyIndexCollection(GetEnabler()))
             {
-            AdhocPropertyEdit adhocs(*this, containerIndex);
+            AdHocPropertyEdit adHocs(*this, containerIndex);
             uint32_t propertyIndex;
-            if (adhocs.GetPropertyIndex(propertyIndex, propertyAccessString))
+            if (adHocs.GetPropertyIndex(propertyIndex, propertyAccessString))
                 {
                 bool isReadOnly = true;
-                status = adhocs.IsReadOnly(isReadOnly, propertyIndex);
+                status = adHocs.IsReadOnly(isReadOnly, propertyIndex);
                 if (ECObjectsStatus::Success == status)
                     {
                     if (isReadOnly)
@@ -398,10 +398,10 @@ ECObjectsStatus IECInstance::ChangeValueOrAdhoc(Utf8CP propertyAccessString, ECV
                     else
                         {
                         ECValue curV;
-                        if (ECObjectsStatus::Success == adhocs.GetValue(curV, propertyIndex) && curV.Equals(v))
+                        if (ECObjectsStatus::Success == adHocs.GetValue(curV, propertyIndex) && curV.Equals(v))
                             status = ECObjectsStatus::PropertyValueMatchesNoChange;
                         else
-                            status = adhocs.SetValue(propertyIndex, v);
+                            status = adHocs.SetValue(propertyIndex, v);
                         }
                     }
                 }
@@ -427,9 +427,9 @@ ECObjectsStatus     IECInstance::SetValue(Utf8CP propertyAccessString, ECValueCR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus IECInstance::SetValueOrAdhoc(Utf8CP propertyAccessString, ECValueCR v)
+ECObjectsStatus IECInstance::SetValueOrAdHoc(Utf8CP propertyAccessString, ECValueCR v)
     {
-    auto status = ChangeValueOrAdhoc(propertyAccessString, v);
+    auto status = ChangeValueOrAdHoc(propertyAccessString, v);
     if (ECObjectsStatus::PropertyValueMatchesNoChange == status)
         return ECObjectsStatus::Success;
 
@@ -592,19 +592,19 @@ bool                IECInstance::IsPropertyReadOnly(Utf8CP accessString) const {
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IECInstance::IsPropertyOrAdhocReadOnly(Utf8CP accessString) const
+bool IECInstance::IsPropertyOrAdHocReadOnly(Utf8CP accessString) const
     {
     uint32_t propertyIndex;
     auto status = GetEnabler().GetPropertyIndex(propertyIndex, accessString);
     if (ECObjectsStatus::PropertyNotFound == status)
         {
         bool readOnly = true;
-        for (auto const& containerIndex : AdhocContainerPropertyIndexCollection(GetEnabler()))
+        for (auto const& containerIndex : AdHocContainerPropertyIndexCollection(GetEnabler()))
             {
-            AdhocPropertyQuery adhocs(*this, containerIndex);
-            if (adhocs.GetPropertyIndex(propertyIndex, accessString))
+            AdHocPropertyQuery adHocs(*this, containerIndex);
+            if (adHocs.GetPropertyIndex(propertyIndex, accessString))
                 {
-                status = adhocs.IsReadOnly(readOnly, propertyIndex);
+                status = adHocs.IsReadOnly(readOnly, propertyIndex);
                 break;
                 }
             }
@@ -836,7 +836,7 @@ static ECObjectsStatus          setInternalValueHelper(IECInstanceR instance, EC
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           IECInstance::GetValueUsingAccessor(ECValueR v, ECValueAccessorCR accessor) const
     {
-    if (accessor.IsAdhocProperty())
+    if (accessor.IsAdHocProperty())
         {
         // The array index is already pointing to the index of the desired ad-hoc property
         if (1 != accessor.GetDepth() || ECValueAccessor::INDEX_ROOT == accessor[0].GetArrayIndex())
@@ -845,8 +845,8 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor(ECValueR v, ECValue
             return ECObjectsStatus::Error;
             }
 
-        AdhocPropertyQuery adhoc(*this, accessor[0].GetPropertyIndex());
-        return adhoc.GetValue(v, accessor[0].GetArrayIndex());
+        AdHocPropertyQuery adHoc(*this, accessor[0].GetPropertyIndex());
+        return adHoc.GetValue(v, accessor[0].GetArrayIndex());
         }
 
     ECObjectsStatus status = ECObjectsStatus::Success;
@@ -879,7 +879,7 @@ ECObjectsStatus           IECInstance::GetValueUsingAccessor(ECValueR v, ECValue
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor(ECValueAccessorCR accessor, ECValueCR valueToSet)
     {
-    if (accessor.IsAdhocProperty())
+    if (accessor.IsAdHocProperty())
         {
         // The array index is already pointing to the index of the desired ad-hoc property
         if (1 != accessor.GetDepth() || ECValueAccessor::INDEX_ROOT == accessor[0].GetArrayIndex())
@@ -888,8 +888,8 @@ ECObjectsStatus           IECInstance::SetInternalValueUsingAccessor(ECValueAcce
             return ECObjectsStatus::Error;
             }
 
-        AdhocPropertyEdit adhoc(*this, accessor[0].GetPropertyIndex());
-        return adhoc.SetValue(accessor[0].GetArrayIndex(), valueToSet);
+        AdHocPropertyEdit adHoc(*this, accessor[0].GetPropertyIndex());
+        return adHoc.SetValue(accessor[0].GetArrayIndex(), valueToSet);
         }
 
     ECObjectsStatus status = ECObjectsStatus::Success;
@@ -2751,7 +2751,7 @@ struct  InstanceXmlReader
         //--------------------------------------------------------------------------------------
         // @bsimethod                                    Colin.Kerr                     12/15
         //---------------+---------------+---------------+---------------+---------------+------
-        InstanceReadStatus  ReadSimplePropertyValue(Utf8StringCR propertyName, PrimitiveType propertyType, Utf8StringP baseAccessString, IECInstanceP ecInstance, BeXmlNodeR propertyValueNode, PrimitiveType serializedType)
+        InstanceReadStatus  ReadSimplePropertyValue(Utf8StringCR propertyName, PrimitiveType propertyType, Utf8StringP baseAccessString, IECInstanceP ecInstance, BeXmlNodeR propertyValueNode, PrimitiveType serializedType, KindOfQuantityCP koq, Utf8CP oldUnitName)
             {
             // on entry, propertyValueNode is the xml node for the primitive property value.
             InstanceReadStatus   ixrStatus;
@@ -2763,6 +2763,15 @@ struct  InstanceXmlReader
                 {
                 //A malformed value was found.  A warning was shown; just move on.
                 return InstanceReadStatus::Success;
+                }
+
+            if (nullptr != koq && !Utf8String::IsNullOrEmpty(oldUnitName))
+                {
+                Units::UnitCP oldUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(oldUnitName);
+                double convertedValue;
+                oldUnit->Convert(convertedValue, ecValue.GetDouble(), koq->GetPersistenceUnit().GetUnit());
+                
+                ecValue.SetDouble(convertedValue);
                 }
 
             ECObjectsStatus setStatus;
@@ -2865,7 +2874,9 @@ struct  InstanceXmlReader
         +---------------+---------------+---------------+---------------+---------------+------*/
         InstanceReadStatus   ReadPrimitivePropertyValue(PrimitiveECPropertyP primitiveProperty, IECInstanceP ecInstance, Utf8String* baseAccessString, BeXmlNodeR propertyValueNode)
             {
-            return ReadSimplePropertyValue(primitiveProperty->GetName(), primitiveProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, m_context.GetSerializedPrimitiveType(*primitiveProperty));
+            Utf8String oldUnitName = m_context.GetOldUnitName(*primitiveProperty);
+            return ReadSimplePropertyValue(primitiveProperty->GetName(), primitiveProperty->GetType(), baseAccessString, ecInstance, propertyValueNode, m_context.GetSerializedPrimitiveType(*primitiveProperty), 
+                    primitiveProperty->GetKindOfQuantity(), oldUnitName.c_str());
             }
 
         /*---------------------------------------------------------------------------------**//**

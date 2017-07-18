@@ -8,8 +8,9 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-using namespace BentleyApi::ECN;
 
 struct SchemaHolderTestFixture : ECTestFixture
     {

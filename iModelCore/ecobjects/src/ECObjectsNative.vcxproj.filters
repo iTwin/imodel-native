@@ -99,9 +99,6 @@
     <ClCompile Include="StandardCustomAttributeHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ECDiff.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Units\Units.cpp">
       <Filter>ECUnits\Source Files</Filter>
     </ClCompile>
@@ -213,19 +210,16 @@
     <ClCompile Include="ECJsonUtilities.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ecprovider.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ECRelationshipPath.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SchemaResourceKeyHelper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AdHocJsonContainer.cpp">
+    <ClCompile Include="ECSchemaValidator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ECSchemaValidator.cpp">
+    <ClCompile Include="PropertyCategory.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -287,9 +281,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\ECDiff.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="ecobjectsnativelog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -327,9 +318,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\PublicApi\ECObjects\SchemaDiff.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\SystemSymbolProvider.h">

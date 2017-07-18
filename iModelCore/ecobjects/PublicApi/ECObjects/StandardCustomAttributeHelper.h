@@ -93,6 +93,8 @@ public:
     //! @param[in] attributeName The name of the ECCustomAttributeClass to create an ECInstance of.
     //! @return An IECInstance of the given custom attribute name, if it is one of the supported custom attributes. Otherwise, nullptr will be returned.
     ECOBJECTS_EXPORT static IECInstancePtr CreateCustomAttributeInstance(Utf8CP attributeName);
+
+    ECOBJECTS_EXPORT static ECSchemaPtr GetSchema();
     };
 
 //=======================================================================================    

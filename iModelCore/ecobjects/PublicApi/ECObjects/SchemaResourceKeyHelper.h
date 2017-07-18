@@ -90,6 +90,8 @@ struct SchemaResourceKeyHelper
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(ECEnumerationCR ecEnumeration);
         ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(KindOfQuantityCR kindOfQuantity);
         ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(KindOfQuantityCR kindOfQuantity);
+        ECOBJECTS_EXPORT static Utf8String GetTypeDisplayLabelKey(PropertyCategoryCR propertyCategory);
+        ECOBJECTS_EXPORT static Utf8String GetTypeDescriptionKey(PropertyCategoryCR propertyCategory);
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDisplayLabelKey(ECPropertyCR ecProperty);
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDescriptionKey(ECPropertyCR ecProperty);
         ECOBJECTS_EXPORT static Utf8String GetTypeChildDisplayLabelKey(ECEnumeratorCR ecEnumerator);

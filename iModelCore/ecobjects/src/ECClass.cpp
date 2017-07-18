@@ -29,7 +29,7 @@ void ECClass::SetErrorHandling (bool doAssert)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECClass::ECClass (ECSchemaCR schema)
     :
-    m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments()
+    m_schema(schema), m_modifier(ECClassModifier::None), m_xmlComments(), m_contentXmlComments(), m_propertyCountCached(false), m_propertyCount(0)
     {
     //
     };
@@ -580,6 +580,9 @@ void ECClass::InvalidateDefaultStandaloneEnabler() const
     m_defaultStandaloneEnabler = NULL;
     for (ECClassP derivedClass : m_derivedClasses)
         derivedClass->InvalidateDefaultStandaloneEnabler();
+
+    m_propertyCountCached = false;
+    m_propertyCount = 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1336,6 +1339,39 @@ ECObjectsStatus ECClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginni
         {
         if (!ECSchema::IsSchemaReferenced(this->GetSchema(), baseClass.GetSchema()))
             return ECObjectsStatus::SchemaNotFound;
+
+        IECInstancePtr notSubClassableCA = baseClass.GetCustomAttributeLocal("CoreCustomAttributes", "NotSubclassableInReferencingSchemas");
+        if (notSubClassableCA.IsValid())
+            {
+            bool exceptionFound = false;
+            uint32_t exceptionsIndex;
+            notSubClassableCA->GetEnabler().GetPropertyIndex(exceptionsIndex, "Exceptions");
+            ECValue exceptionsArray;
+            if (ECObjectsStatus::Success == notSubClassableCA->GetValue(exceptionsArray, exceptionsIndex))
+                {
+                GetFullName(); // Call to ensure m_fullName is cached.
+                ArrayInfo arrayInfo = exceptionsArray.GetArrayInfo();
+                for (uint32_t i = 0; i < arrayInfo.GetCount(); ++i)
+                    {
+                    ECValue exception;
+                    if (ECObjectsStatus::Success != notSubClassableCA->GetValue(exception, exceptionsIndex, i) || exception.IsNull())
+                        continue;
+
+                    if (m_fullName.EqualsIAscii(exception.GetUtf8CP()))
+                        {
+                        exceptionFound = true;
+                        break;
+                        }
+                    }
+                }
+
+            if (!exceptionFound)
+                {
+                LOG.errorv("Cannot add class '%s' as a base class to '%s' because the base class has the 'NotSubclassableInReferencingSchema' CA, this class is in a referencing schema and is not listed as an exception",
+                    baseClass.GetFullName(), GetFullName());
+                return ECObjectsStatus::BaseClassUnacceptable;
+                }
+            }
         }
 
     if (this == &baseClass || ClassesAreEqualByName(this, &baseClass) || baseClass.TraverseBaseClasses(&CheckBaseClassCycles, true, this))
@@ -2212,14 +2248,18 @@ ECSchemaCP ECClass::_GetContainerSchema
 +---------------+---------------+---------------+---------------+---------------+------*/
 size_t ECClass::GetPropertyCount (bool includeBaseClasses) const
     {
-    size_t nProperties = m_propertyList.size();
-    if (includeBaseClasses)
-        {
-        for (const ECClassP& baseClass: m_baseClasses)
-            nProperties += baseClass->GetPropertyCount (true);
-        }
+    if (!includeBaseClasses || !HasBaseClasses())
+        return m_propertyList.size();
 
-    return nProperties;
+    if (m_propertyCountCached)
+        return m_propertyCount;
+
+    PropertyList props;
+    GetProperties(true, &props);
+    m_propertyCount = (uint16_t)props.size();
+    m_propertyCountCached = true;
+
+    return m_propertyCount;
     }
     
 /*---------------------------------------------------------------------------------**//**
@@ -2334,6 +2374,10 @@ bool ECEntityClass::Verify() const
         return true;
     
     bool thisIsMixin = IsMixin();
+
+    if (thisIsMixin && GetBaseClasses().size() > 1)
+        return false;
+
     for(ECClassCP baseClass : GetBaseClasses())
         {
         ECEntityClassCP baseAsEntity = baseClass->GetEntityClassCP();
@@ -2347,8 +2391,11 @@ bool ECEntityClass::Verify() const
 
 ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtBeginning, bool resolveConflicts, bool validate)
     {
-    //if (validate)
-    //    {
+    if (validate)
+        {
+        if (IsMixin() && GetBaseClasses().size() == 1)
+            return ECObjectsStatus::BaseClassUnacceptable;
+
     //    ECEntityClassCP baseAsEntity = baseClass.GetEntityClassCP();
     //    if (nullptr != baseAsEntity)
     //        {
@@ -2356,7 +2403,7 @@ ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtB
     //        if (!VerifyMixinHierarchy(thisIsMixin, baseAsEntity))
     //            return ECObjectsStatus::BaseClassUnacceptable;
     //        }
-    //    }
+        }
 
     return T_Super::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
     }
@@ -2756,7 +2803,7 @@ ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipC
 
     if (m_constraintClasses.size() != 0 && baseConstraint.GetConstraintClasses().size() != 0)
         {
-        for(ECEntityClassCP constraintClass : m_constraintClasses)
+        for(ECClassCP constraintClass : m_constraintClasses)
             {
             if (!baseConstraint.SupportsClass(*constraintClass))
                 {
@@ -2812,7 +2859,7 @@ static void FindCommonBaseClass(ECEntityClassCP &commonClass, ECEntityClassCP st
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues)
+ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECClassCP abstractConstraint, bool resolveIssues)
     {
     resolveIssues &= m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1);
     if (abstractConstraint == nullptr)
@@ -2894,7 +2941,8 @@ ECObjectsStatus ECRelationshipConstraint::ValidateAbstractConstraint(ECEntityCla
 
     for (const auto &constraint : m_constraintClasses)
         {
-        if (!constraint->IsOrAppliesTo(abstractConstraint))
+        if ((constraint->IsRelationshipClass() && !constraint->Is(abstractConstraint)) ||
+            (constraint->IsEntityClass() && !constraint->GetEntityClassCP()->IsOrAppliesTo(abstractConstraint->GetEntityClassCP())))
             {
             LOG.messagev(resolveIssues ? NativeLogging::SEVERITY::LOG_WARNING : NativeLogging::SEVERITY::LOG_ERROR,
                 "Abstract Constraint Violation: The constraint class '%s' on %s-Constraint of '%s' is not derived from the abstract constraint class '%s'. "
@@ -2927,14 +2975,16 @@ ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    
 +---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint(ECEntityClassCR constraintClass) const
+ECObjectsStatus ECRelationshipConstraint::ValidateClassConstraint(ECClassCR constraintClass) const
     {
-    ECEntityClassCP abstractConstraint = GetAbstractConstraint();
-    if (abstractConstraint != nullptr && !constraintClass.IsOrAppliesTo(abstractConstraint))
+    ECClassCP abstractConstraint = GetAbstractConstraint();
+    if (abstractConstraint != nullptr && 
+            ((constraintClass.IsEntityClass() && !constraintClass.GetEntityClassCP()->IsOrAppliesTo(abstractConstraint->GetEntityClassCP())) ||
+            (constraintClass.IsRelationshipClass() && !constraintClass.Is(abstractConstraint))))
         {
-        LOG.messagev(m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_1)? NativeLogging::SEVERITY::LOG_ERROR : NativeLogging::SEVERITY::LOG_WARNING,
+        LOG.messagev(m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_1) ? NativeLogging::SEVERITY::LOG_ERROR : NativeLogging::SEVERITY::LOG_WARNING,
             "Class Constraint Violation: The Class '%s' on %s-Constraint of '%s' is not derived from the Abstract Constraint Class '%s'.",
-                constraintClass.GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), abstractConstraint->GetFullName());
+            constraintClass.GetFullName(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(), abstractConstraint->GetFullName());
 
         return ECObjectsStatus::RelationshipConstraintsNotCompatible;
         }
@@ -3016,9 +3066,23 @@ ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel(bool resolveIssues)
         {
         if (resolveIssues && m_relClass->GetSchema().OriginalECXmlVersionLessThan(ECVersion::V3_1))
             {
-            m_roleLabel = m_relClass->GetInvariantDisplayLabel();
-            if (!m_isSource)
-                m_roleLabel += " (Reversed)";
+            if (m_relClass->HasBaseClasses())
+                {
+                ECClassCP baseClass = m_relClass->GetBaseClasses()[0];
+                if (nullptr == baseClass)
+                    return ECObjectsStatus::Error;
+                ECRelationshipClassCP baseRel = baseClass->GetRelationshipClassCP();
+                m_roleLabel = (m_isSource) ? baseRel->GetSource().GetRoleLabel() : baseRel->GetTarget().GetRoleLabel();
+                }
+
+            // Need to check if the roleLabel has been set or not. In the case where there is a base class but it does not have a role 
+            // label defined, fall back to the default.
+            if (!IsRoleLabelDefined())
+                {
+                m_roleLabel = m_relClass->GetInvariantDisplayLabel();
+                if (!m_isSource)
+                    m_roleLabel += " (Reversed)";
+                }
 
             return ECObjectsStatus::Success;
             }
@@ -3037,20 +3101,17 @@ ECObjectsStatus ECRelationshipConstraint::ValidateRoleLabel(bool resolveIssues)
 SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext)
     {
     SchemaReadStatus status = SchemaReadStatus::Success;
-    
-    Utf8String roleLabel;
-    constraintNode.GetAttributeStringValue(roleLabel, ROLELABEL_ATTRIBUTE);
-    _SetRoleLabel(roleLabel.c_str());
 
     Utf8String value;  // needed for macros.
     if (m_relClass->GetSchema().OriginalECXmlVersionAtLeast(ECVersion::V3_1))
         {
         READ_REQUIRED_XML_ATTRIBUTE(constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic, constraintNode.GetName());
+        READ_REQUIRED_XML_ATTRIBUTE(constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel, constraintNode.GetName());
 
         Utf8String abstractConstraint;
         if (BEXML_Success == constraintNode.GetAttributeStringValue(abstractConstraint, ABSTRACTCONSTRAINT_ATTRIBUTE) && Utf8String::IsNullOrEmpty(abstractConstraint.c_str()))
             {
-            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass, %s, must have a %s attribute.", m_relClass->GetFullName(), MULTIPLICITY_ATTRIBUTE);
+            LOG.errorv("Invalid ECSchemaXML: The ECRelationshipClass, %s, cannot have an empty %s attribute.", m_relClass->GetFullName(), MULTIPLICITY_ATTRIBUTE);
             return SchemaReadStatus::InvalidECSchemaXml;
             }
 
@@ -3069,7 +3130,8 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
         {
         ECObjectsStatus setterStatus; // need for macros
         READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS(constraintNode, POLYMORPHIC_ATTRIBUTE, this, IsPolymorphic);
-        READ_OPTIONAL_XML_ATTRIBUTE (constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
+        READ_OPTIONAL_XML_ATTRIBUTE_IGNORING_SET_ERRORS(constraintNode, ROLELABEL_ATTRIBUTE, this, RoleLabel);
+        READ_OPTIONAL_XML_ATTRIBUTE(constraintNode, CARDINALITY_ATTRIBUTE, this, Cardinality);
         }
     
     // Add Custom Attributes
@@ -3117,18 +3179,18 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
                 m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
             return SchemaReadStatus::InvalidECSchemaXml;
             }
-        ECEntityClassCP constraintAsEntity = constraintClass->GetEntityClassCP();
-        if (nullptr == constraintAsEntity)
+        
+        if (!constraintClass->IsEntityClass() && !constraintClass->IsRelationshipClass())
             {
             if (2 == m_relClass->GetSchema().GetVersionRead())
                 {
-                LOG.warningv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'.  The constraint class will be ignored.", 
+                LOG.warningv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass or ECRelationshipClass named '%s' in the ECSchema '%s'.  The constraint class will be ignored.", 
                              m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
                 continue;
                 }
             else
                 {
-                LOG.errorv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
+                LOG.errorv("Invalid ECSchemaXML: The %s ECRelationshipConstraint on %s contains a %s attribute with the value '%s' that does not resolve to an ECEntityClass or ECRelationshipClass named '%s' in the ECSchema '%s'",
                            m_isSource ? "Source" : "Target", m_relClass->GetFullName(), CONSTRAINTCLASSNAME_ATTRIBUTE, constraintClassName.c_str(), className.c_str(), resolvedSchema->GetName().c_str());
                 return SchemaReadStatus::InvalidECSchemaXml;
                 }
@@ -3136,11 +3198,11 @@ SchemaReadStatus ECRelationshipConstraint::ReadXml (BeXmlNodeR constraintNode, E
 
         bool alreadyExists = false;
         for (auto ecClass : m_constraintClasses)
-            if (ECClass::ClassesAreEqualByName(ecClass, constraintAsEntity))
+            if (ECClass::ClassesAreEqualByName(ecClass, constraintClass))
                 alreadyExists = true;
 
         if (!alreadyExists)
-            m_constraintClasses.push_back(constraintAsEntity);
+            m_constraintClasses.push_back(constraintClass);
 
         for (BeXmlNodeP keyNode = constraintClassNode->GetFirstChild(); nullptr != keyNode; keyNode = keyNode->GetNextSibling())
             {
@@ -3179,8 +3241,7 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
     else
         xmlWriter.WriteAttribute(CARDINALITY_ATTRIBUTE, ECXml::MultiplicityToLegacyString(*m_multiplicity).c_str());
     
-    if (IsRoleLabelDefinedLocally())
-        xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, GetInvariantRoleLabel().c_str());
+    xmlWriter.WriteAttribute(ROLELABEL_ATTRIBUTE, GetInvariantRoleLabel().c_str());
 
     xmlWriter.WriteAttribute(POLYMORPHIC_ATTRIBUTE, this->GetIsPolymorphic());
 
@@ -3197,6 +3258,14 @@ SchemaWriteStatus ECRelationshipConstraint::WriteXml (BeXmlWriterR xmlWriter, Ut
         }
     xmlWriter.WriteElementEnd();
     return status;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8CP abstractConstraint)
+    {
+    return SetAbstractConstraint(abstractConstraint, m_verify);
     }
 
 //---------------------------------------------------------------------------------------
@@ -3232,25 +3301,25 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(Utf8CP value, bo
                     ABSTRACTCONSTRAINT_ATTRIBUTE, value, className.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
         }
-    ECEntityClassCP abstractConstraint = constraintClass->GetEntityClassCP();
-    if (nullptr == abstractConstraint)
+
+    if (!constraintClass->IsEntityClass() && !constraintClass->IsRelationshipClass())
         {
         LOG.errorv("Invalid ECSchemaXML: The ECRelationshipConstraint contains an %s attribute with the value '%s' that does not resolve to an ECEntityClass named '%s' in the ECSchema '%s'",
                     ABSTRACTCONSTRAINT_ATTRIBUTE, value, className.c_str(), resolvedSchema->GetName().c_str());
         return ECObjectsStatus::ClassNotFound;
-        }
+        }        
     
     if (validate)
-        return SetAbstractConstraint(*abstractConstraint);
+        return SetAbstractConstraint(*constraintClass);
     
-    m_abstractConstraint = abstractConstraint;
+    m_abstractConstraint = constraintClass;
     return ECObjectsStatus::Success;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  09/2016
+// @bsimethod                                   Caleb.Shafer                  06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECEntityClassCR abstractConstraint)
+ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECClassCR abstractConstraint)
     {
     if (m_verify)
         {
@@ -3265,45 +3334,31 @@ ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECEntityClassCR 
     return ECObjectsStatus::Success;
     }
 
+ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECEntityClassCR abstractConstraint) { return SetAbstractConstraint((ECClassCR)abstractConstraint); }
+ECObjectsStatus ECRelationshipConstraint::SetAbstractConstraint(ECRelationshipClassCR abstractConstraint) {return SetAbstractConstraint((ECClassCR)abstractConstraint);}
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                  09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-ECEntityClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
+ECClassCP const ECRelationshipConstraint::GetAbstractConstraint() const
     {
-    if (m_abstractConstraint != nullptr)
+    if (nullptr != m_abstractConstraint)
         return m_abstractConstraint;
 
-    for (auto const& relBaseClass : m_relClass->GetBaseClasses())
-        {
-        ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
-                                                                        : &relBaseClass->GetRelationshipClassCP()->GetTarget();
-        ECEntityClassCP abstractConstraint = baseClassConstraint->GetAbstractConstraint();
-        if (abstractConstraint != nullptr)
-            return abstractConstraint;
-        }
-
-    if (m_constraintClasses.size() == 1)
+    if (1 == m_constraintClasses.size())
         return m_constraintClasses[0];
 
     return nullptr;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  09/2016
+// @bsimethod                                   Caleb.Shafer                  06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-bool ECRelationshipConstraint::IsAbstractConstraintDefined() const
-    {
-    return nullptr != GetAbstractConstraint();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstraint)
+ECObjectsStatus ECRelationshipConstraint::AddClass(ECClassCR classConstraint)
     {
     if (m_verify)
         {
-        if (m_constraintClasses.size() == 1 && !m_relClass->HasBaseClasses() && !IsAbstractConstraintDefinedLocally())
+        if (m_constraintClasses.size() == 1 && !IsAbstractConstraintDefined())
             return ECObjectsStatus::RelationshipConstraintsNotCompatible;
 
         ECObjectsStatus validationStatus = ValidateClassConstraint(classConstraint);
@@ -3327,23 +3382,21 @@ ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstrai
             return ECObjectsStatus::Success;
         }
 
-    m_constraintClasses.push_back(classConstraint.GetEntityClassCP());
+    m_constraintClasses.push_back(&classConstraint);
 
     return ECObjectsStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ECRelationshipConstraint::RemoveConstraintClasses() { m_constraintClasses.clear(); }
+ECObjectsStatus ECRelationshipConstraint::AddClass(ECRelationshipClassCR classConstraint) {return AddClass((ECClassCR)classConstraint);}
+ECObjectsStatus ECRelationshipConstraint::AddClass(ECEntityClassCR classConstraint) {return AddClass((ECClassCR)classConstraint); }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Caleb.Shafer                  01/2017
+// @bsimethod                                   Caleb.Shafer                  06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECEntityClassCR classConstraint)
+ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECClassCR classConstraint)
     {
     for (auto itor = m_constraintClasses.begin(); itor != m_constraintClasses.end(); itor++)
-        { 
+        {
         if (ECClass::ClassesAreEqualByName(*itor, &classConstraint))
             {
             m_constraintClasses.erase(itor);
@@ -3354,32 +3407,26 @@ ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECEntityClassCR classConst
     return ECObjectsStatus::ClassNotFound;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Carole.MacDonald                03/2010
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECRelationshipConstraintClassList const& ECRelationshipConstraint::GetConstraintClasses() const
-    {
-    if (m_constraintClasses.size() == 0)
-        {
-        for (auto const& relBaseClass : m_relClass->GetBaseClasses())
-            {
-            ECRelationshipConstraintCP baseClassConstraint = (m_isSource) ? &relBaseClass->GetRelationshipClassCP()->GetSource()
-                                                                        : &relBaseClass->GetRelationshipClassCP()->GetTarget();
-            ECRelationshipConstraintClassList const& baseConstraints = baseClassConstraint->GetConstraintClasses();
-            if (baseConstraints.size() > 0)
-                return baseConstraints;
-            }
-        }
+ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECEntityClassCR classConstraint) {return RemoveClass((ECClassCR)classConstraint);}
+ECObjectsStatus ECRelationshipConstraint::RemoveClass(ECRelationshipClassCR classConstraint) { return RemoveClass((ECClassCR)classConstraint); }
 
-    return m_constraintClasses;
-    }
-
-bool classCompatibleWithConstraint(ECEntityClassCP constraintClass, ECEntityClassCP testClass, bool isPolymorphic)
+bool classCompatibleWithConstraint(ECClassCP constraintClass, ECClassCP testClass, bool isPolymorphic)
     {
     if (nullptr == testClass || nullptr == constraintClass)
         return false;
-    return (isPolymorphic && testClass->IsOrAppliesTo(constraintClass) // only poly constraints support mixins so OK to combine check
-            || ECClass::ClassesAreEqualByName(constraintClass, testClass));
+
+    if (ECClass::ClassesAreEqualByName(constraintClass, testClass))
+        return true;
+
+    if (isPolymorphic)
+        {
+        ECEntityClassCP entityClass = testClass->GetEntityClassCP();
+        if (nullptr != entityClass && entityClass->IsOrAppliesTo(constraintClass->GetEntityClassCP()))
+            return true;
+        else
+            return testClass->Is(constraintClass);
+        }
+    return false;
     }
 
 //---------------------------------------------------------------------------------------
@@ -3387,19 +3434,18 @@ bool classCompatibleWithConstraint(ECEntityClassCP constraintClass, ECEntityClas
 //---------------+---------------+---------------+---------------+---------------+-------
 bool ECRelationshipConstraint::SupportsClass(ECClassCR ecClass) const
     {
-    ECEntityClassCP entityClass = ecClass.GetEntityClassCP();
-    if (nullptr == entityClass) // Only entity classes may be endpoint constraints, mixins are entity classes
+    if (!ecClass.IsEntityClass() && !ecClass.IsRelationshipClass())
         return false;
 
-    if (classCompatibleWithConstraint(GetAbstractConstraint(), entityClass, m_isPolymorphic))
+    if (classCompatibleWithConstraint(GetAbstractConstraint(), &ecClass, m_isPolymorphic))
         return true;
 
-    for (ECEntityClassCP constraintClass : GetConstraintClasses())
+    for (ECClassCP constraintClass : GetConstraintClasses())
         {
         if (constraintClass->GetName().EqualsI("AnyClass"))
             return true;
         
-        if (classCompatibleWithConstraint(constraintClass, entityClass, m_isPolymorphic))
+        if (classCompatibleWithConstraint(constraintClass, &ecClass, m_isPolymorphic))
             return true;
         }
 
@@ -3473,7 +3519,7 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity (RelationshipMultiplic
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity, bool validate)
     {
-    PRECONDITION (NULL != multiplicity, ECObjectsStatus::PreconditionViolated);
+    PRECONDITION (nullptr != multiplicity, ECObjectsStatus::PreconditionViolated);
     uint32_t lowerLimit;
     uint32_t upperLimit;
     ECObjectsStatus status = ECXml::ParseMultiplicityString(lowerLimit, upperLimit, multiplicity);
@@ -3491,6 +3537,14 @@ ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity, b
         }
 
     return SetMultiplicity(lowerLimit, upperLimit);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                  06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipConstraint::SetMultiplicity(Utf8CP multiplicity)
+    {
+    return SetMultiplicity(multiplicity, m_verify);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3522,34 +3576,6 @@ Utf8String const ECRelationshipConstraint::GetRoleLabel () const
         return m_relClass->GetSchema().GetLocalizedStrings().GetRelationshipSourceRoleLabel(m_relClass, GetInvariantRoleLabel());
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-Utf8String const ECRelationshipConstraint::GetInvariantRoleLabel() const
-    {
-    if (IsRoleLabelDefinedLocally())
-        return m_roleLabel;
-
-    if (m_relClass->HasBaseClasses())
-        {
-        ECRelationshipClassCP relBaseClass = m_relClass->GetBaseClasses()[0]->GetRelationshipClassCP();
-        ECRelationshipConstraintP baseClassConstraint = (m_isSource) ? &relBaseClass->GetSource()
-                                                                    : &relBaseClass->GetTarget();
-        return baseClassConstraint->GetInvariantRoleLabel();
-        }
-
-    return m_roleLabel;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-ECObjectsStatus ECRelationshipConstraint::_SetRoleLabel(Utf8CP value)
-    {
-    m_roleLabel = value;
-    return ECObjectsStatus::Success;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3557,7 +3583,8 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8CP value)
     {
     if (Utf8String::IsNullOrEmpty(value))
         return ECObjectsStatus::Error;
-    return _SetRoleLabel(value);
+    m_roleLabel = value;
+    return ECObjectsStatus::Success;
     }
   
   /*---------------------------------------------------------------------------------**//**
@@ -3565,9 +3592,7 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8CP value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint)
     {
-    if (IsRoleLabelDefinedLocally())
-        toRelationshipConstraint.SetRoleLabel(GetInvariantRoleLabel().c_str());
-
+    toRelationshipConstraint.SetRoleLabel(GetInvariantRoleLabel().c_str());
     toRelationshipConstraint.SetMultiplicity(GetMultiplicity());
     toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
 
@@ -3904,6 +3929,12 @@ bool ECRelationshipClass::Verify (bool resolveIssues) const
     {
     bool isValid = true;
 
+    if (!ValidateStrengthConstraint(m_strength))
+        isValid = false;
+
+    if (!ValidateStrengthDirectionConstraint(m_strengthDirection))
+        isValid = false;
+
     ECRelationshipConstraintP source = &GetSource();
     if (!source->IsValid(resolveIssues))
         isValid = false;
@@ -3927,8 +3958,8 @@ bool ECRelationshipClass::ValidateStrengthConstraint(StrengthType value, bool co
             ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthConstraint(value))
                 {
-                LOG.errorv("Strength Constraint: ECRelationshipClass '%s' has different Strength (%d) than its Base Class '%s' (%d).",
-                            GetName().c_str(), value, relationshipBaseClass->GetName().c_str(), relationshipBaseClass->GetStrength());
+                LOG.errorv("Strength Constraint Violation: ECRelationshipClass '%s' has different Strength, %s, than its base class '%s', %s.",
+                            GetFullName(), ECXml::StrengthToString(value), relationshipBaseClass->GetFullName(), ECXml::StrengthToString(relationshipBaseClass->GetStrength()));
                 return false;
                 }
             }
@@ -3949,14 +3980,33 @@ bool ECRelationshipClass::ValidateStrengthDirectionConstraint(ECRelatedInstanceD
             ECRelationshipClassCP relationshipBaseClass = baseClass->GetRelationshipClassCP();
             if (relationshipBaseClass != nullptr && !relationshipBaseClass->ValidateStrengthDirectionConstraint(value))
                 {
-                LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different Strength Direction (%d) than it's Base Class '%s' (%d).",
-                            GetName().c_str(), value, relationshipBaseClass->GetName().c_str(), relationshipBaseClass->GetStrengthDirection());
+                LOG.errorv("Strength Direction Constraint Violation: ECRelationshipClass '%s' has different Strength Direction, %s, than it's base class '%s', %s.",
+                            GetFullName(), ECXml::DirectionToString(value), relationshipBaseClass->GetFullName(), ECXml::DirectionToString(relationshipBaseClass->GetStrengthDirection()));
                 return false;
                 }
             }
         }
 
     return (!compareValue || GetStrengthDirection() == value);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Colin.Kerr                  12/2015
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECRelationshipClass::CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type, bool verify)
+    {
+    ecProperty = new NavigationECProperty(*this);
+    ecProperty->SetType(type);
+    ECObjectsStatus status = ecProperty->SetRelationshipClass(relationshipClass, direction, verify);
+    if (ECObjectsStatus::Success == status)
+        status = AddProperty(ecProperty, name);
+
+    if (ECObjectsStatus::Success != status)
+        {
+        delete ecProperty;
+        ecProperty = nullptr;
+        }
+    return status;
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
