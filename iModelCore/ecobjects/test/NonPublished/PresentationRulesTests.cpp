@@ -679,11 +679,9 @@ TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
 
     ChildNodeRuleP childNodeRule = new ChildNodeRule("TestCondition2", 2, true, TargetTree_Both);
     ruleSet->AddPresentationRule(*childNodeRule);
-    ASSERT_TRUE(nullptr != childNodeRule);
-    bvector<CustomizationRuleP>& customizationRules = childNodeRule->GetCustomizationRulesR();
-    customizationRules.push_back(new ImageIdOverride("TestCondition4", 4, "ImageIdOverrideTestValue"));
-    customizationRules.push_back(new LabelOverride("TestCondition5", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue"));
-    customizationRules.push_back(new StyleOverride("TestCondition6", 6, "Blue", "Red", "Bold"));
+    childNodeRule->GetCustomizationRulesR().push_back(new ImageIdOverride("TestCondition4", 4, "ImageIdOverrideTestValue"));
+    childNodeRule->GetCustomizationRulesR().push_back(new LabelOverride("TestCondition5", 5, "LabelOverrideLabelValue", "LabelOverrideDescriptionValue"));
+    childNodeRule->GetCustomizationRulesR().push_back(new StyleOverride("TestCondition6", 6, "Blue", "Red", "Bold"));
 
     AllInstanceNodesSpecification* spec = new  AllInstanceNodesSpecification(1, false, false, false, false, false, "one");
     ChildNodeRule* nestedChildNodeRule = new ChildNodeRule("", 1, false, TargetTree_MainTree);
@@ -717,12 +715,6 @@ TEST_F(PresentationRulesTests, TestNestedCustomizationRulesWriteToXml)
         "</PresentationRuleSet>";
 
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
-    for (int i = 0; i < customizationRules.size(); i++)
-        {
-        delete customizationRules[i];
-        }
-    delete nestedChildNodeRule->GetCustomizationRulesR()[0];
-    delete rootNodeRule->GetCustomizationRulesR()[0];
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -784,7 +776,6 @@ TEST_F(PresentationRulesTests, TestContentModifierWriteToXml)
             "</ContentModifier>"
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
-    delete modifier;
     }
 
 /*---------------------------------------------------------------------------------**//**

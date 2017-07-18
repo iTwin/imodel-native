@@ -13,6 +13,3 @@ MixinTest.MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass
 MixinTest.MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass
 
 SupplementalDeserializationTests.*
-
-PresentationRulesTests.TestContentModifierWriteToXml
-    # x64, NDEBUG, bim0200
