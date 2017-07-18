@@ -14,10 +14,5 @@ MixinTest.MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass
 
 SupplementalDeserializationTests.*
 
-# These fail after merging from bim0200holdouts
-UnitSpecificationConversionTest.PersistenceUnitChange
-UnitSpecificationConversionTest.PersistenceUnitChange_WithPresentationUnits
-UnitInstanceConversionTest.BasicTest
-
 # Intermittently fails after merge
 ECSchemaTests.RemapReservedPropertyNames
