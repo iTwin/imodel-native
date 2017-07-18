@@ -147,10 +147,12 @@ const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
 
 const Utf8CP FormatConstant::SpecialAngleSymbol(Utf8String name)
     {
-    if (name.EqualsI("^")) return "ARC_DEG";
-    if (name.EqualsI(u8"°")) return "ARC_DEG";
-    if (name.EqualsI("'")) return "ARC_MINUTE";
-    if (name.EqualsI("\"")) return "ARC_SECOND";     
+    if (name.Equals("^")) return "ARC_DEG";
+    //if (name.Equals(u8"°")) return "ARC_DEG";   
+    if (name.Equals(u8"\xC2\xB0"))return "ARC_DEG";
+    if (name.Equals(u8"\xB0"))return "ARC_DEG";
+    if (name.Equals("'")) return "ARC_MINUTE";
+    if (name.Equals("\"")) return "ARC_SECOND";     
     return nullptr;
     }
 
