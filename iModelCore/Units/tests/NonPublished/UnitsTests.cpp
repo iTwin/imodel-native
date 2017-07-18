@@ -198,7 +198,10 @@ bool UnitsTests::TestUnitConversion (double fromVal, Utf8CP fromUnitName, double
         }
     return true;
     }
-    
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (UnitsTests, UnitsMapping)
     {
     bmap<Utf8String, Utf8String> unitNameMap;
@@ -226,6 +229,9 @@ TEST_F (UnitsTests, UnitsMapping)
 //    TestUnitConversion(1.0, "JOULE", 1.0, "NEWTON_METRE", 1000, loadErrors, conversionErrors);
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, TestTemperatureConversions)
     {
     bvector<Utf8String> loadErrors;
@@ -326,6 +332,9 @@ TEST_F(UnitsTests, TestTemperatureConversions)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, TestBasicConversion)
     {
     bvector<Utf8String> loadErrors;
@@ -365,6 +374,9 @@ TEST_F(UnitsTests, TestBasicConversion)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, TestInvertedSlopeUnits)
     {
     bvector<Utf8String> loadErrors;
@@ -378,6 +390,9 @@ TEST_F(UnitsTests, TestInvertedSlopeUnits)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 // NOTE: Disabled because we do not have active customers
 //TEST_F(UnitsTests, TestLinearCostConversions)
 //    {
@@ -396,6 +411,9 @@ TEST_F(UnitsTests, TestInvertedSlopeUnits)
 //    WriteToFile(fileName.c_str(), handledUnits);
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Robert.Schili                              03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 //This test is an open pot to add conversion tests which don't deserve their own method
 TEST_F(UnitsTests, TestMiscConversions)
     {
@@ -589,6 +607,9 @@ TEST_F(UnitsTests, TestMiscConversions)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, CheckSignatureForEveryPhenomenon)
     {
     bvector<PhenomenonCP> allPhenomena;
@@ -599,6 +620,9 @@ TEST_F(UnitsTests, CheckSignatureForEveryPhenomenon)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, PhenomenonAndUnitSignaturesMatch)
     {
     bvector<PhenomenonCP> allPhenomena;
@@ -612,6 +636,9 @@ TEST_F(UnitsTests, PhenomenonAndUnitSignaturesMatch)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, USCustomaryLengths)
     {
     bvector<Utf8String> loadErrors;
@@ -636,6 +663,9 @@ TEST_F(UnitsTests, USCustomaryLengths)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, UsSurveyLengths)
     {
     bvector<Utf8String> loadErrors;
@@ -675,6 +705,9 @@ TEST_F(UnitsTests, UsSurveyLengths)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, USCustomaryAreas)
     {
     bvector<Utf8String> loadErrors;
@@ -702,6 +735,9 @@ TEST_F(UnitsTests, USCustomaryAreas)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, USSurveyAreas)
     {
     bvector<Utf8String> loadErrors;
@@ -741,6 +777,9 @@ TEST_F(UnitsTests, USSurveyAreas)
     WriteToFile(fileName.c_str(), handledUnits);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                 02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, UnitsConversions_Complex)
     {
     bvector<Utf8String> loadErrors;
@@ -922,11 +961,17 @@ void UnitsTests::TestConversionsLoadedFromCvsFile(Utf8CP fileName, WCharCP outpu
     WriteToFile(outputfile.c_str(), handledUnits);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                      03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, UnitsConversion_CompareToRawOutputFromOldSystem)
     {
     TestConversionsLoadedFromCvsFile("ConversionsBetweenAllOldUnits.csv", L"TestConversionsBetweenAllOldUnits_handledUnits.csv", 107); // went from 107 to 109 because work per month units were removed, back to 107 because mass ratios added
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, UnitsConversion)
     {
     TestConversionsLoadedFromCvsFile("unitcomparisondata.csv", L"Testunitcomparisondata_handledUnits.csv", 94);// went from 94 to 96 because work per month units were removed, back to 94 because mass ratios added
@@ -974,6 +1019,9 @@ void GetUnitsByName(UnitRegistry& hub, bvector<Utf8String>& unitNames)
 //    fileStream.close();
 //    }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                 02/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, TestEveryUnitIsAddedToItsPhenomenon)
     {
     UnitRegistry& hub = UnitRegistry::Instance();
@@ -996,6 +1044,9 @@ TEST_F(UnitsTests, TestEveryUnitIsAddedToItsPhenomenon)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, AllUnitsNeededForFirstReleaseExist)
     {
     bvector<Utf8String> missingUnits;
@@ -1033,7 +1084,9 @@ TEST_F(UnitsTests, AllUnitsNeededForFirstReleaseExist)
     ASSERT_NE(0, foundUnits.size()) << "No units were found";
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Robert.Schili                              03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
     {
     Utf8String fileName = UnitsTestFixture::GetOutputDataPath(L"AllUnitsByPhenomenon.csv");
@@ -1080,6 +1133,9 @@ TEST_F(UnitsTests, PrintOutAllUnitsGroupedByPhenonmenon)
     file2.Close();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                 03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, UnitNamesByReferencedComponents)
     {
     bmap<Utf8String, bvector<Utf8String>> unitNamesByReferencedComponent;
@@ -1134,6 +1190,9 @@ TEST_F(UnitsTests, UnitNamesByReferencedComponents)
     file.Close();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                  03/16
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, TestUnitDefinitionsDoNotContainSynonyms)
     {
     bvector<UnitCP> allUnits;
@@ -1163,6 +1222,9 @@ TEST_F(UnitsTests, TestUnitDefinitionsDoNotContainSynonyms)
 
 struct UnitsPerformanceTests : UnitsTests {};
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                                07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsPerformanceTests, InitUnitsHub)
     {
     UnitRegistry::Clear();
@@ -1176,6 +1238,9 @@ TEST_F(UnitsPerformanceTests, InitUnitsHub)
     PERFORMANCELOG.errorv("Time to load Units Hub with %lu units: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                               07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
     {
     StopWatch timer("Get every unit by name", false);
@@ -1204,6 +1269,9 @@ TEST_F(UnitsPerformanceTests, GetEveryUnitByName)
     PERFORMANCELOG.errorv("Time to get %lu units by name including using synonyms: %.17g", allUnitNames.size(), timer.GetElapsedSeconds());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                               07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
     {
     StopWatch timer("Evaluate every unit", false);
@@ -1232,6 +1300,10 @@ TEST_F(UnitsPerformanceTests, GenerateEveryConversionValue)
     PERFORMANCELOG.errorv("Time to Generate %d conversion factors: %.17g", numConversions, timer.GetElapsedSeconds());
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                               07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
     {
     bmap<Utf8String, Utf8String> labels;
@@ -1292,6 +1364,9 @@ TEST_F(UnitsTests, ExportDisplayLabelsFromOldSystem)
     file.Close();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            Colin.Kerr                               07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
 //TEST_F(UnitsPerformanceTests, ConvertManyValues)
 //    {
 //    StopWatch timer("Do Many Conversions", false);

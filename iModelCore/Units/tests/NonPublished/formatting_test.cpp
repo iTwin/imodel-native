@@ -23,9 +23,9 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 static UnitProxySetCP upx = nullptr;
 static int repc = 0;
 
-//---------------------------------------------------------------------------------------
-// @bsiclass                                     David Fox-Rabinovitz             02/2017
-//+---------------+---------------+---------------+---------------+---------------+------
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      03/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Preliminary)
     {
     LOG.infov("================  Formatting Log ===========================");
@@ -242,7 +242,9 @@ TEST(FormattingTest, Preliminary)
 
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, PhysValues)
     {
     FormattingDividers fdiv = FormattingDividers("()[]{} ");
@@ -410,7 +412,9 @@ TEST(FormattingTest, PhysValues)
 
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, Simple)
     {
     double testV = 1000.0 * sqrt(2.0);
@@ -624,10 +628,12 @@ TEST(FormattingTest, Simple)
     EXPECT_STREQ ("27_YD 2_FT 4_IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", "_", 2).c_str());
     EXPECT_STREQ ("27 YD 2 FT 4 IN", tr.FormatTriad((Utf8CP)"YD", (Utf8CP)"FT", (Utf8CP)"IN", " ", 2).c_str());
     EXPECT_STREQ ("27-Yard 2-Feet 4-Inch", tr.FormatTriad((Utf8CP)"Yard", (Utf8CP)"Feet", (Utf8CP)"Inch", "-", 2).c_str());
-
+    delete fmtP;
     }
 
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                            David.Fox-Rabinovitz                      01/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST(FormattingTest, DictionaryValidation)
     {
     FormatDictionary dict = FormatDictionary();
