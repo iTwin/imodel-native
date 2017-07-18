@@ -25,6 +25,17 @@ struct JsonUtils
     BE_JSON_NAME(yaw)
     BE_JSON_NAME(pitch)
     BE_JSON_NAME(roll)
+    BE_JSON_NAME(degrees)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value AngleInDegreesToJson(AngleInDegrees angle)
+    {
+    Json::Value val;
+    val[json_degrees()] = angle.Degrees();
+    return val;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
@@ -32,9 +43,9 @@ struct JsonUtils
 static Json::Value YawPitchRollToJson(YawPitchRollAngles angles)
     {
     Json::Value val;
-    val[json_yaw()] = angles.GetYaw().Degrees();
-    val[json_pitch()] = angles.GetPitch().Degrees();
-    val[json_roll()] = angles.GetRoll().Degrees();
+    val[json_yaw()] = AngleInDegreesToJson(angles.GetYaw());
+    val[json_pitch()] = AngleInDegreesToJson(angles.GetPitch());
+    val[json_roll()] = AngleInDegreesToJson(angles.GetRoll());
     return val;
     }
 
