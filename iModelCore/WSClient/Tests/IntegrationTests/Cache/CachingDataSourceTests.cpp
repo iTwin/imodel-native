@@ -227,9 +227,6 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectContent_Success
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-// FAIL: 
-// BIM02: Failed to map ECRelationshipClass 'ProjectShare:FolderHasContent'. It is mapped to a link table, but the target constraint is mapped to more than one table, which is not supported for link tables.
-// SOLUTION: 2017-07-14 Missing TablePerHierarchy CA in schema. Krischan Eberle will discuss to make TPH be default in ECDb.
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShareV2_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
