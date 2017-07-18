@@ -22,10 +22,7 @@ bool PropertiesDisplaySpecification::ReadXml(BeXmlNodeP xmlNode)
         m_isDisplayed = true;
     else
         m_isDisplayed = false;
-
-    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_fullClassName, PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME))
-        return false;
-
+    
     if (BEXML_Success != xmlNode->GetAttributeStringValue(m_propertyNames, PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES))
         return false;
 
@@ -46,7 +43,6 @@ void PropertiesDisplaySpecification::WriteXml(BeXmlNodeP parentXmlNode) const
     else
         relatedPropertiesNode = parentXmlNode->AddEmptyElement(HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
 
-    relatedPropertiesNode->AddAttributeStringValue(PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_CLASSNAME, m_fullClassName.c_str());
     relatedPropertiesNode->AddAttributeStringValue(PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_PROPERTYNAMES, m_propertyNames.c_str());
     relatedPropertiesNode->AddAttributeInt32Value(PROPERTIES_DISPLAY_SPECIFICATION_XML_ATTRIBUTE_PRIORITY, m_priority);
     }

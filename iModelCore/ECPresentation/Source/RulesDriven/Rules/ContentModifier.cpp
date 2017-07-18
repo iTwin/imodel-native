@@ -28,7 +28,7 @@ ContentModifier::ContentModifier(Utf8String schemaName, Utf8String className)
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ContentModifier::ContentModifier(ContentModifierCR other)
-    : CustomizationRule(other), m_className(other.m_className), m_schemaName(other.m_schemaName)
+    : m_className(other.m_className), m_schemaName(other.m_schemaName)
     {
     CommonTools::CopyRules(m_relatedProperties, other.m_relatedProperties);
     CommonTools::CopyRules(m_propertiesDisplaySpecification, other.m_propertiesDisplaySpecification);
@@ -55,51 +55,38 @@ CharCP ContentModifier::_GetXmlElementName() const {return CONTENTMODIEFIER_XML_
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ContentModifier::_ReadXml(BeXmlNodeP xmlNode)
     {
-      if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME))
-          m_schemaName = "";
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_schemaName, CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME))
+        m_schemaName = "";
 
-      if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, CONTENTMODIEFIER_XML_ATTRIBUTE_CLASSNAME))
-          m_className = "";
+    if (BEXML_Success != xmlNode->GetAttributeStringValue(m_className, CONTENTMODIEFIER_XML_ATTRIBUTE_CLASSNAME))
+        m_className = "";
 
-      CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(xmlNode, m_relatedProperties, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-      CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(xmlNode, m_propertiesDisplaySpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-      CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(xmlNode, m_propertiesDisplaySpecification, DISPLAYED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-      BeXmlNodeP xmlPropertyNode = xmlNode->SelectSingleNode(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
-      if (xmlPropertyNode)
-          CommonTools::LoadSpecificationsFromXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(xmlPropertyNode, m_calculatedProperties, CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME);
-
-      return PresentationRule::_ReadXml(xmlNode);
+    CommonTools::LoadSpecificationsFromXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(xmlNode, m_relatedProperties, RELATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(xmlNode, m_propertiesDisplaySpecification, HIDDEN_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    CommonTools::LoadSpecificationsFromXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(xmlNode, m_propertiesDisplaySpecification, DISPLAYED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    BeXmlNodeP xmlPropertyNode = xmlNode->SelectSingleNode(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+    if (xmlPropertyNode)
+        CommonTools::LoadSpecificationsFromXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(xmlPropertyNode, m_calculatedProperties, CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME);
+    
+    return true;
     }   
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ContentModifier::_WriteXml(BeXmlNodeP parentXmlNode) const
+void ContentModifier::_WriteXml(BeXmlNodeP xmlNode) const
     {
-    BeXmlNodeP contentModifierNode = parentXmlNode->AddEmptyElement(CONTENTMODIEFIER_XML_NODE_NAME);
-    contentModifierNode->AddAttributeStringValue(CONTENTMODIEFIER_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
-    contentModifierNode->AddAttributeStringValue(CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str());
+    xmlNode->AddAttributeStringValue(CONTENTMODIEFIER_XML_ATTRIBUTE_CLASSNAME, m_className.c_str());
+    xmlNode->AddAttributeStringValue(CONTENTMODIEFIER_XML_ATTRIBUTE_SCHEMANAME, m_schemaName.c_str());
 
-    CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(contentModifierNode, m_relatedProperties);
-    CommonTools::WriteRulesToXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(contentModifierNode, m_propertiesDisplaySpecification);
+    CommonTools::WriteRulesToXmlNode<RelatedPropertiesSpecification, RelatedPropertiesSpecificationList>(xmlNode, m_relatedProperties);
+    CommonTools::WriteRulesToXmlNode<PropertiesDisplaySpecification, PropertiesDisplaySpecificationList>(xmlNode, m_propertiesDisplaySpecification);
     if (!m_calculatedProperties.empty())
         {
-        BeXmlNodeP calculatedPropertiesNode = contentModifierNode->AddEmptyElement(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
+        BeXmlNodeP calculatedPropertiesNode = xmlNode->AddEmptyElement(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
         CommonTools::WriteRulesToXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(calculatedPropertiesNode, m_calculatedProperties);
         }
-
-    PresentationRule::_WriteXml(contentModifierNode);
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                 05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool ContentModifier::ReadXml(BeXmlNodeP xmlNode){return _ReadXml(xmlNode);}
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Aidas.Vaiksnoras                 05/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ContentModifier::WriteXml(BeXmlNodeP parentXmlNode) const {_WriteXml(parentXmlNode);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Aidas.Vaiksnoras                 05/2017

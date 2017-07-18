@@ -20,15 +20,14 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 struct PropertiesDisplaySpecification
     {
     private:
-        Utf8String m_fullClassName;
         Utf8String m_propertyNames;
         int m_priority;
         bool m_isDisplayed;
 
     public:
         PropertiesDisplaySpecification() {}
-        PropertiesDisplaySpecification(Utf8String fullClassName, Utf8String propertyNames, int priority, bool isDisplayed)
-            : m_fullClassName(fullClassName), m_propertyNames(propertyNames), m_priority(priority), m_isDisplayed(isDisplayed)
+        PropertiesDisplaySpecification(Utf8String propertyNames, int priority, bool isDisplayed)
+            : m_propertyNames(propertyNames), m_priority(priority), m_isDisplayed(isDisplayed)
             {}
 
         //! Reads rule information from XmlNode, returns true if it can read it successfully.
@@ -36,10 +35,7 @@ struct PropertiesDisplaySpecification
 
         //! Writes rule information to given XmlNode.
         ECOBJECTS_EXPORT void WriteXml(BeXmlNodeP parentXmlNode) const;
-                
-        //! Get the full class name.
-        Utf8StringCR GetFullClassName() const {return m_fullClassName;}
-
+        
         //! Get the property names.
         Utf8StringCR GetPropertyNames() const {return m_propertyNames;}
 
