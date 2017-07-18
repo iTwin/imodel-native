@@ -594,11 +594,9 @@ DgnProjectPackageTest.EnforceLinkTableFor11Relationship
 # Following test must be  updated to use Navigation property and not INSERT INTO rel(..)
 # This must be cleared before merge.
 #----------------------------------------------------------------------------------------------------------------------------
-ChangeSummaryTestFixture.ElementChangesFromCurrentTransaction
-ChangeSummaryTestFixture.ElementChangesFromSavedTransactions
-#============================================================================================================================
-
-ChangeSummaryTestFixture.ElementChildRelationshipChanges
+#ChangeSummaryTestFixture.ElementChangesFromCurrentTransaction
+#ChangeSummaryTestFixture.ElementChangesFromSavedTransactions
+#ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # bim0200, x86, NDEBUG
     # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
     # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(633): error:       Expected: 3
