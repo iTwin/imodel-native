@@ -43,7 +43,7 @@ DgnElementTests.NavigationPropertyOnTargetDelete
 #TFS 697010
 CompatibilityTests.ModifyBaseline       #crashing with repeat
 
-#DgnDbTest.CreateTrackedDgnDb
+DgnDbTest.CreateTrackedDgnDb
     # bim0200holdouts, x64, DEBUG
     # [ RUN      ] DgnDbTest.CreateTrackedDgnDb
     # !!!!!!!!!!!!!!!!!! DgnDb::CreateNewDgnDb F:\Bim0200Holdouts\out\Winx64\Product\DgnPlatform-Gtest\run\Output\TrackedDb.ibim
