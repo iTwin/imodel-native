@@ -2366,8 +2366,10 @@ struct MatrixWeightedBezier2d
 {
 bvector<DVec3d> m_cp;
 bvector<RotMatrix> m_matrix;
-
-void AddCP (double x, double y, double tangentRadians, double w, double mu)
+double m_mu;
+double m_w;
+MatrixWeightedBezier2d (double w = 1.0, double mu = 1.0) : m_w(w), m_mu(mu){}
+void AddCP (double x, double y, double tangentRadians)
     {
     double c = cos (tangentRadians);
     double s = sin (tangentRadians);
@@ -2376,8 +2378,8 @@ void AddCP (double x, double y, double tangentRadians, double w, double mu)
     m_cp.push_back(DVec3d::From (x,y,0));
 
     m_matrix.push_back (RotMatrix::FromRowValues(
-        w * (1.0 + mu * nx * nx), w * mu * nx * ny, 0,
-        w * mu * nx * ny, w * (1.0 + mu * ny * ny), 0,
+        m_w * (1.0 + m_mu * nx * nx), m_w * m_mu * nx * ny, 0,
+        m_w * m_mu * nx * ny, m_w * (1.0 + m_mu * ny * ny), 0,
         0,                0,                        1)); 
     }
 
@@ -2400,8 +2402,33 @@ void FormBezcoffs2d (bvector<double> &bezcoffs)
         AppendBezcoffs2d (bezcoffs, m_cp[i], m_matrix[i]);
         }
     }
-
-void EvaluateBezcoffs2d (bvector<double> &bezcoffs, int n, bvector<DPoint3d> &points)
+    // M = w * (I + mu P)   where P should be orthogonal with sum of diagaonl squares (x,y only!!) equal 1.
+    // But M is a linear interpoland.
+    // experiments show the diagonal condition is maintained anyway !!!!
+RotMatrix RescaleMatrix (RotMatrixCR M)
+    {
+    double a = 1.0 / (m_mu * m_w);
+    double b = -1.0 / m_mu;
+    RotMatrix I = RotMatrix::FromIdentity ();
+    RotMatrix P;
+    for (int i = 0; i <3; i++)
+        for (int j = 0; j < 3; j++)
+            {
+            P.form3d[i][j] = a * M.form3d[i][j] + b * I.form3d[i][j];
+            }
+    double s = P.form3d[0][0] + P.form3d[1][1];
+    double mu1 = m_mu / s;
+    RotMatrix M1 = M;
+    for (int i = 0; i < 2; i++)
+        {
+        for (int j = 0; j < 2; j++)
+            {
+            M1.form3d[i][j] = m_w * (I.form3d[i][j] + mu1 * P.form3d[i][j]);
+            }
+        }
+    return M1;
+    }
+void EvaluateBezcoffs2d (bvector<double> &bezcoffs, int n, bvector<DPoint3d> &points, bool rescale = false)
     {
     if (n < 2)
         n = 2;
@@ -2417,6 +2444,8 @@ void EvaluateBezcoffs2d (bvector<double> &bezcoffs, int n, bvector<DPoint3d> &po
             bezval[4], bezval[5], 0,
             0,         0,         1
             );
+        if (rescale)
+            M = RescaleMatrix (M);
         DVec3d P;
         if (M.Solve (P, Q))
             points.push_back (P);
@@ -2429,20 +2458,18 @@ TEST (MatrixWeightedBezier,HelloWorld)
     for (int order = 2; order < 5; order++)
         {
         SaveAndRestoreCheckTransform shifter (5,0,0);
-        double mu = 1.0;    // balance between constant and normal weights.   1.0 seems best
         for (double alpha = 0.25; alpha < 1.1; alpha *= 2.0)
             {
             SaveAndRestoreCheckTransform shifter (0.1,0.1,0);
             MatrixWeightedBezier2d bezier;
             double degreeStep = alpha * 30.0 / (double)(order - 1.0);
-            double w = 1.0;
             bvector<DPoint3d> circlePoints;
             for (int i = 0; i < order; i++)
                 {
                 double degrees = i * degreeStep;
                 double radians = Angle::DegreesToRadians (degrees);
                 double tangentRadians = Angle::DegreesToRadians (degrees + 90.0);
-                bezier.AddCP (cos(radians), sin(radians), tangentRadians, w, mu);
+                bezier.AddCP (cos(radians), sin(radians), tangentRadians);
                 circlePoints.push_back (DPoint3d::From (cos(radians), sin(radians),0));
                 }
             bvector<double> coffs;
@@ -2459,4 +2486,121 @@ TEST (MatrixWeightedBezier,HelloWorld)
             }
         }
     Check::ClearGeometry ("MatrixWeightedBezier.HelloWorld");
+    }
+
+TEST (MatrixWeightedBezier,RadiusEffects)
+    {
+    int order = 2;
+    for (double radius : bvector<double> { 0.5, 1.0, 1.5, 2.0, 3.0})
+        {
+        SaveAndRestoreCheckTransform shifter (5,0,0);
+        for (double alpha = 0.25; alpha < 1.1; alpha *= 2.0)
+            {
+            SaveAndRestoreCheckTransform shifter (0.1,0.1,0);
+            MatrixWeightedBezier2d bezier;
+            double degreeStep = alpha * 30.0 / (double)(order - 1.0);
+            bvector<DPoint3d> circlePoints;
+            for (int i = 0; i < order; i++)
+                {
+                double degrees = i * degreeStep;
+                double radians = Angle::DegreesToRadians (degrees);
+                double tangentRadians = Angle::DegreesToRadians (degrees + 90.0);
+                bezier.AddCP (radius * cos(radians), radius * sin(radians), tangentRadians);
+                circlePoints.push_back (DPoint3d::From (radius * cos(radians), sin(radius * radians),0));
+                }
+            bvector<double> coffs;
+            bezier.FormBezcoffs2d (coffs);
+            bvector<DPoint3d> points;
+            bezier.EvaluateBezcoffs2d (coffs, 4 * order, points);
+            double eMax = 0.0;
+            for (auto &xyz : points)
+                eMax = DoubleOps::Max (eMax, 1.0 - xyz.MagnitudeXY ());
+            GEOMAPI_PRINTF ("(radius %g) (order %d) (degreeSweep %g) (eMax %.2g)\n", radius, order, degreeStep, eMax);
+            Check::SaveTransformed (points);
+            Check::SaveTransformedMarkers (circlePoints, 0.05);
+            Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (DPoint3d::From (0,0,0), radius));
+            }
+        }
+    Check::ClearGeometry ("MatrixWeightedBezier.RadiusEffects");
+    }
+
+
+TEST (MatrixWeightedBezier,EllipseSections)
+    {
+    int order = 2;
+    double radiusA = 1.0;
+    for (double radiusB : bvector<double> { 0.5, 1.0, 1.5, 2.0, 3.0, 5.0})
+        {
+        SaveAndRestoreCheckTransform shifter (5,0,0);
+        auto arc = DEllipse3d::From (
+                0,0,0,
+                radiusA, 0, 0,
+                0, radiusB, 0,
+                0.0, Angle::DegreesToRadians (90.0)
+                );
+        for (double alpha = 0.25; alpha < 1.1; alpha *= 2.0)
+            {
+            SaveAndRestoreCheckTransform shifter (0.1,0.1,0);
+            MatrixWeightedBezier2d bezier;
+            double degreeStep = alpha * 30.0 / (double)(order - 1.0);
+            bvector<DPoint3d> circlePoints;
+            for (int i = 0; i < order; i++)
+                {
+                double degrees = i * degreeStep;
+                double radians = Angle::DegreesToRadians (degrees);
+                DVec3d dX, ddX;
+                DPoint3d X;
+                arc.Evaluate (X, dX, ddX, radians);
+                bezier.AddCP (X.x, X.y, atan2 (dX.y, dX.x));
+                circlePoints.push_back (X);
+                }
+            bvector<double> coffs;
+            bezier.FormBezcoffs2d (coffs);
+            bvector<DPoint3d> points;
+            bezier.EvaluateBezcoffs2d (coffs, 4 * order, points);
+            GEOMAPI_PRINTF ("(radiusA %g) (radiusB %g) (order %d) (degreeSweep %g) \n", radiusA, radiusB, order, degreeStep);
+            Check::SaveTransformed (points);
+            Check::SaveTransformedMarkers (circlePoints, 0.05);
+            Check::SaveTransformed (arc);
+            }
+        }
+    Check::ClearGeometry ("MatrixWeightedBezier.EllipseSections");
+    }
+
+TEST (MatrixWeightedBezier,WobbleStress)
+    {
+    int order = 2;
+    double radiusA = 1.0;
+    double xB = 1.0;
+    double radiansA = 0.0;
+    double radiansB = Angle::DegreesToRadians (90.0);
+    int numEval = 40;
+    double tickSize = 0.1;
+    bool rescale = false;
+    for (double mu : bvector<double>{1,2,4,8,16})
+        {
+        SaveAndRestoreCheckTransform (0, 20,0);
+        for (double yShoulder : bvector<double> {0.1, 0.5, 1.0, 3.0})
+            {
+            SaveAndRestoreCheckTransform shifter (2,0,0);
+            for (double fB : bvector<double> { 1.5, 2.0, 3.0, 5.0})
+                {
+                double radiansA = atan2 (yShoulder, xB);
+                MatrixWeightedBezier2d bezier (1.0, mu);
+                bezier.AddCP (0.0, 0.0, radiansA);
+                double yC = fB * yShoulder;
+                bezier.AddCP (xB, yC, radiansB);
+                bvector<double> coffs;
+                bezier.FormBezcoffs2d (coffs);
+                bvector<DPoint3d> points;
+                bezier.EvaluateBezcoffs2d (coffs, numEval, points, rescale);
+                Check::SaveTransformed (points);
+                Check::SaveTransformed (bvector<DPoint3d> {DPoint3d::From (0,0), DPoint3d::From (xB, yShoulder),
+                    DPoint3d::From (xB, yC),
+                    DPoint3d::From (xB + tickSize, yC)
+                    });
+                }
+            }
+        }
+    Check::ClearGeometry ("MatrixWeightedBezier.WobbleStress");
     }
