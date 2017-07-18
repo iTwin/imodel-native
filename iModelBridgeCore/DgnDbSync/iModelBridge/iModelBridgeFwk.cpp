@@ -661,7 +661,7 @@ BentleyStatus iModelBridgeFwk::DoInitial()
         return BentleyStatus::ERROR;
 
     //  Create a new repository. (This will import all required domains and their schemas.)
-    m_briefcaseDgnDb = m_bridge->DoCreateDgnDb(m_modelsInserted);
+    m_briefcaseDgnDb = m_bridge->DoCreateDgnDb(m_modelsInserted, nullptr);
     if (!m_briefcaseDgnDb.IsValid())
         {
         // Hopefully, this is a recoverable error. Stay in Initial state, so that we can try again.

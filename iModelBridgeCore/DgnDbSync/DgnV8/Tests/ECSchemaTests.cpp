@@ -1008,3 +1008,117 @@ TEST_F(ECSchemaTests, RelsWithAnyClassConstraint)
     EXPECT_TRUE(0 == BentleyApi::ECN::RelationshipMultiplicity::Compare(BentleyApi::ECN::RelationshipMultiplicity::ZeroMany(), relationshipClass->GetSource().GetMultiplicity()));
     EXPECT_TRUE(0 == BentleyApi::ECN::RelationshipMultiplicity::Compare(BentleyApi::ECN::RelationshipMultiplicity::ZeroMany(), relationshipClass->GetTarget().GetMultiplicity()));
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            07/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" nameSpacePrefix="test" version="01.01" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECClass typeName="Foo" isDomainClass="True">
+                <ECProperty propertyName="ECInstanceId" typeName="string" />
+                <ECProperty propertyName="Id" typeName="string" />
+                <ECProperty propertyName="ECClassId" typeName="string" />
+                <ECProperty propertyName="SourceECInstanceId" typeName="string" />
+                <ECProperty propertyName="SourceId" typeName="string" />
+                <ECProperty propertyName="SourceECClassId" typeName="string" />
+                <ECProperty propertyName="TargetECInstanceId" typeName="string" />
+                <ECProperty propertyName="TargetId" typeName="string" />
+                <ECProperty propertyName="TargetECClassId" typeName="string" />
+            </ECClass>
+        </ECSchema>)xml";
+
+    LineUpFiles(L"RemapReservedPropertyNames.ibim", L"Test3d.dgn", false);
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr schema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+
+    DgnV8Api::ElementId eid;
+    v8editor.AddLine(&eid);
+    DgnV8Api::ElementHandle eh(eid, v8editor.m_defaultModel);
+    DgnV8Api::DgnElementECInstancePtr createdDgnECInstance;
+    EXPECT_EQ(Bentley::BentleyStatus::SUCCESS, v8editor.CreateInstanceOnElement(createdDgnECInstance, *((DgnV8Api::ElementHandle*)&eh), v8editor.m_defaultModel, L"TestSchema", L"Foo"));
+    Bentley::ECN::ECValue v;
+    v.SetUtf8CP("MyECInstanceId");
+    createdDgnECInstance->SetValue(L"ECInstanceId", v);
+
+    v.SetUtf8CP("MyId");
+    createdDgnECInstance->SetValue(L"Id", v);
+
+    v.SetUtf8CP("MyECClassId");
+    createdDgnECInstance->SetValue(L"ECClassId", v);
+
+    v.SetUtf8CP("MySourceECInstanceId");
+    createdDgnECInstance->SetValue(L"SourceECInstanceId", v);
+
+    v.SetUtf8CP("MySourceId");
+    createdDgnECInstance->SetValue(L"SourceId", v);
+
+    v.SetUtf8CP("MySourceECClassId");
+    createdDgnECInstance->SetValue(L"SourceECClassId", v);
+
+    v.SetUtf8CP("MyTargetECInstanceId");
+    createdDgnECInstance->SetValue(L"TargetECInstanceId", v);
+
+    v.SetUtf8CP("MyTargetId");
+    createdDgnECInstance->SetValue(L"TargetId", v);
+
+    v.SetUtf8CP("MyTargetECClassId");
+    createdDgnECInstance->SetValue(L"TargetECClassId", v);
+
+    createdDgnECInstance->WriteChanges();
+    v8editor.Save();
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    if (true)
+        {
+        SyncInfoReader syncInfo;
+        syncInfo.AttachToDgnDb(m_dgnDbFileName);
+        SyncInfo::V8FileSyncInfoId editV8FileSyncInfoId;
+        syncInfo.MustFindFileByName(editV8FileSyncInfoId, m_v8FileName);
+        SyncInfo::V8ModelSyncInfoId editV8ModelSyncInfoId;
+        syncInfo.MustFindModelByV8ModelId(editV8ModelSyncInfoId, editV8FileSyncInfoId, v8editor.m_defaultModel->GetModelId());
+        DgnElementId dgnDbElementId;
+        syncInfo.MustFindElementByV8ElementId(dgnDbElementId, editV8ModelSyncInfoId, eid);
+
+        DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
+        //db->Schemas().CreateClassViewsInDb();
+        //db->SaveChanges();
+        auto dgnDbElement = db->Elements().GetElement(dgnDbElementId);
+        ASSERT_TRUE(dgnDbElement.IsValid());
+
+        Utf8String selEcSql;
+        selEcSql.append("SELECT test_ECInstanceId_, test_Id_, test_ECClassId_, test_SourceECInstanceId_, test_SourceId_, test_SourceECClassId_, test_TargetECInstanceId_, test_TargetId_, test_TargetECClassId_ FROM ").append(dgnDbElement->GetElementClass()->GetECSqlName().c_str()).append("WHERE ECInstanceId=?");
+        EC::ECSqlStatement stmt;
+        stmt.Prepare(*db, selEcSql.c_str());
+        stmt.BindId(1, dgnDbElementId);
+        ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+        ASSERT_TRUE(0 == strcmp("MyECInstanceId", stmt.GetValueText(0)));
+        ASSERT_TRUE(0 == strcmp("MyId", stmt.GetValueText(1)));
+        ASSERT_TRUE(0 == strcmp("MyECClassId", stmt.GetValueText(2)));
+        ASSERT_TRUE(0 == strcmp("MySourceECInstanceId", stmt.GetValueText(3)));
+        ASSERT_TRUE(0 == strcmp("MySourceId", stmt.GetValueText(4)));
+        ASSERT_TRUE(0 == strcmp("MySourceECClassId", stmt.GetValueText(5)));
+        ASSERT_TRUE(0 == strcmp("MyTargetECInstanceId", stmt.GetValueText(6)));
+        ASSERT_TRUE(0 == strcmp("MyTargetId", stmt.GetValueText(7)));
+        ASSERT_TRUE(0 == strcmp("MyTargetECClassId", stmt.GetValueText(8)));
+         
+        BentleyApi::ECN::ECClassCP fooClass = db->Schemas().GetSchema("TestSchema")->GetClassCP("Foo");
+        ASSERT_TRUE(nullptr == fooClass->GetPropertyP("ECInstanceId"));
+        ASSERT_TRUE(nullptr == fooClass->GetPropertyP("Id"));
+        ASSERT_TRUE(nullptr == fooClass->GetPropertyP("ECClassId"));
+        ASSERT_TRUE(nullptr == fooClass->GetPropertyP("SourceECInstanceId"));
+        ASSERT_TRUE(nullptr == fooClass->GetPropertyP("SourceId"));
+        ASSERT_TRUE(nullptr == fooClass->GetPropertyP("SourceECClassId"));
+        ASSERT_TRUE(nullptr == fooClass->GetPropertyP("TargetECInstanceId"));
+        ASSERT_TRUE(nullptr == fooClass->GetPropertyP("TargetId"));
+        ASSERT_TRUE(nullptr == fooClass->GetPropertyP("TargetECClassId"));
+        }
+
+    }

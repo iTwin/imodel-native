@@ -688,66 +688,6 @@ TEST_F(ConverterTests, GCSMultiFilesGCSTransformWithScale)
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MOVED_EXPIRATION_DATE_INTO_BRIDGE_STANDALONE_CONVERTER_LAYER
-TEST_F(ConverterTests, AddExpirationDate)
-    {
-    LineUpFiles(L"addexpirationdate.ibim", L"Test3d.dgn", false);
-    m_wantCleanUp = false;
-
-    BentleyApi::DateTime date = BentleyApi::DateTime::GetCurrentTimeUtc();
-    uint8_t day = date.GetDay();
-    uint8_t month = date.GetMonth();
-    int16_t year = date.GetYear() + 1;
-    date = BentleyApi::DateTime(BentleyApi::DateTime::Kind::Utc, year, month, day, 0, 0, 0);
-
-    m_params.SetExpirationDate(date);
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
-    ASSERT_TRUE(dgnProj->IsDbOpen());
-
-    BentleyApi::BeSQLite::Statement statement;
-    ASSERT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, statement.Prepare(*dgnProj, "Select strData FROM be_Prop WHERE Name='ExpirationDate'"));
-    ASSERT_EQ(statement.Step(), BentleyApi::BeSQLite::DbResult::BE_SQLITE_ROW);
-    EXPECT_STREQ(statement.GetValueText(0), date.ToString().c_str());
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Muhammad Hassan                   02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-#ifdef WIP_MOVED_DESCRIPTION_INTO_BRIDGE_STANDALONE_CONVERTER_LAYER
-TEST_F(ConverterTests, AddProjectDescription)
-    {
-    LineUpFiles(L"ProjectProperties.ibim", L"Test3d.dgn", false);
-    m_wantCleanUp = false;
-
-    m_params.SetDescription("TestDescription");
-
-    DoConvert(m_dgnDbFileName, m_v8FileName);
-
-    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    ASSERT_TRUE(db.IsValid());
-
-    // TEST_ERRROR -- This test is opening an existing bim. It is not converting. Therefore, the description in m_params does not apply. 
-    //                  In order to set the description on the existing root subject, the test must do this:
-    if (true)
-        {
-        auto rootSubject = db->Elements().GetRootSubject()->MakeCopy<Subject>();
-        rootSubject->SetDescription("TestDescription");
-        rootSubject->Update();
-        }
-
-    auto element = db->Elements().GetRootSubject();
-    ASSERT_TRUE(element != nullptr);
-    ASSERT_STREQ("TestDescription", element->GetDescription().c_str()) << "Description doesn't match";
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
 // @bsimethod                                           Sam.Wilson             01/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 static PhysicalModelPtr insertPhysicalModel(DgnDbR db, Utf8CP partitionName)

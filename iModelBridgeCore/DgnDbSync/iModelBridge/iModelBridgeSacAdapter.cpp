@@ -291,7 +291,7 @@ BentleyStatus iModelBridgeSacAdapter::Execute(iModelBridge& bridge, Params const
         {
         wasCreated = true;
         bvector<DgnModelId> dont_care;
-        db = bridge.DoCreateDgnDb(dont_care);
+        db = bridge.DoCreateDgnDb(dont_care, saparams.GetDescription().c_str());
         if (!db.IsValid())
             {
             fwprintf(stderr, L"%ls - creation failed. See %ls for details.\n", inputFileName.GetName(),

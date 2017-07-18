@@ -206,9 +206,10 @@ struct iModelBridge
     //! @private
     //! Create a new local repository and allow this bridge to populate it. This called by the framework as part of creating a new repository.
     //! @param[out] jobModels   The set of models that were created by the job.
+    //! @param[in]  rootSubjectDescription. Optional. If supplied, this becomes the description of the new root subject.
     //! @return nullptr if the db could not be created or populated. 
     //! @note that it is up to the caller to call SaveChanges 
-    IMODEL_BRIDGE_EXPORT DgnDbPtr DoCreateDgnDb(bvector<DgnModelId>& jobModels);
+    IMODEL_BRIDGE_EXPORT DgnDbPtr DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP rootSubjectDescription);
 
     //! @private
     //! Open an existing BIM for read-write, possibly doing a schema upgrade on it.

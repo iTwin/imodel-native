@@ -63,9 +63,12 @@ static void queryAllModels(bvector<DgnModelId>& models, DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels)
+DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP rootSubjectDescription)
     {
     CreateDgnDbParams createProjectParams;
+    if (nullptr != rootSubjectDescription)
+        createProjectParams.SetRootSubjectDescription(rootSubjectDescription);
+
     createProjectParams.SetRootSubjectName("TBD"); // WIP_BRIDGE
 
     // Create the DgnDb file. All currently registered domain schemas are imported.

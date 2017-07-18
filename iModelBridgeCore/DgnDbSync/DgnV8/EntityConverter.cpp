@@ -800,7 +800,7 @@ BentleyStatus BisClassConverter::RemoveDuplicateClassMapCustomAttributes(BECN::E
 //static
 BentleyStatus BisClassConverter::ValidateClassProperties(SchemaConversionContext& context, BECN::ECClassR ecClass)
     {
-    bvector<Utf8CP> reservedNames {"ECInstanceId", "Id", "ECClassId", "SourceECInstanceId", "SourceId", "SourceECClassId", "SourceId", "SourceECClassId", "TargetECInstanceId", "TargetId", "TargetECClassId"};
+    bvector<Utf8CP> reservedNames {"ECInstanceId", "Id", "ECClassId", "SourceECInstanceId", "SourceId", "SourceECClassId", "TargetECInstanceId", "TargetId", "TargetECClassId"};
     for (BECN::ECPropertyP prop : ecClass.GetProperties(false))
         {
         // Need to make sure that property name does not conflict with one of the reserved system properties or aliases.
