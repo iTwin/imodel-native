@@ -747,17 +747,17 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
         ChangeSummary after inserting instances:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
-        0:1;StartupCompany:Employee:1099511627843;Insert;No
+        0:1;StartupCompany:Employee:79;Insert;No
                 FirstName;NULL;"John"
                 LastName;NULL;"Doe"
-        0:2;StartupCompany:Company:1099511627836;Insert;No
+        0:2;StartupCompany:Company:71;Insert;No
                 Name;NULL;"AcmeWorks"
-        0:3;StartupCompany:Company:1099511627836;Insert;No
+        0:3;StartupCompany:Company:71;Insert;No
                 Name;NULL;"CmeaWorks"
-        0:4;StartupCompany:Hardware:1099511627840;Insert;No
+        0:4;StartupCompany:Hardware:75;Insert;No
                 Make;NULL;"Tesla"
                 Model;NULL;"Model-S"
-        0:5;StartupCompany:Hardware:1099511627840;Insert;No
+        0:5;StartupCompany:Hardware:75;Insert;No
                 Make;NULL;"Toyota"
                 Model;NULL;"Prius"
     */
@@ -797,10 +797,10 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
         ChangeSummary after inserting relationships:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
-        0:6;StartupCompany:EmployeeHardware:1099511627847;Insert;No
-                SourceECClassId;NULL;StartupCompany:Employee:1099511627843
+        0:6;StartupCompany:EmployeeHardware:82;Insert;No
+                SourceECClassId;NULL;StartupCompany:Employee:79
                 SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
+                TargetECClassId;NULL;StartupCompany:Hardware:75
                 TargetECInstanceId;NULL;0:4
     */
     EXPECT_EQ(1, changeSummary.MakeInstanceIterator().QueryCount());
@@ -844,15 +844,15 @@ TEST_F(ChangeSummaryTestFixture, RelationshipChangesFromCurrentTransaction)
         ChangeSummary after updating (deleting and inserting different) relationships:
         BriefcaseId:LocalId;SchemaName:ClassName:ClassId;DbOpcode;Indirect
                 AccessString;OldValue;NewValue
-        0:6;StartupCompany:EmployeeHardware:1099511627847;Delete;No
-                SourceECClassId;StartupCompany:Employee:1099511627843;NULL
+        0:6;StartupCompany:EmployeeHardware:82;Delete;No
+                SourceECClassId;StartupCompany:Employee:79;NULL
                 SourceECInstanceId;0:1;NULL
-                TargetECClassId;StartupCompany:Hardware:1099511627840;NULL
+                TargetECClassId;StartupCompany:Hardware:75;NULL
                 TargetECInstanceId;0:4;NULL
-        0:7;StartupCompany:EmployeeHardware:1099511627847;Insert;No
-                SourceECClassId;NULL;StartupCompany:Employee:1099511627843
+        0:7;StartupCompany:EmployeeHardware:82;Insert;No
+                SourceECClassId;NULL;StartupCompany:Employee:79
                 SourceECInstanceId;NULL;0:1
-                TargetECClassId;NULL;StartupCompany:Hardware:1099511627840
+                TargetECClassId;NULL;StartupCompany:Hardware:75
                 TargetECInstanceId;NULL;0:5
     */
     EXPECT_EQ(2, changeSummary.MakeInstanceIterator().QueryCount());
