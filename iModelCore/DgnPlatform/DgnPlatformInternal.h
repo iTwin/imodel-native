@@ -60,6 +60,7 @@
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/VecMath.h>
 #include <DgnPlatform/WebMercator.h>
+#include <DgnPlatform/ModelSpatialClassifier.h>
 #include <DgnPlatformInternal/DgnCore/DgnCoreL10N.h>
 #include <ECObjects/ECSchema.h>
 #include <Units/Units.h>

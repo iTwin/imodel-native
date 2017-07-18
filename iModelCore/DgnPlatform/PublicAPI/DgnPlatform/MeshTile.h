@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#define CLASSIFICATION_WIP
+
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
@@ -889,7 +891,7 @@ public:
 struct ElementTileNode : TileNode
 {
 private:
-    bool                    m_isLeaf;
+    bool                    m_isLeaf;                         
     mutable bool            m_containsParts;
 
     TileMeshList GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const;
@@ -914,6 +916,7 @@ public:
 
     void AdjustTolerance(double newTolerance);
     void SetIsLeaf(bool isLeaf) { m_isLeaf = isLeaf; }
+
     TileGeometryList const& GetGeometries() const { return m_geometries; }
 
 };
@@ -1017,7 +1020,6 @@ private:
     FutureStatus GenerateTiles(ITileCollector& collector, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile, DgnModelR model);
     FutureStatus GenerateTilesFromModels(ITileCollector& collector, DgnModelIdSet const& modelIds, double leafTolerance, bool surfacesOnly, size_t maxPointsPerTile);
     FutureStatus GenerateTilesFromTileTree(IGetTileTreeForPublishingP tileTreePublisher, ITileCollector* collector, double leafTolerance, bool surfacesOnly, DgnModelP model);
-    //FutureGenerateTileResult GenerateTilesFromTileTree(TileP outputTile, TileTree::TileP inputTile, TransformCR transformFromDgn, double leafTolerance, ClipVectorCP clip, DgnModelP model, ITileCollector* collector);
 
 
 public:
@@ -1054,6 +1056,7 @@ struct IGetTileTreeForPublishing
 {
     virtual ClipVectorPtr       _GetPublishingClip () const { return nullptr; }
     virtual TileTree::RootCPtr  _GetPublishingTileTree(Dgn::Render::SystemP renderSys) const = 0;
+    virtual BentleyStatus       _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return ERROR; }
 
 };  // IGetTileTreeForPublishing
 
@@ -1065,7 +1068,7 @@ struct TileUtil
 {
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
     DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
-    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelCR model);
+    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId, bool asClassifier = false);
 
 };  // TileUtil
 

@@ -335,9 +335,9 @@ void TilesetPublisher::GenerateModelNameList()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const
+WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension, bool asClassifier) const
     {
-    WString     modelRootName = TileUtil::GetRootNameForModel(tile.GetModel());
+    WString     modelRootName = TileUtil::GetRootNameForModel(tile.GetModel().GetModelId(), asClassifier);
 
     return modelRootName + L"//" + tile.GetFileName(modelRootName.c_str(), fileExtension); 
     }
