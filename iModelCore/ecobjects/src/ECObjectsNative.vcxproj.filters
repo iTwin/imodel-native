@@ -228,6 +228,15 @@
     <ClCompile Include="ECSchemaValidator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ECQuantityFormatting.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\PropertiesDisplaySpecification.cpp">
+      <Filter>ECPresentationRules\Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\ContentModifier.cpp">
+      <Filter>ECPresentationRules\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -383,9 +392,6 @@
     <ClInclude Include="..\PublicApi\EcPresentationRules\GroupingRule.h">
       <Filter>ECPresentationRules\Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\PublicApi\EcPresentationRules\HiddenPropertiesSpecification.h">
-      <Filter>ECPresentationRules\Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\PublicApi\EcPresentationRules\ImageIdOverride.h">
       <Filter>ECPresentationRules\Header Files</Filter>
     </ClInclude>
@@ -442,6 +448,15 @@
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECObjects\ECQuantityFormatting.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\EcPresentationRules\PropertiesDisplaySpecification.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECPresentationRules\ContentModifier.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -35,7 +35,7 @@
 #include <ECPresentationRules/ContentSpecification.h>
 #include <ECPresentationRules/ContentModifier.h>
 #include <ECPresentationRules/RelatedPropertiesSpecification.h>
-#include <ECPresentationRules/HiddenPropertiesSpecification.h>
+#include <ECPresentationRules/PropertiesDisplaySpecification.h>
 #include <ECPresentationRules/ContentInstancesOfSpecificClassesSpecification.h>
 #include <ECPresentationRules/ContentRelatedInstancesSpecification.h>
 #include <ECPresentationRules/SelectedNodeInstancesSpecification.h>

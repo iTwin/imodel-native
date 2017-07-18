@@ -1522,6 +1522,7 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     relationshipClass->GetTarget().SetMultiplicity(*card);
     EXPECT_EQ(2, relationshipClass->GetTarget().GetMultiplicity().GetLowerLimit());
     EXPECT_EQ(5, relationshipClass->GetTarget().GetMultiplicity().GetUpperLimit());
+    delete card;
     }
 
 /*---------------------------------------------------------------------------------**//**

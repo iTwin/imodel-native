@@ -13,4 +13,3 @@ MixinTest.MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass
 MixinTest.MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass
 
 SupplementalDeserializationTests.*
-

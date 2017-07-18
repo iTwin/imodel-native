@@ -33,7 +33,7 @@ CPchOpts            = $(UsePrecompiledHeaderOptions)
 # below compilands. The entire set of compilands must be content with
 # uniform treatment for multi-compilation to work.
 #----------------------------------------------------------------------
-MultiCompileDepends = $(_MakeFileSpec) 
+MultiCompileDepends = $(_MakeFileSpec)
 %include MultiCppCompileRule.mki
 
 #----------------------------------------------------------------------
@@ -59,8 +59,9 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)SchemaResourceKeyHelper.h \
                                 $(ecobjectsPublicAPISrc)ECJsonUtilities.h \
                                 $(ecobjectsPublicAPISrc)ECRelationshipPath.h \
-                                $(ecobjectsPublicAPISrc)ECQuantityFormatting.h
-                        
+                                $(ecobjectsPublicAPISrc)ECQuantityFormatting.h \
+                                $(ecobjectsPublicAPISrc)SchemaComparer.h
+
 ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRules.h \
                                 $(ecpresentationRulesPublicAPISrc)ChildNodeSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)ChildNodeRule.h \
@@ -86,12 +87,12 @@ ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRu
                                 $(ecpresentationRulesPublicAPISrc)ContentSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)ContentInstancesOfSpecificClassesSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)ContentRelatedInstancesSpecification.h \
-                                $(ecpresentationRulesPublicAPISrc)HiddenPropertiesSpecification.h \
+                                $(ecpresentationRulesPublicAPISrc)PropertiesDisplaySpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)SelectedNodeInstancesSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)CalculatedPropertySpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)RelatedInstanceSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)CustomizationRules.h \
-				$(ecpresentationRulesPublicAPISrc)ContentModifier.h \
+                                $(ecpresentationRulesPublicAPISrc)ContentModifier.h \
                                 $(ECPresentationHeaders)
 
 
@@ -100,17 +101,17 @@ ECUnitsHeaders =                $(ecunitsPublicAPISrc)Units.h \
 
 # ECObjects
 
-$(o)ecxml$(oext)                                           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ecxml$(oext)                                           : $(baseDir)ecxml.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECSchema$(oext)                                        : $(baseDir)ECSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECSchemaConverter$(oext)                               : $(baseDir)ECSchemaConverter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  
+$(o)ECSchemaConverter$(oext)                               : $(baseDir)ECSchemaConverter.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECSchemaValidator$(oext)                               : $(baseDir)ECSchemaValidator.cpp $(ECObjectsHeaders) ${MultiCompileDepends}  
+$(o)ECSchemaValidator$(oext)                               : $(baseDir)ECSchemaValidator.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)SchemaXml$(oext)                                       : $(baseDir)SchemaXml.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)SchemaXml$(oext)                                       : $(baseDir)SchemaXml.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECType$(oext)                                          : $(baseDir)ECType.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECType$(oext)                                          : $(baseDir)ECType.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECClass$(oext)                                         : $(baseDir)ECClass.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
@@ -118,25 +119,25 @@ $(o)ECEnumeration$(oext)                                   : $(baseDir)ECEnumera
 
 $(o)KindOfQuantity$(oext)                                  : $(baseDir)KindOfQuantity.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECProperty$(oext)                                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECProperty$(oext)                                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECInstance$(oext)                                      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECInstance$(oext)                                      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECCustomAttribute$(oext)                               : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECCustomAttribute$(oext)                               : $(baseDir)ECCustomAttribute.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECcontext$(oext)                                       : $(baseDir)ECcontext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECcontext$(oext)                                       : $(baseDir)ECcontext.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECValue$(oext)                                         : $(baseDir)ECValue.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECValue$(oext)                                         : $(baseDir)ECValue.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ECEnabler$(oext)                                       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ECEnabler$(oext)                                       : $(baseDir)ECEnabler.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ExpressionNode$(oext)                                  : $(baseDir)ExpressionNode.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ExpressionNode$(oext)                                  : $(baseDir)ExpressionNode.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ExpressionContext$(oext)                               : $(baseDir)ExpressionContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends} 
+$(o)ExpressionContext$(oext)                               : $(baseDir)ExpressionContext.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)ExpressionHandler$(oext)                               : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)ECExpressionNode.h ${MultiCompileDepends} 
+$(o)ExpressionHandler$(oext)                               : $(baseDir)ExpressionHandler.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)ECExpressionNode.h ${MultiCompileDepends}
 
-$(o)SystemSymbolProvider$(oext)                            : $(baseDir)SystemSymbolProvider.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SystemSymbolProvider.h ${MultiCompileDepends} 
+$(o)SystemSymbolProvider$(oext)                            : $(baseDir)SystemSymbolProvider.cpp $(ECObjectsHeaders) $(ecobjectsPublicAPISrc)SystemSymbolProvider.h ${MultiCompileDepends}
 
 $(o)ECDBuffer$(oext)                                       : $(baseDir)ECDBuffer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
@@ -146,7 +147,7 @@ $(o)StandaloneECRelationshipInstance$(oext)                : $(baseDir)Standalon
 
 $(o)SupplementalSchema$(oext)                              : $(baseDir)SupplementalSchema.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
-$(o)DesignByContract$(oext)                                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends} 
+$(o)DesignByContract$(oext)                                : $(baseDir)DesignByContract.cpp $(ecobjectsPublicAPISrc)DesignByContract.h ${MultiCompileDepends}
 
 $(o)CalculatedProperty$(oext)                              : $(baseDir)CalculatedProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
@@ -167,6 +168,8 @@ $(o)ECJsonUtilities$(oext)                                 : $(baseDir)ECJsonUti
 $(o)ECRelationshipPath$(oext)                              : $(baseDir)ECRelationshipPath.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECQuantityFormatting$(oext)                            : $(baseDir)ECQuantityFormatting.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
+$(o)SchemaComparer$(oext)                                  : $(baseDir)SchemaComparer.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 # ECPresentationRules
 
@@ -222,7 +225,7 @@ $(o)ContentRelatedInstancesSpecification$(oext)            : $(baseDir)presentat
 
 $(o)SelectedNodeInstancesSpecification$(oext)              : $(baseDir)presentation/PresentationRules/SelectedNodeInstancesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
-$(o)HiddenPropertiesSpecification$(oext)                   : $(baseDir)presentation/PresentationRules/HiddenPropertiesSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+$(o)PropertiesDisplaySpecification$(oext)                  : $(baseDir)presentation/PresentationRules/PropertiesDisplaySpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)CalculatedPropertySpecification$(oext)                 : $(baseDir)presentation/PresentationRules/CalculatedPropertySpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 

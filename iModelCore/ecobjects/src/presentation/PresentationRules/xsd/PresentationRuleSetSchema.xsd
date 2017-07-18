@@ -211,11 +211,17 @@
     </xs:attributeGroup>
     <xs:element name="ContentModifier">
         <xs:complexType mixed="true">
-            <xs:choice minOccurs="0" maxOccurs="unbounded">
-                <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" />
-                <xs:element name="HiddenProperties" type="HiddenPropertiesDef" />
-            </xs:choice>
-            <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
+            <xs:sequence>
+                <xs:choice minOccurs="0" maxOccurs="unbounded">
+                    <!-- Not supported yet
+                    <xs:element name="DisplayRelatedItems" type="DisplayRelatedItemsDef" />
+                    -->
+                    <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" />
+                    <xs:element name="HiddenProperties" type="HiddenPropertiesDef" />
+                    <xs:element name="DisplayedProperties" type="DisplayedPropertiesDef" />
+                </xs:choice>
+                <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
+            </xs:sequence>
             <xs:attribute name="SchemaName" type="xs:string" use="required"/>
             <xs:attribute name="ClassName" type="xs:string" use="required"/>
         </xs:complexType>
@@ -430,6 +436,7 @@
                 -->
                 <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" />
                 <xs:element name="HiddenProperties" type="HiddenPropertiesDef" />
+                <xs:element name="DisplayedProperties" type="DisplayedPropertiesDef" />
             </xs:choice>
             <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
@@ -510,6 +517,13 @@
     <xs:complexType name="HiddenPropertiesDef">
         <xs:attribute name="ClassName" type="xs:string"/>
         <xs:attribute name="PropertyNames" type="xs:string"/>
+        <xs:attribute name="Priority" type="xs:int"/>
+    </xs:complexType>
+
+    <xs:complexType name="DisplayedPropertiesDef">
+        <xs:attribute name="ClassName" type="xs:string"/>
+        <xs:attribute name="PropertyNames" type="xs:string"/>
+        <xs:attribute name="Priority" type="xs:int"/>
     </xs:complexType>
 
     <xs:complexType name="CalculatedPropertiesDef">
