@@ -40,9 +40,9 @@ struct ECSqlRangeTreeTests : ECDbTestFixture
         ASSERT_EQ(BE_SQLITE_OK, m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE demo_rtree USING rtree(ECInstanceId,minX,maxX,minY,maxY);"));
 
         ASSERT_EQ(SUCCESS, ImportSchema(SchemaItem(
-            "<ECSchema schemaName=\"RangeTreeTest\" alias=\"rt\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
+            "<ECSchema schemaName='RangeTreeTest' alias='rt' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-            "  <ECEntityClass typeName=\"DemoRTree\" >"
+            "  <ECEntityClass typeName='DemoRTree' modifier='Sealed'>"
             "       <ECCustomAttributes>"
             "            <ClassMap xmlns='ECDbMap.02.00'>"
             "                <MapStrategy>ExistingTable</MapStrategy>"

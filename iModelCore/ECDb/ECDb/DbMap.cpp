@@ -90,11 +90,11 @@ BentleyStatus DbMap::TryLoadClassMap(ClassMapPtr& classMap, ClassMapLoadContext&
     classMap = nullptr;
 
     DbClassMapLoadContext classMapLoadContext;
-    if (DbClassMapLoadContext::Load(classMapLoadContext, ctx, GetECDb(), ecClass) != SUCCESS)
-        {
-        //Failed to find classmap
-        return SUCCESS;
-        }
+    if (SUCCESS != DbClassMapLoadContext::Load(classMapLoadContext, ctx, GetECDb(), ecClass))
+        return ERROR;
+
+    if (!classMapLoadContext.ClassMapExists())
+        return SUCCESS; //Class was not yet mapped in a previous import
 
     MapStrategyExtendedInfo const& mapStrategy = classMapLoadContext.GetMapStrategy();
     ClassMapPtr classMapTmp = nullptr;
@@ -662,8 +662,7 @@ BentleyStatus DbMap::PurgeOrphanTables() const
 //---------------------------------------------------------------------------------------
 // Gets the count of tables at the specified end of a relationship class.
 // @param  relationshpEnd [in] Constraint at the end of the relationship
-// @return Number of tables at the specified end of the relationship. Returns
-//         std::numeric_limits<size_t>::max() if the end is AnyClass.
+// @return Number of tables at the specified end of the relationship. 
 // @bsimethod                                 Ramanujam.Raman                05/2012
 //---------------------------------------------------------------------------------------
 size_t DbMap::GetTableCountOnRelationshipEnd(SchemaImportContext& ctx, ECRelationshipConstraintCR relationshipEnd) const

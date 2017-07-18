@@ -69,7 +69,6 @@ struct DbMappingManager final : NonCopyableClass
             //WIP_CLEANUP Moving the below MapNavigationProperty from elsewhere here makes evident that we now have 2 equally named methods
             //for mapping nav props, plus a third method related to nav props. This needs to be cleaned up.
             static ClassMappingStatus MapNavigationProperty(SchemaImportContext&, NavigationPropertyMap&);
-            static BentleyStatus SetupNavigationPropertyMap(SchemaImportContext&, NavigationPropertyMap&);
 
             static BentleyStatus MapUserDefinedIndexes(SchemaImportContext& ctx, ClassMap const&);
             static BentleyStatus MapUserDefinedIndex(SchemaImportContext& ctx, ClassMap const&, DbIndexListCustomAttribute::DbIndex const&);

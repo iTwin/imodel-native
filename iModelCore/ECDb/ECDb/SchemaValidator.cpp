@@ -145,7 +145,7 @@ bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter co
     bset<ECClassCP> duplicateConstraintClasses;
     for (ECClassCP constraintClass : constraintClasses)
         {
-        if (ClassMap::IsAnyClass(*constraintClass))
+        if (constraintClass->GetSchema().IsStandardSchema() && constraintClass->GetName().EqualsIAscii("AnyClass"))
             {
             issueReporter.Report("The relationship class '%s' uses the AnyClass constraint. AnyClass is not supported.", relClass.GetFullName());
             valid = false;

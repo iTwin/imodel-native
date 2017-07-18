@@ -22,6 +22,7 @@
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp" />
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECDbTests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceECSqlSelectAdapterTests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp" />

@@ -64,7 +64,6 @@ struct LightweightCache final: NonCopyableClass
         bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId) const;
         ClassIdsPerTableMap const& GetHorizontalPartitionsForClass(ECN::ECClassId) const;
         //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
-        //@remarks: AnyClass constraints are ignored.
         bmap<ECN::ECClassId, RelationshipEnd> const& GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClassesForConstraintClass(ECN::ECClassId constraintId) const;
         bset<ECN::ECClassId> const& GetDirectRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;

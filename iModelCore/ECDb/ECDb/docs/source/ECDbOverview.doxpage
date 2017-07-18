@@ -593,8 +593,8 @@
         applies to the subclasses, too 
         - @c OwnTable (default): This class is mapped to its own table.
         - @c TablePerHierarchy: The class and all its subclasses are mapped to a single table. See also section <i>Additional customization for MapStrategy TablePerHierarchy</i>
-        - @c ExistingTable : This class is mapped to an existing table. The existing table must be specified in the @b TableName ECProperty.
-        The table must have a primary key column of type INTEGER. This does not affect subclasses of this ECClass.
+        - @c ExistingTable : This class is mapped to an existing table. the class must be sealed (see BentleyApi::ECN::ECClassModifier).
+        The existing table must be specified in the @b TableName ECProperty. The table must have a primary key column of type INTEGER.
         The primary key column must either be called @b Id or its name must be specified in the @b ECInstanceIdColumn ECProperty.
         <b>ECClasses mapped to existing tables are read-only in ECSQL, i.e. only ECSQL SELECT can be used against them.</b>
     - @b TableName (optional, required for MapStrategies @em ExistingTable):

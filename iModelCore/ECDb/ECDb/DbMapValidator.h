@@ -41,6 +41,7 @@ struct DbMapValidator final : NonCopyableClass
 
         BentleyStatus ValidateDbMap() const;
         BentleyStatus ValidateClassMap(ClassMap const&) const;
+        BentleyStatus ValidateMapStrategy(ClassMap const&) const;
         BentleyStatus ValidateRelationshipClassEndTableMap(RelationshipClassEndTableMap const&) const;
         BentleyStatus ValidateRelationshipClassLinkTableMap(RelationshipClassLinkTableMap const&) const;
         BentleyStatus ValidatePropertyMap(PropertyMap const&, bmap<DbColumn const*, SingleColumnDataPropertyMap const*>& duplicateColumnMappings) const;

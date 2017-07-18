@@ -18,18 +18,19 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct DbClassMapLoadContext final : public NonCopyableClass
     {
     private:
-        bool m_isValid;
+        bool m_classMapExists = false;
         MapStrategyExtendedInfo m_mapStrategyExtInfo;
         std::map<Utf8String, std::vector<DbColumn const*>> m_columnByAccessString;
 
         static BentleyStatus ReadPropertyMaps(DbClassMapLoadContext&, ECDbCR, ECN::ECClassId);
 
     public:
-        DbClassMapLoadContext() :m_isValid(false) {}
+        DbClassMapLoadContext() {}
         ~DbClassMapLoadContext() {}
 
         static BentleyStatus Load(DbClassMapLoadContext&, ClassMapLoadContext&, ECDbCR, ECN::ECClassCR);
 
+        bool ClassMapExists() const { return m_classMapExists; }
         MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
         bool HasMappedProperties() const { return !m_columnByAccessString.empty(); }
         std::map<Utf8String, std::vector<DbColumn const*>> const& GetPropertyMaps() const { return m_columnByAccessString; }

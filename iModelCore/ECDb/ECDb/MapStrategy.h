@@ -80,9 +80,6 @@ struct TablePerHierarchyInfo final
 //+===============+===============+===============+===============+===============+=====
 struct MapStrategyExtendedInfo final
     {
-public:
-    static const MapStrategy DEFAULT = MapStrategy::OwnTable;
-
 private:
     MapStrategy m_strategy = MapStrategy::NotMapped;
     TablePerHierarchyInfo m_tphInfo;
@@ -113,8 +110,7 @@ struct ClassMappingCACache final
     {
 private:
     ClassMapCustomAttribute m_classMapCA;
-    bool m_hasMapStrategy = false;
-    MapStrategy m_mapStrategy = MapStrategy::NotMapped;
+    Nullable<MapStrategy> m_mapStrategy;
     ShareColumnsCustomAttribute m_shareColumnsCA;
     bool m_hasJoinedTablePerDirectSubclassOption = false;
 
@@ -126,9 +122,8 @@ public:
 
     ~ClassMappingCACache() {}
 
-    bool HasMapStrategy() const { return m_hasMapStrategy; }
     ClassMapCustomAttribute const& GetClassMap() const { return m_classMapCA; }
-    MapStrategy GetStrategy() const { return m_mapStrategy; }
+    Nullable<MapStrategy> const& GetStrategy() const { return m_mapStrategy; }
     ShareColumnsCustomAttribute const& GetShareColumnsCA() const { return m_shareColumnsCA; }
     bool HasJoinedTablePerDirectSubclassOption() const { return m_hasJoinedTablePerDirectSubclassOption; }
     };

@@ -1327,7 +1327,6 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
     {
     //A constraint class id column is needed if 
     // * the map strategy implies that multiple classes are stored in the same table or
-    // * the constraint includes the AnyClass or 
     // * it has more than one classes including subclasses in case of a polymorphic constraint. 
     //So we first determine whether a constraint class id column is needed
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();

@@ -60,25 +60,32 @@ protected:
 private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
-    ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty;
+    ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty = nullptr;
 
     ClassMappingStatus EvaluateMapStrategy(SchemaImportContext&);
-    virtual ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&);
 
     ClassMappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
     BentleyStatus InitializeClassHasCurrentTimeStampProperty();
 
 protected:
-    virtual BentleyStatus _InitializeFromSchema(SchemaImportContext&);
 
-    BentleyStatus EvaluateTablePerHierarchyMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap, ClassMappingCACache const&);
-    bool ValidateTablePerHierarchyChildStrategy(MapStrategyExtendedInfo const& baseStrategy, ClassMappingCACache const&) const;
+    virtual BentleyStatus _InitializeFromSchema(SchemaImportContext&);
+    virtual ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&);
+
+    BentleyStatus EvaluateRootClassMapStrategy(SchemaImportContext&, ClassMappingCACache const&);
+    BentleyStatus EvaluateNonRootClassMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap, ClassMappingCACache const&);
+
+    BentleyStatus EvaluateNonRootClassTablePerHierarchyMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap, ClassMappingCACache const&);
+    bool ValidateNonRootClassTablePerHierarchyStrategy(MapStrategyExtendedInfo const& baseStrategy, ClassMappingCACache const&) const;
+    
     BentleyStatus AssignMapStrategy(ClassMappingCACache const&);
 
     IssueReporter const& Issues() const;
 
+    static MapStrategy GetDefaultStrategy(ECN::ECClassCR);
+
 public:
-    ClassMappingInfo(ECDb const&, ECN::ECClassCR);
+    ClassMappingInfo(ECDb const& ecdb, ECN::ECClassCR ecClass) : m_ecdb(ecdb), m_ecClass(ecClass) {}
     virtual ~ClassMappingInfo() {}
 
     ClassMappingStatus Initialize(SchemaImportContext&);
@@ -90,6 +97,7 @@ public:
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
     ECN::PrimitiveECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
+
     };
 
 //======================================================================================
@@ -211,7 +219,7 @@ private:
     BentleyStatus _InitializeFromSchema(SchemaImportContext&) override;
     ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&) override;
 
-    BentleyStatus EvaluateLinkTableStrategy(SchemaImportContext&, ClassMappingCACache const&, ClassMap const* baseClassMap);
+    BentleyStatus EvaluateRootClassLinkTableStrategy(SchemaImportContext&, ClassMappingCACache const&);
     BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&);
 
     BentleyStatus FailIfConstraintClassIsNotMapped() const;
@@ -222,8 +230,7 @@ private:
     static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
 
 public:
-    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass) 
-        : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()) {}
+    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass)  : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()) {}
 
     ~RelationshipMappingInfo() {}
 

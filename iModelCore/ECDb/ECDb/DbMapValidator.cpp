@@ -728,6 +728,42 @@ BentleyStatus DbMapValidator::ValidateClassMap(ClassMap const& classMap) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                              Krischan.Eberle                        07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMapValidator::ValidateMapStrategy(ClassMap const& classMap) const
+    {
+    const bool hasBaseClasses = classMap.GetClass().HasBaseClasses();
+    MapStrategyExtendedInfo const& actualStrat = classMap.GetMapStrategy();
+    
+    switch (actualStrat.GetStrategy())
+        {
+            case MapStrategy::ExistingTable:
+            {
+            if (hasBaseClasses || classMap.GetClass().GetClassModifier() != ECClassModifier::Sealed)
+                {
+                Issues().Report("The class '%s' has the map strategy 'ExistingTable' but is not sealed or has a base class. Only sealed classes without base class can be mapped with 'ExistingTable'.", classMap.GetClass().GetFullName());
+                return ERROR;
+                }
+            break;
+            }
+
+            case MapStrategy::OwnTable:
+            {
+            if (classMap.GetClass().IsRelationshipClass())
+                {
+                Issues().Report("The relationship class '%s' has the map strategy 'OwnTable'. This is not valid for relationship classes.", classMap.GetClass().GetFullName());
+                return ERROR;
+                }
+            }
+
+            default:
+                break;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Affan.Khan                           06/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMapValidator::ValidateRelationshipClassEndTableMap(RelationshipClassEndTableMap const& relMap) const

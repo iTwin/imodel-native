@@ -170,7 +170,6 @@ struct ClassMap : RefCountedBase
         BentleyStatus SetOverflowTable(DbTable& overflowTable);
         ClassMapColumnFactory const& GetColumnFactory() const;
         PropertyMapContainer& GetPropertyMapsR() { return m_propertyMaps; }  
-        static bool IsAnyClass(ECN::ECClassCR ecclass) { return ecclass.GetSchema().IsStandardSchema() && ecclass.GetName().Equals("AnyClass"); }
     };
 
 
