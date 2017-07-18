@@ -299,7 +299,7 @@ TEST_F(ClientTests, DownloadArchivedFiles)
     EXPECT_EQ(2, changeSets.size());
 
     // Attempt to merge the changeSets
-    originalDb->AssignBriefcaseId(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
+    originalDb->SetAsBriefcase(BeSQLite::BeBriefcaseId(BeSQLite::BeBriefcaseId::Standalone()));
     originalDb->SaveChanges();
     originalDb->CloseDb();
     originalDb = DgnDb::OpenDgnDb(nullptr, originalFilePath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));

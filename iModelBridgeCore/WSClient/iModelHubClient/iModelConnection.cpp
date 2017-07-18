@@ -636,7 +636,7 @@ bmap<Utf8String, bvector<DgnCode>>* groupedCodes,
 DgnCode searchCode
 )
     {
-    Utf8String searchKey = FormatCodeId(searchCode.GetCodeSpecId(), searchCode.GetScopeString(), "");
+    Utf8String searchKey = FormatCodeId(searchCode.GetCodeSpecId().GetValue(), searchCode.GetScopeString(), "");
     auto it = groupedCodes->find(searchKey);
     if (it == groupedCodes->end())
         {
@@ -897,9 +897,9 @@ const BeBriefcaseId*  briefcaseId
     {
     Utf8String idString;
     if (nullptr != briefcaseId)
-        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValue(), *briefcaseId).c_str());
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScopeString(), code.GetValue(), *briefcaseId).c_str());
     else
-        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValue()).c_str());
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScopeString(), code.GetValue()).c_str());
 
     return ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Code, idString);
     }

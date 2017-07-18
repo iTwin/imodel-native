@@ -317,7 +317,6 @@ ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
         context = ECSchemaReadContext::CreateContext();
         context->AddSchemaPath(GetTestsAssetsDir().AppendToPath(L"/MobileUtilsAssets/ECSchemas/CacheSchemas/"));
         context->AddSchemaPath(GetTestsAssetsDir().AppendToPath(L"ECSchemas/ECDb"));
-
         }
 
     ECSchemaPtr schema;
@@ -325,6 +324,9 @@ ECSchemaPtr ParseSchema(Utf8StringCR schemaXml, ECSchemaReadContextPtr context)
 
     EXPECT_EQ(SchemaReadStatus::Success, status);
     EXPECT_TRUE(schema.IsValid());
+
+    if (schema.IsNull())
+        throw std::exception(); // Failed to parse schema
 
     return schema;
     }

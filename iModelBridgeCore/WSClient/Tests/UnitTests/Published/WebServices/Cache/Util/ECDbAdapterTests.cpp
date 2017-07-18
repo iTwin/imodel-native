@@ -354,7 +354,6 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingRel
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
-
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                            <ClassMap xmlns="ECDbMap.02.00">
@@ -362,7 +361,6 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingRel
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
-
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -395,7 +393,14 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassWithTarget_SchemaHasOneMatchingBac
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+            <ECClass typeName="Base" >
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>TablePerHierarchy</MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -434,7 +439,6 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
-
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
@@ -442,7 +446,6 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
-
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -476,7 +479,6 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
-
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                      <ClassMap xmlns="ECDbMap.02.00">
@@ -484,7 +486,6 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
-
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -518,7 +519,6 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasNoMatch
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
             <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
-
             <ECClass typeName="Base">
                 <ECCustomAttributes>
                     <ClassMap xmlns="ECDbMap.02.00">
@@ -526,7 +526,6 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasNoMatch
                     </ClassMap>
                 </ECCustomAttributes>
             </ECClass>
-
             <ECClass typeName="A"/>
             <ECClass typeName="B"/>
             <ECRelationshipClass typeName="AB1">
@@ -554,7 +553,16 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasOneMatc
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>
+                            <Strategy>TablePerHierarchy</Strategy>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -713,7 +721,16 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>
+                            <Strategy>TablePerHierarchy</Strategy>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -758,7 +775,16 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>
+                            <Strategy>TablePerHierarchy</Strategy>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -803,7 +829,16 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>
+                            <Strategy>TablePerHierarchy</Strategy>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -848,7 +883,16 @@ TEST_F(ECDbAdapterTests, FindClosestRelationshipClassWithSource_SchemaHasTwoMatc
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>
+                            <Strategy>TablePerHierarchy</Strategy>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -1051,7 +1095,16 @@ TEST_F(ECDbAdapterTests, FindRelationshipClassesInSchema_SchemaHasTwoMatchingRel
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>
+                            <Strategy>TablePerHierarchy</Strategy>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -1153,7 +1206,16 @@ TEST_F(ECDbAdapterTests, FindRelationshipClasses_SchemaHasOneMatchingRelClassOne
     {
     auto schema = ParseSchema(R"(
         <ECSchema schemaName="TestSchema" nameSpacePrefix="TS" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
-            <ECClass typeName="Base" />
+            <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap" />
+            <ECClass typeName="Base">
+                <ECCustomAttributes>
+                    <ClassMap xmlns="ECDbMap.02.00">
+                        <MapStrategy>
+                            <Strategy>TablePerHierarchy</Strategy>
+                        </MapStrategy>
+                    </ClassMap>
+                </ECCustomAttributes>
+            </ECClass>
             <ECClass typeName="A">
                 <BaseClass>Base</BaseClass>
             </ECClass>
@@ -2164,21 +2226,25 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationship_DeletesRelatio
 
     ECInstanceKey a, b, rel;
     INSERT_INSTANCE(*db, ecClass, a);
-    INSERT_INSTANCE(*db, ecClass, b);
-    INSERT_RELATIONSHIP(*db, relClass, a, b, rel);
-    EXPECT_EQ(1, adapter.FindInstances(relClass).size());
 
-    CREATE_MockECDbAdapterDeleteListener(listener);
-    EXPECT_CALL_OnBeforeDelete(listener, db, b);
-    EXPECT_CALL_OnBeforeDelete(listener, db, rel);
-    adapter.RegisterDeleteListener(&listener);
+    for (int i = 0; i < 2; i++) // Test statement caching for same operations
+        {
+        INSERT_INSTANCE(*db, ecClass, b);
+        INSERT_RELATIONSHIP(*db, relClass, a, b, rel);
+        EXPECT_EQ(1, adapter.FindInstances(relClass).size());
 
-    EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
+        CREATE_MockECDbAdapterDeleteListener(listener);
+        EXPECT_CALL_OnBeforeDelete(listener, db, b);
+        EXPECT_CALL_OnBeforeDelete(listener, db, rel);
+        adapter.RegisterDeleteListener(&listener);
 
-    auto notDeletedInstances = adapter.FindInstances(ecClass);
-    EXPECT_EQ(1, notDeletedInstances.size());
-    EXPECT_CONTAINS(notDeletedInstances, a.GetInstanceId());
-    EXPECT_EQ(0, adapter.FindInstances(relClass).size());
+        EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
+
+        auto notDeletedInstances = adapter.FindInstances(ecClass);
+        EXPECT_EQ(1, notDeletedInstances.size());
+        EXPECT_CONTAINS(notDeletedInstances, a.GetInstanceId());
+        EXPECT_EQ(0, adapter.FindInstances(relClass).size());
+        }
     }
 
 TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithRequiredParent_DeletesRelationshipAndChild)
@@ -2193,26 +2259,29 @@ TEST_F(ECDbAdapterTests, DeleteRelationship_EmbeddingRelationshipWithRequiredPar
     ECInstanceKey a, b, rel;
     INSERT_INSTANCE(*db, parentClass, a);
 
-    ASSERT_FALSE(childClass == nullptr); 
-    Json::Value instance;
-    instance["ParentId"]["id"] = a.GetInstanceId().ToString();
-    ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *childClass, nullptr).Insert(b, instance));
-    rel = ECInstanceKey(relClass->GetId(), b.GetInstanceId());
+    for (int i = 0; i < 2; i++) // Test statement caching for same operations
+        {
+        ASSERT_FALSE(childClass == nullptr);
+        Json::Value instance;
+        instance["ParentId"]["id"] = a.GetInstanceId().ToString();
+        ASSERT_EQ(BE_SQLITE_OK, JsonInserter(*db, *childClass, nullptr).Insert(b, instance));
+        rel = ECInstanceKey(relClass->GetId(), b.GetInstanceId());
 
-    EXPECT_EQ(1, adapter.FindInstances(relClass).size());
+        EXPECT_EQ(1, adapter.FindInstances(relClass).size());
 
-    CREATE_MockECDbAdapterDeleteListener(listener);
-    EXPECT_CALL_OnBeforeDelete(listener, db, b);
-    EXPECT_CALL_OnBeforeDelete(listener, db, rel);
-    adapter.RegisterDeleteListener(&listener);
+        CREATE_MockECDbAdapterDeleteListener(listener);
+        EXPECT_CALL_OnBeforeDelete(listener, db, b);
+        EXPECT_CALL_OnBeforeDelete(listener, db, rel);
+        adapter.RegisterDeleteListener(&listener);
 
-    EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
+        EXPECT_EQ(SUCCESS, adapter.DeleteRelationship(relClass, a, b));
 
-    auto notDeletedInstances = adapter.FindInstances(parentClass);
-    EXPECT_EQ(1, notDeletedInstances.size());
-    EXPECT_CONTAINS(notDeletedInstances, a.GetInstanceId());
-    EXPECT_EQ(0, adapter.FindInstances(childClass).size());
-    EXPECT_EQ(0, adapter.FindInstances(relClass).size());
+        auto notDeletedInstances = adapter.FindInstances(parentClass);
+        EXPECT_EQ(1, notDeletedInstances.size());
+        EXPECT_CONTAINS(notDeletedInstances, a.GetInstanceId());
+        EXPECT_EQ(0, adapter.FindInstances(childClass).size());
+        EXPECT_EQ(0, adapter.FindInstances(relClass).size());
+        }
     }
 
 TEST_F(ECDbAdapterTests, DeleteRelationship_HoldingRelationshipWithChildWithMultipleParents_DeletesRelationshipLeavingChild)

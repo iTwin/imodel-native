@@ -12,7 +12,6 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnMaterial.h>
-#include <DgnPlatform/AnnotationTable.h>
 #include <ECObjects/ECSchema.h>
 #include "../BackDoor/PublicAPI/BackDoor/WebServices/iModelHub/BackDoor.h"
 #include <DgnPlatform/DgnDbTables.h>
@@ -179,7 +178,7 @@ void SetLastPulledChangeSetId (Briefcase& briefcase, Utf8StringCR changeSetId)
 //---------------------------------------------------------------------------------------
 DgnCode CreateElementCode(DgnDbR db, Utf8StringCR name, Utf8CP nameSpace = nullptr)
     {
-    return nullptr != nameSpace ? DgnMaterial::CreateCode(db.GetDictionaryModel(), name) : SpatialCategory::CreateCode(db.GetDictionaryModel(), name);
+    return nullptr != nameSpace ? PhysicalMaterial::CreateCode(db.GetDictionaryModel(), name) : SpatialCategory::CreateCode(db.GetDictionaryModel(), name);
     }
 
 //---------------------------------------------------------------------------------------

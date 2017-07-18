@@ -206,6 +206,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFi
     EXPECT_EQ(fileName, Utf8String(path.GetFileNameAndExtension()));
     }
 
+// FAIL: eB schema incomaptible to BIM02
+// SOLUTION: redesign eB schema in new WSG 2.6+ release, no fix for ProjectContent?
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectContent_Success)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -244,6 +246,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShareV2_Succeed
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+// FAIL: 
+// BIM02: Invalid property in ECClass 'Forms_EC_Mapping:FormStyle': The property 'Id' has a name of an ECSQL system property which is not allowed.
+// SOLUTION: "IssuePlugin--default" is only used in Graphite generation, no fix
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -263,6 +268,10 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+// FAIL:
+// BIM02: Invalid property in ECClass 'Forms_EC_Mapping:FormStyle': The property 'Id' has a name of an ECSQL system property which is not allowed.
+// BIM02: ECClass 'ClashDetection:ResultBase' has invalid base class : An abstract class must not have a non - abstract base class.
+// SOLUTION: Need IssuePluginV1.2 with changes
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyPunchlistV11_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -301,21 +310,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyMarkupV2_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
-// BIM0200 does not support ECDbMap.01.00 schema, but it is required here for DgnDb0601 version... 
-// Requires not importing ECDbMap with lower version and skipping Views / Contents schemas because those contain "Id" property.
-/* Requires such change in FeatureTracking schema:
-<ClassMap xmlns="ECDbMap.01.00">
-    <MapStrategy>
-        <Strategy>SharedTable</Strategy>
-        <AppliesToSubclasses>True</AppliesToSubclasses>
-    </MapStrategy>
-</ClassMap>
-->
-<ClassMap xmlns="ECDbMap.02.00">
-    <MapStrategy>TablePerHierarchy</MapStrategy>
-</ClassMap>
-*/
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds_KnownIssue)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectFeatureTracking_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
@@ -388,6 +383,9 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13ProjectWisePluginRepository_Suc
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+// FAIL:
+// BIM02: Invalid property in ECClass 'Bentley_SP:Field': The property 'ID' has a name of an ECSQL system property which is not allowed.
+// SOLUTION: bim02 added this constraing, share point plugin is deprecated, no fix
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -404,6 +402,8 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG13SharePointPluginRepository_Succ
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+// FAIL: eB schema incomaptible to BIM02
+// SOLUTION: redesign eB schema in new WSG 2.6+ release, no fix for ProjectContent?
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -420,6 +420,7 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_WSG22eBPluginRepository_Succeeds)
     ASSERT_FALSE(nullptr == result.GetValue());
     }
 
+// FAIL: server down
 TEST_F(CachingDataSourceTests, OpenOrCreate_WSG205xProjectWiseRepository_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();

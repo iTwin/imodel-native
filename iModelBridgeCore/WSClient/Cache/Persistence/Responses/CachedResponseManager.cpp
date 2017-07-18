@@ -393,22 +393,19 @@ CacheNodeKey CachedResponseManager::InsertPage(CachedResponseInfoCR info, uint64
             "[" CLASS_CachedResponsePageInfo_PROPERTY_Index "],"
             "[" CLASS_CachedResponsePageInfo_PROPERTY_CacheTag "],"
             "[" CLASS_CachedResponsePageInfo_PROPERTY_CacheDate "],"
-            "[" CLASS_CachedResponsePageInfo_PROPERTY_IsPartial "]"
-            ") VALUES (?,?,?,?)";
+            "[" CLASS_CachedResponsePageInfo_PROPERTY_IsPartial "],"
+            "[" CLASS_CachedResponsePageInfo_PROPERTY_Response "].Id "
+            ") VALUES (?,?,?,?,?)";
         });
 
     statement->BindInt64(1, page);
     statement->BindText(2, cacheTag.c_str(), IECSqlBinder::MakeCopy::No);
     statement->BindDateTime(3, DateTime::GetCurrentTimeUtc());
     statement->BindBoolean(4, isPartial);
+    statement->BindId(5, info.GetInfoKey().GetInstanceId());
 
     CacheNodeKey pageKey;
     statement->Step(pageKey);
-
-    if (!m_hierarchyManager.RelateInstances(info.GetInfoKey(), pageKey, m_responseToResponsePageClass).IsValid())
-        {
-        pageKey = CacheNodeKey();
-        }
 
     return pageKey;
     }
@@ -504,16 +501,14 @@ BentleyStatus CachedResponseManager::SaveInfo(CachedResponseInfoR info)
 BentleyStatus CachedResponseManager::InsertInfo(CachedResponseInfoR info)
     {
     if (info.IsCached())
-        {
         return SUCCESS;
-        }
 
-    if (BE_SQLITE_OK != m_responseInserter.Get().Insert(info.GetJsonData()) ||
-        !m_hierarchyManager.RelateInstances(info.GetInfoKey(), info.GetKey().GetParent(), m_responseToParentClass).IsValid() ||
-        !m_hierarchyManager.RelateInstances(info.GetInfoKey(), info.GetKey().GetHolder(), m_responseToHolderClass).IsValid())
-        {
+    Json::Value& instance = info.GetJsonData();
+    instance[CLASS_CachedResponseInfo_PROPERTY_Parent][NavPropId] = info.GetKey().GetParent().GetInstanceId().ToString();
+    instance[CLASS_CachedResponseInfo_PROPERTY_Holder][NavPropId] = info.GetKey().GetHolder().GetInstanceId().ToString();
+
+    if (BE_SQLITE_OK != m_responseInserter.Get().Insert(instance))
         return ERROR;
-        }
 
     return SUCCESS;
     }

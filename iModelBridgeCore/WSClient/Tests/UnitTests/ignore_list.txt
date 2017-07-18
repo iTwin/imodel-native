@@ -32,6 +32,12 @@ WSChangesetTests.CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToReque
 # BREAKAGES caused by recent changes in dependencies
 #--------------------------------------------------------------------------------
 
+# New ECDb forces cardinality rules upon data, so relationship change caching is broken.
+# This should be rare case and not be needed in real world, but should be fixed:
+#   probably by safely removing relationship before caching new one.
+#   holding/embedding relationships should be taken care of to not loose children as well.
+DataSourceCacheTests.CacheResponse_ResultContainsChangedOneToOneRelationship_ChangesRelationshipWithoutErrors
+
 # Need to be adjusted as ECDb no longer contains MetaSchema by default. WSCacheMetaSchema can be removed now and generic MetaSchema be used instead
 # However, this will make MetaSchema.02.00 fail upon import as it has some invalid classes. Using MetaSchema from WSG 2.x servers will not work.
 # Importing MetaSchema.03.00 will make old servers not compatible immediately. Review after WSG 2.6 or WSG 3.0 with EC3.0 compatibility is released.
@@ -89,7 +95,7 @@ CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_Ret
     # 2016-10-27 07:54:41,529 ERROR [0x00002790] BeAssert - F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
     # F:\Bim0200Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(215): error: Failed
     # F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
-    # [  FAILED  ] CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas (798 ms)
+    # CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas (798 ms)
 
 UrlProviderTests.GetPunchlistWsgUrl_TimeoutIsLessThanTimeElapsed_CallsBuddiToGetUrl
     # bim0200, NDEBUG, x64, random, firebug hang
@@ -137,7 +143,7 @@ CachingDataSourceTests.GetRepositorySchemaKeys_CacheContainsNonRepositorySchema_
     # 2017-01-13 08:35:20,299 ERROR [0x0000b4ac] BeAssert - F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
     # F:\Bim0200Dev\src-staging\BeGTest\gtest\BeGTestExe.cpp(225): error: Failed
     # F:\Bim0200Dev\src-staging\WSClient\Cache\Util\TempFile.cpp(61): ASSERTION FAILURE (0): false
-    # [  FAILED  ] CachingDataSourceTests.GetRepositorySchemaKeys_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas (1379 ms)
+    # CachingDataSourceTests.GetRepositorySchemaKeys_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas (1379 ms)
 
 UrlProviderTests.GetPunchlistWsgUrl_LocalStateHasOldUrlStoredAsString_IgnoresOldUrlAndCallsBuddi
     # bim0200, x64, NDEBUG
@@ -187,7 +193,7 @@ ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsin
 #           Returns: 040E0560
 #          Expected: to be called once
 #            Actual: called twice - over-saturated and active
-# [  FAILED  ] ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent (10 ms)
+# ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentInParaleleUsingDifferentAuthHandlersWithSameServer_OnlyOneTokenRequestSent (10 ms)
 
 UsageTrackingTests.PostSingleUsage
     # bim0200dev, x64, DEBUG, random hang
@@ -262,7 +268,7 @@ DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelatio
     # F:\Bim0200\src\WSClient\Tests\UnitTests\Published\WebServices\Cache\Persistence\DataSourceCacheTests.cpp(293): error: Value of: VerifyHasRelationship(cache, "UpdateSchema.AB", {"UpdateSchema.A", "AA"}, {"UpdateSchema.B", "BB"})
     #   Actual: false
     # Expected: true
-    # [  FAILED  ] DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching (68 ms)
+    # DataSourceCacheTests.UpdateSchemas_SchemaWithOneToOneRelationship_ChangesRelationshipToZeroToOneAndAllowsCaching (68 ms)
 
 ConnectSignInManagerTests.GetTokenProvider_NotSignedIn_TokenProviderDoesNotReturnAnyTokens
     # bim0200dev, x64 & x86, DEBUG,
@@ -275,7 +281,7 @@ DataSourceCacheTests.Create_ValidParameters_Success
     #       Which is: 0
     # To be equal to: result
     #       Which is: 32768
-    # [  FAILED  ] DataSourceCacheTests.Create_ValidParameters_Success (398 ms)
+    # DataSourceCacheTests.Create_ValidParameters_Success (398 ms)
 DataSourceCacheTests.Open_SimpleECDb_Succeeds
     # bim0200dev, x64, DEBUG
     # [ RUN      ] DataSourceCacheTests.Open_SimpleECDb_Succeeds
@@ -283,7 +289,7 @@ DataSourceCacheTests.Open_SimpleECDb_Succeeds
     #       Which is: 0
     # To be equal to: DataSourceCache().Open(path, CacheEnvironment())
     #       Which is: 32768
-    # [  FAILED  ] DataSourceCacheTests.Open_SimpleECDb_Succeeds (501 ms)
+    # DataSourceCacheTests.Open_SimpleECDb_Succeeds (501 ms)
 DataSourceCacheTests.Open_ExistingDb_Success
     # bim0200dev, x64, DEBUG
     # [ RUN      ] DataSourceCacheTests.Open_ExistingDb_Success
@@ -291,7 +297,7 @@ DataSourceCacheTests.Open_ExistingDb_Success
     #       Which is: 0
     # To be equal to: cache.Create(path, StubCacheEnvironemnt())
     #       Which is: 32768
-    # [  FAILED  ] DataSourceCacheTests.Open_ExistingDb_Success (441 ms)
+    # DataSourceCacheTests.Open_ExistingDb_Success (441 ms)
 DataSourceCacheTests.GetEnvironment_CreatedWithEmptyEnvironment_Empty
     # bim0200dev, x64, DEBUG
     # [ RUN      ] DataSourceCacheTests.GetEnvironment_CreatedWithEmptyEnvironment_Empty
@@ -299,7 +305,7 @@ DataSourceCacheTests.GetEnvironment_CreatedWithEmptyEnvironment_Empty
     #       Which is: 0
     # To be equal to: cache.Create(BeFileName(":memory:"), CacheEnvironment())
     #       Which is: 32768
-    # [  FAILED  ] DataSourceCacheTests.GetEnvironment_CreatedWithEmptyEnvironment_Empty (374 ms)
+    # DataSourceCacheTests.GetEnvironment_CreatedWithEmptyEnvironment_Empty (374 ms)
 DataSourceCacheTests.GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToSameBaseEnvironment
     # bim0200dev, x64, DEBUG
     # [ RUN      ] DataSourceCacheTests.GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToSameBaseEnvironment
@@ -307,7 +313,7 @@ DataSourceCacheTests.GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToS
     #       Which is: 0
     # To be equal to: cache.Create(BeFileName(":memory:"), baseEnv)
     #       Which is: 32768
-    # [  FAILED  ] DataSourceCacheTests.GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToSameBaseEnvironment (366 ms)
+    # DataSourceCacheTests.GetEnvironment_CreatedWithFullBaseEnvironment_SubFoldersToSameBaseEnvironment (366 ms)
 DataSourceCacheTests.GetEnvironment_CreatedWithoutExternalEnvironmentDir_ExternalIsSubfolderToPersistentDir
     # bim0200dev, x64, DEBUG
     # [ RUN      ] DataSourceCacheTests.GetEnvironment_CreatedWithoutExternalEnvironmentDir_ExternalIsSubfolderToPersistentDir
@@ -315,7 +321,7 @@ DataSourceCacheTests.GetEnvironment_CreatedWithoutExternalEnvironmentDir_Externa
     #       Which is: 0
     # To be equal to: cache.Create(BeFileName(":memory:"), baseEnv)
     #       Which is: 32768
-    # [  FAILED  ] DataSourceCacheTests.GetEnvironment_CreatedWithoutExternalEnvironmentDir_ExternalIsSubfolderToPersistentDir (352 ms)
+    # DataSourceCacheTests.GetEnvironment_CreatedWithoutExternalEnvironmentDir_ExternalIsSubfolderToPersistentDir (352 ms)
 DataSourceCacheTests.UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds
     # bim0200dev, x64, DEBUG
     # [ RUN      ] DataSourceCacheTests.UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds
@@ -323,7 +329,7 @@ DataSourceCacheTests.UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds
     #       Which is: 0
     # To be equal to: cache->Create(filePath, environment)
     #       Which is: 32768
-    # [  FAILED  ] DataSourceCacheTests.UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds (821 ms)
+    # DataSourceCacheTests.UpdateSchemas_EmptyVectorPassed_DoesNothingAndSucceeds (821 ms)
 DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
     # bim0200dev, x64, DEBUG
     # [ RUN      ] DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
@@ -331,7 +337,7 @@ DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success
     #       Which is: 0
     # To be equal to: cache.Create(path, StubCacheEnvironemnt())
     #       Which is: 32768
-    # [  FAILED  ] DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success (871 ms)
+    # DataSourceCacheUpgradeTests.Open_CurrentVersionDb_Success (871 ms)
 
 DataSourceCacheTests.*
     # bim0200dev, x64, DEBUG
@@ -343,3 +349,10 @@ ChunkedUploadRequestTests.PerformAsync_FirtResponseNotResumeIncomplete_StopsRequ
 #--------------------------------------------------------------------------------
 # NEW not reviewed issues
 #--------------------------------------------------------------------------------
+UrlProviderTests.GetUrl_ValidateAllGetters
+    # bim0200holdouts, x64, NDEBUG, random PRG failure
+    # [ RUN      ] UrlProviderTests.GetUrl_ValidateAllGetters
+    # e:\Builds\dcsdk02000157\Source\WSClient\Tests\UnitTests\Published\WebServices\Configuration\UrlProviderTests.cpp(88): error: Actual function call count doesn't match EXPECT_CALL(*client, GetUrl(_, _))...
+    #          Expected: to be called once
+    #            Actual: never called - unsatisfied and active
+    # [  FAILED  ] UrlProviderTests.GetUrl_ValidateAllGetters (893 ms)
