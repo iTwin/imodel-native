@@ -49,7 +49,7 @@ StatusResult iModelInfo::WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId
     const Utf8String methodName = "iModelInfo::WriteiModelInfo";
     BeSQLite::DbResult status;
     Utf8String parentChangeSetId = clearLastPulledChangeSetId ? "" : db.Revisions().GetParentRevisionId();
-    status = db.AssignBriefcaseId(briefcaseId);
+    status = db.SetAsBriefcase(briefcaseId);
 
     //Write the iModelInfo properties to the file
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
