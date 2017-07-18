@@ -113,7 +113,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
+    <Part Name="PublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=folly">
         <SubPart PartName="DgnPlatformDLL"/>
         <Bindings>
             <Directory SourceName="Delivery/PublishedApi" ProductDirectoryName="PublishedAPI" SubPartDirectory="PublishedApi/DgnProject" Required="false"/>
@@ -126,6 +126,7 @@
         <Bindings>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/ScopedDgnHost.h</Files>
             <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnDbTestUtils.h</Files>
+            <Files SubPartDirectory="UnitTests/include/UnitTests/BackDoor/DgnPlatform">Delivery/UnitTests/DgnPlatformTestDomain.h</Files>
         </Bindings>
     </Part>
 
@@ -151,7 +152,7 @@
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
-        <RequiredRepository>CompatibilityTestFiles-2-0-1-38</RequiredRepository>
+        <RequiredRepository>CompatibilityTestFiles-2-0-1-53</RequiredRepository>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Directory ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="Script" SourceName="Delivery/UnitTests/Script" />
@@ -401,7 +402,7 @@
             <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
                 CompatibilityTestFiles/CompatibilityTestSeed.bim
             </Files>
-			<Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
+            <Files ProductDirectoryName="CompatibilityTestFiles" SubPartDirectory="CompatibilityTestFiles">
                 CompatibilityTestFiles/InstancesCompatibilitySeed.bim
             </Files>
         </Bindings>
@@ -447,6 +448,11 @@
         </Bindings>
     </Part>
 
+    <!-- Memory leak testing of DgnPlatform tests. Only called on demand -->
+    <Part Name="MemLeakTests" BentleyBuildMakeFile="${SrcRoot}DgnDbTestingScripts/MemoryLeak/RunMemLeakDetection.mke" BMakeOptions="-dGTEST_PRODUCT=DgnPlatform-Gtest -dGTEST_NAME=DgnPlatformTest" OnlyPlatforms="x64">
+        <SubPart PartFile="DgnDbTestingScripts" Repository="DgnDbTestingScripts" PartName="MemLeakTests" />
+        <SubProduct ProductName="DgnPlatform-Gtest" />
+    </Part>
     
     <!-- ********************** -->
     <!-- **** AndroidJUnit **** -->
@@ -539,7 +545,8 @@
       <SubProduct ProductName="ToyTileCreator" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="Briefcase" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
       <SubProduct ProductName="BimConsole" PartFile="DgnPlatform" Repository="DgnPlatform" />
-        <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
+      <SubProduct ProductName="iModelJsNode_node_module" PartFile="DgnPlatformExamples" Repository="DgnPlatformExamples" />
+      <!-- Won't build on Linux because of capitalization problems in ImagePP.PartFile.xml:
       <SubProduct ProductName="TilePublisher" PartFile="DgnPlatform" Repository="DgnPlatform"/>
         -->
       <SubPart PartName="NoView-Gtest-RunAggregator-Unix" LibType="Static" />

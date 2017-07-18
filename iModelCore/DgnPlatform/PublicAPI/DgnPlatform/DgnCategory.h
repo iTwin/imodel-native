@@ -44,6 +44,9 @@ public:
     BE_PROP_NAME(Properties)
     BE_PROP_NAME(Description)
 
+    BE_JSON_NAME(appearance)
+    BE_JSON_NAME(descr)
+
     //! The parameters that can determine how graphics on a SubCategory appear when drawn.
     //! @ingroup GROUP_DgnCategory
     //! @ingroup GROUP_Appearance
@@ -62,6 +65,17 @@ public:
         double m_transparency;
 
     public:
+        BE_JSON_NAME(invisible)
+        BE_JSON_NAME(dontPlot)
+        BE_JSON_NAME(dontSnap)
+        BE_JSON_NAME(dontLocate)
+        BE_JSON_NAME(color)
+        BE_JSON_NAME(weight)
+        BE_JSON_NAME(style)
+        BE_JSON_NAME(priority)
+        BE_JSON_NAME(material)
+        BE_JSON_NAME(transp)
+
         void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
         Appearance() {Init();}
         explicit Appearance(Utf8StringCR val) {FromJson(val);}
@@ -171,6 +185,7 @@ private:
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
@@ -251,6 +266,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnCategory : DefinitionElement
     friend struct dgn_ElementHandler::Category;
 
 public:
+    BE_JSON_NAME(rank)
+    BE_JSON_NAME(descr)
+
     //! The Rank of a category indicates how it was created and where it can be used.
     //! @ingroup GROUP_DgnCategory
     enum class Rank
@@ -267,6 +285,7 @@ protected:
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
@@ -305,6 +324,7 @@ public:
 
     //! Looks up the DgnCategoryId of a category by code.
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnDbR db, DgnCodeCR code);
+
     //! Gets a DgnCategory by ID. 
     //! @note It is better to use DrawingCategory::Get or SpatialCategory::Get if the type of category is known
     static DgnCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<DgnCategory>(categoryId);}

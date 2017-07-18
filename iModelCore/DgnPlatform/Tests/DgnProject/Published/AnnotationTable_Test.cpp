@@ -1947,60 +1947,89 @@ TEST_F (AnnotationTableActionTest, DeleteMergedCells_Nothing)
     DoModifyTableTest (testAction);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowBefore)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowBefore);
     DoModifyTableTest (testAction);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowWithRoot)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowWithRoot);
     DoModifyTableTest (testAction);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowInterior)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowInterior);
     DoModifyTableTest (testAction);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowAllMerged)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowAllMerged);
     DoModifyTableTest (testAction);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_RowAfter)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::RowAfter);
     DoModifyTableTest (testAction);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnBefore)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnBefore);
     DoModifyTableTest (testAction);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnWithRoot)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnWithRoot);
     DoModifyTableTest (testAction);
     }
-
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnInterior)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnInterior);
     DoModifyTableTest (testAction);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnAllMerged)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnAllMerged);
     DoModifyTableTest (testAction);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    JoshSchifter    04/14
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (AnnotationTableActionTest, DeleteMergedCells_ColumnAfter)
     {
     DeleteMergedCellsAction testAction (DeleteMergedCellsAction::DeleteTarget::ColumnAfter);

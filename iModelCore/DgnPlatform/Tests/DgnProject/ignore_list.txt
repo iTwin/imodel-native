@@ -25,9 +25,6 @@ CsvFileTests.GetSections
 #TFS 386093 : Unable to query line style unless we reload the file ( which will reload the cache )
 DgnLineStyleTest.InsertAndQueryWithoutCacheReLoad
 
-# Will be removed from ignore list once the Bim produced by ECInstancesCompatibility is preserved by the 'CompatibilityTestFiles' product.
-ECInstancesCompatibility.ModifyPreservedBim
-
 #TFS 630732
 DgnECNavigatorTest.GetElementInfo
 
@@ -52,3 +49,7 @@ CompatibilityTests.ModifyBaseline       #crashing with repeat
 PerformanceElementsTests.ElementsInsertStrategies   #it was a disable test
 DgnChangeSummaryTestFixture.CreateSampleDataSet     #it was a disable test
 DgnChangeSummaryTestFixture.ValidateChangeSummaries  #it was a disable test
+
+ECInstancesCompatibility.UpdateInstances
+    # bim2-0r1, x64, NDEBUG, fails after updating compatibility files from 2-0-1-46 to 2-0-1-53.
+    # NOTE: Test fails because the baseline file contains an invalid bis:GeometryPart (null GeometryStream) that we cannot load. This will be resolved when the baseline files are re-created

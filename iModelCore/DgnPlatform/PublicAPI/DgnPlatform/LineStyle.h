@@ -9,7 +9,7 @@
 //__PUBLISH_SECTION_START__
 /** @cond BENTLEY_SDK_Internal */
 
-#include "Render.h" 
+#include "Render.h"
 #include "LineStyleResource.r.h"
 #include "DgnHost.h"
 //__PUBLISH_SECTION_END__
@@ -55,9 +55,10 @@ DGNPLATFORM_REF_COUNTED_PTR(LsInternalComponent);
 DGNPLATFORM_REF_COUNTED_PTR(LsCache);
 DGNPLATFORM_REF_COUNTED_PTR(LsRasterImageComponent);
 
+BEGIN_BENTLEY_DGN_NAMESPACE
+
 static Utf8CP LINESTYLE_PROP_Description = "Description";
 static Utf8CP LINESTYLE_PROP_Data = "Data";
-BEGIN_BENTLEY_DGN_NAMESPACE
 
 //! Special style numbers that form a subset of values that may passed to LineStyleManager::GetNameFromNumber() or returned from LineStyleManager::GetNumberFromName()
 //! @ingroup LineStyleManagerModule
@@ -120,7 +121,7 @@ public:
 struct LsJsonHelpers
 {
     static Utf8CP CompId;
-    
+
     static double GetDouble(JsonValueCR json, CharCP fieldName, double defaultValue);
     static uint32_t GetUInt32(JsonValueCR json, CharCP fieldName, uint32_t defaultValue);
     static int32_t GetInt32(JsonValueCR json, CharCP fieldName, int32_t defaultValue);
@@ -230,7 +231,7 @@ typedef struct DecomposedDwgLine*               DecomposedDwgLineP;
 typedef struct Centerline*                      CenterlineP;
 
 //=======================================================================================
-// @bsiclass  
+// @bsiclass
 //=======================================================================================
 struct  LsLocation
 {
@@ -342,6 +343,8 @@ public:
     virtual bool        _ContainsComponent (LsComponentP other) const {return other == this;}
     virtual bool        _HasUniformFullWidth (double *pWidth) const  {if (pWidth) *pWidth=0.0; return false;}
     virtual double      _CalcRepetitions (Render::LineStyleSymbCP) const;
+    virtual LsRasterImageComponentP      _GetRasterImageComponent () {return nullptr;}
+    virtual bool        _HasRasterImageComponent () const {return false;}
 
     bool        _IsContinuous           () const override  {return false;}
     bool        _HasWidth               () const override  {return true;}
@@ -424,6 +427,8 @@ protected:
     LsComponentPtr _GetForTextureGeneration() const override { return const_cast<LsRasterImageComponentP>(this); }
     LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override { return LsOkayForTextureGeneration::NoChangeRequired; }
     LsComponentPtr _Import(DgnImportContext& importer) const override;
+    virtual LsRasterImageComponentP      _GetRasterImageComponent () override {return this; }
+    virtual bool        _HasRasterImageComponent () const override {return true;}
 
 public:
     void SaveToJson(Json::Value& result, bvector<uint8_t>& imageData) const;
@@ -466,7 +471,7 @@ private:
 
 protected:
     LsComponentPtr _Import(DgnImportContext& importer) const override;
-    
+
 public:
     static LsSymbolComponent* LoadPointSym  (LsComponentReader* reader);
     static LsSymbolComponentPtr Create (LsLocation& location) { LsSymbolComponentP retval = new LsSymbolComponent (&location); retval->m_isDirty = true; return retval; }
@@ -672,6 +677,8 @@ private:
 protected:
     virtual         ~LsCompoundComponent        ();
     LsComponentPtr _Import(DgnImportContext& importer) const override;
+    virtual LsRasterImageComponentP      _GetRasterImageComponent () override;
+    virtual bool        _HasRasterImageComponent () const override;
 
 public:
     static LsCompoundComponentP  LoadCompoundComponent  (LsComponentReader*reader);
@@ -950,7 +957,7 @@ public:
     void _StartTextureGeneration() const override { m_okayForTextureGeneration = LsOkayForTextureGeneration::Unknown; }
     LsComponentPtr _GetForTextureGeneration() const override;
     LsOkayForTextureGeneration _IsOkayForTextureGeneration() const override;
-                                                              
+
 //__PUBLISH_SECTION_START__
 public:
     enum PhaseMode
@@ -1201,7 +1208,7 @@ enum class LsUnit
 
 //=======================================================================================
 //! TextureDescr
-//!  
+//!
 // @bsiclass
 //=======================================================================================
 struct          TextureDescr
@@ -1219,7 +1226,7 @@ private:
     double      m_scale;
     double      m_styleWidth;  //  don't allow both end and start for texture.
 public:
-    bool operator< (struct TextureParams const&rhs) const;    
+    bool operator< (struct TextureParams const&rhs) const;
     TextureParams();
     TextureParams(uint32_t lineWeight, uint32_t flags, double scale, double styleWidth);
     };
@@ -1255,7 +1262,8 @@ private:
     mutable bool        m_firstTextureInitialized;
     mutable bool        m_texturesNotSupported;
     mutable bool        m_usesSymbolWeight; // if m_usesSymbolWeight is true, only use m_textures[0]
-    ParamsToTexture_t   m_textures; // Geometry textures...raster component uses m_textures[0]
+    Render::TexturePtr  m_rasterTexture;
+    ParamsToTexture_t   m_geometryTextures; // Geometry textures...raster component uses m_rasterTexture
 
     void Init (CharCP nName, Json::Value& lsDefinition, DgnStyleId styleId);
     void SetHWStyle(LsComponentId componentID);
@@ -1469,7 +1477,7 @@ private:
     BentleyStatus Load();
     static LsCachePtr Create(DgnDbR project);
 
-    DEFINE_BENTLEY_NEW_DELETE_OPERATORS 
+    DEFINE_BENTLEY_NEW_DELETE_OPERATORS
 public:
 
     typedef int (*PFNameMapProcessFunc) (NameNode const* nameNode, void* arg);
@@ -1560,7 +1568,7 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE LineStyleElement : DefinitionElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_LineStyle, DefinitionElement);
-    
+
 private:
     static DgnCode CreateCode(DgnDbR db, Utf8StringCR name) { return CodeSpec::CreateCode(BIS_CODESPEC_LineStyle, db.GetDictionaryModel(), name); }
 
@@ -1572,7 +1580,7 @@ protected:
 public:
     static ECN::ECClassId QueryECClassId(DgnDbR db) { return db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_LineStyle); }
     static DgnClassId QueryDgnClassId(DgnDbR db) { return DgnClassId(QueryECClassId(db)); }
-    
+
     explicit LineStyleElement(DgnDbR db) : T_Super(CreateParams(db, DgnModel::DictionaryId(), QueryDgnClassId(db), DgnCode())) {}
     explicit LineStyleElement(CreateParams const& params) : T_Super(params) {}
     static LineStyleElementPtr Create(DgnDbR db) { return new LineStyleElement(db); }
@@ -1584,7 +1592,7 @@ public:
     void SetDescription(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Description, value); }
     Utf8String GetData() const { return GetPropertyValueString(LINESTYLE_PROP_Data); }
     void SetData(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Data, value); }
-    
+
     static DgnStyleId QueryId(DgnDbR db, Utf8CP name) { return DgnStyleId(db.Elements().QueryElementIdByCode(CreateCode(db, name)).GetValueUnchecked()); }
     static LineStyleElementCPtr Get(DgnDbR db, Utf8CP name) { return Get(db, QueryId(db, name)); }
     static LineStyleElementCPtr Get(DgnDbR db, DgnStyleId id) { return db.Elements().Get<LineStyleElement>(id); }
@@ -1594,18 +1602,18 @@ public:
     LineStyleElementCPtr Update() { return GetDgnDb().Elements().Update<LineStyleElement>(*this); }
 
     //=======================================================================================
-    // @bsiclass                                                   
+    // @bsiclass
     //=======================================================================================
     struct Entry : ECSqlStatementEntry
     {
         DEFINE_T_SUPER(ECSqlStatementEntry);
         friend struct ECSqlStatementIterator<Entry>;
         friend struct LineStyleElement;
-    
+
     private:
         Entry() : T_Super(nullptr) {}
         Entry(BeSQLite::EC::ECSqlStatement* stmt) : T_Super(stmt) {}
-    
+
     public:
         DgnStyleId GetElementId() const { return m_statement->GetValueId<DgnStyleId>(0); }
         Utf8CP GetName() const { return m_statement->GetValueText(1); }

@@ -8,12 +8,12 @@
 #pragma once
 
 #include "../NonPublished/DgnHandlersTests.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 #include "GeomHelper.h"
 #include <Bentley/BeTest.h>
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <ECDb/ECDbApi.h>
 #include <UnitTests/BackDoor/DgnPlatform/ScopedDgnHost.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/GenericDomain.h>
 
@@ -83,6 +83,4 @@ public:
 
     DgnElementId InsertElementUsingGeometryPart(DgnGeometryPartId gpId, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
     DgnElementId InsertElementUsingGeometryPart2d(DgnCodeCR gpCode, DgnModelId mid = DgnModelId(), DgnCategoryId categoryId = DgnCategoryId(), DgnCode elementCode = DgnCode());
-
-    void FlushLocalChanges();
 };

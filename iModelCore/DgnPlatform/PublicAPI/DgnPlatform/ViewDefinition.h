@@ -303,7 +303,7 @@ public:
     //! @return true if the model was dropped, false if it was not previously in this ModelSelector
     bool DropModel(DgnModelId id) {return 0 != m_models.erase(id);}
 
-    //! Create a DgnCode for a CategorySelector given a name that is meant to be unique within the scope of the specified DefinitionModel
+    //! Create a DgnCode for a ModelSelector given a name that is meant to be unique within the scope of the specified DefinitionModel
     static DgnCode CreateCode(DefinitionModelR scope, Utf8StringCR name) {return name.empty() ? DgnCode() : CodeSpec::CreateCode(BIS_CODESPEC_ModelSelector, scope, name);}
 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ModelSelector));}//!< @private
@@ -345,7 +345,7 @@ public:
     DgnCategoryIdSet& GetCategoriesR() {return m_categories;}//!< @private
     void SetCategories(DgnCategoryIdSet const& categories) {m_categories = categories;}//!< @private
 
-    //! Determine whether this CateggorySelector includes the specified category
+    //! Determine whether this CategorySelector includes the specified category
     bool IsCategoryViewed(DgnCategoryId categoryId) const {return m_categories.Contains(categoryId);}
 
     //! Add a category to this CategorySelector
@@ -407,6 +407,7 @@ protected:
 
     DGNPLATFORM_EXPORT virtual bool _EqualState(ViewDefinitionR);
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     void _OnInserted(DgnElementP copiedFrom) const override {ClearState(); T_Super::_OnInserted(copiedFrom);}
@@ -445,6 +446,8 @@ protected:
     void AdjustAspectRatio(double windowAspect);
 
 public:
+    BE_JSON_NAME(categorySelectorId)
+    BE_JSON_NAME(displayStyleId)
     BE_JSON_NAME(width)
     BE_JSON_NAME(height)
     BE_JSON_NAME(format)
@@ -454,6 +457,7 @@ public:
     BE_JSON_NAME(gridSpaceY)
     BE_JSON_NAME(gridPerRef)
     BE_JSON_NAME(acs)
+    BE_JSON_NAME(aspectSkew)
 
     DGNPLATFORM_EXPORT ViewportStatus ValidateViewDelta(DPoint3dR delta, bool displayMessage);
 
@@ -623,6 +627,12 @@ public:
 
     //! Get the aspect ratio (width/height) of this view
     double GetAspectRatio() const {auto extents=GetExtents(); return extents.x/extents.y;}
+
+    //! Get the aspect ratio skew (x/y, usually 1.0) that can be used to exaggerate one axis of the view.
+    double GetAspectRatioSkew() const {return GetDetail(json_aspectSkew()).asDouble(1.0);}
+
+    //! Change the aspect ratio skew (x/y) of this view.
+    void SetAspectRatioSkew(double val) {if (val == 1.0) {RemoveDetail(json_aspectSkew());} else {SetDetail(json_aspectSkew(), Json::Value(val));}}
 
     //! Set the extents of this view
     void SetExtents(DVec3dCR delta) {_SetExtents(delta);}
@@ -830,6 +840,10 @@ public:
         DPoint3d m_eyePoint = {0.0,0.0,0.0};
 
     public:
+        BE_JSON_NAME(lens)
+        BE_JSON_NAME(focusDist)
+        BE_JSON_NAME(eye)
+
         static bool IsValidLensAngle(Angle val) {return val.Radians()>(Angle::Pi()/8.0) && val<Angle::AnglePi();}
         void InvalidateFocus() {m_focusDistance=0.0;}
         bool IsFocusValid() const {return m_focusDistance > 0.0 && m_focusDistance<1.0e14;}
@@ -843,6 +857,8 @@ public:
         void SetEyePoint(DPoint3dCR pt) {m_eyePoint = pt;}
         bool IsValid() const {return IsLensValid() && IsFocusValid();}
         bool IsEqual(Camera const& other) const {return m_lensAngle==other.m_lensAngle && m_focusDistance==other.m_focusDistance && m_eyePoint.IsEqual(other.m_eyePoint);}
+        Json::Value ToJson() const;
+        static Camera FromJson(JsonValueCR );
     };
 
     //! Parameters used to construct a ViewDefinition3d
@@ -871,6 +887,7 @@ protected:
     Camera m_cameraDef;  //!< The camera used for this view.
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
@@ -890,6 +907,12 @@ protected:
     virtual bool _SupportsCamera() const {return true;}
 
 public:
+    BE_JSON_NAME(cameraOn)
+    BE_JSON_NAME(origin)
+    BE_JSON_NAME(extents)
+    BE_JSON_NAME(angles)
+    BE_JSON_NAME(camera)
+
     static double MinimumFrontDistance() {return 300 * DgnUnits::OneMillimeter();} 
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_ViewDefinition3d));} //!< private
     void VerifyFocusPlane();//!< private
@@ -1063,6 +1086,7 @@ protected:
     mutable ModelSelectorPtr m_modelSelector;
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
@@ -1074,6 +1098,8 @@ protected:
     DGNPLATFORM_EXPORT ViewControllerPtr _SupplyController() const override;
 
 public:
+    BE_JSON_NAME(modelSelectorId)
+
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_SpatialViewDefinition));} //!< private
 
     //! Create a SpatialViewDefinition from CreateParams
@@ -1137,6 +1163,7 @@ protected:
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext& importer) override;
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT bool _EqualState(ViewDefinitionR) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR el) override;
@@ -1151,6 +1178,11 @@ protected:
     explicit ViewDefinition2d(CreateParams const& params) : T_Super(params) {}
 
 public:
+    BE_JSON_NAME(baseModelId)
+    BE_JSON_NAME(origin)
+    BE_JSON_NAME(delta)
+    BE_JSON_NAME(angle)
+
     ViewDefinition2d(DefinitionModelR model, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categorySelector, DisplayStyle2dR displayStyle) :
             T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), classId, CreateCode(model, name), categorySelector)), m_baseModelId(baseModelId) {SetDisplayStyle2d(displayStyle);}
 
@@ -1184,8 +1216,6 @@ protected:
     explicit DrawingViewDefinition(CreateParams const& params) : T_Super(params) {}
 
 public:
-    BE_JSON_NAME(aspectSkew)
-
     //! Construct a DrawingViewDefinition subclass in the specified DefinitionModel prior to inserting it
     DrawingViewDefinition(DefinitionModelR model, Utf8StringCR name, DgnClassId classId, DgnModelId baseModelId, CategorySelectorR categories, DisplayStyle2dR displayStyle) :
         T_Super(model, name, classId, baseModelId, categories, displayStyle) {}
@@ -1198,7 +1228,6 @@ public:
 
     //! Look up the ECClass Id used for DrawingViewDefinitions in the specified DgnDb
     static DgnClassId QueryClassId(DgnDbR db) {return DgnClassId(db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingViewDefinition));}
-    DGNPLATFORM_EXPORT double GetAspectRatioSkew() const;
 };
 
 //=======================================================================================

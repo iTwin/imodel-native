@@ -23,6 +23,16 @@ DgnDbStatus DgnCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParam
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCategory::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_rank()] = (int) m_rank;
+    val[json_descr()] = m_descr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
@@ -183,6 +193,17 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
         }
 
     return status;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnSubCategory::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+
+    val[json_appearance()] = m_data.m_appearance.ToJson();
+    val[json_descr()] = m_data.m_descr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -357,16 +378,6 @@ DgnCode DgnSubCategory::_GenerateDefaultCode() const
     return DgnCode();
     }
 
-static Utf8CP APPEARANCE_Invisible  = "invisible";
-static Utf8CP APPEARANCE_DontPlot   = "dontPlot";
-static Utf8CP APPEARANCE_DontSnap   = "dontSnap";
-static Utf8CP APPEARANCE_DontLocate = "dontLocate";
-static Utf8CP APPEARANCE_Color      = "color";
-static Utf8CP APPEARANCE_Weight     = "weight";
-static Utf8CP APPEARANCE_Style      = "style";
-static Utf8CP APPEARANCE_Priority   = "priority";
-static Utf8CP APPEARANCE_Material   = "material";
-static Utf8CP APPEARANCE_Transparency = "transp";
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
@@ -379,21 +390,21 @@ void DgnSubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
     if (val.isNull())
         return;
 
-    m_invisible = val.get(APPEARANCE_Invisible, false).asBool();
-    m_dontPlot = val.get(APPEARANCE_DontPlot, false).asBool();
-    m_dontSnap = val.get(APPEARANCE_DontSnap, false).asBool();
-    m_dontLocate = val.get(APPEARANCE_DontLocate, false).asBool();
-    m_color  = ColorDef(val[APPEARANCE_Color].asUInt());
-    m_weight = val[APPEARANCE_Weight].asUInt();
-    if (val.isMember(APPEARANCE_Style))
-        m_style  = DgnStyleId(val[APPEARANCE_Style].asUInt64());
+    m_invisible = val.get(json_invisible(), false).asBool();
+    m_dontPlot = val.get(json_dontPlot(), false).asBool();
+    m_dontSnap = val.get(json_dontSnap(), false).asBool();
+    m_dontLocate = val.get(json_dontLocate(), false).asBool();
+    m_color  = ColorDef(val[json_color()].asUInt());
+    m_weight = val[json_weight()].asUInt();
+    if (val.isMember(json_style()))
+        m_style  = DgnStyleId(val[json_style()].asUInt64());
     else
         m_style.Invalidate();
-    m_displayPriority = val[APPEARANCE_Priority].asInt();
-    m_transparency = val[APPEARANCE_Transparency].asDouble();
+    m_displayPriority = val[json_priority()].asInt();
+    m_transparency = val[json_transp()].asDouble();
 
-    if (val.isMember(APPEARANCE_Material))
-        m_material = DgnMaterialId(val[APPEARANCE_Material].asUInt64());
+    if (val.isMember(json_material()))
+        m_material = DgnMaterialId(val[json_material()].asUInt64());
     else
         m_material.Invalidate();
     }
@@ -405,16 +416,16 @@ Utf8String DgnSubCategory::Appearance::ToJson() const
     {
     Json::Value val;
 
-    if (m_invisible)            val[APPEARANCE_Invisible] = true;
-    if (m_dontPlot)             val[APPEARANCE_DontPlot] = true;
-    if (m_dontSnap)             val[APPEARANCE_DontSnap] = true;
-    if (m_dontLocate)           val[APPEARANCE_DontLocate] = true;
-    if (ColorDef::Black() != m_color)  val[APPEARANCE_Color]  = m_color.GetValue();
-    if (0 != m_weight)          val[APPEARANCE_Weight] = m_weight;
-    if (m_style.IsValid())      val[APPEARANCE_Style]  = m_style.GetValue();
-    if (0 != m_displayPriority) val[APPEARANCE_Priority] = m_displayPriority;
-    if (m_material.IsValid())   val[APPEARANCE_Material] = m_material.GetValue();
-    if (0.0 != m_transparency)  val[APPEARANCE_Transparency] = m_transparency;
+    if (m_invisible)            val[json_invisible()] = true;
+    if (m_dontPlot)             val[json_dontPlot()] = true;
+    if (m_dontSnap)             val[json_dontSnap()] = true;
+    if (m_dontLocate)           val[json_dontLocate()] = true;
+    if (ColorDef::Black() != m_color)  val[json_color()]  = m_color.GetValue();
+    if (0 != m_weight)          val[json_weight()] = m_weight;
+    if (m_style.IsValid())      val[json_style()]  = m_style.GetValue();
+    if (0 != m_displayPriority) val[json_priority()] = m_displayPriority;
+    if (m_material.IsValid())   val[json_material()] = m_material.GetValue();
+    if (0.0 != m_transparency)  val[json_transp()] = m_transparency;
 
     return Json::FastWriter::ToString(val);
     }
@@ -455,13 +466,13 @@ void DgnSubCategory::Appearance::RelocateToDestinationDb(DgnImportContext& conte
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnSubCategory::Override::ToJson(JsonValueR outValue) const
     {
-    if (m_flags.m_invisible)    outValue[APPEARANCE_Invisible] = m_value.IsInvisible();
-    if (m_flags.m_color)        outValue[APPEARANCE_Color] = m_value.GetColor().GetValue();
-    if (m_flags.m_weight)       outValue[APPEARANCE_Weight] = m_value.GetWeight();
-    if (m_flags.m_style)        outValue[APPEARANCE_Style] = m_value.GetStyle().GetValue();
-    if (m_flags.m_material)     outValue[APPEARANCE_Material] = m_value.GetMaterial().GetValue();
-    if (m_flags.m_priority)     outValue[APPEARANCE_Priority] = m_value.GetDisplayPriority();
-    if (m_flags.m_transparency) outValue[APPEARANCE_Transparency] = m_value.GetTransparency();
+    if (m_flags.m_invisible)    outValue[Appearance::json_invisible()] = m_value.IsInvisible();
+    if (m_flags.m_color)        outValue[Appearance::json_color()] = m_value.GetColor().GetValue();
+    if (m_flags.m_weight)       outValue[Appearance::json_weight()] = m_value.GetWeight();
+    if (m_flags.m_style)        outValue[Appearance::json_style()] = m_value.GetStyle().GetValue();
+    if (m_flags.m_material)     outValue[Appearance::json_material()] = m_value.GetMaterial().GetValue();
+    if (m_flags.m_priority)     outValue[Appearance::json_priority()] = m_value.GetDisplayPriority();
+    if (m_flags.m_transparency) outValue[Appearance::json_transp()] = m_value.GetTransparency();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -471,13 +482,13 @@ void DgnSubCategory::Override::FromJson(JsonValueCR val)
     {
     Init();
 
-    if (val.isMember(APPEARANCE_Invisible))    SetInvisible(val[APPEARANCE_Invisible].asBool());
-    if (val.isMember(APPEARANCE_Color))        SetColor(ColorDef(val[APPEARANCE_Color].asUInt()));
-    if (val.isMember(APPEARANCE_Weight))       SetWeight(val[APPEARANCE_Weight].asUInt());
-    if (val.isMember(APPEARANCE_Style))        SetStyle(DgnStyleId(val[APPEARANCE_Style].asUInt64()));
-    if (val.isMember(APPEARANCE_Material))     SetMaterial(DgnMaterialId(val[APPEARANCE_Material].asUInt64()));
-    if (val.isMember(APPEARANCE_Priority))     SetDisplayPriority(val[APPEARANCE_Priority].asInt());
-    if (val.isMember(APPEARANCE_Transparency)) SetTransparency(val[APPEARANCE_Transparency].asDouble());
+    if (val.isMember(Appearance::json_invisible()))    SetInvisible(val[Appearance::json_invisible()].asBool());
+    if (val.isMember(Appearance::json_color()))        SetColor(ColorDef(val[Appearance::json_color()].asUInt()));
+    if (val.isMember(Appearance::json_weight()))       SetWeight(val[Appearance::json_weight()].asUInt());
+    if (val.isMember(Appearance::json_style()))        SetStyle(DgnStyleId(val[Appearance::json_style()].asUInt64()));
+    if (val.isMember(Appearance::json_material()))     SetMaterial(DgnMaterialId(val[Appearance::json_material()].asUInt64()));
+    if (val.isMember(Appearance::json_priority()))     SetDisplayPriority(val[Appearance::json_priority()].asInt());
+    if (val.isMember(Appearance::json_transp())) SetTransparency(val[Appearance::json_transp()].asDouble());
     }
 
 /*---------------------------------------------------------------------------------**//**

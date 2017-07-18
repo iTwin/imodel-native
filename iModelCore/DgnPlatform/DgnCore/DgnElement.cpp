@@ -355,6 +355,15 @@ DgnDbStatus DefinitionElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClas
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DefinitionElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_isPrivate()] = m_isPrivate;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DefinitionElement::_CopyFrom(DgnElementCR el)
@@ -1194,6 +1203,32 @@ DgnDbStatus DgnElement::_LoadFromDb()
         return DgnDbStatus::ReadError;
     
     return _ReadSelectParams(*select.m_statement, select.m_params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
+    {
+    val[json_id()] = m_elementId.ToString(BeInt64Id::UseHex::Yes);
+
+    auto ecClass = GetElementClass();
+    val[json_schemaName()] = ecClass->GetSchema().GetName();
+    val[json_className()] = ecClass->GetName();
+    val[json_model()] = m_modelId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_code()] = m_code.ToJson2();
+
+    if (m_parentId.IsValid())
+        val[json_parent()] = m_parentId.ToString(BeInt64Id::UseHex::Yes);
+
+    if (m_federationGuid.IsValid())
+        val[json_federationGuid()] = m_federationGuid.ToString();
+
+    if (!m_userLabel.empty())
+        val[json_userLabel()] = m_userLabel;
+
+    if (!m_jsonProperties.empty())
+        val[json_jsonProperties()] = m_jsonProperties;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2119,6 +2154,24 @@ DgnDbStatus DgnElement::MultiAspect::_InsertInstance(DgnElementCR el, BeSQLite::
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<DgnElement::MultiAspect> DgnElement::MultiAspect::CreateAspect(DgnDbR db, ECClassCR aspectClass)
+    {
+    if (!aspectClass.Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect))
+        return nullptr;
+
+    dgn_AspectHandler::Aspect* aspectHandler = dgn_AspectHandler::Aspect::FindHandler(db, aspectClass.GetId());
+    if ((nullptr == aspectHandler) || (aspectHandler == &dgn_AspectHandler::Aspect::GetHandler()))
+        {
+        StandaloneECInstancePtr aspectInstance = aspectClass.GetDefaultStandaloneEnabler()->CreateInstance();
+        return aspectInstance.IsValid() ? new GenericMultiAspect(*aspectInstance, ECInstanceId()) : nullptr;
+        }
+
+    return dynamic_cast<DgnElement::MultiAspect*>(aspectHandler->_CreateInstance().get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::MultiAspect const* DgnElement::MultiAspect::GetAspect(DgnElementCR el, ECClassCR cls, ECInstanceId id)
@@ -2196,6 +2249,24 @@ ECInstanceKey DgnElement::MultiAspect::_QueryExistingInstanceKey(DgnElementCR el
     {
     // My m_instanceId field is valid if and only if I was just inserted or was loaded from an existing instance.
     return ECInstanceKey(GetECClassId(el.GetDgnDb()), m_instanceId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+RefCountedPtr<DgnElement::UniqueAspect> DgnElement::UniqueAspect::CreateAspect(DgnDbR db, ECClassCR aspectClass)
+    {
+    if (!aspectClass.Is(BIS_ECSCHEMA_NAME, BIS_CLASS_ElementUniqueAspect))
+        return nullptr;
+
+    dgn_AspectHandler::Aspect* aspectHandler = dgn_AspectHandler::Aspect::FindHandler(db, aspectClass.GetId());
+    if ((nullptr == aspectHandler) || (aspectHandler == &dgn_AspectHandler::Aspect::GetHandler()))
+        {
+        StandaloneECInstancePtr aspectInstance = aspectClass.GetDefaultStandaloneEnabler()->CreateInstance();
+        return aspectInstance.IsValid() ? new GenericUniqueAspect(*aspectInstance) : nullptr;
+        }
+
+    return dynamic_cast<DgnElement::UniqueAspect*>(aspectHandler->_CreateInstance().get());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2940,6 +3011,28 @@ DgnDbStatus GeometricElement::DoSetCategoryId(DgnCategoryId catId)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement2d::_SetCategoryId(DgnCategoryId categoryId)
+    {
+    if (!DrawingCategory::Get(GetDgnDb(), categoryId).IsValid())
+        return DgnDbStatus::InvalidCategory; // A GeometricElement2d requires an existing DrawingCategory
+
+    return DoSetCategoryId(categoryId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_SetCategoryId(DgnCategoryId categoryId)
+    {
+    if (!SpatialCategory::Get(GetDgnDb(), categoryId).IsValid())
+        return DgnDbStatus::InvalidCategory; // A GeometricElement3d requires an existing SpatialCategory
+
+    return DoSetCategoryId(categoryId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement2d::_SetPlacement(Placement2dCR placement)
@@ -3519,6 +3612,21 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_category()] = m_categoryId.ToString(BeInt64Id::UseHex::Yes);
+
+    if (opts["noGeometry"].asBool(false))
+        return;
+
+    // load geometry
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
@@ -3718,6 +3826,15 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
@@ -3745,6 +3862,16 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
                               ElementAlignedBox3d(boxLow.x, boxLow.y, boxLow.z, boxHi.x, boxHi.y, boxHi.z));
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -3928,9 +4055,37 @@ DgnDbStatus DgnElement::GenericUniqueAspect::_UpdateProperties(Dgn::DgnElementCR
     m_instance->SetInstanceId(ecinstidstr);
 
     // Set the UniqueAspect's "Element" navigation property. This is what links the aspect to its host element. The IDs are not the same.
-    m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), ECN::ECClassId(el.GetElementClassId().GetValue())));
+    m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), el.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsUniqueAspect)));
 
     return (BE_SQLITE_OK == updater->Update(*m_instance))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericUniqueAspect::_GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
+    {
+    if (!m_instance.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    if (arrayIndex.HasIndex())
+        return ECObjectsStatus::Success == m_instance->GetValue(value, propertyName, arrayIndex.GetIndex()) ? DgnDbStatus::Success : DgnDbStatus::BadArg;
+
+    return ECObjectsStatus::Success == m_instance->GetValue(value, propertyName) ? DgnDbStatus::Success : DgnDbStatus::BadArg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericUniqueAspect::_SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex)
+    {
+    if (!m_instance.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    if (arrayIndex.HasIndex())
+        return ECObjectsStatus::Success == m_instance->SetValue(propertyName, value, arrayIndex.GetIndex()) ? DgnDbStatus::Success : DgnDbStatus::BadArg;
+
+    return ECObjectsStatus::Success == m_instance->SetValue(propertyName, value) ? DgnDbStatus::Success : DgnDbStatus::BadArg;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -4015,6 +4170,34 @@ DgnDbStatus DgnElement::GenericMultiAspect::_UpdateProperties(Dgn::DgnElementCR 
     m_instance->SetValue("Element", ECN::ECValue(el.GetElementId(), ECN::ECClassId(el.GetElementClassId().GetValue())));
 
     return (BE_SQLITE_OK == updater->Update(*m_instance))? DgnDbStatus::Success: DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericMultiAspect::_GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const
+    {
+    if (!m_instance.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    if (arrayIndex.HasIndex())
+        return ECObjectsStatus::Success == m_instance->GetValue(value, propertyName, arrayIndex.GetIndex()) ? DgnDbStatus::Success : DgnDbStatus::BadArg;
+
+    return ECObjectsStatus::Success == m_instance->GetValue(value, propertyName) ? DgnDbStatus::Success : DgnDbStatus::BadArg;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus DgnElement::GenericMultiAspect::_SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex)
+    {
+    if (!m_instance.IsValid())
+        return DgnDbStatus::BadRequest;
+
+    if (arrayIndex.HasIndex())
+        return ECObjectsStatus::Success == m_instance->SetValue(propertyName, value, arrayIndex.GetIndex()) ? DgnDbStatus::Success : DgnDbStatus::BadArg;
+
+    return ECObjectsStatus::Success == m_instance->SetValue(propertyName, value) ? DgnDbStatus::Success : DgnDbStatus::BadArg;
     }
 
 /*---------------------------------------------------------------------------------**//**

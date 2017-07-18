@@ -11,9 +11,9 @@
 //=======================================================================================
 
 #include <UnitTests/BackDoor/DgnPlatform/DgnDbTestUtils.h>
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/Render.h>
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -489,24 +489,6 @@ DgnDbStatus DgnDbTestUtils::MakeSeedDbCopy(BeFileNameR actualName, WCharCP relSe
     return DgnDbStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Sam.Wilson      06/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void setBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
-    {
-    if (db->IsBriefcase())
-        return;
-
-    BeFileName name(db->GetFileName());
-
-    db->ChangeBriefcaseId(BeBriefcaseId(BeBriefcaseId::Standalone()));
-    db->SaveChanges();
-    db->CloseDb();
-
-    DbResult result = BE_SQLITE_OK;
-    db = DgnDb::OpenDgnDb(&result, name, DgnDb::OpenParams(mode));
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
@@ -533,7 +515,7 @@ void DgnDbTestUtils::EmptySubDirectory(WCharCP relPath)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                           Sam.Wilson             01/2016
 //---------------------------------------------------------------------------------------
-DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBriefcase)
+DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath, bool isRoot)
     {
     MUST_HAVE_HOST(nullptr);
 
@@ -562,9 +544,6 @@ DgnDbPtr DgnDbTestUtils::CreateDgnDb(WCharCP relPath, bool isRoot, bool mustBeBr
     DgnDbPtr db = DgnDb::CreateDgnDb(&createStatus, fileName, createDgnDbParams);
     if (!db.IsValid())
         EXPECT_FALSE(true) << WPrintfString(L"%ls - create failed", fileName.c_str()).c_str();
-
-    if (mustBeBriefcase)
-        setBriefcase(db, DgnDb::OpenMode::ReadWrite);
 
     return db;
     }

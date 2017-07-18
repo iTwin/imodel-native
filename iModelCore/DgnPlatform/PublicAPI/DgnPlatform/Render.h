@@ -326,7 +326,7 @@ public:
 //=======================================================================================
 struct Image
 {
-    enum class Format {Rgba=0, Rgb=2}; // must match qvision.h values
+    enum class Format {Rgba=0, Rgb=2, Alpha=5}; // must match qvision.h values
     enum class BottomUp : bool {No=0, Yes=1}; //!< whether the rows in the image should be flipped top-to-bottom
 protected:
     uint32_t m_width = 0;
@@ -796,7 +796,7 @@ struct GradientSymb : RefCountedBase
         None         = 0,
         Invert       = (1 << 0),
         Outline      = (1 << 1),
-        AlwaysFilled = (1 << 2),
+        Deprecated   = (1 << 2), //!< Was AlwaysFilled, now controlled by FillDisplay...
     };
 
     enum class Mode : Byte

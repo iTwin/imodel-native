@@ -497,6 +497,30 @@ DgnDbStatus CodeSpec::ValidateCode(DgnElementCR element) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value DgnCode::ToJson2() const
+    {
+    Json::Value val;
+    val[json_spec()] = m_specId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_scope()] = m_scopeElementId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_value()] = m_value;
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode DgnCode::FromJson2(JsonValueCR value)
+    {
+    DgnCode val;
+    val.m_specId = CodeSpecId(value[json_spec()].asUInt64());
+    val.m_scopeElementId = DgnElementId(value[json_scope()].asUInt64());
+    val.m_value = value[json_value()].asString();
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8CP DgnCode::Iterator::Options::GetECSql() const
@@ -515,3 +539,4 @@ DgnCode::Iterator::Iterator(DgnDbR db, Options options)
     {
     Prepare(db, options.GetECSql(), 3);
     }
+

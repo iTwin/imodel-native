@@ -10,7 +10,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired /*= Required::No*/, DgnDomain::Readonly isReadonly /*= Readonly::No*/)
+BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required isRequired /*= Required::No*/, DgnDomain::Readonly isReadonly /*= Readonly::No*/, BeFileNameCP schemaRootDir /* = nullptr*/)
     {
     auto& domains = T_HOST.RegisteredDomains();
     for (DgnDomainCP it : domains)
@@ -19,11 +19,13 @@ BentleyStatus DgnDomains::RegisterDomain(DgnDomain& domain, DgnDomain::Required 
             return SUCCESS;
         }
 
-    if (!domain.ValidateSchemaPathname())
-        return ERROR;
-
     domain.SetRequired(isRequired);
     domain.SetReadonly(isReadonly);
+    if (schemaRootDir)
+        domain.SetSchemaRootDir(*schemaRootDir);
+
+    if (!domain.ValidateSchemaPathname())
+        return ERROR;
 
     domains.push_back(&domain);
     return SUCCESS;
@@ -48,7 +50,7 @@ DgnDomainCP DgnDomains::FindDomain(Utf8CP name) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName DgnDomain::GetSchemaPathname() const
     {
-    BeFileName schemaPathname = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    BeFileName schemaPathname = m_schemaRootDir.IsEmpty() ? T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory() : m_schemaRootDir;
     schemaPathname.AppendToPath(_GetSchemaRelativePath());
     return schemaPathname;
     }
@@ -332,6 +334,13 @@ DgnDbStatus DgnDomain::RegisterHandler(Handler& handler, bool reregister)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDomains::OnDbOpened()
     {
+    if (m_dgndb.IsBriefcase() && !m_dgndb.IsReadonly())
+        {
+        TxnManagerR txnManager = m_dgndb.Txns();
+        txnManager.EnableTracking(true);
+        txnManager.InitializeTableHandlers(); // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges(). 
+        }
+
     for (DgnDomainCP domain : m_domains)
         domain->_OnDgnDbOpened(m_dgndb);
     }
@@ -411,9 +420,14 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaPtr> const& schemasToIm
         return status;
 
     SyncWithSchemas();
+    
+    m_dgndb.BriefcaseManager().StartBulkOperation();
 
     for (DgnDomainP domain : domainsToImport)
         domain->_OnSchemaImported(m_dgndb);
+
+    if (RepositoryStatus::Success != m_dgndb.BriefcaseManager().EndBulkOperation().Result())
+        return SchemaStatus::CouldNotAcquireLocksOrCodes;
 
     SaveDevelopmentPhase();
 
@@ -438,7 +452,7 @@ SchemaStatus DgnDomains::UpgradeSchemas()
     SchemaUpgradeOptions::AllowedDomainUpgrades allowedUpgrades = m_schemaUpgradeOptions.GetAllowedDomainUpgrades();
     
     if (m_dgndb.IsBriefcase())
-        m_dgndb.Txns().EnableTracking(true); // Ensure all changes are captured in the txn table for creating revisions
+        m_dgndb.Txns().EnableTracking(true); // Ensure all schema changes are captured in the txn table for creating revisions
 
     SchemaManager::SchemaImportOptions importOptions = (allowedUpgrades == SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly) ? SchemaManager::SchemaImportOptions::None : SchemaManager::SchemaImportOptions::Poisoning;
     status = DoImportSchemas(importSchemas, importOptions);
@@ -450,18 +464,28 @@ SchemaStatus DgnDomains::UpgradeSchemas()
 
     SyncWithSchemas();
 
-    for (DgnDomainCP domain : m_domains)
+    if (m_dgndb.IsBriefcase())
         {
-        if (std::find(domainsToImport.begin(), domainsToImport.end(), domain) != domainsToImport.end())
-            continue;
-        domain->_OnDgnDbOpened(m_dgndb); // Necessary to setup dependent domains before importing new domains
+        m_dgndb.Txns().InitializeTableHandlers(); 
+        // Necessary to this after the domains are loaded so that the tables are already setup. The method calls SaveChanges(). 
         }
         
+    for (DgnDomainCP domain : m_domains)
+        {
+        // Call domain handlers of dependent domains before the newly imported domains
+        if (std::find(domainsToImport.begin(), domainsToImport.end(), domain) != domainsToImport.end())
+            continue;
+        domain->_OnDgnDbOpened(m_dgndb); 
+        }
+        
+    m_dgndb.BriefcaseManager().StartBulkOperation();
     for (DgnDomainP domain : domainsToImport)
         {
         domain->_OnSchemaImported(m_dgndb);
-        domain->_OnDgnDbOpened(m_dgndb); // Necessary to setup dependent domains before importing new domains.
+        domain->_OnDgnDbOpened(m_dgndb);
         }
+    if (RepositoryStatus::Success != m_dgndb.BriefcaseManager().EndBulkOperation().Result())
+        return SchemaStatus::CouldNotAcquireLocksOrCodes;
 
     return SchemaStatus::Success;
     }
@@ -685,8 +709,15 @@ SchemaStatus DgnDomains::DoImportSchemas(bvector<ECSchemaCP> const& importSchema
 
     if (BentleyStatus::SUCCESS != dgndb.Schemas().ImportSchemas(importSchemas, importOptions, dgndb.GetSchemaImportToken()))
         {
-        DbResult result = dgndb.AbandonChanges();
-        BeAssert(result == BE_SQLITE_OK);
+        if (SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues == importOptions)
+            {
+            LOG.errorv("Failed to import legacy V8 schemas"); 
+            }
+        else
+            {
+            DbResult result = dgndb.AbandonChanges();
+            BeAssert(result == BE_SQLITE_OK);
+            }
 
         return SchemaStatus::SchemaImportFailed;
         }

@@ -12,7 +12,7 @@
 #include "../TestFixture/GenericDgnModelTestFixture.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnElementHelpers.h"
 #include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnDbUtilities.h"
-#include "../BackDoor/PublicAPI/BackDoor/DgnProject/DgnPlatformTestDomain.h"
+#include <UnitTests/BackDoor/DgnPlatform/DgnPlatformTestDomain.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/DgnElementDependency.h>
@@ -31,6 +31,8 @@ USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DPTEST
 
 BEGIN_UNNAMED_NAMESPACE
+
+typedef Dgn::dgn_TxnTable::ElementDep::DepRelData T_DepRelData;
 
 /*=================================================================================**//**
 * @bsiclass                                                     Sam.Wilson      01/15
@@ -156,9 +158,17 @@ void TxnMonitorVerifier::_OnCommit(TxnManager& txnMgr)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   BentleySystems
 //---------------------------------------------------------------------------------------
-static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> const& rels, ECInstanceKey eid)
+static bvector<ECInstanceId>::const_iterator findRelId(bvector<ECInstanceId> const& rels, ECInstanceKey relid)
     {
-    return std::find(rels.begin(), rels.end(), eid.GetInstanceId());
+    return std::find(rels.begin(), rels.end(), relid.GetInstanceId());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   BentleySystems
+//---------------------------------------------------------------------------------------
+static bvector<T_DepRelData>::const_iterator findRelId(bvector<T_DepRelData> const& rels, ECInstanceKey relid)
+    {
+    return std::find_if(rels.begin(), rels.end(), [&](T_DepRelData const& dep) {return dep.m_relKey == relid;});
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -235,7 +245,7 @@ CachedECSqlStatementPtr ElementDependencyGraph::GetSelectElementDrivesElementByI
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ElementDependencyGraph::SetUpForRelationshipTests()
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     ASSERT_TRUE(m_db->IsBriefcase());
     ASSERT_TRUE(m_db->Txns().IsTracking());
     }
@@ -407,6 +417,44 @@ void ElementDependencyGraph::TestRelationships(DgnDb& db, ElementsAndRelationshi
         ASSERT_EQ( rels.size() , 1);
         auto i2_1   = findRelId(rels, g.r2_1);      ASSERT_NE(i2_1  , rels.end());
         }
+
+    //  ----------------
+    //  delete e31 =>
+    //  ----------------
+    //     X->e31-X
+    //    /        \     *
+    // e99          ->e2-o->e1
+    //    \        /
+    //     o->e3-o
+    //
+    // (The little "o"s represent the ECRelationships and the X's represent the deleted relationships. * marks a handler that should be fired.)
+    ASSERT_EQ(DgnDbStatus::Success, g.e31->Delete());
+
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    if (true)
+        {
+        auto const& rels = TestElementDrivesElementHandler::GetHandler().m_relIds;
+        ASSERT_EQ( rels.size() , 1);
+        auto i2_1   = findRelId(rels, g.r2_1);               ASSERT_NE(i2_1, rels.end());
+
+        auto const& deletedRels = TestElementDrivesElementHandler::GetHandler().m_deletedRels;
+        ASSERT_EQ( deletedRels.size() , 2 );
+        auto i99_31 = findRelId(deletedRels, g.r99_31);       ASSERT_NE(i99_31, deletedRels.end());
+        auto i31_2  = findRelId(deletedRels, g.r31_2);        ASSERT_NE(i31_2, deletedRels.end());
+
+        ASSERT_LT(i99_31, i31_2);
+        }
+
+    // Make sure deletedRels was cleared. To check that, make some change, and verify that only the
+    // change comes through, not the prior deletions.
+    TwiddleTime(g.e1);
+    monitor.Clear();
+    TestElementDrivesElementHandler::GetHandler().Clear();
+    db.SaveChanges();   // ==> Triggers callbacks to TestElementDrivesElementHandler::GetHandler()
+    ASSERT_EQ( 0, TestElementDrivesElementHandler::GetHandler().m_deletedRels.size() );
+    ASSERT_EQ( 1, TestElementDrivesElementHandler::GetHandler().m_relIds.size() );
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -131,7 +131,7 @@ void TransactionManagerTests::TwiddleTime(DgnElementCPtr el)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, CRUD)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
 
     m_db->SaveChanges();
     TxnMonitorVerifier monitor;
@@ -192,7 +192,7 @@ TEST_F(TransactionManagerTests, CRUD)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementAssembly)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     DgnClassId parentRelClassId = m_db->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsChildElements);
 
     TestElementPtr e1 = TestElement::Create(*m_db, m_defaultModelId,m_defaultCategoryId);
@@ -549,6 +549,9 @@ TEST_F(TransactionManagerTests, UndoRedo)
     DgnDbTestFixture::GetSeedDbCopy(outFileName,L"Test.bim");
     OpenDb(m_db, outFileName, mode);
     
+    TestDataManager::MustBeBriefcase(m_db, mode);
+    ASSERT_TRUE(m_db->IsBriefcase());
+
     auto& txns = m_db->Txns();
     m_db->SaveChanges();
 
@@ -682,7 +685,7 @@ struct ModelTxnMonitor : TxnMonitor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ModelInsertReverse)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     auto& txns = m_db->Txns();
 
     ModelTxnMonitor monitor;
@@ -715,7 +718,7 @@ TEST_F(TransactionManagerTests, ModelInsertReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ModelDeleteReverse)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     auto& txns = m_db->Txns();
 
     PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
@@ -745,7 +748,7 @@ TEST_F(TransactionManagerTests, ModelDeleteReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(TransactionManagerTests, ElementInsertReverse)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     auto& txns = m_db->Txns();
 
     PhysicalModelPtr model1 = DgnDbTestUtils::InsertPhysicalModel(*m_db, "model1");
@@ -792,7 +795,7 @@ TEST_F(TransactionManagerTests, ElementInsertReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, ElementDeleteReverse)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     auto& txns = m_db->Txns();
 
     //Creates a model.
@@ -839,7 +842,7 @@ TEST_F (TransactionManagerTests, ElementDeleteReverse)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, ReverseToPos)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     auto& txns = m_db->Txns();
     auto txn_id = txns.GetCurrentTxnId();
 
@@ -859,7 +862,7 @@ TEST_F (TransactionManagerTests, ReverseToPos)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, CancelToPos)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     auto& txns = m_db->Txns();
 
     //creates model
@@ -885,7 +888,7 @@ TEST_F (TransactionManagerTests, CancelToPos)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (TransactionManagerTests, MultiTxnOperation)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
     auto& txns = m_db->Txns();
 
     //Inserts a  model
@@ -1017,7 +1020,7 @@ TEST_F(DynamicTxnsTest, BasicInvariants)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DynamicTxnsTest, DynamicTxns)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
 
     DgnDbR db = *m_db;
     auto& txns = db.Txns();
@@ -1111,7 +1114,7 @@ TEST_F(DynamicTxnsTest, DynamicTxns)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DynamicTxnsTest, TxnMonitors)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
 
     DgnDbR db = *m_db;
     auto& txns = db.Txns();
@@ -1285,7 +1288,7 @@ struct DynamicChangesProcessor : DynamicTxnProcessor
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DynamicTxnsTest, IndirectChanges)
     {
-    SetupSeedProject();
+    SetupSeedProject(BeSQLite::Db::OpenMode::ReadWrite, true /*=needBriefcase*/);
 
     DgnDbR db = *m_db;
     DefinitionModelR dictionary = db.GetDictionaryModel();

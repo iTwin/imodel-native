@@ -316,6 +316,16 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_categorySelectorId()] = m_categorySelectorId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_displayStyleId()] = m_displayStyleId.ToString(BeInt64Id::UseHex::Yes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition::_CopyFrom(DgnElementCR el)
@@ -351,14 +361,6 @@ ViewControllerPtr OrthographicViewDefinition::_SupplyController() const
 ViewControllerPtr DrawingViewDefinition::_SupplyController() const
     {
     return new DrawingViewController(*this);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   10/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-double DrawingViewDefinition::GetAspectRatioSkew() const
-    {
-    return GetDetail(json_aspectSkew()).asDouble(1.0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -404,6 +406,15 @@ DgnDbStatus ViewDefinition2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     m_baseModelId = stmt.GetValueNavigation<DgnModelId>(params.GetSelectIndex(prop_BaseModel()));
 
     return T_Super::_ReadSelectParams(stmt, params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_categorySelectorId()] = m_categorySelectorId.ToString(BeInt64Id::UseHex::Yes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -756,6 +767,46 @@ DgnDbStatus ViewDefinition3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value ViewDefinition3d::Camera::ToJson() const 
+    {
+    Json::Value val; 
+    val[json_lens()] = m_lensAngle.Degrees(); 
+    val[json_focusDist()] = m_focusDistance; 
+    JsonUtils::DPoint3dToJson(val[json_eye()], m_eyePoint); 
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ViewDefinition3d::Camera ViewDefinition3d::Camera::FromJson(JsonValueCR val)
+    {
+    Camera camera;
+    camera.SetLensAngle(Angle::FromDegrees(val[json_lens()].asDouble())); 
+    camera.SetFocusDistance(val[json_focusDist()].asDouble()); 
+    JsonUtils::DPoint3dFromJson(camera.m_eyePoint, val[json_eye()]);
+    return camera;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ViewDefinition3d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_cameraOn()] = m_cameraOn;
+    JsonUtils::DPoint3dToJson(val[json_origin()], m_origin);
+    JsonUtils::DPoint3dToJson(val[json_extents()], m_extents);
+    
+    YawPitchRollAngles angles;
+    YawPitchRollAngles::TryFromRotMatrix(angles, m_rotation);
+    val[json_angles()] = JsonUtils::YawPitchRollToJson(angles);
+    val[json_camera()] = m_cameraDef.ToJson();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ViewDefinition3d::_CopyFrom(DgnElementCR el)
@@ -898,6 +949,15 @@ DgnDbStatus SpatialViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatemen
     {
     m_modelSelectorId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(prop_ModelSelector()));
     return T_Super::_ReadSelectParams(stmt, params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SpatialViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_modelSelectorId()] = m_modelSelectorId.ToString(BeInt64Id::UseHex::Yes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1234,7 +1294,7 @@ ViewportStatus ViewDefinition::_SetupFromFrustum(Frustum const& frustum)
     viewDiagRoot.SumOf(xDir, xDir.DotProduct(frustumX), yDir, yDir.DotProduct(frustumY));  // vectors on the back plane
     viewDiagRoot.SumOf(viewDiagRoot, zDir, zSize);       // add in z vector perpendicular to x,y
 
-    // use center of frustum and view diagonal for origin. Original frustum may not have been orgthogonal
+    // use center of frustum and view diagonal for origin. Original frustum may not have been orthogonal
     viewOrg.SumOf(frustum.GetCenter(), viewDiagRoot, -0.5);
 
     // delta is in view coordinates

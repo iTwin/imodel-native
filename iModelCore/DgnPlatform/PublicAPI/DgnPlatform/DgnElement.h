@@ -378,6 +378,8 @@ struct PropertyArrayIndex
     PropertyArrayIndex() : m_hasIndex(0) {}
     PropertyArrayIndex(uint32_t index) : m_hasIndex(true), m_index(index) {}
     PropertyArrayIndex(bool useIndex, uint32_t index) : m_hasIndex(useIndex), m_index(index) {}
+    bool HasIndex() const {return m_hasIndex;}
+    uint32_t GetIndex() const {return m_index;}
 };
 
 //=======================================================================================
@@ -807,6 +809,11 @@ public:
         //! @param el   The host element
         virtual DgnDbStatus _LoadProperties(DgnElementCR el) = 0;
 
+        //! The subclass must implement this method to get the value of a property by name from this aspect
+        virtual DgnDbStatus _GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex) const = 0;
+        //! The subclass must implement this method to set the value of a property by name for this aspect
+        virtual DgnDbStatus _SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex) = 0;
+
     public:
         //! Get the Id of this aspect
         BeSQLite::EC::ECInstanceId GetAspectInstanceId() const {return m_instanceId;}
@@ -823,6 +830,11 @@ public:
 
         //! Get the ECClass for this aspect
         DGNPLATFORM_EXPORT ECN::ECClassCP GetECClass(DgnDbR) const;
+
+        //! Get the value of a property by name from this aspect
+        DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP propertyName, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) const {return _GetPropertyValue(value, propertyName, arrayIndex);}
+        //! Set the value of a property by name for this aspect
+        DgnDbStatus SetPropertyValue(Utf8CP propertyName, ECN::ECValueCR value, PropertyArrayIndex const& arrayIndex = PropertyArrayIndex()) {return _SetPropertyValue(propertyName, value, arrayIndex);}
 
         //! The aspect should make a copy of itself.
         DGNPLATFORM_EXPORT virtual RefCountedPtr<DgnElement::Aspect> _CloneForImport(DgnElementCR sourceEl, DgnImportContext& importer) const;
@@ -851,6 +863,10 @@ public:
         DGNPLATFORM_EXPORT DgnDbStatus _InsertInstance(DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override final;
 
     public:
+        //! Create a new, uninitialized MultiAspect of the specified ECClass
+        //! @see DgnElement::Aspect::SetPropertyValue
+        DGNPLATFORM_EXPORT static RefCountedPtr<MultiAspect> CreateAspect(DgnDbR, ECN::ECClassCR);
+
         //! Load the specified instance
         //! @param el   The host element
         //! @param ecclass The class of ElementAspect to load
@@ -893,6 +909,8 @@ public:
         Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
         DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
         DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, PropertyArrayIndex const&) const override;
+        DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, PropertyArrayIndex const&) override;
 
         //! Use this constructor when you want to load a multiaspect
         GenericMultiAspect(ECN::ECClassCR cls, BeSQLite::EC::ECInstanceId id);
@@ -970,6 +988,11 @@ public:
             BulkInsert,     //!< An application is creating a large number of Elements 
             Other           //!< An unspecified reason
         };
+
+        //! Create a new, uninitialized UniqueAspect of the specified ECClass
+        //! @see DgnElement::Aspect::SetPropertyValue
+        DGNPLATFORM_EXPORT static RefCountedPtr<UniqueAspect> CreateAspect(DgnDbR, ECN::ECClassCR);
+
         //! Prepare to insert or update an Aspect for the specified element
         //! @param el   The host element
         //! @param aspect The new aspect to be adopted by the host.
@@ -1014,6 +1037,8 @@ public:
         Utf8CP _GetSuperECClassName() const override {return T_Super::_GetECClassName();}
         DGNPLATFORM_EXPORT DgnDbStatus _LoadProperties(Dgn::DgnElementCR el) override;
         DGNPLATFORM_EXPORT DgnDbStatus _UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const*) override;
+        DGNPLATFORM_EXPORT DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, PropertyArrayIndex const&) const override;
+        DGNPLATFORM_EXPORT DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, PropertyArrayIndex const&) override;
         GenericUniqueAspect(ECN::ECClassCR cls) : m_ecclassName(cls.GetName()), m_ecschemaName(cls.GetSchema().GetName()) {}
         GenericUniqueAspect(ECN::IECInstanceR inst) : m_instance(&inst),  m_ecclassName(inst.GetClass().GetName()), m_ecschemaName(inst.GetClass().GetSchema().GetName()) {}
 
@@ -1145,6 +1170,10 @@ protected:
     //! selectParams.GetParameterIndex() to look up the index of each parameter within the statement.
     //! @see ElementProperties
     virtual DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParamsCR selectParams) {return DgnDbStatus::Success;}
+
+    //! Convert this DgnElement to a Json::Value.
+    //! @note If you override this method, you @em must call T_Super::_ToJson()
+    DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const;
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -1458,6 +1487,16 @@ protected:
     CreateParams GetCreateParamsForImport(DgnModelR destModel, DgnImportContext& importer) const;
 
 public:
+    BE_JSON_NAME(id)
+    BE_JSON_NAME(schemaName)
+    BE_JSON_NAME(className)
+    BE_JSON_NAME(model)
+    BE_JSON_NAME(code)
+    BE_JSON_NAME(parent)
+    BE_JSON_NAME(federationGuid)
+    BE_JSON_NAME(userLabel)
+    BE_JSON_NAME(jsonProperties)
+
     static Utf8CP MyHandlerECClassName() {return BIS_CLASS_Element;}                //!< @private
     Utf8CP GetHandlerECClassName() const {return _GetHandlerECClassName();}             //!< @private
     Utf8CP GetSuperHandlerECClassName() const {return _GetSuperHandlerECClassName();}   //!< @private
@@ -1760,7 +1799,7 @@ public:
     //! Return the NavigationPropertyInfo for an ECNavigationProperty of the specified name
     DGNPLATFORM_EXPORT NavigationPropertyInfo GetNavigationPropertyInfo(Utf8CP propertyName) const;
 
-    //! Return the value of the ID of an ECNavigationProperty by name
+    //! Return the value of the Id of an ECNavigationProperty by name
     template <class TBeInt64Id> TBeInt64Id GetPropertyValueId(Utf8CP propertyName) const
         {
         return GetNavigationPropertyInfo(propertyName).GetId<TBeInt64Id>();
@@ -1817,7 +1856,7 @@ public:
     DgnDbStatus GetPropertyValue(ECN::ECValueR value, Utf8CP accessString, PropertyArrayIndex aidx = PropertyArrayIndex()) const
         {
         ElementECPropertyAccessor access(*this, accessString);
-        return _GetPropertyValue(value, access, aidx);
+        return access.IsValid()? _GetPropertyValue(value, access, aidx): DgnDbStatus::WrongClass;
         }
 
     //! Get the value of a property. Also see @ref ElementProperties.
@@ -1828,7 +1867,7 @@ public:
     DgnDbStatus GetPropertyValue(ECN::ECValueR value, uint32_t propIndex, PropertyArrayIndex aidx = PropertyArrayIndex()) const
         {
         ElementECPropertyAccessor access(*this, propIndex);
-        return _GetPropertyValue(value, access, aidx);
+        return access.IsValid()? _GetPropertyValue(value, access, aidx): DgnDbStatus::WrongClass;
         }
 
     //! Set the value of a property. 
@@ -1841,7 +1880,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(Utf8CP accessString, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex())
         {
         ElementECPropertyAccessor access(*this, accessString);
-        return _SetPropertyValue(access, value, aidx);
+        return access.IsValid()? _SetPropertyValue(access, value, aidx): DgnDbStatus::WrongClass;
         }
 
     //! Set the value of a property. 
@@ -1854,7 +1893,7 @@ public:
     DGNPLATFORM_EXPORT DgnDbStatus SetPropertyValue(uint32_t propIndex, ECN::ECValueCR value, PropertyArrayIndex aidx = PropertyArrayIndex())
         {
         ElementECPropertyAccessor access(*this, propIndex);
-        return _SetPropertyValue(access, value, aidx);
+        return access.IsValid()? _SetPropertyValue(access, value, aidx): DgnDbStatus::WrongClass;
         }
 
     //! Set the properties of this element from the specified instance. Calls _SetPropertyValue for each non-NULL property in the input instance.
@@ -1891,6 +1930,13 @@ public:
     //! @returns SUCCESS if successful, otherwise an error code indicating the failure
     //! @see GetPropertyIndex
     DGNPLATFORM_EXPORT DgnDbStatus ClearPropertyArray(uint32_t propertyIndex);
+
+    //! Create a Json::Value that represents the state of this element.
+    Json::Value ToJson(JsonValueCR opts) const {Json::Value val; _ToJson(val, opts); return val;}
+
+    //! @private
+    DGNPLATFORM_EXPORT void GetCustomHandledPropertiesAsJson(Json::Value& json) const;
+
     //! @}
 };
 
@@ -1920,6 +1966,10 @@ protected:
     ElementAlignedBox3d m_boundingBox;
 
 public:
+    BE_JSON_NAME(origin)
+    BE_JSON_NAME(angles)
+    BE_JSON_NAME(bbox)
+
     Placement3d() : m_origin(DPoint3d::FromZero())  {}
     Placement3d(DPoint3dCR origin, YawPitchRollAngles angles, ElementAlignedBox3dCR box = ElementAlignedBox3d()): m_origin(origin), m_angles(angles), m_boundingBox(box) {}
     Placement3d(Placement3d const& rhs) : m_origin(rhs.m_origin), m_angles(rhs.m_angles), m_boundingBox(rhs.m_boundingBox) {}
@@ -1985,6 +2035,10 @@ protected:
     ElementAlignedBox2d m_boundingBox;
 
 public:
+    BE_JSON_NAME(origin)
+    BE_JSON_NAME(angle)
+    BE_JSON_NAME(bbox)
+
     Placement2d() : m_origin(DPoint2d::FromZero()) {}
     Placement2d(DPoint2dCR origin, AngleInDegrees const& angle, ElementAlignedBox2dCR box = ElementAlignedBox2d()) : m_origin(origin), m_angle(angle), m_boundingBox(box){}
     Placement2d(Placement2d const& rhs) : m_origin(rhs.m_origin), m_angle(rhs.m_angle), m_boundingBox(rhs.m_boundingBox) {}
@@ -2166,17 +2220,24 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         //! @return 
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) {}
     };
+
+    BE_JSON_NAME(placement)
+    BE_JSON_NAME(typeDefintion)
+    BE_JSON_NAME(category)
+    BE_JSON_NAME(geom)
+
 protected:
-    DgnCategoryId               m_categoryId;
-    GeometryStream              m_geom;
-    mutable Render::GraphicSet  m_graphics;
-    mutable bool                m_multiChunkGeomStream;
+    DgnCategoryId m_categoryId;
+    GeometryStream m_geom;
+    mutable Render::GraphicSet m_graphics;
+    mutable bool m_multiChunkGeomStream;
 
     explicit GeometricElement(CreateParams const& params) : T_Super(params), m_categoryId(params.m_category), m_multiChunkGeomStream(false) {}
 
     virtual bool _IsPlacementValid() const = 0;
     virtual Utf8CP _GetGeometryColumnClassName() const = 0;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT DgnDbStatus _InsertInDb() override;
     DGNPLATFORM_EXPORT DgnDbStatus _UpdateInDb() override;
@@ -2242,6 +2303,7 @@ public:
             : T_Super(params, category), m_placement(placement) {}
     };
 protected:
+
     Placement3d m_placement;
     DgnElementId m_typeDefinitionId;
     ECN::ECClassId m_typeDefinitionRelClassId;
@@ -2255,7 +2317,7 @@ protected:
     GeometrySource3dCP _GetAsGeometrySource3d() const override final {return this;}
     Utf8CP _GetGeometryColumnClassName() const override final {return BIS_CLASS_GeometricElement3d;}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    DGNPLATFORM_EXPORT DgnDbStatus _SetCategoryId(DgnCategoryId) override;
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement3dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement3dCR placement) override;
@@ -2263,6 +2325,7 @@ protected:
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
@@ -2332,7 +2395,7 @@ protected:
     GeometrySource2dCP _GetAsGeometrySource2d() const override final {return this;}
     Utf8CP _GetGeometryColumnClassName() const override final {return BIS_CLASS_GeometricElement2d;}
     DgnCategoryId _GetCategoryId() const override final {return m_categoryId;}
-    DgnDbStatus _SetCategoryId(DgnCategoryId categoryId) override {return DoSetCategoryId(categoryId);}
+    DGNPLATFORM_EXPORT DgnDbStatus _SetCategoryId(DgnCategoryId) override;
     GeometryStreamCR _GetGeometryStream() const override final {return m_geom;}
     Placement2dCR _GetPlacement() const override final {return m_placement;}
     DGNPLATFORM_EXPORT DgnDbStatus _SetPlacement(Placement2dCR placement) override;
@@ -2341,6 +2404,7 @@ protected:
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
@@ -2749,6 +2813,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DefinitionElement : InformationContentElement
     bool m_isPrivate = false;
 
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
 
@@ -2758,6 +2823,7 @@ protected:
     explicit DefinitionElement(CreateParams const& params) : T_Super(params) {}
 
 public:
+    BE_JSON_NAME(isPrivate)
     bool IsPrivate() const {return m_isPrivate;} //!< Test if this definition is private (should not be listed in the GUI, for example)
     void SetIsPrivate(bool isPrivate) {m_isPrivate = isPrivate;} //!< Specify that this definition is private (should not appear in the GUI, for example)
 
@@ -3325,9 +3391,12 @@ public:
 
     //! @private
     Utf8StringCR GetSelectEcPropsECSql(ECSqlClassInfo&, ECN::ECClassCR) const;
-
+    //! @private
+    DGNPLATFORM_EXPORT Utf8StringCR GetAutoHandledPropertiesSelectECSql(ECN::ECClassCR ecclass) const;
     //! @private
     ECSqlClassInfo& FindClassInfo(DgnElementCR el) const;
+    //! @private
+    ECSqlClassInfo& FindClassInfo(DgnClassId classId) const;
     
     DGNPLATFORM_EXPORT BeSQLite::CachedStatementPtr GetStatement(Utf8CP sql) const; //!< Get a statement from the element-specific statement cache for this DgnDb @private
     DGNPLATFORM_EXPORT void ChangeMemoryUsed(int32_t delta) const; //!< @private

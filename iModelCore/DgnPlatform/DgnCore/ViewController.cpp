@@ -581,8 +581,8 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     if (!hit.GetGeomDetail().IsValidSurfaceHit())
         return; // AccuSnap will flash edge/segment geometry...
 
-    if (!(static_cast<SnapDetailCR>(hit)).IsHot() || SnapMode::Nearest != static_cast<SnapDetailCR>(hit).GetSnapMode())
-        return; // Only display if snap is nearest/hot...otherwise it's confusing as it shows the surface information for a location that won't be used...
+    if (SnapMode::Nearest != static_cast<SnapDetailCR>(hit).GetSnapMode() && ((static_cast<SnapDetailCR>(hit)).IsHot()))
+        return; // Only display if snap is nearest or NOT hot...surface normal is for hit location, not snap location...
 
     ColorDef    color = ColorDef(~vp.GetHiliteColor().GetValue()); // Invert hilite color for good contrast...
     ColorDef    colorFill = color;
@@ -590,11 +590,34 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     double      radius = (2.5 * aperture) * vp.GetPixelSizeAtPoint(&pt);
     DVec3d      normal = hit.GetGeomDetail().GetSurfaceNormal();
     RotMatrix   rMatrix = RotMatrix::From1Vector(normal, 2, true);
+
+    color.SetAlpha(100);
+    colorFill.SetAlpha(200);
+
+#if defined (NOT_NOW_SHOW_RECTANGLE)
+    double   length = (0.8 * radius);
+    DPoint3d pts[5];
+
+    pts[0].Init(-length, -length, 0.0);
+    pts[1].Init(length, -length, 0.0);
+    pts[2].Init(length, length, 0.0);
+    pts[3].Init(-length, length, 0.0);
+    pts[4] = pts[0];
+
+    Transform::From(rMatrix, pt).Multiply(pts, pts, 5);
+
+    GraphicBuilderPtr graphic = context.CreateGraphic();
+
+    graphic->SetSymbology(color, colorFill, 1);
+    graphic->AddShape(5, pts, true);
+    graphic->AddLineString(5, pts);
+
+    context.AddWorldOverlay(*graphic);
+#else
     DEllipse3d  ellipse = DEllipse3d::FromScaledRotMatrix(pt, rMatrix, radius, radius, 0.0, Angle::TwoPi());
 
     GraphicBuilderPtr graphic = context.CreateGraphic();
 
-    colorFill.SetAlpha(150);
     graphic->SetSymbology(color, colorFill, 1);
     graphic->AddArc(ellipse, true, true);
     graphic->AddArc(ellipse, false, false);
@@ -612,6 +635,7 @@ static void drawLocateHitDetail(DecorateContextR context, double aperture, HitDe
     segment.point[1].SumOf(pt, normal, -length);
     graphic->AddLineString(2, segment.point);
     context.AddWorldOverlay(*graphic);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
