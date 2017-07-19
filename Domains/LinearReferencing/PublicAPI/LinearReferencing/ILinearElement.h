@@ -37,6 +37,21 @@ public:
 }; // ILinearElement
 
 //=======================================================================================
+//! Interface implemented by linear-elements that have a spatial representation.
+//! @ingroup GROUP_LinearReferencing
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE ISpatialLinearElement
+{
+protected:
+    virtual DPoint3d _ToDPoint3d(DistanceExpressionCR distanceExpression) const = 0;
+    virtual DistanceExpression _ToDistanceExpression(DPoint3dCR point) const = 0;
+
+public:
+    DPoint3d ToDPoint3d(DistanceExpressionCR distanceExpression) const { return _ToDPoint3d(distanceExpression); }
+    DistanceExpression ToDistanceExpression(DPoint3dCR point) const { return _ToDistanceExpression(point); }
+}; // ISpatialLinearElement
+
+//=======================================================================================
 //! Interface implemented by elements that can realize Linear-Elements along which
 //! linear referencing is performed.
 //! @ingroup GROUP_LinearReferencing
