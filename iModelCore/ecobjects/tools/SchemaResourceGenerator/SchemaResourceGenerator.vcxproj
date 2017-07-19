@@ -60,9 +60,6 @@
   <ItemGroup>
     <None Include="SchemaConverter.mke" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="SchemaResourceGenerator.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
