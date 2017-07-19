@@ -52,7 +52,7 @@
     <Part Name="BuildingDomainTestsExe" DeferType="BuildingDomainTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
         <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
-        <SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" />
+        <!--SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" /-->
         <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
         <SubPart PartName="BuildingDomain"/>
         <Bindings>
