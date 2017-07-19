@@ -70,9 +70,18 @@ Json::Value ECQuantityFormatting::FormatQuantityJson(BEU::QuantityCR qty, KindOf
 //     context must be checked by the caller. When multiple Units are being used the Quantity Unit
 //   will be the "biggest", but in the first implementaiton the biggest is assumed to be the leftmost
 //----------------------------------------------------------------------------------------
-BEU::Quantity CreateQuantity(Utf8CP input, size_t start, Utf8CP unitName)
+BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, Utf8CP unitName)
     {
     Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, unitName);
+    BEU::Quantity qty = fps.GetQuantity();
+    return qty;
+    }
+
+BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, KindOfQuantityCP koq)
+    {
+    Formatting::FormatUnitSetCR persistFUS = koq->GetPersistenceUnit();
+    BEU::UnitCP unit = persistFUS.GetUnit();
+    Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, unit);
     BEU::Quantity qty = fps.GetQuantity();
     return qty;
     }
