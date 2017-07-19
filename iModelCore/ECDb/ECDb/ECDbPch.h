@@ -6,14 +6,16 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
+#include <Bentley/BeId.h>
+#include <Bentley/Nullable.h>
+#include <Bentley/DateTime.h>
+#include <Bentley/BeTimeUtilities.h>
+#include <Bentley/PerformanceLogger.h>
 #include <Bentley/CatchNonPortable.h>
 #include <Bentley/Nullable.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ECObjects/ECObjectsAPI.h>
 #include <ECDb/ECDbApi.h>
-#include <Bentley/DateTime.h>
-#include <Bentley/BeTimeUtilities.h>
-#include <Bentley/PerformanceLogger.h>
 #include <algorithm>
 #include <memory>
 
