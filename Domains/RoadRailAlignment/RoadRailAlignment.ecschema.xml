@@ -92,7 +92,9 @@
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="AlignmentReferentElement" modifier="Abstract">
-        <BaseClass>lr:LinearlyLocatedReferent</BaseClass>
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <BaseClass>lr:IReferent</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>

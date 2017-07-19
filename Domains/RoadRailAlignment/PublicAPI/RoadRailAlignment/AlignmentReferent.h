@@ -17,9 +17,9 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //! Known location along an Alignment.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct AlignmentReferentElement : LinearReferencing::LinearlyLocatedReferent
+struct AlignmentReferentElement : Dgn::SpatialLocationElement, LinearReferencing::ILinearlyLocatedElement, LinearReferencing::IReferent
 {
-    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, LinearReferencing::LinearlyLocatedReferent);
+    DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, Dgn::SpatialLocationElement);
     friend struct AlignmentReferentElementHandler;
 
 private:
@@ -34,10 +34,14 @@ protected:
         T_Super(params), m_restartValue(restartValue) {}
 
     virtual double _GetRestartValue() const override { return m_restartValue; }
+    virtual LinearReferencing::ILinearlyLocatedElementCP _ToLinearlyLocatedElement() const { return this; }
+    virtual Dgn::DgnElementCR _IReferentToDgnElement() const override { return *this; }
+    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override { return *this; }
 
 public:
-    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentReferentElement)    
+    DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(AlignmentReferentElement)
 
+    ROADRAILALIGNMENT_EXPORT LinearReferencing::ILinearlyLocatedElementCP ToLinearlyLocatedElement() const { return _ToLinearlyLocatedElement(); }
 }; // AlignmentReferentElement
 
 //=======================================================================================
@@ -74,9 +78,9 @@ public:
 //! ElementHandler for AlignmentReferent Elements
 //! @ingroup GROUP_RoadRailAlignment
 //=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE AlignmentReferentElementHandler : LinearReferencing::LinearlyLocatedReferentHandler
+struct EXPORT_VTABLE_ATTRIBUTE AlignmentReferentElementHandler : Dgn::dgn_ElementHandler::SpatialLocation
 {
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, AlignmentReferentElement, AlignmentReferentElementHandler, LinearReferencing::LinearlyLocatedReferentHandler, ROADRAILALIGNMENT_EXPORT)
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRA_CLASS_AlignmentReferentElement, AlignmentReferentElement, AlignmentReferentElementHandler, Dgn::dgn_ElementHandler::SpatialLocation, ROADRAILALIGNMENT_EXPORT)
 }; //AlignmentReferentElementHandler
 
 //=================================================================================
