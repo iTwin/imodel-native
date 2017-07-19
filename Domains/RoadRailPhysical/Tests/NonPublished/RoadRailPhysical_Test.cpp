@@ -55,6 +55,13 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     ASSERT_EQ(StatusAspect::Status::Proposed, StatusAspect::Get(*roadwayCPtr)->GetStatus());
     ASSERT_EQ(alignmentPtr->GetElementId(), roadwayCPtr->GetAlignmentId());
 
+    alignmentPtr->SetILinearElementSource(roadwayPtr.get());
+    ASSERT_TRUE(alignmentPtr->Update().IsValid());
+
+    auto linearElements = roadwayPtr->QueryLinearElements();
+    ASSERT_EQ(1, linearElements.size());
+    ASSERT_EQ(alignmentPtr->GetElementId(), *linearElements.begin());
+
     auto designSpeedDefPtr = InsertRoadDesignSpeedDefinition(*projectPtr);
     auto designSpeedPtr = RoadDesignSpeed::Create(*roadwayCPtr, *designSpeedDefPtr, 0, 150);
     ASSERT_TRUE(designSpeedPtr->Insert().IsValid());

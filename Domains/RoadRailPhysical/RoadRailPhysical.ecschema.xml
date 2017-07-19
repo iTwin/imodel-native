@@ -332,11 +332,29 @@
             <Class class="LinearlyLocatedStatus"/>
         </Target>
     </ECRelationshipClass>
+    <ECRelationshipClass typeName="ElementOwnsStatusAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 element">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="owns 1 status-aspect">
+            <Class class="StatusAspect"/>
+        </Target>
+    </ECRelationshipClass>
     <ECEntityClass typeName="PhysicalElementDataCache" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements to hold general cached-data.">
         <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TerrainClippingMask" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="LENGTH" />
         <ECProperty propertyName="DerivedPropertiesCache" typeName="string" description="Json string containing derived properties, typically computed by an EGA"/>
     </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsDataCache" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 element">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="owns 1 data-cache aspect">
+            <Class class="PhysicalElementDataCache"/>
+        </Target>
+    </ECRelationshipClass>
     <!-- END General Aspects classes -->
 
     <!-- BEGIN Road Design-Speed classes -->
@@ -410,9 +428,8 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="RoadDesignSpeedDefinition" relationshipName="RoadDesignSpeedRefersToDefinition" direction="Forward"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="RoadwayHasDesignSpeeds" strength="embedding" modifier="Sealed">
+    <ECRelationshipClass typeName="RoadwayOwnsDesignSpeeds" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <!--BaseClass>lr:ILinearElementSourceOwnsILinearlyLocatedAttributions</BaseClass-->
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 Roadway">
             <Class class="Roadway"/>
         </Source>
@@ -474,9 +491,8 @@
             <Class class="RoadClassDefinition"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="RoadwayHasRoadClasses" strength="embedding" modifier="Sealed">
+    <ECRelationshipClass typeName="RoadwayOwnsRoadClasses" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <!--BaseClass>lr:ILinearEntityHasILinearlyLocatedProperties</BaseClass-->
         <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 Roadway">
             <Class class="Roadway"/>
         </Source>

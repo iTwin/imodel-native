@@ -164,7 +164,7 @@ RoadClassPtr RoadClass::Create(RoadwayCR roadway, RoadClassDefinitionCR ClassDef
 
     CreateParams params(roadway.GetDgnDb(), roadway.GetModelId(), QueryClassId(roadway.GetDgnDb()));
     params.SetParentId(roadway.GetElementId(),
-        DgnClassId(roadway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadwayHasRoadClasses)));
+        DgnClassId(roadway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadwayOwnsRoadClasses)));
 
     auto retVal = new RoadClass(params, ClassDef, fromDistanceAlong, toDistanceAlong);
     retVal->_SetLinearElement(alignmentId);
