@@ -80,7 +80,7 @@ struct BisJson1ImporterImpl : DgnImportContext
         DgnCategoryId _RemapCategory(DgnCategoryId sourceId) override;
         DgnSubCategoryId _RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId) override;
         //DgnClassId _RemapClassId(DgnClassId sourceId) override;
-        DgnMaterialId _RemapMaterialId(DgnMaterialId sourceId) override;
+        RenderMaterialId _RemapRenderMaterialId(RenderMaterialId sourceId) override;
         //DgnTextureId _RemapTextureId(DgnTextureId sourceId) override;
         //DgnDbStatus _RemapGeometryStreamIds(GeometryStreamR geom) override;
         DgnFontId _RemapFont(DgnFontId) override;

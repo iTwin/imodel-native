@@ -274,15 +274,15 @@ DgnSubCategoryId BisJson1ImporterImpl::_RemapSubCategory(DgnCategoryId destCateg
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            05/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnMaterialId BisJson1ImporterImpl::_RemapMaterialId(DgnMaterialId sourceId)
+RenderMaterialId BisJson1ImporterImpl::_RemapRenderMaterialId(RenderMaterialId sourceId)
     {
-    DgnMaterialId dest = m_remap.Find(sourceId);
+	RenderMaterialId dest = m_remap.Find(sourceId);
     if (!dest.IsValid())
         {
         DgnElementId destElm = m_syncInfo->LookupElement(sourceId);
         if (!destElm.IsValid())
-            return DgnMaterialId();
-        dest = DgnMaterialId(destElm.GetValue());
+            return RenderMaterialId();
+        dest = RenderMaterialId(destElm.GetValue());
         return m_remap.Add(sourceId, dest);
         }
     return dest;
