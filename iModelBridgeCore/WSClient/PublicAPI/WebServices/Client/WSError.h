@@ -80,6 +80,7 @@ struct WSError : public AsyncError
     private:
         static bool IsValidErrorJson(JsonValueCR jsonError);
         static Id ErrorIdFromString(Utf8StringCR errorIdString);
+        static Id GetErrorIdFromString(Utf8StringCR errorIdString);
         static Utf8String FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
         BentleyStatus ParseBody(HttpResponseCR httpResponse);
