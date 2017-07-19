@@ -135,6 +135,7 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
     DPoint3d box[8];
     size_t nPts = 0;
     DRange3d queryRange;    
+    DRange3d queryRangeInSrcGCS;
     ClipVectorPtr queryClip;
             
     if (clip != nullptr)
@@ -161,18 +162,16 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
 #endif			
             }
         else
-            {    
-            DRange3d queryRangeLocal;
-
+            {                
             if (m_destinationGcs.IsValid())
-                ReprojectRange(queryRangeLocal, queryRange, m_destinationGcs, m_sourceGcs, GeoCoordinates::GeoCoordInterpretation::Cartesian, m_geocoordInterpretation);
+                ReprojectRange(queryRangeInSrcGCS, queryRange, m_destinationGcs, m_sourceGcs, GeoCoordinates::GeoCoordInterpretation::Cartesian, m_geocoordInterpretation);
             else
-                queryRangeLocal = queryRange;
+                queryRangeInSrcGCS = queryRange;
 
-            if (queryRangeLocal.XLength() == 0 || queryRangeLocal.YLength() == 0)
+            if (queryRangeInSrcGCS.XLength() == 0 || queryRangeInSrcGCS.YLength() == 0)
                 return SUCCESS; 
 
-            queryRangeLocal.Get8Corners(box);
+            queryRangeInSrcGCS.Get8Corners(box);
             nPts = 8;
             }
         }
@@ -197,7 +196,10 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
     flags->SetLoadIndices(false);
 
     for (auto& node: nodes)
-        {        
+        {                
+        if (!queryRangeInSrcGCS.IntersectsWith(node->GetContentExtent()))
+            continue;
+        
         auto mesh = node->GetMesh(flags);
                 
         for (size_t ptInd = 0; ptInd <  mesh->GetNbPoints(); ptInd++)
@@ -207,7 +209,7 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
             if (m_destinationGcs.IsValid())
                 ReprojectPt(pt, pt, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
                             
-            if (queryRange.IsContainedXY(pt))
+            if (queryRange.IsContained(pt))
                 {
                 points.push_back(pt);
                 }
