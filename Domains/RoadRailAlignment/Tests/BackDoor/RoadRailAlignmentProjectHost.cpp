@@ -282,7 +282,7 @@ DgnDbPtr RoadRailAlignmentTestsFixture::CreateProject(WCharCP baseName, bool nee
 
     if (needsSetBriefcase)
         {
-        s_currentProject->AssignBriefcaseId(BeBriefcaseId(1));
+        s_currentProject->SetAsBriefcase(BeBriefcaseId(1));
         s_currentProject->CloseDb();
         s_currentProject = m_host->OpenProject(baseName);
         }
@@ -312,7 +312,7 @@ Dgn::DgnDbPtr RoadRailAlignmentTestsFixture::OpenProject(WCharCP baseName, bool 
 
     if (needsSetBriefcase && s_currentProject.IsValid())
         {
-        s_currentProject->AssignBriefcaseId(BeBriefcaseId(1));
+        s_currentProject->SetAsBriefcase(BeBriefcaseId(1));
         s_currentProject->SaveChanges();
         s_currentProject->CloseDb();
         s_currentProject = m_host->OpenProject(baseName);
