@@ -5,13 +5,21 @@
     <ECCustomAttributes>
         <SupplementalSchemaMetaData xmlns="Bentley_Standard_CustomAttributes.01.12">
             <PrimarySchemaName>PW_WSG</PrimarySchemaName>
-            <PrimarySchemaMajorVersion>2</PrimarySchemaMajorVersion>
-            <PrimarySchemaMinorVersion>2</PrimarySchemaMinorVersion>
+            <PrimarySchemaMajorVersion>1</PrimarySchemaMajorVersion>
+            <PrimarySchemaMinorVersion>1</PrimarySchemaMinorVersion>
             <Precedence>10</Precedence>
             <Purpose>ECDbMapping</Purpose>
             <IsUserSpecific>False</IsUserSpecific>
         </SupplementalSchemaMetaData>
     </ECCustomAttributes>
+    <ECClass typeName="document">
+      <ECCustomAttributes>
+        <!-- DgnDb06 ECDb requires one table for relationship end -->
+        <ClassMap xmlns="ECDbMap.02.00">
+          <MapStrategy>TablePerHierarchy</MapStrategy>
+        </ClassMap>
+      </ECCustomAttributes>
+    </ECClass>
     <ECClass typeName="environment">
         <ECCustomAttributes>
             <!-- DgnDb06 ECDb requires one table for relationship end -->

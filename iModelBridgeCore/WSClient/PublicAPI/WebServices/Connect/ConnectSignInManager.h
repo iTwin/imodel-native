@@ -124,9 +124,11 @@ struct ConnectSignInManager : IConnectAuthenticationProvider, std::enable_shared
         //! Change default configuration with new one. Best called before any other calls are done.
         WSCLIENT_EXPORT void Configure(Configuration config);
 
-        //! Sign in using identity token. 
+        //! Sign in using identity token.
+        //! Note: Token can be retrieved from IMS sign-in page from browser, in-app web view, or other means.
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithToken(SamlTokenPtr token);
-        //! Sign in using user credentials. Credentials will be used for future token retrieval.
+        //! Sign in using user credentials. Credentials will be used for token retrieval but will not be stored.
+        //! Note: this only works for IMS managed users. Federated users from organisations can only use SignInWithToken().
         WSCLIENT_EXPORT AsyncTaskPtr<SignInResult> SignInWithCredentials(CredentialsCR credentials);
         //! Store sign-in information on disk so user would stay signed-in. Call after successful sign-in.
         WSCLIENT_EXPORT void FinalizeSignIn();

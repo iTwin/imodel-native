@@ -105,23 +105,16 @@ BentleyStatus FileInfoManager::SaveInfo(FileInfoR info)
         }
     else
         {
-        if (BE_SQLITE_OK != m_cachedFileInfoInserter.Get().Insert(info.GetJsonInfo()))
-            {
+        Json::Value& instance = info.GetJsonInfo();
+        instance[CLASS_CachedFileInfo_PROPERTY_ObjectInfo][NavPropId] = info.GetCachedInstanceKey().GetInfoKey().GetInstanceId().ToString();
+
+        if (BE_SQLITE_OK != m_cachedFileInfoInserter.Get().Insert(instance))
             return ERROR;
-            }
+        
+        if (BE_SQLITE_OK != m_externalFileInfoInserter.Get().Insert(info.GetExternalFileInfoJson()))
+            return ERROR;
 
         ECInstanceKey cachedFileInfoKey(m_cachedFileInfoClass->GetId(), ECDbHelper::ECInstanceIdFromJsonInstance(info.GetJsonInfo()));
-
-        if (!m_dbAdapter.RelateInstances(m_objectInfoToCachedFileInfoClass, info.GetCachedInstanceKey().GetInfoKey(), cachedFileInfoKey).IsValid())
-            {
-            return ERROR;
-            }
-
-        if (BE_SQLITE_OK != m_externalFileInfoInserter.Get().Insert(info.GetExternalFileInfoJson()))
-            {
-            return ERROR;
-            }
-
         ECInstanceKey externalFileInfoKey(m_externalFileInfoClass->GetId(), ECDbHelper::ECInstanceIdFromJsonInstance(info.GetExternalFileInfoJson()));
         ECInstanceKey fileInfoOwnershipKey = InsertFileInfoOwnership(info.GetCachedInstanceKey().GetInstanceKey(), externalFileInfoKey);
 

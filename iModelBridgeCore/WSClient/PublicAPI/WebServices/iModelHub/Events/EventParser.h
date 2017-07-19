@@ -25,6 +25,7 @@ public:
     IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct ChangeSetPrePushEvent> GetChangeSetPrePushEvent(EventPtr eventPtr);
     IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct CodeEvent> GetCodeEvent(EventPtr eventPtr);
     IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct DeletedEvent> GetDeletedEvent(EventPtr eventPtr);
+    IMODELHUBCLIENT_EXPORT static RefCountedPtr<struct VersionEvent> GetVersionEvent(EventPtr eventPtr);
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

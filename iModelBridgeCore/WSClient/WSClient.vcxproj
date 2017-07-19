@@ -186,6 +186,7 @@
     <ClCompile Include="iModelHubClient\Events\LockEvent.cpp" />
     <ClCompile Include="iModelHubClient\Events\ChangeSetPrePushEvent.cpp" />
     <ClCompile Include="iModelHubClient\Events\ChangeSetPostPushEvent.cpp" />
+    <ClCompile Include="iModelHubClient\Events\VersionEvent.cpp" />
     <ClCompile Include="iModelHubClient\Utils.cpp" />
     <ClCompile Include="iModelHubClient\FileInfo.cpp" />
     <ClCompile Include="iModelHubClient\Logging.cpp" />
@@ -329,6 +330,7 @@
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\Error.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Common.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\VersionEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\Azure\AzureBlobStorageClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Azure\EventServiceClient.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\CachingDataSource.h" />
@@ -444,18 +446,24 @@
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.09.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\DSCacheSchema.01.10.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Bentley_SP_Supplemental_ECDbMapping.01.00.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\FeatureTracking_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\Issue_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\MetaSchema_Supplemental_ECDbMapping.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\ProjectContent_Supplemental_ECDbMapping.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.01.01.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.03.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\Bentley_SP_V3Conversion.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\eBAttributes_V3Conversion.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\FileAccess_V3Conversion.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\Policies_V3Conversion.01.01.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\PW_WSG_V3Conversion.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\PW_WSG_V3Conversion.02.03.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.01.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.02.ecschema.xml">
+      <SubType>Designer</SubType>
+    </Xml>
     <Xml Include="Cache\Persistence\ECSchemas\WSCacheMetaSchema.03.00.ecschema.xml" />
     <Xml Include="WSClient.PartFile.xml">
       <SubType>Designer</SubType>
