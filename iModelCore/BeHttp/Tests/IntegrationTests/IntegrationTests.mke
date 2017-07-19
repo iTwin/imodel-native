@@ -2,11 +2,11 @@
 #
 #     $Source: Tests/IntegrationTests/IntegrationTests.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
-%include mdl.mki
+# %include mdl.mki - the include of BuildUnitTests.mke below does this, and would otherwise emit a warnings.
 
 beHttpUnitTestsDir = $(SrcRoot)BeHttp/Tests/UnitTests/Published/
 
