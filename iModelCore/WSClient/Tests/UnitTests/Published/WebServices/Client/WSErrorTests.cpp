@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Client/WSErrorTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -66,9 +66,9 @@ TEST_F(WSErrorTests, Ctor_HttpResponseWithCertificateError_SetsStatusCertificate
     EXPECT_EQ(WSError::Status::CertificateError, WSError(StubHttpResponse(ConnectionStatus::CertificateError)).GetStatus());
     }
 
-TEST_F(WSErrorTests, Ctor_JsonErrorFormatHasMissingField_SetsStatusServerNotSupported)
+TEST_F(WSErrorTests, Ctor_JsonErrorFormatHasMissingRequiredFieldErrorMessage_SetsStatusServerNotSupported)
     {
-    auto body = R"({"errorId":null, "errorMessage":null})";
+    auto body = R"({"errorId":null, "errorDescription":null})";
     WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/json"}}));
 
     EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
@@ -80,6 +80,36 @@ TEST_F(WSErrorTests, Ctor_JsonErrorFormatCorrectButContentTypeXml_SetsStatusServ
     WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}}));
 
     EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    }
+
+TEST_F(WSErrorTests, Ctor_XmlErrorFormatMissingRequiredFieldErrorMessage_SetsStatusServerNotSupported)
+    {
+    auto body = R"( <ModelError
+                      xmlns:i="http://www.w3.org/2001/XMLSchema-instance"
+                      xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
+                        <errorId>ClassNotFound</errorId>
+                        <errorDescription>TestDescription</errorDescription>
+                    </ModelError>)";
+
+    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}}));
+
+    EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    }
+
+TEST_F(WSErrorTests, Ctor_XmlErrorFormatMissingOptionalFields_ParsesXmlAndSetsError)
+    {
+    auto body = R"( <ModelError
+                      xmlns:i="http://www.w3.org/2001/XMLSchema-instance"
+                      xmlns="http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models">
+                        <errorMessage>TestMessage</errorMessage>
+                    </ModelError>)";
+
+    WSError error(StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/xml"}}));
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("TestMessage", error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
     }
 
 TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectAndContentTypeXml_ParsesXmlAndSetsError)
@@ -191,6 +221,137 @@ TEST_F(WSErrorTests, Ctor_ConflictError_SetsRecievedMessageAndDescriptionForUser
     EXPECT_EQ(WSError::Id::Conflict, error.GetId());
     EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
     EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_MissingRequiredFieldErrorMessage_SetsStatusServerNotSupported)
+    {
+    auto body = R"({"errorId":null, "errorDescription":"DESCRIPTION", "httpStatusCode" : 409})";
+    auto httpResponse = StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+    WSError error(httpResponse);
+
+    EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    }
+
+TEST_F(WSErrorTests, Ctor_RequiredFieldsOnly_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto body = R"({"errorMessage":"MESSAGE", "httpStatusCode" : 409})";
+    auto httpResponse = StubHttpResponse(HttpStatus::Conflict, body, {{"Content-Type", "application/json"}});
+    WSError error(httpResponse);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_JsonValueWithNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
+    {
+    auto json = ToJson(R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 404})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::NotFound).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_TRUE(error.GetDisplayDescription().find("MESSAGE") != Utf8String::npos);
+    EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
+    }
+
+TEST_F(WSErrorTests, Ctor_JsonValueWithClassNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
+    {
+    auto json = ToJson(R"({"errorId":"ClassNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 404})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::ClassNotFound, error.GetId());
+    EXPECT_NE(HttpError(ConnectionStatus::OK, HttpStatus::NotFound).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_TRUE(error.GetDisplayDescription().find("MESSAGE") != Utf8String::npos);
+    EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
+    }
+
+TEST_F(WSErrorTests, Ctor_JsonValueWithoutHttpStatusCodeField_SetsStatusServerNotSupported)
+    {
+    auto json = ToJson(R"({"errorId":"ClassNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    }
+
+TEST_F(WSErrorTests, Ctor_JsonValueConflictError_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto json = ToJson(R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 409})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_JsonValueWithRequiredFieldsOnly_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto json = ToJson(R"({"errorMessage":"MESSAGE", "httpStatusCode" : 409})");
+    WSError error(json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_RapidJsonValueWithNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
+    {
+    auto json = ToRapidJson(R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 404})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_EQ(HttpError(ConnectionStatus::OK, HttpStatus::NotFound).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_TRUE(error.GetDisplayDescription().find("MESSAGE") != Utf8String::npos);
+    EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
+    }
+
+TEST_F(WSErrorTests, Ctor_RapidJsonValueWithClassNotFoundError_SetsErrorReceivedStatusAndIdWithLocalizedMessage)
+    {
+    auto json = ToRapidJson(R"({"errorId":"ClassNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 404})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::ClassNotFound, error.GetId());
+    EXPECT_NE(HttpError(ConnectionStatus::OK, HttpStatus::NotFound).GetDisplayMessage(), error.GetDisplayMessage());
+    EXPECT_TRUE(error.GetDisplayDescription().find("MESSAGE") != Utf8String::npos);
+    EXPECT_TRUE(error.GetDisplayDescription().find("DESCRIPTION") != Utf8String::npos);
+    }
+
+TEST_F(WSErrorTests, Ctor_RapidJsonValueWithoutHttpStatusCodeField_SetsStatusServerNotSupported)
+    {
+    auto json = ToRapidJson(R"({"errorId":"ClassNotFound", "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION"})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ServerNotSupported, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    }
+
+TEST_F(WSErrorTests, Ctor_RapidJsonValueConflictError_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto json = ToRapidJson(R"({"errorId":null, "errorMessage":"MESSAGE", "errorDescription":"DESCRIPTION", "httpStatusCode" : 409})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("DESCRIPTION", error.GetDisplayDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_RapidJsonValueWithRequiredFieldsOnly_SetsRecievedMessageAndDescriptionForUser)
+    {
+    auto json = ToRapidJson(R"({"errorMessage":"MESSAGE", "httpStatusCode" : 409})");
+    WSError error(*json);
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Conflict, error.GetId());
+    EXPECT_EQ("MESSAGE", error.GetDisplayMessage());
+    EXPECT_EQ("", error.GetDisplayDescription());
     }
 
 TEST_F(WSErrorTests, Ctor_ISMRedirectResponse_SetsIdLoginFailedWithLocalizedMessage)

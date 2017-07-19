@@ -2,7 +2,7 @@
 |
 |     $Source: Client/WSError.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
@@ -13,16 +13,18 @@
 
 #include "WSError.xliff.h"
 
-#define JSON_ErrorId            "errorId"
-#define JSON_ErrorMessage       "errorMessage"
-#define JSON_ErrorDescription   "errorDescription"
+#define JSON_ErrorId                "errorId"
+#define JSON_ErrorMessage           "errorMessage"
+#define JSON_ErrorDescription       "errorDescription"
 
-#define XML_NAMESPACE           "http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models"
-#define XML_NAMESPACE_PREFIX    "error"
-#define XML_ROOTNODE_NAME       "ModelError"
-#define XML_ErrorId             "error:errorId"
-#define XML_ErrorMessage        "error:errorMessage"
-#define XML_ErrorDescription    "error:errorDescription"
+#define JSON_ErrorHttpStatusCode    "httpStatusCode"
+
+#define XML_NAMESPACE               "http://schemas.datacontract.org/2004/07/Bentley.Mas.WebApi.Models"
+#define XML_NAMESPACE_PREFIX        "error"
+#define XML_ROOTNODE_NAME           "ModelError"
+#define XML_ErrorId                 "error:errorId"
+#define XML_ErrorMessage            "error:errorMessage"
+#define XML_ErrorDescription        "error:errorDescription"
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
@@ -51,9 +53,7 @@ WSError::Id WSError::ErrorIdFromString(Utf8StringCR errorIdString)
 
     auto it = map.find(errorIdString);
     if (it != map.end())
-        {
         return it->second;
-        }
 
     return Id::Unknown;
     }
@@ -117,9 +117,7 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         }
 
     if (SUCCESS == ParseBody(httpResponse))
-        {
         return;
-        }
 
     if (ImsClient::IsLoginRedirect(httpResponse) ||                 // Bentley CONNECT login redirect
         HttpStatus::Unauthorized == httpResponse.GetHttpStatus())   // Bentley CONNECT token could not be retrieved
@@ -131,6 +129,46 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         }
 
     SetStatusServerNotSupported();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError::WSError(JsonValueCR jsonError)
+    {
+    int statusInt = jsonError[JSON_ErrorHttpStatusCode].asInt();
+    if (statusInt == 0)
+        {
+        SetStatusServerNotSupported();
+        return;
+        }
+
+    HttpStatus status = static_cast<HttpStatus>(statusInt);
+    if (SUCCESS != ParseJsonError(jsonError, status))
+        {
+        SetStatusServerNotSupported();
+        return;
+        }
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    05/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError::WSError(RapidJsonValueCR jsonError)
+    {
+    int statusInt = jsonError[JSON_ErrorHttpStatusCode].IsInt() ? jsonError[JSON_ErrorHttpStatusCode].GetInt() : 0;
+    if (statusInt == 0)
+        {
+        SetStatusServerNotSupported();
+        return;
+        }
+
+    HttpStatus status = static_cast<HttpStatus>(statusInt);
+    if (SUCCESS != ParseJsonError(jsonError, status))
+        {
+        SetStatusServerNotSupported();
+        return;
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -181,29 +219,56 @@ BentleyStatus WSError::ParseBody(HttpResponseCR httpResponse)
 BentleyStatus WSError::ParseJsonError(HttpResponseCR httpResponse)
     {
     Json::Value jsonError = httpResponse.GetBody().AsJson();
-    if (!IsValidErrorJson(jsonError))
-        {
+    return ParseJsonError(jsonError, httpResponse.GetHttpStatus());
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSError::ParseJsonError(JsonValueCR jsonError, HttpStatus status)
+    {
+    if (!DoesStringFieldExist(jsonError, JSON_ErrorMessage))
         return ERROR;
-        }
 
     WSError::Id errorId = ErrorIdFromString(jsonError[JSON_ErrorId].asString());
     Utf8String errorMessage = jsonError[JSON_ErrorMessage].asString();
     Utf8String errorDescription = jsonError[JSON_ErrorDescription].asString();
 
-    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription);
+    SetStatusReceivedError(HttpError(ConnectionStatus::OK, status), errorId, errorMessage, errorDescription);
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSError::ParseJsonError(RapidJsonValueCR jsonError, HttpStatus status)
+    {
+    if (!DoesStringFieldExist(jsonError, JSON_ErrorMessage))
+        return ERROR;
+
+    WSError::Id errorId = ErrorIdFromString(GetOptionalString(jsonError[JSON_ErrorId]));
+    Utf8String errorMessage = GetOptionalString(jsonError[JSON_ErrorMessage]);
+    Utf8String errorDescription = GetOptionalString(jsonError[JSON_ErrorDescription]);
+
+    SetStatusReceivedError(HttpError(ConnectionStatus::OK, status), errorId, errorMessage, errorDescription);
     return SUCCESS;
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    09/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus GetChildNodeContents(BeXmlNodeP node, Utf8CP childNodePath, Utf8StringR contentsOut)
+BentleyStatus GetChildNodeContents(BeXmlNodeP node, Utf8CP childNodePath, Utf8StringR contentsOut, bool isRequired)
     {
     BeXmlNodeP childNode = node->SelectSingleNode(childNodePath);
-    if (nullptr == childNode)
+    if (nullptr == childNode && isRequired)
         {
-        return ERROR;
+        if (isRequired)
+            return ERROR;
+
+        contentsOut.clear();
+        return SUCCESS;
         }
+
     childNode->GetContent(contentsOut);
     return SUCCESS;
     }
@@ -218,24 +283,21 @@ BentleyStatus WSError::ParseXmlError(HttpResponseCR httpResponse)
     BeXmlStatus xmlStatus;
     BeXmlDomPtr xmlDom = BeXmlDom::CreateAndReadFromMemory(xmlStatus, bodyStr.c_str(), bodyStr.size());
     if (BeXmlStatus::BEXML_Success != xmlStatus)
-        {
         return ERROR;
-        }
+
     xmlDom->RegisterNamespace(XML_NAMESPACE_PREFIX, XML_NAMESPACE);
 
     BeXmlNodeP rootNode = xmlDom->GetRootElement();
     if (nullptr == rootNode || Utf8String(XML_ROOTNODE_NAME) != rootNode->GetName())
-        {
         return ERROR;
-        }
 
     Utf8String errorIdStr;
     Utf8String errorMessage;
     Utf8String errorDescription;
 
-    if (SUCCESS != GetChildNodeContents(rootNode, XML_ErrorId, errorIdStr) ||
-        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorMessage, errorMessage) ||
-        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorDescription, errorDescription))
+    if (SUCCESS != GetChildNodeContents(rootNode, XML_ErrorId, errorIdStr, false) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorMessage, errorMessage, true) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_ErrorDescription, errorDescription, false))
         {
         return ERROR;
         }
@@ -329,27 +391,35 @@ void WSError::SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8Stri
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    09/2014
+* @bsimethod                                                    Vincas.Razma    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool IsMemberStringOrNull(JsonValueCR json, Utf8CP name)
+bool WSError::DoesStringFieldExist(JsonValueCR json, Utf8CP name)
     {
     if (!json.isMember(name))
-        {
         return false;
-        }
     JsonValueCR member = json[name];
     return member.isString() || member.isNull();
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    05/2014
+* @bsimethod                                                    Vincas.Razma    07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool WSError::IsValidErrorJson(JsonValueCR jsonError)
+bool WSError::DoesStringFieldExist(RapidJsonValueCR json, Utf8CP name)
     {
-    return
-        IsMemberStringOrNull(jsonError, JSON_ErrorId) &&
-        IsMemberStringOrNull(jsonError, JSON_ErrorMessage) &&
-        IsMemberStringOrNull(jsonError, JSON_ErrorDescription);
+    if (!json.HasMember(name))
+        return false;
+    RapidJsonValueCR member = json[name];
+    return member.IsString() || member.IsNull();
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8CP WSError::GetOptionalString(RapidJsonValueCR json)
+    {
+    if (json.IsNull())
+        return nullptr;
+    return json.GetString();
     }
 
 /*--------------------------------------------------------------------------------------+
