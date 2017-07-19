@@ -37,6 +37,7 @@ struct ECQuantityFormatting
     ECOBJECTS_EXPORT static Json::Value FormatQuantityJson(BEU::QuantityCR qty, KindOfQuantityCP koq, size_t indx, bool useAlias=true);
     ECOBJECTS_EXPORT ECValue static GetQuantityValue(BEU::QuantityCR qty, UnitCP useUnit = nullptr);
     ECOBJECTS_EXPORT BEU::Quantity CreateQuantity(Utf8CP input, size_t start, Utf8CP unitName = nullptr);
+    ECOBJECTS_EXPORT BEU::Quantity CreateQuantity(Utf8CP input, size_t start, KindOfQuantityCP koq = nullptr);
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE
