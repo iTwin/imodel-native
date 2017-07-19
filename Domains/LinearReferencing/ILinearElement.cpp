@@ -8,7 +8,6 @@
 #include <LinearReferencingInternal.h>
 
 HANDLER_DEFINE_MEMBERS(GeometricElementAsReferentHandler)
-HANDLER_DEFINE_MEMBERS(LinearlyLocatedReferentHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      09/2016

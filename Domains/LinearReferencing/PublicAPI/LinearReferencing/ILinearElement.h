@@ -228,30 +228,6 @@ public:
 //! @see IReferent
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinearlyLocatedReferent : Dgn::SpatialLocationElement, ILinearlyLocatedElement, IReferent
-{
-    DGNELEMENT_DECLARE_MEMBERS(BLR_CLASS_LinearlyLocatedReferent, Dgn::SpatialLocationElement);
-    friend struct LinearlyLocatedReferentHandler;
-
-protected:
-    //! @private
-    explicit LinearlyLocatedReferent(CreateParams const& params) : T_Super(params) {}
-
-    virtual ILinearlyLocatedElementCP _ToLinearlyLocatedElement() const { return nullptr; }
-    virtual Dgn::DgnElementCR _IReferentToDgnElement() const override { return *this; }
-    virtual Dgn::DgnElementCR _ILinearlyLocatedToDgnElement() const override { return *this; }
-
-public:
-    DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(LinearlyLocatedReferent)
-
-    LINEARREFERENCING_EXPORT ILinearlyLocatedElementCP ToLinearlyLocatedElement() const { return _ToLinearlyLocatedElement(); }
-}; // LinearlyLocatedReferent
-
-//=======================================================================================
-//! Specialization of IReferent implemented by referents that are linearly-located.
-//! @see IReferent
-//! @ingroup GROUP_LinearReferencing
-//=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE GeometricElementAsReferent : Dgn::SpatialLocationElement, IReferent
 {
     DGNELEMENT_DECLARE_MEMBERS(BLR_CLASS_GeometricElementAsReferent, Dgn::SpatialLocationElement);
@@ -271,15 +247,6 @@ public:
     LINEARREFERENCING_EXPORT Dgn::DgnElementId QueryGeometricElementId() const;
 }; // GeometricElementReferent
 
-
-//=================================================================================
-//! ElementHandler for LinearlyLocatedReferent Element
-//! @ingroup GROUP_LinearReferencing
-//=================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE LinearlyLocatedReferentHandler : Dgn::dgn_ElementHandler::SpatialLocation
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BLR_CLASS_LinearlyLocatedReferent, LinearlyLocatedReferent, LinearlyLocatedReferentHandler, Dgn::dgn_ElementHandler::SpatialLocation, LINEARREFERENCING_EXPORT)
-}; // LinearlyLocatedReferentHandler
 
 //=================================================================================
 //! ElementHandler for GeometricElementAsReferent Element

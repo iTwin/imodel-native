@@ -75,7 +75,6 @@ END_BENTLEY_LINEARREFERENCING_NAMESPACE
 #define BLR_CLASS_ILinearlyLocated                                  "ILinearlyLocated"
 #define BLR_CLASS_ILinearlyLocatedAttribution                       "ILinearlyLocatedAttribution"
 #define BLR_CLASS_ILinearlyLocatedElement                           "ILinearlyLocatedElement"
-#define BLR_CLASS_LinearlyLocatedReferent                           "LinearlyLocatedReferent"
 #define BLR_CLASS_LinearlyReferencedAtLocation                      "LinearlyReferencedAtLocation"
 #define BLR_CLASS_LinearlyReferencedFromToLocation                  "LinearlyReferencedFromToLocation"
 #define BLR_CLASS_LinearlyReferencedLocation                        "LinearlyReferencedLocation"
@@ -134,13 +133,11 @@ LINEARREFERENCING_TYPEDEFS(ILinearlyLocated)
 LINEARREFERENCING_TYPEDEFS(ILinearlyLocatedElement)
 LINEARREFERENCING_TYPEDEFS(IReferent)
 LINEARREFERENCING_TYPEDEFS(ISegmentableLinearElement)
-LINEARREFERENCING_TYPEDEFS(LinearlyLocatedReferent)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedAtLocation)
 LINEARREFERENCING_TYPEDEFS(LinearlyReferencedFromToLocation)
 
 LINEARREFERENCING_REFCOUNTED_PTR(GeometricElementAsReferent)
-LINEARREFERENCING_REFCOUNTED_PTR(LinearlyLocatedReferent)
 LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedAtLocation)
 LINEARREFERENCING_REFCOUNTED_PTR(LinearlyReferencedFromToLocation)
 
