@@ -139,6 +139,7 @@
     <ClCompile Include="Client\ClientConnection.cpp" />
     <ClCompile Include="Client\ClientInfo.cpp" />
     <ClCompile Include="Client\ClientInternal.cpp" />
+    <ClCompile Include="Client\RequestOptions.cpp" />
     <ClCompile Include="Client\WSChangeset.cpp" />
     <ClCompile Include="Configuration\BuddiClient.cpp" />
     <ClCompile Include="Configuration\BuddiError.cpp" />
@@ -295,6 +296,7 @@
     <ClInclude Include="Client\WebApi\WebApiV2.h" />
     <ClInclude Include="Client\WSError.xliff.h" />
     <ClInclude Include="Client\ChunkedUploadRequest.h" />
+    <ClInclude Include="PublicAPI\WebServices\Client\RequestOptions.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\Response\WSUploadResponse.h" />
     <ClInclude Include="PublicAPI\WebServices\Client\WSChangeset.h" />
     <ClInclude Include="PublicAPI\WebServices\Configuration\BuddiClient.h" />

@@ -72,6 +72,13 @@ size_t WSChangeset::CalculateSize() const
         size -= 2; // size of "{}"
         }
 
+    if (!m_requestOptions.isNull())
+        {
+        static const size_t requestOptionsFieldSize = Utf8String(R"(,"requestOptions":)").size();
+        size += requestOptionsFieldSize;
+        size += m_requestOptionsJsonSize;
+        }
+
     return size;
     }
 
@@ -99,6 +106,11 @@ void WSChangeset::ToRequestJson(JsonValueR changesetJson) const
     else
         {
         ToMultipleInstancesRequestJson(changesetJson);
+        }
+
+    if (!m_requestOptions.isNull())
+        {
+        changesetJson["requestOptions"] = m_requestOptions;
         }
     }
 
@@ -140,22 +152,22 @@ void WSChangeset::ToMultipleInstancesRequestJson(JsonValueR changesetJson) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSChangeset::ExtractNewIdsFromResponse(RapidJsonValueCR response, const IdHandler& handler) const
+BentleyStatus WSChangeset::ExtractNewIdsFromResponse(RapidJsonValueCR response, const SuccessHandler& successHandler, const ErrorHandler& errorHandler) const
     {
     if (Format::SingeInstance == m_format)
         {
-        return ExtractNewIdsFromSingleInstanceResponse(response, handler);
+        return ExtractNewIdsFromSingleInstanceResponse(response, successHandler, errorHandler);
         }
     else
         {
-        return ExtractNewIdsFromMultipleInstancesResponse(response, handler);
+        return ExtractNewIdsFromMultipleInstancesResponse(response, successHandler, errorHandler);
         }
     }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSChangeset::ExtractNewIdsFromSingleInstanceResponse(RapidJsonValueCR response, const IdHandler& handler) const
+BentleyStatus WSChangeset::ExtractNewIdsFromSingleInstanceResponse(RapidJsonValueCR response, const SuccessHandler& successHandler, const ErrorHandler& errorHandler) const
     {
     auto& instanceJson = response["changedInstance"]["instanceAfterChange"];
     if (!instanceJson.IsObject() || m_instances.empty())
@@ -163,7 +175,7 @@ BentleyStatus WSChangeset::ExtractNewIdsFromSingleInstanceResponse(RapidJsonValu
         return ERROR;
         }
 
-    if (SUCCESS != m_instances.front()->ExtractNewIdsFromInstanceAfterChange(instanceJson, handler))
+    if (SUCCESS != m_instances.front()->ExtractNewIdsFromInstanceAfterChange(instanceJson, successHandler, errorHandler))
         {
         return ERROR;
         }
@@ -174,7 +186,7 @@ BentleyStatus WSChangeset::ExtractNewIdsFromSingleInstanceResponse(RapidJsonValu
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSChangeset::ExtractNewIdsFromMultipleInstancesResponse(RapidJsonValueCR response, const IdHandler& handler) const
+BentleyStatus WSChangeset::ExtractNewIdsFromMultipleInstancesResponse(RapidJsonValueCR response, const SuccessHandler& successHandler, const ErrorHandler& errorHandler) const
     {
     auto& instancesJson = response["changedInstances"];
     if (!instancesJson.IsArray() || instancesJson.Size() != m_instances.size())
@@ -186,7 +198,7 @@ BentleyStatus WSChangeset::ExtractNewIdsFromMultipleInstancesResponse(RapidJsonV
     for (auto& instance : m_instances)
         {
         auto& instanceJson = instancesJson[index]["instanceAfterChange"];
-        if (SUCCESS != instance->ExtractNewIdsFromInstanceAfterChange(instanceJson, handler))
+        if (SUCCESS != instance->ExtractNewIdsFromInstanceAfterChange(instanceJson, successHandler, errorHandler))
             {
             return ERROR;
             }
@@ -194,6 +206,15 @@ BentleyStatus WSChangeset::ExtractNewIdsFromMultipleInstancesResponse(RapidJsonV
         }
 
     return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+void WSChangeset::SetRequestOptions(RequestOptions options)
+    {
+    options.ToJson(m_requestOptions);
+    m_requestOptionsJsonSize = Json::FastWriter::ToString(m_requestOptions).size();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -329,45 +350,65 @@ bool WSChangeset::Instance::RemoveRelatedInstance(Instance& instanceToRemove)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WSChangeset::Instance::ExtractNewIdsFromInstanceAfterChange(RapidJsonValueCR instanceAfterChange, const IdHandler& handler) const
+BentleyStatus WSChangeset::Instance::ExtractNewIdsFromInstanceAfterChange
+(
+RapidJsonValueCR instanceAfterChange,
+const SuccessHandler& successHandler,
+const ErrorHandler& errorHandler
+) const
     {
-    if (ChangeState::Created == m_state)
-        {
-        if (SUCCESS != handler(m_id, GetObjectIdFromInstance(instanceAfterChange)))
-            {
-            return ERROR;
-            }
-        }
+    if (SUCCESS != HandleInstance(instanceAfterChange, m_id, m_state, successHandler, errorHandler))
+        return ERROR;
 
     if (m_relationships.empty())
-        {
         return SUCCESS;
-        }
 
     auto& relationshipsJson = instanceAfterChange["relationshipInstances"];
     if (relationshipsJson.Size() != m_relationships.size())
-        {
         return ERROR;
-        }
 
     rapidjson::SizeType index = 0;
     for (auto& relationship : m_relationships)
         {
         auto& relationshipJson = relationshipsJson[index];
-        if (ChangeState::Created == relationship->m_state)
-            {
-            if (SUCCESS != handler(relationship->m_id, GetObjectIdFromInstance(relationshipJson)))
-                {
-                return ERROR;
-                }
-            }
-        auto& relatedInstanceJson = relationshipJson["relatedInstance"];
-        if (SUCCESS != relationship->m_instance.ExtractNewIdsFromInstanceAfterChange(relatedInstanceJson, handler))
-            {
+
+        if (SUCCESS != HandleInstance(relationshipJson, relationship->m_id, relationship->m_state, successHandler, errorHandler))
             return ERROR;
-            }
+
+        auto& relatedInstanceJson = relationshipJson["relatedInstance"];
+        if (SUCCESS != relationship->m_instance.ExtractNewIdsFromInstanceAfterChange(relatedInstanceJson, successHandler, errorHandler))
+            return ERROR;
         index++;
         }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSChangeset::Instance::HandleInstance
+(
+RapidJsonValueCR instanceAfterChange,
+ObjectId instanceId,
+ChangeState state,
+const SuccessHandler& successHandler,
+const ErrorHandler& errorHandler
+)
+    {
+    auto* errorJson = GetErrorJsonFromInstance(instanceAfterChange);
+    if (errorJson != nullptr)
+        {
+        if (SUCCESS != errorHandler(instanceId, WSError(*errorJson)))
+            return ERROR;
+        return SUCCESS;
+        }
+
+    if (ChangeState::Created != state)
+        return SUCCESS;
+
+    if (SUCCESS != successHandler(instanceId, GetObjectIdFromInstance(instanceAfterChange)))
+        return ERROR;
 
     return SUCCESS;
     }
@@ -382,6 +423,16 @@ ObjectId WSChangeset::Instance::GetObjectIdFromInstance(RapidJsonValueCR instanc
     id.className = instance["className"].GetString();
     id.remoteId = instance["instanceId"].GetString();
     return id;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    10/2015
++---------------+---------------+---------------+---------------+---------------+------*/
+const rapidjson::Value* WSChangeset::Instance::GetErrorJsonFromInstance(RapidJsonValueCR instance)
+    {
+    if (!instance.HasMember("error"))
+        return nullptr;
+    return &instance["error"];
     }
 
 /*--------------------------------------------------------------------------------------+

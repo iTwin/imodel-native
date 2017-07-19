@@ -12,31 +12,32 @@ ClientMkiSourceDir = $(ClientSourceDirectory)Client/
 #--------------------------------------------------------------------------------------
 #   Set up build dependencies for precompiled header and Client.mki
 #--------------------------------------------------------------------------------------
-ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                         \
-                    $(ClientMkiPublicApiDir)ObjectId.h                           \
-                    $(ClientMkiPublicApiDir)Response/WSFileResponse.h            \
-                    $(ClientMkiPublicApiDir)Response/WSObjectsReader.h           \
-                    $(ClientMkiPublicApiDir)Response/WSObjectsReaderV1.h         \
-                    $(ClientMkiPublicApiDir)Response/WSObjectsReaderV2.h         \
-                    $(ClientMkiPublicApiDir)Response/WSObjectsResponse.h         \
-                    $(ClientMkiPublicApiDir)Response/WSUploadResponse.h          \
-                    $(ClientMkiPublicApiDir)WSChangeset.h                        \
-                    $(ClientMkiPublicApiDir)WSClient.h                           \
-                    $(ClientMkiPublicApiDir)WSError.h                            \
-                    $(ClientMkiPublicApiDir)WSInfo.h                             \
-                    $(ClientMkiPublicApiDir)WSQuery.h                            \
-                    $(ClientMkiPublicApiDir)WSRepository.h                       \
-                    $(ClientMkiPublicApiDir)WSRepositoryClient.h                 \
-                    $(ClientMkiSourceDir)ChunkedUploadRequest.h                  \
-                    $(ClientMkiSourceDir)ClientConfiguration.h                   \
-                    $(ClientMkiSourceDir)ClientConnection.h                      \
-                    $(ClientMkiSourceDir)ClientInternal.h                        \
-                    $(ClientMkiSourceDir)ServerInfoProvider.h                    \
-                    $(ClientMkiSourceDir)Utils.h                                 \
-                    $(ClientMkiSourceDir)WebApi/WebApi.h                         \
-                    $(ClientMkiSourceDir)WebApi/WebApiV1.h                       \
-                    $(ClientMkiSourceDir)WebApi/WebApiV1BentleyConnect.h         \
-                    $(ClientMkiSourceDir)WebApi/WebApiV2.h                       \
+ClientMkiHeaders =  $(ClientMkiPublicApiDir)ClientInfo.h                        \
+                    $(ClientMkiPublicApiDir)ObjectId.h                          \
+                    $(ClientMkiPublicApiDir)RequestOptions.h                    \
+                    $(ClientMkiPublicApiDir)Response/WSFileResponse.h           \
+                    $(ClientMkiPublicApiDir)Response/WSObjectsReader.h          \
+                    $(ClientMkiPublicApiDir)Response/WSObjectsReaderV1.h        \
+                    $(ClientMkiPublicApiDir)Response/WSObjectsReaderV2.h        \
+                    $(ClientMkiPublicApiDir)Response/WSObjectsResponse.h        \
+                    $(ClientMkiPublicApiDir)Response/WSUploadResponse.h         \
+                    $(ClientMkiPublicApiDir)WSChangeset.h                       \
+                    $(ClientMkiPublicApiDir)WSClient.h                          \
+                    $(ClientMkiPublicApiDir)WSError.h                           \
+                    $(ClientMkiPublicApiDir)WSInfo.h                            \
+                    $(ClientMkiPublicApiDir)WSQuery.h                           \
+                    $(ClientMkiPublicApiDir)WSRepository.h                      \
+                    $(ClientMkiPublicApiDir)WSRepositoryClient.h                \
+                    $(ClientMkiSourceDir)ChunkedUploadRequest.h                 \
+                    $(ClientMkiSourceDir)ClientConfiguration.h                  \
+                    $(ClientMkiSourceDir)ClientConnection.h                     \
+                    $(ClientMkiSourceDir)ClientInternal.h                       \
+                    $(ClientMkiSourceDir)ServerInfoProvider.h                   \
+                    $(ClientMkiSourceDir)Utils.h                                \
+                    $(ClientMkiSourceDir)WebApi/WebApi.h                        \
+                    $(ClientMkiSourceDir)WebApi/WebApiV1.h                      \
+                    $(ClientMkiSourceDir)WebApi/WebApiV1BentleyConnect.h        \
+                    $(ClientMkiSourceDir)WebApi/WebApiV2.h                      \
                     $(ClientMkiSourceDir)WSError.xliff.h                         
 
 #----------------------------------------------------------------------
@@ -76,6 +77,8 @@ $(o)ClientConnection$(oext)                 : $(ClientMkiSourceDir)ClientConnect
 $(o)ClientInfo$(oext)                       : $(ClientMkiSourceDir)ClientInfo.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ObjectId$(oext)                         : $(ClientMkiSourceDir)ObjectId.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)RequestOptions$(oext)                   : $(ClientMkiSourceDir)RequestOptions.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)ServerInfoProvider$(oext)               : $(ClientMkiSourceDir)ServerInfoProvider.cpp $(ClientMkiHeaders) ${MultiCompileDepends}
 

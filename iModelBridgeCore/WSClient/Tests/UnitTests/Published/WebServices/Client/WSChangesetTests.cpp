@@ -299,6 +299,65 @@ TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetAndOneDeletedIns
     EXPECT_EQ(0, changeset.GetRelationshipCount());
     }
 
+TEST_F(WSChangesetTests, ToRequestString_SingleInstanceChangesetWithRequestOptions_ReturnsChangesetWithRequestOptionsAndCalculateSizeMatches)
+    {
+    auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
+
+    WSChangeset changeset(WSChangeset::SingeInstance);
+    changeset.AddInstance({"TestSchema.TestClass", "Foo"}, WSChangeset::Created, properties);
+    changeset.SetRequestOptions(RequestOptions());
+
+    auto expectedJson = ToJson(R"({
+        "instance":
+            {
+            "changeState":"new",
+            "schemaName":"TestSchema",
+            "className":"TestClass",
+            "properties":{"TestProperty":"TestValue"}
+            },
+        "requestOptions":{
+            "FailureStrategy" : "Stop",
+            "ResponseContent" : "FullInstance",
+            "RefreshInstances" : false
+        }})");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(1, changeset.GetInstanceCount());
+    EXPECT_EQ(0, changeset.GetRelationshipCount());
+    }
+
+TEST_F(WSChangesetTests, ToRequestString_OneCreatedInstanceWithRequestOptions_ReturnsChangesetWithRequestOptionsAndCalculateSizeMatches)
+    {
+    auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
+
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchema.TestClass", "Foo"}, WSChangeset::Created, properties);
+    changeset.SetRequestOptions(RequestOptions());
+
+    auto expectedJson = ToJson(R"({
+        "instances":[
+            {
+            "changeState":"new",
+            "schemaName":"TestSchema",
+            "className":"TestClass",
+            "properties":{"TestProperty":"TestValue"}
+            }
+        ],
+        "requestOptions":{
+            "FailureStrategy" : "Stop",
+            "ResponseContent" : "FullInstance",
+            "RefreshInstances" : false
+        }})");
+
+    Utf8String changesetStr = changeset.ToRequestString();
+    EXPECT_EQ(expectedJson, ToJson(changesetStr));
+    EXPECT_EQ(changesetStr.size(), changeset.CalculateSize());
+    EXPECT_EQ(1, changeset.GetInstanceCount());
+    EXPECT_EQ(0, changeset.GetRelationshipCount());
+    }
+
 TEST_F(WSChangesetTests, AddInstance_SingleInstanceChangesetAndSecondInstance_ReturnsInvalidInstanceAndDoesNotAddIt)
     {
     auto properties = std::make_shared<Json::Value>(ToJson(R"({"TestProperty":"TestValue"})"));
@@ -988,6 +1047,216 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_CreatedRelationship_CallsHand
         return SUCCESS;
         }));
     EXPECT_EQ(1, count);
+    }
+
+TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_OneFailedAndOneSuccessInstance_CallsErrorAndSuccessHandler)
+    {
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchemaA.TestClassA", "A"}, WSChangeset::Created, nullptr);
+    changeset.AddInstance({"TestSchemaB.TestClassB", "B"}, WSChangeset::Created, nullptr);
+
+    auto response = ToRapidJson(R"({
+        "changedInstances" :
+            [{
+            "instanceAfterChange" :
+                {
+                "instanceId" : "NewIdA",
+                "className" : "NewClassA",
+                "schemaName" : "NewSchemaA",
+                "error":
+                    {
+                    "httpStatusCode": 404,
+                    "errorId": "InstanceNotFound",
+                    "errorMessage": "MESSAGE",
+                    "errorDescription": "DESCRIPTION"
+                    }
+                }
+            },{
+            "instanceAfterChange" :
+                {
+                "instanceId" : "NewIdB",
+                "className" : "NewClassB",
+                "schemaName" : "NewSchemaB"
+                }
+            }]
+        })");
+
+    int successCount = 0;
+    auto successHandler =
+        [&] (ObjectIdCR oldId, ObjectIdCR newId)
+        {
+        EXPECT_EQ(ObjectId("TestSchemaB.TestClassB", "B"), oldId);
+        EXPECT_EQ(ObjectId("NewSchemaB.NewClassB", "NewIdB"), newId);
+        successCount++;
+        return SUCCESS;
+        };
+
+    int errorCount = 0;
+    auto errorHandler = [&] (ObjectIdCR oldId, WSErrorCR error)
+        {
+        EXPECT_EQ(ObjectId("TestSchemaA.TestClassA", "A"), oldId);
+        EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+        EXPECT_EQ(WSError::Id::InstanceNotFound, error.GetId());
+        EXPECT_NE("", error.GetDisplayMessage());
+        EXPECT_EQ("MESSAGE\nDESCRIPTION", error.GetDisplayDescription());
+        errorCount++;
+        return SUCCESS;
+        };
+
+    EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(*response, successHandler, errorHandler));
+    EXPECT_EQ(1, successCount);
+    EXPECT_EQ(1, errorCount);
+    }
+
+TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_FailedRelationshipInstance_CallsErrorHandler)
+    {
+    WSChangeset changeset;
+    changeset
+        .AddInstance({"TestSchemaA.TestClassA", "A"}, WSChangeset::Existing, nullptr)
+        .AddRelatedInstance({"TestSchemaB.TestClassB", "B"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+        {"TestSchemaC.TestClassC", "C"}, WSChangeset::Existing, nullptr);
+
+    auto response = ToRapidJson(R"({
+        "changedInstances" :
+            [{
+            "instanceAfterChange" :
+                {
+                "instanceId" : "ExistingIdA",
+                "className" : "ExistingClassA",
+                "schemaName" : "ExistingSchemaA",
+                "relationshipInstances" :
+                    [{
+                    "instanceId" : "NewIdB",
+                    "className" : "NewClassB",
+                    "schemaName" : "NewSchemaB",
+                    "error":
+                        {
+                        "httpStatusCode": 404,
+                        "errorId": "InstanceNotFound",
+                        "errorMessage": "MESSAGE",
+                        "errorDescription": "DESCRIPTION"
+                        },
+                    "relatedInstance" :
+                        {
+                        "instanceId" : "ExistingIdC",
+                        "className" : "ExistingClassC",
+                        "schemaName" : "ExistingSchemaC"
+                        }
+                    }]
+                }
+            }]
+        })");
+
+    int successCount = 0;
+    auto successHandler =
+        [&] (ObjectIdCR oldId, ObjectIdCR newId)
+        {
+        successCount++;
+        return SUCCESS;
+        };
+
+    int errorCount = 0;
+    auto errorHandler = [&] (ObjectIdCR oldId, WSErrorCR error)
+        {
+        EXPECT_EQ(ObjectId("TestSchemaB.TestClassB", "B"), oldId);
+        EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+        EXPECT_EQ(WSError::Id::InstanceNotFound, error.GetId());
+        EXPECT_NE("", error.GetDisplayMessage());
+        EXPECT_EQ("MESSAGE\nDESCRIPTION", error.GetDisplayDescription());
+        errorCount++;
+        return SUCCESS;
+        };
+
+    EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(*response, successHandler, errorHandler));
+    EXPECT_EQ(0, successCount);
+    EXPECT_EQ(1, errorCount);
+    }
+
+TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_MultipleErrorInstances_CallsErrorHandlerForEach)
+    {
+    WSChangeset changeset;
+    changeset
+        .AddInstance({"TestSchemaA.TestClassA", "A"}, WSChangeset::Existing, nullptr)
+        .AddRelatedInstance({"TestSchemaB.TestClassB", "B"}, WSChangeset::Created, ECRelatedInstanceDirection::Forward,
+        {"TestSchemaC.TestClassC", "C"}, WSChangeset::Existing, nullptr);
+
+    auto response = ToRapidJson(R"({
+        "changedInstances" :
+            [{
+            "instanceAfterChange" :
+                {
+                "instanceId" : "ExistingIdA",
+                "className" : "ExistingClassA",
+                "schemaName" : "ExistingSchemaA",
+                "error":
+                    {
+                    "httpStatusCode": 404,
+                    "errorId": "InstanceNotFound",
+                    "errorMessage": "MESSAGE",
+                    "errorDescription": "DESCRIPTION"
+                    },
+                "relationshipInstances" :
+                    [{
+                    "instanceId" : "NewIdB",
+                    "className" : "NewClassB",
+                    "schemaName" : "NewSchemaB",
+                    "error":
+                        {
+                        "httpStatusCode": 404,
+                        "errorId": "InstanceNotFound",
+                        "errorMessage": "MESSAGE",
+                        "errorDescription": "DESCRIPTION"
+                        },
+                    "relatedInstance" :
+                        {
+                        "instanceId" : "ExistingIdC",
+                        "className" : "ExistingClassC",
+                        "schemaName" : "ExistingSchemaC",
+                        "error":
+                            {
+                            "httpStatusCode": 404,
+                            "errorId": "InstanceNotFound",
+                            "errorMessage": "MESSAGE",
+                            "errorDescription": "DESCRIPTION"
+                            }
+                        }
+                    }]
+                }
+            }]
+        })");
+
+    int successCount = 0;
+    auto successHandler =
+        [&] (ObjectIdCR oldId, ObjectIdCR newId)
+        {
+        successCount++;
+        return SUCCESS;
+        };
+
+    bvector<ObjectId> expectedIds = {
+            {"TestSchemaA.TestClassA", "A"},
+            {"TestSchemaB.TestClassB", "B"},
+            {"TestSchemaC.TestClassC", "C"}
+        };
+
+    int errorCount = 0;
+    auto errorHandler = [&] (ObjectIdCR oldId, WSErrorCR error)
+        {
+        errorCount++;
+        if (errorCount > expectedIds.size())
+            return ERROR;
+
+        EXPECT_EQ(expectedIds[errorCount - 1], oldId);
+        EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+        EXPECT_EQ(WSError::Id::InstanceNotFound, error.GetId());
+        EXPECT_NE("", error.GetDisplayMessage());
+        EXPECT_EQ("MESSAGE\nDESCRIPTION", error.GetDisplayDescription());
+        return SUCCESS;
+        };
+
+    EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(*response, successHandler, errorHandler));
+    EXPECT_EQ(0, successCount);
+    EXPECT_EQ(3, errorCount);
     }
 
 TEST_F(WSChangesetTests, DISABLED_CalculateSize_LotsOfIntsances_PerformanceBetterThanDoingToRequestString)
