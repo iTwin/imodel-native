@@ -24,6 +24,7 @@ struct WSRepository
         Utf8String m_label;
         Utf8String m_description;
         Utf8String m_pluginId;
+        Utf8String m_serverUrl;
 
     public:
         WSCLIENT_EXPORT WSRepository();
@@ -33,12 +34,17 @@ struct WSRepository
         WSCLIENT_EXPORT Utf8StringCR GetLabel() const;
         WSCLIENT_EXPORT Utf8StringCR GetDescription() const;
         WSCLIENT_EXPORT Utf8StringCR GetPluginId() const;
+        WSCLIENT_EXPORT Utf8StringCR GetServerUrl() const;
 
         WSCLIENT_EXPORT void SetId(Utf8String id);
         WSCLIENT_EXPORT void SetLocation(Utf8String location);
         WSCLIENT_EXPORT void SetLabel(Utf8String label);
         WSCLIENT_EXPORT void SetDescription(Utf8String description);
         WSCLIENT_EXPORT void SetPluginId(Utf8String type);
+        WSCLIENT_EXPORT void SetServerUrl(Utf8String url);
+
+        //! Check if WSRepository contains minimum information required - server URL and repository ID
+        WSCLIENT_EXPORT bool IsValid() const;
     };
 
 typedef const WSRepository& WSRepositoryCR;

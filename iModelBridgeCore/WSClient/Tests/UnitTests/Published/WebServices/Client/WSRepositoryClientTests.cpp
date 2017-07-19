@@ -2265,3 +2265,105 @@ TEST_F(WSRepositoryClientTests, SendGetSchemasRequest_WebApiV2ResponseContainsOb
 
     EXPECT_EQ(ObjectId("TestSchema.TestClass", "A"), (*(result.GetValue().GetInstances().begin())).GetObjectId());
     }
+
+#ifdef USE_GTEST
+struct WSRepositoryClientTests_VariousServerUrls : TestWithParam<vector<Utf8String>> {};
+INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_VariousServerUrls, ValuesIn(vector<vector<Utf8String>>{
+        // Host
+        {"http://foo.boo.com/foo/v2.5/repositories/A--B/", "http://foo.boo.com/foo/"},
+        {"https://foo-boo.com/foo/v2.5/Repositories/A--B/", "https://foo-boo.com/foo/"},
+        // Service path
+        {"https://foo.com/ws250/v2.5/repositories/A--B/", "https://foo.com/ws250/"},
+        {"https://foo.com/ws2/v2.5/repositories/A--B/", "https://foo.com/ws2/"}
+    }));
+
+TEST_P(WSRepositoryClientTests_VariousServerUrls, ParseRepositoryUrl_RepositoryUrl_ServerUrlParsed)
+    {
+    auto param = GetParam();
+    WSRepository repository = WSRepositoryClient::ParseRepositoryUrl(param[0]);
+    EXPECT_EQ(param[1], repository.GetServerUrl());
+    EXPECT_EQ("A--B", repository.GetId());
+    EXPECT_EQ("A", repository.GetPluginId());
+    EXPECT_EQ("B", repository.GetLocation());
+    }
+
+struct WSRepositoryClientTests_ServerUrlEndings : TestWithParam<Utf8String> {};
+INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_ServerUrlEndings, Values(
+    // Web API version
+    "https://foo.com/foo/v1.0/repositories/A--B/",
+    "https://foo.com/foo/v2.5/repositories/A--B/",
+    "https://foo.com/foo/v1234.5678/repositories/A--B/",
+    // Repositories
+    "https://foo.com/foo/v2.5/Repositories/A--B/",
+    "https://foo.com/foo/v2.5/RePosiTorieS/A--B/"
+    ));
+
+TEST_P(WSRepositoryClientTests_ServerUrlEndings, ParseRepositoryUrl_RepositoryUrl_ServerUrlParsed)
+    {
+    auto param = GetParam();
+    WSRepository repository = WSRepositoryClient::ParseRepositoryUrl(param);
+    EXPECT_EQ("https://foo.com/foo/", repository.GetServerUrl());
+    EXPECT_EQ("A--B", repository.GetId());
+    EXPECT_EQ("A", repository.GetPluginId());
+    EXPECT_EQ("B", repository.GetLocation());
+    }
+
+struct WSRepositoryClientTests_RepositoryIdAndRemainingPath : TestWithParam<vector<Utf8String>> {};
+INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_RepositoryIdAndRemainingPath, ValuesIn(vector<vector<Utf8String>>{
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo", ""},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo/", ""},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo/Schema/Class", "/Schema/Class"},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo/Schema/Class/RemoteId", "/Schema/Class/RemoteId"},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo/Schema/Class/RemoteId/", "/Schema/Class/RemoteId/"},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo?query=foo", "?query=foo"},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo/?query=foo", "/?query=foo"},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo#hashtag", "#hashtag"},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo/Schema/Class/RemoteId?query=foo", "/Schema/Class/RemoteId?query=foo"},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo/Schema/Class/RemoteId/?query=foo", "/Schema/Class/RemoteId/?query=foo"},
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo/Schema/Class/RemoteId#hashtag", "/Schema/Class/RemoteId#hashtag"}
+    }));
+
+TEST_P(WSRepositoryClientTests_RepositoryIdAndRemainingPath, ParseRepositoryUrl_Url_RepositoryIdAndRemainingPathReturned)
+    {
+    auto param = GetParam();
+    Utf8String remainingUrlPath;
+    auto repository = WSRepositoryClient::ParseRepositoryUrl(param[0], &remainingUrlPath);
+    EXPECT_EQ("Foo--Boo", repository.GetId());
+    EXPECT_EQ("https://foo.com/boo/", repository.GetServerUrl());
+    EXPECT_EQ(param[1], remainingUrlPath);
+    }
+
+struct WSRepositoryClientTests_PluginId : TestWithParam<vector<Utf8String>> {};
+INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_PluginId, ValuesIn(vector<vector<Utf8String>>{
+        {"https://foo.com/boo/v2.5/repositories/Foo--Boo/", "Foo"},
+        {"https://foo.com/boo/v2.5/repositories/Foo.Boo--Boo/", "Foo.Boo"},
+        {"https://foo.com/boo/v2.5/repositories/Foo-Boo--Boo/", "Foo-Boo"}
+    }));
+
+TEST_P(WSRepositoryClientTests_PluginId, ParseRepositoryUrl_Url_PluginIdParsed)
+    {
+    auto param = GetParam();
+    WSRepository repository = WSRepositoryClient::ParseRepositoryUrl(param[0]);
+    EXPECT_EQ(param[1], repository.GetPluginId());
+    EXPECT_EQ("https://foo.com/boo/", repository.GetServerUrl());
+    EXPECT_EQ("Boo", repository.GetLocation());
+    }
+
+struct WSRepositoryClientTests_Location : TestWithParam<vector<Utf8String>> {};
+INSTANTIATE_TEST_CASE_P(, WSRepositoryClientTests_Location, ValuesIn(vector<vector<Utf8String>>{
+        {"https://foo.com/boo/v2.5/repositories/A--Boo-Foo.com~3AFoo/", "Boo-Foo.com:Foo"},
+        {"https://foo.com/boo/v2.5/repositories/A--Boo.Foo.com~3AFoo/", "Boo.Foo.com:Foo"},
+        {"https://foo.com/boo/v2.5/repositories/A--Boo--Foo.com~3AFoo/", "Boo--Foo.com:Foo"},
+        {"https://foo.com/boo/v2.5/repositories/A--Boo.A~3A~3A~3AFoo/", "Boo.A:::Foo"},
+        {"https://foo.com/boo/v2.5/repositories/A--Boo%Foo/", "Boo%Foo"}
+    }));
+
+TEST_P(WSRepositoryClientTests_Location, ParseRepositoryUrl_Url_LocationParsed)
+    {
+    auto param = GetParam();
+    auto repository = WSRepositoryClient::ParseRepositoryUrl(param[0]);
+    EXPECT_EQ(param[1], repository.GetLocation());
+    EXPECT_EQ("https://foo.com/boo/", repository.GetServerUrl());
+    EXPECT_EQ("A", repository.GetPluginId());
+    }
+#endif
