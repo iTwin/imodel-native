@@ -93,7 +93,7 @@
     <Product Name="BuildingDomainSDK-Winx64">
         <Directories DirectoryListName="BuildingDomainSDK-Winx64"/>
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
-        <SubPart PartName="StructuralMaterialsAPI" PartFile="StructuralDomains" Repository="DgnDomains-Structural"/>
+        <SubPart PartName="StructuralPhysicalPublicAPI" PartFile="StructuralDomains" Repository="DgnDomains-Structural"/>
 
     </Product>
 
