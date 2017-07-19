@@ -223,6 +223,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(HttpResponse& resp
         repository.SetPluginId(GetNullableString(instance.GetProperties()["ECPluginID"]));
         repository.SetLabel(GetNullableString(instance.GetProperties()["DisplayLabel"]));
         repository.SetDescription(GetNullableString(instance.GetProperties()["Description"]));
+        repository.SetServerUrl(m_configuration->GetServerUrl().c_str());
 
         repositories.push_back(repository);
         }
