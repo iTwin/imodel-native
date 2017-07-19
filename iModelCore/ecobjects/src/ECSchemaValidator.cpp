@@ -396,42 +396,6 @@ ECObjectsStatus CheckStrength(ECRelationshipClassCP relClass)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  05/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus CheckStrength(ECRelationshipClassCP relClass)
-    {
-    ECObjectsStatus returnStatus = ECObjectsStatus::Success;
-    if (relClass->GetStrength() == StrengthType::Holding)
-        {
-        LOG.errorv("Relationship class '%s' strength must not be set to 'holding'.", relClass->GetFullName());
-        returnStatus = ECObjectsStatus::Error;
-        }
-
-    if (relClass->GetStrength() == StrengthType::Embedding)
-        {
-        if (relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Forward && relClass->GetSource().GetMultiplicity().GetUpperLimit() > 1)
-            {
-            LOG.errorv("Relationship class '%s' has an 'embedding' strength with a forward direction so the source constraint may not have a multiplicity upper bound greater than 1",
-                       relClass->GetFullName());
-            returnStatus = ECObjectsStatus::Error;
-            }
-        if (relClass->GetStrengthDirection() == ECRelatedInstanceDirection::Backward && relClass->GetTarget().GetMultiplicity().GetUpperLimit() > 1)
-            {
-            LOG.errorv("Relationship class '%s' has an 'embedding' strength with a backward direction so the target constraint may not have a multiplicity upper bound greater than 1",
-                       relClass->GetFullName());
-            returnStatus = ECObjectsStatus::Error;
-            }
-        if (relClass->GetName().Contains("Has"))
-            {
-            LOG.errorv("Relationship class '%s' has an 'embedding' strength and contains 'Has' in its name. Consider renaming this class.",
-                       relClass->GetFullName());
-            returnStatus = ECObjectsStatus::Error;
-            }
-        }
-    return returnStatus;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus RelationshipValidator::Validate(ECClassCR ecClass) const
@@ -478,14 +442,6 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
         status = ECObjectsStatus::Error;
         }
 
-
-    if (constraint.IsAbstractConstraintDefinedLocally() && constraint.GetConstraintClasses().size() == 1)
-        {
-        LOG.errorv("Relationship class '%s' has an abstract constraint, '%s', and only one concrete constraint set in '%s'",
-                   className.c_str(), constraint.GetAbstractConstraint()->GetFullName(), constraintType.c_str());
-        status = ECObjectsStatus::Error;
-        }
-
     return status;
     }
 
@@ -500,15 +456,5 @@ ECObjectsStatus KindOfQuantityValidator::Validate(KindOfQuantityCP koq) const
     LOG.errorv("KindOfQuantity %s has persistence unit of unit system '%s' but must have an SI unit system", koq->GetFullName().c_str(), koq->GetPersistenceUnit().GetUnit()->GetUnitSystem());
     return ECObjectsStatus::Error;
     }
-//---------------------------------------------------------------------------------------
-// @bsimethod                                    Dan.Perlman                  06/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-ECObjectsStatus KindOfQuantityValidator::Validate(KindOfQuantityCP koq) const
-    {
-    if (strcmp(koq->GetPersistenceUnit().GetUnit()->GetUnitSystem(), "SI") == 0)
-        return ECObjectsStatus::Success;
- 
-    LOG.errorv("KindOfQuantity %s has persistence unit of unit system '%s' but must have an SI unit system", koq->GetFullName().c_str(), koq->GetPersistenceUnit().GetUnit()->GetUnitSystem());
-    return ECObjectsStatus::Error;
-    }
+
 END_BENTLEY_ECOBJECT_NAMESPACE

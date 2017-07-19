@@ -27,6 +27,30 @@ struct ExpectedClassMetaData
     ECClassModifier Modifier;
     };
 
+void validateUnitsInConvertedSchema2(ECSchemaR convertedSchema, ECSchemaR originalSchema)
+{
+	for (const auto& ecClass : originalSchema.GetClasses())
+	{
+		ECClassP convertedClass = convertedSchema.GetClassP(ecClass->GetName().c_str());
+		for (const auto& ecProp : ecClass->GetProperties(true))
+		{
+			Unit originalUnit;
+			if (Unit::GetUnitForECProperty(originalUnit, *ecProp))
+			{
+				ECPropertyP convertedProp = convertedClass->GetPropertyP(ecProp->GetName().c_str());
+				KindOfQuantityCP koq = convertedProp->GetAsPrimitiveProperty()->GetKindOfQuantity();
+				ASSERT_NE(nullptr, koq) << "Could not find KOQ for property " << ecClass->GetName().c_str() << ":" << ecProp->GetName().c_str();
+				Units::UnitCP convertedUnit = Units::UnitRegistry::Instance().LookupUnitUsingOldName(originalUnit.GetName());
+				if (nullptr == convertedUnit) // If null it may be a dummy unit added during conversion ... 
+					convertedUnit = Units::UnitRegistry::Instance().LookupUnit(originalUnit.GetName());
+				ASSERT_NE(nullptr, convertedUnit) << "Could not find converted unit for old unit " << originalUnit.GetName();
+
+				EXPECT_EQ(0, strcmp(convertedUnit->GetName(), koq->GetPersistenceUnit().GetUnit()->GetName())) << "Converted unit not correct for " << convertedProp->GetName().c_str();
+			}
+		}
+	}
+}
+
 void VerifySchema(ECSchemaPtr schema, bvector<ExpectedClassMetaData> expectedClasses, bvector<Utf8CP> unexpectedClasses)
     {
     for (auto const& expected : expectedClasses)
@@ -206,9 +230,10 @@ TEST_F(SchemaVersionConversionTests, OldUnitsWithKoqNameConflicts)
     ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
 
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
-    //validateUnitsInConvertedSchema(*schema, *originalSchema);
+    validateUnitsInConvertedSchema2(*schema, *originalSchema);
     ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
     }
+
 // Test that references are properly removed when there is no schema level 'UnitSpecifications' CA, only property level ones
 TEST_F(SchemaVersionConversionTests, SchemaWithIsUnitSystemSchema_Attribute)
     {
@@ -240,7 +265,7 @@ TEST_F(SchemaVersionConversionTests, SchemaWithIsUnitSystemSchema_Attribute)
     ASSERT_EQ(ECObjectsStatus::Success, schema->CopySchema(originalSchema)) << "Failed to copy schema";
 
     ASSERT_TRUE(ECSchemaConverter::Convert(*schema)) << "Failed to convert schema";
-    validateUnitsInConvertedSchema(*schema, *originalSchema);
+    validateUnitsInConvertedSchema2(*schema, *originalSchema);
     ASSERT_EQ(0, schema->GetReferencedSchemas().size()) << "Expected no schema references after conversion because the only reference in the original schema was the Unit_Attributes schema";
     }
 

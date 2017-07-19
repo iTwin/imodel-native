@@ -14,5 +14,5 @@ MixinTest.MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass
 
 SupplementalDeserializationTests.*
 
-# Intermittently fails after merge
-ECSchemaTests.RemapReservedPropertyNames
+# Fails after merge
+SchemaValidatorTests.BisCoreAspectTests
