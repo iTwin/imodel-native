@@ -2,11 +2,12 @@
 |
 |     $Source: Client/WSError.cpp $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <map>
+#include <mutex>
 #include <WebServices/Connect/ImsClient.h>
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 #include <BeXml/BeXml.h>
@@ -24,10 +25,23 @@
 #define XML_ErrorMessage        "error:errorMessage"
 #define XML_ErrorDescription    "error:errorDescription"
 
+std::once_flag s_initErrorIdmap;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSError::Id WSError::ErrorIdFromString(Utf8StringCR errorIdString)
+    {
+    //static local variables are not thread safe in VS2013 version of c++11 compiler
+    //TODO: change this to old way after we move to VS2015
+    std::call_once(s_initErrorIdmap, []() {GetErrorIdFromString(""); });
+    return GetErrorIdFromString(errorIdString);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Basanta.Kharel    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError::Id WSError::GetErrorIdFromString(Utf8StringCR errorIdString)
     {
     static std::map<Utf8String, Id> map =
         {

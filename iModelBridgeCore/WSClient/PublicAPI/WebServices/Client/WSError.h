@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Client/WSError.h $
 |
-|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2018 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -81,6 +81,7 @@ struct WSError : public AsyncError
     private:
         static bool IsValidErrorJson(JsonValueCR jsonError);
         static Id ErrorIdFromString(Utf8StringCR errorIdString);
+        static Id GetErrorIdFromString(Utf8StringCR errorIdString);
         static Utf8String FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
         BentleyStatus ParseBody(HttpResponseCR httpResponse);
