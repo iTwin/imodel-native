@@ -1,0 +1,8 @@
+{
+"CodePostSize": 300000,
+"CodeGetSize": 1500000,
+"CodeGetByIDSize": 20000,
+"LockPostSize": 200000,
+"LockGetSize": 1500000,
+"LockGetByIDSize": 20000
+}

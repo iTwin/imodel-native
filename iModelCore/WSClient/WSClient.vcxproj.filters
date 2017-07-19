@@ -498,6 +498,9 @@
     <ClCompile Include="iModelHubClient\Utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="iModelHubClient\Events\VersionEvent.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -1130,6 +1133,9 @@
     <ClInclude Include="iModelHubClient\DgnDbServerUtils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\VersionEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="WSClient.PartFile.xml" />
@@ -1159,6 +1165,10 @@
     <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.01.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\Bentley_SP_V3Conversion.01.00.ecschema.xml" />
     <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\PW_WSG_V3Conversion.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\WSCache.02.02.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\PW_WSG_Supplemental_ECDbMapping.02.03.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\V3Conversion\PW_WSG_V3Conversion.02.03.ecschema.xml" />
+    <Xml Include="Cache\Persistence\ECSchemas\Support\Mapping\FeatureTracking_Supplemental_ECDbMapping.01.00.ecschema.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Connect\Connect.mki" />

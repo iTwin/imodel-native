@@ -53,7 +53,7 @@ StatusTaskPtr iModelConnection::DownloadFileInternal
 (
     BeFileName                        localFile,
     ObjectIdCR                        fileId,
-    FileAccessKeyPtr       fileAccessKey,
+    FileAccessKeyPtr                  fileAccessKey,
     Http::Request::ProgressCallbackCR callback,
     ICancellationTokenPtr             cancellationToken
 ) const
@@ -488,6 +488,14 @@ uint8_t DgnCodeStateToInt(DgnCodeStateCR state)
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikoliunas             07/2017
+//---------------------------------------------------------------------------------------
+Utf8String FormatBeInt64Id(BeInt64Id int64Value)
+    {
+    return int64Value.ToString(BeInt64Id::UseHex::Yes);
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             06/2016
 //---------------------------------------------------------------------------------------
 Json::Value CreateCodeInstanceJson
@@ -501,11 +509,8 @@ bool                         queryOnly
     Json::Value properties;
     DgnCode const* firstCode = codes.begin();
 
-    Utf8String scopeString;
-    scopeString.Sprintf("%" PRIu64, firstCode->GetScopeElementId().GetValue());
-
-    properties[ServerSchema::Property::CodeSpecId]   = firstCode->GetCodeSpecId().GetValue();
-    properties[ServerSchema::Property::CodeScope]    = scopeString;
+    properties[ServerSchema::Property::CodeSpecId]   = FormatBeInt64Id(firstCode->GetCodeSpecId());
+    properties[ServerSchema::Property::CodeScope]    = firstCode->GetScopeString();
     properties[ServerSchema::Property::BriefcaseId]  = briefcaseId.GetValue();
     properties[ServerSchema::Property::State]        = DgnCodeStateToInt(state);
     properties[ServerSchema::Property::QueryOnly]    = queryOnly;
@@ -585,7 +590,7 @@ Utf8String UriEncode(Utf8String input)
 //---------------------------------------------------------------------------------------
 Utf8String FormatCodeId
 (
-uint64_t                         codeSpecId,
+BeInt64Id                        codeSpecId,
 Utf8StringCR                     scope,
 Utf8StringCR                     value
 )
@@ -600,7 +605,7 @@ Utf8StringCR                     value
     EncodeIdString(encodedValue);
     encodedValue = UriEncode(encodedValue);
     
-    idString.Sprintf("%d-%s-%s", codeSpecId, encodedScope.c_str(), encodedValue.c_str());
+    idString.Sprintf("%s-%s-%s", FormatBeInt64Id(codeSpecId), encodedScope.c_str(), encodedValue.c_str());
 
     return idString;
     }
@@ -610,7 +615,7 @@ Utf8StringCR                     value
 //---------------------------------------------------------------------------------------
 Utf8String FormatCodeId
 (
-uint64_t                         codeSpecId,
+BeInt64Id                        codeSpecId,
 Utf8StringCR                     scope,
 Utf8StringCR                     value,
 BeBriefcaseId                    briefcaseId
@@ -631,10 +636,7 @@ bmap<Utf8String, bvector<DgnCode>>* groupedCodes,
 DgnCode searchCode
 )
     {
-    Utf8String scopeString;
-    scopeString.Sprintf("%" PRIu64, searchCode.GetScopeElementId().GetValue());
-
-    Utf8String searchKey = FormatCodeId(searchCode.GetCodeSpecId().GetValue(), scopeString, "");
+    Utf8String searchKey = FormatCodeId(searchCode.GetCodeSpecId(), searchCode.GetScopeString(), "");
     auto it = groupedCodes->find(searchKey);
     if (it == groupedCodes->end())
         {
@@ -676,7 +678,7 @@ bool                            queryOnly = false
 //---------------------------------------------------------------------------------------
 Json::Value CreateLockInstanceJson
 (
-bvector<uint64_t> const& ids,
+bvector<BeInt64Id> const& ids,
 BeBriefcaseId            briefcaseId,
 BeGuidCR                 seedFileId,
 Utf8StringCR             releasedWithChangeSetId,
@@ -698,9 +700,7 @@ bool                     queryOnly
     int i = 0;
     for (auto const& id : ids)
         {
-        Utf8String idStr;
-        idStr.Sprintf("%llu", id);
-        properties[ServerSchema::Property::ObjectIds][i++] = idStr;
+        properties[ServerSchema::Property::ObjectIds][i++] = FormatBeInt64Id(id);
         }
 
     return properties;
@@ -713,7 +713,7 @@ void AddToInstance
 (
 WSChangeset&                     changeset,
 WSChangeset::ChangeState const&  changeState,
-bvector<uint64_t> const&         ids,
+bvector<BeInt64Id> const&        ids,
 BeBriefcaseId                    briefcaseId,
 BeGuidCR                         seedFileId,
 Utf8StringCR                     releasedWithChangeSetId,
@@ -744,7 +744,7 @@ bool                            includeOnlyExclusive = false,
 bool                            queryOnly = false
 )
     {
-    bvector<uint64_t> objects[12];
+    bvector<BeInt64Id> objects[12];
     for (auto& lock : locks)
         {
         if (includeOnlyExclusive && LockLevel::Exclusive != lock.GetLevel ())
@@ -752,47 +752,11 @@ bool                            queryOnly = false
 
         int index = static_cast<int32_t>(lock.GetType ()) * 3 + static_cast<int32_t>(lock.GetLevel ());
         if (index >= 0 && index <= 11)
-            objects[index].push_back (lock.GetId ().GetValue ());
+            objects[index].push_back (lock.GetId ());
         }
 
     for (int i = 0; i < 12; ++i)
         AddToInstance(changeset, changeState, objects[i], briefcaseId, seedFileId, releasedWithChangeSetId, static_cast<LockableType>(i / 3), static_cast<LockLevel>(i % 3), queryOnly);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String FormatCodeId
-(
-uint64_t                         codeSpecId,
-uint64_t                         scopeElementId,
-Utf8StringCR                     value
-)
-    {
-    Utf8String idString;
-
-    Utf8String encodedValue(value.c_str());
-    EncodeIdString(encodedValue);
-    encodedValue = UriEncode(encodedValue);
-    
-    idString.Sprintf("%" PRIu64 "-%" PRIu64 "-%s", codeSpecId, scopeElementId, encodedValue.c_str());
-    return idString;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             06/2016
-//---------------------------------------------------------------------------------------
-Utf8String FormatCodeId
-(
-uint64_t                         codeSpecId,
-uint64_t                         scopeElementId,
-Utf8StringCR                     value,
-BeBriefcaseId                    briefcaseId
-)
-    {
-    Utf8String idString;
-    idString.Sprintf("%s-%d", FormatCodeId(codeSpecId, scopeElementId, value).c_str(), briefcaseId.GetValue());
-    return idString;
     }
 
 //---------------------------------------------------------------------------------------
@@ -830,7 +794,7 @@ DgnDbStatus GenerateValuePattern(CodeSpec codeSpec, Utf8StringR valuePattern, ui
 DgnDbStatus CreateCodeSequenceJson
 (
 JsonValueR                   properties,
-uint64_t                     codeSpecId,
+BeInt64Id                    codeSpecId,
 Utf8StringCR                 codeScope,
 Utf8StringCR                 valuePattern,
 CodeSequence::Type           templateType,
@@ -838,7 +802,7 @@ int                          startIndex,
 int                          incrementBy
 )
     {
-    properties[ServerSchema::Property::CodeSpecId] = codeSpecId;
+    properties[ServerSchema::Property::CodeSpecId] = FormatBeInt64Id(codeSpecId);
     properties[ServerSchema::Property::CodeScope] = codeScope;
     properties[ServerSchema::Property::ValuePattern] = valuePattern;
     properties[ServerSchema::Property::Type] = (int)templateType;
@@ -848,38 +812,6 @@ int                          incrementBy
         properties[ServerSchema::Property::StartIndex] = startIndex;
         properties[ServerSchema::Property::IncrementBy] = incrementBy;
         }
-
-    return DgnDbStatus::Success;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             08/2016
-//---------------------------------------------------------------------------------------
-DgnDbStatus SetCodeSpecJsonRequestToChangeSet
-(
-CodeSpecCR                      codeSpec,
-const CodeSequence::Type        templateType,
-WSChangeset&                    changeset,
-const WSChangeset::ChangeState& changeState
-)
-    {
-    ObjectId codeObject(ServerSchema::Schema::iModel, ServerSchema::Class::CodeSequence, "");
-
-    Json::Value codeJson;
-    Utf8String valuePattern;
-    uint32_t startIndex, incrementBy;
-
-    auto status = GenerateValuePattern(codeSpec, valuePattern, startIndex, incrementBy);
-    if (DgnDbStatus::Success != status)
-        return status;
-
-    Utf8String codeScope;
-    codeScope.Sprintf("%d", static_cast<int>(codeSpec.GetScope().GetType()));
-
-    status = CreateCodeSequenceJson(codeJson, codeSpec.GetCodeSpecId().GetValue(), codeScope, valuePattern, templateType, startIndex, incrementBy);
-    if (DgnDbStatus::Success != status)
-        return status;
-    changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
 
     return DgnDbStatus::Success;
     }
@@ -900,7 +832,7 @@ const WSChangeset::ChangeState& changeState
     ObjectId codeObject(ServerSchema::Schema::iModel, ServerSchema::Class::CodeSequence, "");
 
     Json::Value codeJson;
-    auto status = CreateCodeSequenceJson(codeJson, codeSequence.GetCodeSpecId().GetValue(), codeSequence.GetScope(), codeSequence.GetValuePattern(), templateType, startIndex, incrementBy);
+    auto status = CreateCodeSequenceJson(codeJson, codeSequence.GetCodeSpecId(), codeSequence.GetScope(), codeSequence.GetValuePattern(), templateType, startIndex, incrementBy);
     if (DgnDbStatus::Success != status)
         return status;
     changeset.AddInstance(codeObject, changeState, std::make_shared<Json::Value>(codeJson));
@@ -947,9 +879,9 @@ const BeBriefcaseId*  briefcaseId
     {
     Utf8String idString;
     if (nullptr == briefcaseId)
-        idString.Sprintf("%d-%" PRIu64, (int) lock.GetType(), lock.GetId().GetValue());
+        idString.Sprintf("%d-%s", (int) lock.GetType(), FormatBeInt64Id(lock.GetId()));
     else
-        idString.Sprintf("%d-%" PRIu64 "-%u", (int) lock.GetType(), lock.GetId().GetValue(), briefcaseId->GetValue());
+        idString.Sprintf("%d-%s-%u", (int) lock.GetType(), FormatBeInt64Id(lock.GetId()), briefcaseId->GetValue());
 
     return ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Lock, idString);
     }
@@ -965,9 +897,9 @@ const BeBriefcaseId*  briefcaseId
     {
     Utf8String idString;
     if (nullptr != briefcaseId)
-        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScopeElementId().GetValue(), code.GetValue(), *briefcaseId).c_str());
-    else
-        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId().GetValue(), code.GetScopeElementId().GetValue(), code.GetValue()).c_str());
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValue(), *briefcaseId).c_str());
+	else
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValue()).c_str());
 
     return ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Code, idString);
     }
@@ -3290,25 +3222,6 @@ ICancellationTokenPtr cancellationToken
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             08/2016
-//---------------------------------------------------------------------------------------
-CodeSequenceTaskPtr iModelConnection::QueryCodeMaximumIndex
-(
-CodeSpecCR codeSpec,
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    const Utf8String methodName = "iModelConnection::QueryCodeMaximumIndex";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-    auto status = SetCodeSpecJsonRequestToChangeSet(codeSpec, CodeSequence::Type::Maximum, *changeset, WSChangeset::ChangeState::Created);
-    if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeSequenceRequestError)}));
-
-    return QueryCodeMaximumIndexInternal(changeset, cancellationToken);
-    }
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas             04/2017
 //---------------------------------------------------------------------------------------
 CodeSequenceTaskPtr iModelConnection::QueryCodeMaximumIndex
@@ -3326,26 +3239,6 @@ ICancellationTokenPtr cancellationToken
         return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({ Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeSequenceRequestError) }));
 
     return QueryCodeMaximumIndexInternal(changeset, cancellationToken);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas             03/2017
-//---------------------------------------------------------------------------------------
-CodeSequenceTaskPtr iModelConnection::QueryCodeNextAvailable
-(
-CodeSpecCR codeSpec, 
-ICancellationTokenPtr cancellationToken
-) const
-    {
-    const Utf8String methodName = "iModelConnection::QueryCodeNextAvailable";
-    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
-    
-    std::shared_ptr<WSChangeset> changeset(new WSChangeset());
-    auto status = SetCodeSpecJsonRequestToChangeSet(codeSpec, CodeSequence::Type::NextAvailable, *changeset, WSChangeset::ChangeState::Created);
-    if (DgnDbStatus::Success != status)
-        return CreateCompletedAsyncTask<CodeSequenceResult>(CodeSequenceResult::Error({Error::Id::iModelHubOperationFailed, ErrorLocalizedString(MESSAGE_CodeSequenceRequestError)}));
-
-    return QueryCodeNextAvailableInternal(changeset, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------

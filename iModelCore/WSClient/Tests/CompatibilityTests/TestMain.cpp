@@ -36,6 +36,7 @@ int main(int argc, char** argv)
         FAIL();
         });
 
+
     ::testing::InitGoogleMock(&argc, argv);
 
     int runStatus = RUN_ALL_TESTS();

@@ -150,8 +150,8 @@ ECSchemaPtr SchemaManager::LoadSchema(SchemaKey key, ECSchemaReadContext& contex
     if (!schema.IsValid())
         {
         LOG.errorv("Could not load schema: %s.%s. Check assets or dependencies",
-                   key.m_schemaName.c_str(),
-                   ECSchema::FormatSchemaVersion(key.m_versionRead, key.m_versionMinor).c_str());
+            key.m_schemaName.c_str(),
+            ECSchema::FormatSchemaVersion(key.m_versionRead, key.m_versionMinor).c_str());
         BeAssert(false);
         }
     return schema;
@@ -181,8 +181,8 @@ ECSchemaPtr SchemaManager::LoadSchema(BeFileNameCR schemaPath, ECSchemaReadConte
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::LoadSchemas
 (
-const std::vector<BeFileName>& schemaPaths,
-std::vector<ECSchemaPtr>& schemasOut
+    const std::vector<BeFileName>& schemaPaths,
+    std::vector<ECSchemaPtr>& schemasOut
 )
     {
     ECSchemaReadContextPtr context = SchemaContext::CreateReadContext();
@@ -208,6 +208,17 @@ std::vector<ECSchemaPtr>& schemasOut
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadContextR context)
     {
+    // Workaround older schema errors with ECDbMap.01.00 references:
+    // ECSchema Upgrade failed. ECSchema ECDbMap.02.00.00: Decreasing 'VersionRead' of an ECSchema is not supported.
+    if (SUCCESS != RemoveReferences(schema, SchemaKey("ECDbMap", 1, 0)) ||
+        SUCCESS != RemoveReferences(schema, SchemaKey("ECDbMap", 1, 1)))
+        {
+        LOG.errorv(
+            "Failed to remove deprecated schema reference from '%s'.",
+            schema.GetFullSchemaName().c_str());
+        BeAssert(false);
+        }
+
     Utf8String versionStr = SchemaKey::FormatLegacySchemaVersion(schema.GetVersionRead(), schema.GetVersionMinor());
     Utf8String supplName = schema.GetName() + "_Supplemental_ECDbMapping." + versionStr + ".ecschema.xml";
 
@@ -228,10 +239,20 @@ BentleyStatus SchemaManager::FixLegacySchema(ECSchema& schema, ECSchemaReadConte
     if (SupplementedSchemaStatus::Success != builder.UpdateSchema(schema, supplSchemas))
         return ERROR;
 
+    if (!schema.IsSupplemented())
+        {
+        LOG.errorv(
+            "Failed to supplement schema. Check if supplemental schema '%s' is properly configured for schema '%s'.",
+            supplName.c_str(),
+            schema.GetFullSchemaName().c_str());
+        return SUCCESS;
+        }
+
     LOG.warningv(
-        "Adjustements for server schema '%s' were applied due to compatibility issues to 06xx ECv3 ECDb. "
+        "Adjustements for server schema '%s' were applied due to compatibility issues to 06xx ECv3 ECDb by supplementing with '%s'. "
         "Some data may not be possible to cache - consider verifying required functionality.",
-        schema.GetFullSchemaName().c_str());
+        schema.GetFullSchemaName().c_str(),
+        supplName.c_str());
 
     return SUCCESS;
     }
@@ -265,7 +286,7 @@ BentleyStatus SchemaManager::FixLegacySchemaRelationshipCardinalities(ECSchema& 
             modifiedClasses.insert(ecRelClass);
             }
         }
-        
+
     if (!modifiedClasses.empty())
         {
         Utf8String classesStr;
@@ -282,6 +303,44 @@ BentleyStatus SchemaManager::FixLegacySchemaRelationshipCardinalities(ECSchema& 
             schema.GetFullSchemaName().c_str(),
             classesStr.c_str());
         }
+
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus SchemaManager::RemoveReferences(ECSchema& schema, SchemaKeyCR referencedSchemaKey)
+    {
+    auto it = schema.GetReferencedSchemas().find(referencedSchemaKey);
+    if (it == schema.GetReferencedSchemas().end())
+        return SUCCESS;
+
+    for (auto& ecClass : schema.GetClasses())
+        {
+        for (auto& instance : ecClass->GetCustomAttributes(false))
+            {
+            if (instance->GetClass().GetSchema().GetSchemaKey() != referencedSchemaKey)
+                continue;
+                
+            if (!ecClass->RemoveCustomAttribute(instance->GetClass()))
+                return ERROR;
+                
+            LOG.warningv(
+                "Incompatible '%s' custom attribute was removed from class '%s' ",
+                instance->GetClass().GetFullName(),
+                ecClass->GetFullName());
+            }
+        }
+
+    auto status = schema.RemoveReferencedSchema(referencedSchemaKey);
+    if (ECObjectsStatus::Success != status)
+        return ERROR;
+        
+    LOG.warningv(
+        "Incompatible '%s' reference was removed from schema '%s'. ",
+        referencedSchemaKey.GetFullSchemaName().c_str(),
+        schema.GetFullSchemaName().c_str());
 
     return SUCCESS;
     }

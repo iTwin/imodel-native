@@ -49,7 +49,7 @@ StatusResult iModelInfo::WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId
     const Utf8String methodName = "iModelInfo::WriteiModelInfo";
     BeSQLite::DbResult status;
     Utf8String parentChangeSetId = clearLastPulledChangeSetId ? "" : db.Revisions().GetParentRevisionId();
-    status = db.AssignBriefcaseId(briefcaseId);
+    status = db.SetAsBriefcase(briefcaseId);
 
     //Write the iModelInfo properties to the file
     if (BeSQLite::DbResult::BE_SQLITE_OK == status)
@@ -76,11 +76,11 @@ iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModel
     Utf8String name = properties[ServerSchema::Property::iModelName].GetString();
     Utf8String description = properties[ServerSchema::Property::iModelDescription].GetString();
     Utf8String userUploaded = properties.HasMember(ServerSchema::Property::UserCreated) ? properties[ServerSchema::Property::UserCreated].GetString() : "";
-    DateTime uploadedDate;
-    Utf8String dateStr = properties.HasMember(ServerSchema::Property::UploadedDate) ? properties[ServerSchema::Property::UploadedDate].GetString() : "";
+    DateTime createdDate;
+    Utf8String dateStr = properties.HasMember(ServerSchema::Property::CreatedDate) ? properties[ServerSchema::Property::CreatedDate].GetString() : "";
     if (!dateStr.empty())
-        DateTime::FromString(uploadedDate, dateStr.c_str());
-    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, uploadedDate);
+        DateTime::FromString(createdDate, dateStr.c_str());
+    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate);
     }
 
 //---------------------------------------------------------------------------------------
