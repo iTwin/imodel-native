@@ -576,15 +576,13 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     //End table relationship is always mapped to virtual table.
     //we use nav properties to generate views dynamically
-    if (SUCCESS != DbMappingManager::Tables::MapToTable(ctx.GetImportCtx(), *this, ctx.GetClassMappingInfo()))
+    if (SUCCESS != DbMappingManager::Tables::CreateVirtualTableForFkRelationship(ctx.GetImportCtx(), *this, ctx.GetClassMappingInfo()))
         return ClassMappingStatus::Error;
 
     if (SUCCESS != MapSystemColumns())
         return ClassMappingStatus::Error;
-
     
     DbTable* vtable = GetTables().front();
-    PRECONDITION(vtable != nullptr && vtable->GetType() == DbTable::Type::Virtual, ClassMappingStatus::Error);
     {////////SourceECInstanceId
     DbColumn* sourceECInstanceId = vtable->CreateColumn(ECDBSYS_PROP_SourceECInstanceId, DbColumn::Type::Integer, DbColumn::Kind::Default, PersistenceType::Virtual);
     RefCountedPtr<ConstraintECInstanceIdPropertyMap> propMap = ConstraintECInstanceIdPropertyMap::CreateInstance(*this, ECRelationshipEnd_Source, {sourceECInstanceId});
@@ -797,7 +795,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::_Map(ClassMappingContext& ctx)
     if (stat != ClassMappingStatus::Success)
         return stat;
 
-    LinkTableMappingType const& linkTableMappingType = relationClassMapInfo.GetMappingType().GetAs<LinkTableMappingType>();
+    LinkTableRelationshipMapCustomAttribute const& ca = relationClassMapInfo.GetLinkTableMappingCA();
 
     //only create constraints on TPH root or if not TPH and not existing table
     if (GetPrimaryTable().GetType() != DbTable::Type::Existing && linkTableMappingType.GetCreateForeignKeyConstraintsFlag() &&
@@ -889,7 +887,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(ClassMappi
     ECRelationshipConstraintCR foreignEndConstraint = relationshipEnd == ECRelationshipEnd_Source ? relationship->GetSource() : relationship->GetTarget();
     ECClass const* foreignEndClass = foreignEndConstraint.GetConstraintClasses()[0];
     ClassMap const* foreignEndClassMap = GetDbMap().GetClassMap(*foreignEndClass);
-    size_t foreignEndTableCount = GetDbMap().GetTableCountOnRelationshipEnd(ctx.GetImportCtx(), foreignEndConstraint);
+    size_t foreignEndTableCount = GetDbMap().GetRelationshipConstraintTableCount(ctx.GetImportCtx(), foreignEndConstraint);
 
     Utf8String columnName = DetermineConstraintECClassIdColumnName(mapInfo.GetMappingType().GetAs<LinkTableMappingType>(), relationshipEnd);
     if (GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr &&
@@ -926,7 +924,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Class
     bool addTargetECClassIdColumnToTable)
     {
     //**** SourceECInstanceId prop map 
-    Utf8String columnName = DetermineConstraintECInstanceIdColumnName(mapInfo.GetMappingType().GetAs<LinkTableMappingType>(), ECRelationshipEnd_Source);
+    Utf8String columnName = DetermineConstraintECInstanceIdColumnName(mapInfo.GetLinkTableMappingCA(), ECRelationshipEnd_Source);
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_SourceECInstanceId " column named '%s'.",
@@ -956,7 +954,7 @@ ClassMappingStatus RelationshipClassLinkTableMap::CreateConstraintPropMaps(Class
 
 
     //**** TargetECInstanceId prop map 
-    columnName = DetermineConstraintECInstanceIdColumnName(mapInfo.GetMappingType().GetAs<LinkTableMappingType>(), ECRelationshipEnd_Target);
+    columnName = DetermineConstraintECInstanceIdColumnName(mapInfo.GetLinkTableMappingCA(), ECRelationshipEnd_Target);
     if (columnName.empty() || GetPrimaryTable().FindColumn(columnName.c_str()) != nullptr && GetMapStrategy().GetStrategy() != MapStrategy::TablePerHierarchy && GetMapStrategy().GetStrategy() != MapStrategy::ExistingTable)
         {
         LOG.errorv("Failed to map ECRelationshipClass '%s': Table '%s' already contains " ECDBSYS_PROP_TargetECInstanceId " column named '%s'.",
@@ -1095,26 +1093,30 @@ void RelationshipClassLinkTableMap::GenerateIndexColumnList(std::vector<DbColumn
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnName(LinkTableMappingType const& mappingType, ECN::ECRelationshipEnd end)
+Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnName(LinkTableRelationshipMapCustomAttribute const& ca, ECN::ECRelationshipEnd end)
     {
     Utf8String colName;
     switch (end)
         {
             case ECRelationshipEnd_Source:
             {
-            if (mappingType.GetSourceIdColumnName().IsNull())
+            Nullable<Utf8String> sourceIdColName;
+            ca.TryGetSourceECInstanceIdColumn(sourceIdColName);
+            if (sourceIdColName.IsNull())
                 colName.assign(COL_DEFAULTNAME_SourceId);
             else
-                colName.assign(mappingType.GetSourceIdColumnName().Value());
+                colName.assign(sourceIdColName.Value());
 
             break;
             }
             case ECRelationshipEnd_Target:
             {
-            if (mappingType.GetTargetIdColumnName().IsNull())
+            Nullable<Utf8String> targetIdColName;
+            ca.TryGetTargetECInstanceIdColumn(targetIdColName);
+            if (targetIdColName.IsNull())
                 colName.assign(COL_DEFAULTNAME_TargetId);
             else
-                colName.assign(mappingType.GetTargetIdColumnName().Value());
+                colName.assign(targetIdColName.Value());
 
             break;
             }
@@ -1132,7 +1134,7 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECInstanceIdColumnN
 * @bsimethod                                   Ramanujam.Raman                   09/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 //static
-Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName(LinkTableMappingType const& mappingType, ECN::ECRelationshipEnd end)
+Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName(LinkTableRelationshipMapCustomAttribute const& ca, ECN::ECRelationshipEnd end)
     {
     Utf8String colName;
     Utf8StringCP idColName = nullptr;
@@ -1140,20 +1142,26 @@ Utf8String RelationshipClassLinkTableMap::DetermineConstraintECClassIdColumnName
         {
             case ECRelationshipEnd_Source:
             {
-            if (mappingType.GetSourceIdColumnName().IsNull())
+            Nullable<Utf8String> sourceIdColName;
+            ca.TryGetTargetECInstanceIdColumn(sourceIdColName);
+
+            if (sourceIdColName.IsNull())
                 colName.assign(COL_SourceECClassId);
             else
-                idColName = &mappingType.GetSourceIdColumnName().Value();
-            
+                idColName = &sourceIdColName.Value();
+
             break;
             }
 
             case ECRelationshipEnd_Target:
             {
-            if (mappingType.GetTargetIdColumnName().IsNull())
+            Nullable<Utf8String> targetIdColName;
+            ca.TryGetTargetECInstanceIdColumn(targetIdColName);
+
+            if (targetIdColName.IsNull())
                 colName.assign(COL_TargetECClassId);
             else
-                idColName = &mappingType.GetTargetIdColumnName().Value();
+                idColName = &targetIdColName.Value();
             
             break;
             }

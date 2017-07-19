@@ -136,7 +136,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ECN::ECRelationshipEnd GetForeignEnd() const;
         ECN::ECRelationshipEnd GetReferencedEnd() const;
         PartitionView const& GetPartitionView() const;
-        bool IsRelationshipSubclass() const { return GetClass().HasBaseClasses(); }
         void ResetPartitionCache() const { m_partitionCollection = nullptr; }
     };
 
@@ -167,8 +166,8 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
         DbColumn* ConfigureForeignECClassIdKey(ClassMappingContext&, RelationshipMappingInfo const&, ECN::ECRelationshipEnd);
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
-        static Utf8String DetermineConstraintECInstanceIdColumnName(LinkTableMappingType const&, ECN::ECRelationshipEnd);
-        static Utf8String DetermineConstraintECClassIdColumnName(LinkTableMappingType const&, ECN::ECRelationshipEnd);
+        static Utf8String DetermineConstraintECInstanceIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
+        static Utf8String DetermineConstraintECClassIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
         static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
     public:
         ~RelationshipClassLinkTableMap() {}

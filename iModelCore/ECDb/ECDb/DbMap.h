@@ -37,7 +37,7 @@ struct DbMap final : NonCopyableClass
         BentleyStatus CreateOrUpdateIndexesInDb(SchemaImportContext&) const;
         BentleyStatus PurgeOrphanTables() const;
         ClassMappingStatus AddClassMap(ClassMapPtr&) const;
-        BentleyStatus GetClassMapsFromRelationshipEnd(SchemaImportContext&, std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
+        BentleyStatus GetRelationshipConstraintClassMaps(SchemaImportContext&, std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
         static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);
 
     public:
@@ -53,8 +53,9 @@ struct DbMap final : NonCopyableClass
         bmap<ECN::ECClassId, ClassMapPtr> const& GetClassMapCache() const { return m_classMapDictionary; }
 
         //!Loads the class maps if they were not loaded yet
-        size_t GetTableCountOnRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
-        std::set<ClassMap const*> GetClassMapsFromRelationshipEnd(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
+        size_t GetRelationshipConstraintTableCount(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
+        std::set<DbTable const*> GetRelationshipConstraintPrimaryTables(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
+        std::set<ClassMap const*> GetRelationshipConstraintClassMaps(SchemaImportContext&, ECN::ECRelationshipConstraintCR) const;
 
         DbSchema const& GetDbSchema() const { return m_dbSchema; }
         DbSchema& GetDbSchemaR() const { return const_cast<DbSchema&> (m_dbSchema); }

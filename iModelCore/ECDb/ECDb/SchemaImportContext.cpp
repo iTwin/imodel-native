@@ -38,35 +38,8 @@ ClassMappingCACache const* SchemaImportContext::GetClassMappingCACache(ECClassCR
 //---------------------------------------------------------------------------------------
 void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMappingInfo>& info)
     {
-    m_classMappingInfoCache[&classMap] = std::move(info);
-
-    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-        {
-        ECN::ECClassCP rootClass = DbMappingManager::Classes::GetRootClass(classMap.GetClass());
-        BeAssert(rootClass != nullptr);
-        ECClassId rootClassId = rootClass->GetId();
-        if (m_fkRelInfos.Contains(rootClassId))
-            return;
-
-        m_fkRelInfos.Add(*this, classMap.GetAs<RelationshipClassEndTableMap>(), rootClassId);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   05/2017
-//---------------------------------------------------------------------------------------
-bool SchemaImportContext::CacheFkConstraintCA(ECN::NavigationECPropertyCR navProp)
-    {
-    ForeignKeyConstraintCustomAttribute ca;
-    if (!ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ca, navProp))
-        return false;
-
-    BeAssert(navProp.GetRelationshipClass() != nullptr);
-    ECClassId relClassId = navProp.GetRelationshipClass()->GetId();
-    BeAssert(relClassId.IsValid() && "Navigation property's relationship class is expected to have been persisted already by this time");
-    BeAssert(m_fkConstraintCACache.find(relClassId) == m_fkConstraintCACache.end());
-    m_fkConstraintCACache[relClassId] = ca;
-    return true;
+    if (classMap.GetType() != ClassMap::Type::RelationshipEndTable)
+        m_classMappingInfoCache[&classMap] = std::move(info);
     }
 
 

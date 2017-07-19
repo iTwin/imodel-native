@@ -70,10 +70,13 @@ struct DbMappingManager final : NonCopyableClass
             //for mapping nav props, plus a third method related to nav props. This needs to be cleaned up.
             static ClassMappingStatus MapNavigationProperty(SchemaImportContext&, NavigationPropertyMap&);
 
-            static BentleyStatus MapUserDefinedIndexes(SchemaImportContext& ctx, ClassMap const&);
-            static BentleyStatus MapUserDefinedIndex(SchemaImportContext& ctx, ClassMap const&, DbIndexListCustomAttribute::DbIndex const&);
+            static BentleyStatus MapUserDefinedIndexes(SchemaImportContext&, ClassMap const&);
+            static BentleyStatus MapUserDefinedIndex(SchemaImportContext&, ClassMap const&, DbIndexListCustomAttribute::DbIndex const&);
 
+            static BentleyStatus TryDetermineRelationshipMappingType(RelationshipMappingType&, SchemaImportContext const&, ECN::ECRelationshipClassCR);
+            
             static ECN::ECClassCP GetRootClass(ECN::ECClassCR);
+
 
             //! Rules:
             //! If MapStrategy != TPH: NotInherited
@@ -84,39 +87,37 @@ struct DbMappingManager final : NonCopyableClass
     //=======================================================================================
     // @bsiclass                                                Affan.Khan      07/2017
     //+===============+===============+===============+===============+===============+======
-    struct FkRelationships : NonCopyableClass
+    struct NavigationPropertyInfo : NonCopyableClass
         {
         public:
             struct Collection final
                 {
                 private:
-                    std::vector<std::unique_ptr<FkRelationships>> m_list;
-                    bmap<ECN::ECClassId, FkRelationships*> m_byRootClassIdMap;
+                    std::map<ECN::ECPropertyId, std::unique_ptr<NavigationPropertyInfo>> m_navPropInfos;
 
                 public:
                     Collection() {}
 
-                    FkRelationships* Get(ECN::ECClassId rootRelClassId) const 
+                    NavigationPropertyInfo const* Get(ECN::ECPropertyId navPropId) const 
                         {
-                        auto it = m_byRootClassIdMap.find(rootRelClassId);
-                        if (it == m_byRootClassIdMap.end())
+                        auto it = m_navPropInfos.find(navPropId);
+                        if (it == m_navPropInfos.end())
                             return nullptr;
 
-                        return it->second;
+                        return it->second.get();
                         }
 
-                    bool Contains(ECN::ECClassId rootRelClassId) const { return Get(rootRelClassId) != nullptr; }
+                    bool Contains(ECN::ECPropertyId navPropId) const { return Get(navPropId) != nullptr; }
 
-                    std::vector<std::unique_ptr<FkRelationships>> const& Get() const { return m_list; }
+                    std::map<ECN::ECPropertyId, std::unique_ptr<NavigationPropertyInfo>> const& Get() const { return m_navPropInfos; }
 
-                    void Add(SchemaImportContext& ctx, RelationshipClassEndTableMap const& relMap, ECN::ECClassId rootRelClassId)
+                    NavigationPropertyInfo& Add(SchemaImportContext& ctx, ECN::NavigationECPropertyCR navProp, RelationshipClassEndTableMap const& relClassMap) 
                         {
-                        std::unique_ptr<FkRelationships> newEntry = std::make_unique<DbMappingManager::FkRelationships>(ctx, relMap);
-                        FkRelationships* newEntryP = newEntry.get();
-                        m_list.push_back(std::move(newEntry));
-                        m_byRootClassIdMap[rootRelClassId] = newEntryP;
+                        std::unique_ptr<NavigationPropertyInfo> navPropInfo = std::make_unique<NavigationPropertyInfo>(ctx, navProp, relClassMap);
+                        NavigationPropertyInfo& navPropInfoR = *navPropInfo;
+                        m_navPropInfos[navProp.GetId()] = std::move(navPropInfo); 
+                        return navPropInfoR;
                         }
-
                 };
         private:
             struct PartitionInfo final
@@ -170,9 +171,11 @@ struct DbMappingManager final : NonCopyableClass
 
             static Utf8CP RELECCLASSID_COLNAME_TOKEN;
             SchemaImportContext& m_ctx;
-            RelationshipClassEndTableMap const& m_relationshipMap;
+            ECN::NavigationECPropertyCR m_navProp;
+            RelationshipClassEndTableMap const& m_relClassMap;
             std::map<DbTableId, std::vector<PartitionInfo>> m_partitions;
-            std::unique_ptr<ForeignKeyMappingType> m_foreignKeyMappingType;
+            ForeignKeyConstraintCustomAttribute m_fkConstraintCA;
+
 
             BentleyStatus FinishMapping();
 
@@ -183,19 +186,24 @@ struct DbMappingManager final : NonCopyableClass
             BentleyStatus AddIndexToRelationshipEnd(PartitionInfo const&);
             BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol);
             DbColumn* CreateForeignKeyColumn(DbTable& fkTable, NavigationPropertyMap const&, ForeignKeyColumnInfo&);
-            ClassMappingStatus CreateForeignKeyConstraint(DbTable const& referencedTable);
+            BentleyStatus CreateForeignKeyConstraint(DbTable const& referencedTable);
             DbColumn* CreateRelECClassIdColumn(DbMap const&, ECN::ECClassCR, DbTable& fkTable, ForeignKeyColumnInfo const&, DbColumn const& fkCol, NavigationPropertyMap const&);
+            
             ECN::ECRelationshipEnd GetForeignEnd() const;
             ECN::ECRelationshipEnd GetReferencedEnd() const;
 
-            bool IsPhysicalForeignKey() const { if (m_foreignKeyMappingType == nullptr) return false; return m_foreignKeyMappingType->GetType() == RelationshipMappingType::Type::PhysicalForeignKey; }
+            ECN::ECRelationshipClassCR GetRelClass() const { return *m_navProp.GetRelationshipClass(); }
+            bool IsPhysicalForeignKey() const { return m_fkConstraintCA.IsValid(); }
 
         public:
-            FkRelationships(SchemaImportContext&, RelationshipClassEndTableMap const&);
+            NavigationPropertyInfo(SchemaImportContext&, ECN::NavigationECPropertyCR, RelationshipClassEndTableMap const&);
 
             BentleyStatus UpdatePersistedEnd(NavigationPropertyMap&);
 
             static BentleyStatus FinishMapping(SchemaImportContext&);
+
+            static BentleyStatus TryDetermineFkEnd(ECN::ECRelationshipEnd&, ECN::ECRelationshipClassCR, IssueReporter const&);
+
         };
 
     //=======================================================================================
@@ -216,6 +224,7 @@ struct DbMappingManager final : NonCopyableClass
 
         public:
             static BentleyStatus MapToTable(SchemaImportContext&, ClassMap&, ClassMappingInfo const&);
+            static BentleyStatus CreateVirtualTableForFkRelationship(SchemaImportContext&, RelationshipClassEndTableMap&, ClassMappingInfo const&);
             static BentleyStatus DetermineTableName(Utf8StringR tableName, ECN::ECClassCR, Utf8CP tablePrefix = nullptr);
             static DbTable* CreateOverflowTable(SchemaImportContext&, DbTable const&);
             static BentleyStatus CreateIndex(SchemaImportContext&, DbTable&, Utf8StringCR indexName, bool isUnique, std::vector<DbColumn const*> const&, bool addIsNotNullWhereExp, bool isAutoGenerated, ECN::ECClassId, bool applyToSubclassesIfPartial = true);
