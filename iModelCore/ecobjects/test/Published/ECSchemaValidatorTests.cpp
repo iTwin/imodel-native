@@ -36,7 +36,6 @@ Utf8CP oldStandardSchemaNames[] =
 
 Utf8CP newStandardSchemaNames[] =
     {
-    "CoreClasses",
     "CoreCustomAttributes",
     "SchemaLocalizationCustomAttributes",
     };
