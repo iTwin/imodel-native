@@ -16,6 +16,38 @@ USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 USING_NAMESPACE_BENTLEY_SQLITE
 
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+static void    padTo4ByteBoundary(std::FILE* outputFile)
+    {
+    std::fseek(outputFile, 0, SEEK_END);
+    long        position = ftell(outputFile), padBytes = (4 - position % 4);
+
+    if (0 != padBytes)
+        {
+        uint64_t    zero = 0;
+
+        std::fwrite(&zero, 1, padBytes, outputFile);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      getJsonString(Json::Value const& value)
+    {
+    Utf8String      string =  Json::FastWriter().write(value);
+
+    // Pad to 4 byte boundary...
+    while (0 != string.size() % 4)
+        string = string + " ";
+
+    return string;
+    }
+
+
 //=======================================================================================
 // We use a hierarchical batch table to organize features by element and subcategory,
 // and subcategories by category
@@ -118,7 +150,7 @@ public:
         {
         Json::Value json;
         json["HIERARCHY"] = GetHierarchy();
-        return Json::FastWriter().write(json);
+        return getJsonString(json);
         }
 };
 
@@ -658,6 +690,13 @@ void    PublishTileData::PadBinaryDataToBoundary(size_t boundarySize)
         m_binaryData.Append(&zero, 1);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+WString     PublisherContext::GetTileExtension (TileNodeCR tile)
+    {
+    return m_publishAsClassifier ? L"vctr" : tile.GetFileExtension();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -667,7 +706,7 @@ BeFileName  TilePublisher::GetBinaryDataFileName() const
     WString rootName;
     BeFileName dataDir = m_context.GetDataDirForModel(m_tile.GetModel(), &rootName);
 
-    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), m_tile.GetFileExtension().c_str()).c_str(), nullptr);
+    return  BeFileName(nullptr, dataDir.c_str(), m_tile.GetFileName (rootName.c_str(), m_context.GetTileExtension(m_tile).c_str()).c_str(), nullptr);
     }
 
 
@@ -695,6 +734,9 @@ static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP
         }
     }
 
+template<typename T> static void FWriteValue (T const& value, std::FILE* file) { fwrite(&value, 1, sizeof(value), file); }
+template<typename T> static void FWrite(T const& value, std::FILE* file) { if (!value.empty()) fwrite(value.data(), 1, value.size(), file); }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -715,8 +757,13 @@ PublisherContext::Status TilePublisher::Publish()
         return PublisherContext::Status::CantOpenOutputFile;
         }
     
-        
-    if (publishableGeometry.Parts().empty())
+    static double s_minClassHeight = 1.0E3;
+
+    if (m_context.DoPublishAsClassifier())
+        {
+        WriteVector(outputFile, publishableGeometry);
+        }
+    else if (publishableGeometry.Parts().empty())
         {
         BeAssert (publishableGeometry.PointClouds().empty() || publishableGeometry.Meshes().empty());   // We don't expect point clouds with meshes (although these could be handled as a composite if necessary).
         if (!publishableGeometry.PointClouds().empty())
@@ -727,22 +774,21 @@ PublisherContext::Status TilePublisher::Publish()
     else
         {
         // Composite header.
-        uint32_t        tileCount = (publishableGeometry.Meshes().empty() ? 0 : 1) + publishableGeometry.Parts().size(), zero = 0;
+        uint32_t        tileCount = (publishableGeometry.Meshes().empty() ? 0 : 1) + publishableGeometry.Parts().size();
 
         std::fwrite(s_compositeTileMagic, 1, 4, outputFile);
-        std::fwrite(&s_compositeTileVersion, 1, 4, outputFile);
+        FWriteValue(s_compositeTileVersion, outputFile);
         long    compositeSizeLocation = ftell (outputFile);
-        std::fwrite(&zero, 1, 4, outputFile);                   // Filled in below...
-        std::fwrite(&tileCount, 1, 4, outputFile);
+        FWriteValue((uint32_t) 0, outputFile);                   // Filled in below...
+        FWriteValue(tileCount, outputFile);
 
         WriteTileMeshes(outputFile, publishableGeometry);
 
         uint32_t    compositeSize = std::ftell(outputFile);
         std::fseek (outputFile, compositeSizeLocation, SEEK_SET);
-        std::fwrite (&compositeSize, 1, 4, outputFile);
+        FWriteValue(compositeSize, outputFile);
         }
     std::fclose(outputFile);
-
 
     return PublisherContext::Status::Success;
     }
@@ -776,32 +822,6 @@ Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishT
     return jsonMesh;
     }
 
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    padTo4ByteBoundary(std::FILE* outputFile)
-    {
-    std::fseek(outputFile, 0, SEEK_END);
-    long        position = ftell(outputFile), padBytes = (4 - position % 4);
-
-    if (0 != padBytes)
-        {
-        uint64_t    zero = 0;
-
-        std::fwrite (&zero, 1, padBytes, outputFile);
-        }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void    padTo4ByteBoundary(Utf8String& string)
-    {
-    while (0 != string.size() % 4)
-        string = string + " ";
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
@@ -850,23 +870,21 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
     if (rgbPresent)
         featureTable["RGB"]["byteOffset"] = pointCloud.Points().size() * 3 * sizeof(int16_t);
 
-    Utf8String      featureTableStr =  Json::FastWriter().write(featureTable);
-
-    padTo4ByteBoundary(featureTableStr);
+    Utf8String      featureTableStr =  getJsonString(featureTable);
 
     uint32_t        zero = 0, 
                     featureTableStrLen = featureTableStr.size(),
                     featureTableBinaryLength = pointCloud.Points().size() * (3 * sizeof(int16_t) + (rgbPresent ?  sizeof(TileMeshPointCloud::Rgb) : 0));
 
     std::fwrite(s_pointCloudMagic, 1, 4, outputFile);
-    std::fwrite(&s_pointCloudVersion, 1, 4, outputFile);                                                                                                                                  
+    FWriteValue(s_pointCloudVersion, outputFile);                                                                                                                                  
     long    lengthDataPosition = ftell(outputFile);
-    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // Total length filled in below.
-    std::fwrite(&featureTableStrLen, 1, sizeof(uint32_t), outputFile);          
-    std::fwrite(&featureTableBinaryLength, 1, sizeof(uint32_t), outputFile);    
+    FWriteValue((int32_t) 0, outputFile);    // Total length filled in below.
+    FWriteValue(featureTableStrLen, outputFile);          
+    FWriteValue(featureTableBinaryLength, outputFile);    
 
-    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // No batch for now.
-    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // No batch for now.
+    FWriteValue(zero, outputFile);    // No batch for now.
+    FWriteValue(zero, outputFile);    // No batch for now.
 
     std::fwrite(featureTableStr.data(), 1, featureTableStrLen, outputFile);
     for (auto& point : pointCloud.Points())
@@ -885,7 +903,7 @@ void TilePublisher::WritePointCloud (std::FILE* outputFile, TileMeshPointCloudR 
 
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
-    std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
+    FWriteValue(dataSize, outputFile);
     std::fseek(outputFile, 0, SEEK_END);
 
 
@@ -997,10 +1015,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     BatchTableBuilder batchTableBuilder(attributesSet, m_context.GetDgnDb(), m_tile.GetModel().Is3d());
     Utf8String      batchTableStr = batchTableBuilder.ToString();
-    Utf8String      featureTableStr = Json::FastWriter().write(featureTableData.m_json);
-
-    // Pad the feature table string to insure that the binary is 4 byte aligned.
-    padTo4ByteBoundary(featureTableStr);
+    Utf8String      featureTableStr = featureTableData.GetJsonString();
 
     uint32_t        batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t        featureTableJsonLength = static_cast<uint32_t> (featureTableStr.size());
@@ -1015,15 +1030,15 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
 
     long            startPosition = ftell(outputFile);
 
-    std::fwrite(s_instanced3dMagic, 1, 4, outputFile);
-    std::fwrite(&s_instanced3dVersion, 1, 4, outputFile);
+    std::fwrite(s_instanced3dMagic, 4, 1, outputFile);
+    FWriteValue(s_instanced3dVersion, outputFile);
     long    lengthDataPosition = ftell(outputFile);
-    std::fwrite (&zero, 1, sizeof(uint32_t),outputFile);        // Filled in later.
-    std::fwrite(&featureTableJsonLength, 1, sizeof(uint32_t),outputFile);
-    std::fwrite(&featureTableBinarySize, 1, sizeof(uint32_t),outputFile);
-    std::fwrite(&batchTableStrLen, 1, sizeof(uint32_t),outputFile);
-    std::fwrite(&zero, 1, sizeof(uint32_t),outputFile);         // Batch table binary (not used).
-    std::fwrite(&gltfFormat, 1, sizeof(uint32_t), outputFile);
+    FWriteValue(zero, outputFile);        // Filled in later.
+    FWriteValue(featureTableJsonLength, outputFile);
+    FWriteValue(featureTableBinarySize, outputFile);
+    FWriteValue(batchTableStrLen, outputFile);
+    FWriteValue((uint32_t) 0, outputFile);         // Batch table binary (not used).
+    FWriteValue(gltfFormat, outputFile);
     std::fwrite(featureTableStr.data(), 1, featureTableJsonLength, outputFile);
     std::fwrite(featureTableData.BinaryData(), 1, featureTableData.BinaryDataSize(), outputFile);
     std::fwrite(batchTableStr.data(), 1, batchTableStrLen, outputFile);
@@ -1032,7 +1047,7 @@ void TilePublisher::WritePartInstances(std::FILE* outputFile, DRange3dR publishe
     padTo4ByteBoundary (outputFile);
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
-    std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
+    FWriteValue(dataSize, outputFile);
     std::fseek(outputFile, 0, SEEK_END);
     }
 
@@ -1052,52 +1067,237 @@ void TilePublisher::WriteBatched3dModel(std::FILE* outputFile, TileMeshList cons
     AddDefaultScene(tileData);
     AddMeshes(tileData, meshes);
 
-    FeatureAttributesMapCR attributes = m_tile.GetAttributes();
     Utf8String batchTableStr;
     if (validIdsPresent)
         {
-        BatchTableBuilder batchTableBuilder(attributes, m_context.GetDgnDb(), m_tile.GetModel().Is3d());
+        BatchTableBuilder batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d());
         batchTableStr = batchTableBuilder.ToString();
         }
 
     uint32_t batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-    uint32_t zero = 0;
-    uint32_t b3dmNumBatches = validIdsPresent ? attributes.size() : 0;
+    Json::Value     featureTable;
+
+    featureTable["BATCH_LENGTH"] = validIdsPresent ? m_tile.GetAttributes().size() : 0;
+    Utf8String      featureTableStr = getJsonString(featureTable);
 
     long    startPosition = ftell (outputFile);
     std::fwrite(s_b3dmMagic, 1, 4, outputFile);
-    std::fwrite(&s_b3dmVersion, 1, 4, outputFile);
+    FWriteValue(s_b3dmVersion, outputFile);
     long    lengthDataPosition = ftell(outputFile);
-    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);    // Filled in below.
-    std::fwrite(&batchTableStrLen, 1, sizeof(uint32_t), outputFile);
-    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile); // length of binary portion of batch table - we have no binary batch table data
-    std::fwrite(&b3dmNumBatches, 1, sizeof(uint32_t), outputFile);
-    std::fwrite(batchTableStr.data(), 1, batchTableStrLen, outputFile);
+    FWriteValue(0, outputFile);    // Filled in below.
+    FWriteValue((uint32_t) featureTableStr.size(), outputFile);   
+    FWriteValue(0, outputFile);    // Feature table binary (none)
+    FWriteValue((uint32_t) batchTableStr.size(), outputFile);
+    FWriteValue(0, outputFile);    // length of binary portion of batch table (none).
+    FWrite(featureTableStr, outputFile);
+    FWrite(batchTableStr, outputFile);
 
     WriteGltf (outputFile, tileData);
 
     padTo4ByteBoundary (outputFile);
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
-    std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
+    FWriteValue(dataSize, outputFile);
     std::fseek(outputFile, 0, SEEK_END);
     }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     07/2017
++===============+===============+===============+===============+===============+======*/
+struct  VectorPosition
+    {
+    uint16_t  m_x;
+    uint16_t  m_y;
+
+    VectorPosition() : m_x(0), m_y(0) { }
+    VectorPosition(DPoint3dCR dPoint, DRange3dCR range)
+        {
+        m_x = (uint16_t) ((double) 0x7fff * (dPoint.x - range.low.x) / (range.high.x - range.low.x));
+        m_y = (uint16_t) ((double) 0x7fff * (dPoint.y - range.low.y) / (range.high.y - range.low.y));
+        }
+    };
+
+
+uint16_t    zigZagEncode(int32_t value) { return (uint16_t) (((value << 1) ^ (value >> 15)) & 0xffff); }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void addVectorPosition(ByteStream& positionsX, ByteStream& positionsY, DPoint3dCR point, VectorPosition& lastPosition, DRange3dCR range)
+    {
+    VectorPosition     thisPosition(point, range);
+
+    positionsX.Append(zigZagEncode(thisPosition.m_x - lastPosition.m_x));
+    positionsY.Append(zigZagEncode(thisPosition.m_y - lastPosition.m_y));
+
+    lastPosition = thisPosition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void addVectorPolygons (Json::Value& json, ByteStream& positionsX, ByteStream& positionsY, ByteStream& indices, ByteStream& featureBinary, TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR tileRange)
+    {
+    // Need to process all triangles that have the same attribute value as a single "polygon".
+    bmap <uint16_t, bvector<TileTriangle const*>> triangleMap;
+    
+    for (auto& triangle : triangles)
+        {
+        bvector<TileTriangle const*>   triangleVector(1, &triangle);
+
+        auto    insertPair = triangleMap.Insert(mesh.Attributes().at(triangle.m_indices[0]), triangleVector);
+
+        if (!insertPair.second)
+            insertPair.first->second.push_back(&triangle);
+        }
+
+    uint32_t            polygonCount =0;
+    ByteStream          polygonIndexCountBuffer;
+    for (auto& curr : triangleMap)
+        {
+        bmap    <uint32_t, uint32_t>    indexMap;
+        uint32_t                        thisPolygonPointCount = 0, thisPolygonIndexCount = 0;
+        VectorPosition                  lastPosition;
+
+        for (auto& triangle : curr.second)
+            {
+            for (size_t i=0; i<3; i++)
+                {
+                uint32_t    triangleIndex = triangle->m_indices[i], outIndex  = positionsX.size()/sizeof(uint16_t);
+                auto        insertPair = indexMap.Insert(triangleIndex, outIndex);
+
+                if (insertPair.second)  
+                    {
+                    thisPolygonPointCount++;
+                    addVectorPosition(positionsX, positionsY, mesh.Points().at(triangleIndex), lastPosition, tileRange);
+                    }
+                else
+                    {
+                    outIndex = insertPair.first->second;
+                    }
+
+                thisPolygonIndexCount++;
+                indices.Append(outIndex);
+                }
+            }
+        json["POLYGON_BATCH_IDS"][polygonCount] = curr.first;
+        featureBinary.Append(thisPolygonPointCount);
+        polygonIndexCountBuffer.Append(thisPolygonIndexCount);
+        polygonCount++;
+        }
+    json["POLYGONS_LENGTH"] = polygonCount;
+    json["POLYGON_COUNT"]["byteOffset"] = 0;
+    json["POLYGON_INDEX_COUNT"]["byteOffset"] = featureBinary.size();
+    featureBinary.Append(polygonIndexCountBuffer.data(), polygonIndexCountBuffer.size());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void addVectorPolylinesAndPoints (Json::Value& json, ByteStream& polylinePositionsX, ByteStream& polylinePositionsY, ByteStream& polylineIndices, ByteStream& pointPositionsX, ByteStream& pointPositionsY, TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRange3dCR tileRange)
+    {
+    // Need to process all triangles that have the same attribute value as a single "polygon".
+    bmap <uint16_t, bvector<TilePolyline const*>> polylineMap;
+    
+    for (auto& polyline : polylines)
+        {
+        bvector<TilePolyline const*>   polylineVector(1, &polyline);
+
+        auto    insertPair = polylineMap.Insert(mesh.Attributes().at(polyline.m_indices.front()), polylineVector);
+
+        if (!insertPair.second)
+            insertPair.first->second.push_back(&polyline);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WriteVector(std::FILE* outputFile, PublishableTileGeometryR geometry)
+    {
+    Json::Value         json;
+    ByteStream          polygonIndices, polylineIndices, polygonPositionsX, polygonPositionsY, polylinePositionsX, polylinePositionsY, pointPositionsX, pointPositionsY, featureTableBinary;
+
+    json["RTC_CENTER"][0] = 0.0; json["RTC_CENTER"][1] = 0.0; json["RTC_CENTER"][2] = 0.0;
+    json["MINIMUM_HEIGHT"] = -1000.0;
+    json["MAXIMUM_HEIGHT"] =  1000.0;
+    json["FORMAT"] = 1;  // Cartesian coordinates.
+
+    DRange3d            contentRange = DRange3d::NullRange();
+
+    for (auto& mesh : geometry.Meshes())
+        contentRange.Extend(mesh->Points());
+
+    auto& rectangle     = json["RECTANGLE"];
+    rectangle[0]  = contentRange.low.x;
+    rectangle[1]  = contentRange.low.y;         
+    rectangle[2]  = contentRange.high.x;
+    rectangle[3]  = contentRange.high.y;
+
+    BeAssert (geometry.PointClouds().empty() && geometry.Parts().empty());
+    for (auto& mesh : geometry.Meshes())
+        {
+        if (!mesh->Triangles().empty())
+            addVectorPolygons(json, polygonPositionsX, polygonPositionsY, polygonIndices, featureTableBinary, *mesh, mesh->Triangles(), contentRange);
+
+        if (!mesh->Polylines().empty())
+            addVectorPolylinesAndPoints (json, polylinePositionsX, polylinePositionsY, polylineIndices, pointPositionsX, pointPositionsY, *mesh, mesh->Polylines(), contentRange);
+        }
+
+    BatchTableBuilder   batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d());
+    Utf8String          batchTableStr = batchTableBuilder.ToString(), 
+                        featureTableStr = getJsonString(json);
+
+    long    startPosition = ftell (outputFile);
+    std::fwrite(s_vectorMagic, 1, 4, outputFile);
+    FWriteValue(s_vectorVersion, outputFile);
+    long    lengthDataPosition = ftell(outputFile);
+    FWriteValue((uint32_t) 0, outputFile);    // Filled in below.
+    FWriteValue((uint32_t) featureTableStr.size(), outputFile);
+    FWriteValue((uint32_t) featureTableBinary.size(), outputFile);   // No binary feature data.
+    FWriteValue((uint32_t) batchTableStr.size(), outputFile);
+    FWriteValue((uint32_t) 0, outputFile);  // No binary batch data.
+    FWriteValue((uint32_t) polygonIndices.size(), outputFile);
+    FWriteValue((uint32_t) (2*polygonPositionsX.size()), outputFile);
+    FWriteValue((uint32_t) (2*polylinePositionsX.size()), outputFile);
+    FWriteValue((uint32_t) (2*pointPositionsX.size()), outputFile);
+    FWrite(featureTableStr, outputFile);
+    FWrite(featureTableBinary, outputFile);
+    FWrite(batchTableStr, outputFile);
+    FWrite(polygonIndices, outputFile);
+    FWrite(polylineIndices, outputFile);
+    FWrite(polygonPositionsX, outputFile);
+    FWrite(polygonPositionsY, outputFile);
+    FWrite(polylinePositionsX, outputFile);
+    FWrite(polylinePositionsY, outputFile);
+    FWrite(pointPositionsX, outputFile);
+    FWrite(pointPositionsY, outputFile);
+
+    uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
+    std::fseek(outputFile, lengthDataPosition, SEEK_SET);
+    FWriteValue(dataSize, outputFile);
+    std::fseek(outputFile, 0, SEEK_END);
+
+    m_tile.SetPublishedRange (contentRange);
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteGltf(std::FILE* outputFile, PublishTileData tileData)
+void TilePublisher::WriteGltf(std::FILE* outputFile, PublishTileData const& tileData)
     {
-    Utf8String  sceneStr = Json::FastWriter().write(tileData.m_json);
-    uint32_t    sceneStrLength = static_cast<uint32_t>(sceneStr.size()), zero = 0;
+    Utf8String  sceneStr = tileData.GetJsonString();
+    uint32_t    sceneStrLength = static_cast<uint32_t>(sceneStr.size());
 
     long    startPosition = ftell(outputFile);
-    std::fwrite(&s_gltfMagic, 1, 4, outputFile);
-    std::fwrite(&s_gltfVersion, 1, sizeof(uint32_t), outputFile);
+    std::fwrite(s_gltfMagic, 1, 4, outputFile);
+    FWriteValue(s_gltfVersion, outputFile);
     long    lengthDataPosition = ftell(outputFile);
-    std::fwrite(&zero, 1, sizeof(uint32_t), outputFile);        // Filled in below.
-    std::fwrite(&sceneStrLength, 1, sizeof(uint32_t), outputFile);
-    std::fwrite(&s_gltfSceneFormat, 1, sizeof(uint32_t), outputFile);
+    FWriteValue((uint32_t) 0, outputFile);        // Filled in below.
+    FWriteValue(sceneStrLength, outputFile);
+    FWriteValue(s_gltfSceneFormat, outputFile);
 
     std::fwrite(sceneStr.data(), 1, sceneStrLength, outputFile);
     if (!tileData.m_binaryData.empty())
@@ -1105,9 +1305,10 @@ void TilePublisher::WriteGltf(std::FILE* outputFile, PublishTileData tileData)
 
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
-    std::fwrite(&dataSize, 1, sizeof(uint32_t), outputFile);
+    FWriteValue(dataSize, outputFile);
     std::fseek(outputFile, 0, SEEK_END);
     }       
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                   Ray.Bentley     12/2016
@@ -2748,7 +2949,7 @@ bool PublisherContext::IsGeolocated () const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, TextureMode textureMode)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_textureMode(textureMode)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_textureMode(textureMode), m_publishAsClassifier(false)
     {
     // By default, output dir == data dir. data dir is where we put the json/b3dm files.
     m_outputDir.AppendSeparator();
@@ -2910,7 +3111,7 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
         return;
         }
 
-    WString         rootName;
+    WString         rootName = TileUtil::GetRootNameForModel(tile.GetModel().GetModelId(), m_publishAsClassifier);
     DRange3d        contentRange, publishedRange = tile.GetPublishedRange();
 
     // If we are publishing standalone datasets then the tiles are all published before we write the metadata tree.
@@ -2939,7 +3140,7 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
                 childTileset["asset"]["gltfUpAxis"] = "Z";
 
                 auto&       childRoot = childTileset[JSON_Root];
-                WString     metadataRelativePath = rootName + L"/" + childTile->GetFileName(rootName.c_str(), s_metadataExtension);
+                WString     metadataRelativePath = childTile->GetFileName(rootName.c_str(), s_metadataExtension);
                 BeFileName  metadataFileName (nullptr, m_dataDir.c_str(), metadataRelativePath.c_str(), nullptr);
 
                 WriteModelMetadataTree (childRange, childRoot, *childTile, GetMaxTilesetDepth());
@@ -2949,7 +3150,7 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
 
                     Json::Value         child;
 
-                    child["refine"] = "replace";
+                    child["refine"] = "REPLACE";
                     child[JSON_GeometricError] = childTile->GetTolerance();
                     TilePublisher::WriteBoundingVolume(child, childRange);
 
@@ -2979,13 +3180,13 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
     if (range.IsNull())
         return;
 
-    root["refine"] = "replace";
+    root["refine"] = "REPLACE";
     root[JSON_GeometricError] = tile.GetTolerance();
     TilePublisher::WriteBoundingVolume(root, range);
 
     if (!contentRange.IsNull() && !tile.GetIsEmpty())
         {
-        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, tile.GetFileExtension().c_str()));
+        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, GetTileExtension(tile).c_str(), m_publishAsClassifier));
         TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
         }
     }
@@ -3057,20 +3258,13 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
     return status;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     04/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName PublisherContext::GetModelTilesetName(DgnModelCR model)
-    {
-    return BeFileName(nullptr, m_dataDir.c_str(), TileUtil::GetRootNameForModel(model).c_str(), s_metadataExtension);
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteModelTileset(TileNodeCR tile)
     {
-    WriteTileset(GetModelTilesetName(tile.GetModel()), tile, GetMaxTilesetDepth());
+    WriteTileset(GetTilesetFileName(tile.GetModel().GetModelId()), tile, GetMaxTilesetDepth());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3080,10 +3274,11 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
     {
     WString tmpTilesetName;
     WStringR tilesetName = nullptr != pTilesetName ? *pTilesetName : tmpTilesetName;
-    tilesetName = TileUtil::GetRootNameForModel(model);
+
+    tilesetName = TileUtil::GetRootNameForModel(model.GetModelId(), m_publishAsClassifier);
 
     BeFileName dataDir = m_dataDir;
-    dataDir.AppendToPath(tilesetName.c_str());
+    dataDir.AppendToPath(tilesetName.c_str());                                                                                
 
     return dataDir;
     }
@@ -3139,7 +3334,7 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR generator, DRange3dR rootRange, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter)
     {
-    DgnModelIdSet viewedModels;
+    DgnModelIdSet viewedModels, classifierModels;
 
     for (auto const& viewId : m_viewIds)
         GetViewedModelsFromView (viewedModels, viewId);
@@ -3153,7 +3348,53 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     for (auto const& kvp : m_modelRanges)
         rootRange.Extend(kvp.second);
 
+    for (auto& modelId : viewedModels)
+        {
+        auto                        getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(GetDgnDb().Models().GetModel(modelId).get());
+        ModelSpatialClassifiers     classifiers;
+
+        if (nullptr != getTileTree && 
+            SUCCESS == getTileTree->_GetSpatialClassifiers(classifiers))
+            {
+            for (auto& classifier : classifiers)
+                classifierModels.insert(classifier.GetModelId());
+
+            m_classifierMap.Insert(modelId, classifiers);
+            }
+        }
+
+    if (!classifierModels.empty())
+        {
+        AutoRestore<bool> savePublishAsVectors (&m_publishAsClassifier, true);
+
+        auto status = generator.GenerateTiles(*this, classifierModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
+        if (TileGeneratorStatus::Success != status)
+            return ConvertStatus(status);
+        }
+
     return Status::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId)
+    {
+    return BeFileName(nullptr, m_dataDir.c_str(), TileUtil::GetRootNameForModel(modelId, m_publishAsClassifier).c_str(), s_metadataExtension);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, bool asClassifier)
+    {
+    WString         modelRootName = TileUtil::GetRootNameForModel(modelId, asClassifier);
+    BeFileName      tilesetFileName (nullptr, m_rootName.c_str(), modelRootName.c_str(), s_metadataExtension);
+    auto            utf8FileName = tilesetFileName.GetNameUtf8();
+
+    utf8FileName.ReplaceAll("\\", "//");
+    return utf8FileName;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3204,15 +3445,14 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
                 }
 
             modelJson["extents"] = RangeToJson(modelRange);
+            modelJson["tilesetUrl"] = GetTilesetName(modelId, false);
 
-            // ###TODO: Shouldn't have to compute this twice...
-            WString modelRootName = TileUtil::GetRootNameForModel(*model);
-
-            BeFileName tilesetFileName (nullptr, m_rootName.c_str(), modelRootName.c_str(), s_metadataExtension);
-
-            auto utf8FileName = tilesetFileName.GetNameUtf8();
-            utf8FileName.ReplaceAll("\\", "//");
-            modelJson["tilesetUrl"] = utf8FileName;
+#ifdef PER_MODEL_CLASSIFIER
+            // Cesium doesn't support classifying a single model as we do in JSon.
+            auto const& foundClassifier = m_classifierMap.find(modelId);
+            if (foundClassifier != m_classifierMap.end())
+                modelJson["classifiers"] = GetClassifiersJson(foundClassifier->second);
+#endif
 
             modelsJson[modelId.ToString()] = modelJson;
             }
@@ -3426,6 +3666,47 @@ void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const&
         }
 
     json["models"] = GetModelsJson(allModels);
+    json["classifiers"] = GetAllClassifiersJson();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetClassifiersJson(ModelSpatialClassifiersCR classifiers)
+    {
+    Json::Value classifiersValue = Json::arrayValue;
+
+    for (auto& classifier : classifiers)
+        {
+        Json::Value     classifierValue = classifier.ToJson();
+
+        classifierValue["tilesetUrl"] = GetTilesetName(classifier.GetModelId(), true);
+
+        classifiersValue.append(classifierValue);
+        }
+    return classifiersValue;
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value PublisherContext::GetAllClassifiersJson()
+    {
+    Json::Value classifiersValue = Json::objectValue;
+
+    for (auto& curr : m_classifierMap)
+        {
+        size_t      index = 0;
+        for (auto& classifier : curr.second)
+            {
+            Json::Value     classifierValue = classifier.ToJson();
+
+            classifierValue["tilesetUrl"] = GetTilesetName(classifier.GetModelId(), true);
+
+            Utf8PrintfString    classifierId("%s_%d", classifier.GetModelId().ToString(), index++);
+            classifiersValue[classifierId] = classifierValue;
+            }
+        }
+    return classifiersValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3433,7 +3714,7 @@ void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const&
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PublisherContext::WriteCategoriesJson(Json::Value& json, DgnElementIdSet const& selectorIds)
     {
-    DgnCategoryIdSet allCategories;
+    DgnCategoryIdSet allCategories;                                                                                                                      
     Json::Value& selectorsJson = (json["categorySelectors"] = Json::objectValue);
     for (auto const& selectorId : selectorIds)
         {
