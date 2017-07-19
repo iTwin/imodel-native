@@ -20,7 +20,7 @@ uint32_t CachedECSqlStatement::Release()
     // Since statements can be referenced from multiple threads, and since we want to reset the statement 
     // when it is only held by the StatementCache, we need to hold the cache's mutex for the entire scope of this
     // method. However, the reference count member must still be atomic since we don't acquire the mutex for AddRef.
-    BeMutexHolder lock(m_cache.m_mutex);
+	BeDbMutexHolder lock(m_cache.m_mutex);
 
     const bool isInCache = m_isInCache; // hold this in a local before we decrement the refcount in case another thread deletes us
     const uint32_t countWas = m_refCount.DecrementAtomicPost();
@@ -169,7 +169,7 @@ void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR
 //---------------------------------------------------------------------------------------
 void ECSqlStatementCache::Empty()
     {
-    BeMutexHolder lock(m_mutex);
+	BeDbMutexHolder lock(m_mutex);
     for (CachedECSqlStatementPtr& stmt : m_entries)
         {
         stmt->m_isInCache = false;

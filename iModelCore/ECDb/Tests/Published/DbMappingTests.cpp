@@ -6792,8 +6792,7 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
     {
-    std::vector<SchemaItem> testItems;
-    testItems.push_back(SchemaItem(
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
@@ -6810,8 +6809,9 @@ TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='FooProp' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "NotMapped mapping strategy on Mixins is not supported"));
-    testItems.push_back(SchemaItem(
+        "</ECSchema>"))) << "NotMapped mapping strategy on Mixins is not supported";
+
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
@@ -6828,8 +6828,9 @@ TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='FooProp' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "OwnTable mapping strategy on Mixins is not supported"));
-    testItems.push_back(SchemaItem(
+        "</ECSchema>"))) << "OwnTable mapping strategy on Mixins is not supported";
+
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
@@ -6846,9 +6847,9 @@ TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='FooProp' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "TPH mapping strategy on Mixins is not supported"));
+        "</ECSchema>"))) << "TPH mapping strategy on Mixins is not supported";
 
-    testItems.push_back(SchemaItem(
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
@@ -6866,9 +6867,9 @@ TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
         "        </ECCustomAttributes>"
         "        <ECProperty propertyName='FooProp' typeName='int' />"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "ExistingTable mapping strategy on Mixins is not supported"));
+        "</ECSchema>"))) << "ExistingTable mapping strategy on Mixins is not supported";
 
-    testItems.push_back(SchemaItem(
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
@@ -6888,9 +6889,9 @@ TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
         "           </ECCustomAttributes>"
         "       </ECProperty>"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "PropertyMap CA on Mixins is not supported"));
+        "</ECSchema>"))) << "PropertyMap CA on Mixins is not supported";
 
-    testItems.push_back(SchemaItem(
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
@@ -6910,9 +6911,9 @@ TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
         "           </ECCustomAttributes>"
         "       </ECProperty>"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "PropertyMap CA on Mixins is not supported"));
+        "</ECSchema>"))) << "PropertyMap CA on Mixins is not supported";
 
-    testItems.push_back(SchemaItem(
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
         "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
@@ -6932,9 +6933,7 @@ TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
         "           </ECCustomAttributes>"
         "       </ECProperty>"
         "    </ECEntityClass>"
-        "</ECSchema>", false, "PropertyMap CA on Mixins is not supported"));
-
-    AssertSchemaImport(testItems, "CAOnMixins.ecdb");
+        "</ECSchema>"))) << "PropertyMap CA on Mixins is not supported";
     }
 
 //---------------------------------------------------------------------------------------
@@ -7030,55 +7029,50 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, LogicalForeignKeyOnSharedColumn)
     {
-    SchemaItem schema(
-        "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-        "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-        "  <ECEntityClass typeName='DgnModel' >"
-        "    <ECProperty propertyName='Name' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECEntityClass typeName='DgnElement' >"
-        "    <ECCustomAttributes>"
-        "         <ClassMap xmlns='ECDbMap.02.00'>"
-        "                <MapStrategy>TablePerHierarchy</MapStrategy>"
-        "        </ClassMap>"
-        "         <ShareColumns xmlns='ECDbMap.02.00' />"
-        "    </ECCustomAttributes>"
-        "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
-        "    <ECProperty propertyName='Code' typeName='string' />"
-        "  </ECEntityClass>"
-        "  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
-        "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
-        "      <Class class='DgnModel' />"
-        "    </Source>"
-        "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-        "      <Class class='DgnElement' />"
-        "    </Target>"
-        "  </ECRelationshipClass>"
-        "</ECSchema>", true, "");
-
-    ECDb ecdb;
-    bool asserted = false;
-    AssertSchemaImport(ecdb, asserted, schema, "LogicalForeignKeyOnSharedColumn.ecdb");
-    ecdb.Schemas().CreateClassViewsInDb();
+	ASSERT_EQ(SUCCESS, SetupECDb("LogicalForeinKeyOnSharedColumn.ecdb", SchemaItem(
+		"<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+		"  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+		"  <ECEntityClass typeName='DgnModel' >"
+		"    <ECProperty propertyName='Name' typeName='string' />"
+		"  </ECEntityClass>"
+		"  <ECEntityClass typeName='DgnElement' >"
+		"    <ECCustomAttributes>"
+		"         <ClassMap xmlns='ECDbMap.02.00'>"
+		"                <MapStrategy>TablePerHierarchy</MapStrategy>"
+		"        </ClassMap>"
+		"         <ShareColumns xmlns='ECDbMap.02.00' />"
+		"    </ECCustomAttributes>"
+		"    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
+		"    <ECProperty propertyName='Code' typeName='string' />"
+		"  </ECEntityClass>"
+		"  <ECRelationshipClass typeName='ModelHasElements' modifier='None' strength='embedding' direction='Forward'>"
+		"    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
+		"      <Class class='DgnModel' />"
+		"    </Source>"
+		"    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
+		"      <Class class='DgnElement' />"
+		"    </Target>"
+		"  </ECRelationshipClass>"
+		"</ECSchema>")));
 
     ECSqlStatement stmt;
     ECInstanceKey modelKey;
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.DgnModel(Name) VALUES('val1')"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.DgnModel(Name) VALUES('val1')"));
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step(modelKey));
     stmt.Finalize();
 
-    ECClassId modelHasElementsRelClassId = ecdb.Schemas().GetClassId("TestSchema", "ModelHasElements");
+    ECClassId modelHasElementsRelClassId = m_ecdb.Schemas().GetClassId("TestSchema", "ModelHasElements");
     ASSERT_TRUE(modelHasElementsRelClassId.IsValid());
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "INSERT INTO ts.DgnElement(Model.Id, Model.RelECClassId,Code) VALUES(?,?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "INSERT INTO ts.DgnElement(Model.Id, Model.RelECClassId,Code) VALUES(?,?,?)"));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(1, modelKey.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindId(2, modelHasElementsRelClassId));
     ASSERT_EQ(ECSqlStatus::Success, stmt.BindText(3, "val2", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(DbResult::BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
 
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasElements"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasElements"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(2, stmt.GetValueInt64(0));
     ASSERT_EQ(51, stmt.GetValueInt64(1));
@@ -7087,7 +7081,7 @@ TEST_F(DbMappingTestFixture, LogicalForeignKeyOnSharedColumn)
     ASSERT_EQ(2, stmt.GetValueInt64(4));
     ASSERT_EQ(50, stmt.GetValueInt64(5));
     
-    ASSERT_FALSE(ecdb.ColumnExists("ts_DgnElement", "RelECClassId"));
+    ASSERT_FALSE(m_ecdb.ColumnExists("ts_DgnElement", "RelECClassId"));
     }
 
 //---------------------------------------------------------------------------------------
@@ -7095,10 +7089,7 @@ TEST_F(DbMappingTestFixture, LogicalForeignKeyOnSharedColumn)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, Mixins_FailingCases)
     {
-    std::vector<SchemaItem> testSchemas;
-
-    testSchemas.push_back(
-    SchemaItem(
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
             "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
@@ -7117,10 +7108,9 @@ TEST_F(DbMappingTestFixture, Mixins_FailingCases)
             "    <BaseClass>IMixin</BaseClass>"
             "    <ECProperty propertyName='TestProp' typeName='string' />"
             "  </ECEntityClass>"
-            "</ECSchema>", false, "IsMixin Custom Attribute's property 'AppliesToEntityClass' is not present"));
+            "</ECSchema>"))) << "IsMixin Custom Attribute's property 'AppliesToEntityClass' is not present";
 
-    testSchemas.push_back(
-    SchemaItem(
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
         "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
@@ -7139,10 +7129,9 @@ TEST_F(DbMappingTestFixture, Mixins_FailingCases)
         "    <BaseClass>IMixin</BaseClass>"
         "    <ECProperty propertyName='TestProp' typeName='string' />"
         "  </ECEntityClass>"
-        "</ECSchema>", false, "'TestClass' doesn't derives from TestSchema:Model class, which is specified in the applies to constraint"));
+        "</ECSchema>"))) << "'TestClass' doesn't derives from TestSchema:Model class, which is specified in the applies to constraint";
 
-    testSchemas.push_back(
-        SchemaItem(
+	ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
             "<ECSchema schemaName='TestSchema' alias='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
             "  <ECSchemaReference name='ECDbMap' version='02.00.00' alias='ecdbmap' />"
             "  <ECSchemaReference name='CoreCustomAttributes' version='01.00.00' alias='CoreCA'/>"
@@ -7168,9 +7157,7 @@ TEST_F(DbMappingTestFixture, Mixins_FailingCases)
             "    <ECProperty propertyName='TestClassProp' typeName='string' />"
             "    <ECProperty propertyName='IMixinProp' typeName='int' />"
             "  </ECEntityClass>"
-            "</ECSchema>", false, "TestClass can't override the property inherited from Mixin"));
-
-    AssertSchemaImport(testSchemas, "Mixins.ecdb");
+            "</ECSchema>"))) << "TestClass can't override the property inherited from Mixin";
     }
 
 //---------------------------------------------------------------------------------------

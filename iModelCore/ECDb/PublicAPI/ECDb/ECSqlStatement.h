@@ -488,7 +488,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ECSqlStatementCache final : NonCopyableClass
     private:
         friend struct CachedECSqlStatement;
 
-        mutable BeMutex m_mutex;
+        mutable BeDbMutex m_mutex;
         Utf8String m_name;
         mutable std::list<CachedECSqlStatementPtr> m_entries;
         uint32_t m_maxSize;
