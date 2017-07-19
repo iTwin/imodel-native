@@ -45,13 +45,26 @@ struct NativeSqlBuilder final
         //!@param[in] separator The separator used to separate the items in @p builderList. If nullptr is passed,
         //!                     the items will be separated by comma.
         NativeSqlBuilder& Append(List const& builderList, Utf8CP separator = nullptr);
-
         NativeSqlBuilder& Append(List const& lhsBuilderList, Utf8CP operatorStr, List const& rhsBuilderList, Utf8CP separator = nullptr);
         NativeSqlBuilder& AppendFormatted(Utf8CP format, ...);
         NativeSqlBuilder& Append(Utf8CP classIdentifier, Utf8CP identifier);
-
         NativeSqlBuilder& AppendEscaped(Utf8CP identifier) { return Append("[").Append(identifier).Append("]"); }
+        NativeSqlBuilder& Append(DbColumn const& column) { return Append(column.GetTable().GetName().c_str(), column.GetName().c_str()); }
+        NativeSqlBuilder& Append(DbColumn const& column, DbColumn::Type castInto)
+            {
+            if (column.GetType() == castInto || castInto == DbColumn::Type::Any)
+                return Append(column);
 
+            return Append("CAST (").Append(column).Append(" AS ").Append(DbColumn::TypeToSql(castInto)).Append(")");
+            }
+        NativeSqlBuilder& Append(Utf8CP tableAlias, DbColumn const& column, DbColumn::Type castInto)
+            {
+            if (column.GetType() == castInto || castInto == DbColumn::Type::Any)
+                return Append(tableAlias, column.GetName().c_str());
+
+            return Append("CAST (").Append(column).Append(" AS ").Append(DbColumn::TypeToSql(castInto)).Append(")");
+            }
+        NativeSqlBuilder& Append(DbTable const& table) { return Append(table.GetName().c_str()); }
         NativeSqlBuilder& Append(Utf8CP identifier, bool escape) { return escape ? AppendEscaped(identifier) : Append(identifier); };
         NativeSqlBuilder& AppendQuoted(Utf8CP stringLiteral) { return Append("'").Append(stringLiteral).Append("'"); }
         NativeSqlBuilder& Append(ECN::ECClassId id);
@@ -68,7 +81,7 @@ struct NativeSqlBuilder final
         void Clear() { m_nativeSql.clear(); m_stack.clear(); }
         bool IsEmpty() const { return m_nativeSql.empty(); }
         Utf8CP ToString() const { return m_nativeSql.c_str(); }
-
+        
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::vector<size_t> const& indexSkipList);
         static List FlattenJaggedList(ListOfLists const& listOfLists, std::map<size_t, std::vector<size_t>> const& indexSkipList);
     };

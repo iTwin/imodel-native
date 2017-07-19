@@ -9,6 +9,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
+#include <Bentley/PerformanceLogger.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -41,9 +42,9 @@ void BulkCrudTestFixture::AssertInsert(TestDataset& testData)
             inserter = it->second.get();
         else
             {
-            ECClassCP ecClass = GetECDb().Schemas().GetClass(classId);
+            ECClassCP ecClass = m_ecdb.Schemas().GetClass(classId);
             ASSERT_TRUE(ecClass != nullptr);
-            std::unique_ptr<JsonInserter> inserterPtr(new JsonInserter(GetECDb(), *ecClass, nullptr));
+            std::unique_ptr<JsonInserter> inserterPtr(new JsonInserter(m_ecdb, *ecClass, nullptr));
             inserter = inserterPtr.get();
             inserterCache[classId] = std::move(inserterPtr);
             }
@@ -439,63 +440,74 @@ BentleyStatus BulkCrudTestFixture::TestDataset::Setup(ECDbCR testECDb)
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-void BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder)
+BentleyStatus BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder)
     {
-    if (m_failed)
-        return;
-
-    m_failed = true;
-
-    ECDbCR ecdb = SetupECDb(fileName);
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    if (BE_SQLITE_OK != SetupECDb(fileName))
+        return ERROR;
 
     //BIS ECSchema needs this table to pre-exist
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)")) << ecdb.GetLastError().c_str();
-    m_failed = false;
-    ImportSchemasFromFolder(bisSchemaFolder);
+    if (BE_SQLITE_OK != m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"))
+        return ERROR;
+
+    PERFLOG_START("ECDb ATP", "BIS schema import");
+    const BentleyStatus stat = ImportSchemasFromFolder(bisSchemaFolder);
+    PERFLOG_FINISH("ECDb ATP", "BIS schema import");
+    return stat;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-void BulkBisDomainCrudTestFixture::SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder)
+BentleyStatus BulkBisDomainCrudTestFixture::SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder)
     {
-    CreateFakeBimFile(fileName, bisSchemaFolder);
-    ImportSchemasFromFolder(domainSchemaFolder);
+    if (SUCCESS != CreateFakeBimFile(fileName, bisSchemaFolder))
+        return ERROR;
+
+    PERFLOG_START("ECDb ATP", "BIS domain schema import");
+    const BentleyStatus stat = ImportSchemasFromFolder(domainSchemaFolder);
+    PERFLOG_FINISH("ECDb ATP", "BIS domain schema import");
+    return stat;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
 //static
-void BulkBisDomainCrudTestFixture::ImportSchemasFromFolder(BeFileName const& schemaFolder)
+BentleyStatus BulkBisDomainCrudTestFixture::ImportSchemasFromFolder(BeFileName const& schemaFolder)
     {
-    if (m_failed)
-        return;
-
-    m_failed = true;
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(false, true);
-    ctx->AddSchemaLocater(GetECDb().GetSchemaLocater());
+    ctx->AddSchemaLocater(m_ecdb.GetSchemaLocater());
     ctx->AddSchemaPath(schemaFolder);
+
+    BeFileName ecdbSchemaSearchPath;
+    BeTest::GetHost().GetDgnPlatformAssetsDirectory(ecdbSchemaSearchPath);
+    ecdbSchemaSearchPath.AppendToPath(L"ECSchemas").AppendToPath(L"ECDb");
+    ctx->AddSchemaPath(ecdbSchemaSearchPath);
 
     bvector<BeFileName> schemaPaths;
     BeDirectoryIterator::WalkDirsAndMatch(schemaPaths, schemaFolder, L"*.ecschema.xml", false);
 
-    ASSERT_FALSE(schemaPaths.empty());
+    if (schemaPaths.empty())
+        return ERROR;
 
-    for (BeFileName const& schemaXml : schemaPaths)
+    for (BeFileName const& schemaXmlFile : schemaPaths)
         {
         ECN::ECSchemaPtr ecSchema = nullptr;
-        const SchemaReadStatus stat = ECN::ECSchema::ReadFromXmlFile(ecSchema, schemaXml.GetName(), *ctx);
+        const SchemaReadStatus stat = ECN::ECSchema::ReadFromXmlFile(ecSchema, schemaXmlFile.GetName(), *ctx);
         //duplicate schema error is ok, as the ReadFromXmlFile reads schema references implicitly.
-        ASSERT_TRUE(SchemaReadStatus::Success == stat || SchemaReadStatus::DuplicateSchema == stat) << "Deserializing " << schemaXml.GetNameUtf8().c_str();
+        if (SchemaReadStatus::Success != stat && SchemaReadStatus::DuplicateSchema != stat)
+            return ERROR;
         }
 
-    ASSERT_EQ(SUCCESS, GetECDb().Schemas().ImportSchemas(ctx->GetCache().GetSchemas())) << schemaFolder.GetNameUtf8().c_str();
-    GetECDb().ClearECDbCache();
-    ASSERT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges()) << GetECDb().GetDbFileName();
-    m_failed = false;
+    if (SUCCESS != m_ecdb.Schemas().ImportSchemas(ctx->GetCache().GetSchemas()))
+        {
+        m_ecdb.AbandonChanges();
+        return ERROR;
+        }
+
+    m_ecdb.SaveChanges();
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------

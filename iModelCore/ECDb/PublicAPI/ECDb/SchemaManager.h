@@ -136,16 +136,18 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
 #endif
 
         //! Checks whether the ECDb file contains the ECSchema with the specified name or not.
-        //! @param[in] schemaName Name of the ECSchema to check for
+        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema
+        //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return true if the ECDb file contains the ECSchema. false otherwise.
-        ECDB_EXPORT bool ContainsSchema(Utf8CP schemaName) const;
+        ECDB_EXPORT bool ContainsSchema(Utf8StringCR schemaNameOrAlias, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
 
         //! Get an ECSchema by name
-        //! @param[in] schemaName Name (not full name) of the ECSchema to retrieve
+        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema
         //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
         //!                                   if they are loaded on-demand.
+        //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return The retrieved ECSchema or nullptr if not found
-        ECDB_EXPORT ECN::ECSchemaCP GetSchema(Utf8CP schemaName, bool loadSchemaEntities = true) const;
+        ECDB_EXPORT ECN::ECSchemaCP GetSchema(Utf8StringCR schemaNameOrAlias, bool loadSchemaEntities = true, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
 
         //! Gets all @ref ECN::ECSchema "ECSchemas" stored in the @ref ECDbFile "ECDb file"
         //! @param[in] loadSchemaEntities true, if all ECClasses, ECEnumerations, KindOfQuantities in the ECSchema should be pro-actively loaded into memory. false,
@@ -184,16 +186,25 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         ECDB_EXPORT ECN::ECDerivedClassesList const& GetDerivedClasses(ECN::ECClassCR baseECClass) const;
 
         //! Gets the ECEnumeration for the specified name.
-        //! @param[in] schemaName Name (not full name) of the schema containing the ECEnumeration
+        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the enumeration (@see @p mode)
         //! @param[in] enumName Name of the ECEnumeration to be retrieved
+        //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return The retrieved ECEnumeration or nullptr if not found
-        ECDB_EXPORT ECN::ECEnumerationCP GetEnumeration(Utf8CP schemaName, Utf8CP enumName) const;
+        ECDB_EXPORT ECN::ECEnumerationCP GetEnumeration(Utf8StringCR schemaNameOrAlias, Utf8StringCR enumName, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
 
         //! Gets the KindOfQuantity for the specified name.
-        //! @param[in] schemaName Name (not full name) of the schema containing the KindOfQuantity
+        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the KindOfQuantity (@see @p mode)
         //! @param[in] koqName Name of the KindOfQuantity to be retrieved
+        //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
         //! @return The retrieved KindOfQuantity or nullptr if not found
-        ECDB_EXPORT ECN::KindOfQuantityCP GetKindOfQuantity(Utf8CP schemaName, Utf8CP koqName) const;
+        ECDB_EXPORT ECN::KindOfQuantityCP GetKindOfQuantity(Utf8StringCR schemaNameOrAlias, Utf8StringCR koqName, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
+
+        //! Gets the PropertyCategory for the specified name.
+        //! @param[in] schemaNameOrAlias Name (not full name) or alias of the schema containing the category (@see @p mode)
+        //! @param[in] propertyCategoryName Name of the PropertyCategory to be retrieved
+        //! @param[in] mode indicates whether @p schemaNameOrAlias is a schema name or a schema alias
+        //! @return The retrieved PropertyCategory or nullptr if not found
+        ECDB_EXPORT ECN::PropertyCategoryCP GetPropertyCategory(Utf8StringCR schemaNameOrAlias, Utf8StringCR propertyCategoryName, SchemaLookupMode mode = SchemaLookupMode::ByName) const;
 
         //! Creates or updates views in the ECDb file to visualize the EC content as ECClasses and ECProperties rather than tables and columns.
         //! This can help debugging the EC data, especially when ECClasses and ECProperties share tables and columns or are spread across multiple tables.
@@ -219,12 +230,6 @@ struct SchemaManager final : ECN::IECSchemaLocater, ECN::IECClassLocater, NonCop
         //! <b>this method does not have to be called</b>. ECDb maintains the cache tables autonomously.
         //! @return SUCCESS or ERROR
         ECDB_EXPORT BentleyStatus RepopulateCacheTables() const;
-
-        //! Only use this until we solved handling legacy v8 class inheritance issues when BISifying v8 ECSchemas.
-        //! Gets the SQLite SELECT SQL statement to detect those issues. The SELECT clause of the SQL has these columns:
-        //! ECSchema Name, ECSchema Alias, ECClass Name, Table Name, Issue Type (INT), Issue Type Description, Issue (JSON)
-        //! @return SQLite Validate SELECT SQL
-        ECDB_EXPORT static Utf8CP GetValidateDbMappingSql();
 
         void ClearCache() const;
         SchemaReader const& GetReader() const;

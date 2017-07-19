@@ -10,6 +10,7 @@
 #include <GeomSerialization/GeomLibsSerialization.h>
 #include <GeomSerialization/GeomLibsJsonSerialization.h>
 #include <Bentley/Base64Utilities.h>
+#include <ECObjects/ECJsonUtilities.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -877,6 +878,18 @@ bool JsonECSqlSelectAdapter::JsonFromPrimitiveArray(JsonValueR jsonValue, IECSql
     return status;
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle               06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool JsonECSqlSelectAdapter::JsonFromNavigation(JsonValueR jsonValue, IECSqlValue const& ecsqlValue) const
+    {
+    jsonValue = Json::Value(Json::objectValue);
+    if (!JsonFromPropertyValue(jsonValue[JSON_NAVIGATION_ID_KEY], ecsqlValue[ECDBSYS_PROP_NavPropId]))
+        return false;
+
+    return JsonFromPropertyValue(jsonValue[JSON_NAVIGATION_RELECCLASSID_KEY], ecsqlValue[ECDBSYS_PROP_NavPropRelECClassId]);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ramanujam.Raman                 09/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -968,8 +981,10 @@ bool JsonECSqlSelectAdapter::JsonFromPropertyValue(JsonValueR jsonValue, IECSqlV
     BeAssert(ecProperty != nullptr && "According to the ECSqlStatement API, this can happen only for array readers, where this method should never have been called");
     if (ecProperty->GetIsPrimitive())
         return JsonFromPrimitive(jsonValue, ecsqlValue, *ecProperty, false);
-    else if (ecProperty->GetIsStruct() || ecProperty->GetIsNavigation())
+    else if (ecProperty->GetIsStruct())
         return JsonFromStruct(jsonValue, ecsqlValue);
+    else if (ecProperty->GetIsNavigation())
+        return JsonFromNavigation(jsonValue, ecsqlValue);
     else if (ecProperty->GetIsArray())
         return JsonFromArray(jsonValue, ecsqlValue, *ecProperty);
 

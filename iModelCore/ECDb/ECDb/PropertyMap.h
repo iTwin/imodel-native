@@ -85,7 +85,7 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         typedef bvector<PropertyMap const*>::const_iterator const_iterator;
         private:
             bvector<PropertyMap const*> m_vect;
-            Path(bvector<PropertyMap const*>& vect):m_vect(std::move(vect)){}
+            explicit Path(bvector<PropertyMap const*>& vect):m_vect(std::move(vect)){}
         public:
             Path(Path const&& path) : m_vect(std::move(path.m_vect)) {}
             Path(Path const& path) :m_vect(path.m_vect) {}
@@ -102,25 +102,28 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
     public:
         enum class Type
             {
-            Primitive = 1,
-            PrimitiveArray = 2,
-            Point3d = 4,
-            Point2d = 8,
-            Struct = 16,
-            StructArray = 32,
-            Navigation = 64,
-            NavigationRelECClassId = 128,
-            NavigationId = 256,
-            ECInstanceId = 512,
-            ECClassId = 1024,
-            ConstraintECInstanceId = 2048,
-            ConstraintECClassId = 4096,
-            SystemPerTableId = 8192,
-            SystemPerTableClassId = 16384,
+            ConstraintECClassId = 1,
+            ConstraintECInstanceId = 2,
+            ECClassId = 4,
+            ECInstanceId = 8,
+
+            Navigation = 16,
+            NavigationId = 32,
+            NavigationRelECClassId = 64,
+
+            Point2d = 128,
+            Point3d = 256,
+            Primitive = 512,
+            PrimitiveArray = 1024,
+            Struct = 2048,
+            StructArray = 4096,
+            SystemPerTableClassId = 8192,
+            SystemPerTableId = 16384,
 
             System = ECInstanceId | ECClassId | ConstraintECClassId | ConstraintECInstanceId,
             SingleColumnData = Primitive | PrimitiveArray | StructArray | NavigationRelECClassId | NavigationId | SystemPerTableId | SystemPerTableClassId,
-            Data = SingleColumnData | Point3d | Point2d | Struct | Navigation,
+            CompoundData = Navigation | Point2d | Point3d | Struct,
+            Data = SingleColumnData | CompoundData,
             All = System | Data
             };
     private:
@@ -170,8 +173,6 @@ struct PropertyMap : RefCountedBase, ISupportsPropertyMapVisitor, NonCopyableCla
         //! Test if current property map part of class map tables.
         bool IsMappedToClassMapTables() const; //WIP Move to ECSQL
         Path GetPath() const { return Path::From(*this); }
-        //! It traverse base property hierarchy 
-        static ECN::ECPropertyCR GetOverriddenRootProperty(ECN::ECPropertyCR ecProperty);
     };
 
 ENUM_IS_FLAGS(PropertyMap::Type);
@@ -215,7 +216,8 @@ struct CompoundDataPropertyMap : DataPropertyMap
         DbTable const& _GetTable() const override;
 
     protected:
-        bvector<DataPropertyMap const*> m_list;
+        bvector<DataPropertyMap const*> m_memberPropertyMaps;
+
         CompoundDataPropertyMap(Type kind, ClassMap const& classMap, ECN::ECPropertyCR ecProperty)
             : DataPropertyMap(kind, classMap, ecProperty) {}
         CompoundDataPropertyMap(Type kind, CompoundDataPropertyMap const& parentPropertyMap, ECN::ECPropertyCR ecProperty)
@@ -229,10 +231,10 @@ struct CompoundDataPropertyMap : DataPropertyMap
         virtual ~CompoundDataPropertyMap() {}
 
         DataPropertyMap const* Find(Utf8CP accessString) const;
-        const_iterator begin() const { return m_list.begin(); }
-        const_iterator end() const { return m_list.end(); }
-        size_t Size() const { return m_list.size(); }
-        bool IsEmpty() const { return m_list.empty(); }
+        const_iterator begin() const { return m_memberPropertyMaps.begin(); }
+        const_iterator end() const { return m_memberPropertyMaps.end(); }
+        size_t Size() const { return m_memberPropertyMaps.size(); }
+        bool IsEmpty() const { return m_memberPropertyMaps.empty(); }
     };
 
 //=======================================================================================
@@ -472,9 +474,14 @@ struct NavigationPropertyMap final : CompoundDataPropertyMap
         bool IsComplete() const { return m_isComplete; }
         IdPropertyMap const& GetIdPropertyMap() const;
         RelECClassIdPropertyMap const& GetRelECClassIdPropertyMap() const;
-
+        bool HasForeignKeyConstraint() const { return GetProperty().IsDefinedLocal("ECDbMap", "ForeignKeyConstraint"); }
         BentleyStatus SetMembers(DbColumn const& idColumn, DbColumn const& relECClassIdColumn, ECN::ECClassId defaultRelClassId);
 
+        bool CardinalityImpliesNotNull() const { return GetRelationshipConstraint(NavigationPropertyMap::NavigationEnd::To).GetMultiplicity().GetLowerLimit() > 0; }
+        bool CardinalityImpliesUnique() const { return GetRelationshipConstraint(NavigationPropertyMap::NavigationEnd::From).GetMultiplicity().GetUpperLimit() <= 1; }
+
+        ECN::ECRelationshipConstraintCR GetRelationshipConstraint(NavigationPropertyMap::NavigationEnd navEnd) const;
+        static ECN::ECRelationshipEnd GetRelationshipEnd(ECN::NavigationECPropertyCR, NavigationPropertyMap::NavigationEnd);
     };
 
 //=======================================================================================

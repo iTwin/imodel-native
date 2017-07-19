@@ -183,7 +183,7 @@ void ECDb::ClearECDbCache() const { m_pimpl->ClearECDbCache(); }
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Raman.Ramanujam                09/2012
 //---------------+---------------+---------------+---------------+---------------+------
-ECDb::Impl& ECDb::GetECDbImplR() const { BeAssert(m_pimpl != nullptr); return *m_pimpl; }
+ECDb::Impl& ECDb::GetImpl() const { BeAssert(m_pimpl != nullptr); return *m_pimpl; }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                09/2012

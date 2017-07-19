@@ -20,6 +20,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 ECSqlStatus ECSqlUpdatePreparer::Prepare(ECSqlPrepareContext& ctx, UpdateStatementExp const& exp)
     {
     BeAssert(exp.IsComplete());
+    ClassMap const& classMap = exp.GetClassNameExp()->GetInfo().GetMap();
+    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+        {
+        BeAssert(false && "Should have been caught before");
+        return ECSqlStatus::InvalidECSql;
+        }
 
     ctx.PushScope(exp, exp.GetOptionsClauseExp());
     NativeSqlBuilder& nativeSqlBuilder = ctx.GetSqlBuilderR();
@@ -107,7 +113,6 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
     BeAssert(snippets.m_propertyNamesNativeSqlSnippets.empty());
     BeAssert(snippets.m_valuesNativeSqlSnippets.empty());
 
-    size_t index = 0;
     for (Exp const* childExp : assignmentListExp->GetChildren())
         {
         BeAssert(childExp != nullptr);
@@ -148,8 +153,6 @@ ECSqlStatus ECSqlUpdatePreparer::PrepareAssignmentListExp(NativeSqlSnippets& sni
             snippets.m_propertyNamesNativeSqlSnippets.push_back(propertyNamesNativeSqlSnippets);
             snippets.m_valuesNativeSqlSnippets.push_back(rhsNativeSqlSnippets);
             }
-
-        index++;
         }
 
     ctx.PopScope();

@@ -62,6 +62,7 @@ public:
         CustomAttributeId,
         EnumId,
         KoqId,
+        PropertyCategoryId,
         PropertyMapId,
         TableId,
         ColumnId,
@@ -72,14 +73,11 @@ public:
 private:
     BeBriefcaseBasedIdSequenceManager m_sequenceManager;
 
+    //cache the vector of sequence name to avoid creation of the vector for every ECDb instance
+    static bvector<Utf8CP> const* s_sequenceNames; //no need to release a static non-POD variable (Bentley C++ coding standards)
+
 public:
-    explicit IdSequences(ECDbR ecdb) : 
-        m_sequenceManager(ecdb, {"ec_instanceidsequence", "ec_schemaidsequence","ec_schemarefidsequence", "ec_classidsequence","ec_classhasbaseclassesidsequence",
-                                 "ec_propertyidsequence","ec_propertypathidsequence", 
-                                "ec_relconstraintidsequence", "ec_relconstraintclassidsequence",
-                                "ec_customattributeidsequence", "ec_enumidsequence","ec_koqidsequence", "ec_propertymapidsequence",
-                                 "ec_tableidsequence","ec_columnidsequence", "ec_indexidsequence", "ec_indexcolumnidsequence"})
-        {}
+    explicit IdSequences(ECDbR ecdb) : m_sequenceManager(ecdb, *s_sequenceNames) {}
 
     BeBriefcaseBasedIdSequence const& GetSequence(Key key) const { return m_sequenceManager.GetSequence(Enum::Convert<Key, uint32_t>(key)); }
     BeBriefcaseBasedIdSequenceManager const& GetManager() const { return m_sequenceManager; }
@@ -199,7 +197,7 @@ public:
     //! an error from any of its methods.
     ClearCacheCounter const& GetClearCacheCounter() const { return m_clearCacheCounter; }
 
-    IssueReporter const& GetIssueReporter() const { return m_issueReporter; }
+    IssueReporter const& Issues() const { return m_issueReporter; }
 
     BeMutex& GetMutex() const { return m_mutex; }
     };

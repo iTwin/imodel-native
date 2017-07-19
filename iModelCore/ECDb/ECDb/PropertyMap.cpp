@@ -15,18 +15,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
-ECN::ECPropertyCR PropertyMap::GetOverriddenRootProperty(ECN::ECPropertyCR ecProperty)
-    {
-    ECPropertyCP cursor = &ecProperty;
-    while (cursor->GetBaseProperty())
-        cursor = cursor->GetBaseProperty();
-
-    return *cursor;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
 ECPropertyId PropertyMap::GetRootPropertyId() const
     {
     PropertyMap const* root = this;
@@ -160,8 +148,8 @@ PropertyMap const* PropertyMapContainer::Find(Utf8CP accessString) const
 //---------------------------------------------------------------------------------------
 DbTable const& CompoundDataPropertyMap::_GetTable() const
     {
-    BeAssert(!m_list.empty());
-    return m_list[0]->GetTable();
+    BeAssert(!m_memberPropertyMaps.empty());
+    return m_memberPropertyMaps[0]->GetTable();
     }
 
 //---------------------------------------------------------------------------------------
@@ -193,7 +181,7 @@ BentleyStatus CompoundDataPropertyMap::InsertMember(RefCountedPtr<DataPropertyMa
     if (const_cast<ClassMap&>(GetClassMap()).GetPropertyMapsR().Insert(propertyMap) != SUCCESS)
         return ERROR;
 
-    m_list.push_back(propertyMap.get());
+    m_memberPropertyMaps.push_back(propertyMap.get());
     return SUCCESS;
     }
 
@@ -541,6 +529,31 @@ BentleyStatus NavigationPropertyMap::SetMembers(DbColumn const& idColumn, DbColu
     return SUCCESS;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+ECRelationshipConstraintCR NavigationPropertyMap::GetRelationshipConstraint(NavigationPropertyMap::NavigationEnd navEnd) const
+    {
+    BeAssert(GetProperty().GetIsNavigation());
+    NavigationECPropertyCR navProp = *GetProperty().GetAsNavigationProperty();
+    ECRelationshipEnd constraintEnd = GetRelationshipEnd(navProp, navEnd);
+    return constraintEnd == ECRelationshipEnd::ECRelationshipEnd_Source ? navProp.GetRelationshipClass()->GetSource() : navProp.GetRelationshipClass()->GetTarget();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                      01/2016
+//---------------------------------------------------------------------------------------
+//static
+ECN::ECRelationshipEnd NavigationPropertyMap::GetRelationshipEnd(ECN::NavigationECPropertyCR prop, NavigationPropertyMap::NavigationEnd end)
+    {
+    const ECRelatedInstanceDirection navPropDir = prop.GetDirection();
+    if (navPropDir == ECRelatedInstanceDirection::Forward && end == NavigationPropertyMap::NavigationEnd::From ||
+        navPropDir == ECRelatedInstanceDirection::Backward && end == NavigationPropertyMap::NavigationEnd::To)
+        return ECRelationshipEnd_Source;
+
+    return ECRelationshipEnd_Target;
+    }
 
 //************************************NavigationPropertyMap::RelECClassIdPropertyMap********************
 //---------------------------------------------------------------------------------------

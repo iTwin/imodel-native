@@ -160,9 +160,8 @@ struct ECRelationshipJoinExp final : JoinExp
             private:
                 ClassNameExp const*    m_classRef;
                 ClassLocation           m_location;
-                bool                   m_anyClass;
             protected:
-                ResolvedEndPoint() :m_classRef(nullptr), m_location(ClassLocation::NotResolved), m_anyClass(false) {}
+                ResolvedEndPoint() :m_classRef(nullptr), m_location(ClassLocation::NotResolved){}
                 void SetClassRef(ClassNameExp const* classRef)
                     {
                     m_classRef = classRef;
@@ -174,14 +173,9 @@ struct ECRelationshipJoinExp final : JoinExp
                     else
                         m_location = location;
                     }
-                void SetAnyClass(bool isAnyClass)
-                    {
-                    m_anyClass = isAnyClass;
-                    }
             public:
                 ClassNameExp const* GetClassNameRef() const { return m_classRef; }
                 ClassLocation       GetLocation() const { return m_location; }
-                bool                IsAnyClass() const { return m_anyClass; }
             };
     private:
         JoinDirection           m_direction;

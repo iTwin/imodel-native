@@ -18,7 +18,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "repopulate table " TABLE_ClassHierarchyCache);
+    PERFLOG_START("ECDb", "Repopulate table " TABLE_ClassHierarchyCache);
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHierarchyCache))
         return ERROR;
 
@@ -37,7 +37,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
         return ERROR;
         }
 
-    PERFLOG_FINISH("ECDb", "repopulate table " TABLE_ClassHierarchyCache);
+    PERFLOG_FINISH("ECDb", "Repopulate table " TABLE_ClassHierarchyCache);
     return SUCCESS;
     }
 
@@ -47,7 +47,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHierarchyCacheTable(ECD
 //static
 BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "repopulate table " TABLE_ClassHasTablesCache);
+    PERFLOG_START("ECDb", "Repopulate table " TABLE_ClassHasTablesCache);
     if (BE_SQLITE_OK != ecdb.ExecuteSql("DELETE FROM " TABLE_ClassHasTablesCache))
         return ERROR;
 
@@ -62,7 +62,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
                                         "    GROUP BY ec_ClassMap.ClassId, ec_Table.Id"))
         return ERROR;
 
-    PERFLOG_FINISH("ECDb", "repopulate table " TABLE_ClassHasTablesCache);
+    PERFLOG_FINISH("ECDb", "Repopulate table " TABLE_ClassHasTablesCache);
     return SUCCESS;
     }
 
@@ -72,7 +72,7 @@ BentleyStatus DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(ECDb
 //static
 DbSchemaPersistenceManager::CreateOrUpdateTableResult DbSchemaPersistenceManager::CreateOrUpdateTable(ECDbCR ecdb, DbTable const& table)
     {
-    if (table.GetPersistenceType() == PersistenceType::Virtual || table.GetType() == DbTable::Type::Existing)
+    if (table.GetType() == DbTable::Type::Virtual || table.GetType() == DbTable::Type::Existing)
         return CreateOrUpdateTableResult::Skipped;
 
     Utf8CP tableName = table.GetName().c_str();
@@ -110,7 +110,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
         return ERROR;
         }
 
-    if (table.GetType() == DbTable::Type::Existing || table.GetPersistenceType() == PersistenceType::Virtual)
+    if (table.GetType() == DbTable::Type::Existing || table.GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "CreateTable must not be called on virtual table or table not owned by ECDb");
         return ERROR;
@@ -168,7 +168,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 
     if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to create table %s: %s", table.GetName().c_str(), ecdb.GetLastError().c_str());
+        ecdb.GetImpl().Issues().Report("Failed to create table %s: %s", table.GetName().c_str(), ecdb.GetLastError().c_str());
         return ERROR;
         }
 
@@ -181,7 +181,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTable(ECDbCR ecdb, DbTable const
 //static
 BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const& table)
     {
-    if (table.GetType() == DbTable::Type::Existing || table.GetPersistenceType() == PersistenceType::Virtual)
+    if (table.GetType() == DbTable::Type::Existing || table.GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "UpdateTable must not be called on virtual table or table not owned by ECDb");
         return ERROR;
@@ -203,7 +203,7 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
         auto r = ecdb.ExecuteSql(sql.c_str());
         if (r != BE_SQLITE_OK)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to drop view '%s'", tableName);
+            ecdb.GetImpl().Issues().Report("Failed to drop view '%s'", tableName);
             return ERROR;
             }
 
@@ -227,7 +227,7 @@ BentleyStatus DbSchemaPersistenceManager::UpdateTable(ECDbCR ecdb, DbTable const
         }
 
     //Create a fast hash set of in-memory column list;
-    const std::vector<DbColumn const*> columns = table.FindAll( PersistenceType::Physical);
+    const std::vector<DbColumn const*> columns = table.FindAll(PersistenceType::Physical);
 
     std::vector<DbColumn const*> newColumns;
     //compute new columns;
@@ -260,6 +260,12 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
         BeAssert(&table == &columnToAdd->GetTable());
         //Limitation of ADD COLUMN http://www.sqlite.org/lang_altertable.html
         
+        if (columnToAdd->IsOnlyColumnOfPrimaryKeyConstraint())
+            {
+            ecdb.GetImpl().Issues().Report("Failed to add column (%s) as primary column for an existing table.", columnToAdd->GetName().c_str());
+            return ERROR;
+            }
+
         Utf8String ddl(alterDdlTemplate);
         if (SUCCESS != AppendColumnDdl(ddl, *columnToAdd))
             return ERROR;
@@ -267,9 +273,13 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
         //append FK constraints, if defined for this column
         for (DbConstraint const* constraint : table.GetConstraints())
             {
-            if (constraint->GetType() != DbConstraint::Type::ForeignKey)
-                continue;
+            if (constraint->GetType() == DbConstraint::Type::PrimaryKey)
+                {
+                ecdb.GetImpl().Issues().Report("Failed to add column (%s) as primary column for an existing table.", ddl.c_str());
+                return ERROR;
+                }
 
+            BeAssert(constraint->GetType() == DbConstraint::Type::ForeignKey);
             ForeignKeyDbConstraint const* fkConstraint = static_cast<ForeignKeyDbConstraint const*> (constraint);
             if (!fkConstraint->IsValid())
                 return ERROR;
@@ -283,7 +293,7 @@ BentleyStatus DbSchemaPersistenceManager::AlterTable(ECDbCR ecdb, DbTable const&
 
         if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to add new column (%s). Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
+            ecdb.GetImpl().Issues().Report("Failed to add new column (%s). Error message: %s", ddl.c_str(), ecdb.GetLastError().c_str());
             return ERROR;
             }
         }
@@ -328,6 +338,34 @@ bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& tabl
     return persistedColumns.size() != namesOfExistingColumns.size();
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle 07/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus DbSchemaPersistenceManager::CreateOrReplaceIndex(ECDbCR ecdb, DbIndex const& index, Utf8StringCR ddl)
+    {
+    if (index.GetTable().GetType() == DbTable::Type::Virtual)
+        {
+        BeAssert(false && "Must not call this method for indexes on virtual tables");
+        return ERROR;
+        }
+
+    //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
+    Utf8String dropIndexSql;
+    dropIndexSql.Sprintf("DROP INDEX [%s]", index.GetName().c_str());
+    ecdb.TryExecuteSql(dropIndexSql.c_str());
+
+    if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
+        {
+        ecdb.GetImpl().Issues().Report("Failed to create index %s on table %s. Error: %s", index.GetName().c_str(), index.GetTable().GetName().c_str(),
+                                       ecdb.GetLastError().c_str());
+
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle 10/2015
@@ -376,8 +414,8 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
     {
     auto buildECClassIdFilter = [] (Utf8StringR filterSqlExpression, StorageDescription const& desc, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
         {
-        if (table.GetPersistenceType() != PersistenceType::Physical)
-            return SUCCESS; //table is virtual -> noop
+        if (table.GetType() == DbTable::Type::Virtual)
+            return SUCCESS; //-> noop
 
         Partition const* partition = desc.GetPartition(table);
         if (partition == nullptr)
@@ -390,7 +428,6 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         classIdColSql.append(classIdColumn.GetName());
         Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
         desc.GetClassId().ToString(classIdStr);
-
         if (!polymorphic)
             {
             //if partition's table is only used by a single class, no filter needed     
@@ -447,9 +484,9 @@ BentleyStatus DbSchemaPersistenceManager::GenerateIndexWhereClause(Utf8StringR w
         }
 
     StorageDescription const& storageDescription = classMap->GetStorageDescription();
-    if (index.AppliesToSubclassesIfPartial() && storageDescription.HierarchyMapsToMultipleTables() && classMap->GetClass().GetRelationshipClassCP() == nullptr)
+    if (index.AppliesToSubclassesIfPartial() && storageDescription.HasMultipleNonVirtualHorizontalPartitions() && classMap->GetClass().GetRelationshipClassCP() == nullptr)
         {
-        ecdb.GetECDbImplR().GetIssueReporter().Report("Index %s cannot be created for ECClass '%s' because the ECClass has subclasses in other tables and the index is defined to apply to subclasses.",
+        ecdb.GetImpl().Issues().Report("Index %s cannot be created for ECClass '%s' because the ECClass has subclasses in other tables and the index is defined to apply to subclasses.",
                                                         index.GetName().c_str(), ecclass->GetFullName());
         return ERROR;
         }
@@ -493,7 +530,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
             {
             if (failIfExists)
                 {
-                ecdb.GetECDbImplR().GetIssueReporter().Report("Trigger %s already exists on table %s.", trigger->GetName(), trigger->GetTable().GetName().c_str());
+                ecdb.GetImpl().Issues().Report("Trigger %s already exists on table %s.", trigger->GetName(), trigger->GetTable().GetName().c_str());
                 return ERROR;
                 }
 
@@ -520,7 +557,7 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 
         if (ecdb.ExecuteSql(ddl.c_str()) != BE_SQLITE_OK)
             {
-            ecdb.GetECDbImplR().GetIssueReporter().Report("Failed to create trigger %s on table %s. Error: %s", trigger->GetName(), trigger->GetTable().GetName().c_str(),
+            ecdb.GetImpl().Issues().Report("Failed to create trigger %s on table %s. Error: %s", trigger->GetName(), trigger->GetTable().GetName().c_str(),
                                                           ecdb.GetLastError().c_str());
             return ERROR;
             }
@@ -719,5 +756,59 @@ BentleyStatus DbSchemaPersistenceManager::RunPragmaTableInfo(bvector<SqliteColum
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+//static
+bmap<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetTableDefNamesAndIds(ECDbCR ecdb, Utf8CP whereClause)
+    {
+    bmap<Utf8String, DbTableId, CompareIUtf8Ascii> map;
+
+    CachedStatementPtr stmt = nullptr;
+    if (whereClause == nullptr)
+        stmt = ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Table");
+    else
+        {
+        Utf8String sql("SELECT Name, Id FROM ec_Table");
+        sql.append(" WHERE ").append(whereClause);
+        stmt = ecdb.GetCachedStatement(sql.c_str());
+        }
+
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return map;
+        }
+
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        map[stmt->GetValueText(0)] = stmt->GetValueId<DbTableId>(1);
+        }
+
+    return map;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Affan.Khan        09/2014
+//---------------------------------------------------------------------------------------
+//static
+bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetColumnNamesAndIds(ECDbCR ecdb, DbTableId tableId)
+    {
+    bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> map;
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Column WHERE TableId=?");
+    if (stmt == nullptr)
+        {
+        BeAssert(false);
+        return map;
+        }
+
+    stmt->BindId(1, tableId);
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        map[stmt->GetValueText(0)] = stmt->GetValueId<DbColumnId>(1);
+        }
+
+    return map;
+    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

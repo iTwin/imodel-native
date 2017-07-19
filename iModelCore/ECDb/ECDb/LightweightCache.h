@@ -64,7 +64,6 @@ struct LightweightCache final: NonCopyableClass
         bset<DbTable const*> const& GetVerticalPartitionsForClass(ECN::ECClassId) const;
         ClassIdsPerTableMap const& GetHorizontalPartitionsForClass(ECN::ECClassId) const;
         //Gets all the constraint class ids plus the constraint end that make up the relationship with the given class id.
-        //@remarks: AnyClass constraints are ignored.
         bmap<ECN::ECClassId, RelationshipEnd> const& GetConstraintClassesForRelationshipClass(ECN::ECClassId relClassId) const;
         bmap<ECN::ECClassId, RelationshipEnd> const& GetRelationshipClassesForConstraintClass(ECN::ECClassId constraintId) const;
         bset<ECN::ECClassId> const& GetDirectRelationshipClasssForConstraintClass(ECN::ECClassId constraintId) const;
@@ -138,8 +137,8 @@ struct StorageDescription final : NonCopyableClass
         Partition const* GetPartition(DbTable const&) const;
 
         std::vector<Partition> const& GetHorizontalPartitions() const { return m_horizontalPartitions; }
-        bool HasNonVirtualPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
-        bool HierarchyMapsToMultipleTables() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
+        bool HasNonVirtualHorizontalPartitions() const { return !m_nonVirtualHorizontalPartitionIndices.empty(); }
+        bool HasMultipleNonVirtualHorizontalPartitions() const { return m_nonVirtualHorizontalPartitionIndices.size() > 1; }
         ECN::ECClassId GetClassId() const { return m_classId; }
     };
 

@@ -67,7 +67,6 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, SelectStateme
     return st;
     }
 
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    01/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -77,78 +76,100 @@ ECSqlStatus ECSqlSelectPreparer::Prepare(ECSqlPrepareContext& ctx, NativeSqlBuil
     BeAssert(exp.IsComplete());
 
     ctx.PushScope(exp, exp.GetOptions());
-
     NativeSqlBuilder& sqlGenerator = ctx.GetSqlBuilderR();
-    sqlGenerator.Append("SELECT ");
-    
-    if (exp.GetSelectionType() != SqlSetQuantifier::NotSpecified)
-        sqlGenerator.Append(ExpHelper::ToSql(exp.GetSelectionType())).AppendSpace();
-
-    // Append selection.
-    ECSqlStatus status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *exp.GetSelection(), referenceSelectClauseSqlSnippetCounts);
-    if (!status.IsSuccess())
-        return status;
-
-    bool isFirstItem = true;
-    for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+    ECSqlStatus status;
+    if (exp.IsRowConstructor())
         {
-        if (!isFirstItem)
-            sqlGenerator.AppendComma();
-
-        sqlGenerator.Append(list);
-        isFirstItem = false;
-        }
-
-    ExtractPropertyRefs(ctx, &exp);
-
-    sqlGenerator.AppendSpace();
-    // Append FROM
-    status = ECSqlExpPreparer::PrepareFromExp(ctx, *exp.GetFrom());
-    if (!status.IsSuccess())
-        return status;
-
-    // Append WHERE
-    if (WhereExp const* e = exp.GetWhere())
-        {
-        sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareWhereExp(sqlGenerator, ctx, *e);
+        sqlGenerator.Append("VALUES(");
+        status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *exp.GetSelection(), referenceSelectClauseSqlSnippetCounts);
         if (!status.IsSuccess())
             return status;
-        }
-    // Append GROUP BY
-    if (GroupByExp const* e = exp.GetGroupBy())
-        {
-        sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareGroupByExp(ctx, *e);
-        if (!status.IsSuccess())
-            return status;
-        }
 
-    // Append HAVING
-    if (HavingExp const* e = exp.GetHaving())
-        {
-        sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareHavingExp(ctx, *e);
-        if (!status.IsSuccess())
-            return status;
-        }
+        bool isFirstItem = true;
+        for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+            {
+            if (!isFirstItem)
+                sqlGenerator.AppendComma();
 
-    // Append ORDER BY
-    if (OrderByExp const* e = exp.GetOrderBy())
-        {
-        sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareOrderByExp(ctx, *e);
-        if (!status.IsSuccess())
-            return status;
-        }
+            sqlGenerator.Append(list);
+            isFirstItem = false;
+            }
 
-    // Append LIMIT
-    if (LimitOffsetExp const* e = exp.GetLimitOffset())
+        sqlGenerator.Append(")");
+        }
+    else
         {
-        sqlGenerator.AppendSpace();
-        status = ECSqlExpPreparer::PrepareLimitOffsetExp(ctx, *e);
+        sqlGenerator.Append("SELECT ");
+
+        if (exp.GetSelectionType() != SqlSetQuantifier::NotSpecified)
+            sqlGenerator.Append(ExpHelper::ToSql(exp.GetSelectionType())).AppendSpace();
+
+        // Append selection.
+        status = PrepareSelectClauseExp(selectClauseSqlSnippetList, ctx, *exp.GetSelection(), referenceSelectClauseSqlSnippetCounts);
         if (!status.IsSuccess())
             return status;
+
+        bool isFirstItem = true;
+        for (NativeSqlBuilder::List const& list : selectClauseSqlSnippetList)
+            {
+            if (!isFirstItem)
+                sqlGenerator.AppendComma();
+
+            sqlGenerator.Append(list);
+            isFirstItem = false;
+            }
+
+        ExtractPropertyRefs(ctx, &exp);
+
+        sqlGenerator.AppendSpace();
+        // Append FROM
+        status = ECSqlExpPreparer::PrepareFromExp(ctx, *exp.GetFrom());
+        if (!status.IsSuccess())
+            return status;
+
+        // Append WHERE
+        if (WhereExp const* e = exp.GetWhere())
+            {
+            sqlGenerator.AppendSpace();
+            status = ECSqlExpPreparer::PrepareWhereExp(sqlGenerator, ctx, *e);
+            if (!status.IsSuccess())
+                return status;
+            }
+        // Append GROUP BY
+        if (GroupByExp const* e = exp.GetGroupBy())
+            {
+            sqlGenerator.AppendSpace();
+            status = ECSqlExpPreparer::PrepareGroupByExp(ctx, *e);
+            if (!status.IsSuccess())
+                return status;
+            }
+
+        // Append HAVING
+        if (HavingExp const* e = exp.GetHaving())
+            {
+            sqlGenerator.AppendSpace();
+            status = ECSqlExpPreparer::PrepareHavingExp(ctx, *e);
+            if (!status.IsSuccess())
+                return status;
+            }
+
+        // Append ORDER BY
+        if (OrderByExp const* e = exp.GetOrderBy())
+            {
+            sqlGenerator.AppendSpace();
+            status = ECSqlExpPreparer::PrepareOrderByExp(ctx, *e);
+            if (!status.IsSuccess())
+                return status;
+            }
+
+        // Append LIMIT
+        if (LimitOffsetExp const* e = exp.GetLimitOffset())
+            {
+            sqlGenerator.AppendSpace();
+            status = ECSqlExpPreparer::PrepareLimitOffsetExp(ctx, *e);
+            if (!status.IsSuccess())
+                return status;
+            }
         }
 
     ctx.PopScope();
@@ -213,7 +234,11 @@ ECSqlStatus ECSqlSelectPreparer::PrepareDerivedPropertyExp(NativeSqlBuilder::Lis
             return status;
         }
 
-    if (!ctx.GetCurrentScope().IsRootScope())
+    bool isRowConstructor = false;
+    if (SingleSelectStatementExp const* stmt = static_cast<SingleSelectStatementExp const*>(exp.FindParent(Exp::Type::SingleSelect)))
+        isRowConstructor = stmt->IsRowConstructor();
+
+    if (!ctx.GetCurrentScope().IsRootScope() && !isRowConstructor)
         {
         Utf8String alias = exp.GetColumnAlias();
         if (alias.empty())
@@ -257,7 +282,7 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
     const size_t count = lhs.GetChildrenCount();
     if (count != rhs.GetChildrenCount())
         {
-        ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
+        ctx.GetECDb().GetImpl().Issues().Report("Number of properties in all the select clauses of UNION/EXCEPT/INTERSECT must be same in number and type.");
         return ERROR;
         }
 
@@ -269,13 +294,13 @@ BentleyStatus ECSqlSelectPreparer::ValidateSelectClauseItems(ECSqlPrepareContext
         ECSqlTypeInfo const& rhsTypeInfo = rhsDerivedPropExp->GetExpression()->GetTypeInfo();
         if (!lhsTypeInfo.CanCompare(rhsTypeInfo))
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            ctx.GetECDb().GetImpl().Issues().Report("Type of expression %s in LHS of UNION/EXCEPT/INTERSECT is not same as respective expression %s in RHS.", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
             return ERROR;
             }
 
         if (lhsTypeInfo.GetKind() == ECSqlTypeInfo::Kind::Null && (rhsTypeInfo.IsPoint() || !rhsTypeInfo.IsPrimitive()))
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
+            ctx.GetECDb().GetImpl().Issues().Report("NULL in LHS of UNION/EXCEPT/INTERSECT is ambiguous if its RHS counterpart is not of a primitive type (excluding Point2d and Point3d).", lhsDerivedPropExp->ToECSql().c_str(), rhsDerivedPropExp->ToECSql().c_str());
             return ERROR;
             }
         }

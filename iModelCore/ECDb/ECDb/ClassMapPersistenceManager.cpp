@@ -69,7 +69,7 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
         }
 
     BeInt64Id pmId;
-    if (GetMapSaveContext().GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::PropertyMapId).GetNextValue(pmId))
+    if (GetMapSaveContext().GetECDb().GetImpl().GetSequence(IdSequences::Key::PropertyMapId).GetNextValue(pmId))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, pmId) ||
@@ -152,7 +152,7 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
     if (!addIfDoesNotExist)
         return ERROR;
 
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::PropertyPathId).GetNextValue(id) != BE_SQLITE_OK)
+    if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::PropertyPathId).GetNextValue(id) != BE_SQLITE_OK)
         {
         BeAssert(false);
         return ERROR;
@@ -182,9 +182,8 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
 //static
 BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECClassCR ecClass)
     {
-    loadContext.m_isValid = false;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy,ShareColumnsMode,MaxSharedColumnsBeforeOverflow,JoinedTableInfo,UpdatableViewInfo "
-                                                      "FROM ec_ClassMap WHERE ClassId=?");
+    loadContext.m_classMapExists = false;
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy,ShareColumnsMode,MaxSharedColumnsBeforeOverflow,JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -192,8 +191,18 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         }
 
     stmt->BindId(1, ecClass.GetId());
-    if (stmt->Step() != BE_SQLITE_ROW)
-        return ERROR;
+    const DbResult stat = stmt->Step();
+    switch (stat)
+        {
+            case BE_SQLITE_ROW:
+                break;
+
+            case BE_SQLITE_DONE:
+                return SUCCESS; //does not exist yet -> m_isValid == false;
+
+            default:
+                return ERROR;
+        }
 
     const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
     if (mapStrategy == MapStrategy::TablePerHierarchy)
@@ -214,14 +223,11 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy);
         }
 
-    if (!stmt->IsColumnNull(4))
-        loadContext.m_updatableViewInfo = ClassMap::UpdatableViewInfo(stmt->GetValueText(4));
-
     stmt = nullptr; //to release the statement.
     if (ReadPropertyMaps(loadContext, ecdb, ecClass.GetId()) != SUCCESS)
         return ERROR;
 
-    loadContext.m_isValid = true;
+    loadContext.m_classMapExists = true;
     return SUCCESS;
     }
 

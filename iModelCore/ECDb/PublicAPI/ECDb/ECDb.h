@@ -218,7 +218,7 @@ public:
     ECDB_EXPORT void ClearECDbCache() const;
 
 #if !defined (DOCUMENTATION_GENERATOR)
-    Impl& GetECDbImplR() const;
+    Impl& GetImpl() const;
     void FireAfterSchemaImportEvent() const { _OnAfterSchemaImport(); }
 #endif
 };

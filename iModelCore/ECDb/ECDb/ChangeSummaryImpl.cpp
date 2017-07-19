@@ -48,7 +48,7 @@ void TableMap::Initialize(Utf8StringCR tableName)
     m_tableName = tableName;
 
     DbTable const* dbTable = dbSchema.FindTable(tableName.c_str());
-    if (!dbTable || !dbTable->IsValid() || dbTable->IsNullTable())
+    if (!dbTable || !dbTable->IsValid() || dbSchema.IsNullTable(*dbTable))
         {
         m_isMapped = false;
         return;
@@ -59,7 +59,6 @@ void TableMap::Initialize(Utf8StringCR tableName)
     
     InitColumnIndexByName();
     InitSystemColumnMaps();
-    InitForeignKeyRelClassMaps();
     return;
     }
 
@@ -95,33 +94,6 @@ void TableMap::InitSystemColumnMaps()
         }
     else
         m_primaryClassId = QueryClassId();
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     07/2015
-//---------------------------------------------------------------------------------------
-void TableMap::InitForeignKeyRelClassMaps()
-    {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
-        "SELECT DISTINCT ec_Class.Id FROM ec_Class "
-        "JOIN ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId "
-        "JOIN ec_PropertyMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
-        "JOIN ec_Column ON ec_PropertyMap.ColumnId = ec_Column.Id "
-        "JOIN ec_Table ON ec_Table.Id = ec_Column.TableId "
-        "WHERE ec_Table.Name = :tableName AND ec_Class.Type=" SQLVAL_ECClassType_Relationship " AND"
-        "     (ec_ClassMap.MapStrategy = " SQLVAL_MapStrategy_ForeignKeyRelationshipInSourceTable " OR ec_ClassMap.MapStrategy = " SQLVAL_MapStrategy_ForeignKeyRelationshipInTargetTable ") AND"
-        "     ec_Column.IsVirtual = " SQLVAL_False " AND"
-        "     (ec_Column.ColumnKind & " SQLVAL_DbColumn_Kind_ECInstanceId "=" SQLVAL_DbColumn_Kind_ECInstanceId ")");
-    BeAssert(stmt.IsValid());
-
-    stmt->BindText(stmt->GetParameterIndex(":tableName"), m_tableName, Statement::MakeCopy::No);
-
-    DbResult result;
-    while ((result = stmt->Step()) == BE_SQLITE_ROW)
-        {
-        m_fkeyRelClassIds.push_back(stmt->GetValueId<ECClassId>(0));
-        }
-    BeAssert(result == BE_SQLITE_DONE);
     }
 
 //---------------------------------------------------------------------------------------
@@ -238,6 +210,7 @@ TableClassMap::TableClassMap(ECDbCR ecdb, TableMap const& tableMap, ECN::ECClass
 //---------------------------------------------------------------------------------------
 TableClassMap::~TableClassMap()
     {
+    FreeEndTableRelationshipMaps();
     FreeColumnMaps();
     }
 
@@ -272,7 +245,49 @@ void TableClassMap::Initialize()
     if (!m_classMap)
         return;
 
+    InitEndTableRelationshipMaps();
     InitPropertyColumnMaps();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     07/2017
+//---------------------------------------------------------------------------------------
+void TableClassMap::InitEndTableRelationshipMaps()
+    {
+    SearchPropertyMapVisitor navVisitor(PropertyMap::Type::Navigation, false /*=recurseIntoCompoundTypes*/);
+    m_classMap->GetPropertyMaps().AcceptVisitor(navVisitor);
+    for (PropertyMap const* propertyMap : navVisitor.Results())
+        {
+        NavigationPropertyMap const& navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
+
+        NavigationPropertyMap::IdPropertyMap const& idPropertyMap = navPropertyMap.GetIdPropertyMap();
+        DbColumn const& idColumn = idPropertyMap.GetColumn();
+
+        if (idColumn.GetTable().GetId() != m_tableMap.GetDbTable()->GetId())
+            continue; // Navigation property isn't really written to this table. todo: is this even possible?
+
+        NavigationPropertyMap::RelECClassIdPropertyMap const& relClassIdPropertyMap = navPropertyMap.GetRelECClassIdPropertyMap();
+        DbColumn const& relClassIdColumn = relClassIdPropertyMap.GetColumn();
+
+        EndTableRelationshipMap* endTableRelMap = new EndTableRelationshipMap();
+        endTableRelMap->m_relatedInstanceIdColumnMap = ColumnMap(idColumn.GetName(), m_tableMap.GetColumnIndexByName(idColumn.GetName()));
+        if (relClassIdColumn.IsVirtual())
+            endTableRelMap->m_relationshipClassId = relClassIdPropertyMap.GetDefaultClassId();
+        else
+            endTableRelMap->m_relationshipClassIdColumnMap = ColumnMap(relClassIdColumn.GetName(), m_tableMap.GetColumnIndexByName(relClassIdColumn.GetName()));
+
+        m_endTableRelMaps.push_back(endTableRelMap);
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     07/2017
+//---------------------------------------------------------------------------------------
+void TableClassMap::FreeEndTableRelationshipMaps()
+    {
+    for (TableClassMap::EndTableRelationshipMap* map: m_endTableRelMaps)
+        delete map;
+    m_endTableRelMaps.clear();
     }
 
 //---------------------------------------------------------------------------------------
@@ -288,25 +303,13 @@ void TableClassMap::InitPropertyColumnMaps()
         {
         SingleColumnDataPropertyMap const& singleColumnMap = propertyMap->GetAs<SingleColumnDataPropertyMap>();
 
-        if (singleColumnMap.GetTable().GetId() != m_tableMap.GetDbTable()->GetId())
-            continue; // Skip properties that don't belong to the current table. 
-
-        AddColumnMapsForProperty(singleColumnMap);
+        DbColumn const& column = singleColumnMap.GetColumn();
+        if (column.GetTable().GetId() != m_tableMap.GetDbTable()->GetId() || column.IsVirtual())
+            continue; // Skip properties that don't belong to, or not written to the current table. 
+        
+        int columnIndex = m_tableMap.GetColumnIndexByName(column.GetName());
+        m_columnMapByAccessString[singleColumnMap.GetAccessString()] = new ColumnMap(column.GetName(), columnIndex);
         }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                              Ramanujam.Raman     03/2016
-//---------------------------------------------------------------------------------------
-void TableClassMap::AddColumnMapsForProperty(SingleColumnDataPropertyMap const& singleColumnMap)
-    {
-    DbColumn const& column = singleColumnMap.GetColumn();
-
-    if (column.GetPersistenceType() == PersistenceType::Virtual)
-        return; // TODO: This is to filter virtual Navigation property's RelECClassId column - needs a better check from Affan. 
-
-    int columnIndex = m_tableMap.GetColumnIndexByName(column.GetName());
-    m_columnMapByAccessString[singleColumnMap.GetAccessString()] = new ColumnMap(column.GetName(), columnIndex);
     }
 
 //---------------------------------------------------------------------------------------
@@ -911,16 +914,12 @@ void ChangeExtractor::ExtractRelInstances(ChangeIterator::RowEntry const& rowEnt
         return;
         }
 
-    bvector<ECClassId> const& relClassIds = rowEntry.GetTableMap()->GetMappedForeignKeyRelationshipClasses();
-    for (ECClassId relClassId : relClassIds)
+    TableClassMap const* tableClassMap = rowEntry.GetTableMap()->GetTableClassMap(*primaryClass);
+    BeAssert(tableClassMap != nullptr);
+
+    for (TableClassMap::EndTableRelationshipMap const* endTableRelMap : tableClassMap->GetEndTableRelationshipMaps())
         {
-        ECN::ECClassCP relClass = m_ecdb.Schemas().GetClass(relClassId);
-        BeAssert(relClass != nullptr);
-
-        RelationshipClassEndTableMap const* relClassMap = dynamic_cast<RelationshipClassEndTableMap const*> (m_ecdb.Schemas().GetDbMap().GetClassMap(*relClass));
-        BeAssert(relClassMap != nullptr);
-
-        ExtractRelInstanceInEndTable(rowEntry, *relClassMap);
+        ExtractRelInstanceInEndTable(rowEntry, *endTableRelMap);
         }
     }
 
@@ -943,63 +942,91 @@ void ChangeExtractor::ExtractRelInstanceInLinkTable(ChangeIterator::RowEntry con
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-// static
-ECClassId ChangeExtractor::ExtractClassId(ChangeIterator::RowEntry const& rowEntry, ClassMapCR classMap, ECInstanceId instanceId)
+ECN::ECClassId ChangeExtractor::GetClassIdFromColumn(TableMap const& tableMap, DbColumn const& classIdColumn, ECInstanceId instanceId) const
     {
-    ECClassIdPropertyMap const* classIdPropMap = classMap.GetECClassIdPropertyMap();
-    ECClassIdPropertyMap::PerTableIdPropertyMap const* perTableClassIdPropMap = classIdPropMap->FindDataPropertyMap(*rowEntry.GetTableMap()->GetDbTable());
-    BeAssert(perTableClassIdPropMap != nullptr && perTableClassIdPropMap->GetType() == PropertyMap::Type::SystemPerTableClassId);
-    DbColumn const& classIdCol = perTableClassIdPropMap->GetColumn();
-    if (classIdCol.GetPersistenceType() == PersistenceType::Virtual)
-        return perTableClassIdPropMap->GetAs<ECClassIdPropertyMap::PerTableClassIdPropertyMap>().GetDefaultECClassId();
+    // Search in all changes
+    ECClassId classId = m_instancesTable.QueryClassId(tableMap.GetTableName(), instanceId);
+    if (classId.IsValid())
+        return classId;
 
-    GetColumnsPropertyMapVisitor columnsDisp(PropertyMap::Type::All, /* doNotSkipSystemPropertyMaps */ true);
-    classIdPropMap->AcceptVisitor(columnsDisp);
-    if (columnsDisp.GetColumns().size() != 1)
-        {
-        BeAssert(false);
-        return ECClassId();
-        }
-
-    DbColumn const* classIdColumn = columnsDisp.GetColumns()[0];
-    ECClassId classId = rowEntry.GetClassIdFromChangeOrTable(classIdColumn->GetName().c_str(), instanceId);
+    // Search in table itself
+    classId = tableMap.QueryValueId<ECClassId>(classIdColumn.GetName(), instanceId);
+    BeAssert(classId.IsValid());
+    
     return classId;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry const& rowEntry, RelationshipClassEndTableMap const& relClassMap)
-    {    
-    ECClassId relClassId = relClassMap.GetClass().GetId();
+void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry const& rowEntry, TableClassMap::EndTableRelationshipMap const& endTableRelMap)
+    {
+    // Check if the other end was/is valid to determine if there's really a relationship that was inserted/updated/deleted
+    ColumnMap const& otherEndColumnMap = endTableRelMap.m_relatedInstanceIdColumnMap;
+    ECInstanceId oldOtherEndInstanceId, newOtherEndInstanceId;
+    rowEntry.GetSqlChange()->GetValueIds(oldOtherEndInstanceId, newOtherEndInstanceId, otherEndColumnMap.GetIndex());
+    if (!oldOtherEndInstanceId.IsValid() && !newOtherEndInstanceId.IsValid())
+        return;
+
+    // Evaluate the relationship information
+    ECN::ECClassId relClassId = endTableRelMap.m_relationshipClassId;
+    if (!relClassId.IsValid())
+        {
+        ColumnMap const& relClassIdColumnMap = endTableRelMap.m_relationshipClassIdColumnMap;
+
+        relClassId = rowEntry.GetClassIdFromChangeOrTable(relClassIdColumnMap.GetName().c_str(), rowEntry.GetPrimaryInstanceId());
+        BeAssert(relClassId.IsValid());
+        }
     ECInstanceId relInstanceId = rowEntry.GetPrimaryInstanceId();
+    
+    ECN::ECClassCP relClass = m_ecdb.Schemas().GetClass(relClassId);
+    BeAssert(relClass != nullptr);
+    RelationshipClassEndTableMap const* relClassMap = dynamic_cast<RelationshipClassEndTableMap const*> (m_ecdb.Schemas().GetDbMap().GetClassMap(*relClass));
+    BeAssert(relClassMap != nullptr);
+    
+    // Setup this end of the relationship (Note: EndInstanceId = RelationshipInstanceId)
     ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
-
-    // Check that this end of the relationship matches the actual class found.
-    ECN::ECRelationshipEnd thisEnd = relClassMap.GetForeignEnd();
-    if (!ClassIdMatchesConstraint(relClassId, thisEnd, thisEndClassId))
-        return;
-
-    // Check that the relationship class matches the class of the entry found
-    ECClassId foundClassId = ExtractClassId(rowEntry, relClassMap, relInstanceId);
-    if (relClassId != foundClassId)
-        return;
-
     ECInstanceKey thisEndInstanceKey(thisEndClassId, relInstanceId);
+    ECN::ECRelationshipEnd thisEnd = relClassMap->GetForeignEnd();
+
+    // Setup other end of relationship
+    RelationshipClassEndTableMap::Partition const* firstPartition = relClassMap->GetPartitionView().GetPhysicalPartitions().front();
+    if (!firstPartition)
+        return;
+    ECN::ECRelationshipEnd otherEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
+    DbColumn const* otherEndClassIdColumnCP = firstPartition->GetConstraintECClassId(otherEnd);
+    if (otherEndClassIdColumnCP == nullptr)
+        {
+        BeAssert(false && "Need to adjust code when constraint ecclassid column is nullptr");
+        return;
+        }
+
+    DbColumn const& otherEndClassIdColumn = *otherEndClassIdColumnCP;
+
+    ECClassId oldOtherEndClassId, newOtherEndClassId;
+    if (otherEndClassIdColumn.IsVirtual())
+        {
+        // The table at the end contains a single class only - just use the relationship to get the end class
+        oldOtherEndClassId = newOtherEndClassId = GetRelEndClassIdFromRelClass(relClass->GetRelationshipClassCP(), otherEnd);
+        }
+    else
+        {
+        TableMap const* otherEndTableMap = rowEntry.GetChangeIterator().GetTableMap(otherEndClassIdColumn.GetTable().GetName());
+        BeAssert(otherEndTableMap != nullptr);
+
+        if (newOtherEndInstanceId.IsValid())
+            newOtherEndClassId = GetClassIdFromColumn(*otherEndTableMap, otherEndClassIdColumn, newOtherEndInstanceId);
+        if (oldOtherEndInstanceId.IsValid())
+            oldOtherEndClassId = GetClassIdFromColumn(*otherEndTableMap, otherEndClassIdColumn, oldOtherEndInstanceId);
+        }
 
     ECInstanceKey oldOtherEndInstanceKey, newOtherEndInstanceKey;
-    ECN::ECRelationshipEnd referencedEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    GetRelEndInstanceKeys(oldOtherEndInstanceKey, newOtherEndInstanceKey, rowEntry, relClassMap, relInstanceId, referencedEnd);
+    if (newOtherEndInstanceId.IsValid())
+        newOtherEndInstanceKey = ECInstanceKey(newOtherEndClassId, newOtherEndInstanceId);
+    if (oldOtherEndInstanceId.IsValid())
+        oldOtherEndInstanceKey = ECInstanceKey(oldOtherEndClassId, oldOtherEndInstanceId);
 
-    if (!newOtherEndInstanceKey.IsValid() && !oldOtherEndInstanceKey.IsValid())
-        return;
-
-    // Check if the other end of the relationship matches the actual class found. 
-    if (newOtherEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, newOtherEndInstanceKey.GetClassId()))
-        return;
-    if (oldOtherEndInstanceKey.IsValid() && !ClassIdMatchesConstraint(relClassId, referencedEnd, oldOtherEndInstanceKey.GetClassId()))
-        return;
-
+    // Setup the change instance of the relationship
     DbOpcode relDbOpcode;
     if (newOtherEndInstanceKey.IsValid() && !oldOtherEndInstanceKey.IsValid())
         relDbOpcode = DbOpcode::Insert;
@@ -1138,9 +1165,9 @@ void ChangeExtractor::GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECIns
 //---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     10/2015
 //---------------------------------------------------------------------------------------
-ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId endInstanceId) const
+ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relationshipClassMap, ECInstanceId relationshipInstanceId, ECN::ECRelationshipEnd relEnd, ECInstanceId relEndInstanceId) const
     {
-    ConstraintECClassIdPropertyMap const* classIdPropMap = relClassMap.GetConstraintECClassIdPropMap(relEnd);
+    ConstraintECClassIdPropertyMap const* classIdPropMap = relationshipClassMap.GetConstraintECClassIdPropMap(relEnd);
     if (classIdPropMap == nullptr)
         {
         BeAssert(false);
@@ -1188,7 +1215,7 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
         {
         // TODO: dynamic_cast<PropertyMapRelationshipConstraintClassId const*> (propMap)->GetDefaultConstraintECClassId()
         // should work, but doesn't for link tables - need to check with Krischan/Affan. 
-        return GetRelEndClassIdFromRelClass(relClassMap.GetClass().GetRelationshipClassCP(), relEnd);
+        return GetRelEndClassIdFromRelClass(relationshipClassMap.GetClass().GetRelationshipClassCP(), relEnd);
         }
 
     // Case #2: End is in only one table (Note: not in the current table the row belongs to, but some OTHER end table)
@@ -1198,20 +1225,19 @@ ECN::ECClassId ChangeExtractor::GetRelEndClassId(ChangeIterator::RowEntry const&
         Utf8StringCR endTableName = classIdColumn->GetTable().GetName();
 
         // Search in all changes
-        ECClassId classId = m_instancesTable.QueryClassId(endTableName, endInstanceId);
+        ECClassId classId = m_instancesTable.QueryClassId(endTableName, relEndInstanceId);
         if (classId.IsValid())
             return classId;
 
         // Search in the end table
-        classId = rowEntry.GetChangeIterator().GetTableMap(endTableName)->QueryValueId<ECClassId>(classIdColumn->GetName(), endInstanceId);
+        classId = rowEntry.GetChangeIterator().GetTableMap(endTableName)->QueryValueId<ECClassId>(classIdColumn->GetName(), relEndInstanceId);
         BeAssert(classId.IsValid());
-
         return classId;
         }
 
     // Case #3: End could be in many tables
     Utf8StringCR classIdColumnName = classIdColumn->GetName();
-    ECClassId classId = rowEntry.GetClassIdFromChangeOrTable(classIdColumnName.c_str(), relInstanceId);
+    ECClassId classId = rowEntry.GetClassIdFromChangeOrTable(classIdColumnName.c_str(), relationshipInstanceId);
     BeAssert(classId.IsValid());
     return classId;
     }

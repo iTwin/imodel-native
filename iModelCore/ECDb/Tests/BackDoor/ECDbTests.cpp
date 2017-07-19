@@ -908,3 +908,156 @@ ECObjectsStatus ECDbTestUtility::CopyStruct(IECInstanceR target, IECInstanceCR s
     }
 
 END_ECDBUNITTESTS_NAMESPACE
+
+//************************************************************************************
+//GTest PrintTo customizations
+//************************************************************************************
+
+BEGIN_BENTLEY_NAMESPACE
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(BentleyStatus stat, std::ostream* os)
+    {
+    switch (stat)
+        {
+            case SUCCESS:
+                *os << "SUCCESS";
+                break;
+
+            case ERROR:
+                *os << "ERROR";
+                break;
+
+            default:
+                *os << "Unhandled BentleyStatus. Adjust the PrintTo method";
+                break;
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(BeInt64Id id, std::ostream* os) {  *os << id.GetValueUnchecked();  }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(DateTime const& dt, std::ostream* os) { *os << dt.ToString().c_str(); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(std::vector<Utf8CP> const& vec, std::ostream* os)
+    {
+    *os << "{";
+    bool isFirstItem = true;
+    for (Utf8CP str : vec)
+        {
+        if (!isFirstItem)
+            *os << ",";
+
+        *os << str;
+        isFirstItem = false;
+        }
+    *os << "}";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(std::vector<Utf8String> const& vec, std::ostream* os)
+    {
+    *os << "{";
+    bool isFirstItem = true;
+    for (Utf8StringCR str : vec)
+        {
+        if (!isFirstItem)
+            *os << ",";
+
+        *os << str.c_str();
+        isFirstItem = false;
+        }
+    *os << "}";
+    }
+END_BENTLEY_NAMESPACE
+
+BEGIN_BENTLEY_ECOBJECT_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECClassId id, std::ostream* os) { PrintTo((BeInt64Id) id, os); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECValue const& val, std::ostream* os) {  *os << val.ToString().c_str(); }
+
+END_BENTLEY_ECOBJECT_NAMESPACE
+
+BEGIN_BENTLEY_SQLITE_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(DbResult r, std::ostream* os)
+    {
+    *os << Db::InterpretDbResult(r);
+    }
+
+END_BENTLEY_SQLITE_NAMESPACE
+
+BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECInstanceId id, std::ostream* os) { PrintTo((BeInt64Id) id, os); }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECInstanceKey const& key, std::ostream* os) 
+    { 
+    *os << "{ECInstanceId:";
+    PrintTo(key.GetInstanceId(), os);
+    *os << ",ECClassId:";
+    PrintTo(key.GetClassId(), os);
+    *os << "}";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle                  05/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(ECSqlStatus stat, std::ostream* os)
+    {
+    if (stat.IsSuccess())
+        {
+        *os << "ECSqlStatus::Success";
+        return;
+        }
+
+    if (stat.IsSQLiteError())
+        {
+        *os << "ECSqlStatus::SQLiteError " << stat.GetSQLiteError();
+        return;
+        }
+
+    switch (stat.Get())
+        {
+            case ECSqlStatus::Status::Error:
+                *os << "ECSqlStatus::Error";
+                return;
+
+            case ECSqlStatus::Status::InvalidECSql:
+                *os << "ECSqlStatus::InvalidECSql";
+                return;
+
+            default:
+                *os << "Unhandled ECSqlStatus. Adjust the PrintTo method";
+                break;
+        }
+    }
+
+END_BENTLEY_SQLITE_EC_NAMESPACE

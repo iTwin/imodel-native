@@ -19,28 +19,31 @@ struct SchemaWriter final : NonCopyableClass
     private:
         ECDbCR m_ecdb;
         SchemaImportContext& m_ctx;
-        ECN::CustomAttributeValidator m_customAttributeValidator;
+        ECN::CustomAttributeValidator m_schemaUpgradeCustomAttributeValidator;
         std::set<ECN::ECSchemaId> m_majorChangesAllowedForSchemas;
 
         BentleyStatus ImportSchema(SchemaCompareContext&, ECN::ECSchemaCR);
         BentleyStatus ImportClass(ECN::ECClassCR);
         BentleyStatus ImportEnumeration(ECN::ECEnumerationCR);
         BentleyStatus ImportKindOfQuantity(ECN::KindOfQuantityCR);
+        BentleyStatus ImportPropertyCategory(ECN::PropertyCategoryCR);
         BentleyStatus ImportProperty(ECN::ECPropertyCR, int ordinal);
         BentleyStatus ImportRelationshipClass(ECN::ECRelationshipClassCP);
         BentleyStatus ImportRelationshipConstraint(ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
         BentleyStatus ImportCustomAttributes(ECN::IECCustomAttributeContainerCR sourceContainer, ECContainerId sourceContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
-        BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveECPropertyCR);
-        BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::PrimitiveArrayECPropertyCR);
-        BentleyStatus BindPropertyKindOfQuantityId(Statement&, int paramIndex, ECN::ECPropertyCR);
+        BentleyStatus BindPropertyMinMaxValue(Statement&, int paramIndex, ECN::ECPropertyCR, ECN::ECValueCR);
+        BentleyStatus BindPropertyExtendedTypeName(Statement&, int paramIndex, ECN::ECPropertyCR);
+        BentleyStatus BindPropertyPrimTypeOrEnumeration(Statement&, int primTypeParamIndex, int enumParamIndex, ECN::ECPropertyCR);
+        BentleyStatus BindPropertyKindOfQuantity(Statement&, int paramIndex, ECN::ECPropertyCR);
+        BentleyStatus BindPropertyCategory(Statement&, int paramIndex, ECN::ECPropertyCR);
 
         BentleyStatus InsertSchemaEntry(ECN::ECSchemaCR);
         BentleyStatus InsertBaseClassEntry(ECN::ECClassId, ECN::ECClassCR baseClass, int ordinal);
         BentleyStatus InsertRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECN::ECClassId relationshipClassId, ECN::ECRelationshipConstraintR, ECN::ECRelationshipEnd);
         BentleyStatus InsertSchemaReferenceEntries(ECN::ECSchemaCR);
-        BentleyStatus InsertCAEntry(ECN::IECInstanceP customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
-        BentleyStatus ReplaceCAEntry(ECN::IECInstanceP customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
+        BentleyStatus InsertCAEntry(ECN::IECInstanceR customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
+        BentleyStatus ReplaceCAEntry(ECN::IECInstanceR customAttribute, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType, int ordinal);
         BentleyStatus DeleteCAEntry(int& ordinal, ECN::ECClassId, ECContainerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType);
 
         BentleyStatus UpdateRelationshipConstraint(ECContainerId, ECN::ECRelationshipConstraintChange&, ECN::ECRelationshipConstraintCR oldConstraint, ECN::ECRelationshipConstraintCR newConstraint, bool isSource, Utf8CP relationshipName);
@@ -54,6 +57,7 @@ struct SchemaWriter final : NonCopyableClass
         BentleyStatus UpdateEnumeration(ECN::ECEnumerationChange& enumChanges, ECN::ECEnumerationCR oldEnum, ECN::ECEnumerationCR newEnum);
 
         BentleyStatus UpdateKindOfQuantities(ECN::KindOfQuantityChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
+        BentleyStatus UpdatePropertyCategories(ECN::PropertyCategoryChanges&, ECN::ECSchemaCR oldSchema, ECN::ECSchemaCR newSchema);
 
         BentleyStatus UpdateProperties(ECN::ECPropertyChanges&, ECN::ECClassCR oldClass, ECN::ECClassCR newClass);
 
@@ -69,15 +73,16 @@ struct SchemaWriter final : NonCopyableClass
         bool IsPropertyTypeChangeSupported(Utf8StringR error, ECN::StringChange& typeChange, ECN::ECPropertyCR oldProperty, ECN::ECPropertyCR newProperty) const;
 
         BentleyStatus ValidateSchemasPreImport(bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies) const;
-        BentleyStatus ValidateSchemasPostImport() const;
 
-        IssueReporter const& Issues() const { return m_ecdb.GetECDbImplR().GetIssueReporter(); }
-
+        BentleyStatus UpdateBaseClasses(ECN::BaseClassChanges&, ECN::ECClassCR, ECN::ECClassCR);
+        IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
+        static bool IsChangeToBaseClassIsSupported(ECN::ECClassCR baseClass);
     public:
         explicit SchemaWriter(ECDbCR ecdb, SchemaImportContext& ctx) : m_ecdb(ecdb), m_ctx(ctx)
             {
-            m_customAttributeValidator.Accept("ECDbMap:DbIndexList.Indexes.Name");
-            m_customAttributeValidator.Reject("ECDbMap:*");
+            m_schemaUpgradeCustomAttributeValidator.Accept("ECDbMap:DbIndexList.Indexes.Name");
+            m_schemaUpgradeCustomAttributeValidator.Reject("CoreCustomAttributes:IsMixin.*");
+            m_schemaUpgradeCustomAttributeValidator.Reject("ECDbMap:*");
             }
 
         BentleyStatus ImportSchemas(bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies);

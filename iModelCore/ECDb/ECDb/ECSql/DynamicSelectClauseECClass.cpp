@@ -59,7 +59,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
         DerivedPropertyExp const* otherSelectClauseItem = it->second;
         if (!columnAlias.empty() || !otherSelectClauseItem->GetColumnAlias().empty())
             {
-            ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Alias '%s' used in the select clause is ambiguous.", propName.c_str());
+            ctx.GetECDb().GetImpl().Issues().Report("Alias '%s' used in the select clause is ambiguous.", propName.c_str());
             return ECSqlStatus::InvalidECSql;
             }
 
@@ -82,7 +82,7 @@ ECSqlStatus DynamicSelectClauseECClass::GeneratePropertyIfRequired(ECN::ECProper
 
                 if (suffixNr > 1000) //arbitrary threshold to avoid end-less loop
                     {
-                    ctx.GetECDb().GetECDbImplR().GetIssueReporter().Report("Could not generate a unique select clause item name for the item '%s'. Try to avoid duplicate select clause items.",
+                    ctx.GetECDb().GetImpl().Issues().Report("Could not generate a unique select clause item name for the item '%s'. Try to avoid duplicate select clause items.",
                                                                            selectClauseItemExp.ToECSql().c_str());
                     return ECSqlStatus::InvalidECSql;
                     }

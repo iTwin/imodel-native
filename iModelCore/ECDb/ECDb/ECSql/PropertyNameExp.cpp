@@ -214,7 +214,8 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(Utf8StringR error, RangeClassRef
             DerivedPropertyExp const* derivedPropertyRef = subQueryRef.GetSubquery()->FindProperty(propPath[0].GetPropertyName());
             if (derivedPropertyRef == nullptr)
                 {
-                BeAssert(derivedPropertyRef != nullptr && "Should not be nullptr as the classRefExp was found in the first place by checking that the property exists");
+				//"Should not be nullptr as the classRefExp was found in the first place by checking that the property exists"
+                BeAssert(false);
                 return ERROR;
                 }
 
@@ -341,18 +342,6 @@ DerivedPropertyExp const& PropertyNameExp::PropertyRef::GetEndPointDerivedProper
     return LinkedTo();
     }
 
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       05/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-PropertyNameExp const* PropertyNameExp::PropertyRef::GetEndPointPropertyNameIfAny() const
-    {
-    DerivedPropertyExp const& cur = GetEndPointDerivedProperty();
-    if (cur.GetExpression()->GetType() == Exp::Type::PropertyName)
-        return cur.GetExpression()->GetAsCP<PropertyNameExp>();
-
-    return nullptr;
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013

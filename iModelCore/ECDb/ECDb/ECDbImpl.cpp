@@ -11,6 +11,16 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                07/2017
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+//no need to release a static non-POD variable (Bentley C++ coding standards)
+bvector<Utf8CP> const* IdSequences::s_sequenceNames = new bvector<Utf8CP> {"ec_instanceidsequence", "ec_schemaidsequence","ec_schemarefidsequence", "ec_classidsequence","ec_classhasbaseclassesidsequence",
+"ec_propertyidsequence","ec_propertypathidsequence",
+"ec_relconstraintidsequence", "ec_relconstraintclassidsequence",
+"ec_customattributeidsequence", "ec_enumidsequence","ec_koqidsequence", "ec_propertycategoryidsequence", "ec_propertymapidsequence",
+"ec_tableidsequence","ec_columnidsequence", "ec_indexidsequence", "ec_indexcolumnidsequence"};
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
@@ -215,7 +225,7 @@ BentleyStatus ECDb::Impl::PurgeFileInfos() const
         ECClassCP ownerClass = Schemas().GetClass(ownerClassId);
         if (ownerClass == nullptr)
             {
-            GetIssueReporter().Report("FileInfo owner ECClass not found for " ECDBSYS_PROP_ECClassId " %s.", ownerClassId.ToString().c_str());
+            m_issueReporter.Report("FileInfo owner ECClass not found for " ECDBSYS_PROP_ECClassId " %s.", ownerClassId.ToString().c_str());
             return ERROR;
             }
 
@@ -268,7 +278,7 @@ BentleyStatus ECDb::Impl::OpenBlobIO(BlobIO& blobIO, ECN::ECClassCR ecClass, Utf
     Policy policy = PolicyManager::GetPolicy(ECCrudPermissionPolicyAssertion(m_ecdb, writable, writeToken));
     if (!policy.IsSupported())
         {
-        GetIssueReporter().Report(policy.GetNotSupportedMessage().c_str());
+        m_issueReporter.Report(policy.GetNotSupportedMessage().c_str());
         return ERROR;
         }
 

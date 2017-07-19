@@ -583,19 +583,19 @@ void PerformanceCRUDTestsHelper::SetUpTestECDb(ECDbR ecdb, Utf8String destFileNa
         bvector<ECSchemaCP> schemas;
         schemas.push_back(testSchema.get());
 
-        ECDbR ecdb = SetupECDb(seedFileName.c_str());
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb(seedFileName.c_str()));
 
-        EXPECT_EQ(BentleyStatus::SUCCESS, ecdb.Schemas().ImportSchemas(schemas));
-        EXPECT_EQ(BE_SQLITE_OK, ecdb.SaveChanges());
+        EXPECT_EQ(BentleyStatus::SUCCESS, m_ecdb.Schemas().ImportSchemas(schemas));
+        EXPECT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
         GenerateECSqlCRUDTestStatements(*testSchema, true);
 
-        ECSqlInsertInstances(ecdb, false, 1);
+        ECSqlInsertInstances(m_ecdb, false, 1);
 
-        ecdb.SaveChanges();
+        m_ecdb.SaveChanges();
         m_ecsqlTestItems.clear();
         }
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(ecdb, destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     }
 
 END_ECDBUNITTESTS_NAMESPACE

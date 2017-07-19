@@ -309,9 +309,6 @@
     <ClInclude Include="ClassMapPersistenceManager.h">
       <Filter>DbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ClassMapper.h">
-      <Filter>DbMap</Filter>
-    </ClInclude>
     <ClInclude Include="SqlNames.h" />
     <ClInclude Include="PropertyMap.h">
       <Filter>DbMap</Filter>
@@ -334,7 +331,6 @@
     <ClInclude Include="ECDbSqlFunctions.h">
       <Filter>ECDb</Filter>
     </ClInclude>
-    <ClInclude Include="Nullable.h" />
     <ClInclude Include="..\PublicAPI\ECDb\ECDbExpressionSymbolContext.h">
       <Filter>PublicApi</Filter>
     </ClInclude>
@@ -361,9 +357,6 @@
     </ClInclude>
     <ClInclude Include="ChangeSummaryImpl.h">
       <Filter>ChangeSummary</Filter>
-    </ClInclude>
-    <ClInclude Include="BeBriefcaseBasedIdSequence.h">
-      <Filter>ECDb</Filter>
     </ClInclude>
     <ClInclude Include="ECDbMapSchemaHelper.h">
       <Filter>SchemaManager</Filter>
@@ -403,6 +396,12 @@
       <Filter>Profile</Filter>
     </ClInclude>
     <ClInclude Include="DbMap.h">
+      <Filter>DbMap</Filter>
+    </ClInclude>
+    <ClInclude Include="DbMapValidator.h">
+      <Filter>DbMap</Filter>
+    </ClInclude>
+    <ClInclude Include="DbMappingManager.h">
       <Filter>DbMap</Filter>
     </ClInclude>
   </ItemGroup>
@@ -651,9 +650,6 @@
     <ClCompile Include="ClassMapPersistenceManager.cpp">
       <Filter>DbMap</Filter>
     </ClCompile>
-    <ClCompile Include="ClassMapper.cpp">
-      <Filter>DbMap</Filter>
-    </ClCompile>
     <ClCompile Include="PropertyMap.cpp">
       <Filter>DbMap</Filter>
     </ClCompile>
@@ -699,9 +695,6 @@
     <ClCompile Include="ChangeSummaryImpl.cpp">
       <Filter>ChangeSummary</Filter>
     </ClCompile>
-    <ClCompile Include="BeBriefcaseBasedIdSequence.cpp">
-      <Filter>ECDb</Filter>
-    </ClCompile>
     <ClCompile Include="ECDbMapSchemaHelper.cpp">
       <Filter>SchemaManager</Filter>
     </ClCompile>
@@ -742,6 +735,12 @@
     <ClCompile Include="DbMap.cpp">
       <Filter>DbMap</Filter>
     </ClCompile>
+    <ClCompile Include="DbMapValidator.cpp">
+      <Filter>DbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="DbMappingManager.cpp">
+      <Filter>DbMap</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="ECSchemas\ECDbMap.02.00.00.ecschema.xml">
@@ -751,6 +750,9 @@
       <Filter>ECSchemas</Filter>
     </Xml>
     <Xml Include="ECSchemas\ECDbMeta.01.00.00.ecschema.xml">
+      <Filter>ECSchemas</Filter>
+    </Xml>
+    <Xml Include="ECSchemas\ECDbSchemaPolicies.01.00.00.ecschema.xml">
       <Filter>ECSchemas</Filter>
     </Xml>
   </ItemGroup>
