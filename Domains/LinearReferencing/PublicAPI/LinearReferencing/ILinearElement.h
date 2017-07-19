@@ -40,7 +40,7 @@ public:
 //! Interface implemented by linear-elements that have a spatial representation.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ISpatialLinearElement
+struct EXPORT_VTABLE_ATTRIBUTE ISpatialLinearElement : ILinearElement
 {
 protected:
     virtual DPoint3d _ToDPoint3d(DistanceExpressionCR distanceExpression) const = 0;
