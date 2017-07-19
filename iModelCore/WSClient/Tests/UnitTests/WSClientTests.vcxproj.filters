@@ -333,6 +333,7 @@
     <ClCompile Include="Published\WebServices\Cache\Util\ECInstanceKeyFilterTests.cpp" />
     <ClCompile Include="Published\WebServices\Client\Response\WSUploadResponseTests.cpp" />
     <ClCompile Include="Published\WebServices\Cache\CachingDataSourceProgressTests.cpp" />
+    <ClCompile Include="Published\WebServices\Client\RequestOptionsTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="dependencies.mki" />

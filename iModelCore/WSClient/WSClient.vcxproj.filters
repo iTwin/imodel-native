@@ -381,6 +381,9 @@
     <ClCompile Include="Cache\FileDownloadManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Client\RequestOptions.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Client\WebApi\WebApi.h">
@@ -849,6 +852,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Connect\ConnectSessionAuthenticationPersistence.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\WebServices\Client\RequestOptions.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
