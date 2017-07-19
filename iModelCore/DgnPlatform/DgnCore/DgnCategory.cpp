@@ -470,7 +470,7 @@ void DgnSubCategory::Override::ToJson(JsonValueR outValue) const
     if (m_flags.m_color)        outValue[Appearance::json_color()] = m_value.GetColor().GetValue();
     if (m_flags.m_weight)       outValue[Appearance::json_weight()] = m_value.GetWeight();
     if (m_flags.m_style)        outValue[Appearance::json_style()] = m_value.GetStyle().GetValue();
-    if (m_flags.m_material)     outValue[APPEARANCE_Material] = m_value.GetRenderMaterial().GetValue();
+    if (m_flags.m_material)     outValue[Appearance::json_material()] = m_value.GetRenderMaterial().GetValue();
     if (m_flags.m_priority)     outValue[Appearance::json_priority()] = m_value.GetDisplayPriority();
     if (m_flags.m_transparency) outValue[Appearance::json_transp()] = m_value.GetTransparency();
     }
