@@ -78,12 +78,16 @@ struct WSError : public AsyncError
         Id m_id = Id::Unknown;
 
     private:
-        static bool IsValidErrorJson(JsonValueCR jsonError);
+        static bool DoesStringFieldExist(JsonValueCR json, Utf8CP name);
+        static bool DoesStringFieldExist(RapidJsonValueCR json, Utf8CP name);
+        static Utf8CP GetOptionalString(RapidJsonValueCR json);
         static Id ErrorIdFromString(Utf8StringCR errorIdString);
         static Utf8String FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
         BentleyStatus ParseBody(HttpResponseCR httpResponse);
         BentleyStatus ParseJsonError(HttpResponseCR httpResponse);
+        BentleyStatus ParseJsonError(JsonValueCR jsonError, HttpStatus status);
+        BentleyStatus ParseJsonError(RapidJsonValueCR jsonError, HttpStatus status);
         BentleyStatus ParseXmlError(HttpResponseCR httpResponse);
 
         void SetStatusServerNotSupported();
@@ -94,6 +98,10 @@ struct WSError : public AsyncError
         WSCLIENT_EXPORT WSError();
         //! Handle supported server response
         WSCLIENT_EXPORT WSError(HttpResponseCR httpResponse);
+        //! Handle $changeset error. Requires httpStatusCode field or will map to not supported error.
+        WSCLIENT_EXPORT WSError(JsonValueCR jsonError);
+        //! Handle $changeset error. Requires httpStatusCode field or will map to not supported error.
+        WSCLIENT_EXPORT WSError(RapidJsonValueCR jsonError);
         //! Handle generic HttpError, unknow error will map to Id::Unknown
         WSCLIENT_EXPORT WSError(HttpErrorCR httpError);
         //! Do not use in production code, this is for testing purposes only.
