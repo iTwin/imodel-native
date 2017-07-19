@@ -994,7 +994,14 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
     if (!firstPartition)
         return;
     ECN::ECRelationshipEnd otherEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    DbColumn const& otherEndClassIdColumn = firstPartition->GetConstraintECClassId(otherEnd);
+    DbColumn const* otherEndClassIdColumnCP = firstPartition->GetConstraintECClassId(otherEnd);
+    if (otherEndClassIdColumnCP == nullptr)
+        {
+        BeAssert(false && "Need to adjust code when constraint ecclassid column is nullptr");
+        return;
+        }
+
+    DbColumn const& otherEndClassIdColumn = *otherEndClassIdColumnCP;
 
     ECClassId oldOtherEndClassId, newOtherEndClassId;
     if (otherEndClassIdColumn.IsVirtual())
