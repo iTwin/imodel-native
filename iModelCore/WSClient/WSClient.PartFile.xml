@@ -240,7 +240,7 @@
 
     <Product Name="iModelHubNativeTestsCollection">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
-        <SubPart PartName="iModelHubIntegrationTests"/>
+<!--        <SubPart PartName="iModelHubIntegrationTests"/> -->
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <Directories DirectoryListName="iModelHubNativeTests"/>
     </Product>
@@ -255,7 +255,9 @@
     </Part>
 
     <Product Name="iModelHubNativeTests" SaveProduct="true">
+      <!--
         <SubPart PartName="iModelHubGtest"/>
+        -->
         <Directories DirectoryListName="iModelHubNativeTests"/>
     </Product>
 
@@ -505,7 +507,6 @@
         <SubPart PartName="WebServicesCache" />
         <SubPart PartName="WebServicesClient"/>
         <SubPart PartName="WSClientTestAssets" />
-        <SubPart PartName="WSClientTestsL10N" />
         <SubPart PartName="WSClient_en_L10N" />
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="WebServices" SubPartDirectory="UnitTests/WebServices">
