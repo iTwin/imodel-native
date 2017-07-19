@@ -47,8 +47,8 @@ protected:
     virtual DistanceExpression _ToDistanceExpression(DPoint3dCR point) const = 0;
 
 public:
-    DPoint3d ToDPoint3d(DistanceExpressionCR distanceExpression) const { return _ToDPoint3d(distanceExpression); }
-    DistanceExpression ToDistanceExpression(DPoint3dCR point) const { return _ToDistanceExpression(point); }
+    LINEARREFERENCING_EXPORT DPoint3d ToDPoint3d(DistanceExpressionCR distanceExpression) const { return _ToDPoint3d(distanceExpression); }
+    LINEARREFERENCING_EXPORT DistanceExpression ToDistanceExpression(DPoint3dCR point) const { return _ToDistanceExpression(point); }
 }; // ISpatialLinearElement
 
 //=======================================================================================
