@@ -9,7 +9,7 @@
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
-        <!--ECNavigationProperty propertyName="ILinearElementSource" relationshipName="ILinearElementSourceOwnsILinearElements" direction="backward"/-->
+        <ECNavigationProperty propertyName="ILinearElementSource" relationshipName="ILinearElementSourceProvidesILinearElements" direction="backward"/>
     </ECEntityClass>
     <ECEntityClass typeName="ILinearElementSource" description="Interface to be mixed-in by Element-subclasses meant to provide Linear-Elements." modifier="Abstract">
         <ECCustomAttributes>
@@ -18,28 +18,20 @@
             </IsMixin>
         </ECCustomAttributes>
     </ECEntityClass>
-    <!--ECRelationshipClass typeName="ILinearElementSourceOwnsILinearElements" strength="embedding">
-        <Source multiplicity="(0..1)" polymorphic="true">
+    <ECRelationshipClass typeName="ILinearElementSourceProvidesILinearElements" strength="referencing" modifier="None">
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="provided by 1 ILinearElementSource">
             <Class class="ILinearElementSource"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="provides N ILinearElements">
             <Class class="ILinearElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="ILinearElementSourceRefersToIReferents" strength="referencing">
+    <!--ECRelationshipClass typeName="ILinearElementSourceRefersToIReferents" strength="referencing">
         <Source multiplicity="(0..1)" polymorphic="true">
             <Class class="ILinearElementSource"/>
         </Source>
         <Target multiplicity="(0..*)" polymorphic="true">
             <Class class="IReferent"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="ILinearElementSourceOwnsILinearlyLocatedAttributions" modifier="Abstract" strength="embedding">
-        <Source multiplicity="(0..1)" polymorphic="true">
-            <Class class="ILinearElementSource"/>
-        </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
-            <Class class="ILinearlyLocatedAttribution"/>
         </Target>
     </ECRelationshipClass-->
     <!-- Restrictions that may be applied to an implementation of ILinearlyLocated during Segmentation operations. -->
@@ -103,13 +95,22 @@
     <ECEntityClass typeName="LinearlyReferencedLocation" modifier="Abstract">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="ILinearlyLocatedOwnsLocations" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="ILinearlyLocatedOwnsAtLocations" strength="embedding" modifier="None">
         <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
         <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 ILinearlyLocated">
             <Class class="ILinearlyLocated"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="owns N LinearlyReferencedLocations">
-            <Class class="LinearlyReferencedLocation"/>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N LinearlyReferencedLocations">
+            <Class class="LinearlyReferencedAtLocation"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ILinearlyLocatedOwnsFromToLocations" strength="embedding" modifier="None">
+        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 ILinearlyLocated">
+            <Class class="ILinearlyLocated"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N LinearlyReferencedLocations">
+            <Class class="LinearlyReferencedFromToLocation"/>
         </Target>
     </ECRelationshipClass>
     <ECStructClass typeName="DistanceExpression">

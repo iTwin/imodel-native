@@ -32,6 +32,9 @@ public:
     Dgn::DgnElementCR ToElement() const { return _ILinearElementToDgnElement(); }
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearElementToDgnElement()); }
 
+    Dgn::DgnElementId GetILinearElementSource() const { return ToElement().GetPropertyValueId<Dgn::DgnElementId>("ILinearElementSource"); }
+    LINEARREFERENCING_EXPORT void SetILinearElementSource(ILinearElementSourceCP);
+
     LINEARREFERENCING_EXPORT double GetLength() const { return _GetLength(); }
     LINEARREFERENCING_EXPORT double GetStartValue() const { return _GetStartValue(); }
 }; // ILinearElement
@@ -52,6 +55,7 @@ protected:
 public:
     Dgn::DgnElementCR ToElement() const { return _ILinearElementSourceToDgnElement(); }
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_ILinearElementSourceToDgnElement()); }
+    LINEARREFERENCING_EXPORT bset<Dgn::DgnElementId> QueryLinearElements() const;
 }; // ILinearElementSource
 
 typedef BeSQLite::EC::ECInstanceId LinearlyReferencedLocationId;
