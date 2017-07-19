@@ -40,5 +40,5 @@ struct StructuralMemberGeometricProperties
 struct GeometricTools
     {
     public:
-        static BentleyStatus CreateStructuralMemberGeometry(ArchitecturalPhysical::ArchitecturalBaseElementPtr element, BuildingPhysical::BuildingPhysicalModelR model, StructuralMemberGeometricProperties* properties);
+        static BentleyStatus CreateStructuralMemberGeometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model, StructuralMemberGeometricProperties* properties);
     };

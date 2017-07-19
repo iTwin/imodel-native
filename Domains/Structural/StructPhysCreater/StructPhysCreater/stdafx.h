@@ -5,15 +5,7 @@
 
 #pragma once
 
-//#include "targetver.h"
-//
-//#include <stdio.h>
-//#include <tchar.h>
-
-#include <ArchitecturalPhysical/ArchitecturalPhysicalApi.h>
-#include <BuildingCommon/BuildingCommonApi.h>
-#include <BuildingPhysical/BuildingPhysicalApi.h>
-
+#include <StructuralDomain/StructuralDomainApi.h>
 
 
 // TODO: reference additional headers your program requires here

@@ -31,5 +31,22 @@ struct ConcreteDomain : Dgn::DgnDomain
         CONCRETE_EXPORT static Dgn::CodeSpecId QueryConcreteCodeSpecId(Dgn::DgnDbCR dgndb);
     };
 
+//=======================================================================================
+// @bsiclass                                    BentleySystems
+//=======================================================================================
+struct ConcreteCategory : NonCopyableClass
+    {
+    friend struct ConcreteDomain;
+
+    private:
+        static void InsertDomainCategories(Dgn::DgnDbR);
+        static Dgn::DgnCategoryId InsertCategory(Dgn::DgnDbR, Utf8CP, Dgn::ColorDef const&);
+        static Dgn::DgnSubCategoryId InsertSubCategory(Dgn::DgnDbR, Dgn::DgnCategoryId, Utf8CP, Dgn::ColorDef const&);
+
+    public:
+        //! Get the DgnSubCategoryId
+        CONCRETE_EXPORT static Dgn::DgnCategoryId QueryStructuralPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName);
+    };
+
 
 END_BENTLEY_CONCRETE_NAMESPACE

@@ -9,9 +9,15 @@
         </SchemaChangeTrackingState>
     </ECCustomAttributes>
     <ECEntityClass typeName="StructuralPhysicalModel" displayLabel="Structural Physical Model">
-        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>bis:PhysicalModel</BaseClass>
+		<ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="StructuralTypeDefinitionModel" displayLabel="Structural Type Definition Model">
         <BaseClass>bis:DefinitionModel</BaseClass>
+		<ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
     </ECEntityClass>
 </ECSchema>

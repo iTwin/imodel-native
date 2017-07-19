@@ -13,5 +13,393 @@ BE_JSON_NAME(StructuralDomain)
 BEGIN_BENTLEY_STRUCTURAL_DOMAIN_NAMESPACE
 
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Utf8String StructuralDomainUtilities::BuildDynamicSchemaName(Utf8StringCR modelCodeName)
+    {
+    return modelCodeName + "Dynamic";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Utf8String StructuralDomainUtilities::BuildPhysicalModelCode(Utf8StringCR modelCodeName)
+    {
+    return modelCodeName + ":Physical";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Utf8String StructuralDomainUtilities::BuildTypeDefinitionModelCode(Utf8StringCR modelCodeName)
+    {
+    return modelCodeName + ":TypeDefinition";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
+    {
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Concrete::ConcreteDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BentleyStatus::ERROR;
+
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::StructuralPhysical::StructuralPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BentleyStatus::ERROR;
+
+    //if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::StructuralMaterials::StructuralMaterialsDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+    //    return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+ECN::ECSchemaCP StructuralDomainUtilities::GetStructuralDynamicSchema(StructuralPhysical::StructuralPhysicalModelCPtr model)
+    {
+    StructuralDomainSettings outSettings = StructuralDomainSettings::CreateStructuralDomainSettings();
+
+    outSettings = model->GetJsonProperties(json_StructuralDomain());
+
+    if (Utf8String::IsNullOrEmpty(outSettings.GetclasslibraryName().c_str()))
+        return nullptr;
+
+    return model->GetDgnDb().Schemas().GetSchema(outSettings.GetclasslibraryName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+ECN::ECSchemaPtr StructuralDomainUtilities::GetUpdateableSchema(StructuralPhysical::StructuralPhysicalModelCPtr model)
+    {
+    ECN::ECSchemaCP schema = GetStructuralDynamicSchema(model);
+
+    if (nullptr == schema)
+        return nullptr;
+
+    auto context = ECN::ECSchemaReadContext::CreateContext(false);
+
+    ECN::SchemaKey k(schema->GetSchemaKey());
+
+    ECN::ECSchemaPtr currSchema = model->GetDgnDb().GetSchemaLocater().LocateSchema(k, ECN::SchemaMatchType::Exact, *context);
+
+    ECN::ECSchemaPtr updateableSchema;
+
+    if (ECN::ECObjectsStatus::Success != currSchema->CopySchema(updateableSchema))
+        return nullptr;
+
+    updateableSchema->SetVersionMinor(currSchema->GetVersionMinor() + 1);
+
+    return updateableSchema;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Utf8String StructuralDomainUtilities::GetSchemaNameFromModel(StructuralPhysical::StructuralPhysicalModelCPtr model)
+    {
+    StructuralDomainSettings outSettings = StructuralDomainSettings::CreateStructuralDomainSettings();
+
+    outSettings = model->GetJsonProperties(json_StructuralDomain());
+
+    return outSettings.GetclasslibraryName();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+StructuralPhysical::StructuralPhysicalModelPtr StructuralDomainUtilities::GetStructuralPhyicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+    {
+    if (parentSubject.IsNull())
+        {
+        parentSubject = db.Elements().GetRootSubject();
+        }
+
+    Dgn::DgnCode partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, BuildPhysicalModelCode(modelCodeName));
+    Dgn::DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+    Dgn::PhysicalPartitionCPtr partition = db.Elements().Get<Dgn::PhysicalPartition>(partitionId);
+    if (!partition.IsValid())
+        return nullptr;
+
+    return dynamic_cast<StructuralPhysical::StructuralPhysicalModelP>(partition->GetSubModel().get());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+StructuralPhysical::StructuralTypeDefinitionModelPtr StructuralDomainUtilities::GetStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+    {
+    if (parentSubject.IsNull())
+        parentSubject = db.Elements().GetRootSubject();
+
+    Dgn::DgnCode partitionCode = Dgn::PhysicalPartition::CreateCode(*parentSubject, BuildTypeDefinitionModelCode(modelCodeName));
+    Dgn::DgnElementId partitionId = db.Elements().QueryElementIdByCode(partitionCode);
+    Dgn::DefinitionPartitionCPtr partition = db.Elements().Get<Dgn::DefinitionPartition>(partitionId);
+    if (!partition.IsValid())
+        return nullptr;
+
+    return dynamic_cast<StructuralPhysical::StructuralTypeDefinitionModelP>(partition->GetSubModel().get());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+ECN::ECClassCP StructuralDomainUtilities::GetExistingECClass(Dgn::DgnDbPtr db, Utf8StringCR schemaName, Utf8StringCR className)
+    {
+    ECN::ECSchemaCP schema = db->Schemas().GetSchema(schemaName.c_str());
+
+    if (nullptr == schema)
+        return nullptr;
+
+    return schema->GetClassCP(className.c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+ECN::ECSchemaCP StructuralDomainUtilities::CreateStructuralDynamicSchema(Utf8StringCR modelCodeName, StructuralPhysical::StructuralPhysicalModelPtr model)
+    {
+    Dgn::DgnDbR db = model->GetDgnDb();
+    Utf8String schemaName = BuildDynamicSchemaName(modelCodeName);
+    Utf8String internalName = GetSchemaNameFromModel(model);
+
+    bool nameExists = false;
+
+    if (!Utf8String::IsNullOrEmpty(internalName.c_str()))
+        {
+        schemaName = internalName;
+        nameExists = true;
+        }
+
+    // Check to see if the schema exists. Should we get a unique name?
+
+    ECN::ECSchemaCP existingSchema = db.Schemas().GetSchema(schemaName.c_str());
+
+    if (nullptr != existingSchema)
+        {
+        if (!nameExists)
+            {
+            UpdateSchemaNameInModel(schemaName, model);
+            }
+        return existingSchema;
+        }
+
+    ECN::ECSchemaPtr dynSchema;
+
+    Utf8String alias;
+
+    alias.Sprintf("BLDG%d", rand());
+
+    if (ECN::ECObjectsStatus::Success != ECN::ECSchema::CreateSchema(dynSchema, schemaName, alias, 1, 1, 0))
+        return nullptr;
+
+    ECN::ECSchemaCP bisSchema = db.Schemas().GetSchema(BIS_ECSCHEMA_NAME);
+
+    if (nullptr == bisSchema)
+        return nullptr;
+
+
+    if (ECN::ECObjectsStatus::Success != dynSchema->AddReferencedSchema((ECN::ECSchemaR)(*bisSchema)))
+        return nullptr;
+
+    return InsertSuppliedSchema(dynSchema, model);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus StructuralDomainUtilities::CreateStructuralModels(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject, bool createDynamicSchema, ECN::ECSchemaPtr suppliedDynamicSchema)
+    {
+    StructuralPhysical::StructuralPhysicalModelPtr physicalModel = CreateStructuralPhysicalModel(modelCodeName, db, parentSubject);
+
+    if (!physicalModel.IsValid())
+        return BentleyStatus::ERROR;
+
+    if (createDynamicSchema && !suppliedDynamicSchema.IsValid())
+        {
+        if (nullptr == CreateStructuralDynamicSchema(modelCodeName, physicalModel))
+            return BentleyStatus::ERROR;
+        }
+    else if (suppliedDynamicSchema.IsValid())
+        {
+        if (nullptr == InsertSuppliedSchema(suppliedDynamicSchema, physicalModel))
+            return BentleyStatus::ERROR;
+        }
+
+    StructuralPhysical::StructuralTypeDefinitionModelPtr typeDefinitionModel = CreateStructuralTypeDefinitionModel(modelCodeName, db, parentSubject);
+
+    if (!typeDefinitionModel.IsValid())
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+StructuralPhysical::StructuralPhysicalModelPtr StructuralDomainUtilities::CreateStructuralPhysicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+    {
+    if (!parentSubject.IsValid())
+        {
+        parentSubject = db.Elements().GetRootSubject();
+        }
+
+    // Create the partition and the StructuralPhysicalModel.
+
+    Utf8String phyModelCode = BuildPhysicalModelCode(modelCodeName);
+
+    Dgn::PhysicalPartitionCPtr partition = Dgn::PhysicalPartition::CreateAndInsert(*parentSubject, phyModelCode);
+
+    if (!partition.IsValid())
+        return nullptr;
+
+    StructuralPhysical::StructuralPhysicalModelPtr physicalModel = StructuralPhysical::StructuralPhysicalModel::Create(*partition);
+
+    return physicalModel;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+StructuralPhysical::StructuralTypeDefinitionModelPtr StructuralDomainUtilities::CreateStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+    {
+    if (parentSubject.IsNull())
+        parentSubject = db.Elements().GetRootSubject();
+
+    Utf8String defModelCode = BuildTypeDefinitionModelCode(modelCodeName);
+
+    Dgn::DefinitionPartitionCPtr defPartition = Dgn::DefinitionPartition::CreateAndInsert(*parentSubject, defModelCode);
+
+    if (!defPartition.IsValid())
+        return nullptr;
+
+    StructuralPhysical::StructuralTypeDefinitionModelPtr typeDefinitionModel = StructuralPhysical::StructuralTypeDefinitionModel::Create(*defPartition);
+
+    return typeDefinitionModel;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Dgn::PhysicalElementPtr StructuralDomainUtilities::CreatePhysicalElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model, Utf8CP categoryName)
+    {
+    Dgn::DgnDbR db = model.GetDgnDb();
+    Dgn::DgnModelId modelId = model.GetModelId();
+
+    // Find the class
+
+    ECN::ECClassCP structuralClass = db.GetClassLocater().LocateClass(schemaName.c_str(), className.c_str());
+
+    if (nullptr == structuralClass)
+        return nullptr;
+
+    ECN::ECClassId classId = structuralClass->GetId();
+
+    Dgn::ElementHandlerP elmHandler = Dgn::dgn_ElementHandler::Element::FindHandler(db, classId);
+    if (NULL == elmHandler)
+        return nullptr;
+
+    Utf8String localCategoryName = structuralClass->GetDisplayLabel();
+
+    if (nullptr != categoryName)
+        localCategoryName = categoryName;
+
+    Dgn::DgnCategoryId categoryId = Concrete::ConcreteCategory::QueryStructuralPhysicalCategoryId(db, localCategoryName.c_str());
+
+    Dgn::GeometricElement3d::CreateParams params(db, modelId, classId, categoryId);
+
+    Dgn::DgnElementPtr element = elmHandler->Create(params);
+
+    Dgn::PhysicalElementPtr structuralElement = dynamic_pointer_cast<Dgn::PhysicalElement>(element);
+
+    auto geomSource = structuralElement->ToGeometrySourceP();
+
+    if (nullptr == geomSource)
+        return nullptr;
+
+    geomSource->SetCategoryId(categoryId);
+
+    return structuralElement;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+ECN::ECEntityClassP StructuralDomainUtilities::CreatePhysicalElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR className)
+    {
+    ECN::ECClassCP baseClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalElement);
+
+    if (nullptr == baseClass)
+        return nullptr;
+
+    ECN::ECEntityClassP newClass;
+
+    if (ECN::ECObjectsStatus::Success != schema->CreateEntityClass(newClass, className))
+        return nullptr;
+
+    if (ECN::ECObjectsStatus::Success != newClass->AddBaseClass(*baseClass))
+        {
+        schema->DeleteClass(*newClass);
+        return nullptr;
+        }
+
+    return newClass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+ECN::ECSchemaCP StructuralDomainUtilities::InsertSuppliedSchema(ECN::ECSchemaPtr suppliedDynamicSchema, StructuralPhysical::StructuralPhysicalModelPtr model)
+    {
+    bvector<ECN::ECSchemaCP> schemas;
+
+    ECN::ECSchemaCP a = &(*suppliedDynamicSchema);
+
+    schemas.push_back(a);
+
+    if (Dgn::SchemaStatus::Success != model->GetDgnDb().ImportSchemas(schemas))
+        return nullptr;
+
+    model->GetDgnDb().SaveChanges();
+
+    UpdateSchemaNameInModel(suppliedDynamicSchema->GetName(), model);
+
+    return  model->GetDgnDb().Schemas().GetSchema(suppliedDynamicSchema->GetName().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Dgn::SchemaStatus StructuralDomainUtilities::UpdateSchemaInDb(Dgn::DgnDbR db, ECN::ECSchemaR updatedSchema)
+    {
+    bvector<ECN::ECSchemaCP> schemas;
+
+    ECN::ECSchemaCP b = &updatedSchema;
+
+    schemas.push_back(b);
+
+    return db.ImportSchemas(schemas);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus StructuralDomainUtilities::UpdateSchemaNameInModel(Utf8StringCR schemaName, StructuralPhysical::StructuralPhysicalModelPtr model)
+    {
+    StructuralDomainSettings settings = StructuralDomainSettings::CreateStructuralDomainSettings(schemaName.c_str());
+
+    model->SetJsonProperties(json_StructuralDomain(), settings);
+
+    if (Dgn::DgnDbStatus::Success != model->Update())
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+
 END_BENTLEY_STRUCTURAL_DOMAIN_NAMESPACE
 

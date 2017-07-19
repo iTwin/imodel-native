@@ -14,13 +14,13 @@
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 BentleyStatus GeometricTools::CreateStructuralMemberGeometry(
-    ArchitecturalPhysical::ArchitecturalBaseElementPtr element,
-    BuildingPhysical::BuildingPhysicalModelR model,
+    Dgn::PhysicalElementPtr element,
+    StructuralPhysical::StructuralPhysicalModelR model,
     StructuralMemberGeometricProperties* properties)
     {
     Dgn::DgnDbR db = model.GetDgnDb();
     Dgn::DgnModelId modelId = model.GetModelId();
-    Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalCategoryId(db, element->GetElementClass()->GetName().c_str());
+    Dgn::DgnCategoryId categoryId = Concrete::ConcreteCategory::QueryStructuralPhysicalCategoryId(db, element->GetElementClass()->GetName().c_str());
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*element);
     if (!builder.IsValid())
