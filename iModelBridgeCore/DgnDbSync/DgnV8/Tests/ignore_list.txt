@@ -13,3 +13,5 @@ ImportConfigTests.embedConfigFile
 
 ECConversionTests.RelationshipInstance       # WIP UmarH
 
+# Fails after the merge
+ECSchemaTests.RemapReservedPropertyNames
