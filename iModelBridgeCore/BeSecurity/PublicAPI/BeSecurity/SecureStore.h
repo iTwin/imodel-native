@@ -2,14 +2,13 @@
  |
  |     $Source: PublicAPI/BeSecurity/SecureStore.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <BeSecurity/BeSecurity.h>
-#include <json/json.h>
 #include <Bentley/LocalState.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
 
