@@ -1070,7 +1070,7 @@ void GeometryParams::Resolve(DgnDbR dgnDb, DgnViewportP vp)
         m_styleInfo = LineStyleInfo::Create(appearance.GetStyle(), nullptr).get(); // WIP_LINESTYLE - Need LineStyleParams...
 
     if (!m_appearanceOverrides.m_material)
-        m_materialId = appearance.GetMaterial();
+        m_materialId = appearance.GetRenderMaterial();
 
     // SubCategory transparency is combined with element transparency to compute net transparency. 
     if (0.0 != appearance.GetTransparency())

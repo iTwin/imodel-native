@@ -5,7 +5,6 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
 #include "../TestFixture/DgnDbTestFixtures.h"
 
 USING_NAMESPACE_BENTLEY_DPTEST
@@ -15,7 +14,6 @@ USING_NAMESPACE_BENTLEY_DPTEST
 +===============+===============+===============+===============+===============+======*/
 struct CategoryTests : public DgnDbTestFixture
     {
-
     void CompareCategories(DgnCategoryId catId, Utf8CP name, DgnCategory::Rank rank, Utf8CP descr)
         {
         DgnCategoryCPtr cat = DgnCategory::Get(*m_db, catId);
@@ -52,7 +50,7 @@ struct CategoryTests : public DgnDbTestFixture
             {
             EXPECT_STREQ(subcat->GetSubCategoryName().c_str(), other.GetSubCategoryName().c_str());
             EXPECT_EQ(subcat->GetCategoryId(), other.GetCategoryId());
-            EXPECT_EQ(subcat->GetCode().GetScopeElementId(), other.GetCode().GetScopeElementId());
+            EXPECT_EQ(subcat->GetCode().GetScopeElementId(*m_db), other.GetCode().GetScopeElementId(*m_db));
             EXPECT_EQ(subcat->GetDescription(), other.GetDescription());
             EXPECT_TRUE(subcat->GetAppearance().IsEqual(other.GetAppearance()));
             }
@@ -341,6 +339,34 @@ TEST_F (CategoryTests, ChangeElementCategory)
     ASSERT_NE(DgnDbStatus::Success, element->SetCategoryId(drawingCategoryId));
     ASSERT_EQ(spatialCategoryId2.GetValue(), element->GetCategoryId().GetValue());
     }
+	
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CategoryTests, ValidateCategoryClass)
+    {
+    PhysicalModelPtr physicalModel = DgnDbTestUtils::InsertPhysicalModel(*m_db, "MyPhysicalModel");
+    DgnCategoryId spatialCategoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "MySpatialCategory");
+    DocumentListModelPtr drawingListModel = DgnDbTestUtils::InsertDocumentListModel(GetDgnDb(), "MyDrawingListModel");
+    DrawingPtr drawing = DgnDbTestUtils::InsertDrawing(*drawingListModel, "MyDrawing");
+    DrawingModelPtr drawingModel = DgnDbTestUtils::InsertDrawingModel(*drawing);
+    DgnCategoryId drawingCategoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "MyDrawingCategory");
+
+    GenericPhysicalObjectPtr physicalElement = GenericPhysicalObject::Create(*physicalModel, drawingCategoryId);
+    EXPECT_TRUE(physicalElement.IsValid());
+    DgnDbStatus insertStatus;
+    EXPECT_FALSE(physicalElement->Insert(&insertStatus).IsValid()) << "Should not be able to insert a PhysicalElement with a DrawingCategory";
+    EXPECT_EQ(DgnDbStatus::InvalidCategory, insertStatus);
+    EXPECT_EQ(DgnDbStatus::Success, physicalElement->SetCategoryId(spatialCategoryId));
+    EXPECT_TRUE(physicalElement->Insert().IsValid());
+
+    DrawingGraphicPtr drawingGraphic = DrawingGraphic::Create(*drawingModel, spatialCategoryId);
+    EXPECT_TRUE(drawingGraphic.IsValid());
+    EXPECT_FALSE(drawingGraphic->Insert(&insertStatus).IsValid()) << "Should not be able to insert a DrawingGraphic with a SpatialCategory";
+    EXPECT_EQ(DgnDbStatus::InvalidCategory, insertStatus);
+    EXPECT_EQ(DgnDbStatus::Success, drawingGraphic->SetCategoryId(drawingCategoryId));
+    EXPECT_TRUE(drawingGraphic->Insert().IsValid());
+    }
 
 //=======================================================================================
 //! Test for inserting SubCategories and checking their properties.
@@ -482,10 +508,8 @@ TEST_F(CategoryTests, SubCategoryInvariants)
 
     // Code validation
     DgnSubCategoryPtr defaultSubCat1Edit = defaultSubCat1->MakeCopy<DgnSubCategory>();
-    DgnCode code;    // invalid code
-    EXPECT_EQ(DgnDbStatus::InvalidCodeSpec, defaultSubCat1Edit->SetCode(code));
 
-    code = DgnSubCategory::CreateCode(db, cat2Id, "Cat2"); // Duplicate code
+    DgnCode code = DgnSubCategory::CreateCode(db, cat2Id, "Cat2");
     EXPECT_EQ(DgnDbStatus::Success, defaultSubCat1Edit->SetCode(code));
     DgnDbStatus status;
     defaultSubCat1Edit->Update(&status);

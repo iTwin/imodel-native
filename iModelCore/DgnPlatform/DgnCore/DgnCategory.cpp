@@ -404,7 +404,7 @@ void DgnSubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
     m_transparency = val[json_transp()].asDouble();
 
     if (val.isMember(json_material()))
-        m_material = DgnMaterialId(val[json_material()].asUInt64());
+        m_material = RenderMaterialId(val[json_material()].asUInt64());
     else
         m_material.Invalidate();
     }
@@ -458,7 +458,7 @@ void DgnSubCategory::Appearance::RelocateToDestinationDb(DgnImportContext& conte
         }
 
     if (m_material.IsValid())
-        m_material = context.RemapMaterialId(m_material);
+        m_material = context.RemapRenderMaterialId(m_material);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -470,7 +470,7 @@ void DgnSubCategory::Override::ToJson(JsonValueR outValue) const
     if (m_flags.m_color)        outValue[Appearance::json_color()] = m_value.GetColor().GetValue();
     if (m_flags.m_weight)       outValue[Appearance::json_weight()] = m_value.GetWeight();
     if (m_flags.m_style)        outValue[Appearance::json_style()] = m_value.GetStyle().GetValue();
-    if (m_flags.m_material)     outValue[Appearance::json_material()] = m_value.GetMaterial().GetValue();
+    if (m_flags.m_material)     outValue[APPEARANCE_Material] = m_value.GetRenderMaterial().GetValue();
     if (m_flags.m_priority)     outValue[Appearance::json_priority()] = m_value.GetDisplayPriority();
     if (m_flags.m_transparency) outValue[Appearance::json_transp()] = m_value.GetTransparency();
     }
@@ -486,7 +486,7 @@ void DgnSubCategory::Override::FromJson(JsonValueCR val)
     if (val.isMember(Appearance::json_color()))        SetColor(ColorDef(val[Appearance::json_color()].asUInt()));
     if (val.isMember(Appearance::json_weight()))       SetWeight(val[Appearance::json_weight()].asUInt());
     if (val.isMember(Appearance::json_style()))        SetStyle(DgnStyleId(val[Appearance::json_style()].asUInt64()));
-    if (val.isMember(Appearance::json_material()))     SetMaterial(DgnMaterialId(val[Appearance::json_material()].asUInt64()));
+    if (val.isMember(Appearance::json_material()))     SetRenderMaterial(RenderMaterialId(val[Appearance::json_material()].asUInt64()));
     if (val.isMember(Appearance::json_priority()))     SetDisplayPriority(val[Appearance::json_priority()].asInt());
     if (val.isMember(Appearance::json_transp())) SetTransparency(val[Appearance::json_transp()].asDouble());
     }
@@ -500,7 +500,7 @@ void DgnSubCategory::Override::ApplyTo(Appearance& appear) const
     if (m_flags.m_color)        appear.SetColor(m_value.GetColor());
     if (m_flags.m_weight)       appear.SetWeight(m_value.GetWeight());
     if (m_flags.m_style)        appear.SetStyle(m_value.GetStyle());
-    if (m_flags.m_material)     appear.SetMaterial(m_value.GetMaterial());
+    if (m_flags.m_material)     appear.SetRenderMaterial(m_value.GetRenderMaterial());
     if (m_flags.m_priority)     appear.SetDisplayPriority(m_value.GetDisplayPriority());
     if (m_flags.m_transparency) appear.SetTransparency(m_value.GetTransparency());
     }

@@ -868,7 +868,7 @@ private:
     bool m_resolved = false; //!< whether Resolve has established SubCategory::Appearance/effective values.
     DgnCategoryId m_categoryId; //!< the Category Id on which the geometry is drawn.
     DgnSubCategoryId m_subCategoryId; //!< the SubCategory Id that controls the appearance of subsequent geometry.
-    DgnMaterialId m_materialId; //!< render material Id.
+    RenderMaterialId m_materialId; //!< render material Id.
     int32_t m_elmPriority = 0; //!< display priority (applies to 2d only)
     int32_t m_netPriority = 0; //!< net display priority for element/category (applies to 2d only)
     uint32_t m_weight = 0;
@@ -908,7 +908,7 @@ public:
     void SetTransparency(double transparency) {m_elmTransparency = m_netElmTransparency = m_fillTransparency = m_netFillTransparency = transparency; m_resolved = false;} // NOTE: Sets BOTH element and fill transparency...
     void SetFillTransparency(double transparency) {m_fillTransparency = m_netFillTransparency = transparency; m_resolved = false;}
     void SetDisplayPriority(int32_t priority) {m_elmPriority = m_netPriority = priority; m_resolved = false;} // Set display priority (2d only).
-    void SetMaterialId(DgnMaterialId materialId) {m_appearanceOverrides.m_material = true; m_materialId = materialId;}
+    void SetMaterialId(RenderMaterialId materialId) {m_appearanceOverrides.m_material = true; m_materialId = materialId;}
     void SetPatternParams(PatternParamsP patternParams) {m_pattern = patternParams;}
 
     //! @cond DONTINCLUDEINDOC
@@ -978,7 +978,7 @@ public:
     double GetFillTransparency() const {return m_fillTransparency;}
 
     //! Get render material.
-    DgnMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId;}
+    RenderMaterialId GetMaterialId() const {BeAssert(m_appearanceOverrides.m_material || m_resolved); return m_materialId;}
 
     //! Get display priority (2d only).
     int32_t GetDisplayPriority() const {return m_elmPriority;}
@@ -1793,7 +1793,7 @@ struct System
     virtual ~System(){}
 
     //! Get or create a material from a material element, by id
-    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const = 0;
+    virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const = 0;
 
     //! Create a Material from parameters
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const = 0;
@@ -1927,7 +1927,7 @@ public:
     void* ResolveOverrides(OvrGraphicParamsCP ovr) {return ovr ? _ResolveOverrides(*ovr) : nullptr;}
     GraphicBuilderPtr CreateGraphic(Graphic::CreateParams const& params) {return m_system._CreateGraphic(params);}
     GraphicPtr CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) {return m_system._CreateSprite(sprite, location, xVec, transparency);}
-    MaterialPtr GetMaterial(DgnMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
+    MaterialPtr GetMaterial(RenderMaterialId id, DgnDbR dgndb) const {return m_system._GetMaterial(id, dgndb);}
     TexturePtr GetTexture(DgnTextureId id, DgnDbR dgndb) const {return m_system._GetTexture(id, dgndb);}
     TexturePtr CreateTexture(ImageCR image) const {return m_system._CreateTexture(image);}
     TexturePtr CreateTexture(ImageSourceCR source, Image::Format targetFormat=Image::Format::Rgb, Image::BottomUp bottomUp=Image::BottomUp::No) const {return m_system._CreateTexture(source, targetFormat, bottomUp);}

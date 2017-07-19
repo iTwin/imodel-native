@@ -2017,7 +2017,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, IBRepEntityPtr& entity
 
         if (fbSymb->useMaterial())
             {
-            faceParams.SetMaterialId(DgnMaterialId((uint64_t)fbSymb->materialId()));
+            faceParams.SetMaterialId(RenderMaterialId((uint64_t)fbSymb->materialId()));
             // NEEDSWORK_WIP_MATERIAL...uv???
             }
 
@@ -2314,7 +2314,7 @@ bool GeometryStreamIO::Reader::Get(Operation const& egOp, GeometryParamsR elPara
             // NEEDSWORK_WIP_MATERIAL - Set geometry specific material settings of GeometryParams...
             if (ppfb->useMaterial())
                 {
-                DgnMaterialId material((uint64_t)ppfb->materialId());
+                RenderMaterialId material((uint64_t)ppfb->materialId());
 
                 if (elParams.IsMaterialFromSubCategoryAppearance() || material != elParams.GetMaterialId())
                     {
@@ -2693,8 +2693,8 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
             case GeometryStreamIO::OpCode::Material:
                 {
                 auto fbSymb = flatbuffers::GetRoot<FB::Material>(egOp.m_data);
-                DgnMaterialId materialId((uint64_t)fbSymb->materialId());
-                DgnMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapMaterialId(materialId) : DgnMaterialId());
+                RenderMaterialId materialId((uint64_t)fbSymb->materialId());
+                RenderMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapRenderMaterialId(materialId) : RenderMaterialId());
                 BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
 
                 FlatBufferBuilder remappedfbb;
@@ -2722,8 +2722,8 @@ DgnDbStatus GeometryStreamIO::Import(GeometryStreamR dest, GeometryStreamCR sour
 
                     if (fbSymb->useMaterial())
                         {
-                        DgnMaterialId materialId((uint64_t)fbSymb->materialId());
-                        DgnMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapMaterialId(materialId) : DgnMaterialId());
+                        RenderMaterialId materialId((uint64_t)fbSymb->materialId());
+                        RenderMaterialId remappedMaterialId = (materialId.IsValid() ? importer.RemapRenderMaterialId(materialId) : RenderMaterialId());
                         BeAssert((materialId.IsValid() == remappedMaterialId.IsValid()) && "Unable to deep-copy material");
 
                         FB::FaceSymbology  remappedfbSymb(fbSymb->useColor(), fbSymb->useMaterial(),
@@ -5088,7 +5088,7 @@ void GeometryBuilder::OnNewGeom(DRange3dCR localRangeIn, bool isSubGraphic, Geom
             localParams.SetLineStyle(nullptr);
 
         if (hasInvalidMaterial)
-            localParams.SetMaterialId(DgnMaterialId());
+            localParams.SetMaterialId(RenderMaterialId());
 
         if (!m_appearanceModified || !m_elParamsModified.IsEquivalent(localParams))
             {

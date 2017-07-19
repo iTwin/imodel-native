@@ -21,71 +21,6 @@ struct DgnElementTests : public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Maha Nasir                      08/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(DgnElementTests, ResetStatistics)
-    {
-    SetupSeedProject();
-
-    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "Model1");
-    DgnModelId modelId = model->GetModelId();
-    m_db->SaveChanges("InsertPhysicalModel");
-
-    m_db->Memory().PurgeUntil(0);
-    m_db->Elements().ResetStatistics(); // clear statistics to prevent SetupSeedProject changes from breaking this test
-
-    DgnElementCPtr element1 = InsertElement(modelId);
-    DgnElementCPtr element2 = InsertElement(modelId);
-    EXPECT_TRUE(element1.IsValid());
-    EXPECT_TRUE(element2.IsValid());
-
-    DgnElements::Statistics stats = m_db->Elements().GetStatistics();
-    EXPECT_EQ(2, stats.m_newElements);
-    EXPECT_EQ(0, stats.m_unReferenced);
-    EXPECT_EQ(0, stats.m_reReferenced);
-    EXPECT_EQ(0, stats.m_purged);
-
-    DgnElementId elementId1 = element1->GetElementId();
-    element1 = nullptr;
-    stats = m_db->Elements().GetStatistics();
-    EXPECT_EQ(2, stats.m_newElements);
-    EXPECT_EQ(1, stats.m_unReferenced);
-    EXPECT_EQ(0, stats.m_reReferenced);
-    EXPECT_EQ(0, stats.m_purged);
-
-    element1 = m_db->Elements().GetElement(elementId1);
-    stats = m_db->Elements().GetStatistics();
-    EXPECT_EQ(2, stats.m_newElements);
-    EXPECT_EQ(1, stats.m_unReferenced);
-    EXPECT_EQ(1, stats.m_reReferenced);
-    EXPECT_EQ(0, stats.m_purged);
-
-    EXPECT_EQ(DgnDbStatus::Success, element2->Delete());
-    m_db->SaveChanges("DeleteElement");
-    stats = m_db->Elements().GetStatistics();
-    EXPECT_EQ(2, stats.m_newElements);
-    EXPECT_EQ(1, stats.m_unReferenced);
-    EXPECT_EQ(1, stats.m_reReferenced);
-    EXPECT_EQ(1, stats.m_purged);
-    
-    element1 = nullptr;
-    element2 = nullptr;
-    m_db->Memory().PurgeUntil(0);
-    stats = m_db->Elements().GetStatistics();
-    EXPECT_EQ(2, stats.m_newElements);
-    EXPECT_EQ(2, stats.m_unReferenced);
-    EXPECT_EQ(1, stats.m_reReferenced);
-    EXPECT_EQ(2, stats.m_purged);
-
-    m_db->Elements().ResetStatistics();
-    stats = m_db->Elements().GetStatistics();
-    EXPECT_EQ(0, stats.m_newElements);
-    EXPECT_EQ(0, stats.m_unReferenced);
-    EXPECT_EQ(0, stats.m_reReferenced);
-    EXPECT_EQ(0, stats.m_purged);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Maha Nasir                      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F (DgnElementTests, UpdateElement)
     {
     SetupSeedProject();
@@ -850,7 +785,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledProperties)
     EXPECT_EQ(element->GetCategoryId(), element->GetPropertyValueId<DgnCategoryId>("Category"));
     EXPECT_STREQ(element->GetUserLabel(), element->GetPropertyValueString("UserLabel").c_str());
     EXPECT_EQ(element->GetCode().GetCodeSpecId(), element->GetPropertyValueId<CodeSpecId>("CodeSpec"));
-    EXPECT_EQ(element->GetCode().GetScopeElementId(), element->GetPropertyValueId<DgnElementId>("CodeScope"));
+    EXPECT_EQ(element->GetCode().GetScopeElementId(*m_db), element->GetPropertyValueId<DgnElementId>("CodeScope"));
     EXPECT_STREQ(element->GetCode().GetValue().c_str(), element->GetPropertyValueString("CodeValue").c_str());
     }
 
@@ -1499,7 +1434,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(*m_db))));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));

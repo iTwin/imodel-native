@@ -2,7 +2,7 @@
 |
 |  $Source: Tests/DgnProject/NonPublished/ElementGeometryBuilder_Tests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -108,16 +108,17 @@ TEST_F(GeometryBuilderTests, CreateElement2d)
     {
     SetupSeedProject();
 
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertDrawingCategory(*m_db, "MyDrawingCategory");
     DocumentListModelPtr sheetListModel = DgnDbTestUtils::InsertDocumentListModel(*m_db, "SheetListModel");
     auto sheet = DgnDbTestUtils::InsertSheet(*sheetListModel, 1,1,1, "TestSheet");
     auto sheetModel = DgnDbTestUtils::InsertSheetModel(*sheet);
     DgnModelId sheetModelId = sheetModel->GetModelId();
 
-    DgnElementPtr el = TestElement2d::Create(*m_db, sheetModelId, m_defaultCategoryId, DgnCode(), 100);
+    DgnElementPtr el = TestElement2d::Create(*m_db, sheetModelId, categoryId, DgnCode(), 100);
 
     GeometrySourceP geomElem = el->ToGeometrySourceP();
 
-    GeometryBuilderPtr builder = GeometryBuilder::Create(*sheetModel, m_defaultCategoryId, DPoint2d::From(0.0, 0.0));
+    GeometryBuilderPtr builder = GeometryBuilder::Create(*sheetModel, categoryId, DPoint2d::From(0.0, 0.0));
     TextString textStringElem;
     textStringElem.SetText("If we have no text we have no range and insert fails");
     EXPECT_TRUE(builder->Append(textStringElem));

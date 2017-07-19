@@ -73,23 +73,6 @@ struct TestingConfigurationAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_appDir;}
     };
 
-//=======================================================================================
-// @bsiclass                                                    Sam.Wilson      07/15
-//=======================================================================================
-struct TestingDgnScriptingAdmin : Dgn::DgnPlatformLib::Host::ScriptAdmin
-{
-    ScopedDgnHost::FetchScriptCallback* m_callback;
-
-    TestingDgnScriptingAdmin() {m_callback=nullptr;}
-
-    DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lmt, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred) override
-        {
-        if (nullptr == m_callback)
-            return DgnDbStatus::NotEnabled;
-        return m_callback->_FetchScript(sText, stypeFound, lmt, db, sName, stypePreferred);
-        }
-};
-
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -126,13 +109,10 @@ struct ScopedDgnHostImpl : DgnPlatformLib::Host
     LineStyleAdmin& _SupplyLineStyleAdmin() override;
     NotificationAdmin& _SupplyNotificationAdmin() override;
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override;
-    ScriptAdmin& _SupplyScriptingAdmin() override {return *new TestingDgnScriptingAdmin();}
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return *new ProxyRepositoryAdmin();}
     void _SupplyProductName(Utf8StringR s) override {s="BeTest";}
     L10N::SqlangFiles _SupplySqlangFiles() override {return L10N::SqlangFiles(BeFileName());} // users must have already initialized L10N to use ScopedDgnHost
 
-    void SetFetchScriptCallback(ScopedDgnHost::FetchScriptCallback* cb) {((TestingDgnScriptingAdmin*)m_scriptingAdmin)->m_callback = cb;}
-    void SetCodeAdmin(DgnPlatformLib::Host::CodeAdmin* admin) {delete m_codeAdmin; m_codeAdmin = admin;}
     void SetRepositoryAdmin(DgnPlatformLib::Host::RepositoryAdmin* admin) {((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl = admin;}
     DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin() {return ((ProxyRepositoryAdmin*)m_repositoryAdmin)->m_impl;}
 };
@@ -152,22 +132,6 @@ ScopedDgnHost::ScopedDgnHost()
 ScopedDgnHost::~ScopedDgnHost() 
     {
     delete m_pimpl;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      11/2011
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ScopedDgnHost::SetFetchScriptCallback(FetchScriptCallback* cb)
-    {
-    m_pimpl->SetFetchScriptCallback(cb);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Shaun.Sewall    12/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void ScopedDgnHost::SetCodeAdmin(DgnPlatformLib::Host::CodeAdmin* admin)
-    {
-    m_pimpl->SetCodeAdmin(admin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -247,7 +211,7 @@ void TestDataManager::MustBeBriefcase(DgnDbPtr& db, DgnDb::OpenMode mode)
 
     BeFileName name(db->GetFileName());
 
-    db->AssignBriefcaseId(BeBriefcaseId(BeBriefcaseId::Standalone()));
+    db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
     db->SaveChanges();
     db->CloseDb();
 

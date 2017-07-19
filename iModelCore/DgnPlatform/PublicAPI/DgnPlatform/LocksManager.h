@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <DgnPlatform/DgnPlatform.h>
-#include <BeJavaScriptTools/BeJavaScriptTools.h>
 
 DGNPLATFORM_TYPEDEFS(LockRequest);
 DGNPLATFORM_TYPEDEFS(DgnLock);
@@ -24,13 +23,13 @@ struct DgnChangeSummary;
 //! Enumerates the types of objects that can be locked by a briefcase.
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
 enum class LockableType : uint8_t
 {
     Db = 0, //!< The DgnDb itself.
     Model = 1, //!< A DgnModel.
     Element = 2, //!< A DgnElement.
     Schemas = 3, //!< Schemas in the DgnDb
+    CodeSpecs = 4, //!< CodeSpecs in the DgnDb
 };
 
 //=======================================================================================
@@ -51,6 +50,7 @@ public:
     DGNPLATFORM_EXPORT explicit LockableId(DgnModelCR model); //!< Constructs a LockableId for a model
     DGNPLATFORM_EXPORT explicit LockableId(DgnElementCR element); //!< Constructs a LockableId for an element
     DGNPLATFORM_EXPORT explicit LockableId(BeSQLite::EC::SchemaManager const& schemas); //!< Constructs a LockableId for ecshemas
+    DGNPLATFORM_EXPORT explicit LockableId(DgnCodeSpecs const& codeSpecs); //!< Constructs a LockableId for CodeSpecs
     BeInt64Id GetId() const { return m_id; } //!< The ID of the lockable object
     LockableType GetType() const { return m_type; } //!< The type of the lockable object
     bool IsValid() const { return m_id.IsValid(); } //!< Determine if this LockableId refers to a valid object
@@ -105,7 +105,6 @@ typedef bset<LockableId> LockableIdSet;
 //! 
 // @bsiclass                                                      Paul.Connelly   10/15
 //=======================================================================================
-BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
 enum class LockLevel : uint8_t
 {
     None = 0, //!< No ownership.
@@ -295,6 +294,10 @@ public:
     //! Inserts a request to exclusively lock schemas in the DgnDb
     //! @param[in]      db    The DgnDb containing the schemas
     DGNPLATFORM_EXPORT void InsertSchemasLock(DgnDbCR db);
+
+    //! Inserts a request to exclusively lock CodeSpecs in the DgnDb
+    //! @param[in] db The DgnDb containing the CodeSpecs
+    DGNPLATFORM_EXPORT void InsertCodeSpecsLock(DgnDbCR db);
 
     //! Inserts a collection of elements or models into the request at the specified level.
     //! @param[in]      lockableObjects A collection of elements or models

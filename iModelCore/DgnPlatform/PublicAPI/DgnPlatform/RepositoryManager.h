@@ -350,7 +350,11 @@ public:
 
     //! Acquire an exclusive lock on Schemas in the DgnDb. 
     //! In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.
-    DGNPLATFORM_EXPORT Response LockSchemas() { Request req; req.Locks().InsertSchemasLock(GetDgnDb()); return Acquire(req); }
+    Response LockSchemas() { Request req; req.Locks().InsertSchemasLock(GetDgnDb()); return Acquire(req); }
+
+    //! Acquire an exclusive lock on CodeSpecs in the DgnDb. 
+    //! In bulk operation mode, this function does not acquire the resource but merely adds it to the pending request.
+    Response LockCodeSpecs() { Request req; req.Locks().InsertCodeSpecsLock(GetDgnDb()); return Acquire(req); }
 
     //! Obtain an iterator over the locks currently owned by this briefcase.
     //! By default, iteration is provided over a local cache of held locks. Specifying FastQuery::Yes will query the server for an up-to-date list of held locks.

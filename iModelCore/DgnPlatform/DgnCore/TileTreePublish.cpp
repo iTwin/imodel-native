@@ -119,13 +119,9 @@ struct GeometryProcessor : Dgn::IGeometryProcessor
     virtual IFacetOptionsP _GetFacetOptionsP() override { return m_facetOptions.get(); }
     virtual bool _DoClipping() const override {return true;}
 
-
     virtual bool _ProcessTriMesh(Render::IGraphicBuilder::TriMeshArgs const& args, SimplifyGraphic& simplifyGraphic) override   { m_tile.AddTriMesh (args, simplifyGraphic); return true;     }
 
 };  // GeometryProcessor
-
-
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2017
@@ -144,7 +140,7 @@ struct RenderSystem : Render::System
     RenderSystem(TileR outputTile, ClipVectorPtr& clip) : m_processor(outputTile), m_clip(clip) {  }
     ~RenderSystem() { }
 
-    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const override { return nullptr; }
+    virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override { return nullptr; } 
     virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) const override { return new Graphic(m_clip, params, m_processor, m_context); }
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency) const override { BeAssert(false); return nullptr; }
@@ -155,7 +151,6 @@ struct RenderSystem : Render::System
     virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::Format targetFormat, Image::BottomUp bottomUp, Texture::CreateParams const& params) const override {return new Texture(source, targetFormat, bottomUp, params); }
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override { BeAssert(false); return nullptr; }
     virtual LightPtr   _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const override { BeAssert(false); return nullptr; }
-
 };
 
 /*=================================================================================**//**
@@ -176,7 +171,6 @@ struct Context
 
     Context(TilePtr& outputTile, TileTree::TilePtr& inputTile, Context const& inContext) :
             m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_clip(inContext.m_clip), m_collector(inContext.m_collector), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model) { }
-
 };
 
 } // end TileTreePublish

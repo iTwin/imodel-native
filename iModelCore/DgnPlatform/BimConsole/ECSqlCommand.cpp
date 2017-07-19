@@ -43,7 +43,7 @@ void ECSqlCommand::_Run(Session& session, Utf8StringCR args) const
         return;
         }
 
-    if (ecsql.StartsWithIAscii("select"))
+    if (ecsql.StartsWithIAscii("select") || ecsql.StartsWithIAscii("values"))
         ExecuteSelect(session, stmt);
     else if (ecsql.StartsWithIAscii("insert into"))
         ExecuteInsert(session, stmt);

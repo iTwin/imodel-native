@@ -283,7 +283,6 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
     DgnCategoryId catId = DgnDbTestUtils::InsertSpatialCategory(*m_db, categoryName.c_str());
 
     bool addMultiAspect = false;
-    bool addExtKey = false;
 
     for (int i = 0; i < numInstances; i++)
         {
@@ -294,12 +293,6 @@ void PerformanceElementsCRUDTestFixture::CreateElements(int numInstances, Utf8CP
         AddGeometry(element);
         if (addMultiAspect)
             DgnElement::MultiAspect::AddAspect(*element, *TestMultiAspect::Create("Initial Value"));
-        if (addExtKey)
-            {
-            DgnElement::ExternalKeyAspectPtr extkeyAspect = DgnElement::ExternalKeyAspect::Create(CodeSpecId((uint64_t) 1), "TestExtKey");
-            ASSERT_TRUE(extkeyAspect.IsValid());
-            element->AddAppData(DgnElement::ExternalKeyAspect::GetAppDataKey(), extkeyAspect.get());
-            }
 
         elements.push_back(element);
         }
