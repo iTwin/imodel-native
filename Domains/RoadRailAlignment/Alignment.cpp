@@ -32,6 +32,47 @@ double Alignment::_GetLength() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d Alignment::_ToDPoint3d(DistanceExpressionCR distanceExpression) const
+    {
+    auto mainPairPtr = QueryMainPair();
+
+    DPoint3d retVal;
+    if (distanceExpression.GetLateralOffsetFromILinearElement().IsValid())
+        {
+        retVal = mainPairPtr->GetPointFromStationAndOffset(
+            distanceExpression.GetDistanceAlongFromStart(), 
+            distanceExpression.GetLateralOffsetFromILinearElement().Value());
+        retVal.z = mainPairPtr->GetVerticalElevationAtStation(distanceExpression.GetDistanceAlongFromStart());
+        }
+    else
+        {
+        retVal = mainPairPtr->GetPointFromStationWithZ(distanceExpression.GetDistanceAlongFromStart());
+        }
+
+    if (distanceExpression.GetVerticalOffsetFromILinearElement().IsValid())
+        retVal.z += distanceExpression.GetVerticalOffsetFromILinearElement().Value();
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DistanceExpression Alignment::_ToDistanceExpression(DPoint3dCR point) const
+    {
+    auto mainPairPtr = QueryMainPair();
+
+    double horizOffset;
+    double distanceFromStart = mainPairPtr->HorizontalDistanceFromStart(point, &horizOffset);
+    double vertElev = mainPairPtr->GetVerticalElevationAtStation(distanceFromStart);
+    double vertOffset = (point.z - vertElev);
+
+    return DistanceExpression(distanceFromStart, horizOffset, vertOffset);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Alignment::_OnDelete() const

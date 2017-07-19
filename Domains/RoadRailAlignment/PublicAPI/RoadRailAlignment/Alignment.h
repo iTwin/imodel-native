@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //! Main Linear-Element used in Road & Rail applications.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ISegmentableLinearElement
+struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ISegmentableLinearElement, LinearReferencing::ISpatialLinearElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Dgn::SpatialLocationElement);
     friend struct AlignmentHandler;
@@ -26,9 +26,14 @@ protected:
     //! @private
     explicit Alignment(CreateParams const& params) : T_Super(params) {}
 
+    // ILinearElement
     virtual double _GetLength() const override;
     virtual double _GetStartValue() const override { return 0.0; }
     virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const override final { return *this; }
+
+    // ISpatialLinearElement
+    virtual DPoint3d _ToDPoint3d(LinearReferencing::DistanceExpressionCR distanceExpression) const override;
+    virtual LinearReferencing::DistanceExpression _ToDistanceExpression(DPoint3dCR point) const override;
 
     virtual Dgn::DgnDbStatus _OnDelete() const override;
 

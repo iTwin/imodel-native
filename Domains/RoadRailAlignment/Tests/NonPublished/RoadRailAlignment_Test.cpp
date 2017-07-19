@@ -46,6 +46,17 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_DOUBLE_EQ(150.0, alignmentPairPtr->LengthXY());
     ASSERT_TRUE(alignmentPairPtr->VerticalCurveVector().IsValid());
 
+    // ISpatialLinearElement
+    DPoint3d point = alignmentPtr->ToDPoint3d(DistanceExpression(75.0, 10.0, 5.0));
+    ASSERT_DOUBLE_EQ(75.0, point.x);
+    ASSERT_DOUBLE_EQ(-10.0, point.y);
+    ASSERT_DOUBLE_EQ(5.0, point.z);
+
+    DistanceExpression distanceExp = alignmentPtr->ToDistanceExpression(point);
+    ASSERT_DOUBLE_EQ(75.0, distanceExp.GetDistanceAlongFromStart());
+    ASSERT_DOUBLE_EQ(10.0, distanceExp.GetLateralOffsetFromILinearElement().Value());
+    ASSERT_DOUBLE_EQ(5.0, distanceExp.GetVerticalOffsetFromILinearElement().Value());
+
     // Delete-cascade
     ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->Delete());
     
