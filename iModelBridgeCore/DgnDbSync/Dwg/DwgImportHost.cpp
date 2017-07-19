@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgImportHost.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgImportInternal.h"
@@ -284,7 +284,7 @@ DwgDbStatus     DwgImportHost::_FindFile (WStringR fullpathOut, WCharCP filename
             }
         }
 
-// NEEDSWORK - portable file search (BeFileName::GetCwd not currently portable either).
+// NEEDSWORK - portable file search (Desktop::FileSystem::GetCwd not currently portable either).
 #ifdef BENTLEY_WIN32
     LPCWSTR         fname = static_cast<LPCWSTR> (filenameIn);
     LPCWSTR         extname = static_cast<LPCWSTR> (pExtension);
@@ -397,7 +397,7 @@ void            DwgImportHost::NewProgressMeter ()
     if (nullptr != m_progressMeter)
         delete m_progressMeter;
 
-    DgnProgressMeterP   dgnMeter = m_importer->GetOptions().GetProgressMeter ();
+    DgnProgressMeterP   dgnMeter = &m_importer->GetProgressMeter ();
 
     m_progressMeter = new DwgProgressMeter (dgnMeter);
 

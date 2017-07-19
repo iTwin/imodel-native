@@ -1271,7 +1271,7 @@ StableIdPolicy Converter::_GetIdPolicy(DgnV8FileR dgnFile) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnFilePtr Converter::OpenDgnV8File(DgnV8Api::DgnFileStatus &openStatus, BeFileNameCR inputFile)
+DgnFilePtr Converter::OpenDgnV8File(DgnV8Api::DgnFileStatus &openStatus, BeFileNameCR inputFile, Utf8CP password)
     {
     auto doc = DgnV8Api::DgnDocument::CreateFromFileName(openStatus, inputFile, nullptr, Bentley::DEFDGNFILE_ID, DgnV8Api::DgnDocument::FetchMode::Read, DgnV8Api::DgnDocument::FetchOptions::Default);
     if (doc == nullptr)
@@ -1289,7 +1289,7 @@ DgnFilePtr Converter::OpenDgnV8File(DgnV8Api::DgnFileStatus &openStatus, BeFileN
     if (!file.IsValid())
         return nullptr;
     
-    SupplyPassword supplyPw(_GetParams().GetPassword().c_str());
+    SupplyPassword supplyPw(password);
     DgnV8Api::DgnFileLoadContext v8LoadContext(&supplyPw);
 
     openStatus = (DgnV8Api::DgnFileStatus) file->LoadFile(nullptr, &v8LoadContext, true);
@@ -1300,6 +1300,14 @@ DgnFilePtr Converter::OpenDgnV8File(DgnV8Api::DgnFileStatus &openStatus, BeFileN
     file->SetShareFlag(true);     // TRICKY: If a drawing or sheet references a model in this file, we want it to find our copy of it, not load another copy.
 
     return (SUCCESS != openStatus) ? nullptr : file;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnFilePtr Converter::OpenDgnV8File(DgnV8Api::DgnFileStatus &openStatus, BeFileNameCR inputFile)
+    {
+    return OpenDgnV8File(openStatus, inputFile, _GetParams().GetPassword().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1327,7 +1335,7 @@ Converter::Converter(Params const& params)
 
     ParseModelConfig(m_config);
     if (!params.GetIsPowerplatformBased())
-        Converter::InitializeDwgSettings (this);
+        Converter::InitV8ForeignFileTypes (this);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1351,6 +1359,8 @@ Converter::~Converter()
 
     if (nullptr != m_elementAspectConverter)
         delete m_elementAspectConverter;
+
+    Converter::InitV8ForeignFileTypes (nullptr);
     }
 
 //---------------------------------------------------------------------------------------
@@ -1465,9 +1475,11 @@ void Converter::_OnConversionComplete()
     GetChangeDetector()._Cleanup(*this);
 
 #if defined (BENTLEYCONFIG_PARASOLID)
-    // NOTE: Terminate V8 frustum before trying to use DgnDb to render thumbnails...
-    if (DgnDbApi::PSolidKernelManager::SetExternalFrustrum(false))
+    // NOTE: Terminate V8 frustum before trying to use DgnDb to render thumbnails...    
+    if (true) // DgnV8Api::PSolidKernelManager::IsSessionStarted()) <- Need SDK update to avoid loading pskernel unnecessarily...
         DgnV8Api::PSolidKernelManager::StopSession();
+
+    DgnDbApi::PSolidKernelManager::SetExternalFrustrum(false);
 #endif
 
     if (!IsUpdating())
@@ -1480,6 +1492,9 @@ void Converter::_OnConversionComplete()
 #ifdef WIP_DUMP
     dumpParentAndChildren(*GetDgnDb().Elements().GetRootSubject(), 0);
 #endif
+
+    if (DgnDbApi::PSolidKernelManager::IsSessionStarted())
+        DgnDbApi::PSolidKernelManager::StopSession(); 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1698,11 +1713,6 @@ void Converter::CreateJobStructure_ImportSchemas()
     SetStepName(ProgressMessage::STEP_CREATING(), Utf8String(projectName).c_str());
     Utf8String subjectName(projectName.GetFileNameWithoutExtension());
     
-    FunctionalDomain::GetDomain().ImportSchema(*m_dgndb);
-    Raster::RasterDomain::GetDomain().ImportSchema(*m_dgndb);
-    PointCloud::PointCloudDomain::GetDomain().ImportSchema(*m_dgndb);
-    ThreeMx::ThreeMxDomain::GetDomain().ImportSchema(*m_dgndb);
-
     ImportHandlerExtensionsSchema(*m_dgndb);
 
     if (_WantProvenanceInBim() && !m_dgndb->TableExists(DGN_TABLE_ProvenanceFile))
@@ -1736,6 +1746,8 @@ void Converter::GetOrCreateJobPartitions()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::_OnConversionStart()
     {
+    BeAssert(_GetParams().GetAssetsDir().DoesPathExist());
+
     SetV8ProgressMeter();
 
     ParseLevelConfigAndUpdateParams(m_config);
@@ -3193,7 +3205,11 @@ void Converter::PopulateRangePartIdMap()
         if (!geomPart.IsValid())
             continue;
 
-        if (nullptr == strstr(geomPart->GetCode().GetValueCP(), "CvtV8"))
+        Utf8CP codeValue = geomPart->GetCode().GetValueCP();
+        if (nullptr == codeValue)
+            continue; //Null codes are valid.
+
+        if (nullptr == strstr(codeValue, "CvtV8"))
             continue;
 
         GetRangePartIdMap().insert(Converter::RangePartIdMap::value_type(PartRangeKey(geomPart->GetBoundingBox()), geomPart->GetId()));
@@ -3366,9 +3382,11 @@ DgnV8Api::Handler::Extension::Token& ConvertToDgnDbElementExtension::z_GetConver
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConverterLibrary::ConverterLibrary(DgnDbR bim) : Converter(Params())
+ConverterLibrary::ConverterLibrary(DgnDbR bim, RootModelSpatialParams& params) : T_Super(params)
     {
     m_dgndb = &bim;
+
+    m_changeDetector.reset(new CreatorChangeDetector); // *** NEEDS WORK: we must use a real change detector in case we are updating, if only to detect changes to drawings and sheets.
     
     if (SUCCESS != m_syncInfo.CreateEmptyFile(SyncInfo::GetDbFileName(*m_dgndb)))
         ReportSyncInfoIssue(Converter::IssueSeverity::Fatal, Converter::IssueCategory::Sync(), Converter::Issue::CantCreateSyncInfo(), "");
@@ -3382,13 +3400,6 @@ ConverterLibrary::ConverterLibrary(DgnDbR bim) : Converter(Params())
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConverterLibrary::ConverterLibrary() : Converter(Params())
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 void ConverterLibrary::RecordFileMapping(DgnV8FileR v8File)
     {
     GetV8FileSyncInfoId(v8File);
@@ -3397,19 +3408,34 @@ void ConverterLibrary::RecordFileMapping(DgnV8FileR v8File)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConverterLibrary::RecordModelMapping(DgnV8ModelR sourceV8Model, DgnModelR targetBimModel, BentleyApi::TransformCP transform)
+void ConverterLibrary::ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model)
+    {
+    m_rootModelRef = &rootV8Model;
+    _ComputeCoordinateSystemTransform();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping ConverterLibrary::RecordModelMapping(DgnV8ModelR sourceV8Model, DgnModelR targetBimModel, BentleyApi::TransformCP transform)
     {
     BentleyApi::Transform defaultTransform;
     if (nullptr == transform)
         {
-        defaultTransform = ComputeUnitsScaleTransform(sourceV8Model);
-        transform = &defaultTransform;
+        if (&sourceV8Model == m_rootModelRef)
+            transform = &m_rootTrans;
+        else
+            {
+            defaultTransform = ComputeUnitsScaleTransform(sourceV8Model);
+            transform = &defaultTransform;
+            }
         }
 
-    if (FindModelForDgnV8Model(sourceV8Model, *transform).IsValid())
-        return;
+    auto v8mm = FindModelForDgnV8Model(sourceV8Model, *transform);
+    if (v8mm.IsValid())
+        return v8mm;
 
-    _GetV8FileIntoSyncInfo(*sourceV8Model.GetDgnFileP(), _GetIdPolicy(*sourceV8Model.GetDgnFileP()));
+    GetV8FileSyncInfoId(*sourceV8Model.GetDgnFileP());
 
     ResolvedModelMapping unresolved(sourceV8Model);
 
@@ -3417,7 +3443,7 @@ void ConverterLibrary::RecordModelMapping(DgnV8ModelR sourceV8Model, DgnModelR t
     auto rc = m_syncInfo.InsertModel(mapping, targetBimModel.GetModelId(), sourceV8Model, *transform);
     BeAssert(SUCCESS == rc);
 
-    ResolvedModelMapping v8mm(targetBimModel, sourceV8Model, mapping);
+    v8mm = ResolvedModelMapping(targetBimModel, sourceV8Model, mapping);
 
     m_v8ModelMappings.insert(v8mm);
 
@@ -3425,58 +3451,11 @@ void ConverterLibrary::RecordModelMapping(DgnV8ModelR sourceV8Model, DgnModelR t
     GetChangeDetector()._OnModelSeen(*this, v8mm);
 
     BeAssert(FindModelForDgnV8Model(sourceV8Model, *transform).IsValid());
-    }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping ConverterLibrary::FindModelForDgnV8Model(DgnV8ModelR v8Model, TransformCR trans)
-    {
-    ResolvedModelMapping unresolvedMapping(v8Model);
-    auto range = m_v8ModelMappings.equal_range(unresolvedMapping); // all unique transforms of attachments of this model
-    for (auto thisModel=range.first; thisModel!=range.second; ++thisModel)
-        {
-        if (thisModel->GetTransform().IsEqual(trans))
-            return *thisModel;
-        }
-    return ResolvedModelMapping();
-    }
+    if (&sourceV8Model == m_rootModelRef)
+        m_rootModelMapping = v8mm;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping ConverterLibrary::_GetModelForDgnV8Model(DgnV8ModelRefCR v8ModelRef, TransformCR trans)
-    {
-    auto rmm = FindModelForDgnV8Model(*v8ModelRef.GetDgnModelP(), trans);
-    BeAssert(rmm.IsValid() && "You must call RecordModelMapping to enroll all V8 models before converting elements from them");
-    return rmm;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-ResolvedModelMapping ConverterLibrary::_FindFirstModelMappedTo(DgnV8ModelR v8Model)
-    {
-    ResolvedModelMapping unresolvedMapping(v8Model);
-    
-    auto range = m_v8ModelMappings.equal_range(unresolvedMapping); // all unique transforms of attachments of this model
-    if (range.first !=range.second)
-        return *range.first;
-
-    BeAssert(false && "You must call RecordModelMapping to enroll all V8 models before converting elements from them");
-    return ResolvedModelMapping();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      02/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnV8FileR ConverterLibrary::_GetFontRootV8File()
-    {
-    if (m_v8ModelMappings.empty())
-        {
-        throw "You must call RecordModelMapping to enroll all V8 models before converting elements from them";
-        }
-    return *m_v8ModelMappings.begin()->GetV8Model().GetDgnFileP();
+    return v8mm;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3512,6 +3491,37 @@ ElementConversionResults ConverterLibrary::ConvertElement(DgnV8EhCR v8Element, R
     ElementConversionResults results;
     Converter::ConvertElement(results, v8Element, *rmm, GetSyncInfo().GetCategory(v8Element, *rmm), false, true);
     return results;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void ConverterLibrary::SetChangeDetector(bool isUpdate)
+    {
+    _SetChangeDetector(isUpdate);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus ConverterLibrary::ConvertAllDrawingsAndSheets()
+    {
+    if (!m_jobSubject.IsValid())
+        {
+        BeAssert(false && "You must register your job subject first");
+        return BSIERROR;
+        }
+    
+    GetOrCreateJobPartitions();
+
+    _ImportDrawingAndSheetModels(m_rootModelMapping);
+    if (WasAborted())
+        return BSIERROR;
+    _ConvertDrawings();
+    if (WasAborted())
+        return BSIERROR;
+    _ConvertSheets();
+    return BSISUCCESS;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

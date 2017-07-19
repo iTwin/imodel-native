@@ -27,7 +27,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
-struct WindowsKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
+struct KnownDesktopLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     {
     BeFileName m_tempDirectory;
     BeFileName m_executableDirectory;
@@ -39,7 +39,7 @@ struct WindowsKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   BentleySystems
     //---------------------------------------------------------------------------------------
-    WindowsKnownLocationsAdmin()
+    KnownDesktopLocationsAdmin()
         {
         // use the standard Windows temporary directory
         wchar_t tempPathW[MAX_PATH];
@@ -73,7 +73,7 @@ private:
     WString GetArgValueW(WCharCP arg);
 
     virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
-    virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); };
+    virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
     virtual L10N::SqlangFiles _SupplySqlangFiles() override;
 
     int _PrintUsage(WCharCP programName);

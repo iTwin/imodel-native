@@ -257,18 +257,26 @@ DbResult SyncInfo::InsertLineStyle(DgnStyleId newId, double componentScale, V8St
     }
 
 /*---------------------------------------------------------------------------------**//**
+ _RemapLineStyle adds an entry with an invalid ID when it finds an entry that cannot
+ be mapped (probably because the original definition could not be found).  When FindLineStyle
+ returns an invalid DgnStyleId, _RemapLineStyle needs to know if it is because the entry was 
+ never added or because the entry was added with an invalid DgnStyleId. It uses foundStyle
+ to determine that.
+
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnStyleId SyncInfo::FindLineStyle(double&unitsScale, V8StyleId oldId)
+DgnStyleId SyncInfo::FindLineStyle(double&unitsScale, bool& foundStyle, V8StyleId oldId)
     {
     // WIP_CONVERTER -- read syncInfo
     auto i = m_lineStyle.find(oldId);
     if (i == m_lineStyle.end())
         {
         unitsScale = 1;
+        foundStyle = false;
         return DgnStyleId();
         }
 
+    foundStyle = true;
     unitsScale = i->second.m_unitsScale;
     return i->second.m_id;
     }

@@ -33,16 +33,16 @@ ASSEMBLY_TARGET_DIRECTORY    = $(buildDir)
 #----------------------------------------------------------------------
 #  allow shared assemblies to be located 
 #----------------------------------------------------------------------
-ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\pas81114\Pas\WinX86\Delivery\Bentley.AutomationServices.dll
+ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\pas100002\Pas\WinX86\Delivery\Bentley.AutomationServices.dll
 %include csrefapnd.mki
 
-ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\pas81114\Pas\WinX86\Delivery\Bentley.Applications.dll
+ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\pas100002\Pas\WinX86\Delivery\Bentley.Applications.dll
 %include csrefapnd.mki
 
-ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\orchfrwk81114\OrchestrationFramework\WinX86\Delivery\Bentley.Orchestration.dll
+ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\orchfrwk100002\OrchestrationFramework\WinX86\Delivery\Bentley.Orchestration.dll
 %include csrefapnd.mki
 
-ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\orchfrwk81114\OrchestrationFramework\WinX86\Delivery\Bentley.MSProcessor.dll
+ASSEMBLY_REFERENCE = $(SrcRoot)prgbuilds\orchfrwk100002\OrchestrationFramework\WinX86\Delivery\Bentley.MSProcessor.dll
 %include csrefapnd.mki
 
 #-----------------------------------------------------------------------

@@ -83,7 +83,7 @@ TEST_F(ConverterTests, DuplicateTile)
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
     
-    params.SetRootFileName(m_v8FileName);
+    params.SetInputFileName(m_v8FileName);
     
     TiledFileConverter creator(params);
 
@@ -736,7 +736,7 @@ static void addCell(V8FileEditor& v8editor, DgnV8ModelR v8model)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File)
+static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File, Bentley::DgnModelR rootModel)
     {
     // For purposes of this test, I will create a model and a category in the output BIM.
     //  In a real converter, you would may have created many models and categories. 
@@ -744,11 +744,17 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File)
     auto bimCategoryBar = insertSpatialCategory(outputBim, "Bar");
 
     //  Initialize the ConverterLibrary helper object. Do all this initialization once, before converting any elements.
-    ConverterLibrary cvt(outputBim);
+    RootModelConverter::RootModelSpatialParams params;
+    // Call params.AddDrawingOrSheetFile to add files to be processed by ConvertAllDrawingsAndSheets
+    ConverterLibrary cvt(outputBim, params);
 
     // If you choose to add model mappings as you go along as this test does below, then 
     //  you must at least record file mappings up front, before you try to map in any levels or styles.
     cvt.RecordFileMapping(v8File);
+
+    // If you plan to convert sheets and/or drawings, you must call this up front:
+    auto subject = Subject::CreateAndInsert(*outputBim.Elements().GetRootSubject(), "ConverterTests_UseConverterAsLibrary");
+    cvt.SetJobSubject(*subject);
 
     //  Set up mappings for levels and styles.
     //  You must record a mapping for every input V8 level that is used by elements that you plan to convert.
@@ -763,17 +769,22 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File)
     cvt.InitUncategorizedCategory();
     cvt.ConvertAllSpatialLevels(v8File);
 
-    //  Convert elements
-    //      In this test, I step through all of the elements in all of the models.
+    //  Set up the source GCS -> BIM GCS transformation.
+    //  To do that, I need to know the root model of the source data. In this test, I arbitrarily decide on the first one. A real converter would know the root model.
+    cvt.ComputeCoordinateSystemTransform(rootModel);
+
+
+    //  Convert spatial elements
+    //      In this test, I step through all of the elements in all of the spatial models.
     //      A real converter could pick and choose which elements to convert.
     for (int i=0; i<v8File.GetLoadedDgnModelCount(); ++i)
         {
         auto v8Model = v8File.GetLoadedModelByIndex(i);
 
-        //  You must record a mapping for any given V8 model before you can convert any element from that model.
-        //      The ConverterLibrary will not write to the output BIM, but it does need to know these mappings.
-        //      In this test, I arbitrarily decide that all V8 elements go into a model called "Foo", so I map all V8 models to that BIM model.
-        cvt.RecordModelMapping(*v8Model, *bimModelFoo);
+        if (!v8Model->Is3D() || v8Model->IsSheet())
+            continue;
+
+        ResolvedModelMapping modelMapping = cvt.RecordModelMapping(*v8Model, *bimModelFoo);
 
         for (auto v8El : *v8Model->GetGraphicElementsP())
             {
@@ -806,8 +817,25 @@ static void convertSomeElements(DgnDbR outputBim, Bentley::DgnFileR v8File)
                 //      m_childElements represents the children, each of which could have its own children.
                 //  This is normally meant to be written to a BIM as an assembly.
                 }
+
+            // Show how you can convert a curve vector in isolation
+            DgnV8Api::ICurvePathQuery* curveQuery = dynamic_cast<DgnV8Api::ICurvePathQuery*>(&v8eh.GetHandler());
+            if (nullptr != curveQuery)
+                {
+                CurveVectorPtr v8Cv;
+                ASSERT_EQ(0, curveQuery->GetCurveVector(v8eh, v8Cv));
+                BentleyApi::CurveVectorPtr bimCv;
+                Converter::ConvertCurveVector(bimCv, *v8Cv, nullptr);
+                ASSERT_TRUE(bimCv.IsValid());
+                // ConvertCurveVector does not transform the units.
+                // You must do that explicitly.
+                bimCv->TransformInPlace(modelMapping.GetTransform());
+                }
             }
         }
+
+    // Convert drawings and sheets
+    cvt.ConvertAllDrawingsAndSheets();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -831,8 +859,59 @@ TEST_F(ConverterTests, UseConverterAsLibrary)
     v8editor.Open(m_v8FileName);
     v8editor.AddLine(nullptr, v8editor.m_defaultModel, Bentley::DPoint3d::From(0,0,0));
     addCell(v8editor, *v8editor.m_defaultModel);
+    auto threeDModel = v8editor.m_defaultModel;
+
+    if (true)
+        {
+        // Create a drawing model ...
+        DgnV8Api::DgnModelStatus modelStatus;
+        Bentley::DgnModelP drawingModel = v8editor.m_file->CreateNewModel(&modelStatus, L"Drawing1", DgnV8Api::DgnModelType::Normal, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+
+        // ... and attach the 3D model as a reference to the new drawing model
+        Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(m_v8FileName.c_str());
+        DgnV8Api::DgnAttachment* attachment;
+        ASSERT_EQ(BentleyApi::SUCCESS, drawingModel->CreateDgnAttachment(attachment, *moniker, threeDModel->GetModelName(), true));
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment->WriteToModel());
+        v8editor.Save();
+
+        //  Default (3D)
+        //      ^
+        //      DgnAttachment
+        //      |
+        //  Drawing1
+        }
+
+    if (true)
+        {
+        // Create a sheet model ...
+        DgnV8Api::DgnModelStatus modelStatus;
+        Bentley::DgnModelP sheetModel = v8editor.m_file->CreateNewModel(&modelStatus, L"Sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
+        EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+
+        // ... and attach the drawing as a reference to the new sheet model
+        Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(m_v8FileName.c_str());
+        DgnV8Api::DgnAttachment* attachment;
+        ASSERT_EQ(BentleyApi::SUCCESS, sheetModel->CreateDgnAttachment(attachment, *moniker, L"Drawing1", true));
+        ASSERT_EQ(BentleyApi::SUCCESS, attachment->WriteToModel());
+        v8editor.Save();
+
+        //  Default (3D)
+        //      ^
+        //      DgnAttachment
+        //      |
+        //  Drawing1
+        //      ^
+        //      DgnAttachment
+        //      |
+        //  Sheet1
+        }
+
     v8editor.Save();
 
     //  Now show how to use ConverterLibrary to convert element geometry and levels
-    convertSomeElements(*outputBim, *v8editor.m_file);
+    convertSomeElements(*outputBim, *v8editor.m_file, *v8editor.m_defaultModel);
+
+    outputBim->SaveChanges();
+    wprintf(L"%ls\n", outputBim->GetFileName().c_str());
     }

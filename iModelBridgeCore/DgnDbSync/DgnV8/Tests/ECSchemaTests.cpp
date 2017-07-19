@@ -1010,6 +1010,69 @@ TEST_F(ECSchemaTests, RelsWithAnyClassConstraint)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Simi Hartstein                   04/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(ECSchemaTests, Mixinify)
+	{
+	Utf8CP schemaMixinTest = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+		"<ECSchema schemaName=\"TestMixinifySchema\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+		"    <ECClass typeName=\"BaseInterface\" description=\"Parent class for all interfaces\" displayLabel=\"Interface\" isDomainClass=\"False\" />"
+		"    <ECClass typeName=\"BaseObject\" isDomainClass=\"False\">"
+		"        <ECProperty propertyName=\"Oid\" typeName=\"string\" />"
+		"    </ECClass>"
+		"    <ECClass typeName=\"Interface1\" isDomainClass=\"False\">"
+		"        <BaseClass>BaseInterface</BaseClass>"
+		"    </ECClass>"
+		"    <ECClass typeName=\"Interface2\" isDomainClass=\"False\">"
+		"        <BaseClass>BaseInterface</BaseClass>"
+		"    </ECClass>"
+		"    <ECClass typeName=\"ClassA\" isDomainClass=\"True\">"
+		"        <BaseClass>BaseObject</BaseClass>"
+		"        <ECProperty propertyName=\"TestProperty1\" typeName=\"string\" />"
+		"    </ECClass>"
+		"    <ECClass typeName=\"ClassB\" isDomainClass=\"True\">"
+		"        <BaseClass>BaseObject</BaseClass>"
+		"        <BaseClass>Interface1</BaseClass>"
+		"        <ECProperty propertyName=\"TestProperty\" typeName=\"string\" />"
+		"    </ECClass>"
+		"    <ECClass typeName=\"ClassC\" isDomainClass=\"True\">"
+		"        <BaseClass>BaseObject</BaseClass>"
+		"        <BaseClass>Interface1</BaseClass>"
+		"        <BaseClass>Interface2</BaseClass>"
+		"        <ECProperty propertyName=\"TestProperty2\" typeName=\"string\" />"
+		"    </ECClass>"
+		"</ECSchema>";
+
+	LineUpFiles(L"mixinify.ibim", L"Test3d.dgn", false);
+
+	ImportSchema(m_v8FileName, schemaMixinTest);
+	DoConvert(m_dgnDbFileName, m_v8FileName);
+	
+	BentleyApi::Dgn::DgnDbPtr dgnProj = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+	ASSERT_TRUE(dgnProj->IsDbOpen());
+
+	// assert schema exists (schema may not exist if schema conversion failed)
+	BentleyApi::ECN::ECSchemaCP ecSchema = dgnProj->Schemas().GetSchema("TestMixinifySchema", true);
+	ASSERT_TRUE(ecSchema != nullptr);
+
+	// assert BaseObject, ClassA, ClassB, and ClassC are not mixins
+	EXPECT_FALSE(ecSchema->GetClassCP("BaseObject")->GetEntityClassCP()->IsMixin());
+	EXPECT_FALSE(ecSchema->GetClassCP("ClassA")->GetEntityClassCP()->IsMixin());
+	EXPECT_FALSE(ecSchema->GetClassCP("ClassB")->GetEntityClassCP()->IsMixin());
+	EXPECT_FALSE(ecSchema->GetClassCP("ClassC")->GetEntityClassCP()->IsMixin());
+
+	// assert BaseInterface, Interface1, and Interface2 are mixins
+	EXPECT_TRUE(ecSchema->GetClassCP("BaseInterface")->GetEntityClassCP()->IsMixin());
+	EXPECT_TRUE(ecSchema->GetClassCP("Interface1")->GetEntityClassCP()->IsMixin());
+	EXPECT_TRUE(ecSchema->GetClassCP("Interface2")->GetEntityClassCP()->IsMixin());
+
+	// assert correct applies to choice
+	EXPECT_STREQ("BaseObject", ecSchema->GetClassCP("Interface1")->GetEntityClassCP()->GetAppliesToClass()->GetName().c_str());
+	EXPECT_STREQ("ClassC", ecSchema->GetClassCP("Interface2")->GetEntityClassCP()->GetAppliesToClass()->GetName().c_str());
+	EXPECT_STREQ("BaseObject", ecSchema->GetClassCP("BaseInterface")->GetEntityClassCP()->GetAppliesToClass()->GetName().c_str());
+	}
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 TEST_F(ECSchemaTests, RemapReservedPropertyNames) // TFS#670031

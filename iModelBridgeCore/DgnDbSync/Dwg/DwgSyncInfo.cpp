@@ -85,6 +85,13 @@ BentleyStatus DwgSyncInfo::CreateTables()
         return BSIERROR;
         }
 
+    if (m_dgndb->TableExists(SYNCINFO_ATTACH(SYNC_TABLE_File)))
+        {
+        ImportJob::CreateTable(*m_dgndb);
+        m_dgndb->SaveChanges();
+        return BSISUCCESS;
+        }
+
     m_dgndb->CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_File), 
                     "Id INTEGER PRIMARY KEY AUTOINCREMENT,"
                     "UniqueName CHAR NOT NULL UNIQUE,"
@@ -220,11 +227,10 @@ void DwgSyncInfo::ImportJob::CreateTable (BeSQLite::Db& db)
     if (db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ImportJob)))
         return;
     db.CreateTable(SYNCINFO_ATTACH(SYNC_TABLE_ImportJob),
-                         "RootFileId INTEGER PRIMARY KEY,"
-                         "RootModelId BIGINT,"          // ModelSpace object ID
-                         "Convert2dModels INTEGER,"     // future use
-                         "Type INTEGER,"                
-                         "Prefix TEXT");                // future use
+                         "DwgModelSyncInfoId INTEGER PRIMARY KEY,"
+                         "SubjectId BIGINT NOT NULL,"
+                         "Type INTEGER,"
+                         "Prefix TEXT");
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -233,11 +239,10 @@ void DwgSyncInfo::ImportJob::CreateTable (BeSQLite::Db& db)
 BeSQLite::DbResult DwgSyncInfo::ImportJob::Insert (BeSQLite::Db& db) const
     {
     Statement stmt;
-    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) "(RootFileId,RootModelId,Convert2dModels,Type,Prefix) VALUES (?,?,?,?,?)");
+    stmt.Prepare(db, "INSERT INTO " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) "(DwgModelSyncInfoId,SubjectId,Type,Prefix) VALUES (?,?,?,?)");
     int col = 1;
-    stmt.BindInt(col++, m_dwgRootModel.GetDwgFileId().GetValue());
-    stmt.BindInt64(col++, m_dwgRootModel.GetDwgModelId().GetValue());
-    stmt.BindInt(col++, (int)m_convert2dModels);
+    stmt.BindInt(col++, m_dwgRootModel.GetValue());
+    stmt.BindId(col++, m_subjectId);
     stmt.BindInt(col++, (int)m_type);
     stmt.BindText(col++, m_prefix, Statement::MakeCopy::No);
     return stmt.Step();
@@ -256,7 +261,7 @@ BentleyStatus DwgSyncInfo::InsertImportJob(ImportJob const& importJob)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String DwgSyncInfo::ImportJob::GetSelectSql()
     {
-    return "SELECT RootFileId,RootModelId,Convert2dModels,Type,Prefix FROM " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob);
+    return "SELECT DwgModelSyncInfoId,SubjectId,Type,Prefix FROM " SYNCINFO_ATTACH(SYNC_TABLE_ImportJob);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -264,11 +269,10 @@ Utf8String DwgSyncInfo::ImportJob::GetSelectSql()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DwgSyncInfo::ImportJob::FromSelect(BeSQLite::Statement& stmt)
     {
-    m_dwgRootModel.SetDwgFileId (DwgFileId(stmt.GetValueInt(0)));
-    m_dwgRootModel.SetDwgModelId (DwgModelId(stmt.GetValueInt(1)));
-    m_convert2dModels = (Convert2dModels)stmt.GetValueInt(2);
-    m_type = (Type)stmt.GetValueInt(3);
-    m_prefix = stmt.GetValueText(4);
+    SetDwgModelSyncInfoId (DwgModelSyncInfoId(stmt.GetValueInt(0)));
+    SetSubjectId (stmt.GetValueId<DgnElementId>(1));
+    SetType ((Type)stmt.GetValueInt(2));
+    SetPrefix (stmt.GetValueText(3));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -303,17 +307,16 @@ DwgSyncInfo::ImportJobIterator::Entry DwgSyncInfo::ImportJobIterator::begin() co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DwgSyncInfo::ImportJob::FindById(ImportJob& importJob, DgnDbCR db, DwgModelSource const& modelSource)
+BentleyStatus DwgSyncInfo::ImportJob::FindById (ImportJob& importJob, DgnDbCR db, DwgModelSyncInfoId const& modelSyncId)
     {
     if (!db.TableExists(SYNCINFO_ATTACH(SYNC_TABLE_ImportJob)))
         return BSIERROR;
 
-    if (!modelSource.GetDwgFileId().IsValid())
+    if (!modelSyncId.IsValid())
         return BSIERROR;
 
-    ImportJobIterator iter(db, "RootFileId=? AND RootModelId=?");
-    iter.GetStatement()->BindInt (1, modelSource.GetDwgFileId().GetValue());
-    iter.GetStatement()->BindInt64 (2, modelSource.GetDwgModelId().GetValue());
+    ImportJobIterator iter(db, "DwgModelSyncInfoId=?");
+    iter.GetStatement()->BindInt64 (1, modelSyncId.GetValue());
     auto i = iter.begin();
     if (i == iter.end())
         return BSIERROR;
@@ -324,9 +327,46 @@ BentleyStatus DwgSyncInfo::ImportJob::FindById(ImportJob& importJob, DgnDbCR db,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson      02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus DwgSyncInfo::FindImportJobById(ImportJob& importJob, DwgModelSource const& modelSource)
+BentleyStatus DwgSyncInfo::FindImportJobById (ImportJob& importJob, DwgModelSyncInfoId const& modelSyncId)
     {
-    return ImportJob::FindById(importJob, *m_dgndb, modelSource);
+    return ImportJob::FindById(importJob, *m_dgndb, modelSyncId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/15
++---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedImportJob   DwgImporter::FindSoleImportJobForFile (DwgDbDatabaseR dwg)
+    {
+    DwgSyncInfo::FileProvenance provenance(dwg, m_syncInfo, _GetDwgFileIdPolicy());
+    if (!provenance.FindByName(true))
+        return ResolvedImportJob();
+
+    auto fileId = this->GetDwgFileId (dwg, true);
+    if (!fileId.IsValid())
+        return ResolvedImportJob();
+
+    Statement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT importJob.DwgModelSyncInfoId FROM " 
+                 SYNCINFO_ATTACH(SYNC_TABLE_ImportJob) " importJob, "
+                 SYNCINFO_ATTACH(SYNC_TABLE_Model) " model "
+                 "WHERE model.DwgFileId=? AND importJob.DwgModelSyncInfoId = model.ROWID");
+    stmt.BindInt (1, fileId.GetValue());
+    if (stmt.Step() != BE_SQLITE_ROW)
+        return ResolvedImportJob();
+        
+    DwgSyncInfo::DwgModelSyncInfoId modelSyncId = stmt.GetValueId<DwgSyncInfo::DwgModelSyncInfoId>(0);
+
+    DwgSyncInfo::ImportJob importJob;
+    GetSyncInfo().FindImportJobById(importJob, modelSyncId);    // grab the data now, before we step again
+
+    if (BE_SQLITE_ROW == stmt.Step())                           // check that there is only ONE ImportJob record for this file
+        {
+        OnFatalError(IssueCategory::CorruptData(), Issue::Error(), "Multiple ImportJobs are registered for the root file. You must specify a root model in order to select the one you want to use.");
+        BeAssert(false);
+        return ResolvedImportJob();
+        }
+
+    return GetResolvedImportJob(importJob);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -858,7 +898,7 @@ BentleyStatus   DwgSyncInfo::FindModel (DwgSyncInfo::DwgModelMapping* mapping, D
     if (!provenance.FindByName(false))
         return BSIERROR;
 
-    DwgSyncInfo::ModelIterator iter (*m_dgndb, "DwgFile=? AND DwgModelId=?");
+    DwgSyncInfo::ModelIterator iter (*m_dgndb, "DwgFileId=? AND DwgModelId=?");
     iter.GetStatement()->BindInt (1, provenance.GetDwgFileId().GetValue());
     iter.GetStatement()->BindInt64 (2, modelId.ToUInt64());
 
@@ -918,7 +958,7 @@ BentleyStatus DwgSyncInfo::InsertElement(DgnElementId elementId, DwgDbEntityCR e
         fileId = DwgSyncInfo::DwgFileId::GetFrom (this->GetDwgImporter().GetDwgDb());
         }
 
-    if (m_dwgImporter._IsUpdating())
+    if (m_dwgImporter.IsUpdating())
         this->DeleteDiscardedDwgObject (entityId, modelSyncId); // just in case it was previously recorded as a discard
 
     CachedStatementPtr stmt;
@@ -993,6 +1033,27 @@ bool DwgSyncInfo::TryFindElement(DgnElementId& elementId, DwgDbObjectCP obj, Dwg
         }
 
     BeAssert(BE_SQLITE_DONE == stmt->Step() && "DwgSyncInfo::TryFindElement is expected to only return one row from the SELECT");
+    return false;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DwgSyncInfo::IsMappedToSameDwgObject (DgnElementId elementId, DgnElementIdSet const& known) const
+    {
+    ElementIterator findByBimId(*m_dgndb, "ElementId=?");
+    findByBimId.GetStatement()->BindId(1, elementId);
+    auto iThisElement = findByBimId.begin();
+    if (iThisElement == findByBimId.end())
+        return false;
+
+    ByDwgObjectIdIter othersMappedToDwgId(*m_dgndb);
+    othersMappedToDwgId.Bind(iThisElement.GetDwgModelSyncInfoId(), iThisElement.GetDwgObjectId());
+    for (auto const& otherMappedToDwgId : othersMappedToDwgId)
+        {
+        if (known.find(otherMappedToDwgId.GetElementId()) != known.end())
+            return true;
+        }
     return false;
     }
 
@@ -1153,11 +1214,20 @@ DwgDbStatus DwgSyncInfo::DwgObjectHash::HashFiler::Add (void const* buf, size_t 
     return DwgDbStatus::Success;    
     }
 
-DgnElementId                    DwgSyncInfo::ElementIterator::Entry::GetElementId() {return m_sql->GetValueId<DgnElementId>(0);}
-DwgSyncInfo::DwgFileId          DwgSyncInfo::ElementIterator::Entry::GetDwgFileId() {return DwgFileId(m_sql->GetValueInt(1));}
-DwgSyncInfo::DwgModelSyncInfoId DwgSyncInfo::ElementIterator::Entry::GetDwgModelSyncInfoId() {return DwgModelSyncInfoId(m_sql->GetValueInt(2));}
-uint64_t                        DwgSyncInfo::ElementIterator::Entry::GetDwgObjectId() {return m_sql->GetValueInt64(3);}
-DwgSyncInfo::DwgObjectProvenance DwgSyncInfo::ElementIterator::Entry::GetProvenance() {return DwgSyncInfo::DwgObjectProvenance(m_sql);}
+DgnElementId                    DwgSyncInfo::ElementIterator::Entry::GetElementId() const {return m_sql->GetValueId<DgnElementId>(0);}
+DwgSyncInfo::DwgFileId          DwgSyncInfo::ElementIterator::Entry::GetDwgFileId() const {return DwgFileId(m_sql->GetValueInt(1));}
+DwgSyncInfo::DwgModelSyncInfoId DwgSyncInfo::ElementIterator::Entry::GetDwgModelSyncInfoId() const {return DwgModelSyncInfoId(m_sql->GetValueInt(2));}
+uint64_t                        DwgSyncInfo::ElementIterator::Entry::GetDwgObjectId() const {return m_sql->GetValueInt64(3);}
+DwgSyncInfo::DwgObjectProvenance DwgSyncInfo::ElementIterator::Entry::GetProvenance() const {return DwgSyncInfo::DwgObjectProvenance(m_sql);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::DwgObjectMapping   DwgSyncInfo::ElementIterator::Entry::GetObjectMapping () const
+    {
+    DwgObjectMapping omap(GetElementId(), GetDwgObjectId(), GetDwgModelSyncInfoId(), GetProvenance());
+    return  omap;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/15
@@ -1685,6 +1755,16 @@ BeFileName DwgSyncInfo::GetDbFileName(DgnDb& project)
     BeFileName name(Utf8String(project.GetDbFileName()));
     name.append(L".syncinfo");
     return name;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BeFileName DwgSyncInfo::GetDbFileName (BeFileNameCR bimFileName)
+    {
+    BeFileName syncFileName(bimFileName);
+    syncFileName.append (L".syncinfo");
+    return syncFileName;
     }
 
 /*---------------------------------------------------------------------------------**//**

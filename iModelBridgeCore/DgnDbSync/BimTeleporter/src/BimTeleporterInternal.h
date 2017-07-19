@@ -13,6 +13,7 @@
 #include <Bentley/BeFileName.h>
 #include <BimTeleporter/BimTeleporter.h>
 #include <Logging/bentleylogging.h>
+#include <folly/futures/Future.h>
 
 #if defined (__BIMTELEPORTER_BUILD__)
 #   define BIMTELEPORTER_EXPORT      EXPORT_ATTRIBUTE
@@ -21,6 +22,8 @@
 #endif
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
+
+struct BisJson1Exporter0601;
 
 struct BimTeleporter
 {
@@ -39,6 +42,8 @@ private:
     BentleyStatus _ParseCommandLine(WStringR errmsg, int argc, WCharCP argv[]);
     BentleyStatus _Initialize(int argc, WCharCP argv[]);
     static BentleyApi::NativeLogging::ILogger& GetLogger() { return *BentleyApi::NativeLogging::LoggingManager::GetLogger("BimTeleporter"); }
+
+    folly::Future<bool> ExportDgnDb(BisJson1Exporter0601* exporter);
 
 public:
     //! wmain should call this to run the job.

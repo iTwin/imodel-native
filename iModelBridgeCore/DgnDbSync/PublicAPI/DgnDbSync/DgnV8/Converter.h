@@ -708,7 +708,7 @@ struct Converter
     };
 
     //! Categories for issues
-    BENTLEY_TRANSLATABLE_STRINGS_START(IssueCategory,dgnv8_issueCategory)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(IssueCategory,dgnv8_issueCategory)
         L10N_STRING(Compatibility)      // =="Compatibility"==
         L10N_STRING(ConfigXml)          // =="Config"==
         L10N_STRING(CorruptData)        // =="Corrupt Data"==
@@ -722,10 +722,10 @@ struct Converter
         L10N_STRING(Unsupported)        // =="Unsupported"==
         L10N_STRING(VisualFidelity)     // =="Visual Fidelity"==
         L10N_STRING(Briefcase)          // =="Briefcase"==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! A problem in the conversion process
-    BENTLEY_TRANSLATABLE_STRINGS_START(Issue,dgnv8_issue)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(Issue,dgnv8_issue)
         L10N_STRING(BRepConversion)              // =="BRep processed as mesh."==
         L10N_STRING(CannotCreateChangesFile)     // =="Cannot create changes file"==
         L10N_STRING(CannotEmbedFont)             // =="Could not embed font type/name %i/'%s'; a different font will used for display."==
@@ -796,6 +796,8 @@ struct Converter
         L10N_STRING(ViewNoneFound)               // =="No view was found"==
         L10N_STRING(PointCloudCreationError)     // =="Can't create point cloud file: %s"==
         L10N_STRING(DwgFileIgnored)              // =="master DWG/DXF file [%s] is ignored - use DwgImporter to convert these"==
+        L10N_STRING(FailedLoadingFileIO)         // =="Unable to load file handler %s"==
+        L10N_STRING(MissingFileIOImplementer)    // =="File handler %s missing V8 file type implementation"==
 
         L10N_STRING(InitProjectWiseLinkError)      // =="Could not initialize ProjectWise extension. Any ProjectWise documents that are target of links will not be embedded."==
         L10N_STRING(TerminateProjectWiseLinkError) // =="Could not terminate ProjectWise extension."==
@@ -806,10 +808,10 @@ struct Converter
         L10N_STRING(UnsupportedPrimaryInstance)   // =="[%s] has an unsupported primary ECInstance. Capturing graphics only."==
         L10N_STRING(WrongBriefcaseManager)        // =="You must use the UpdaterBriefcaseManager when updating a briefcase with the converter"==
 
-        BENTLEY_TRANSLATABLE_STRINGS_END
+        IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Progress messages for the conversion process
-    BENTLEY_TRANSLATABLE_STRINGS_START(ProgressMessage,dgnv8_progress)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ProgressMessage,dgnv8_progress)
         L10N_STRING(STEP_CLEANUP_EMPTY_TABLES)         // =="Cleaning up empty tables"==
         L10N_STRING(STEP_COMPACTING)                   // =="Compacting File"==
         L10N_STRING(STEP_CONVERTING_STYLES)            // =="Converting Styles and Levels "==
@@ -842,15 +844,15 @@ struct Converter
         L10N_STRING(TASK_V8_PROGRESSS)                 // =="%s"==
         L10N_STRING(STEP_EMBEDDING_FILES)              // =="Embedding Files"==
         L10N_STRING(TASK_FILLING_V8_MODELS)            // =="Filling"==
-        BENTLEY_TRANSLATABLE_STRINGS_END
+        IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Other arbitrary strings required by the conversion process
-    BENTLEY_TRANSLATABLE_STRINGS_START(ConverterDataStrings,dgnv8_converterDataStrings)
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(ConverterDataStrings,dgnv8_converterDataStrings)
         L10N_STRING(V8StyleNone) // =="V8 Default Style"==
         L10N_STRING(V8StyleNoneDescription) // =="Created from V8 active settings to handle Style (none)"==
         L10N_STRING(LinkModelDefaultName) // =="Default Link Model"==
         L10N_STRING(RepositoryLinksPartitionName) // =="Repository Links"==
-    BENTLEY_TRANSLATABLE_STRINGS_END
+    IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END
 
     //! Reports conversion issues
     struct IssueReporter
@@ -972,7 +974,7 @@ public:
 
     DGNDBSYNC_EXPORT static DgnDbStatus InsertLinkTableRelationship(DgnDbR db, Utf8CP relClassName, DgnElementId source, DgnElementId target, Utf8CP schemaName = BIS_ECSCHEMA_NAME);
 
-    static void SetDllSearchPath(BentleyApi::BeFileNameCR pathname);
+    DGNDBSYNC_EXPORT static void SetDllSearchPath(BentleyApi::BeFileNameCR v8Path, BentleyApi::BeFileNameCP realdwgPath = nullptr);
 
     //! Add a callback to be invoked by _FinishConversion
     //! @param f    Finisher to be invoked by _FinishConversion. @note f must not be freed by the caller and will not be freed by the Converter.
@@ -980,12 +982,44 @@ public:
 
     virtual bool _WantProvenanceInBim() {return _GetParams().GetWantProvenanceInBim();}
 
+    //! @name Graphics Conversion Utilties
+    //! @{
+    DGNDBSYNC_EXPORT static void ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8Api::LineStyleParams const* v8lsParams, double uorPerMeter, double componentScale, double modelLsScale);
+
+    DGNDBSYNC_EXPORT static void ConvertCurveVector(BentleyApi::CurveVectorPtr& clone, Bentley::CurveVectorCR v8Curves, TransformCP v8ToDgnDbTrans);
+
+    DGNDBSYNC_EXPORT static void ConvertMSBsplineSurface(BentleyApi::MSBsplineSurfacePtr& clone, Bentley::MSBsplineSurfaceCR v8Entity);
+
+    DGNDBSYNC_EXPORT static void ConvertSolidPrimitive(BentleyApi::ISolidPrimitivePtr& clone, Bentley::ISolidPrimitiveCR v8Entity);
+
+    DGNDBSYNC_EXPORT static void ConvertPolyface(BentleyApi::PolyfaceHeaderPtr& clone, Bentley::PolyfaceQueryCR v8Entity);
+
+    DGNDBSYNC_EXPORT static void ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8Text, DgnFileR dgnFile, Converter& converter);
+
+    DGNDBSYNC_EXPORT static void ConvertSolidKernelEntity(IBRepEntityPtr& clone, Bentley::ISolidKernelEntityCR v8Entity);
+
+    DGNDBSYNC_EXPORT void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model);
+
+    DGNDBSYNC_EXPORT bool InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context);
+
+    //! @}
+
     //! @name V8Files
     //! @{
 
     //! Open the specified V8File
+    DGNDBSYNC_EXPORT static DgnFilePtr OpenDgnV8File(DgnV8Api::DgnFileStatus&, BeFileNameCR, Utf8CP password);
+
+    //! Open the specified V8File
     DGNDBSYNC_EXPORT DgnFilePtr OpenDgnV8File(DgnV8Api::DgnFileStatus&, BeFileNameCR);
 
+    //! Called to clean up when the caller detects that the inputFileName was deleted.
+    DGNDBSYNC_EXPORT virtual void _OnSourceFileDeleted();
+
+    //! @private
+    //! This is called in a separate process to check bridge file affinity only.
+    DGNDBSYNC_EXPORT static BentleyStatus CheckCanOpenFile(BentleyApi::BeFileName const& sourceFileName, BentleyApi::BeFileName const& affinityLibraryPath);
+    
     //! Make sure that the specified V8 file is registered in SyncInfo and then return the ID assigned to it by SyncInfo.
     //! This function \em caches the result in appdata on the file.
     //! @see GetV8FileSyncInfoIdFromAppData, GetV8FileSyncInfoId
@@ -1588,7 +1622,7 @@ public:
     DGNDBSYNC_EXPORT bool GetMaterialUsed(RenderMaterialId id) const;
     virtual void _RemoveUnusedMaterials() {RemoveUnusedMaterials();}
     DGNDBSYNC_EXPORT void RemoveUnusedMaterials();
-    RenderMaterialId GetRemappedMaterial(DgnV8Api::Material const* material);
+    DGNDBSYNC_EXPORT RenderMaterialId GetRemappedMaterial(DgnV8Api::Material const* material);
     void AddMaterialMapping(DgnV8Api::Material const* material, Utf8StringCR name, Utf8StringCR palette, RenderMaterialId materialId);
     //! @}
 
@@ -1702,11 +1736,13 @@ public:
     //! Call this once before working with Converter
     //! @note Call this just \em after initializing DgnDb's DgnPlatformLib
     //! @note If you install RealDWG on a shared location, pass in an absolute path; otherwise the default \V8SDK\RealDwg\ location will be used.
-    DGNDBSYNC_EXPORT static void Initialize(BentleyApi::BeFileNameCR libraryDir, 
+    DGNDBSYNC_EXPORT static void Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, 
                                             BentleyApi::BeFileNameCR v8DllsRelativeDir, BentleyApi::BeFileNameCP realdwgAbsoluteDir, 
                                             bool isPowerPlatformBased, int argc, WCharCP argv[]);
     static BentleyStatus InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, BentleyApi::BeFileNameCR realdwgDir);
     static BentleyStatus InitializeDwgSettings (Converter* v8converter);
+    static void InitV8ForeignFileTypes (Converter* v8converter);
+    static void RegisterForeignFileTypes (BentleyApi::BeFileNameCR v8dir, BentleyApi::BeFileNameCR dwgDir);
     //! Sniff a file and see if it smells like DWG, DXF or DXB format.
     DGNDBSYNC_EXPORT static bool IsDwgOrDxfFile (BeFileNameCR filename);
 
@@ -2069,9 +2105,6 @@ public:
         DgnModelId              m_rootModelId;
         iModelBridge::GCSCalculationMethod    m_gcsCalculationMethod{};
 
-        void SetRootFileName(BeFileNameCR fn) {m_rootFileName=fn;}
-        BeFileNameCR GetRootFileName() const {return m_rootFileName;}
-
         void SetNamePrefix(BentleyApi::Utf8CP s) {m_namePrefix=s;}
         Utf8String GetNamePrefix() const {return m_namePrefix;}
 
@@ -2105,6 +2138,8 @@ protected:
 
     virtual void _SetChangeDetector(bool isUpdate) = 0;
 
+    bmap<Bentley::DgnModelP, DgnV8Api::DgnAttachment*> m_modelAttachmentMapping;
+
     SpatialConverterBase(SpatialParams const& p) : T_Super(p) {}
 
 public:
@@ -2115,14 +2150,13 @@ public:
 
     //! @name  Root Model
     //! @{
-    //! Get the name of the root file as specified by teh caller in the input params.
-    BeFileNameCR GetRootFileName() const {return _GetSpatialParams().m_rootFileName;}
+    //! Get the name of the root file as specified by the caller in the input params.
+    BeFileNameCR GetRootFileName() const {return _GetSpatialParams().GetInputFileName();}
     
     //! Get the currently open root V8 file or nullptr if no root file is open.
     DgnFileP GetRootV8File() {return m_rootFile.get();}
 
-    //! Get the currently open root model as a modelref. This will actually be a DgnV8Api::DgnAttachment in that case 
-    //! where the converter is reprojecting the original V8 root model (and its references) into a new GCS.
+    //! Get the currently open root model as a modelref.
     DgnV8ModelRefP GetRootModelRefP() {return m_rootModelRef;}
 
     //! Get the currently open root model as a DgnV8Model.
@@ -2293,7 +2327,6 @@ struct RootModelConverter : SpatialConverterBase
     struct RootModelSpatialParams : SpatialParams
     {
         RootModelChoice m_rootModelChoice;
-        bvector<BeFileName> m_drawingAndSheetFiles;
         bool m_considerNormal2dModelsSpatial {};
 
         void SetConsiderNormal2dModelsSpatial(bool b) {m_considerNormal2dModelsSpatial=b;}
@@ -2626,6 +2659,26 @@ struct ConvertThreeMxAttachment : ConvertToDgnDbElementExtension
     Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
 };
 
+//=============================================================================================
+// A DgnV8 element handler. Exists only so it can be extended with ConverScalableMeshAttachment
+// @bsiclass                                                    Mathieu.St-Pierre 07/17
+//=============================================================================================
+struct ScalableMeshElementHandler : DgnV8Api::ExtendedElementHandler
+{    
+    enum { XATTRIBUTEID_ScalableMeshAttachment = 22899};
+    DEFINE_T_SUPER(DgnV8Api::ExtendedElementHandler)
+    DGNV8_ELEMENTHANDLER_DECLARE_MEMBERS(ScalableMeshElementHandler, );
+};
+
+//=======================================================================================
+// @bsiclass                                                    Mathieu.St-Pierre 07/17
+//=======================================================================================
+struct ConvertScalableMeshAttachment : ConvertToDgnDbElementExtension
+{
+    static void Register();
+    Result _PreConvertElement(DgnV8EhCR, Converter&, ResolvedModelMapping const&) override;
+};
+
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson      09/2016
 //=======================================================================================
@@ -2677,50 +2730,138 @@ struct ConverterLogging
 
 //=======================================================================================
 //! Helper class for using the converter as a library.
+//!
+//! <h2>Initialization</h2>
+//! You must call Converter::Initialize before calling any other method in this class.
+//! @code
+//! Assume that 'this' is-a iModelBridge
+//! ConverterLibrary cvt(outputBim);
+//! Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), BeFileName(L"DgnV8"), nullptr, false, argc, argv);
+//! @endcode
+//!
+//! <h2>Coordinate System Transformation</h2>
+//! Coordinates and distances in the BIM are in meters. The BIM may also have its own Geographic Coordinate System (GCS).
+//! All source V8 geometry must be transformed into the BIM's coordinate system. ConvertElement does this for you. When you call geometry conversion
+//! utility functions, you must do it yourself.
+//!
+//! Normaly, you should call ComputeCoordinateSystemTransform up front. This prepares the units and GCS transformation 
+//! from a specified V8 root model to the BIM's coordinate system.
+//! @code
+//! cvt.ComputeCoordinateSystemTransform(rootModel);
+//! @endcode
+//! You can then call Converter::GetRootTransform to query the computed transform. Note that ComputeCoordinateSystemTransform
+//! may actually reproject your input V8 models in order to prepare for the GCS transformation.
+//!
+//! <h2>File and Model Mappings</h2>
+//! You must 'map' source files and models to BIM models before you can convert elements
+//! or even geometry. Before mapping a model from a V8 source file, you must first map
+//! the V8 file itself by calling RecordFileMapping;
+//! @code
+//! cvt.RecordFileMapping(v8File);
+//! @endcode
+//!
+//! Then before converting elements or geometry from a given source model, you must map
+//! the source model by calling RecordModelMapping. Note that the returned ResolvedModelMapping
+//! object holds the units transform for the model.
+//! @code
+//! auto v8Model = v8File.GetLoadedModelByIndex(i);
+//! ResolvedModelMapping modelMapping = cvt.RecordModelMapping(*v8Model, someBimModel);
+//! @endcode
+//!
+//! <h2>Level and LineStyle Mappings</h2>
+//! Before converting any elements, you must define mappings from the levels and linestyles
+//! used by those elements to Categories and LineStyles in the target BIM. Call 
+//! ConvertAllLineStyles, InitUncategorizedCategory, ConvertAllSpatialLevels, and/or RecordLevelMappingForModel.
+//! @code
+//! cvt.ConvertAllLineStyles(v8File);       // This is necessary to support both element and level conversion
+//! cvt.InitUncategorizedCategory();        // This is important, in case the converter hits an element with a bad or unmapped level
+//! cvt.ConvertAllSpatialLevels(v8File);    // This is how you can map all (3D) levels in one shot
+//! cvt.RecordLevelMappingForModel(DGNV8_LEVEL_DEFAULT_LEVEL_ID, someBimCategory->GetDefaultSubCategoryId(), v8File); // this is how to map levels one by one
+//! @endcode
+//!
+//! <h2>Converting Elements</h2>
+//! Call ConvertElement to convert the geometry of a V8 element to a BIS format. 
+//! ConvertElement also transforms the element's geometry into the BIM's coordinate system (meters and GCS).
+//! Note that ConverterLibrary does @em not convert EC "business data" on the V8 element, just geometry.
+//! 
+//! @code
+//! for (auto v8El : *v8Model->GetGraphicElementsP())
+//!     {
+//!     DgnV8Api::EditElementHandle v8eh(v8El);
+//!     ElementConversionResults results = cvt.ConvertElement(v8eh);
+//!     if (!results.m_element.IsValid())
+//!         continue;       // the element's geometry could not be converted for some reason?!
+//!     ... do something with results ...
+//!     }
+//! @endcode
+
+//! <h2>Converting Geometry</h2>
+//! You can also convert geometry as such, without having or converting a V8 element. Call one of the geometry conversion
+//! utility functions, including ConvertLineStyleParams, ConvertCurveVector, ConvertMSBsplineSurface, ConvertSolidPrimitive, ConvertPolyface, ConvertTextString, ConvertSolidKernelEntity
+//! Note that the geometry conversion utility functions do @em not ransforms the geometry into the BIM's coordinate system. You must do that by 
+//! applying the coordinate system transform to the resulting geometry. For example:
+//! @code
+//! DgnV8Api::ICurvePathQuery* curveQuery = dynamic_cast<DgnV8Api::ICurvePathQuery*>(&v8eh.GetHandler());
+//! if (nullptr != curveQuery)
+//!     {
+//!     CurveVectorPtr v8Cv;
+//!     curveQuery->GetCurveVector(v8eh, v8Cv));
+//!     if (!v8Cv.IsValid())
+//!         return ERROR;
+//!     BentleyApi::CurveVectorPtr bimCv;
+//!     Converter::ConvertCurveVector(bimCv, *v8Cv, nullptr);
+//!     if (!bimCv.IsValid())
+//!         return ERROR;
+//!     bimCv->TransformInPlace(modelMapping.GetTransform()); // ConvertCurveVector does not transform the units. You must do that explicitly.
+//!     }
+//! @endcode
+//! 
+//! <h2>Reference Attachments and Coordinate System Transformation</h2>
+//! If you will be processing V8 reference attachments, then you must a) map them to BIM models and b) set up the coordinate system transforms for them.
+//! As noted in the description of RecordModelMapping, the option third argument must be specified for a reference attachment. You must compute this
+//! transform by calling ComputeAttachmentTransform, passing in the coordinate system transform for the immediate parent model. The most natural way
+//! to do this is to recursively walk the V8 reference attachment hierarchy up front, starting with the V8 root model and using the result of Converter::GetRootTrans
+//! as the root transform.
+//! 
+//! If you don't plan to process reference attachments -- for example, if all V8 models are top-level models and are not attached to each other --
+//! then you can treat each one as a root model.
+//!
 // @bsiclass                                                    Sam.Wilson          02/17
 //=======================================================================================
-struct ConverterLibrary : Converter
+struct ConverterLibrary : RootModelConverter
 {
-    DEFINE_T_SUPER(Converter)
+    DEFINE_T_SUPER(RootModelConverter)
 
 private:
     SubjectCPtr m_jobSubject;
     SubjectCPtr m_spatialParentSubject;
 
-    CreatorChangeDetector m_changeDetector;
-    bmultiset<ResolvedModelMapping> m_v8ModelMappings; // NB: the V8Model pointer is the key
-    Params m_params;
-    Params const& _GetParams() const {return m_params;}
-    Params& _GetParamsR() {return m_params;}
-    
-    void _OnUpdateLevel(DgnV8Api::LevelHandle const& level, DgnCategoryId cat, DgnV8FileR file) override {;}
-    void _OnDrawingModelFound(DgnV8ModelR v8model) override {;}
-    void _KeepFileAlive(DgnV8FileR) override {;}
-    DGNDBSYNC_EXPORT ResolvedModelMapping _GetModelForDgnV8Model(DgnV8ModelRefCR v8, BentleyApi::TransformCR trans);
-    ResolvedModelMapping _FindModelForDgnV8Model(DgnV8ModelR v8Model, BentleyApi::TransformCR trans) override {return _GetModelForDgnV8Model(v8Model, trans);}
-    DGNDBSYNC_EXPORT ResolvedModelMapping _FindFirstModelMappedTo(DgnV8ModelR v8Model);
-    bool _ConsiderNormal2dModelsSpatial() override {return true;}
-    DGNDBSYNC_EXPORT DgnV8FileR _GetFontRootV8File();
-    BentleyApi::Utf8String _GetNamePrefix() const override {return "";}
-    bool _HaveChangeDetector() override {return true;}
-    IChangeDetector& _GetChangeDetector() override {return m_changeDetector;}
-    bool _WantProvenanceInBim() override {return false;}
     SubjectCR _GetJobSubject() const override {return m_jobSubject.IsValid() ? *m_jobSubject : *GetDgnDb().Elements().GetRootSubject();}
     SubjectCR _GetSpatialParentSubject() const override {return m_spatialParentSubject.IsValid() ? *m_spatialParentSubject : T_Super::_GetSpatialParentSubject();}
-
-    ResolvedModelMapping FindModelForDgnV8Model(DgnV8ModelR v8ModelRef, TransformCR);
 
 public:
     //! Construct an instance of this helper class
     //! @param bim     The output BIM
-    DGNDBSYNC_EXPORT ConverterLibrary(DgnDbR bim);
+    //! @param params  The converter parameters
+    DGNDBSYNC_EXPORT ConverterLibrary(DgnDbR bim, RootModelSpatialParams& params);
 
-    //! Construct an instance of this helper class. If you use this constructor, you must follow up with a call to OpenExistingDgnDb
-    DGNDBSYNC_EXPORT ConverterLibrary();
+    //! Call this to set up for change-detection. This is optional unless you plan to call ConvertAllDrawingsAndSheets.
+    DGNDBSYNC_EXPORT void SetChangeDetector(bool isUpdate);
 
     //! Record the fact that content from the specified V8 file is being converted to the target BIM
     //! @param v8File           A V8 file that you plan to use as input.
     DGNDBSYNC_EXPORT void RecordFileMapping(DgnV8FileR v8File);
+
+    //! Compute the units transform from the specified root model into meters, and *also* prepare the transformation of geo-located data 
+    //! in the root model and its attachments into the GCS of the target BIM.
+    //! @param rootV8Model    The root DgnModel in the input V8
+    //! @note This function will modify the data in rootV8Model and its attachments if reprojection is necessary.
+    //! @note You must call this once up front, before calling ConvertElement.
+    //! @note If you want to set up a GCS on the output BIM (if it does not have one), do that before calling this function. @see Dgn::DgnGCS
+    //! @note If you later call RecordModelMapping to enroll a model that is attached to this root model, you must call #ComputeAttachmentTransform
+    //! in order to compute the units transform for the attached model and then pass that as the optional third argument to RecordModelMapping.
+    //! @see GetRootTrans
+    DGNDBSYNC_EXPORT void ComputeCoordinateSystemTransform(DgnV8ModelR rootV8Model);
 
     //! Record a V8->BIM model mapping
     //! @param sourceV8Model    A DgnModel in the input V8
@@ -2728,8 +2869,12 @@ public:
     //! @param transform        Optional. The transform that you plan to apply to elements from this model as you convert them. This defaults to the 
     //!                         transform necessary to convert the model's storage units to meters. 
     //!                         Supply a different transform if the source V8 model is attached more than once with different transforms.
-    //!                        @see ComputeUnitsScaleTransform
-    DGNDBSYNC_EXPORT void RecordModelMapping(DgnV8ModelR sourceV8Model, DgnModelR targetBimModel, BentleyApi::TransformCP transform = nullptr);
+    //!                        @see ComputeUnitsScaleTransform, ComputeAttachmentTransform
+    //! @return The record of the mapping, which includes the units transform from source to BIM
+    //! @note If you called ComputeCoordinateSystemTransform up front, then you must supply a transform when recording mappings for all 
+    //! attached models. Call #ComputeAttachmentTransform to get this transform.
+    //! @see FindModelForDgnV8Model and FindFirstModelMappedTo
+    DGNDBSYNC_EXPORT ResolvedModelMapping RecordModelMapping(DgnV8ModelR sourceV8Model, DgnModelR targetBimModel, BentleyApi::TransformCP transform = nullptr);
 
     //! Record a V8 Level -> BIM DgnSubCategory mapping for elements in a particular model.
     //! @param sourceV8LevelId  A V8 level to be remapped. The level must be defined in the DgnFile that contains \a sourceV8Model.
@@ -2750,6 +2895,7 @@ public:
     //! @param[in] modelMapping Optional. If not null, specifies the V8 attachment that contains \a v8Element. This only has to be supplied if
     //!             a model is attached more than once with different transforms.
     //! @return the BIM version of the element. 
+    //! @see ConvertLineStyleParams, ConvertCurveVector, ConvertMSBsplineSurface, ConvertSolidPrimitive, ConvertPolyface, ConvertTextString, ConvertSolidKernelEntity
     DGNDBSYNC_EXPORT ElementConversionResults ConvertElement(DgnV8EhCR v8Element, ResolvedModelMapping const* modelMapping = nullptr);
 
     //! Return the Subject that will be the "root" of the job hierarchy.
@@ -2761,6 +2907,13 @@ public:
     SubjectCR GetSpatialParentSubject() const {return _GetSpatialParentSubject();}
     //! Set the Subject that will be the "root" for spatial models
     void SetSpatialParentSubject(SubjectCR subject) {m_spatialParentSubject = &subject;}
+
+    //! Converts all sheets and drawings found in all files that have been mapped, plus all files passed to RootModelSpatialParams::AddDrawingOrSheetFile 
+    //! @note You must call SetJobSubject first to set the job subject.
+    //! @return non-zero if the converter is not prepared to import sheets and drawings or if import fails
+    //! @see SetJobSubject, SetChangeDetector, RootModelSpatialParams::AddDrawingOrSheetFile
+    DGNDBSYNC_EXPORT BentleyStatus ConvertAllDrawingsAndSheets();
+
 };
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

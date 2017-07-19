@@ -107,6 +107,7 @@ struct iModelBridgeSyncInfoFileTester : iModelBridgeBase
     SubjectCPtr _FindJob() override {return nullptr;}
     SubjectCPtr _InitializeJob() override {return nullptr;}
     void _DeleteSyncInfo() override {iModelBridgeSyncInfoFile::DeleteSyncInfoFileFor(_GetParams().GetBriefcaseName());}
+    void _OnSourceFileDeleted() override {}
 
     void DoTests(SubjectCR jobSubject);
 

@@ -118,7 +118,7 @@ BentleyApi::BentleyStatus Converter::SupplementV8ECSchemas()
         return BSIERROR;
         }
 
-    BeFileName supplementalECSchemasDir = host->GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+    BeFileName supplementalECSchemasDir = _GetParams().GetAssetsDir();
     supplementalECSchemasDir.AppendToPath(L"ECSchemas");
     supplementalECSchemasDir.AppendToPath(L"Supplemental");
 
@@ -441,6 +441,13 @@ bool Converter::DoesRelationshipExist(Utf8StringCR relName, BeSQLite::EC::ECInst
     BeSQLite::EC::CachedECSqlStatementPtr stmt = GetDgnDb().GetPreparedECSqlStatement(ecsql.c_str());
     //Utf8String qplan = GetDgnDb().ExplainQuery();
 
+    if (!stmt.IsValid())
+        {
+        ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::CorruptData(), Converter::Issue::Message(),
+            Utf8PrintfString("%s - failed to prepare", ecsql.c_str()).c_str());
+        return false;
+        }
+
     if (BeSQLite::EC::ECSqlStatus::Success != stmt->BindId(1, sourceInstanceKey.GetInstanceId()))
         {
         Utf8PrintfString error("Failed to search for ECRelationship %s. Binding value to SourceECInstanceId (%s) failed. (%s:%s -> %s:%s)", relName.c_str(), sourceInstanceKey.GetInstanceId().ToString().c_str(),
@@ -481,7 +488,7 @@ bool Converter::DoesRelationshipExist(Utf8StringCR relName, BeSQLite::EC::ECInst
 //---------------------------------------------------------------------------------------
 BentleyApi::BentleyStatus Converter::ConvertToBisBasedECSchemas()
     {
-    BisClassConverter::SchemaConversionContext context(*this, *m_schemaReadContext);
+    BisClassConverter::SchemaConversionContext context(*this, *m_schemaReadContext, *m_syncReadContext, m_config.GetOptionValueBool("AutoDetectMixinParams", true));
 
     if (BentleyApi::SUCCESS != BisClassConverter::PreprocessConversion(context))
         return BentleyApi::ERROR;
@@ -711,7 +718,7 @@ void Converter::InitializeECSchemaConversion()
     auto host = DgnPlatformLib::QueryHost();
     if (host != nullptr)
         {
-        BeFileName ecschemasDir = host->GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+        BeFileName ecschemasDir = _GetParams().GetAssetsDir();
         ecschemasDir.AppendToPath(L"ECSchemas");
 
         BeFileName dgnECSchemasDir(ecschemasDir);
@@ -1107,6 +1114,11 @@ void RootModelConverter::ImportSpatialModels(DgnV8ModelRefR thisModelRef, Bentle
         {                  
         if (nullptr == attachment->GetDgnModelP() || !_WantAttachment(*attachment))
             continue; // missing reference 
+
+        // Keep the mapping between models and the attachment that references the model
+        DgnV8Api::Fd_opts fdOpts = attachment->GetFDOptsCR();
+        Bentley::DgnModelP dgnModelP = attachment->GetDgnModelP();
+        m_modelAttachmentMapping[dgnModelP] = attachment;
 
         if (!hasPushedReferencesSubject)
             {

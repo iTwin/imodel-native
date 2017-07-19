@@ -14,22 +14,25 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 //=======================================================================================
+//! @private
 // @bsiclass                                    BentleySystems
 //=======================================================================================
-struct iModelBridgeKnownLocationsAdmin : Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin
+struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeKnownLocationsAdmin : Dgn::DgnPlatformLib::Host::IKnownLocationsAdmin
 {
-    static BeFileName s_assetsDirectory;
+    BeFileName        m_fwkAssetsDir;
     static BeFileName s_tempDirectory;
 
+    iModelBridgeKnownLocationsAdmin(BeFileNameCR fa) : m_fwkAssetsDir(fa) {}
+
     IMODEL_BRIDGE_EXPORT BeFileNameCR _GetLocalTempDirectoryBaseName() override;
-    IMODEL_BRIDGE_EXPORT BeFileNameCR _GetDgnPlatformAssetsDirectory() override;
-    IMODEL_BRIDGE_EXPORT static void SetAssetsDir(BeFileNameCR);
+    IMODEL_BRIDGE_EXPORT BeFileNameCR _GetDgnPlatformAssetsDirectory() override {return m_fwkAssetsDir;}
 };
 
 //=======================================================================================
+//! @private
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
-struct iModelBridgeNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
+struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
 {
     virtual BentleyApi::StatusInt _OutputMessage(NotifyMessageDetails const& msg) override
         {
@@ -56,9 +59,10 @@ struct iModelBridgeNotificationAdmin : DgnPlatformLib::Host::NotificationAdmin
 };
 
 //=======================================================================================
-//! @bsiclass
+//! @private
+// @bsiclass
 //=======================================================================================
-struct iModelBridgeViewManager : ViewManager
+struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeViewManager : ViewManager
 {
     Display::SystemContext* m_systemContext = nullptr;
     IMODEL_BRIDGE_EXPORT Display::SystemContext* _GetSystemContext() override;
@@ -66,10 +70,10 @@ struct iModelBridgeViewManager : ViewManager
 };
 
 //=======================================================================================
-// Allows the converter app to forward ResolveFont calls to the converter.
+//! @private
 // @bsiclass                                                    Jeff.Marker     09/2015
 //=======================================================================================
-struct iModelBridgeFontAdmin : DgnPlatformLib::Host::FontAdmin
+struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeFontAdmin : DgnPlatformLib::Host::FontAdmin
 {
 private:
     DEFINE_T_SUPER(DgnPlatformLib::Host::FontAdmin);
@@ -84,25 +88,32 @@ public:
 };
 
 //=======================================================================================
-//! An implementation of Dgn::DgnViewLib::Host that an iModelBridge can use to register
-//! a host in its iModelBridge::_Initialize method. 
+//! An implementation of Dgn::DgnViewLib::Host that iModelBridgeFwk sets up before running a bridge. 
 //! @ingroup GROUP_iModelBridge
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
-struct iModelBridgeBimHost : Dgn::DgnViewLib::Host
+struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeBimHost : Dgn::DgnViewLib::Host
 {
     RepositoryAdmin*    m_repoAdmin;
-    WString             m_sqlangRelPath;
+    BeFileName          m_fwkSqlangPath;
+    BeFileName          m_fwkAssetsDir;
+    Utf8String          m_productName;
 
-    IMODEL_BRIDGE_EXPORT void _SupplyProductName(Utf8StringR name) override;
-    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override {return *new iModelBridgeKnownLocationsAdmin();}
+    IMODEL_BRIDGE_EXPORT void _SupplyProductName(Utf8StringR name) override {name = m_productName;}
+    IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override {return *new iModelBridgeKnownLocationsAdmin(m_fwkAssetsDir);}
     IMODEL_BRIDGE_EXPORT BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
     NotificationAdmin& _SupplyNotificationAdmin() override {return *new iModelBridgeNotificationAdmin();}
     ViewManager& _SupplyViewManager() override {return *new iModelBridgeViewManager ();}
     RepositoryAdmin& _SupplyRepositoryAdmin() override {return *m_repoAdmin;}
     FontAdmin& _SupplyFontAdmin() override {return *new iModelBridgeFontAdmin;}
 
-    iModelBridgeBimHost(RepositoryAdmin* ra, WString const& sqlangRelPath) : m_repoAdmin(ra), m_sqlangRelPath(sqlangRelPath) {}
+    //! Construct the host to use when running bridges.
+    //! @param ra               The framework's RepositoryAdmin
+    //! @param fwkAssetsDir     The full path to the framework's Assets directory
+    //! @param fwkSqlangPath    The full path to the framework's .db3 file
+    //! @param productName      The name of the product that is using this host
+    iModelBridgeBimHost(RepositoryAdmin* ra, BeFileNameCR fwkAssetsDir, BeFileNameCR fwkSqlangPath, Utf8StringCR productName) 
+        : m_repoAdmin(ra), m_fwkAssetsDir(fwkAssetsDir), m_fwkSqlangPath(fwkSqlangPath), m_productName(productName) {}
 };
 
 END_BENTLEY_DGN_NAMESPACE

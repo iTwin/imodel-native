@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/DgnDbServerClientUtils.h $
+|     $Source: iModelBridge/Fwk/DgnDbServerClientUtils.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -286,12 +286,18 @@ int BimExporter0601::Run(int argc, WCharCP argv[])
     exporter.SetQueueWrite([&file] (const char* jsonEntry)
         {
         file.Write(nullptr, jsonEntry, (uint32_t) strlen(jsonEntry));
+        Utf8CP comma(",\n");
+        file.Write(nullptr, comma, (uint32_t) strlen(comma));
         }
     );
 
+    Utf8CP openBracket = "[\n";
+    file.Write(nullptr, openBracket, (uint32_t) strlen(openBracket));
     exporter.ExportDgnDb();
     file.Flush();
     LOG->infov(L"Exported dgndb to '%ls'", jsonPath.GetName());
+    Utf8CP closeBracket = "]\n";
+    file.Write(nullptr, closeBracket, (uint32_t) strlen(closeBracket));
 
     PrintMessage(L"Successfully exported %ls to %ls\n", m_inputFileName.GetName(), m_outputPath.GetName());
     return 0;

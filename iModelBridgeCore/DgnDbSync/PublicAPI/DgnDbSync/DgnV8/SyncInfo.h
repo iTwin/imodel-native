@@ -707,7 +707,7 @@ public:
     DGNDBSYNC_EXPORT DgnFontId FindFont(V8FontId oldId);
 
     //! Query sync info for a v8 linestyle in the current v8 file.
-    DGNDBSYNC_EXPORT DgnStyleId FindLineStyle(double& unitsScale, V8StyleId oldId);
+    DGNDBSYNC_EXPORT DgnStyleId FindLineStyle(double& unitsScale, bool& foundStyle, V8StyleId oldId);
 
     //! Query sync info for a v8 material in the current v8 file.
     DGNDBSYNC_EXPORT RenderMaterialId FindMaterialByV8Id (uint64_t v, DgnV8FileR v8File, DgnV8ModelR v8Model);

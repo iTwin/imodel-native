@@ -56,6 +56,7 @@
 #include <VersionedDgnV8Api/RasterCore/RasterCoreLib.h>
 #include <VersionedDgnV8Api/Rastercore/msrastercore.h>
 #include <VersionedDgnV8Api/DgnPlatform/ClipUtil.h>
+#include <VersionedDgnV8Api/DgnPlatform/DgnPlatform.r.h>
 
 #define NO_USING_NAMESPACE_BENTLEY 1
 
@@ -90,9 +91,11 @@
 #include <DgnPlatform/DgnMaterial.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/FunctionalDomain.h>
+#include <DgnPlatform/ModelSpatialClassifier.h>
 #include <Raster/RasterApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <ThreeMx/ThreeMxApi.h>
+#include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
 #include "ECDiff.h"
 #include "EntityConverter.h"
 #include "ECConversion.h"

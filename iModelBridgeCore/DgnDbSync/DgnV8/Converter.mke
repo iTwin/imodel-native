@@ -102,6 +102,8 @@ $(o)PointCloudConversion$(oext):  $(baseDir)PointCloudConversion.cpp $(DgnV8Depe
 
 $(o)ThreeMxConversion$(oext):  $(baseDir)ThreeMxConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)ScalableMeshConversion$(oext):  $(baseDir)ScalableMeshConversion.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 $(o)Initialize$(oext):  $(baseDir)Initialize.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
 $(o)SheetAttachmentViewHelper$(oext):  $(baseDir)SheetAttachmentViewHelper.cpp $(baseDir)SheetAttachmentViewHelper.h $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
@@ -130,6 +132,8 @@ $(o)LinkConverter$(oext): $(baseDir)LinkConverter.cpp $(DgnV8Depends) $(DgnDbSyn
 
 $(o)DwgDgnV8Host$(oext): $(baseDir)DwgDgnV8Host.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
 
+$(o)ForeignFileHandlers$(oext): $(baseDir)ForeignFileHandlers.cpp $(DgnV8Depends) $(DgnDbSyncDepends) ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 cppObjects =% $(MultiCompileObjectList)
 
@@ -149,6 +153,12 @@ $(o)V8IModelExtraFiles$(oext) : $(SrcV8IModelExtraFiles)V8IModelExtraFiles.cpp $
 
 nonPortableObjects =% $(MultiCompileObjectList)
 cppObjects + $(nonPortableObjects)
+
+# A workaround for transitioning from RealDWG2017 to 2018, to allow both work for PRG and developers.
+RDVSuffix = 21
+%if exists($(DgnPlatformV8LibDir)acdb22.lib)
+RDVSuffix = 22
+%endif
 
 #----------------------------------------------------------------------
 #   dependencies of the subsystem.
@@ -179,6 +189,9 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)Raster.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)PointCloud.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ThreeMx.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)iModelBridge.lib 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMeshSchema.lib 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib 
+
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyAllocator.lib
@@ -195,7 +208,7 @@ LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnView.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)VisEdgesLib.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib
-LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acdb21.lib
+LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acdb$(RDVSuffix).lib
 LINKER_LIBRARIES_DELAYLOADED + msi.lib
 
 %include $(sharedMki)LinkLibrary.mki

@@ -57,15 +57,10 @@ static BentleyApi::TransformR DoInterop(Bentley::Transform&source) { return (Ben
 static BentleyApi::TransformCR DoInterop(Bentley::Transform const&source) { return (BentleyApi::TransformCR)source; }
 static Bentley::TransformCR DoInterop(BentleyApi::Transform const&source) { return (Bentley::TransformCR)source; }
 
-/*=================================================================================**//**
-* @bsiclass
-+===============+===============+===============+===============+===============+======*/
-struct V8GraphicsConverterUtils
-{
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
-static void ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8Api::LineStyleParams const* v8lsParams, double uorPerMeter, double componentScale, double modelLsScale)
+void Converter::ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8Api::LineStyleParams const* v8lsParams, double uorPerMeter, double componentScale, double modelLsScale)
     {
     if (nullptr == v8lsParams)
         {
@@ -118,7 +113,7 @@ static void ConvertLineStyleParams(Render::LineStyleParams& lsParams, DgnV8Api::
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   11/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void Convert(BentleyApi::CurveVectorPtr& clone, Bentley::CurveVectorCR v8Curves, TransformCP v8ToDgnDbTrans)
+void Converter::ConvertCurveVector(BentleyApi::CurveVectorPtr& clone, Bentley::CurveVectorCR v8Curves, TransformCP v8ToDgnDbTrans)
     {
     clone = BentleyApi::CurveVector::Create((BentleyApi::CurveVector::BoundaryType) v8Curves.GetBoundaryType());
 
@@ -239,7 +234,7 @@ static void Convert(BentleyApi::CurveVectorPtr& clone, Bentley::CurveVectorCR v8
                 BentleyApi::CurveVectorPtr  nestedClone;
 
                 // Nested curve vector can occur with BOUNDARY_TYPE_None and not just union/parity regions...
-                Convert(nestedClone, *v8Curve->GetChildCurveVectorCP(), v8ToDgnDbTrans);
+                ConvertCurveVector(nestedClone, *v8Curve->GetChildCurveVectorCP(), v8ToDgnDbTrans);
 
                 if (!nestedClone.IsValid())
                     {
@@ -263,7 +258,7 @@ static void Convert(BentleyApi::CurveVectorPtr& clone, Bentley::CurveVectorCR v8
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void Convert(BentleyApi::ISolidPrimitivePtr& clone, Bentley::ISolidPrimitiveCR v8Entity)
+void Converter::ConvertSolidPrimitive(BentleyApi::ISolidPrimitivePtr& clone, Bentley::ISolidPrimitiveCR v8Entity)
     {
     switch (v8Entity.GetSolidPrimitiveType())
         {
@@ -323,7 +318,7 @@ static void Convert(BentleyApi::ISolidPrimitivePtr& clone, Bentley::ISolidPrimit
 
             BentleyApi::CurveVectorPtr profileClone;
 
-            V8GraphicsConverterUtils::Convert(profileClone, *detail.m_baseCurve, nullptr);
+            ConvertCurveVector(profileClone, *detail.m_baseCurve, nullptr);
 
             BentleyApi::DgnExtrusionDetail detailClone(profileClone, DoInterop(detail.m_extrusionVector), detail.m_capped);
 
@@ -340,7 +335,7 @@ static void Convert(BentleyApi::ISolidPrimitivePtr& clone, Bentley::ISolidPrimit
 
             BentleyApi::CurveVectorPtr profileClone;
 
-            V8GraphicsConverterUtils::Convert(profileClone, *detail.m_baseCurve, nullptr);
+            ConvertCurveVector(profileClone, *detail.m_baseCurve, nullptr);
 
             BentleyApi::DgnRotationalSweepDetail detailClone(profileClone, DoInterop(detail.m_axisOfRotation.origin), DoInterop(detail.m_axisOfRotation.direction), detail.m_sweepAngle, detail.m_capped);
 
@@ -362,7 +357,7 @@ static void Convert(BentleyApi::ISolidPrimitivePtr& clone, Bentley::ISolidPrimit
                 {
                 BentleyApi::CurveVectorPtr profileClone;
 
-                V8GraphicsConverterUtils::Convert(profileClone, *curves, nullptr);
+                ConvertCurveVector(profileClone, *curves, nullptr);
                 detailClone.m_sectionCurves.push_back(profileClone);
                 }
 
@@ -376,7 +371,7 @@ static void Convert(BentleyApi::ISolidPrimitivePtr& clone, Bentley::ISolidPrimit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void Convert(BentleyApi::MSBsplineSurfacePtr& clone, Bentley::MSBsplineSurfaceCR v8Entity)
+void Converter::ConvertMSBsplineSurface(BentleyApi::MSBsplineSurfacePtr& clone, Bentley::MSBsplineSurfaceCR v8Entity)
     {
     clone = BentleyApi::MSBsplineSurface::CreatePtr();
 
@@ -386,7 +381,7 @@ static void Convert(BentleyApi::MSBsplineSurfacePtr& clone, Bentley::MSBsplineSu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void Convert(BentleyApi::PolyfaceHeaderPtr& clone, Bentley::PolyfaceQueryCR v8Entity)
+void Converter::ConvertPolyface(BentleyApi::PolyfaceHeaderPtr& clone, Bentley::PolyfaceQueryCR v8Entity)
     {
     // NOTE: Assumes that V8 color types have already been resolved to valid int colors...
     BentleyApi::PolyfaceQueryCarrier sourceData(v8Entity.GetNumPerFace(), v8Entity.GetTwoSided(), v8Entity.GetPointIndexCount(),
@@ -403,7 +398,7 @@ static void Convert(BentleyApi::PolyfaceHeaderPtr& clone, Bentley::PolyfaceQuery
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void Convert(TextStringPtr& clone, Bentley::TextStringCR v8Text, DgnFileR dgnFile, Converter& converter)
+void Converter::ConvertTextString(TextStringPtr& clone, Bentley::TextStringCR v8Text, DgnFileR dgnFile, Converter& converter)
     {
     uint32_t v8FontId = 0;
     dgnFile.GetDgnFontMapP()->GetFontNumber(v8FontId, v8Text.GetProperties().GetFont(), false);
@@ -467,11 +462,12 @@ static void Convert(TextStringPtr& clone, Bentley::TextStringCR v8Text, DgnFileR
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void Convert(IBRepEntityPtr& clone, Bentley::ISolidKernelEntityCR v8Entity)
+void Converter::ConvertSolidKernelEntity(IBRepEntityPtr& clone, Bentley::ISolidKernelEntityCR v8Entity)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
     // NOTE: As long as we don't call PK_SESSION_start in the Db code we can continue to use the
     //       frustrum registered by the v8 PSolidCore; which is necessary since they share pskernel...
+    BeAssert(!DgnDbApi::PSolidKernelManager::IsSessionStarted());
     DgnDbApi::PSolidKernelManager::SetExternalFrustrum(true);
 
     clone = DgnDbApi::PSolidUtil::CreateNewEntity(DgnV8Api::PSolidUtil::GetEntityTag(v8Entity), DoInterop(v8Entity.GetEntityTransform()), false); // <- Not owned...
@@ -481,7 +477,7 @@ static void Convert(IBRepEntityPtr& clone, Bentley::ISolidKernelEntityCR v8Entit
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-static void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, Converter& converter, bool is3d, SyncInfo::V8ModelSource v8Model)
+void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model)
     {
     // NOTE: Resolve loses information like WEIGHT_BYLEVEL and we may be called multiple times (ex. disjoint brep)...
     AutoRestore<DgnV8Api::ElemDisplayParams> saveParamsV8(&paramsV8);
@@ -503,8 +499,8 @@ static void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDis
 
     DgnSubCategoryId subCategoryId = params.GetSubCategoryId(); // see if the caller wants to specify an override SubCategoryId
     if (!subCategoryId.IsValid()) // if not, look up the SubCategoryId from V8 LevelId
-        subCategoryId = converter.GetSyncInfo().GetSubCategory(v8Level, v8Model, is3d? SyncInfo::Level::Type::Spatial: SyncInfo::Level::Type::Drawing);
-    DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(converter.GetDgnDb(), subCategoryId);
+        subCategoryId = GetSyncInfo().GetSubCategory(v8Level, v8Model, is3d? SyncInfo::Level::Type::Spatial: SyncInfo::Level::Type::Drawing);
+    DgnCategoryId categoryId = DgnSubCategory::QueryCategoryId(GetDgnDb(), subCategoryId);
 
     params = Render::GeometryParams();
     params.SetCategoryId(categoryId);
@@ -572,17 +568,19 @@ static void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDis
     //  NEEDSWORK LineStyles How do line style overrides interact with STYLE_BYLEVEL, overrides?
     //  NEEDSWORK LineStyles what do we do with LINECODE?
 
-    if (nullptr != ovr && ovr->GetFlags().style && nullptr != ovr->GetLineStyleModelRef())
+    DgnModelRefP        styleModelRef;
+
+    if (nullptr != ovr && ovr->GetFlags().style && nullptr != (styleModelRef = (nullptr == ovr->GetLineStyleModelRef()) ? context.GetCurrentModel() :ovr->GetLineStyleModelRef()))
         {
         if (DgnV8Api::STYLE_BYLEVEL != ovr->GetLineStyle() && ovr->GetLineStyle() != 0)
             {
-            double unitsScale;
+            double          unitsScale;
             
-            DgnStyleId mappedStyleId = converter._RemapLineStyle(unitsScale, *ovr->GetLineStyleModelRef()->GetDgnFileP(), ovr->GetLineStyle(), true);
+            DgnStyleId mappedStyleId = _RemapLineStyle(unitsScale, *styleModelRef->GetDgnFileP(), ovr->GetLineStyle(), true);
             if (mappedStyleId.IsValid())
                 {
-                double modelLsScale = ovr->GetLineStyleModelRef()->GetRoot()->GetLineStyleScale();
-                DgnV8Api::ModelInfo const& v8ModelInfo = ovr->GetLineStyleModelRef()->GetRoot()->GetModelInfo();
+                double modelLsScale = styleModelRef->GetRoot()->GetLineStyleScale();
+                DgnV8Api::ModelInfo const& v8ModelInfo = styleModelRef->GetRoot()->GetModelInfo();
                 double uorPerMeter = DgnV8Api::ModelInfo::GetUorPerMeter(&v8ModelInfo);
                 Render::LineStyleParams lsParams;
                 ConvertLineStyleParams(lsParams, ovr->GetLineStyleParams(), uorPerMeter, unitsScale, modelLsScale);
@@ -591,15 +589,15 @@ static void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDis
                 }
             }
         }
-    else if (DgnV8Api::STYLE_BYLEVEL != rawStyle && paramsV8.GetLineStyle() != 0 && nullptr != paramsV8.GetLineStyleModelRef())
+    else if (DgnV8Api::STYLE_BYLEVEL != rawStyle && paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef())) 
         {
         double unitsScale;
-        DgnStyleId mappedStyleId = converter._RemapLineStyle(unitsScale, *paramsV8.GetLineStyleModelRef()->GetDgnFileP(), paramsV8.GetLineStyle(), true);
+        DgnStyleId mappedStyleId = _RemapLineStyle(unitsScale, *styleModelRef->GetDgnFileP(), paramsV8.GetLineStyle(), true);
         if (mappedStyleId.IsValid())
             {
-            double modelLsScale = paramsV8.GetLineStyleModelRef()->GetRoot()->GetLineStyleScale();
+            double modelLsScale = styleModelRef->GetRoot()->GetLineStyleScale();
             LineStyleParams lsParams;
-            DgnV8Api::ModelInfo const& v8ModelInfo = paramsV8.GetLineStyleModelRef()->GetRoot()->GetModelInfo();
+            DgnV8Api::ModelInfo const& v8ModelInfo = styleModelRef->GetRoot()->GetModelInfo();
             double uorPerMeter = DgnV8Api::ModelInfo::GetUorPerMeter(&v8ModelInfo);
             ConvertLineStyleParams(lsParams, paramsV8.GetLineStyleParams(), uorPerMeter, unitsScale, modelLsScale);
             LineStyleInfoPtr lsInfo = LineStyleInfo::Create(mappedStyleId, &lsParams);
@@ -671,8 +669,8 @@ static void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDis
         {
         if (nullptr != paramsV8.GetMaterial())
             {
-            RenderMaterialId materialId = converter.GetRemappedMaterial(paramsV8.GetMaterial());
-            DgnSubCategoryCPtr dgnDbSubCategory = DgnSubCategory::Get(converter.GetDgnDb(), subCategoryId);
+            RenderMaterialId materialId = GetRemappedMaterial(paramsV8.GetMaterial());
+            DgnSubCategoryCPtr          dgnDbSubCategory = DgnSubCategory::Get(GetDgnDb(), subCategoryId);
 
             if (!dgnDbSubCategory.IsValid() || dgnDbSubCategory->GetAppearance().GetRenderMaterial() != materialId)
                 params.SetMaterialId(materialId);
@@ -684,13 +682,6 @@ static void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDis
             }
         }
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    BrienBastings   05/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-static bool InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context, Converter& converter);
-
-}; // V8GraphicsConverterUtils
 
 /*=================================================================================**//**
 * @bsiclass
@@ -730,7 +721,7 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
 
     Transform v8ToDgnDbTrans = DoInterop(Bentley::Transform::FromProduct(m_conversionScale, m_currentTransform));
 
-    V8GraphicsConverterUtils::Convert(clone, curves, &v8ToDgnDbTrans);
+    Converter::ConvertCurveVector(clone, curves, &v8ToDgnDbTrans);
 
     GeometricPrimitivePtr elemGeom = GeometricPrimitive::Create(clone);
 
@@ -763,7 +754,7 @@ void AddSymbolGeometry(GeometricPrimitivePtr& geometry)
 
     Render::GeometryParams geomParams;
 
-    V8GraphicsConverterUtils::InitGeometryParams(geomParams, m_currentDisplayParams, *m_context, m_converter, true, m_v8Model);
+    m_converter.InitGeometryParams(geomParams, m_currentDisplayParams, *m_context, true, m_v8Model);
     m_symbolParams.push_back(geomParams);
     }
 
@@ -791,7 +782,7 @@ void ProcessSymbol(DgnV8Api::IDisplaySymbol& symbol, DgnV8ModelR model) {DgnV8Ap
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool V8GraphicsConverterUtils::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context, Converter& converter)
+bool Converter::InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context)
     {
     double uorPerMeter = DgnV8Api::ModelInfo::GetUorPerMeter(&context.GetCurrentModel()->GetDgnModelP()->GetModelInfo());
 
@@ -800,8 +791,8 @@ bool V8GraphicsConverterUtils::InitPatternParams(PatternParamsR pattern, DgnV8Ap
         Utf8String nameStr;
         nameStr.Assign(patternV8.cellName);
         Utf8PrintfString partCodeValue("PatternV8-%ld-%s-%lld", Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), nameStr.c_str(), patternV8.cellId);
-        DgnCode partCode = converter.CreateCode(partCodeValue);
-        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(converter.GetDgnDb(), partCode);
+        DgnCode partCode = CreateCode(partCodeValue);
+        DgnGeometryPartId partId = DgnGeometryPart::QueryGeometryPartId(GetDgnDb(), partCode);
 
         if (!partId.IsValid())
             {
@@ -814,7 +805,7 @@ bool V8GraphicsConverterUtils::InitPatternParams(PatternParamsR pattern, DgnV8Ap
             double scale = 1.0/uorPerMeter;
             Transform scaleTransform = Transform::FromScaleFactors(scale, scale, scale);
 
-            V8SymbolGraphicsCollector collector(converter, SyncInfo::V8ModelSource(Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), SyncInfo::V8ModelId(-1)), scaleTransform);
+            V8SymbolGraphicsCollector collector(*this, SyncInfo::V8ModelSource(Converter::GetV8FileSyncInfoIdFromAppData(*context.GetCurrentModel()->GetDgnFileP()), SyncInfo::V8ModelId(-1)), scaleTransform);
 
             if (!isPointCell)
                 collector.SetAllowMultiSymb();
@@ -826,7 +817,7 @@ bool V8GraphicsConverterUtils::InitPatternParams(PatternParamsR pattern, DgnV8Ap
                 return false;
 
             size_t iSymb = 0;
-            GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(converter.GetDgnDb(), true);
+            GeometryBuilderPtr builder = GeometryBuilder::CreateGeometryPart(GetDgnDb(), true);
 
             for (GeometricPrimitivePtr geom : geometry)
                 {
@@ -836,9 +827,9 @@ bool V8GraphicsConverterUtils::InitPatternParams(PatternParamsR pattern, DgnV8Ap
                 builder->Append(*geom);
                 }
 
-            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(converter.GetDgnDb(), partCode);
+            DgnGeometryPartPtr geomPart = DgnGeometryPart::Create(GetDgnDb(), partCode);
 
-            if (SUCCESS != builder->Finish(*geomPart) || !converter.GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
+            if (SUCCESS != builder->Finish(*geomPart) || !GetDgnDb().Elements().Insert<DgnGeometryPart>(*geomPart).IsValid())
                 return false;
 
             partId = geomPart->GetId();
@@ -1111,7 +1102,7 @@ void FixupTransformForPlacement2d(TransformR transform)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   09/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool isPart)
+GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, double v8SymbolScale)
     {
     bool doFlatten = (!m_is3dDest && m_is3dSrc);
 
@@ -1121,7 +1112,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
             {
             BentleyApi::CurveVectorPtr clone;
 
-            V8GraphicsConverterUtils::Convert(clone, *m_curve, &m_v8ToDgnDbTrans);
+            Converter::ConvertCurveVector(clone, *m_curve, &m_v8ToDgnDbTrans);
             m_geometry = GeometricPrimitive::Create(clone);
             }
         else if (m_primitive.IsValid())
@@ -1134,7 +1125,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                     {
                     BentleyApi::CurveVectorPtr clone;
 
-                    V8GraphicsConverterUtils::Convert(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                    Converter::ConvertCurveVector(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
                     m_geometry = GeometricPrimitive::Create(clone);
                     doFlatten = true;
                     }
@@ -1143,7 +1134,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                 {
                 BentleyApi::ISolidPrimitivePtr clone;
 
-                V8GraphicsConverterUtils::Convert(clone, *m_primitive);
+                Converter::ConvertSolidPrimitive(clone, *m_primitive);
                 m_geometry = GeometricPrimitive::Create(clone);
                 }
             }
@@ -1157,7 +1148,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                     {
                     BentleyApi::CurveVectorPtr clone;
 
-                    V8GraphicsConverterUtils::Convert(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                    Converter::ConvertCurveVector(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
                     m_geometry = GeometricPrimitive::Create(clone);
                     doFlatten = true;
                     }
@@ -1166,7 +1157,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                 {
                 BentleyApi::MSBsplineSurfacePtr clone;
 
-                V8GraphicsConverterUtils::Convert(clone, *m_surface);
+                Converter::ConvertMSBsplineSurface(clone, *m_surface);
                 m_geometry = GeometricPrimitive::Create(clone);
                 }
             }
@@ -1189,7 +1180,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
 
                 BentleyApi::CurveVectorPtr clone;
 
-                V8GraphicsConverterUtils::Convert(clone, *facetShapes, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                Converter::ConvertCurveVector(clone, *facetShapes, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
                 m_geometry = GeometricPrimitive::Create(clone);
                 doFlatten = true;
                 }
@@ -1197,7 +1188,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                 {
                 BentleyApi::PolyfaceHeaderPtr clone;
 
-                V8GraphicsConverterUtils::Convert(clone, *m_mesh);
+                Converter::ConvertPolyface(clone, *m_mesh);
                 m_geometry = GeometricPrimitive::Create(clone);
                 }
             }
@@ -1211,7 +1202,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
                     {
                     BentleyApi::CurveVectorPtr clone;
 
-                    V8GraphicsConverterUtils::Convert(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
+                    Converter::ConvertCurveVector(clone, *wires, nullptr); // m_v8ToDgnDbTrans only needed for spirals...
                     m_geometry = GeometricPrimitive::Create(clone);
                     doFlatten = true;
                     }
@@ -1221,7 +1212,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
 #if defined (BENTLEYCONFIG_PARASOLID)
                 IBRepEntityPtr clone;
 
-                V8GraphicsConverterUtils::Convert(clone, *m_brep);
+                Converter::ConvertSolidKernelEntity(clone, *m_brep);
 
                 if (clone.IsValid() && m_attachments.IsValid())
                     DgnDbApi::PSolidUtil::SetFaceAttachments(*clone, m_attachments.get());
@@ -1234,7 +1225,7 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
             {
             TextStringPtr clone;
 
-            V8GraphicsConverterUtils::Convert(clone, *m_text, dgnFile, converter);
+            Converter::ConvertTextString(clone, *m_text, dgnFile, converter);
             m_geometry = GeometricPrimitive::Create(clone);
             }
         else
@@ -1247,9 +1238,9 @@ GeometricPrimitivePtr GetGeometry(DgnFileR dgnFile, Converter& converter, bool i
 
         Transform goopTrans = m_goopTrans;
 
-        if (isPart && 1.0 != fabs(m_partScale))
+        if (0.0 != v8SymbolScale && 1.0 != fabs(v8SymbolScale))
             {
-            double partScale = fabs(1.0/m_partScale);
+            double partScale = fabs(1.0/v8SymbolScale);
 
             goopTrans.ScaleMatrixColumns(goopTrans, partScale, partScale, partScale);
             }
@@ -1479,7 +1470,7 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    V8GraphicsConverterUtils::InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_converter, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
 
     // NOTE: Unfortunately PatternParams isn't part of ElemDisplayParams in V8, so we can only check any
     //       element that output a region curve vector to see if it supports IAreaFillPropertiesQuery.
@@ -1504,7 +1495,7 @@ virtual Bentley::BentleyStatus _ProcessCurveVector(Bentley::CurveVectorCR curves
                     {
                     PatternParamsPtr pattern = PatternParams::Create();
 
-                    if (V8GraphicsConverterUtils::InitPatternParams(*pattern, *v8Pattern, v8DefLines, origin, *m_context, m_converter))
+                    if (m_converter.InitPatternParams(*pattern, *v8Pattern, v8DefLines, origin, *m_context))
                         {
                         DgnV8Api::IAssocRegionQuery* assocRegion = dynamic_cast<DgnV8Api::IAssocRegionQuery*> (&v8Eh.GetHandler());
 
@@ -1542,7 +1533,7 @@ virtual Bentley::BentleyStatus _ProcessSolidPrimitive(Bentley::ISolidPrimitiveCR
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    V8GraphicsConverterUtils::InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_converter, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
 
     pathEntry.m_primitive = primitive.Clone();
     pathGeom.AddEntry(pathEntry);
@@ -1558,7 +1549,7 @@ virtual Bentley::BentleyStatus _ProcessSurface(Bentley::MSBsplineSurfaceCR surfa
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    V8GraphicsConverterUtils::InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_converter, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
 
     pathEntry.m_surface = Bentley::MSBsplineSurface::CreatePtr();
     pathEntry.m_surface->CopyFrom(surface);
@@ -1575,7 +1566,7 @@ virtual Bentley::BentleyStatus _ProcessFacets(Bentley::PolyfaceQueryCR meshData,
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    V8GraphicsConverterUtils::InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_converter, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
 
     BentleyApi::RgbFactor const* rgbColors = (BentleyApi::RgbFactor const*) meshData.GetDoubleColorCP();
     uint32_t const* intColors = meshData.GetIntColorCP();
@@ -1675,7 +1666,7 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    V8GraphicsConverterUtils::InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_converter, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
 
     if (SUCCESS != DgnV8Api::DgnPlatformLib::GetHost().GetSolidsKernelAdmin()._CopyEntity(pathEntry.m_brep, entity))
         return;
@@ -1719,7 +1710,7 @@ void ProcessSingleBody(Bentley::ISolidKernelEntityCR entity, Bentley::IFaceMater
             Render::GeometryParams faceParamsDb;
 
             foundFaceV8->second.ToElemDisplayParams(faceParamsV8);
-            V8GraphicsConverterUtils::InitGeometryParams(faceParamsDb, faceParamsV8, *m_context, m_converter, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+            m_converter.InitGeometryParams(faceParamsDb, faceParamsV8, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
 
             size_t attachmentIndex = 0;
             DgnDbApi::T_FaceAttachmentsVec::const_iterator foundAttachmentDb = std::find(faceAttachmentsVecDb.begin(), faceAttachmentsVecDb.end(), faceParamsDb);
@@ -1810,7 +1801,7 @@ virtual Bentley::BentleyStatus _ProcessTextString(Bentley::TextStringCR v8Text)
     DgnV8PathGeom& pathGeom = GetDgnV8PathGeom();
     DgnV8PathEntry pathEntry(DoInterop(m_currentTransform), DoInterop(m_conversionScale), m_model.Is3d(), m_context->GetCurrentModel()->Is3d());
 
-    V8GraphicsConverterUtils::InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_converter, m_model.Is3d(), m_v8mt.GetV8ModelSource());
+    m_converter.InitGeometryParams(pathEntry.m_geomParams, m_currentDisplayParams, *m_context, m_model.Is3d(), m_v8mt.GetV8ModelSource());
 
     Bentley::DPoint3d                  lowerLeft = v8Text.GetOrigin();
     Bentley::RotMatrix                 rMatrix = v8Text.GetRotMatrix();
@@ -2181,7 +2172,7 @@ void CreatePartReferences(bvector<DgnV8PartReference>& geomParts, TransformCR ba
 
             if (!partId.IsValid())
                 {
-                GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, true);
+                GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, v8SymbolScale);
 
                 if (!geometry.IsValid())
                     continue;
@@ -2733,7 +2724,7 @@ void ProcessElement(DgnClassId elementClassId, bool hasV8PrimaryECInstance, DgnC
             if (0 == (++iEntry % 10))
                 m_converter.ReportProgress();
 
-            GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, false);
+            GeometricPrimitivePtr geometry = pathEntry.GetGeometry(*dgnFile, m_converter, 0.0);
 
             if (!geometry.IsValid())
                 continue;
@@ -2858,7 +2849,7 @@ BentleyStatus Converter::_CreateElementAndGeom(ElementConversionResults& results
 BentleyApi::CurveVectorPtr Converter::ConvertV8Curve(Bentley::CurveVectorCR v8Curves, TransformCP v8ToDgnDbTrans)
     {
     BentleyApi::CurveVectorPtr curve;
-    V8GraphicsConverterUtils::Convert(curve, v8Curves, v8ToDgnDbTrans);
+    ConvertCurveVector(curve, v8Curves, v8ToDgnDbTrans);
     return curve;
     }
 
@@ -3031,7 +3022,7 @@ Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR 
 
     //  Convert the CurveVector itself
     CurveVectorPtr bimcurves;
-    V8GraphicsConverterUtils::Convert(bimcurves, v8curves, &m_parentModelMapping.GetTransform());   
+    Converter::ConvertCurveVector(bimcurves, v8curves, &m_parentModelMapping.GetTransform());   
 
     if (m_currentAttachment->IsCameraOn())
         {
@@ -3066,7 +3057,7 @@ Bentley::BentleyStatus CveConverter::_ProcessCurveVector(Bentley::CurveVectorCR 
     Render::GeometryParams params;
     params.SetCategoryId(m_currentAttachmentInfo.m_categoryId);
     params.SetSubCategoryId(subCategoryId);
-    V8GraphicsConverterUtils::InitGeometryParams(params, m_currentDisplayParams, *m_context, m_converter, false, m_parentModelMapping.GetV8ModelSource());
+    m_converter.InitGeometryParams(params, m_currentDisplayParams, *m_context, false, m_parentModelMapping.GetV8ModelSource());
 
     //  Accumulate the builders in our map. We'll create elements later.
     SyncInfo::V8ElementMapping original = m_converter.FindFirstElementMappedTo(*m_context->GetCurrDisplayPath(), false);

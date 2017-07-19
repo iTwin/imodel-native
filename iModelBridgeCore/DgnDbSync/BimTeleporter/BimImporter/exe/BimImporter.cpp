@@ -14,7 +14,6 @@
 #include <BimTeleporter/BisJson1Importer.h>
 #include "BimImporter.h"
 
-USING_NAMESPACE_BIM_TELEPORTER
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_EC
@@ -192,7 +191,6 @@ BentleyStatus BimImporter::_Initialize(int argc, WCharCP argv[])
         }
     InitLogging(argv[0]);
 
-    DgnPlatformLib::Initialize(*this, false);
     return SUCCESS;
 
     }
@@ -321,28 +319,19 @@ int BimImporter::Run(int argc, WCharCP argv[])
     Json::Value jsonInput;
     ReadJsonInputFromFile(jsonInput, m_inputFileName);
 
-    DgnDbPtr dgndb = CreateNewBim();
-    if (!dgndb.IsValid())
+    BisJson1Importer importer(m_outputPath.GetName());
+    std::thread consumer([&importer] { importer.CreateBim(); });
+
+    for (Json::Value::iterator iter = jsonInput.begin(); iter != jsonInput.end(); iter++)
         {
-        PrintError(L"Unable to create %ls\n", m_outputPath.GetName());
-        return -1;
+        Json::Value& entry = *iter;
+        if (entry.isNull())
+            continue;
+        importer.AddToQueue(entry.toStyledString().c_str());
         }
-
-    BisJson1Importer importer(dgndb.get());
-
-    if (SUCCESS != importer.InitializeSchemas())
-        return ERROR;
-
-    if (SUCCESS != importer.CreateAndAttachSyncInfo())
-        return ERROR;
-
-    if (SUCCESS == importer.ImportDatabase(jsonInput))
-        fwprintf(stdout, L"Successfully teleported %ls into %ls\n", m_inputFileName.GetName(), m_outputPath.GetName());
-    else
-        fwprintf(stdout, L"Failed to teleport %ls into %ls\n", m_inputFileName.GetName(), m_outputPath.GetName());
-
-    dgndb->Schemas().CreateClassViewsInDb(); // Failing to create the views should not cause errors for the rest of the conversion
-
+    BentleyApi::BeThreadUtilities::BeSleep(10000);
+    importer.SetDone();
+    consumer.join();
     return 0;
     }
 END_BIM_TELEPORTER_NAMESPACE
@@ -352,6 +341,6 @@ END_BIM_TELEPORTER_NAMESPACE
 +---------------+---------------+---------------+---------------+---------------+------*/
 int wmain (int argc, wchar_t const* argv[])
     {
-    BimImporter app;
+    BentleyApi::Dgn::BimTeleporter::BimImporter app;
     return app.Run(argc, argv);
     }

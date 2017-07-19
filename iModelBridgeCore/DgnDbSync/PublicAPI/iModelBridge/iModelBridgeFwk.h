@@ -8,10 +8,10 @@
 #pragma once
 //__PUBLISH_SECTION_START__
 
-#ifdef __IMODEL_BRIDGE_BUILD__
-    #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
+#ifdef __IMODEL_BRIDGE_FWK_BUILD__
+    #define IMODEL_BRIDGE_FWK_EXPORT EXPORT_ATTRIBUTE
 #else
-    #define IMODEL_BRIDGE_EXPORT IMPORT_ATTRIBUTE
+    #define IMODEL_BRIDGE_FWK_EXPORT IMPORT_ATTRIBUTE
 #endif
 
 
@@ -24,6 +24,16 @@
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct DgnDbServerClientUtils;
+
+//=======================================================================================
+// @bsiclass
+//=======================================================================================
+// TRICKY: Must use BENTLEY_TRANSLATABLE_STRINGS macros, and NOT IMODELBRIDGEFX_TRANSLATABLE_STRINGS macros. That is because
+// the fwk plays the role of the platform here. The bridge is the "app". The bridge-specific L10 db is layered
+// on top of the base BeSQLite::L10N db.
+BENTLEY_TRANSLATABLE_STRINGS_START(iModelBridgeFwkErrors, iModelBridgeFwkErrors)
+    L10N_STRING(STATUS_TBD)                    // =="TBD"==
+BENTLEY_TRANSLATABLE_STRINGS_END
 
 //=======================================================================================
 // @bsiclass                                                    Sam.Wilson   02/15
@@ -76,7 +86,6 @@ struct iModelBridgeFwk
 
     void SaveNewModelIds();
     void ReadNewModelIds();
-    void DeleteNewModelIdsFile();
     void SetState(BootstrappingState);
     BootstrappingState GetState();
     BentleyStatus AssertPreConditions();
@@ -95,7 +104,9 @@ struct iModelBridgeFwk
 
     void SetSyncState(SyncState);
     SyncState GetSyncState();
-    BeFileName GetSyncStateFileName();
+
+    void SaveBriefcaseId();
+    //void SaveParentRevisionId();
 
     //! The command-line arguments required by the iModelBridgeFwk itself that define the Job
     struct JobDefArgs
@@ -103,10 +114,13 @@ struct iModelBridgeFwk
         bool m_createRepositoryIfNecessary = false;
         int m_maxWaitForMutex = 60000;
         Utf8String m_revisionComment;
+        WString m_bridgeRegSubKey;
         BeFileName m_bridgeLibraryName;
+        BeFileName  m_bridgeAssetsDir;
         BeFileName m_loggingConfigFileName;
         BeFileName m_stagingDir;
         BeFileName m_inputFileName;
+        bvector<BeFileName> m_drawingAndSheetFiles;
         BeFileName m_fwkAssetsDir;
         iModelBridge::GCSDefinition m_inputGcs;
         iModelBridge::GCSCalculationMethod m_gcsCalculationMethod;
@@ -123,7 +137,7 @@ struct iModelBridgeFwk
         static void PrintUsage();
 
         //! Load the bridge library and resolve its T_iModelBridge_getInstance function.
-        T_iModelBridge_getInstance LoadBridge();
+        T_iModelBridge_getInstance* LoadBridge();
         };
 
     //! The command-line arguments required by the iModelBridgeFwk that pertain to the iModelHub
@@ -157,6 +171,7 @@ struct iModelBridgeFwk
 
 protected:
     DgnDbPtr m_briefcaseDgnDb;
+    BeSQLite::Db m_stateDb;
     BeFileName m_briefcaseName;
     BeFileName m_stdoutFileName;
     BeFileName m_stderrFileName;
@@ -169,19 +184,31 @@ protected:
     ServerArgs m_serverArgs;            // the framework's command-line arguments that pertain to the iModelHub
     FwkRepoAdmin m_repoAdmin;
 
+    BeSQLite::DbResult OpenOrCreateStateDb();
     void PrintUsage(WCharCP programName);
     void RedirectStderr();
     void LogStderr();
     void CleanJobWorkdir();
-    BeFileName GetStateFileName();
-    BeFileName GetModelsFileName();
     void InitLogging();
+
+    //  bridge assignment
+    void DiscoverInstalledBridges();
+    BentleyStatus FindBridgeInRegistry(BeFileNameR bridgeLibraryPath, BeFileNameR bridgeAssetsDir, WStringCR bridgeName);
+    bool QueryAnyInstalledBridges();
+    BentleyStatus SearchForBridgeToAssignToDocument(BeFileNameCR);
+    void SearchForBridgesToAssignToDocumentsInDir(BeFileNameCR);
+    void SearchForBridgesToAssignToDocuments();
+    BentleyStatus QueryBridgeAssignedToDocument(BeFileNameR libPath, WStringR name, BeFileNameCR docName);
+    BeFileName QueryBridgeLibraryPathByName(uint64_t* rowid, WStringCR bridgeName);
+    BentleyStatus ComputeBridgeAffinityToDocument(iModelBridge::BridgeAffinity& affinity, BeFileNameCR affinityPath, BeFileNameCR filePath);
+    BentleyStatus WriteBridgesFile();
 
     DgnProgressMeter& GetProgressMeter() const;
 
     //! @name sync with server
     //! @{
     BentleyStatus Briefcase_Initialize(int argc, WCharCP argv[]);
+    bool Briefcase_IsInitialized() const {return nullptr != m_clientUtils;}
     BentleyStatus Briefcase_ParseCommandLine(int argc, WCharCP argv[]);
     void Briefcase_PrintUsage();
     void Briefcase_Shutdown();
@@ -197,26 +224,34 @@ protected:
     //! @}
 
     WString GetMutexName();
-    int Run0(int argc, WCharCP argv[]);
+    int RunExclusive(int argc, WCharCP argv[]);
+    int UpdateExistingBim();
     void SetBridgeParams(iModelBridge::Params&);
     BentleyStatus LoadBridge();
     BentleyStatus InitBridge();
 
 public:
-    IMODEL_BRIDGE_EXPORT iModelBridgeFwk();
-    IMODEL_BRIDGE_EXPORT ~iModelBridgeFwk();
+    IMODEL_BRIDGE_FWK_EXPORT iModelBridgeFwk();
+    IMODEL_BRIDGE_FWK_EXPORT ~iModelBridgeFwk();
 
     //! wmain should call this first
-    IMODEL_BRIDGE_EXPORT BentleyStatus ParseCommandLine(int argc, WCharCP argv[]);
+    IMODEL_BRIDGE_FWK_EXPORT BentleyStatus ParseCommandLine(int argc, WCharCP argv[]);
 
     //! wmain should call this to run the bridge, connected to iModelHub.
-    IMODEL_BRIDGE_EXPORT int Run(int argc, WCharCP argv[]);
+    IMODEL_BRIDGE_FWK_EXPORT int Run(int argc, WCharCP argv[]);
 
     static NativeLogging::ILogger& GetLogger() { return *NativeLogging::LoggingManager::GetLogger("iModelBridge"); }
     bool GetCreateRepositoryIfNecessary() const {return m_jobEnvArgs.m_createRepositoryIfNecessary;}
     BeFileName GetLoggingConfigFileName() const {return m_jobEnvArgs.m_loggingConfigFileName;}
     void SetBriefcaseBim(DgnDbR db) { m_briefcaseDgnDb = &db; }
     DgnDbPtr GetBriefcaseBim() { return m_briefcaseDgnDb; }
+
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static void* GetBridgeFunction(BeFileNameCR bridgeDllName, Utf8CP funcName);
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static int ComputeAffinityMain(int argc, WCharCP argv[]);
+    //! @private
+    IMODEL_BRIDGE_FWK_EXPORT static int AssignMain(int argc, WCharCP argv[]);
 
     IRepositoryManagerP GetRepositoryManager(DgnDbR db) const;
 };

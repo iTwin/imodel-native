@@ -9,6 +9,7 @@
 //__BENTLEY_INTERNAL_ONLY__
 
 #include <iModelBridge/iModelBridge.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 
 #ifdef __IMODEL_BRIDGE_BUILD__
     #define IMODEL_BRIDGE_EXPORT EXPORT_ATTRIBUTE
@@ -132,15 +133,9 @@ struct iModelBridgeSacAdapter
     IMODEL_BRIDGE_EXPORT static BentleyStatus ExtractFromIModel(BeFileName& outFile, BeFileNameCR imodelFile);
 
 public:
-    //! Portable function to get the full path to the executing program.
-    //! @param argv0    pass in the value of argv[0] here. This is used as a default.
-    //! @return the full path to the executing program.
-    IMODEL_BRIDGE_EXPORT static BeFileName GetExecutablePath(WCharCP argv0);
-
     //! Initialize the DgnPlatform host
     //! @param[in] bridge           The bridge that will be run.
-    //! @param[in] sqlangRelPath    Optional. The relative path to the sqlang db3 file to use. If null, the result of bridge._SupplySqlangRelPath is used.
-    IMODEL_BRIDGE_EXPORT static void InitializeHost(iModelBridge& bridge, WCharCP sqlangRelPath = nullptr);
+    IMODEL_BRIDGE_EXPORT static void InitializeHost(iModelBridge& bridge);
 
     //! Tell the specified bridge to update an existing BIM or to create a new one. This is called by stand-alone converters only.
     //! @param[in] bridge           The bridge to run

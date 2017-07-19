@@ -2,7 +2,7 @@
 #
 #     $Source: Dwg/Samples/XData/ImportXData.mke $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #----------------------------------------------------------------------
 %include mdl.mki
@@ -12,7 +12,7 @@ baseDir             = $(_MakeFilePath)
 DgnDbSyncRootDir    = $(SrcRoot)DgnDbSync/
 DgnDbSyncPubAPI     = $(DgnDbSyncRootDir)PublicAPI/DgnDbSync/
 DwgRootDir          = $(DgnDbSyncRootDir)Dwg/
-DwgPublicAPI        = $(DwgRootDir)PublicAPI/
+DwgPublicAPI        = $(DgnDbSyncPubAPI)Dwg/
 DwgDbLibName        = $(DWGTOOLKIT)DbExchange
 DwgImporterDir      = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
 
@@ -21,8 +21,9 @@ always:
     ~mkdir $(o)
 
 ImportXDataDepends  = $(baseDir)ImportXData.h                   \
-                      $(DgnDbSyncPubAPI)DgnDbSync.h             \
-                      $(DgnDbSyncPubAPI)Dwg/DwgImporter.h
+                      $(DwgPublicAPI)DwgBridge.h                \
+                      $(DwgPublicAPI)DwgImporter.h              \
+                      $(DgnDbSyncPubAPI)DgnDbSync.h
 
 ### Pass $(DWGTOOLKIT) to compiler
 CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT)
@@ -51,6 +52,7 @@ EXE_TMP_DIR         = $(o)
 EXE_NO_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES    = $(DwgImporterDir)DwgImporter$(libext)
+LINKER_LIBRARIES    + $(DwgImporterDir)DwgBridge$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)$(DwgDbLibName)$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)BeSQLite$(libext)
 LINKER_LIBRARIES    + $(ContextSubpartsLibs)Bentley$(libext)

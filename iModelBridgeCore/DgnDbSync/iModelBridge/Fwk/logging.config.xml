@@ -18,16 +18,35 @@
         <param name="Append" value="true"/>
     </appender>
 
+    <!-- Calls OutputDebugStringW, sending output to debugger's Output window -->
+    <appender name="OutputDebugStringAppender" class="org.apache.log4j.OutputDebugStringAppender">
+      <layout class="org.apache.log4j.PatternLayout">
+        <!--param name="ConversionPattern" value="%d{ISO8601} %-5p [%t] %-40.40c - %m%n"/-->
+        <param name="ConversionPattern" value="%-5p %-40.40c - %m%n"/>
+      </layout>
+    </appender>
+
+    <appender name="Console" class="org.apache.log4j.ConsoleAppender">
+      <layout class="org.apache.log4j.PatternLayout">
+        <param name="ConversionPattern" value="+++ LOG> %-5p %c - %m%n"/>
+      </layout>
+    </appender>
+
     <root>                            
-        <priority value="fatal" />
-        <appender-ref ref="RollingFileAppender" />
+      <priority value="fatal" />
+      <appender-ref ref="Console" />
+      <appender-ref ref="RollingFileAppender" />
+      <appender-ref ref="OutputDebugStringAppender" />
     </root>
 
     <category name="BeSQLite">
         <priority value="error"/>
     </category>
     <category name="iModelBridge">
-        <priority value="info"/>
+        <priority value="all"/>
+    </category>
+    <category name="iModelBridgeFwk">
+        <priority value="all"/>
     </category>
     <category name="DgnV8Converter">
         <priority value="info"/>

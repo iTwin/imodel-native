@@ -173,7 +173,7 @@ BeFileName ConverterApp::_GetLoggingConfigurationFilename(WCharCP argv0)
             }
         }
 
-    configFile = iModelBridgeSacAdapter::GetExecutablePath(argv0).GetDirectoryName();
+    configFile = Desktop::FileSystem::GetExecutableDir();
     configFile.AppendToPath(s_configFileName);
     configFile.BeGetFullPathName();
 
@@ -200,6 +200,7 @@ void ConverterApp::GetImportConfiguration(BeFileNameR instanceFilePath, BeFileNa
     else
         {
         instanceFilePath.SetName(programDir.c_str());
+        instanceFilePath.AppendToPath(L"assets");
         instanceFilePath.AppendToPath(L"ImportConfig.xml");
         }
 
@@ -271,7 +272,7 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
         _GetConverterParams().SetV8SdkRelativeDir(v8DllsRelativeDir, isPowerplatformBased);
         }
 
-    Converter::Initialize(_GetParams().GetLibraryDir(), _GetConverterParams().GetV8SdkRelativeDir(), nullptr, isPowerplatformBased, argc, argv);
+    Converter::Initialize(_GetParams().GetLibraryDir(), _GetParams().GetAssetsDir(), _GetConverterParams().GetV8SdkRelativeDir(), nullptr, isPowerplatformBased, argc, argv);
 
     // Resolve import config file.
     BeFileName configFile;
@@ -290,7 +291,6 @@ BentleyStatus ConverterApp::_Initialize(int argc, WCharCP argv[])
 BentleyStatus RootModelConverterApp::_Initialize(int argc, WCharCP argv[])
     {
     DetectDrawingsDirs();    // populate m_params.m_drawingAndSheetFiles
-    m_params.SetRootFileName(_GetParams().GetInputFileName());
     return T_Super::_Initialize(argc, argv);
     }
 
@@ -459,13 +459,13 @@ BentleyStatus RootModelConverterApp::_OpenSource()
         switch (initStat)
             {
             case DgnV8Api::DGNOPEN_STATUS_FileNotFound:
-                LOG.fatalv(L"%ls - file not found\n", _GetParams().GetInputFileName().GetName());
+                LOG.fatalv(L"%ls - file not found", _GetParams().GetInputFileName().GetName());
                 fwprintf(stderr, L"%ls - file not found\n", _GetParams().GetInputFileName().GetName());
                 break;
 
             default:
                 m_converter->ReportDgnV8FileOpenError(initStat, _GetParams().GetInputFileName().c_str());
-                LOG.fatalv(L"%ls - cannot find or load root model. See %ls-issues for more information.\n", _GetParams().GetInputFileName().GetName(), _GetParams().GetBriefcaseName().GetName());
+                LOG.fatalv(L"%ls - cannot find or load root model. See %ls-issues for more information.", _GetParams().GetInputFileName().GetName(), _GetParams().GetBriefcaseName().GetName());
             }
 
         return BentleyStatus::ERROR;
@@ -505,7 +505,7 @@ SubjectCPtr RootModelConverterApp::_InitializeJob()
             // This model was converted by some other job and not as its root.
             // This is probably a user error. If we were to use this as a root, we could end up creating duplicates of it and its references, possibly
             //  using different transforms. That would probably only cause confusion.
-            LOG.fatalv(L"%ls - error - the selected root model [%ls] was previously converted, not as a root but as a reference attachment.\n", _GetParams().GetBriefcaseName().GetName(), m_converter->GetRootModelP()->GetModelName());
+            LOG.fatalv(L"%ls - error - the selected root model [%ls] was previously converted, not as a root but as a reference attachment.", _GetParams().GetBriefcaseName().GetName(), m_converter->GetRootModelP()->GetModelName());
             return nullptr;
             }
 
@@ -522,6 +522,14 @@ BentleyStatus RootModelConverterApp::_ConvertToBim(Dgn::SubjectCR jobSubject)
     {
     m_converter->Process();
     return m_converter->WasAborted()? BSIERROR: BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void RootModelConverterApp::_OnSourceFileDeleted()
+    {
+    m_converter->_OnSourceFileDeleted();
     }
 
 //---------------------------------------------------------------------------------------
@@ -552,4 +560,3 @@ BentleyStatus ConverterApp::Run(int argc, WCharCP argv[])
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
-

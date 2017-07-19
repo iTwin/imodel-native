@@ -11,6 +11,7 @@
 #endif
 #include <iModelBridge/iModelBridgeBimHost.h>
 #include <Bentley/BeDirectoryIterator.h>
+#include <Bentley/Desktop/FileSystem.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
@@ -21,10 +22,6 @@ USING_NAMESPACE_BENTLEY_LOGGING
 #undef LOG
 #define LOG (*LoggingManager::GetLogger(L"iModelBridge"))
 
-static Utf8String s_bridgeName;
-static WString s_sqlangRelPath;
-
-BeFileName  iModelBridgeKnownLocationsAdmin::s_assetsDirectory;
 BeFileName  iModelBridgeKnownLocationsAdmin::s_tempDirectory;
 
 //---------------------------------------------------------------------------------------
@@ -91,14 +88,7 @@ BeFileNameCR iModelBridgeKnownLocationsAdmin::_GetLocalTempDirectoryBaseName()
     static std::once_flag s_setTempDir;
     std::call_once(s_setTempDir, []()
         {
-#if defined(__unix__)
-        s_tempDirectory = BeFileName("/tmp/");
-#else
-        wchar_t tempPathW[MAX_PATH];
-        ::GetTempPathW (_countof(tempPathW), tempPathW);
-        s_tempDirectory.SetName(tempPathW);
-        s_tempDirectory.AppendSeparator();
-#endif
+        Desktop::FileSystem::BeGetTempPath(s_tempDirectory);
         });
     return s_tempDirectory;
     }
@@ -106,34 +96,7 @@ BeFileNameCR iModelBridgeKnownLocationsAdmin::_GetLocalTempDirectoryBaseName()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileNameCR iModelBridgeKnownLocationsAdmin::_GetDgnPlatformAssetsDirectory()
-    {
-    return s_assetsDirectory;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeKnownLocationsAdmin::SetAssetsDir(BeFileNameCR dir)
-    {
-    s_assetsDirectory = dir;
-    BeAssert (s_assetsDirectory.DoesPathExist());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeBimHost::_SupplyProductName(Utf8StringR name)
-    {
-    name.assign(s_bridgeName);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
 BeSQLite::L10N::SqlangFiles iModelBridgeBimHost::_SupplySqlangFiles() 
     {
-    BeFileName sqlangPath(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    sqlangPath.AppendToPath(m_sqlangRelPath.c_str());
-    return BeSQLite::L10N::SqlangFiles(sqlangPath);
+    return BeSQLite::L10N::SqlangFiles(m_fwkSqlangPath);
     }

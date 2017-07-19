@@ -184,6 +184,7 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
     // save current model/layout information
     DwgDbObjectId   savedspaceId = m_currentspaceId;
     DwgDbObjectId   savedviewportId = this->_GetCurrentGeometryOptions().GetViewportId ();
+    IDwgChangeDetector& changeDetector = this->_GetChangeDetector ();
 
     // begin processing DwgModelMap - do not add layout's xref models into m_dwgModelMap, add them in m_paperspaceXrefs!
     m_isProcessingDwgModelMap = true;
@@ -211,7 +212,7 @@ BentleyStatus   DwgImporter::_ImportLayouts ()
 
         if (block->IsLayout() && !block->IsExternalReference())
             {
-            if (this->_ShouldSkipModel(entry))
+            if (changeDetector._ShouldSkipModel(*this, entry))
                 continue;
 
             DwgDbLayoutPtr  layout (block->GetLayoutId(), DwgDbOpenMode::ForRead);

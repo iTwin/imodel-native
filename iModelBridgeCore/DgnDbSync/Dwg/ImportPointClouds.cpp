@@ -112,7 +112,7 @@ virtual IPointsProcessor::Status    _Process (PointCloudDataQueryCP dataQuery) o
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgPointCloudExExt::_ToBim (ProtocalExtensionContext& context, DwgImporter& importer)
+BentleyStatus   DwgPointCloudExExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
     {
     DwgDbEntityPtr&     entity = context.GetEntityPtrR ();
     DwgDbPointCloudExCP pointcloud = DwgDbPointCloudEx::Cast(entity.get());

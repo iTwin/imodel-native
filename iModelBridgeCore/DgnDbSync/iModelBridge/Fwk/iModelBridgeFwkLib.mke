@@ -1,0 +1,64 @@
+#--------------------------------------------------------------------------------------
+#
+#     $Source: iModelBridge/Fwk/iModelBridgeFwkLib.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#--------------------------------------------------------------------------------------
+%include mdl.mki
+
+appName = iModelBridgeFwkLib
+o = $(OutputRootDir)Build/$(appName)/
+
+nameToDefine = __IMODEL_BRIDGE_FWK_BUILD__
+%include cdefapnd.mki
+
+always:
+    ~mkdir $(o)
+
+iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
+
+#--------------------------------------------------------------------------------------
+#   Compile the source
+#--------------------------------------------------------------------------------------
+MultiCompileDepends = $(_MakeFileSpec)
+
+%include MultiCppCompileRule.mki
+
+$(o)iModelBridgeFwk$(oext): $(baseDir)iModelBridgeFwk.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
+
+$(o)Briefcase$(oext): $(baseDir)Briefcase.cpp $(DgnDbServerDepends) $(iModelBridgeAPISrc)iModelBridgeFwk.h $(baseDir)DgnDbServerClientUtils.h ${MultiCompileDepends}
+
+$(o)DgnDbServerClientUtils$(oext): $(baseDir)DgnDbServerClientUtils.cpp $(BuildContext)PublicAPI/WebServices/iModelHub/Client/ClientHelper.h $(baseDir)DgnDbServerClientUtils.h $(DgnDbServerDepends) ${MultiCompileDepends}
+
+$(o)cpl_spawn$(oext): $(baseDir)cpl_spawn.cpp $(baseDir)cpl_spawn.h ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#--------------------------------------------------------------------------------------
+#   Create the library
+#--------------------------------------------------------------------------------------
+DLM_NAME                    = $(appName)
+DLM_OBJECT_FILES            = $(MultiCompileObjectList)
+DLM_OBJECT_DEST             = $(o)
+DLM_DEST                    = $(o)
+DLM_EXPORT_DEST             = $(o)
+DLM_NOENTRY                 = 1
+DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
+DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
+DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeHttp$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelBridge$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+
+%include $(sharedMki)linkLibrary.mki
+
+$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.logging.config.xml : $(baseDir)logging.config.xml
+    $(LinkFirstDepToFirstTarget)

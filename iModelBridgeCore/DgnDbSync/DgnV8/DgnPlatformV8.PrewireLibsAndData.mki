@@ -3,9 +3,20 @@
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #----------------------------------------------------------------------
 
+# A workaround for transitioning from RealDWG2017 to 2018, to allow both work for PRG and developers.
+RDVersion = 2017
+RDVSuffix = 21
+%if exists ($(DgnV8Sdk)Dlls/DwgDgnIO2018.dll)
+RDVersion = 2018
+RDVSuffix = 22
+%endif
+
 #--------------------------------------------------------------------------------------------------
 # DLLs
 #--------------------------------------------------------------------------------------------------
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/3dsfileioImp.dll : $(DgnV8Sdk)Dlls/3dsfileioImp.dll
+    $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/BaseGeoCoord2.dll : $(DgnV8Sdk)Dlls/BaseGeoCoord2.dll
     $(LinkFirstDepToFirstTarget)
@@ -46,7 +57,16 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/DgnGeoCoord2.dll : $(DgnV8Sdk)Dlls/DgnGeoCoord2
 $(Delivery)DgnPlatformV8Sdk/Dlls/DgnPlatform5.dll : $(DgnV8Sdk)Dlls/DgnPlatform5.dll
     $(LinkFirstDepToFirstTarget)
 
+$(Delivery)DgnPlatformV8Sdk/Dlls/DgnView2.dll : $(DgnV8Sdk)Dlls/DgnView2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/DwgDgnIO$(RDVersion).dll : $(DgnV8Sdk)Dlls/DwgDgnIO$(RDVersion).dll
+    $(LinkFirstDepToFirstTarget)
+
 $(Delivery)DgnPlatformV8Sdk/Dlls/ECObjects6.dll : $(DgnV8Sdk)Dlls/ECObjects6.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/fbxfileioImp.dll : $(DgnV8Sdk)Dlls/fbxfileioImp.dll
     $(LinkFirstDepToFirstTarget)
 
 %if exists($(DgnV8Sdk)Dlls/icudt38.dll)
@@ -64,6 +84,42 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/ECObjects6.dll : $(DgnV8Sdk)Dlls/ECObjects6.dll
         $(LinkFirstDepToFirstTarget)
 %endif
 
+$(Delivery)DgnPlatformV8Sdk/Dlls/ImageLib2.dll : $(DgnV8Sdk)Dlls/ImageLib2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/IppGraLibs3.dll : $(DgnV8Sdk)Dlls/IppGraLibs3.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/IppImaging3.dll : $(DgnV8Sdk)Dlls/IppImaging3.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/IppUtlLibs3.dll : $(DgnV8Sdk)Dlls/IppUtlLibs3.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/libfbxsdk.dll : $(DgnV8Sdk)Dlls/libfbxsdk.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/lti_dsdk.dll : $(DgnV8Sdk)Dlls/lti_dsdk_9.5.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/lti_dsdk_cdll.dll : $(DgnV8Sdk)Dlls/lti_dsdk_cdll_9.5.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/mstntoolsubs.dll : $(DgnV8Sdk)Dlls/mstntoolsubs.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/objfileioImp.dll : $(DgnV8Sdk)Dlls/objfileioImp.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/objLib.dll : $(DgnV8Sdk)Dlls/objLib.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/opennurbs.dll : $(DgnV8Sdk)Dlls/opennurbs.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/PdfLibInitializer1.dll : $(DgnV8Sdk)Dlls/PdfLibInitializer1.dll
+    $(LinkFirstDepToFirstTarget)
+
 $(Delivery)DgnPlatformV8Sdk/Dlls/PSKernel.dll : $(DgnV8Sdk)Dlls/PSKernel.dll
     $(LinkFirstDepToFirstTarget)
 
@@ -76,7 +132,25 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/PSolidAcisInterop2.dll : $(DgnV8Sdk)Dlls/PSolid
 $(Delivery)DgnPlatformV8Sdk/Dlls/PSolidCore2.dll : $(DgnV8Sdk)Dlls/PSolidCore2.dll
     $(LinkFirstDepToFirstTarget)
 
+$(Delivery)DgnPlatformV8Sdk/Dlls/qvision.dll : $(DgnV8Sdk)Dlls/qvision.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/RasterCore2.dll : $(DgnV8Sdk)Dlls/RasterCore2.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/RealDwg : $(DgnV8Sdk)Dlls/RealDwg
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/rhinolib.dll : $(DgnV8Sdk)Dlls/rhinolib.dll
+    $(LinkFirstDepToFirstTarget)
+
 $(Delivery)DgnPlatformV8Sdk/Dlls/RmgrTools3.dll : $(DgnV8Sdk)Dlls/RmgrTools3.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SketchUpAPI.dll : $(DgnV8Sdk)Dlls/SketchUpAPI.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/skpfileioImp.dll : $(DgnV8Sdk)Dlls/skpfileioImp.dll
     $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/SpaACIS.dll : $(DgnV8Sdk)Dlls/SpaACIS.dll
@@ -196,44 +270,12 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXVisualizationAsm.dll : $(DgnV8Sdk)Dlls/SPAX
 $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXVisualizationRep.dll : $(DgnV8Sdk)Dlls/SPAXVisualizationRep.dll
     $(LinkFirstDepToFirstTarget)
 
-$(Delivery)DgnPlatformV8Sdk/Dlls/RasterCore2.dll : $(DgnV8Sdk)Dlls/RasterCore2.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/DgnView2.dll : $(DgnV8Sdk)Dlls/DgnView2.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/IppGraLibs3.dll : $(DgnV8Sdk)Dlls/IppGraLibs3.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/IppImaging3.dll : $(DgnV8Sdk)Dlls/IppImaging3.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/IppUtlLibs3.dll : $(DgnV8Sdk)Dlls/IppUtlLibs3.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/lti_dsdk.dll : $(DgnV8Sdk)Dlls/lti_dsdk_9.5.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/lti_dsdk_cdll.dll : $(DgnV8Sdk)Dlls/lti_dsdk_cdll_9.5.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/PdfLibInitializer1.dll : $(DgnV8Sdk)Dlls/PdfLibInitializer1.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/qvision.dll : $(DgnV8Sdk)Dlls/qvision.dll
+$(Delivery)DgnPlatformV8Sdk/Dlls/tridslib.dll : $(DgnV8Sdk)Dlls/tridslib.dll
     $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/VisEdgesLib2.dll : $(DgnV8Sdk)Dlls/VisEdgesLib2.dll
     $(LinkFirstDepToFirstTarget)
 
-$(Delivery)DgnPlatformV8Sdk/Dlls/DwgDgnIO2017.dll : $(DgnV8Sdk)Dlls/DwgDgnIO2017.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/mstntoolsubs.dll : $(DgnV8Sdk)Dlls/mstntoolsubs.dll
-    $(LinkFirstDepToFirstTarget)
-
-$(Delivery)DgnPlatformV8Sdk/Dlls/RealDwg : $(DgnV8Sdk)Dlls/RealDwg
-    $(LinkFirstDepToFirstTargetAsDirectory)
 
 
 #--------------------------------------------------------------------------------------------------
@@ -369,15 +411,18 @@ $(Delivery)DgnPlatformV8Sdk/Libs/qvision.lib : $(DgnV8Sdk)Libs/qvision.lib
 $(Delivery)DgnPlatformV8Sdk/Libs/VisEdgesLib.lib : $(DgnV8Sdk)Libs/VisEdgesLib.lib
     $(LinkFirstDepToFirstTarget)
 
+$(Delivery)DgnPlatformV8Sdk/Libs/TerrainModelFormats.lib : $(DgnV8Sdk)Libs/TerrainModelFormats.lib
+    $(LinkFirstDepToFirstTarget)
+
 #--- RealDWG Libs follow ----
 
 $(Delivery)DgnPlatformV8Sdk/Libs/DwgDgnIO.lib : $(DgnV8Sdk)Libs/DwgDgnIO.lib
     $(LinkFirstDepToFirstTarget)
 
-$(Delivery)DgnPlatformV8Sdk/Libs/ac1st21.lib : $(DgnV8Sdk)Libs/ac1st21.lib
+$(Delivery)DgnPlatformV8Sdk/Libs/ac1st$(RDVSuffix).lib : $(DgnV8Sdk)Libs/ac1st$(RDVSuffix).lib
     $(LinkFirstDepToFirstTarget)
 
-$(Delivery)DgnPlatformV8Sdk/Libs/acdb21.lib : $(DgnV8Sdk)Libs/acdb21.lib
+$(Delivery)DgnPlatformV8Sdk/Libs/acdb$(RDVSuffix).lib : $(DgnV8Sdk)Libs/acdb$(RDVSuffix).lib
     $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Libs/acdbmgd.lib : $(DgnV8Sdk)Libs/acdbmgd.lib
@@ -386,7 +431,7 @@ $(Delivery)DgnPlatformV8Sdk/Libs/acdbmgd.lib : $(DgnV8Sdk)Libs/acdbmgd.lib
 $(Delivery)DgnPlatformV8Sdk/Libs/AcDbPointCloudObj.lib : $(DgnV8Sdk)Libs/AcDbPointCloudObj.lib
     $(LinkFirstDepToFirstTarget)
 
-$(Delivery)DgnPlatformV8Sdk/Libs/acge21.lib : $(DgnV8Sdk)Libs/acge21.lib
+$(Delivery)DgnPlatformV8Sdk/Libs/acge$(RDVSuffix).lib : $(DgnV8Sdk)Libs/acge$(RDVSuffix).lib
     $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Libs/AcGeolocationObj.lib : $(DgnV8Sdk)Libs/AcGeolocationObj.lib
@@ -395,7 +440,7 @@ $(Delivery)DgnPlatformV8Sdk/Libs/AcGeolocationObj.lib : $(DgnV8Sdk)Libs/AcGeoloc
 $(Delivery)DgnPlatformV8Sdk/Libs/acgiapi.lib : $(DgnV8Sdk)Libs/acgiapi.lib
     $(LinkFirstDepToFirstTarget)
 
-$(Delivery)DgnPlatformV8Sdk/Libs/acismobj21.lib : $(DgnV8Sdk)Libs/acismobj21.lib
+$(Delivery)DgnPlatformV8Sdk/Libs/acismobj$(RDVSuffix).lib : $(DgnV8Sdk)Libs/acismobj$(RDVSuffix).lib
     $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Libs/acModelDocObj.lib : $(DgnV8Sdk)Libs/acModelDocObj.lib

@@ -458,6 +458,60 @@ CodeSpecId SyncInfo::LookupCodeSpec(CodeSpecId oldId)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::InsertFont(DgnFontId oldId, DgnFontId newId)
+    {
+    m_fontMap[oldId] = newId;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnFontId SyncInfo::LookupFont(DgnFontId oldId)
+    {
+    auto fontId = m_fontMap.find(oldId);
+    return fontId == m_fontMap.end() ? DgnFontId() : fontId->second;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::InsertStyle(DgnStyleId oldId, DgnStyleId newId)
+    {
+    m_styleMap[oldId] = newId;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+DgnStyleId SyncInfo::LookupStyle(DgnStyleId oldId)
+    {
+    auto styleId = m_styleMap.find(oldId);
+    return styleId == m_styleMap.end() ? DgnStyleId() : styleId->second;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus SyncInfo::InsertLsComponent(LsComponentId oldId, LsComponentId newId)
+    {
+    m_componentMap[oldId] = newId;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+LsComponentId SyncInfo::LookupLsComponent(LsComponentId oldId)
+    {
+    auto componentId = m_componentMap.find(oldId);
+    return componentId == m_componentMap.end() ? LsComponentId() : componentId->second;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SyncInfo::InsertCategory(DgnCategoryId oldId, DgnCategoryId newId)

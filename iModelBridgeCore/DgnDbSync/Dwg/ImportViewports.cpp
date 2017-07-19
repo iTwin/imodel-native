@@ -425,7 +425,7 @@ bool            ViewportFactory::ValidateViewName (Utf8StringR viewNameInOut, Dg
     if (viewIdOut.IsValid())
         {
         // if we are updating Bim, return true to use existing view.
-        if (m_importer._IsUpdating())
+        if (m_importer.IsUpdating())
             return true;
 
         viewIdOut.Invalidate ();
@@ -608,12 +608,12 @@ DgnViewId       ViewportFactory::CreateSheetView (DgnModelId modelId, Utf8String
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElementId    ViewportFactory::CreateViewAttachment (DgnModelR sheetModel, DgnViewId viewId, DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId)
+DgnElementPtr   ViewportFactory::CreateViewAttachment (DgnModelCR sheetModel, DgnViewId viewId)
     {
     // get or create a drawing category for a view attachment:
     DwgDbEntityCP       entity = DwgDbEntity::Cast (m_inputViewport);
     if (nullptr == entity)
-        return  DgnElementId();
+        return  nullptr;
 
     DwgDbObjectId       layerId = entity->GetLayerId ();
     // get the overall viewport ID (i.e. the layout viewport):
@@ -631,35 +631,25 @@ DgnElementId    ViewportFactory::CreateViewAttachment (DgnModelR sheetModel, Dgn
     if (nullptr == viewAttachment)
         {
         BeAssert (false && "failed constructing a sheet view attachment!");
-        return  DgnElementId();
+        return  nullptr;
         }
 
     // set view attachment scale
     if (m_customScale > 1.e-5)
         viewAttachment->SetScale (1.0 / m_customScale);
 
-    // insert the view attachment element to Bim:
-    DwgImporter::ElementImportResults   results (viewAttachment);
-    m_importer._InsertResults (results, DgnElementId());
-    m_importer.InsertResultsInSyncInfo (results, *entity, modelSyncId);
-
-    return  viewAttachment->GetElementId ();
+    return  viewAttachment;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ViewportFactory::UpdateViewAttachment (DgnElementId attachId, DgnViewId viewId, DwgSyncInfo::DwgObjectProvenance const& objProv, DwgImporter::ElementImportInputs& inputs)
+DgnElementPtr   ViewportFactory::UpdateViewAttachment (DgnElementId attachId, DgnViewId viewId)
     {
     // get or create a view attachment:
-    DwgUpdater*     updater = dynamic_cast<DwgUpdater*> (&m_importer);
-    DwgDbObjectCP   obj = DwgDbObject::Cast (m_inputViewport);
-    if (nullptr == obj || nullptr == updater)
-        return  BSIERROR;
-
-    auto viewAttachment = updater->GetDgnDb().Elements().GetForEdit<Sheet::ViewAttachment>(attachId);
+    auto viewAttachment = m_importer.GetDgnDb().Elements().GetForEdit<Sheet::ViewAttachment>(attachId);
     if (!viewAttachment.IsValid())
-        return  static_cast<BentleyStatus>(DgnDbStatus::ViewNotFound);
+        return  nullptr;
 
     // calculate the placement point in the sheet view for the view attachment
     Placement2d     placement;
@@ -670,12 +660,7 @@ BentleyStatus   ViewportFactory::UpdateViewAttachment (DgnElementId attachId, Dg
     if (m_customScale > 1.e-5)
         viewAttachment->SetScale (1.0 / m_customScale);
 
-    // update the view attachment in bim as well as in syncinfo
-    DwgImporter::ElementImportResults   results (viewAttachment.get());
-    updater->UpdateResults (results, DgnElementId());
-    updater->UpdateResultsInSyncInfo (results, inputs, objProv);
-    
-    return  BSISUCCESS;
+    return  viewAttachment;
     }
 
 
@@ -688,7 +673,7 @@ BentleyStatus   ViewportFactory::UpdateViewAttachment (DgnElementId attachId, Dg
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          12/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgViewportExt::_ToBim (ProtocalExtensionContext& context, DwgImporter& importer)
+BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
     {
     // this is a viewport entity that displays the modelspace, not an overall viewport for a paperspace!
     DwgDbEntityPtr&     entity = context.GetEntityPtrR ();
@@ -698,7 +683,7 @@ BentleyStatus   DwgViewportExt::_ToBim (ProtocalExtensionContext& context, DwgIm
 
     // get the modelspace model:
     DgnModelP   rootModel = nullptr;
-    DwgImporter::ResolvedModelMapping    modelMap = importer.FindModel (importer.GetModelSpaceId(), importer.GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
+    ResolvedModelMapping    modelMap = importer.FindModel (importer.GetModelSpaceId(), importer.GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
     if (!modelMap.IsValid() || (rootModel = modelMap.GetModel()) == nullptr)
         {
         BeAssert(false && L"failed retrieving modelspace model!");
@@ -708,6 +693,10 @@ BentleyStatus   DwgViewportExt::_ToBim (ProtocalExtensionContext& context, DwgIm
     // set the view name as "LayoutName Viewport-ID":
     DgnModelR           sheetModel = context.GetModel ();
     Utf8PrintfString    viewName ("%s Viewport-%llx", sheetModel.GetName().c_str(), viewport->GetObjectId().ToUInt64());
+
+    // this method gets called for either creating a new or updating existing element.
+    if (importer.IsUpdating() && context.GetElementResults().GetExistingElement().IsValid())
+        return  this->UpdateBim(context, importer, *rootModel, sheetModel);
 
     // create a spatial view from the modelspace/root model:
     ViewportFactory factory (importer, *viewport);
@@ -727,72 +716,58 @@ BentleyStatus   DwgViewportExt::_ToBim (ProtocalExtensionContext& context, DwgIm
         }
 
     // create a view attachment from the viewport entity data
-    DgnElementId   viewAttachId = factory.CreateViewAttachment (sheetModel, modelViewId, context.GetElementInputsR().GetModelSyncInfoId());
+    DgnElementPtr   viewAttachment = factory.CreateViewAttachment (sheetModel, modelViewId);
+    if (!viewAttachment.IsValid())
+        return  BSIERROR;
 
-    return  viewAttachId.IsValid() ? BSISUCCESS : BSIERROR;
+    // the ViewAttachment is the pivotal element in syncinfo - let the caller insert it in bim as well as in syncinfo
+    context.GetElementResultsR().SetImportedElement (viewAttachment.get());
+    return  BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context, DwgUpdater& updater)
+BentleyStatus   DwgViewportExt::UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel)
     {
     /*-----------------------------------------------------------------------------------
-    Override the default implementation as a viewport entity results in a DgnModel, a SpatialView,
-    and a ViewAttachment.  Only ViewAttachment element is saved in the syncInfo.
+    The default implementation of importing an entity can only update a single output 
+    element, but a viewport entity results in a DgnModel, a SpatialView, and a ViewAttachment.
+    This method updates all of them. Only ViewAttachment element is saved in the syncInfo 
+    for change detection.
     -----------------------------------------------------------------------------------*/
-    DwgDbObjectCP   obj = DwgDbObject::Cast (&context.GetEntity());
-    if (nullptr == obj)
-        return  BSIERROR;
-
-    DwgSyncInfo::DwgObjectProvenance    newProv (*obj, updater.GetSyncInfo(), updater.GetCurrentIdPolicy(), false);
-    DwgImporter::ElementImportInputs&   inputs = context.GetElementInputsR ();
-    DwgImporter::ElementImportResults&  results = context.GetElementResultsR ();
-
-    DgnElementId    oldId;
-    if (updater.CheckEntity(oldId, inputs, newProv, false))
-        return  static_cast<BentleyStatus>(DgnDbStatus::IdExists);
-    
-    results.SetIsUpdating (oldId.IsValid());
-
     DwgDbEntityPtr&     entity = context.GetEntityPtrR ();
     DwgDbViewportCP     viewport = DwgDbViewport::Cast (entity.get());
     if (nullptr == viewport)
         return  BSIERROR;
 
-    // get the modelspace model:
-    DgnModelP   rootModel = nullptr;
-    DwgImporter::ResolvedModelMapping    modelMap = updater.FindModel (updater.GetModelSpaceId(), updater.GetRootTransform(), DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
-    if (!modelMap.IsValid() || (rootModel = modelMap.GetModel()) == nullptr)
+    // get ViewAttachment from syncinfo
+    DgnElementId    oldId = context.GetElementResults().GetExistingElement().GetElementId ();
+    auto oldViewAttachment = importer.GetDgnDb().Elements().Get<Sheet::ViewAttachment> (oldId);
+    if (!oldViewAttachment.IsValid())
         {
-        BeAssert(false && L"failed retrieving modelspace model!");
-        return BSIERROR;
+        BeAssert (false && "the expected ViewAttachment does not exist for update!");
+        return  BSIERROR;
         }
 
-    // set the view name as "LayoutName Viewport-ID":
-    DgnModelR           sheetModel = context.GetModel ();
-    Utf8PrintfString    viewName ("%s Viewport-%llx", sheetModel.GetName().c_str(), viewport->GetObjectId().ToUInt64());
+    DgnViewId   modelViewId = oldViewAttachment->GetAttachedViewId ();
+    if (!modelViewId.IsValid())
+        return  BSIERROR;
 
     // create a spatial view from the modelspace/root model:
-    ViewportFactory factory (updater, *viewport);
-    // use white background color for the model view:
-    factory.SetBackgroundColor (ColorDef::White());
-    // the spatial view is generated for a view attachment in next step, hide it from the user:
-    factory.SetViewSourcePrivate (true);
+    ViewportFactory factory (importer, *viewport);
 
     // get or create a spatial view of the modelspace model:
-    DgnViewId       modelViewId;
-    BentleyStatus   status = BSIERROR;
-    if (factory.ValidateViewName(viewName, modelViewId))
-        status = factory.UpdateSpatialView (modelViewId);
-
+    BentleyStatus   status = factory.UpdateSpatialView (modelViewId);
     if (BSISUCCESS != status)
         {
         // delete the view and re-import it anew:
-        updater.GetDgnDb().Elements().Delete (modelViewId);
-        updater.GetSyncInfo().DeleteElement (modelViewId);
+        importer.GetDgnDb().Elements().Delete (modelViewId);
+        importer.GetSyncInfo().DeleteElement (modelViewId);
 
-        modelViewId = factory.CreateSpatialView (rootModel->GetModelId(), viewName);
+        Utf8PrintfString    viewName ("%s Viewport-%llx", sheetModel.GetName().c_str(), viewport->GetObjectId().ToUInt64());
+
+        modelViewId = factory.CreateSpatialView (rootModel.GetModelId(), viewName);
         if (modelViewId.IsValid())
             {
             BeAssert (false && "failed creating a spatial view for a viewport entity");
@@ -800,21 +775,31 @@ BentleyStatus   DwgViewportExt::_ConvertToBim (ProtocalExtensionContext& context
             }
         }
 
+    DwgDbObjectCP   obj = DwgDbObject::Cast(entity.get());
+    if (nullptr == obj)
+        return  BSIERROR;
+
+    DwgSyncInfo::DwgObjectProvenance    newProv (*obj, importer.GetSyncInfo(), importer.GetCurrentIdPolicy(), false);
+
     // update the view attachment and the syninfo
-    status = factory.UpdateViewAttachment (oldId, modelViewId, newProv, inputs);
-    if (BSISUCCESS != status)
+    DgnElementPtr   newViewAttachment = factory.UpdateViewAttachment (oldId, modelViewId);
+    if (!newViewAttachment.IsValid())
         {
         // delete existing ViewAttachment and create a new one
         if (oldId.IsValid())
-            updater.GetDgnDb().Elements().Delete (oldId);
+            importer.GetDgnDb().Elements().Delete (oldId);
 
-        oldId = factory.CreateViewAttachment (sheetModel, modelViewId, modelMap.GetModelSyncInfoId());
+        newViewAttachment = factory.CreateViewAttachment (sheetModel, modelViewId);
 
-        if (oldId.IsValid())
-            status = BSISUCCESS;
+        if (newViewAttachment.IsValid())
+            status = BSIERROR;
         }
 
-    return  status;
+     // the ViewAttachment is the pivotal element in syncinfo - let the caller insert it in bim as well as in syncinfo
+    if (newViewAttachment.IsValid())
+        context.GetElementResultsR().SetImportedElement (newViewAttachment.get());
+
+   return  status;
     }
 
 
@@ -996,6 +981,9 @@ void            DwgImporter::_PostProcessViewports ()
             }
         }
 
+    // Initialize the graphics subsystem (LoadViewController will hist nullptr==s_renderQueue otherwise!):
+    DgnViewLib::GetHost().GetViewManager().Startup ();
+    
     DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::DwgFileId::GetFrom (*m_dwgdb);
 
     // update each view with models or categories we have added since the creation of the view:

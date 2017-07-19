@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/DwgDb/ToolkitHost.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include    "DwgDbInternal.h"
@@ -546,6 +546,8 @@ bool            IDwgDbHost::IsDxfFile (WStringCR filename)
 
     char        headerData[4097] = { 0 };
     int         headerSize = ::_read (handle, headerData, sizeof(headerData)-1);
+    if (headerSize < 0)
+        headerSize = 0;
     headerData[headerSize] = 0;
     ::_close (handle);
 

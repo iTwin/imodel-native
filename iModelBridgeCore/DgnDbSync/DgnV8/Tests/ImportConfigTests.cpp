@@ -36,7 +36,7 @@ void ImportConfigTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::B
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
 
-    params.SetRootFileName(input);
+    params.SetInputFileName(input);
 
     RootModelConverter creator(params);
     creator.SetWantDebugCodes(true);
@@ -68,7 +68,16 @@ void ImportConfigTests::TearDown()
     {
     T_Super::TearDown();
     }
-
+Utf8CP TestSchema = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+"<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+"    <ECSchemaReference name =\"Bentley_Standard_CustomAttributes\" version =\"01.04\" prefix =\"bsca\" />"
+"    <ECClass typeName=\"ClassA\" isDomainClass=\"True\">"
+"        <ECProperty propertyName=\"n\" typeName=\"int\" />"
+"    </ECClass>"
+"    <ECClass typeName=\"ClassB\" >"
+"        <ECProperty propertyName=\"p\" typeName=\"int\" />"
+"    </ECClass>"
+"</ECSchema>";
 /*---------------------------------------------------------------------------------**//**
 // By default Convert should import Design links
 * @bsimethod                                    Umar.Hayat                      08/15
@@ -265,4 +274,52 @@ TEST_F(ImportConfigTests, FontImport_Always)
     // Also, in this case, the provided Outwrite font only contains a "bold" face.
     DgnFonts::DbFaceDataDirect::FaceKey outwriteRegular(FONT_TYPE, FONT_NAME, DgnFonts::DbFaceDataDirect::FaceKey::FACE_NAME_Bold);
     EXPECT_TRUE(db->Fonts().DbFaceData().Exists(outwriteRegular)) << "Unable to find font";
+    }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(ImportConfigTests, CreateANDVerifyECClassViews)
+    {
+    LineUpFiles(L"CreateANDVerifyECClassViews.ibim", L"Test3d.dgn", false); 
+    ASSERT_EQ(0, m_count) << L"The initial V8 file is supposed to be empty!";
+    m_wantCleanUp = false;
+    V8FileEditor v8editor;
+    v8editor.Open(m_v8FileName);
+
+    ECObjectsV8::ECSchemaReadContextPtr  schemaContext = ECObjectsV8::ECSchemaReadContext::CreateContext();
+    ECObjectsV8::ECSchemaPtr schema;
+    EXPECT_EQ(SUCCESS, ECObjectsV8::ECSchema::ReadFromXmlString(schema, TestSchema, *schemaContext));
+    EXPECT_EQ(DgnV8Api::SCHEMAIMPORT_Success, DgnV8Api::DgnECManager::GetManager().ImportSchema(*schema, *(v8editor.m_file)));
+
+    DgnV8Api::ElementId elementId;
+    v8editor.AddLine(&elementId);
+    v8editor.Save();
+    // Change configuration
+    ImportConfigEditor config;
+    config.m_options.CreateECClassViews = true;
+    config.CreateConfig();
+    m_params.SetConfigFile(config.m_importFileName);
+
+    DoConvert(m_dgnDbFileName, m_v8FileName);
+
+    DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName, Db::OpenMode::Readonly);
+
+    EXPECT_TRUE(db->IsDbOpen());
+
+    BentleyApi::BeSQLite::Statement statement;
+    EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, statement.Prepare(*db, "select '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')"));
+   
+    ASSERT_TRUE(statement.Step() != BE_SQLITE_DONE) << "ECClassViews not found ";
+
+    while (statement.Step() == BE_SQLITE_ROW)
+    {
+       // printf ("\n ViewName : %s \n", statement.GetValueText (0));
+        BentleyApi::BeSQLite::Statement stmt;
+        BentleyApi::Utf8String sql;
+        sql.Sprintf("SELECT * FROM %s", statement.GetValueText(0));
+        //printf("Select sql:  %s \n", sql.c_str());
+        EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, stmt.Prepare(*db, sql.c_str())) << "ECClassView " << stmt.GetValueText(0) << " has invalid DDL: " << db->GetLastError().c_str() << " in DgnDb : " << db->GetFileName();
+    }
+    statement.Finalize();
+    db->CloseDb();
     }

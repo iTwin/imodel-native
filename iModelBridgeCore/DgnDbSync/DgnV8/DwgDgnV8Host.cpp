@@ -696,7 +696,7 @@ bool OpenModelSpaceAs2d() const override  { return nullptr == m_data ?  false : 
 bool OpenPaperSpaceAs2d() const override  { return nullptr == m_data ?  false : m_data->OpenPaperSpaceAs2d(); }
 bool DiscardInvalidEntities() const override { return nullptr == m_data ? false : m_data->DiscardInvalidEntities(); }
 bool HyperlinkAsEngineeringLink() const override { return nullptr == m_data ? false : m_data->HyperlinkAsEngineeringLink(); }
-bool AttributesAsTags() const override { return nullptr == m_data ? true : m_data->AttributesAsTags(); }
+bool AttributesAsTags() const override { return nullptr == m_data ? false : m_data->AttributesAsTags(); }
 bool DisallowLogicalNameFromXRefBlockNames() const override { return nullptr == m_data ? false : m_data->DisallowLogicalNameFromXRefBlockNames(); }
 bool PreserveSeedOrigin() const override { return nullptr == m_data ? false : m_data->PreserveSeedOrigin(); }
 bool AllowPsolidAcisInteropLogging () const override { return  false; }
@@ -965,6 +965,8 @@ Bentley::StatusInt InitializeDwgSettings (Converter* v8converter)
     m_v8converter = v8converter;
 
     Bentley::StatusInt  status = BSIERROR;
+    if (nullptr == v8converter)
+        return  status;        
 
     // initialize dwgsettings
     if (nullptr != m_dwgConversionSettings)
@@ -1494,6 +1496,9 @@ bool Converter::IsDwgOrDxfFile (BeFileNameCR filename)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus Converter::InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, BentleyApi::BeFileNameCR realdwgDir)
     {
+    if (nullptr != s_dwgHost)
+        return  BSISUCCESS;
+
     auto loading = ProgressMessage::GetString (Converter::ProgressMessage::TASK_LOADING_REALDWG());
     LOG.tracev (loading.c_str(), "...");
 
@@ -1501,7 +1506,7 @@ BentleyStatus Converter::InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, Bent
     if (nullptr == s_dwgHost)
         return  BSIERROR;
 
-    Bentley::RealDwg::DwgPlatformHost::Initialize (*s_dwgHost, true);
+    Bentley::RealDwg::DwgPlatformHost::Initialize (*s_dwgHost, false, false);
 
     return  BSISUCCESS;
     }
@@ -1511,7 +1516,7 @@ BentleyStatus Converter::InitializeDwgHost (BentleyApi::BeFileNameCR v8dir, Bent
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus Converter::InitializeDwgSettings (Converter* v8converter)
     {
-    if (nullptr == s_dwgHost || nullptr == v8converter)
+    if (nullptr == s_dwgHost)
         {
         BeAssert (false && "DwgHost must be initialized before initializing DwgSettings!");
         return  BSIERROR;

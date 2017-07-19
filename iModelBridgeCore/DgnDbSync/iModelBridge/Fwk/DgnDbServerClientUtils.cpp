@@ -1,21 +1,12 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/DgnDbServerClientUtils.cpp $
+|     $Source: iModelBridge/Fwk/DgnDbServerClientUtils.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "DgnDbServerClientUtils.h"
 #include <DgnPlatform/DgnProgressMeter.h>
-
-//!TODO Abeesh: We need WSClient to not have a dependancy on DgnClient Fx. Replicating the namespace below so that 
-//We do not take an explicit dependancy.
-#define BEGIN_BENTLEY_DGNCLIENTFX_NAMESPACE   BEGIN_BENTLEY_NAMESPACE namespace DgnClientFx {
-#define END_BENTLEY_DGNCLIENTFX_NAMESPACE     } END_BENTLEY_NAMESPACE
-#define USING_NAMESPACE_BENTLEY_DGNCLIENTFX   using namespace BentleyApi::DgnClientFx;
-
-BEGIN_BENTLEY_DGNCLIENTFX_NAMESPACE
-END_BENTLEY_DGNCLIENTFX_NAMESPACE
 
 #include <WebServices/iModelHub/Client/Client.h>
 #include <WebServices/Connect/ConnectSignInManager.h>

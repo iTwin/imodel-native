@@ -81,6 +81,9 @@ $(BuildContext)PublicAPI/VersionedDgnV8Api/RasterCore : $(headersOutputBaseDir)V
 $(BuildContext)PublicAPI/VersionedDgnV8Api/VisEdgesLib : $(headersOutputBaseDir)VersionedDgnV8Api/VisEdgesLib
     $(LinkFirstDepToFirstTargetAsDirectory)
 
+$(BuildContext)PublicAPI/VersionedDgnV8Api/TerrainModel : $(headersOutputBaseDir)VersionedDgnV8Api/TerrainModel
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
 $(BuildContext)PublicAPI/VersionedDgnV8Api/Mstn/RealDWG/DwgPlatformHost.h : $(headersOutputBaseDir)VersionedDgnV8Api/Mstn/RealDWG/DwgPlatformHost.h
     $(LinkFirstDepToFirstTarget)
 
@@ -92,6 +95,9 @@ $(BuildContext)PublicAPI/VersionedDgnV8Api/Mstn/RealDWG/rDwgSettings.h : $(heade
 
 $(BuildContext)PublicAPI/VersionedDgnV8Api/Mstn/RealDWG/rDwgEnums.r.h : $(headersOutputBaseDir)VersionedDgnV8Api/Mstn/RealDWG/rDwgEnums.r.h
     $(LinkFirstDepToFirstTarget)
+
+$(BuildContext)PublicAPI/VersionedDgnV8Api/json : $(headersOutputBaseDir)VersionedDgnV8Api/json
+    $(LinkFirstDepToFirstTargetAsDirectory)
 
 $(BuildContext)PublicAPI/VersionedDgnV8Api/realdwg : $(DgnV8Sdk)VendorAPI/realdwg
     $(LinkFirstDepToFirstTargetAsDirectory)

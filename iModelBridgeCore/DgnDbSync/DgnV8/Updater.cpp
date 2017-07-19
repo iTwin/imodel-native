@@ -385,6 +385,25 @@ void ChangeDetector::_DetectDeletedModelsInFile(Converter& converter, DgnV8FileR
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::_OnSourceFileDeleted()
+    {
+    Utf8String uniqueName = GetSyncInfo().GetUniqueName(_GetParams().GetInputFileName());
+
+    SyncInfo::FileIterator files(GetDgnDb(), nullptr);
+    for (auto file = files.begin(); file != files.end(); ++file)
+        {
+        if (file.GetUniqueName() == uniqueName)
+            {
+            SyncInfo::ModelIterator modelsInFile(GetDgnDb(), "V8FileSyncInfoId=?");
+            modelsInFile.GetStatement()->BindInt(1, file.GetV8FileSyncInfoId().GetValue());
+            GetChangeDetector()._DetectDeletedModels(*this, modelsInFile);
+            }
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool CreatorChangeDetector::_IsElementChanged(SearchResults& res, Converter& converter, DgnV8EhCR v8eh, 

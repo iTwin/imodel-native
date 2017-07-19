@@ -12,6 +12,46 @@
 #include "SyncInfo.h"
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
+#define MODEL_PROP_ModeledElement "ModeledElement"
+#define MODEL_PROP_IsPrivate "IsPrivate"
+#define MODEL_PROP_Properties "Properties"
+#define MODEL_PROP_IsTemplate "IsTemplate"
+#define BIS_ELEMENT_PROP_CodeSpecId "CodeSpec"
+
+static Utf8CP const JSON_TYPE_KEY = "Type";
+static Utf8CP const JSON_OBJECT_KEY = "Object";
+static Utf8CP const JSON_TYPE_Font = "Font";
+static Utf8CP const JSON_TYPE_FontFaceData = "FontFaceData";
+static Utf8CP const JSON_TYPE_LineStyleProperty = "LineStyleProperty";
+static Utf8CP const JSON_TYPE_Model = "Model";
+static Utf8CP const JSON_TYPE_CategorySelector = "CategorySelector";
+static Utf8CP const JSON_TYPE_ModelSelector = "ModelSelector";
+static Utf8CP const JSON_TYPE_DisplayStyle = "DisplayStyle";
+static Utf8CP const JSON_TYPE_DictionaryModel = "DictionaryModel";
+static Utf8CP const JSON_TYPE_CodeSpec = "CodeSpec";
+static Utf8CP const JSON_TYPE_Schema = "Schema";
+static Utf8CP const JSON_TYPE_Element = "Element";
+static Utf8CP const JSON_TYPE_GeometricElement2d = "GeometricElement2d";
+static Utf8CP const JSON_TYPE_GeometricElement3d = "GeometricElement3d";
+static Utf8CP const JSON_TYPE_GeometryPart = "GeometryPart";
+static Utf8CP const JSON_TYPE_Subject = "Subject";
+static Utf8CP const JSON_TYPE_Partition = "Partition";
+static Utf8CP const JSON_TYPE_Category = "Category";
+static Utf8CP const JSON_TYPE_SubCategory = "SubCategory";
+static Utf8CP const JSON_TYPE_ViewDefinition3d = "ViewDefinition3d";
+static Utf8CP const JSON_TYPE_ViewDefinition2d = "ViewDefinition2d";
+static Utf8CP const JSON_TYPE_ElementRefersToElement = "ElementRefersToElement";
+static Utf8CP const JSON_TYPE_ElementGroupsMembers = "ElementGroupsMembers";
+static Utf8CP const JSON_TYPE_ElementHasLinks = "ElementHasLinks";
+static Utf8CP const JSON_TYPE_AnnotationTextStyle = "AnnotationTextStyle";
+static Utf8CP const JSON_TYPE_LineStyleElement = "LineStyleElement";
+
+static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec = "CodeSpec";
+static Utf8CP const  BIS_ELEMENT_PROP_CodeScope = "CodeScope";
+static Utf8CP const  BIS_ELEMENT_PROP_CodeValue = "CodeValue";
+static Utf8CP const  BIS_ELEMENT_PROP_Model = "Model";
+static Utf8CP const  BIS_ELEMENT_PROP_Parent = "Parent";
+
 #pragma once
 struct BisJson1ImporterImpl;
 
@@ -39,7 +79,47 @@ struct Reader
 
     public:
         Reader(BisJson1ImporterImpl* importer);
+        virtual ~Reader() {}
         BentleyStatus Read(Json::Value& object) { return _Read(object); }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct FontFaceReader : Reader
+    {
+    DEFINE_T_SUPER(Reader);
+    protected:
+        BentleyStatus _Read(Json::Value& object) override;
+
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct FontReader : Reader
+    {
+    DEFINE_T_SUPER(Reader);
+    protected:
+        BentleyStatus _Read(Json::Value& object) override;
+
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct LsComponentReader : Reader
+    {
+    DEFINE_T_SUPER(Reader);
+    protected:
+        BentleyStatus _Read(Json::Value& object) override;
+
+    public:
+        using Reader::Reader;
     };
 
 //---------------------------------------------------------------------------------------
@@ -67,7 +147,7 @@ struct ElementReader : Reader
         uint64_t m_instanceId;
 
         BentleyStatus RemapModelId(Json::Value& element);
-        DgnModelId GetMappedModelId(Json::Value& element);
+        DgnModelId GetMappedModelId(Json::Value& element, Utf8CP propertyName = "Model");
         DgnCode CreateCodeFromJson(Json::Value& element);
         BentleyStatus RemapCategoryId(Json::Value& element);
         BentleyStatus RemapParentId(Json::Value& element);
@@ -132,6 +212,20 @@ struct GeometryPartReader : GeometryReader
     };
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct AnnotationTextStyleReader : ElementReader
+    {
+    DEFINE_T_SUPER(ElementReader);
+
+    protected:
+        BentleyStatus _Read(Json::Value& object) override;
+
+    public:
+        using ElementReader::ElementReader;
+    };
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 struct ViewDefinitionReader : ElementReader
@@ -148,6 +242,20 @@ struct ViewDefinitionReader : ElementReader
         ViewDefinitionReader(BisJson1ImporterImpl* importer, bool is3d) : ElementReader(importer), m_is3d(is3d) {}
 
     };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct LineStyleReader : ElementReader
+    {
+    DEFINE_T_SUPER(ElementReader);
+    protected:
+        BentleyStatus _OnElementCreated(DgnElementR element, ECN::IECInstanceR properties) override;
+
+    public:
+        using ElementReader::ElementReader;
+    };
+
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            10/2016
@@ -176,7 +284,7 @@ struct ModelSelectorReader : Reader
     };
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2016
+// @bsiclass                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 struct DisplayStyleReader : Reader
     {
@@ -219,7 +327,7 @@ struct CategoryReader : ElementReader
 //---------------+---------------+---------------+---------------+---------------+-------
 struct SubCategoryReader : ElementReader
     {
-    DEFINE_T_SUPER(Reader);
+    DEFINE_T_SUPER(ElementReader);
 
     private:
         bool m_isDefault;
@@ -229,7 +337,6 @@ struct SubCategoryReader : ElementReader
     public:
         SubCategoryReader(BisJson1ImporterImpl* importer, bool isDefault) : ElementReader(importer), m_isDefault(isDefault) {}
     };
-
 
 //---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            10/2016
@@ -268,7 +375,7 @@ struct PartitionReader : Reader
     };
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2016
+// @bsiclass                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 struct ElementRefersToElementReader : Reader
     {
@@ -279,9 +386,20 @@ struct ElementRefersToElementReader : Reader
     };
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            11/2016
+// @bsiclass                                   Carole.MacDonald            11/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 struct ElementGroupsMembersReader : Reader
+    {
+    protected:
+        BentleyStatus _Read(Json::Value& relationship) override;
+    public:
+        using Reader::Reader;
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+struct ElementHasLinksReader : Reader
     {
     protected:
         BentleyStatus _Read(Json::Value& relationship) override;

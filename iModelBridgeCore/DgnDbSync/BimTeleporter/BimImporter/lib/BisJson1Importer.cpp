@@ -22,7 +22,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
-struct WindowsKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
+struct KnownDesktopLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     {
     BeFileName m_tempDirectory;
     BeFileName m_executableDirectory;
@@ -34,7 +34,7 @@ struct WindowsKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     //---------------------------------------------------------------------------------------
     // @bsimethod                                                   BentleySystems
     //---------------------------------------------------------------------------------------
-    WindowsKnownLocationsAdmin()
+    KnownDesktopLocationsAdmin()
         {
         // use the standard Windows temporary directory
         wchar_t tempPathW[MAX_PATH];
@@ -60,7 +60,7 @@ struct WindowsKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 struct BimImporterHost : DgnPlatformLib::Host
     {
     virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
-    virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); };
+    virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
     virtual L10N::SqlangFiles _SupplySqlangFiles() override
         {
         BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
@@ -75,13 +75,13 @@ struct PCQueue
     {
     public:
         folly::ProducerConsumerQueue<Json::Value> m_objectQueue;
-        PCQueue() : m_objectQueue(4096) {}
+        PCQueue() : m_objectQueue(65536) {}
     };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            08/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-BisJson1Importer::BisJson1Importer(const wchar_t* bimPath) : m_outputPath(bimPath)
+BisJson1Importer::BisJson1Importer(const wchar_t* bimPath) : m_outputPath(bimPath), m_importer(nullptr)
     {
     m_queue = new PCQueue();
     }
@@ -91,8 +91,8 @@ BisJson1Importer::BisJson1Importer(const wchar_t* bimPath) : m_outputPath(bimPat
 //---------------+---------------+---------------+---------------+---------------+-------
 BisJson1Importer::~BisJson1Importer()
     {
-    delete m_importer;
-    delete m_host;
+    //delete m_importer;
+    //delete m_host;
     delete m_queue;
     }
 
@@ -104,7 +104,8 @@ bool BisJson1Importer::CreateBim()
     m_host = new BimImporterHost();
     DgnPlatformLib::Initialize(*m_host, false);
 
-    Utf8String subjectName(m_outputPath.GetFileNameWithoutExtension());
+    //Utf8String subjectName(m_outputPath.GetFileNameWithoutExtension());
+    Utf8String subjectName("TBD");
 
     DbResult dbStatus;
     Dgn::CreateDgnDbParams params;
@@ -136,11 +137,17 @@ void BisJson1Importer::AddToQueue(const char* entry)
     {
     Json::Value record;
     Json::Reader::Parse(entry, record);
-    m_queue->m_objectQueue.write(record);
+    while (!m_queue->m_objectQueue.write(record))
+        {
+        continue;
+        }
     }
 
 void BisJson1Importer::SetDone()
     {
+    while (nullptr == m_importer)
+        BentleyApi::BeThreadUtilities::BeSleep(1000);
+
     m_importer->SetDone();
     }
 

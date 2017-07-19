@@ -339,8 +339,7 @@ void            DwgImporter::ReportSyncInfoIssue (IssueSeverity severity, IssueC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::AddTasks(int32_t n) 
     {
-    if (GetProgressMeter()) 
-        GetProgressMeter()->AddTasks(n);
+    GetProgressMeter().AddTasks (n);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -348,9 +347,6 @@ void            DwgImporter::AddTasks(int32_t n)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::SetTaskName(ProgressMessage::StringId stringNum, ...)
     {
-    if (nullptr == GetProgressMeter())
-        return;
-
     Utf8String fmt = ProgressMessage::GetString (stringNum);
     if (fmt.length() == 0)
         return;
@@ -362,7 +358,7 @@ void            DwgImporter::SetTaskName(ProgressMessage::StringId stringNum, ..
     value.VSprintf (fmt.c_str(), args);
     va_end (args);
 
-    GetProgressMeter()->SetCurrentTaskName (value.c_str());
+    GetProgressMeter().SetCurrentTaskName (value.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -370,9 +366,6 @@ void            DwgImporter::SetTaskName(ProgressMessage::StringId stringNum, ..
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::SetStepName (ProgressMessage::StringId stringNum, ...)
     {
-    if (nullptr == GetProgressMeter())
-        return;
-
     Utf8String fmt = ProgressMessage::GetString (stringNum);
     if (fmt.length() == 0)
         return;
@@ -384,7 +377,7 @@ void            DwgImporter::SetStepName (ProgressMessage::StringId stringNum, .
     value.VSprintf (fmt.c_str(), args);
     va_end (args);
 
-    GetProgressMeter()->SetCurrentStepName (value.c_str());
+    GetProgressMeter().SetCurrentStepName (value.c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -392,8 +385,7 @@ void            DwgImporter::SetStepName (ProgressMessage::StringId stringNum, .
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::OnFatalError(IssueCategory::StringId cat, Issue::StringId issue, ...)
     {
-    if (GetProgressMeter())
-        GetProgressMeter()->Hide();
+    GetProgressMeter().Hide();
 
     _OnFatalError();
 
@@ -413,9 +405,21 @@ BentleyStatus   DwgImporter::OnFatalError(IssueCategory::StringId cat, Issue::St
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgImporter::Progress ()
     {
-    DgnProgressMeter*   meter = this->GetProgressMeter ();
-    if (nullptr != meter && DgnProgressMeter::ABORT_Yes == meter->ShowProgress())
+    if (DgnProgressMeter::ABORT_Yes == this->GetProgressMeter().ShowProgress())
         this->OnFatalError ();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnProgressMeterR   DwgImporter::GetProgressMeter () const
+    {
+    // use DgnHost's progress meter
+    static NopProgressMeter s_nopProgressMeter;
+
+    auto hostProgressMeter = T_HOST.GetProgressMeter ();
+
+    return  nullptr == hostProgressMeter ? s_nopProgressMeter : *hostProgressMeter;
     }
  
 END_DGNDBSYNC_DWG_NAMESPACE

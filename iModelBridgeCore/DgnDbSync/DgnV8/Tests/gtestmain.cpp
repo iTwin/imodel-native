@@ -13,6 +13,7 @@
 #include <Bentley/BeTest.h>
 #include <Bentley/BeFileName.h>
 #include <Logging/bentleylogging.h>
+#include <Bentley/Desktop/FileSystem.h>
 
 /*---------------------------------------------------------------------------------**//**
 * This class knows how data files are linked into the Product/ECObjectsXXXTests directory structure.
@@ -44,7 +45,7 @@ struct BeGTestHost : RefCounted<BeTest::Host>
         path.AppendToPath (L"run");
         }
     virtual void _GetDocumentsRoot (BeFileName& path) override              {path = m_programPath;}
-    virtual void _GetDgnPlatformAssetsDirectory (BeFileName& path) override {path = m_programPath;}
+    virtual void _GetDgnPlatformAssetsDirectory (BeFileName& path) override {path = m_programPath; path.AppendToPath(L"assets");}
     virtual void _GetTempDir(BeFileName& path) override
         {
 #if defined (BENTLEY_WIN32)
@@ -165,15 +166,6 @@ class BeGTestListener : public ::testing::EmptyTestEventListener
         }
     };
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct GtestFailureHandler : BeTest::IFailureHandler
-    {
-    virtual void _OnAssertionFailure (WCharCP msg) THROW_SPECIFIER(CharCP) {FAIL() << msg;}
-    virtual void _OnUnexpectedResult (WCharCP msg) THROW_SPECIFIER(CharCP) {FAIL() << msg;}
-    virtual void _OnFailureHandled() {;}
-    };
 #if defined(BENTLEY_WIN32)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Farhad.Kabir                    07/2017
@@ -286,6 +278,7 @@ int WinSetEnv(const char * name, const char * value)
     return SetEnvironmentVariableA(name, value);
     }
 #endif
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -311,9 +304,7 @@ extern "C" int main (int argc, char **argv)
     BeTest::Initialize (*hostPtr);
 
     BeTest::SetRunningUnderGtest ();
-
-    GtestFailureHandler gtestFailureHandler;
-    BeTest::SetIFailureHandler (gtestFailureHandler);
+    BeTest::SetAssertionFailureHandler([](WCharCP msg) {FAIL() << msg;});
 
     if (::testing::GTEST_FLAG(filter).empty() || ::testing::GTEST_FLAG(filter) == "*")
         { // use ignore lists if the user did not specify any filters on the command line

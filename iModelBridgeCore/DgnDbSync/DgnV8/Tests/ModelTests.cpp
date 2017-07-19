@@ -35,7 +35,7 @@ void ModelTests::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNa
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
 
-    params.SetRootFileName(input);
+    params.SetInputFileName(input);
 
     RootModelConverter creator(params);
     creator.SetWantDebugCodes(true);

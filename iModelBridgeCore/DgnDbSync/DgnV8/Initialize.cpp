@@ -15,6 +15,8 @@
 #include <VersionedDgnV8Api/GeoCoord/GCSLibrary.h>
 #include <VersionedDgnV8Api/Mstn/RealDWG/DwgPlatformHost.h>
 
+#include <ScalableMesh/ScalableMeshLib.h>  
+
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
@@ -389,7 +391,7 @@ static void initializeV8HostConfigVars(Bentley::BeFileNameCR v8RootDir, int argc
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                              Ramanujam.Raman                      11/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::SetDllSearchPath(BentleyApi::BeFileNameCR pathname)
+void Converter::SetDllSearchPath(BentleyApi::BeFileNameCR v8Path, BentleyApi::BeFileNameCP realdwgPath)
     {
     /*
     * Note: We use two mechanisms to setup the PATH - it otherwise results in hard to find and/or reproduce bugs 
@@ -404,16 +406,20 @@ void Converter::SetDllSearchPath(BentleyApi::BeFileNameCR pathname)
     * 
     * See description @ https://msdn.microsoft.com/en-us/library/ms686203(VS.85).aspx
     */
-    ::SetDllDirectoryW(pathname.c_str());
+    ::SetDllDirectoryW(v8Path.c_str());
 
-    WString newPath(L"PATH=");
-    newPath.append(pathname);
-    newPath.append(L";");
+    WString newPath;
+    newPath = L"PATH=" + v8Path + L";";
+
+    if (nullptr != realdwgPath)
+        newPath += *realdwgPath + L";";
+
     newPath.append(::_wgetenv(L"PATH"));
     _wputenv(newPath.c_str());
     }
 
 DGNV8_ELEMENTHANDLER_DEFINE_MEMBERS(ThreeMxElementHandler)
+DGNV8_ELEMENTHANDLER_DEFINE_MEMBERS(ScalableMeshElementHandler)
 
 //=======================================================================================
 // @bsiclass 
@@ -441,14 +447,65 @@ struct ConverterV8Txn : DgnV8Api::DgnCacheTxn
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Converter::Initialize(BentleyApi::BeFileNameCR libraryDir, BentleyApi::BeFileNameCR v8DllsRelativeDir, 
+struct  SMHost : ScalableMesh::ScalableMeshLib::Host
+    {
+    SMHost()
+        {
+        }
+
+    ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin()
+        {
+        struct CsScalableMeshAdmin : public ScalableMesh::ScalableMeshAdmin
+            {
+            virtual IScalableMeshTextureGeneratorPtr _GetTextureGenerator() override
+                {
+                IScalableMeshTextureGeneratorPtr generator;
+                return generator;
+                }
+
+            virtual bool _CanImportPODfile() const override
+                {
+                return false;
+                }
+            };
+        return *new CsScalableMeshAdmin;
+        };
+
+#if 0 
+    ScalableMesh::WsgTokenAdmin& _SupplyWsgTokenAdmin()
+        {
+        auto getTokenFunction = []() -> Utf8String
+        {
+            SamlTokenPtr tokenPtr = ConnectAuthenticationPersistence::GetShared()->GetToken();
+            assert(tokenPtr != nullptr && !tokenPtr->IsEmpty());
+            //bool isValidInHalfHour = tokenPtr->IsValidNow(30);
+            //assert(isValidInHalfHour);
+            return tokenPtr->AsString();
+        };
+        return *new ScalableMesh::WsgTokenAdmin(getTokenFunction);
+        }
+
+    ScalableMesh::SSLCertificateAdmin& _SupplySSLCertificateAdmin()
+    {
+        auto getSSLCertificatePath = []() -> Utf8String
+        {
+            //Getting the cacert.pem file from the current working directory
+            BeFileName certificatePath = BentleyApi::DgnClientFx::DgnClientFxCommon::GetApplicationPaths().GetAssetsRootDirectory();
+            certificatePath.AppendToPath(L"cacert.pem");
+            return certificatePath.GetNameUtf8();
+        };
+        return *new ScalableMesh::SSLCertificateAdmin(getSSLCertificatePath);
+    }
+#endif
+};
+
+void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir, 
                            BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[])
     {
     if (!isPowerPlatformBased)
         {
-        BentleyApi::BeFileName dllDirectory(libraryDir);
+        BentleyApi::BeFileName dllDirectory(bridgeLibraryDir);
         dllDirectory.AppendToPath(v8DllsRelativeDir);
-        SetDllSearchPath(dllDirectory);
 
         BentleyApi::BeFileName realdwgDirectory;
         if (nullptr != realdwgAbsoluteDir)
@@ -462,7 +519,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR libraryDir, BentleyApi::BeFi
             realdwgDirectory.SetName (dllDirectory.c_str());
             realdwgDirectory.AppendToPath (L"RealDwg");
             }
-        SetDllSearchPath (realdwgDirectory);
+        SetDllSearchPath(dllDirectory, &realdwgDirectory);
 
         Bentley::BeFileName dllDirectoryV8(dllDirectory.c_str());
         initializeV8HostConfigVars(dllDirectoryV8, argc, argv);
@@ -478,8 +535,9 @@ void Converter::Initialize(BentleyApi::BeFileNameCR libraryDir, BentleyApi::BeFi
         // We need a V8 handler for ThreeMx attachment elements. That handler is in an MDL app in MicroStation. We don't need it to do anythning, but 
         // we need it to exist so we can put the "ToDgnDbExtension" on it.
         DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, 0), ThreeMxElementHandler::GetInstance());
+        DgnV8Api::ElementHandlerManager::RegisterHandler(DgnV8Api::ElementHandlerId(ScalableMeshElementHandler::XATTRIBUTEID_ScalableMeshAttachment, 0), ScalableMeshElementHandler::GetInstance());
 
-        Converter::InitializeDwgHost (dllDirectory, realdwgDirectory);
+        Converter::RegisterForeignFileTypes (dllDirectory, realdwgDirectory);
         }
     // Directly register basic DgnV8 converter extensions here (that platform owns).
     // In the future, may need an extensibility point here to allow apps and/or arbitrary DLLs to participate in this process.
@@ -487,6 +545,7 @@ void Converter::Initialize(BentleyApi::BeFileNameCR libraryDir, BentleyApi::BeFi
     ConvertV8TagToDgnDbExtension::Register();
     ConvertV8Lights::Register();
     ConvertThreeMxAttachment::Register();
+    ConvertScalableMeshAttachment::Register();
     ConvertDetailingSymbolExtension::Register();
 
     //Ensure tha V8i::DgnGeocoord is using the GCS library from this application admin.
@@ -496,13 +555,79 @@ void Converter::Initialize(BentleyApi::BeFileNameCR libraryDir, BentleyApi::BeFi
     Bentley::GeoCoordinates::BaseGCS::Initialize(T_HOST.GetGeoCoordinationAdmin()._GetDataDirectory().c_str());
     InitCustomGcsDir(argc, argv);
 
-    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::No);
+    // Must register all domains as required, so that OpenDgnDb will import them. We are not allowed to import schemas later in the conversion process.
+    //  Note that this bridge delivers the domains that it uses, and their schemas are in the bridge's assets directory, not the platform's assets directory.
+    DgnDomains::RegisterDomain(FunctionalDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+    DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+    DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No, &bridgeAssetsDir);
+    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
 
     DomainInitCaller caller;
     DgnV8Api::ElementHandlerManager::EnumerateAvailableHandlers(caller);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                     Sam.Wilson                      07/14
++===============+===============+===============+===============+===============+======*/
+struct MinimalV8Host : DgnV8Api::DgnPlatformLib::Host
+    {
+    };
+
+/*=================================================================================**//**
+* @bsiclass                                                     SamWilson       08/13
++===============+===============+===============+===============+===============+======*/
+class SupplyBlankPassword : public DgnV8Api::DgnFileSupplyRights
+    {
+    StatusInt getLicense (DgnV8Api::DgnFileLicenseDef* pLic, bool* userCancel, const Byte*) override
+        {
+        pLic->keypw.InitFromHash (nullptr, (size_t)0);
+        *userCancel = false;
+        return SUCCESS;
+        }
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Converter::CheckCanOpenFile(BentleyApi::BeFileName const& sourceFileName, BentleyApi::BeFileName const& thisLibraryPath)
+    {
+    static std::once_flag s_initOnce;
+    std::call_once(s_initOnce, [&] 
+        {
+        BentleyApi::BeFileName dllDirectory(thisLibraryPath.GetDirectoryName());
+        dllDirectory.AppendToPath(L"DgnV8");
+        Converter::SetDllSearchPath(dllDirectory);
+
+        DgnV8Api::DgnPlatformLib::Initialize (*new MinimalV8Host, true);
+        });
+
+    //  The generic V8 bridge has an affinity to any file that V8 can open.
+
+    DgnV8Api::DgnFileStatus openStatus;
+    auto doc = DgnV8Api::DgnDocument::CreateFromFileName(openStatus, sourceFileName, nullptr, DEFDGNFILE_ID, DgnV8Api::DgnDocument::FetchMode::Read, DgnV8Api::DgnDocument::FetchOptions::Default);
+    if (doc == nullptr)
+        return BSIERROR;
+
+    auto fullSpec = doc->GetMonikerPtr()->ResolveFileName();
+    DgnFilePtr file = DgnV8Api::DgnFile::Create(*doc, DgnV8Api::DgnFileOpenMode::ReadOnly);
+
+    if (!file.IsValid())
+        {
+        BeAssert(false);
+        return BSIERROR; // ??
+        }
+
+    SupplyBlankPassword supplyBlankPw;
+    DgnV8Api::DgnFileLoadContext v8LoadContext(&supplyBlankPw);
+
+    openStatus = (DgnV8Api::DgnFileStatus) file->LoadFile(nullptr, &v8LoadContext, true);
+
+    if (DgnV8Api::DGNFILE_STATUS_Success == openStatus && !file->HasDigitalRight(DgnV8Api::DgnFile::DIGITAL_RIGHT_Export))
+        openStatus = DgnV8Api::DGNFILE_ERROR_RightNotGranted;
+
+    return (SUCCESS == openStatus)? BSISUCCESS: BSIERROR;
     }
 
 END_DGNDBSYNC_DGNV8_NAMESPACE

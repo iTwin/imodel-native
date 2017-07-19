@@ -211,8 +211,9 @@ static void modelNameFromID (WCharP modelName, size_t maxname, Int32 modelID)
 //-----------------------------------------------------------------------------------------
 BentleyStatus ExtractEmbeddedRaster(BeFileNameR outFilename, DgnV8EhCR v8eh, BeFileNameCR embedFileName, DgnDbR db, BeFileNameCR rootFileName, SpatialConverterBase& converter)
     {
-    // Find embedded file id
-    DgnFileP dgnFile = v8eh.GetDgnFileP();
+    // Find embedded file id (the embedded file list can be found in the root model)
+    DgnModelRefP rootModelP = converter.GetRootModelP();
+    DgnFileP  dgnFile  = rootModelP->GetDgnFileP();
     DgnV8Api::EmbeddedFileList const* embeddedFileList;
     if (NULL == (embeddedFileList = dgnFile->GetEmbeddedFileList()))
         {
@@ -779,6 +780,18 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
     
     if (!m_config.GetXPathBool("/ImportConfig/Raster/@importAttachments", false))
         return SUCCESS; // Raster import is disabled in the configuration file
+
+    // Retrieve the options for the attachment (if any) that references this model
+    Bentley::DgnModelP dgnModelP = v8eh.GetModelRef()->GetDgnModelP();
+    DgnV8Api::Fd_opts fdOpts;
+    auto result = m_modelAttachmentMapping.find(dgnModelP);
+    if (result != m_modelAttachmentMapping.end())
+        {
+        // If the "displayRasterRefs" option is off, don't import this raster, since it was not visible in the source file
+        fdOpts = result->second->GetFDOptsCR();
+        if (fdOpts.displayRasterRefs != true)
+            return SUCCESS;
+        }
 
     // In case that it wasn't called during model load.
     DgnV8Api::DgnPlatformLib::GetHost().GetRasterAttachmentAdmin()._LoadRasters(*v8eh.GetModelRef());

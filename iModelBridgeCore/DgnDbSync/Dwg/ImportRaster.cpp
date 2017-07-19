@@ -19,12 +19,12 @@ DWG_PROTOCALEXT_DEFINE_MEMBERS(DwgRasterImageExt)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool            DwgRasterImageExt::GetExistingModel (DwgImporter::ResolvedModelMapping& modelMap)
+bool            DwgRasterImageExt::GetExistingModel (ResolvedModelMapping& modelMap)
     {
     DwgDbObjectId   rasterId = m_dwgRaster->GetObjectId ();
     Transform       toDgn = m_toBimContext->GetTransform();
 
-    if (m_importer->_IsUpdating())
+    if (m_importer->IsUpdating())
         {
         DwgDbDatabaseP  dwg = rasterId.GetDatabase ();
         if (nullptr == dwg)
@@ -32,10 +32,7 @@ bool            DwgRasterImageExt::GetExistingModel (DwgImporter::ResolvedModelM
 
         modelMap = m_importer->GetModelFromSyncInfo (rasterId, *dwg, toDgn);
         if (modelMap.IsValid() && modelMap.GetModel() != nullptr && modelMap.GetMapping().GetSourceType() == DwgSyncInfo::ModelSourceType::RasterAttachment)
-            {
-            m_importer->AddToDwgModelMap (modelMap);
             return  true;
-            }
         // not found in syncinfo => treat as insert
         }
 
@@ -74,7 +71,7 @@ bool            DwgRasterImageExt::ClipRasterModel (Raster::RasterFileModel& mod
     {
     if (!m_dwgRaster->IsClipped() || !m_dwgRaster->IsShownClipped())
         {
-        if (m_importer->_IsUpdating())
+        if (m_importer->IsUpdating())
             {
             Raster::RasterClip  clipper = model.GetClip ();
             if (!clipper.IsEmpty())
@@ -132,7 +129,7 @@ bool            DwgRasterImageExt::CopyRasterToDgnDbFolder (BeFileNameCR rasterF
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          06/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgRasterImageExt::_ToBim (ProtocalExtensionContext& context, DwgImporter& importer)
+BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer)
     {
     m_toBimContext = &context;
     m_importer = &importer;
@@ -150,20 +147,22 @@ BentleyStatus   DwgRasterImageExt::_ToBim (ProtocalExtensionContext& context, Dw
         return  BSIERROR;
  
     // see if there exists the model:
-    DwgImporter::ResolvedModelMapping modelMap;
+    ResolvedModelMapping modelMap;
     this->GetExistingModel (modelMap);
 
-    DgnModelP   model = modelMap.GetModel ();
+    BentleyStatus   status = BSIERROR;
+    BeFileName      rasterFilename (rasterPath.c_str());
+    DgnModelP       model = modelMap.GetModel ();
+
     if (nullptr == model)
-        {
-        BeFileName  rasterFilename (rasterPath.c_str());
-        this->CreateRasterModel (rasterFilename, BeFileName(activePath));
-        }
+        status = this->CreateRasterModel (rasterFilename, BeFileName(activePath));
+    else
+        status = this->UpdateRasterModel (modelMap, rasterFilename, BeFileName(activePath));
 
     // return the raster model back to the caller:
     context.SetResultantModel (model);
     
-    return  nullptr == model ? BSIERROR : BSISUCCESS;
+    return  status;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -244,12 +243,12 @@ BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilenam
     if (LOG_MODEL_IS_SEVERITY_ENABLED(NativeLogging::LOG_TRACE))
         LOG_MODEL.tracev("+ %s %d -> %s %d", mapping.GetDwgName().c_str(), mapping.GetDwgModelId().GetValue(), model->GetName().c_str(), model->GetModelId().GetValue());
 
-    DwgImporter::ResolvedModelMapping   modelMap(rasterId, model, mapping);
+    ResolvedModelMapping   modelMap(rasterId, model, mapping);
 
     // save the model info in our list of known model mappings.
     m_importer->AddToDwgModelMap (modelMap);
     // tell the updater about the newly discovered model
-    m_importer->_OnModelInserted (modelMap);
+    m_importer->_GetChangeDetector()._OnModelInserted (*m_importer, modelMap, nullptr);
 
     // add the new model ID to views
     if (m_dwgRaster->IsDisplayed())
@@ -302,13 +301,9 @@ void    DwgRasterImageExt::AddModelToViews (DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void            DwgRasterImageExt::UpdateViews (DgnModelId modelId, bool isOn)
     {
-    DwgUpdater*     updater = dynamic_cast<DwgUpdater*> (m_importer);
-    if (nullptr == updater)
-        return;
-
-    DgnDbR          db = updater->GetDgnDb ();
-    DwgDbObjectIdCR currentspace = updater->GetCurrentSpaceId ();
-    DwgDbObjectIdCR modelspace = updater->GetModelSpaceId ();
+    DgnDbR          db = m_importer->GetDgnDb ();
+    DwgDbObjectIdCR currentspace = m_importer->GetCurrentSpaceId ();
+    DwgDbObjectIdCR modelspace = m_importer->GetModelSpaceId ();
 
     for (auto const& entry : ViewDefinition::MakeIterator(db))
         {
@@ -334,13 +329,13 @@ void            DwgRasterImageExt::UpdateViews (DgnModelId modelId, bool isOn)
                         continue;
 
                     modelSelector.Update ();
-                    updater->SaveViewDefinition (*viewController);
+                    m_importer->SaveViewDefinition (*viewController);
                     continue;
                     }
                 else
                     {
                     // WIP - add or drop the rater model from paperspace view
-                    updater->ReportError (DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("adding a raster mode in sheet view <%s (%I64d)>", view->GetName().c_str(), modelId.GetValue()).c_str());
+                    m_importer->ReportError (DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("adding a raster mode in sheet view <%s (%I64d)>", view->GetName().c_str(), modelId.GetValue()).c_str());
                     }
                 }
             }
@@ -350,25 +345,11 @@ void            DwgRasterImageExt::UpdateViews (DgnModelId modelId, bool isOn)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocalExtensionContext& context, DwgUpdater& updater)
+BentleyStatus   DwgRasterImageExt::UpdateRasterModel (ResolvedModelMapping& modelMap, BeFileNameCR rasterFilename, BeFileNameCR activePath)
     {
-    m_toBimContext = &context;
-    m_importer = &updater;
-    m_dwgRaster = DwgDbRasterImage::Cast(&context.GetEntity());
-    if (nullptr == m_dwgRaster)
+    Raster::RasterFileModelP    rasterModel = dynamic_cast<Raster::RasterFileModelP> (modelMap.GetModel());
+    if (nullptr == rasterModel) 
         return  BSIERROR;
-
-    Raster::RasterFileModelP    rasterModel = nullptr;
-
-    // get or create raster model
-    DwgImporter::ResolvedModelMapping   modelMap;
-    if (!this->GetExistingModel(modelMap) || nullptr == (rasterModel = dynamic_cast<Raster::RasterFileModelP>(modelMap.GetModel())))
-        {
-        DwgString   rasterPath, activePath;
-        if (DwgDbStatus::Success != m_dwgRaster->GetFileName(rasterPath, &activePath))
-            return  BSIERROR;
-        return  this->CreateRasterModel(BeFileName(rasterPath), BeFileName(activePath));
-        }
 
     // check if the raster has been moved or rotated
     DMatrix4d   newMatrix, oldMatrix;
@@ -393,7 +374,7 @@ BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocalExtensionContext& cont
         {
         // WIP - set the new matrix
         BeDataAssert (false && "need to support editing RasterFileModel!");
-        updater.ReportError (DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("changing raster model origin/size <%s (%I64d)>", rasterModel->GetName().c_str(), rasterModel->GetModelId().GetValue()).c_str());
+        m_importer->ReportError (DwgImporter::IssueCategory::Unsupported(), DwgImporter::Issue::Message(), Utf8PrintfString("changing raster model origin/size <%s (%I64d)>", rasterModel->GetName().c_str(), rasterModel->GetModelId().GetValue()).c_str());
         }
 
     // update clipper
@@ -404,9 +385,9 @@ BentleyStatus   DwgRasterImageExt::_ConvertToBim (ProtocalExtensionContext& cont
     this->UpdateViews (rasterModel->GetModelId(), m_dwgRaster->IsDisplayed());
 
     // save the model info in our list of known model mappings.
-    updater.AddToDwgModelMap (modelMap);
+    m_importer->AddToDwgModelMap (modelMap);
     // tell the updater about the newly discovered model
-    updater._OnModelSeen (modelMap);
+    m_importer->_GetChangeDetector()._OnModelSeen (*m_importer, modelMap);
 
     return  BSISUCCESS;
     }

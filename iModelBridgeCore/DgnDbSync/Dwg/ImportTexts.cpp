@@ -240,7 +240,7 @@ size_t          DwgImporter::WorkingFonts::LoadFonts ()
     m_dwgImporter.SetTaskName (ProgressMessage::TASK_LOADING_FONTS(), "Workspace");
 
     BeFileName  cwd;
-    if (BeFileNameStatus::Success != BeFileName::GetCwd(cwd))
+    if (BeFileNameStatus::Success != Desktop::FileSystem::GetCwd(cwd))
         {
 #ifdef BENTLEY_WIN32
         WChar    moduleDir[MAX_PATH] = { 0 };

@@ -77,7 +77,7 @@ $(DOXYGEN_ARTIFACTS)doxygen.cfg : $(DOXYGEN_CONFIG_FILES) $[@wildcard $(DocOverv
     QUIET               = $(DOXYGEN_QUIET)
     INPUT               = $(DOXYGEN_INPUT)
     OUTPUT_DIRECTORY    = $(DOXYGEN_OUTPUT)
-    INCLUDE_PATH        = $(BuildContext)PublicApi
+    INCLUDE_PATH        = $(BuildContext)PublicAPI
     IMAGE_PATH          = $(DOXYGEN_INPUT)overview/
     DOT_PATH            = $(DOXYGEN_DOT_PATH)
     GENERATE_HTML       = YES

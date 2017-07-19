@@ -38,8 +38,10 @@ BEGIN_DGNDBSYNC_DWG_NAMESPACE
 #endif  // DWGTOOLKIT_Open/RealDwg
 
 
-typedef DwgImporter::ElementImportResults&      ElementResultsR;
-typedef DwgImporter::ElementImportInputs&       ElementInputsR;
+typedef DwgImporter::ElementImportResults const&    ElementResultsCR;
+typedef DwgImporter::ElementImportResults&          ElementResultsR;
+typedef DwgImporter::ElementImportInputs const&     ElementInputsCR;
+typedef DwgImporter::ElementImportInputs&           ElementInputsR;
 
 
 /*=================================================================================**//**
@@ -68,8 +70,10 @@ public:
     DGNDBSYNC_EXPORT void               SetTransform (TransformCR toDgn) { m_elementInputs.SetTransform(toDgn); }
     DGNDBSYNC_EXPORT DgnClassId         GetDgnClassId () const { return m_elementInputs.GetClassId(); }
     DGNDBSYNC_EXPORT void               SetDgnClassId (DgnClassId id) { m_elementInputs.SetClassId(id); }
+    DGNDBSYNC_EXPORT ElementResultsCR   GetElementResults () const { return m_elementResults; }
     DGNDBSYNC_EXPORT ElementResultsR    GetElementResultsR () { return m_elementResults; }
     DGNDBSYNC_EXPORT void               SetElementResultsR (ElementResultsR results) { m_elementResults = results; }
+    DGNDBSYNC_EXPORT ElementInputsCR    GetElementInputs () const { return m_elementInputs; }
     DGNDBSYNC_EXPORT ElementInputsR     GetElementInputsR () { return m_elementInputs; }
     DGNDBSYNC_EXPORT DgnModelP          GetResultantModel () const { return m_resultantModel; }
     DGNDBSYNC_EXPORT void               SetResultantModel (DgnModelP outModel) { m_resultantModel = outModel; }
@@ -89,10 +93,8 @@ public:
     DGNDBSYNC_EXPORT static DwgProtocalExtension*   Cast (DWG_TypeCP(RxObject) obj);
     DGNDBSYNC_EXPORT static void                    RxInit ();
 
-    //! Must implement this method to convert the entity to elements or models, and insert them to BIM.
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _ToBim (ProtocalExtensionContext& context, DwgImporter& importer) = 0;
-    //! The default implementation of _ConvertToBim updates a single element converted from a single entity.  A complex element must override this method.
-    DGNDBSYNC_EXPORT virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgUpdater& updater);
+    //! Must implement this method to either create a new or update an existing element from the input entity:
+    DGNDBSYNC_EXPORT virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) = 0;
     };  // DwgProtocalExtension
 
 /*=================================================================================**//**
@@ -105,8 +107,7 @@ public:
     DWGRX_DECLARE_MEMBERS (DwgRasterImageExt)
     DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgRasterImageExt)
 
-    virtual BentleyStatus  _ToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
-    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgUpdater& updater) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
 
 private:
     mutable ProtocalExtensionContext*   m_toBimContext;
@@ -114,7 +115,8 @@ private:
     mutable DwgDbRasterImageCP          m_dwgRaster;
 
     BentleyStatus   CreateRasterModel (BeFileNameCR rasterFilename, BeFileNameCR activePath);
-    bool        GetExistingModel (DwgImporter::ResolvedModelMapping& modelMap);
+    BentleyStatus   UpdateRasterModel (ResolvedModelMapping& modelMap, BeFileNameCR rasterFilename, BeFileNameCR activePath);
+    bool        GetExistingModel (ResolvedModelMapping& modelMap);
     void        GetRasterMatrix (DMatrix4dR matrixOut);
     bool        ClipRasterModel (Raster::RasterFileModel& model);
     void        AddModelToViews (DgnModelId modelId);
@@ -132,7 +134,7 @@ public:
     DWGRX_DECLARE_MEMBERS (DwgPointCloudExExt)
     DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgPointCloudExExt)
 
-    virtual BentleyStatus  _ToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
 
 private:
     ColorDef    GetDgnColor (DwgDbEntityCR entity) const;
@@ -148,11 +150,10 @@ public:
     DWGRX_DECLARE_MEMBERS (DwgViewportExt)
     DWG_PROTOCALEXT_DECLARE_MEMBERS (DwgViewportExt)
 
-    virtual BentleyStatus  _ToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
-    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgUpdater& updater) override;
+    virtual BentleyStatus  _ConvertToBim (ProtocalExtensionContext& context, DwgImporter& importer) override;
 
 private:
-    BentleyStatus   DoUpdate (ProtocalExtensionContext& context, DwgUpdater& updater);
+    BentleyStatus   UpdateBim (ProtocalExtensionContext& context, DwgImporter& importer, DgnModelCR rootModel, DgnModelCR sheetModel);
     };  // DwgViewportExt
 
 

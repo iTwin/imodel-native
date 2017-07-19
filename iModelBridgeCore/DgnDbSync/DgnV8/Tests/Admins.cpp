@@ -2,11 +2,11 @@
 |
 |     $Source: DgnV8/Tests/Admins.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Tests.h"
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 
 BEGIN_UNNAMED_NAMESPACE
 //=======================================================================================
@@ -83,6 +83,6 @@ ViewManager& ConverterTestsHost::_SupplyViewManager()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnViewLib::Host::IKnownLocationsAdmin& ConverterTestsHost::_SupplyIKnownLocationsAdmin()
     {
-    return *new WindowsKnownLocationsAdmin();
+    return *new KnownDesktopLocationsAdmin();
     }
 

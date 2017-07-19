@@ -6,10 +6,12 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridgeFwk.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-int wmain (int argc, wchar_t const* argv[])
+int wmain (int argc, WCharCP argv[])
     {
     Dgn::iModelBridgeFwk app;
 
@@ -18,3 +20,7 @@ int wmain (int argc, wchar_t const* argv[])
 
     return app.Run(argc, argv);
     }
+
+#ifdef __unix__
+UNIX_MAIN_CALLS_WMAIN(WCharCP*)
+#endif

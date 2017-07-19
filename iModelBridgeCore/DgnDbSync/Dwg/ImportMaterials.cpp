@@ -818,7 +818,7 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
         if ((count++ % 100) == 0)
             this->Progress ();
 
-        if (this->_IsUpdating())
+        if (this->IsUpdating())
             {
             DwgSyncInfo::Material   oldMaterial;
             if (m_syncInfo.FindMaterial(oldMaterial, material->GetObjectId()))
@@ -877,7 +877,7 @@ void            DwgImporter::AddDgnMaterialTexture (Utf8StringCR fileName, DgnTe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgUpdater::_OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial)
+BentleyStatus   DwgImporter::_OnUpdateMaterial (DwgSyncInfo::Material const& syncMaterial, DwgDbMaterialPtr& dwgMaterial)
     {
     if (!syncMaterial.IsValid() || dwgMaterial.IsNull())
         return  BSIERROR;
@@ -886,7 +886,7 @@ BentleyStatus   DwgUpdater::_OnUpdateMaterial (DwgSyncInfo::Material const& sync
     if (dwg.IsNull())
         return  BSIERROR;
 
-    if (this->ShouldSkipFile(*dwg.get()))
+    if (this->_GetChangeDetector()._ShouldSkipFile(*this, *dwg.get()))
         return  BSISUCCESS;
         
     DwgSyncInfo::Material   newSyncMaterial(syncMaterial.m_id, DwgSyncInfo::DwgFileId::GetFrom(*dwg), this->GetCurrentIdPolicy(), *dwgMaterial.get());

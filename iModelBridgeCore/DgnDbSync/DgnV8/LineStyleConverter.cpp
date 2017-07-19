@@ -9,7 +9,11 @@
 
 BEGIN_DGNDBSYNC_DGNV8_NAMESPACE
 
+#define MAX_LINECODE_RENAME_RETRIES 2
 //---------------------------------------------------------------------------------------
+// DgnDb's LsComponentType has the same values as V8's LsElementType so this is essentially
+// just a cast unless new types are added to LsElementType.
+//
 // @bsimethod                                                   John.Gooding    06/2015
 //---------------------------------------------------------------------------------------
 static LsComponentType convertToLsComponentType(DgnV8Api::LsElementType elementType)
@@ -53,11 +57,33 @@ LineStyleStatus LineStyleConverter::ConvertRasterImageComponent(Dgn::LsComponent
     }
 
 //---------------------------------------------------------------------------------------
+/*
+    ConvertLineCode creates an entry in the be_Prop table using namespace dgn_LStyle and Name LineCodeV1. The main body of the definition is Json saved in StrData.  
+    The LineCode code treats 0 as a default value for some of the properties and does not emit the property for some of the 0 values.  In this example, zero-valued properties 
+    that were omitted are "phase", "options", "maxIter", and "capMode".
+
+    Here is an example of the Json portion.  The Json properties correspond to the fields of th V8 LineCodeRsc.
+  
+    {
+    "descr":"water",
+    "strokes":
+        [
+        {"endWidth":10000.0, "length":10000.0, "strokeMode":1, "widthMode":1},
+        {"endWidth":0.0,"length":10000.0,"orgWidth":10000.0,"strokeMode":1,"widthMode":1},
+        {"endWidth":10000.0,"length":10000.0,"strokeMode":1,"widthMode":2},
+        ............
+
+    We assume that the caller has already determined that this stroke pattern has not been mapped.
+*/
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
 LineStyleStatus LineStyleConverter::ConvertLineCode (LsComponentId& v10Id, DgnV8Api::DgnFile&v8File, DgnV8Api::LsCacheStrokePatternComponent const& strokePattern, double lsScale)
     {
-    // We assume that the caller has already determined that this stroke pattern has not been mapped.
+    //  When converting a line style from V8 we have to convert it from the V8 units to meters.  That could be done either by changing the line style scale factor or by scaling
+    //  the components.  I addedd lsScale to make it possible to scale the components but then decided it is better to scale the line style so lsScale should always be 1.
+    //  It should be possible to remove the lsScale parameter.
+    BeAssert(1.0 == lsScale);
+
     Json::Value     jsonValue(Json::objectValue);
 
     SetDescription(jsonValue, strokePattern);
@@ -144,6 +170,23 @@ LineStyleStatus LineStyleConverter::ConvertLineCode (LsComponentId& v10Id, DgnV8
     }
 
 //---------------------------------------------------------------------------------------
+/*
+    ConvertLinePoint creates an entry in the be_Prop table using namespace dgn_LStyle and Name LinePointV1. The main body of the definition 
+    is Json saved in StrData. The Json properties correspond to the fields of th V8 LinePointRsc.
+	
+    ConvertLinePoint typically does not emit properties that have a value of 0 since 0 is considered to be the default value. 
+
+    Here is an example showing the Json portion of the definition. In this case "xOffset", "yOffset", "xOffset", and "angle" were
+    all zero so the corresponding properties were not added to the Json object.
+  
+    {
+    "descr":"Tree Line - Point",
+    "lcId":10,
+    "symbols":[
+        {"mod1":1,"strokeNum":0,"symId":10}
+        ]
+    }
+*/
 // @bsimethod                                                   John.Gooding    09/2014
 //---------------------------------------------------------------------------------------
 LineStyleStatus LineStyleConverter::ConvertLinePoint (LsComponentId& v10Id, DgnV8Api::DgnFile&v8File, DgnV8Api::LsCachePointComponent const& linePointComponent, double lsScale)
@@ -154,6 +197,7 @@ LineStyleStatus LineStyleConverter::ConvertLinePoint (LsComponentId& v10Id, DgnV
 
     v10Id = LsComponentId();
 
+    //  A PointComponent definition is invalid without the stroke pattern that guides the layout of the points.
     DgnV8Api::LsCacheStrokePatternComponent const* strokePattern = linePointComponent.GetStrokeComponentCP();
     BeAssert(nullptr != strokePattern);
     if (nullptr == strokePattern)
@@ -210,6 +254,22 @@ LineStyleStatus LineStyleConverter::ConvertLinePoint (LsComponentId& v10Id, DgnV
     }
 
 //---------------------------------------------------------------------------------------
+/*
+    ConvertCompoundComponent creates an entry in the be_Prop table using namespace dgn_LStyle and Name CompoundV1. 
+
+    Here is an example showing the Json portion of the definition.  The offset property defaults to 0.
+  
+    {
+    "descr":"Rail Road - Compound",
+    "comps":[
+        {"id":8,"type":4},
+        {"id":9,"offset":-20000.0,"type":3},
+        {"id":9,"offset":20000.0,"type":3}
+        ]
+    }
+
+    The Json properties correspond to the fields of th V8 LinePointRsc.
+*/
 // @bsimethod                                                   John.Gooding    10/2012
 //--------------+------------------------------------------------------------------------
 LineStyleStatus LineStyleConverter::ConvertCompoundComponent (LsComponentId&v10Id, DgnV8Api::DgnFile&v8File, DgnV8Api::LsCacheCompoundComponent const& compoundComponent, double lsScale)
@@ -283,12 +343,14 @@ LineStyleConverter::V8Location::V8Location(DgnV8Api::LsCacheComponent const& com
 
     m_isElement         = lsLoc->IsElement();
     m_v8componentKey    = lsLoc->GetIdentKey();
-#if defined (NEEDS_WORK_DGNITEM)
-    m_v8fileHandle      = lsLoc->GetFileKey();
 
+    //  We don't bother recording RscFileHandle because we assume that during a session the 
+    //  search paths through resource files will be the same every time
+    //  and that a search for the same ID and type will yield the same resource. Therefore,
+    //  we don't try to check location based on RscFileHandle.  We only do a file test
+    //  if the component definition comes from an element.
     if (m_isElement)
-        converter.GetDgnV8File(m_v8fileHandle, *lsLoc->GetSourceFile());
-#endif
+        m_v8fileId = Converter::GetV8FileSyncInfoIdFromAppData(*lsLoc->GetSourceFile());
 
     m_v8componentType   = (uint32_t)lsLoc->GetElementType();
     }
@@ -301,6 +363,7 @@ LineStyleStatus LineStyleConverter::ConvertLsComponent (LsComponentId& v10Id, Dg
     //  Pretty sure lsScale is a vestige from when the converter used to scale components at convert time.  Now it is always done at runtime.
     BeAssert(1.0 == lsScale);
     LsComponentType compType = (LsComponentType)component.GetElementType();
+
     if (DgnV8Api::LsElementType::Internal == (DgnV8Api::LsElementType)compType)
         {
         DgnV8Api::LsCacheInternalComponent const* internalComponent = dynamic_cast<DgnV8Api::LsCacheInternalComponent const*>(&component);
@@ -324,6 +387,7 @@ LineStyleStatus LineStyleConverter::ConvertLsComponent (LsComponentId& v10Id, Dg
 
     BeAssert(compType == (LsComponentType)component.GetElementType());
 
+    //  If the component has already been imported then use the existing definition.
     V8Location  v8Location(component, m_converter);
     auto result = m_v8ComponentToV10Id.find(v8Location);
     if (result != m_v8ComponentToV10Id.end())
@@ -382,6 +446,12 @@ LineStyleStatus LineStyleConverter::ConvertLsComponent (LsComponentId& v10Id, Dg
     }
 
 //---------------------------------------------------------------------------------------
+// Turn a DGN line code (1 through 7) into a line style referring to a component defined as
+// { LsComponentType::Internal, line-code-value }.
+//
+//  This is only called by GetOrConvertElementLineCode.  GetOrConvertElementLineCode first 
+//  looks for an existing definition and only calls this if the existing definition is not found.
+//
 // @bsimethod                                                   John.Gooding    05/2016
 //---------------------------------------------------------------------------------------
 LineStyleStatus LineStyleConverter::ConvertElementLineCode(DgnStyleId& newId, uint32_t lineCode)
@@ -394,16 +464,17 @@ LineStyleStatus LineStyleConverter::ConvertElementLineCode(DgnStyleId& newId, ui
     LsComponentId   v10ComponentId(LsComponentType::Internal, lineCode);
 
     BentleyStatus result = GetDgnDb().LineStyles().Insert(newId, lsName, v10ComponentId, lineStyleAttributes, componentScale);
-    for (uint32_t i = 0; SUCCESS != result && i < 5; ++i)
+    for (uint32_t i = 0; SUCCESS != result && i < MAX_LINECODE_RENAME_RETRIES; ++i)
         {
-        //  This could be valid if the we imported a file with a name like lc4, but it is more likely due to us inserting the same line code more than once.
-        BeAssert(SUCCESS == result);
+        //  This could be valid if the converter imported a style with a name like lc4, but it is more likely due to us inserting the same line code more than once.
+        //  GetOrConvertElementLineCode should prevent that from happening.
         strcat(lsName, "_");
         result = GetDgnDb().LineStyles().Insert(newId, lsName, v10ComponentId, lineStyleAttributes, componentScale);
         }
 
     if (SUCCESS != result)
         {
+        BeAssert(SUCCESS == result);
         newId = DgnStyleId();
         return LINESTYLE_STATUS_Error;
         }
@@ -431,7 +502,7 @@ LineStyleStatus LineStyleConverter::GetOrConvertElementLineCode(DgnStyleId& newI
     char lsName[20];
     sprintf(lsName, "lc%d", lineCode);
 
-    for (uint32_t i = 0; i < 5; ++i)
+    for (uint32_t i = 0; i < MAX_LINECODE_RENAME_RETRIES; ++i)
         {
         DgnStyleId styleId = LineStyleElement::QueryId(GetDgnDb(), lsName); 
 
@@ -451,6 +522,7 @@ LineStyleStatus LineStyleConverter::GetOrConvertElementLineCode(DgnStyleId& newI
 
                     if (compId.GetType() == LsComponentType::Internal && compId.GetValue() == lineCode)
                         {
+                        // The project file already contained the expected definition. Use that.
                         newId = styleId;
                         return LINESTYLE_STATUS_Success;
                         }
@@ -474,7 +546,10 @@ LineStyleStatus LineStyleConverter::ConvertLineStyle (DgnStyleId& newId, double&
     {
     Utf8String  lineStyleName(v8ls->GetStyleName().c_str());
         
-    //  First check to see if it is already mapped.
+    //  First check to see if it is already mapped.  There are some files with line style names that 
+    //  differ only in case.  When MicroStation encounters them, it only loads the first one.  It
+    //  will not load multiple line styles that differ only by case.  To mimic that behavior, this code 
+    //  creates the m_lsDefNameToIdMap using lower case names.
     Utf8String  nameLC(lineStyleName.c_str());
     nameLC.ToLower();
     auto mappedId = m_lsDefNameToIdMap.find(nameLC);
@@ -500,9 +575,11 @@ LineStyleStatus LineStyleConverter::ConvertLineStyle (DgnStyleId& newId, double&
     double muPerMeter = uorPerMeter/DgnV8Api::ModelInfo::GetUorPerMaster(&v8ModelInfo);
 
     //  Need to handle units that are Master, Uor, or Device.
-    //  Suport for device line styles has been dropped. We don't have a suitable replacement.
+    //
+    //  Suport for line styles with device units has been dropped. We don't have a suitable replacement.
+    //
     //  We are turning "Master units line styles" into "Meters line styles".  When converting to meters we have a choice of converting all components or just changing the 
-    //  line style's scale factor.  We are changing the line style definition to have a scale value of 1 and changing the components as required.
+    //  line style's scale factor.  I've elected to make the change in the line style scale, leaving the component values unchanged.
     BeAssert(v8ls->IsUnitsMaster() || v8ls->IsUnitsUOR());
 
     //  This value can be used to convert a V8 line style value to a DgnDb line style value.  A line style value is a width or distance encountered in a line style component
@@ -627,8 +704,11 @@ DgnStyleId Converter::_RemapLineStyle(double&unitsScale, DgnV8Api::DgnFile&v8Fil
     SyncInfo::V8FileSyncInfoId v8FileId = GetV8FileSyncInfoIdFromAppData(v8File);
     SyncInfo::V8StyleId  srcLineStyleId(v8FileId, srcLineStyleNum);
 
-    DgnStyleId mappedId = GetSyncInfo().FindLineStyle(unitsScale, srcLineStyleId);
-    if (mappedId.IsValid())
+    bool  foundStyle = false;
+    DgnStyleId mappedId = GetSyncInfo().FindLineStyle(unitsScale, foundStyle, srcLineStyleId);
+    if (foundStyle)
+        //  Use the mappedId even if it is invalid if it cam from SyncInfo.  We do this to avoid emitting the
+        //  "line style not found" error message more than once for a given style.
         return mappedId;
 
     if (IS_LINECODE(srcLineStyleNum))

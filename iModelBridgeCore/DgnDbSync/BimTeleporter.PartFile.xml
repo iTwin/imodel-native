@@ -16,8 +16,8 @@
     </Part>
 
     <Part Name="BisJson1Exporter0601" BentleyBuildMakeFile="BimTeleporter/BimExporter0601/lib/BisJson1Exporter0601.mke" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubPart PartFile="DgnDbSync" PartName="TeleporterPublicAPI"/>
         <SubPart PartName="DgnDb0601Assemblies"/>
+        <SubPart PartFile="DgnDbSync" PartName="TeleporterPublicAPI"/>
         <Bindings>
             <Libs ProductDirectoryName="BimTeleporterLibs" Required="false">Delivery/$(libprefix)BisJson1Exporter0601$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)BisJson1Exporter0601$(shlibext)</Assemblies>

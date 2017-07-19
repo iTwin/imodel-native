@@ -109,7 +109,8 @@ void Converter::ComputeSubCategoryAppearanceFromLevel(DgnSubCategory::Appearance
     auto weight     = level->GetByLevelWeight();
     //  WIP_V10_LEVELS -- Do we care about whether there is a line style scale?
     double unitsScale = 0;
-    auto lineStyleId = m_syncInfo.FindLineStyle(unitsScale, SyncInfo::V8StyleId(GetV8FileSyncInfoIdFromAppData(*level->GetByLevelLineStyle().GetDefinitionFile()), (uint32_t) level->GetByLevelLineStyle().GetStyle()));
+    bool foundStyle = false;
+    auto lineStyleId = m_syncInfo.FindLineStyle(unitsScale, foundStyle, SyncInfo::V8StyleId(GetV8FileSyncInfoIdFromAppData(*level->GetByLevelLineStyle().GetDefinitionFile()), (uint32_t) level->GetByLevelLineStyle().GetStyle()));
 
     appear.SetInvisible(false); // It never makes sense to define a SubCategory that is invisible. If a level is off in a view, then we will turn off this SubCategory in that view.
     appear.SetDisplayPriority(level->GetDisplayPriority());

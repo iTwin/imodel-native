@@ -37,12 +37,39 @@ enum MRMeshMinorXAttributeId
     MRMeshMinorXAttributeId_SecondaryData = 5,
 };
 
+enum    LinkStorageFlags
+    {
+    LinkStorage_ModelPEP              =  0x0001 << 0,
+    LinkStorage_Name                  =  0x0001 << 1,
+    LinkStorage_NamedGroupName        =  0x0001 << 2,
+    LinkStorage_LevelName             =  0x0001 << 3,
+    LinkStorage_ElementPEP            =  0x0001 << 4,
+    };
+
+
+enum ClassifierType
+    {
+    CLASSIFIER_TYPE_Model = 0,
+    CLASSIFIER_TYPE_Element = 1,
+    CLASSIFIER_TYPE_NamedGroup = 2,
+    CLASSIFIER_TYPE_Level = 3,
+    };
+
 struct DgnV8ThreeMxClipFlags
 {
     unsigned        m_isMask:1;
     unsigned        m_clipZLow:1;
     unsigned        m_clipZHigh:1;
     unsigned        m_reserved:29;
+};
+
+struct DgnV8ClassificationFlags
+{
+    unsigned    m_type:5;
+    unsigned    m_outsideMode:5;
+    unsigned    m_insideMode:5;
+    unsigned    m_selectedMode:5;
+    unsigned    m_unused:12;
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -126,7 +153,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
         DgnV8ThreeMxClipFlags flags;
 
         source.get((byte*) &flags, sizeof (flags));
-    
+        
         if (SUCCESS == pep.Load(source) &&
             (clipEh = pep.EvaluateElementFromHost(v8el)).IsValid() &&
             (thisClip = DgnV8Api::ClipVector::CreateFromElement(clipEh, v8el.GetModelRef()->AsDgnModelP(), nullptr, flags.m_isMask ? DgnV8Api::ClipVolumePass::Outside : DgnV8Api::ClipVolumePass::Inside)).IsValid())
@@ -136,6 +163,80 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
                 if (nullptr != clipPrimitive->GetClipPlanes())
                     clipVector->push_back(ClipPrimitive::CreateFromClipPlanes(reinterpret_cast<ClipPlaneSetCR>(*clipPrimitive->GetClipPlanes())));
                 }
+            }
+        }
+
+    // Classifiers.
+    ModelSpatialClassifiers         classifiers;
+    for (UInt32 index=0; true; index++)
+        {
+        DgnV8Api::ElementHandle::XAttributeIter xai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, (int)MRMeshMinorXAttributeId_Link_Classifier), index);
+
+        if (!xai.IsValid())
+            break;
+
+
+        Bentley::DataInternalizer       source ((byte*) xai.PeekData(), xai.GetSize());
+        DgnV8ClassificationFlags        v8Flags;
+        double                          unused, expandDistance;
+        UInt32                          optionalStorageFlags = 0;
+        Bentley::WString                wName;
+        DgnV8Api::PersistentElementPath pep;
+
+        source.get ((byte*) &v8Flags, sizeof(v8Flags));
+        source.get (&unused);
+        source.get (&expandDistance);
+        source.get (&optionalStorageFlags);
+    
+        if (0 == (optionalStorageFlags & LinkStorage_ModelPEP) ||
+            SUCCESS != pep.Load (source))
+            {
+            BeAssert(false && "unable to load classifier PEP");
+            break;
+            }
+
+        if (0 != (optionalStorageFlags & LinkStorage_Name))
+            source.get (wName);
+
+        switch (v8Flags.m_type)
+            {
+            case CLASSIFIER_TYPE_Model:
+                {
+                
+                DgnV8Api::DgnModelRef*        prefix;
+                DgnV8Api::DgnModelRef*        modelRef = nullptr;
+                DgnV8Api::ElementHandle       refAttachEh;
+
+                converter.GetAttachments(*v8el.GetModelRef());          // Force attachments to load.
+
+                if (SUCCESS != pep.EvaluateReferenceAttachmentPrefix (prefix, v8el.GetModelRef()) ||
+                    !(refAttachEh = pep.EvaluateReferenceAttachment(prefix)).IsValid() ||
+                    NULL == (modelRef = prefix->FindDgnAttachmentByElementId (refAttachEh.GetElementId())) ||
+                    NULL == modelRef->GetDgnModelP() ||
+                    NULL == modelRef->AsDgnAttachmentCP())
+                    {
+                    BeAssert(false && "Unable to evaluate classifier attachment.");
+                    break;
+                    }
+
+                auto    refTrans = converter.ComputeAttachmentTransform(v8mm.GetTransform(), *modelRef->AsDgnAttachmentCP());
+                auto    modelMapping = converter.FindModelForDgnV8Model(*modelRef->GetDgnModelP(), refTrans);
+
+                if (!modelMapping.IsValid())
+                    {
+                    BeAssert (false && "Unable to evaluate classifier model");
+                    break;
+                    }
+                
+                ModelSpatialClassifier::Flags   classifierFlags((ModelSpatialClassifier::Type) v8Flags.m_type, (ModelSpatialClassifier::Display) v8Flags.m_outsideMode, (ModelSpatialClassifier::Display) v8Flags.m_insideMode, (ModelSpatialClassifier::Display) v8Flags.m_selectedMode);
+                classifiers.push_back(ModelSpatialClassifier(modelMapping.GetDgnModel().GetModelId(), classifierFlags, Utf8String(wName.c_str()), expandDistance));
+
+                break;
+                }
+
+            default:
+                BeAssert(false && "Unsupported classifier type");
+                break;
             }
         }
 
@@ -170,7 +271,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
     // In DgnV8, ThreeMx attachments are elements, and their visibility is determined by their level. In DgnDb they are DgnModels. 
     // For every spatial view in the DgnDb, determine whether the category of the element's original level is on, and if so
     // add the new ThreeMxModel to the list of viewed models.
-    DgnModelId modelId = ThreeMx::ModelHandler::CreateModel(*repositoryLink, rootUrl.c_str(), &location, clipVector.get());
+    DgnModelId modelId = ThreeMx::ModelHandler::CreateModel(*repositoryLink, rootUrl.c_str(), &location, clipVector.get(), &classifiers);
     DgnCategoryId category = converter.GetSyncInfo().GetCategory(v8el, v8mm);
 
     for (auto const& entry : ViewDefinition::MakeIterator(db))

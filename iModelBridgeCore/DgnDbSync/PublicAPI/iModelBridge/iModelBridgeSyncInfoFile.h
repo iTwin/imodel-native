@@ -67,7 +67,7 @@ method and not in its _ConvertToBim method.
 * and uses the @ref ANCHOR_MutiFileTransaction "attachment" mechanism to guarantee that it always
 * matches the BIM.
 * 
-* A syncinfo file must be specific to a single @ref ANCHOR_BridgeJob "bridge job".
+* A syncinfo file must be specific to a single @ref ANCHOR_iModelBridgeJobOverview "bridge job".
 *
 * <h2>Source "Items"</h2>
 * 
@@ -242,7 +242,7 @@ method and not in its _ConvertToBim method.
 *  @ingroup GROUP_iModelBridgeSyncInfoFile
 * @bsiclass                                    BentleySystems 
 */
-struct iModelBridgeSyncInfoFile
+struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeSyncInfoFile
 {
     typedef uint64_t ROWID;
 
@@ -373,7 +373,7 @@ struct iModelBridgeSyncInfoFile
     //! Iterates the syncinfo file's records
     // @bsiclass                                    BentleySystems 
     //=======================================================================================
-    struct Iterator : BeSQLite::DbTableIterator
+    struct EXPORT_VTABLE_ATTRIBUTE Iterator : BeSQLite::DbTableIterator
         {
         Iterator(DgnDbCR db, Utf8CP where);
 
@@ -421,7 +421,7 @@ struct iModelBridgeSyncInfoFile
     //! @note You should use the same change detector object for an entire update. 
     // @bsiclass                                    BentleySystems 
     //=======================================================================================
-    struct ChangeDetector : RefCountedBase
+    struct EXPORT_VTABLE_ATTRIBUTE ChangeDetector : RefCountedBase
         {
         enum class ChangeType {Unchanged, New, Changed};
 
@@ -472,6 +472,8 @@ struct iModelBridgeSyncInfoFile
 
         //! Get a reference to the BIM
         DgnDbR GetDgnDb() {return m_si.GetDgnDb();}
+
+        iModelBridgeSyncInfoFile& GetSyncInfo() {return m_si;}
 
         //! Used to choose one of many existing entries in SyncInfo
         typedef std::function<bool(Record const&, iModelBridgeSyncInfoFile& bridge)> T_Filter;
@@ -609,7 +611,7 @@ struct iModelBridgeSyncInfoFile
 //! @ingroup GROUP_iModelBridge
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
-struct iModelBridgeWithSyncInfoBase : iModelBridgeBase
+struct EXPORT_VTABLE_ATTRIBUTE iModelBridgeWithSyncInfoBase : iModelBridgeBase
 {
     DEFINE_T_SUPER(iModelBridgeBase)
 protected:

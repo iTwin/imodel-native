@@ -2,7 +2,7 @@
 |
 |     $Source: DgnV8/Converters/FontConverterApp.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -14,7 +14,7 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnFontData.h>
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <Bentley/BeFileListIterator.h>
 #include <BeXml/BeXml.h>
 #include <DgnDbSync/DgnV8/DgnV8Font.h>
@@ -35,7 +35,7 @@ static AString utf8ToLocale(Utf8StringCR str) { return utf8ToLocale(str.c_str())
 //=======================================================================================
 struct FontConverterApp : DgnPlatformLib::Host
 {
-    virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); }
+    virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); }
     virtual void _SupplyProductName(Utf8StringR name) override { name.assign("FontConverter"); }
     virtual L10N::SqlangFiles _SupplySqlangFiles() override;
 };

@@ -98,7 +98,7 @@ void RootModelConverter::_ImportDrawingAndSheetModels(ResolvedModelMapping& root
     for (auto v8 : m_v8Files) // start with the files that we already know about
         filesToSearch.push_back(v8);
 
-    for (auto const& fn : m_params.m_drawingAndSheetFiles)
+    for (auto const& fn : m_params.GetDrawingAndSheetFiles())
         {
         if (nullptr != findOpenV8FileByName(filesToSearch, fn))
             continue;

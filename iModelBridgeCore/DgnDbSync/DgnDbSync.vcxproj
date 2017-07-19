@@ -49,6 +49,7 @@
     <ClCompile Include="DgnV8\LineStyleConverter.cpp" />
     <ClCompile Include="DgnV8\MaterialConverter.cpp" />
     <ClCompile Include="DgnV8\RootModelConverter.cpp" />
+    <ClCompile Include="DgnV8\ScalableMeshConversion.cpp" />
     <ClCompile Include="DgnV8\Thumbnails.cpp" />
     <ClCompile Include="DgnV8\TiledFileConverter.cpp" />
     <ClCompile Include="DgnV8\Updater.cpp" />
@@ -100,6 +101,8 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakePreprocessorDefinitions>WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL   </NMakeBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p DgnV8ConverterDLL -f  DgnDbSync -r  DgnDbSync re DgnV8ConverterDLL -c</NMakeCleanCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>

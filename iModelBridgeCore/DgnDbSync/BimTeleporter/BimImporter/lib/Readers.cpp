@@ -12,49 +12,15 @@
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <Logging/bentleylogging.h>
 #include <DgnPlatform/GenericDomain.h>
-
+#include <Bentley/Base64Utilities.h>
 #include "SyncInfo.h"
 #include "Readers.h"
 #include "BisJson1ImporterImpl.h"
-
-#define MODEL_PROP_ModeledElement "ModeledElement"
-#define MODEL_PROP_IsPrivate "IsPrivate"
-#define MODEL_PROP_Properties "Properties"
-#define MODEL_PROP_IsTemplate "IsTemplate"
-#define BIS_ELEMENT_PROP_CodeSpecId "CodeSpec"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_EC
-
-static Utf8CP const JSON_TYPE_KEY = "Type";
-static Utf8CP const JSON_OBJECT_KEY = "Object";
-static Utf8CP const JSON_TYPE_Model = "Model";
-static Utf8CP const JSON_TYPE_CategorySelector = "CategorySelector";
-static Utf8CP const JSON_TYPE_ModelSelector = "ModelSelector";
-static Utf8CP const JSON_TYPE_DisplayStyle = "DisplayStyle";
-static Utf8CP const JSON_TYPE_DictionaryModel = "DictionaryModel";
-static Utf8CP const JSON_TYPE_CodeSpec = "CodeSpec";
-static Utf8CP const JSON_TYPE_Schema = "Schema";
-static Utf8CP const JSON_TYPE_Element = "Element";
-static Utf8CP const JSON_TYPE_GeometricElement2d = "GeometricElement2d";
-static Utf8CP const JSON_TYPE_GeometricElement3d = "GeometricElement3d";
-static Utf8CP const JSON_TYPE_GeometryPart = "GeometryPart";
-static Utf8CP const JSON_TYPE_Subject = "Subject";
-static Utf8CP const JSON_TYPE_Partition = "Partition";
-static Utf8CP const JSON_TYPE_Category = "Category";
-static Utf8CP const JSON_TYPE_SubCategory = "SubCategory";
-static Utf8CP const JSON_TYPE_ViewDefinition3d = "ViewDefinition3d";
-static Utf8CP const JSON_TYPE_ViewDefinition2d = "ViewDefinition2d";
-static Utf8CP const JSON_TYPE_ElementRefersToElement = "ElementRefersToElement";
-static Utf8CP const JSON_TYPE_ElementGroupsMembers = "ElementGroupsMembers";
-
-static Utf8CP const  BIS_ELEMENT_PROP_CodeSpec = "CodeSpec";
-static Utf8CP const  BIS_ELEMENT_PROP_CodeScope = "CodeScope";
-static Utf8CP const  BIS_ELEMENT_PROP_CodeValue = "CodeValue";
-static Utf8CP const  BIS_ELEMENT_PROP_Model = "Model";
-static Utf8CP const  BIS_ELEMENT_PROP_Parent = "Parent";
 
 BEGIN_BIM_TELEPORTER_NAMESPACE
 
@@ -120,15 +86,23 @@ ECN::ECSchemaPtr BimImportSchemaLocater::DeserializeSchema(ECN::ECSchemaReadCont
     return schema;
     }
 
-
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 Reader::Reader(BisJson1ImporterImpl* importer) : m_importer(importer)
     { }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 DgnDbP Reader::GetDgnDb()
     {
     return m_importer->GetDgnDb();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            09/2016
+//---------------+---------------+---------------+---------------+---------------+-------
 SyncInfo* Reader::GetSyncInfo() { return m_importer->m_syncInfo; }
 
 
@@ -175,13 +149,23 @@ ECN::IECInstancePtr Reader::_CreateInstance(Json::Value& object)
     {
     ECClassCP ecClass = GetClassFromKey(object["$ECClassKey"].asString().c_str());
     if (nullptr == ecClass)
+        {
+        GetLogger().errorv("Failed to get ECClass from key %s\n", object["$ECClassKey"].asString().c_str());
         return nullptr;
+        }
 
     IECInstancePtr ptr = ecClass->GetDefaultStandaloneEnabler()->CreateInstance(0);
     if (!ptr.IsValid())
+        {
+        GetLogger().errorv("Failed to create IECInstancePtr from %s's standalone enabler\n", object["$ECClassKey"].asString().c_str());
         return nullptr;
-    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ptr, object))
+        }
+
+    if (SUCCESS != ECJsonUtilities::ECInstanceFromJson(*ptr, object, &m_importer->GetRemapper()))
+        {
+        GetLogger().errorv("Failed to create ECInstanceFromJson\n");
         return nullptr;
+        }
     return ptr;
     }
 
@@ -194,7 +178,7 @@ BentleyStatus Reader::RemapCodeSpecId(Json::Value& element)
     if (!codeSpec.IsValid())
         return ERROR;
 
-    Utf8PrintfString idStr("%" PRIu64 "%", codeSpec.GetValue());
+    Utf8PrintfString idStr("%" PRIu64 "", codeSpec.GetValue());
     element[BIS_ELEMENT_PROP_CodeSpecId]["id"] = idStr;
     return SUCCESS;
     }
@@ -205,22 +189,29 @@ BentleyStatus Reader::RemapCodeSpecId(Json::Value& element)
 CodeSpecId Reader::GetMappedCodeSpecId(Json::Value& element)
     {
     if (!element.isMember(BIS_ELEMENT_PROP_CodeSpecId))
+        {
+        GetLogger().errorv("No CodeSpec specified for %s element", _GetElementType());
         return CodeSpecId();
+        }
 
     Utf8String idString = element[BIS_ELEMENT_PROP_CodeSpecId]["id"].asString();
     uint64_t id;
     if (!Utf8String::IsNullOrEmpty(idString.c_str()))
         {
         if (SUCCESS != BeStringUtilities::ParseUInt64(id, idString.c_str()))
+            {
+            GetLogger().errorv("Failed to parse CodeSpec.id property value '%s' into a UInt64.", idString.c_str());
             return CodeSpecId();
+            }
         CodeSpecId codeSpec = m_importer->m_syncInfo->LookupCodeSpec(CodeSpecId(id));
         if (!codeSpec.IsValid())
             {
-            GetLogger().errorv("Unable to determine CodeSpecId for imported element %s", element.toStyledString().c_str());
+            GetLogger().errorv("Unable to remap CodeSpecId '%s'", idString.c_str());
             return CodeSpecId();
             }
         return codeSpec;
         }
+    GetLogger().errorv("Missing or empty CodeSpecId field");
     return CodeSpecId();
     }
 
@@ -237,16 +228,19 @@ BentleyStatus ElementReader::RemapParentId(Json::Value& element)
     if (!(Utf8String::IsNullOrEmpty(parentId.c_str())))
         {
         if (SUCCESS != BeStringUtilities::ParseUInt64(id, parentId.c_str()))
+            {
+            GetLogger().errorv("Failed to parse Parent.id property '%s' into a UInt64.\n", parentId.c_str());
             return ERROR;
+            }
         DgnElementId mappedId = m_importer->m_syncInfo->LookupElement(DgnElementId(id));
         if (!mappedId.IsValid())
             {
-            // What do we do here?
+            GetLogger().errorv("Failed to remap Parent.id '%s'\n", parentId.c_str());
             return ERROR;
             }
-        Utf8PrintfString idStr("%" PRIu64 "%", mappedId.GetValue());
+        Utf8PrintfString idStr("%" PRIu64 "", mappedId.GetValue());
         element[BIS_ELEMENT_PROP_Parent]["id"] = idStr.c_str();
-        Utf8PrintfString parRelId("%" PRIu64 "%", _GetRelationshipClassId().GetValue());
+        Utf8PrintfString parRelId("%" PRIu64 "", _GetRelationshipClassId().GetValue());
         element[BIS_ELEMENT_PROP_Parent]["relECClassId"] = parRelId.c_str();
         return SUCCESS;
         }
@@ -266,14 +260,17 @@ BentleyStatus ElementReader::RemapCategoryId(Json::Value& element)
     if (!(Utf8String::IsNullOrEmpty(catId.c_str())))
         {
         if (SUCCESS != BeStringUtilities::ParseUInt64(id, catId.c_str()))
+            {
+            GetLogger().errorv("Failed to parse Category.id property '%s' into a UInt64.\n", catId.c_str());
             return ERROR;
+            }
         DgnElementId mappedId = m_importer->m_syncInfo->LookupElement(DgnElementId(id));
         if (!mappedId.IsValid())
             {
-            // What do we do here?
+            GetLogger().errorv("Failed to remap Category.id '%s'\n", catId.c_str());
             return ERROR;
             }
-        Utf8PrintfString idStr("%" PRIu64 "%", mappedId.GetValue());
+        Utf8PrintfString idStr("%" PRIu64 "", mappedId.GetValue());
         element["Category"]["id"] = idStr;
         return SUCCESS;
         }
@@ -314,7 +311,7 @@ BentleyStatus ElementReader::RemapModelId(Json::Value& element)
     if (!mappedId.IsValid())
         return ERROR;
 
-    Utf8PrintfString idStr("%" PRIu64 "%", mappedId.GetValue());
+    Utf8PrintfString idStr("%" PRIu64 "", mappedId.GetValue());
     element[BIS_ELEMENT_PROP_Model]["id"] = idStr;
     return SUCCESS;
     }
@@ -322,23 +319,26 @@ BentleyStatus ElementReader::RemapModelId(Json::Value& element)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-DgnModelId ElementReader::GetMappedModelId(Json::Value& element)
+DgnModelId ElementReader::GetMappedModelId(Json::Value& element, Utf8CP propertyName)
     {
     // remap modelId
-    Utf8String modelId = element["Model"]["id"].asString();
+    Utf8String modelId = element[propertyName]["id"].asString();
     uint64_t id;
     if (Utf8String::IsNullOrEmpty(modelId.c_str()))
+        {
+        GetLogger().errorv("Model roperty '%s.id' is empty.\n", propertyName);
         return DgnModelId();
+        }
 
     if (SUCCESS != BeStringUtilities::ParseUInt64(id, modelId.c_str()))
         {
-        GetLogger().errorv("Failed to parse ModelId property of element: %s", element.toStyledString().c_str());
+        GetLogger().errorv("Failed to parse %s property value '%s' into a UInt64.", propertyName, modelId.c_str());
         return DgnModelId();
         }
     DgnModelId mappedId = m_importer->m_syncInfo->LookupModel(DgnModelId(id));
     if (!mappedId.IsValid())
         {
-        GetLogger().errorv("Failed to map ModelId property of element: %s", element.toStyledString().c_str());
+        GetLogger().errorv("Failed to map '%s.id' property value '%s'", propertyName, modelId.c_str());
         return DgnModelId();
         }
     return mappedId;
@@ -356,17 +356,7 @@ DgnCode ElementReader::CreateCodeFromJson(Json::Value& element)
         return DgnCode();
         }
 
-    if (!element.isMember(BIS_ELEMENT_PROP_CodeScope) || element[BIS_ELEMENT_PROP_CodeScope].isNull())
-        {
-        GetLogger().errorv("Element is missing code scope value: \n%s", element.toStyledString().c_str());
-        return DgnCode();
-        }
-
-#if 0
-    Utf8String codeScope = element[BIS_ELEMENT_PROP_CodeScope].asString();
-#else
-    DgnElementId codeScope; // WIP: determine how to map CodeScope
-#endif
+    DgnElementId codeScope = GetMappedElementId(element, BIS_ELEMENT_PROP_CodeScope);
 
     if (!element.isMember(BIS_ELEMENT_PROP_CodeValue) || (!element[BIS_ELEMENT_PROP_CodeValue].isNull() && 0 == strlen(element[BIS_ELEMENT_PROP_CodeValue].asString().c_str())))
         {
@@ -484,6 +474,142 @@ BentleyStatus CodeSpecReader::_Read(Json::Value& object)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus LsComponentReader::_Read(Json::Value& object)
+    {
+    LsComponentId v10Id;
+    
+    Json::Value jsonValue;
+    Utf8String name = object["Name"].asString();
+    LsComponentType componentType = LsComponentType::LineCode;
+    if (name.EqualsIAscii("CompoundV1"))
+        componentType = LsComponentType::Compound;
+    else if (name.EqualsIAscii("LineCodeV1"))
+        componentType = LsComponentType::LineCode;
+    else if (name.EqualsIAscii("LinePointV1"))
+        componentType = LsComponentType::LinePoint;
+    else if (name.EqualsIAscii("PointSymV1"))
+        componentType = LsComponentType::PointSymbol;
+    else if (name.EqualsIAscii("RasterImageV1"))
+        componentType = LsComponentType::RasterImage;
+
+    uint32_t id = object["Id"].asUInt();
+    Json::Reader::Parse(object["StrData"].asString().c_str(), jsonValue);
+    if (jsonValue.isMember("geomPartId"))
+        {
+        uint64_t oldId = jsonValue["geomPartId"].asUInt64();
+        DgnElementId mappedId = GetSyncInfo()->LookupElement(DgnElementId(oldId));
+        if (!mappedId.IsValid())
+            {
+            GetLogger().errorv("Failed to remap geometry part Id '%" PRIu64 " LsComponent", oldId);
+            return ERROR;
+            }
+        jsonValue["geomPartId"] = mappedId.GetValue();
+        }
+    LineStyleStatus lstat = LsComponent::AddComponentAsJsonProperty(v10Id, *GetDgnDb(), componentType, jsonValue);
+
+    if (LINESTYLE_STATUS_Success != lstat)
+        {
+        GetLogger().warningv("Unable to add linestyle property.  Error code: %d\n", lstat);
+        return ERROR;
+        }
+
+    LsComponentId oldId(componentType, id);
+    GetSyncInfo()->InsertLsComponent(oldId, v10Id);
+
+    return SUCCESS;
+    }
+
+#define EMBEDDED_FACE_DATA_PROP_NS "dgn_Font"
+#define EMBEDDED_FACE_DATA_PROP_NAME "EmbeddedFaceData"
+static const PropertySpec EMBEDDED_FACE_DATA_PROPERTY_SPEC(EMBEDDED_FACE_DATA_PROP_NAME, EMBEDDED_FACE_DATA_PROP_NS);
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus FontFaceReader::_Read(Json::Value& object)
+    {
+    Statement idQuery;
+    idQuery.Prepare(*GetDgnDb(), "SELECT MAX(Id) FROM " BEDB_TABLE_Property " WHERE Namespace='" EMBEDDED_FACE_DATA_PROP_NS "' AND Name='" EMBEDDED_FACE_DATA_PROP_NAME "'");
+    if (BE_SQLITE_ROW != idQuery.Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    uint64_t id = (idQuery.GetValueInt64(0) + 1);
+
+    bvector<Byte> data;
+    int size = object["RawSize"].asInt();
+    data.resize((size_t) size);
+    data.clear();
+    Utf8String dataAsStr(object["Base64EncodedData"].asString().c_str());
+    int encodedSize = object["Base64EncodedSize"].asInt();
+    Base64Utilities::Decode(data, dataAsStr.c_str(), encodedSize);
+
+    // Db does not expose a SaveProperty that lets us save a string and blob at the same time.
+    // Use the API for the blob so we get compression; manually insert the table of contents string.
+
+    if (BE_SQLITE_OK != GetDgnDb()->SaveProperty(EMBEDDED_FACE_DATA_PROPERTY_SPEC, data.data(), (uint32_t) size, id, 0))
+        return ERROR;
+
+    Statement update;
+    update.Prepare(*GetDgnDb(), "UPDATE " BEDB_TABLE_Property " SET StrData=? WHERE Namespace='" EMBEDDED_FACE_DATA_PROP_NS "' AND Name='" EMBEDDED_FACE_DATA_PROP_NAME "' AND Id=?");
+    update.BindText(1, object["StrData"].asString().c_str(), Statement::MakeCopy::No);
+    update.BindInt64(2, id);
+
+    if (BE_SQLITE_DONE != update.Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus FontReader::_Read(Json::Value& font)
+    {
+    DgnFontId id;
+    DbResult rc = GetDgnDb()->GetServerIssuedId(id, "dgn_Font", "Id");
+
+    if (BE_SQLITE_OK != rc)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    Statement insert;
+    insert.Prepare(*GetDgnDb(), SqlPrintfString("INSERT INTO %s (Id,Type,Name,Metadata) VALUES (?,?,?,?)", "dgn_Font"));
+    insert.BindInt(1, static_cast<int>(id.GetValue()));
+    insert.BindInt(2, static_cast<int>(font["Type"].asInt()));
+    insert.BindText(3, font["Name"].asString().c_str(), Statement::MakeCopy::No);
+
+    bvector<Byte> metadata;
+    size_t size = font["Metadata"].asString().SizeInBytes();
+    metadata.resize(size);
+    Base64Utilities::Decode(metadata, font["Metadata"].asString().c_str(), size);
+
+    insert.BindBlob(4, metadata.data(), (int) metadata.size(), Statement::MakeCopy::No);
+
+    if (BE_SQLITE_DONE != insert.Step())
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    DgnFontId oldId(font["Id"].asUInt64());
+    GetSyncInfo()->InsertFont(oldId, id);
+    m_importer->RemapFont(oldId);
+
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus SubjectReader::_Read(Json::Value& subject)
@@ -501,7 +627,7 @@ BentleyStatus SubjectReader::_Read(Json::Value& subject)
             parentSubject = GetDgnDb()->Elements().Get<Subject>(mappedId);
         else
             {
-            GetLogger().warningv("Unable to locate parent subject with exported id %" PRIu64 "%.  Using root subject instead", parentId);
+            GetLogger().warningv("Unable to locate parent subject with exported id %" PRIu64 ".  Using root subject instead", parentId);
             parentSubject = GetDgnDb()->Elements().GetRootSubject();
             }
         }
@@ -532,7 +658,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
             subject = GetDgnDb()->Elements().Get<Subject>(mappedId);
         else
             {
-            GetLogger().warningv("Unable to locate partition's subject with exported id %" PRIu64 "%.  Using root subject instead", subjectId);
+            GetLogger().warningv("Unable to locate partition's subject with exported id %" PRIu64 ".  Using root subject instead", subjectId);
             subject = GetDgnDb()->Elements().GetRootSubject();
             }
         }
@@ -544,7 +670,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         GroupInformationPartitionCPtr gip = GroupInformationPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
         if (!gip.IsValid())
             {
-            GetLogger().errorv("Failed to create a GroupInformationPartition for %" PRIu64 "%", oldInstanceId);
+            GetLogger().errorv("Failed to create a GroupInformationPartition for %" PRIu64 "", oldInstanceId);
             return ERROR;
             }
         newId = gip->GetElementId();
@@ -554,7 +680,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         PhysicalPartitionCPtr pp = PhysicalPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
         if (!pp.IsValid())
             {
-            GetLogger().errorv("Failed to create a PhysicalPartition for %" PRIu64 "%", oldInstanceId);
+            GetLogger().errorv("Failed to create a PhysicalPartition for %" PRIu64 "", oldInstanceId);
             return ERROR;
             }
         newId = pp->GetElementId();
@@ -564,7 +690,7 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         DocumentPartitionCPtr dp = DocumentPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
         if (!dp.IsValid())
             {
-            GetLogger().errorv("Failed to create a DocumentPartition for %" PRIu64 "%", oldInstanceId);
+            GetLogger().errorv("Failed to create a DocumentPartition for %" PRIu64 "", oldInstanceId);
             return ERROR;
             }
         newId = dp->GetElementId();
@@ -574,14 +700,14 @@ BentleyStatus PartitionReader::_Read(Json::Value& partition)
         LinkPartitionCPtr lp = LinkPartition::CreateAndInsert(*subject, label.c_str(), partition["Descr"].isNull() ? nullptr : partition["Descr"].asString().c_str());
         if (!lp.IsValid())
             {
-            GetLogger().errorv("Failed to create a LinkPartition for %" PRIu64 "%", oldInstanceId);
+            GetLogger().errorv("Failed to create a LinkPartition for %" PRIu64 "", oldInstanceId);
             return ERROR;
             }
         newId = lp->GetElementId();
         }
     else
         {
-        GetLogger().errorv("Unknown (or empty) partition type '%s' for element %" PRIu64 "%", partitionType.c_str(), oldInstanceId);
+        GetLogger().errorv("Unknown (or empty) partition type '%s' for element %" PRIu64 "", partitionType.c_str(), oldInstanceId);
         return ERROR;
         }
     SyncInfo::ElementMapping map(DgnElementId(oldInstanceId), newId);
@@ -604,16 +730,27 @@ BentleyStatus ElementReader::_Read(Json::Value& element)
     {
     IECInstancePtr ecInstance = _CreateInstance(element);
     if (!ecInstance.IsValid())
+        {
+        GetLogger().errorv("Failed to create IECInstance for element %s\n", _GetElementType());
         return ERROR;
+        }
 
     Utf8String idString = element["$ECInstanceId"].asString();
     if (SUCCESS != BeStringUtilities::ParseUInt64(m_instanceId, idString.c_str()))
         return ERROR;
 
+    if (SUCCESS != RemapPropertyElementId(*ecInstance, BIS_ELEMENT_PROP_CodeScope))
+        {
+        GetLogger().errorv("Failed to map CodeScopeId for %s instance.", _GetElementType());
+        return ERROR;
+        }
+
     if (SUCCESS != _OnInstanceCreated(*ecInstance.get()))
         {
-
+        GetLogger().errorv("Failed to post-process IECInstance for %s\n", _GetElementType());
+        return ERROR;
         }
+
     DgnDbStatus stat;
     DgnElementPtr dgnElement = GetDgnDb()->Elements().CreateElement(*ecInstance, &stat);
 
@@ -623,7 +760,11 @@ BentleyStatus ElementReader::_Read(Json::Value& element)
         return ERROR;
         }
 
-    _OnElementCreated(*dgnElement.get(), *ecInstance);
+    if (SUCCESS != _OnElementCreated(*dgnElement.get(), *ecInstance))
+        {
+        GetLogger().errorv("Failed to post-process element for %s\n", _GetElementType());
+        return ERROR;
+        }
 
     DgnElementCPtr inserted = dgnElement->Insert(&stat);
     if (!inserted.IsValid())
@@ -663,6 +804,8 @@ BentleyStatus GeometryReader::_OnInstanceCreated(ECN::IECInstanceR ecInstance)
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus GeometricElementReader::_OnElementCreated(DgnElementR element, ECN::IECInstanceR properties)
     {
+    if (!m_geomStream.HasData())
+        return SUCCESS;
     GeometryStream dest;
     GeometrySourceP geomSource = element.ToGeometrySourceP();
     DgnDbStatus stat = GeometryStreamIO::Import(dest, m_geomStream, *m_importer);
@@ -701,13 +844,92 @@ BentleyStatus GeometryPartReader::_OnElementCreated(DgnElementR element, ECN::IE
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus AnnotationTextStyleReader::_Read(Json::Value& object)
+    {
+    Json::Value properties(object["ExplicitProperties"]);
+    object.removeMember("ExplicitProperties");
+
+    IECInstancePtr ecInstance = _CreateInstance(object);
+    if (!ecInstance.IsValid())
+        {
+        GetLogger().errorv("Failed to create IECInstance for element %s\n", _GetElementType());
+        return ERROR;
+        }
+
+    Utf8String idString = object["$ECInstanceId"].asString();
+    if (SUCCESS != BeStringUtilities::ParseUInt64(m_instanceId, idString.c_str()))
+        return ERROR;
+
+    if (SUCCESS != _OnInstanceCreated(*ecInstance.get()))
+        {
+        GetLogger().errorv("Failed to post-process IECInstance for %s\n", _GetElementType());
+        return ERROR;
+        }
+
+    DgnDbStatus stat;
+    AnnotationTextStylePtr ats = GetDgnDb()->Elements().Create<AnnotationTextStyle>(*ecInstance, &stat);
+    if (!ats.IsValid())
+        {
+        GetLogger().errorv("Failed to create AnnotationTextStyle from instance.  Error code: %d\n", stat);
+        return ERROR;
+        }
+
+    ats->SetColorType((AnnotationColorType) properties["AnnotationColorType"].asInt());
+    ats->SetColorValue(ColorDef(properties["ColorValue"].asInt()));
+    ats->SetFontId(DgnFontId(properties["FontId"].asUInt64()));
+    ats->SetHeight(properties["Height"].asDouble());
+    ats->SetLineSpacingFactor(properties["LineSpacingFactor"].asDouble());
+    ats->SetIsBold(properties["SetIsBold"].asBool());
+    ats->SetIsItalic(properties["SetIsItalic"].asBool());
+    ats->SetIsUnderlined(properties["SetIsUnderlined"].asBool());
+    ats->SetStackedFractionScale(properties["StackedFractionScale"].asDouble());
+    ats->SetStackedFractionType((AnnotationStackedFractionType) properties["StackedFractionType"].asInt());
+    ats->SetSubScriptOffsetFactor(properties["SubScriptOffsetFactor"].asDouble());
+    ats->SetSubScriptScale(properties["SubScriptScale"].asDouble());
+    ats->SetWidthFactor(properties["WidthFactor"].asDouble());
+
+    DgnElementCPtr inserted = ats->Insert();
+    if (!inserted.IsValid())
+        {
+        GetLogger().errorv("Failed to insert newly created %s into db.  Error code %d\n", _GetElementType(), stat);
+        return ERROR;
+        }
+
+    SyncInfo::ElementMapping map(DgnElementId(m_instanceId), inserted->GetElementId());
+    map.Insert(*GetDgnDb());
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus LineStyleReader::_OnElementCreated(DgnElementR element, ECN::IECInstanceR properties)
+    {
+    ECValue v;
+    properties.GetValue(v, "Data");
+    Json::Value json;
+    Json::Reader::Parse(Utf8String(v.GetUtf8CP()), json);
+    
+    uint32_t id = json["compId"].asUInt();
+    int32_t type = json["compType"].asInt();
+    LsComponentId oldId((LsComponentType) type, id);
+    LsComponentId newId = GetSyncInfo()->LookupLsComponent(oldId);
+    json["compId"] = newId.GetValue();
+
+    Utf8String data = Json::FastWriter::ToString(json);
+    v.SetUtf8CP(data.c_str());
+    properties.SetValue("Data", v);
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            03/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
     {
-    if (!m_is3d)
-        return T_Super::_Read(viewDefinition);
-
     Utf8String idString = viewDefinition["$ECInstanceId"].asString();
     uint64_t instanceId;
     if (SUCCESS != BeStringUtilities::ParseUInt64(instanceId, idString.c_str()))
@@ -724,9 +946,6 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
     DgnElementId displayStyleId = GetMappedElementId(viewDefinition, "DisplayStyle");
     if (!displayStyleId.IsValid())
         return ERROR;
-    DisplayStyle3dPtr displayStyle = GetDgnDb()->Elements().GetForEdit<DisplayStyle3d>(displayStyleId); // We aren't editing it, but the CreateParams wants a ref, not a const ref
-    if (!displayStyle.IsValid())
-        return ERROR;
 
     DgnElementId categorySelectorId = GetMappedElementId(viewDefinition, "CategorySelector");
     if (!categorySelectorId.IsValid())
@@ -735,79 +954,119 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
     if (!categorySelector.IsValid())
         return ERROR;
 
-    DgnElementId modelSelectorId = GetMappedElementId(viewDefinition, "ModelSelector");
-    if (!modelSelectorId.IsValid())
-        return ERROR;
-    ModelSelectorPtr modelSelector = GetDgnDb()->Elements().GetForEdit<ModelSelector>(modelSelectorId); // We aren't editing it, but the CreateParams wants a ref, not a const ref
-    if (!modelSelector.IsValid())
-        return ERROR;
-
     ECClassCP ecClass = GetClassFromKey(viewDefinition["$ECClassKey"].asString().c_str());
     if (nullptr == ecClass)
         return ERROR;
 
-    bool isOrthographic = ecClass->Is(m_importer->m_orthographicViewClass);
-    double yaw = viewDefinition["Yaw"].asDouble();
-    double pitch = viewDefinition["Pitch"].asDouble();
-    double roll = viewDefinition["Roll"].asDouble();
-    YawPitchRollAngles ypr = YawPitchRollAngles::FromDegrees(yaw, pitch, roll);
-
-    DPoint3d extents;
-    ECJsonUtilities::JsonToPoint3d(extents, viewDefinition["Extents"]);
-
-    DPoint3d origin;
-    ECJsonUtilities::JsonToPoint3d(origin, viewDefinition["Origin"]);
-
-    bool isCameraOn = viewDefinition["IsCameraOn"].asBool();
-    bool isPrivate = viewDefinition["IsPrivate"].asBool();
-
-    ViewDefinition3d* viewDef;
-    ViewDefinition3d::Camera* camera = nullptr;
-    if (!isOrthographic)
+    if (m_is3d)
         {
-        DPoint3d eyePoint;
-        ECJsonUtilities::JsonToPoint3d(eyePoint, viewDefinition["EyePoint"]);
-        double focusDistance = viewDefinition["FocusDistance"].asDouble();
-        Angle lensAngle = Angle::FromRadians(viewDefinition["LensAngle"].asDouble());
-        
-        camera = new ViewDefinition3d::Camera();
-        camera->SetFocusDistance(focusDistance);
-        camera->SetLensAngle(lensAngle);
-        camera->SetEyePoint(eyePoint);
+        DisplayStyle3dPtr displayStyle = GetDgnDb()->Elements().GetForEdit<DisplayStyle3d>(displayStyleId); // We aren't editing it, but the CreateParams wants a ref, not a const ref
+        if (!displayStyle.IsValid())
+            return ERROR;
 
-        viewDef = new SpatialViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), *categorySelector, *displayStyle, *modelSelector, camera);
+        bool isOrthographic = ecClass->Is(m_importer->m_orthographicViewClass);
+        double yaw = viewDefinition["Yaw"].asDouble();
+        double pitch = viewDefinition["Pitch"].asDouble();
+        double roll = viewDefinition["Roll"].asDouble();
+        YawPitchRollAngles ypr = YawPitchRollAngles::FromDegrees(yaw, pitch, roll);
+
+        DPoint3d extents;
+        ECJsonUtilities::JsonToPoint3d(extents, viewDefinition["Extents"]);
+
+        DPoint3d origin;
+        ECJsonUtilities::JsonToPoint3d(origin, viewDefinition["Origin"]);
+
+        bool isCameraOn = viewDefinition["IsCameraOn"].asBool();
+        bool isPrivate = viewDefinition["IsPrivate"].asBool();
+
+        DgnElementId modelSelectorId = GetMappedElementId(viewDefinition, "ModelSelector");
+        if (!modelSelectorId.IsValid())
+            return ERROR;
+        ModelSelectorPtr modelSelector = GetDgnDb()->Elements().GetForEdit<ModelSelector>(modelSelectorId); // We aren't editing it, but the CreateParams wants a ref, not a const ref
+        if (!modelSelector.IsValid())
+            return ERROR;
+
+        ViewDefinition3d* viewDef;
+        ViewDefinition3d::Camera* camera = nullptr;
+        if (!isOrthographic)
+            {
+            DPoint3d eyePoint;
+            ECJsonUtilities::JsonToPoint3d(eyePoint, viewDefinition["EyePoint"]);
+            double focusDistance = viewDefinition["FocusDistance"].asDouble();
+            Angle lensAngle = Angle::FromRadians(viewDefinition["LensAngle"].asDouble());
+
+            camera = new ViewDefinition3d::Camera();
+            camera->SetFocusDistance(focusDistance);
+            camera->SetLensAngle(lensAngle);
+            camera->SetEyePoint(eyePoint);
+
+            viewDef = new SpatialViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), *categorySelector, *displayStyle, *modelSelector, camera);
+            }
+        else
+            viewDef = new OrthographicViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), *categorySelector, *displayStyle, *modelSelector);
+
+        viewDef->SetOrigin(origin);
+        viewDef->SetExtents(DVec3d::From(extents));
+        viewDef->SetRotation(ypr.ToRotMatrix());
+
+        if (!isCameraOn)
+            viewDef->TurnCameraOff();
+        if (viewDefinition.isMember("IsPrivate") && !viewDefinition["IsPrivate"].isNull())
+            viewDef->SetIsPrivate(viewDefinition["IsPrivate"].asBool());
+        if (viewDefinition.isMember("Descr") && !viewDefinition["Descr"].isNull())
+            viewDef->SetDescription(viewDefinition["Descr"].asString());
+        if (viewDefinition.isMember("UserLabel") && !viewDefinition["UserLabel"].isNull())
+            viewDef->SetUserLabel(viewDefinition["UserLabel"].asString().c_str());
+
+        // WIP: Need to set UserProperties?
+
+        DgnDbStatus stat;
+        DgnElementCPtr inserted = viewDef->Insert(&stat);
+        if (!inserted.IsValid())
+            {
+            GetLogger().errorv("Failed to insert newly created %s into db.  Error code %d\n", _GetElementType(), stat);
+            return ERROR;
+            }
+        SyncInfo::ElementMapping map(DgnElementId(instanceId), inserted->GetElementId());
+        map.Insert(*GetDgnDb());
+        delete viewDef;
+        delete camera;
         }
     else
-        viewDef = new OrthographicViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), *categorySelector, *displayStyle, *modelSelector);
-
-    viewDef->SetOrigin(origin);
-    viewDef->SetExtents(DVec3d::From(extents));
-    viewDef->SetRotation(ypr.ToRotMatrix());
-
-    if (!isCameraOn)
-        viewDef->TurnCameraOff();
-    if (viewDefinition.isMember("IsPrivate") && !viewDefinition["IsPrivate"].isNull())
-        viewDef->SetIsPrivate(viewDefinition["IsPrivate"].asBool());
-    if (viewDefinition.isMember("Descr") && !viewDefinition["Descr"].isNull())
-        viewDef->SetDescription(viewDefinition["Descr"].asString());
-    if (viewDefinition.isMember("UserLabel") && !viewDefinition["UserLabel"].isNull())
-        viewDef->SetUserLabel(viewDefinition["UserLabel"].asString().c_str());
-    
-    // WIP: Need to set UserProperties?
-
-    DgnDbStatus stat;
-    DgnElementCPtr inserted = viewDef->Insert(&stat);
-    if (!inserted.IsValid())
         {
-        GetLogger().errorv("Failed to insert newly created %s into db.  Error code %d\n", _GetElementType(), stat);
-        return ERROR;
-        }
-    SyncInfo::ElementMapping map(DgnElementId(instanceId), inserted->GetElementId());
-    map.Insert(*GetDgnDb());
-    delete viewDef;
-    delete camera;
-    return SUCCESS;
+        DisplayStyle2dPtr displayStyle = GetDgnDb()->Elements().GetForEdit<DisplayStyle2d>(displayStyleId); // We aren't editing it, but the CreateParams wants a ref, not a const ref
+        if (!displayStyle.IsValid())
+            return ERROR;
 
+        DgnModelId baseModelId = GetMappedModelId(viewDefinition, "BaseModel");
+        if (!baseModelId.IsValid())
+            return ERROR;
+
+        DPoint2d extents;
+        ECJsonUtilities::JsonToPoint2d(extents, viewDefinition["Extents"]);
+
+        DPoint2d origin;
+        ECJsonUtilities::JsonToPoint2d(origin, viewDefinition["Origin"]);
+
+        ViewDefinition2d* viewDef;
+        if (ecClass->Is(m_importer->m_sheetViewClass))
+            viewDef = new SheetViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), baseModelId, *categorySelector, *displayStyle);
+        else
+            viewDef = new DrawingViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), baseModelId, *categorySelector, *displayStyle);
+
+        DgnDbStatus stat;
+        DgnElementCPtr inserted = viewDef->Insert(&stat);
+        if (!inserted.IsValid())
+            {
+            GetLogger().errorv("Failed to insert newly created %s into db.  Error code %d\n", _GetElementType(), stat);
+            return ERROR;
+            }
+        SyncInfo::ElementMapping map(DgnElementId(instanceId), inserted->GetElementId());
+        map.Insert(*GetDgnDb());
+        delete viewDef;
+        }
+
+    return SUCCESS;
     }
 
 //---------------------------------------------------------------------------------------
@@ -822,18 +1081,7 @@ BentleyStatus ViewDefinitionReader::_OnInstanceCreated(IECInstanceR properties)
     if (ERROR == RemapPropertyElementId(properties, "CategorySelector"))
         return ERROR;
 
-    ECValue source;
-    uint64_t id;
-    properties.GetValue(source, "BaseModel");
-    DgnModelId mappedId = GetSyncInfo()->LookupModel(DgnModelId((uint64_t) source.GetLong()));
-    if (!mappedId.IsValid())
-        {
-        // What do we do here?
-        return ERROR;
-        }
-    ECValue val(mappedId.GetValue());
-    properties.SetValue("BaseModel", val);
-    return SUCCESS;
+    return T_Super::_OnInstanceCreated(properties);
     }
 
 //---------------------------------------------------------------------------------------
@@ -902,7 +1150,7 @@ BentleyStatus SubCategoryReader::_Read(Json::Value& subCategory)
         DgnCategoryCPtr cat = GetDgnDb()->Elements().Get<DgnCategory>(categoryId);
         if (!cat.IsValid())
             {
-            GetLogger().errorv("Unable to retrieve Category %" PRIu64 "%", categoryId.GetValue());
+            GetLogger().errorv("Unable to retrieve Category %" PRIu64 "", categoryId.GetValue());
             return ERROR;
             }
         GetSyncInfo()->InsertSubCategory(categoryId, DgnSubCategoryId(instanceId), cat->GetDefaultSubCategoryId());
@@ -968,7 +1216,7 @@ BentleyStatus ModelReader::_Read(Json::Value& model)
             // What do we do here? Map to the root subject?
             return ERROR;
             }
-        idString.Sprintf("%" PRIu64 "%", mappedId.GetValue());
+        idString.Sprintf("%" PRIu64 "", mappedId.GetValue());
         model[MODEL_PROP_ModeledElement]["id"] = idString;
         }
 
@@ -983,10 +1231,13 @@ BentleyStatus ModelReader::_Read(Json::Value& model)
 
     SyncInfo::ModelMapping mapping;
     // there is one and only one dictionary model. So if this is a dictionary model, we don't create a model, we just remap
-    // its id to the new one
+    // its id to the new one.  Also create an element mapping as this is needed for CodeScope remappings
     if (m_isDictionary)
         {
         GetSyncInfo()->InsertModel(mapping, GetDgnDb()->GetDictionaryModel().GetModelId(), DgnModelId(ecInstanceId), nullptr);
+        SyncInfo::ElementMapping map(DgnElementId(ecInstanceId), GetDgnDb()->GetDictionaryModel().GetModeledElementId());
+        map.Insert(*GetDgnDb());
+
         return SUCCESS;
         }
 
@@ -1144,10 +1395,50 @@ BentleyStatus SchemaReader::_Read(Json::Value& jsonValue)
         if (knownSchemas.end() != std::find(knownSchemas.begin(), knownSchemas.end(), ecSchema->GetName()))
             continue;
 
-        if (!ECSchemaConverter::Convert(*ecSchema))
+        if (ecSchema->OriginalECXmlVersionLessThan(ECVersion::V3_1) && !ECSchemaConverter::Convert(*ecSchema))
             {
             GetLogger().fatalv("Failed to convert schema %s to EC3.1.  Unable to continue.", schemaName);
             return ERROR;
+            }
+        
+        if (ecSchema->GetName().EqualsIAscii("jclass"))
+            {
+            ECClassP acadProps = ecSchema->GetClassP("ACAD_PROPERTIES");
+            if (nullptr != acadProps)
+                {
+                acadProps->SetClassModifier(ECClassModifier::Abstract);
+
+                IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("IsMixin");
+                if (!mixinInstance.IsValid())
+                    {
+                    GetLogger().errorv("Unable to create mixin custom attribute for jclass:ACAD_PROPERTIES");
+                    return ERROR;
+                    }
+                auto& coreCA = mixinInstance->GetClass().GetSchema();
+                if (!ECSchema::IsSchemaReferenced(*ecSchema, coreCA))
+                    ecSchema->AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
+
+                ECValue appliesToClass("jclass:JSPACE_OBJECT");
+                mixinInstance->SetValue("AppliesToEntityClass", appliesToClass);
+
+                if (ECObjectsStatus::Success != acadProps->SetCustomAttribute(*mixinInstance))
+                    {
+                    GetLogger().errorv("Unable to set mixin custom attribute on jclass:ACAD_PROPERTIES");
+                    return ERROR;
+                    }
+                }
+            for (ECClassCP ecClass : ecSchema->GetClasses())
+                {
+                for (ECClassCP base : ecClass->GetBaseClasses())
+                    {
+                    if (!base->GetName().EqualsIAscii("ACAD_PROPERTIES"))
+                        continue;
+                    // Need to ensure that the mixin baseclass is at the end of the list of baseclasses
+                    ECClassP nonConstClass = ecSchema->GetClassP(ecClass->GetName().c_str());
+                    nonConstClass->RemoveBaseClass(*base);
+                    nonConstClass->AddBaseClass(*base);
+                    }
+                }
             }
         if (SUCCESS != ImportSchema(ecSchema.get()))
             {
@@ -1188,7 +1479,7 @@ BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& groups)
         DgnElementId mappedGroup = GetSyncInfo()->LookupElement(DgnElementId(group["GroupId"].asUInt64()));
         if (!mappedGroup.IsValid())
             {
-            Utf8PrintfString error("Failed to map GroupId element id %" PRIu64 "%.", group["GroupId"].asUInt64());
+            Utf8PrintfString error("Failed to map GroupId element id %" PRIu64 ".", group["GroupId"].asUInt64());
             GetLogger().warning(error.c_str());
             continue;
             }
@@ -1196,21 +1487,21 @@ BentleyStatus ElementGroupsMembersReader::_Read(Json::Value& groups)
         GenericGroupPtr groupElement = GetDgnDb()->Elements().GetForEdit<GenericGroup>(mappedGroup);
         if (!groupElement.IsValid())
             {
-            Utf8PrintfString error("Unable to get GroupInformationElement(%" PRIu64 "%).\n%s", mappedGroup.GetValue(), mappedGroup.ToString().c_str());
+            Utf8PrintfString error("Unable to get GroupInformationElement(%" PRIu64 ").\n%s", mappedGroup.GetValue(), mappedGroup.ToString().c_str());
             GetLogger().warning(error.c_str());
             continue;
             }
         DgnElementId mappedMember = GetSyncInfo()->LookupElement(DgnElementId(group["MemberId"].asUInt64()));
         if (!mappedMember.IsValid())
             {
-            Utf8PrintfString error("Failed to map MemberId element id %" PRIu64 "%.", group["MemberId"].asUInt64());
+            Utf8PrintfString error("Failed to map MemberId element id %" PRIu64 ".", group["MemberId"].asUInt64());
             GetLogger().warning(error.c_str());
             continue;
             }
         DgnElementPtr member = GetDgnDb()->Elements().GetForEdit<DgnElement>(mappedMember);
         if (!member.IsValid())
             {
-            Utf8PrintfString error("Unable to get member DgnElement(%" PRIu64 "%).\n%s", mappedGroup.GetValue(), mappedGroup.ToString().c_str());
+            Utf8PrintfString error("Unable to get member DgnElement(%" PRIu64 ").\n%s", mappedGroup.GetValue(), mappedGroup.ToString().c_str());
             GetLogger().warning(error.c_str());
             continue;
             }
@@ -1230,16 +1521,7 @@ BentleyStatus ElementRefersToElementReader::_Read(Json::Value& relationships)
     {
     if (!relationships.isArray())
         {
-        GetLogger().error("ElementRefersToElement value should be an array");
-        return ERROR;
-        }
-
-    Utf8CP ecsql  = "SELECT ECClassId from bis_Element WHERE Id=?";
-    CachedStatementPtr classLookup = nullptr;
-    auto stat = GetDgnDb()->GetCachedStatement(classLookup, ecsql);
-    if (stat != BE_SQLITE_OK)
-        {
-        BeAssert(false && "Could not retrieve cached statement.");
+        GetLogger().error("ElementRefersToElement value should be an array.\n");
         return ERROR;
         }
 
@@ -1251,7 +1533,7 @@ BentleyStatus ElementRefersToElementReader::_Read(Json::Value& relationships)
         DgnElementId mappedSource = GetSyncInfo()->LookupElement(DgnElementId(member["SourceId"].asUInt64()));
         if (!mappedSource.IsValid())
             {
-            Utf8PrintfString error("Failed to map source instance id %" PRIu64 "% for ECRelationship %s.", member["SourceId"].asUInt64(), relName.c_str());
+            Utf8PrintfString error("Failed to map source instance id %" PRIu64 " for ECRelationship '%s'.", member["SourceId"].asUInt64(), relName.c_str());
             GetLogger().warning(error.c_str());
             continue;
             }
@@ -1259,7 +1541,7 @@ BentleyStatus ElementRefersToElementReader::_Read(Json::Value& relationships)
         DgnElementId mappedTarget = GetSyncInfo()->LookupElement(DgnElementId(member["TargetId"].asUInt64()));
         if (!mappedTarget.IsValid())
             {
-            Utf8PrintfString error("Failed to map target instance id %" PRIu64 "% for ECRelationship %s.", member["TargetId"].asUInt64(), relName.c_str());
+            Utf8PrintfString error("Failed to map target instance id %" PRIu64 " for ECRelationship %s.\n", member["TargetId"].asUInt64(), relName.c_str());
             GetLogger().warning(error.c_str());
             continue;
             }
@@ -1272,4 +1554,44 @@ BentleyStatus ElementRefersToElementReader::_Read(Json::Value& relationships)
     return SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            05/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+BentleyStatus ElementHasLinksReader::_Read(Json::Value& hasLinks)
+    {
+    if (!hasLinks.isArray())
+        {
+        GetLogger().error("ElementHasLinks value should be an array.\n");
+        return ERROR;
+        }
+
+    for (Json::Value::iterator iter = hasLinks.begin(); iter != hasLinks.end(); iter++)
+        {
+        Json::Value& link = *iter;
+        DgnElementId mappedSource = GetSyncInfo()->LookupElement(DgnElementId(link["ElementId"].asUInt64()));
+        if (!mappedSource.IsValid())
+            {
+            Utf8PrintfString error("Failed to map ElementId for ElementHasLinks relationship %" PRIu64 ".", link["ElementId"].asUInt64());
+            GetLogger().warning(error.c_str());
+            continue;
+            }
+
+        DgnElementId mappedLink = GetSyncInfo()->LookupElement(DgnElementId(link["LinkId"].asUInt64()));
+        if (!mappedLink.IsValid())
+            {
+            Utf8PrintfString error("Failed to map LinkId for ElementHasLinks relationship%" PRIu64 ".", link["LinkId"].asUInt64());
+            GetLogger().warning(error.c_str());
+            continue;
+            }
+        LinkElementPtr linkElement = GetDgnDb()->Elements().GetForEdit<LinkElement>(mappedLink);
+        if (!linkElement.IsValid())
+            {
+            Utf8PrintfString error("Unable to get LinkElement DgnElement(%" PRIu64 ").\n", linkElement->GetElementId().GetValue());
+            GetLogger().warning(error.c_str());
+            continue;
+            }
+        linkElement->AddToSource(mappedSource);
+        }
+    return SUCCESS;
+    }
 END_BIM_TELEPORTER_NAMESPACE

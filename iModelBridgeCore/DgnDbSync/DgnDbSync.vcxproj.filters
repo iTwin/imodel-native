@@ -127,6 +127,9 @@
     <ClCompile Include="DgnV8\DgnV8Tags.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>
+    <ClCompile Include="DgnV8\ScalableMeshConversion.cpp">
+      <Filter>DgnV8</Filter>
+    </ClCompile>
     <ClCompile Include="DgnV8\ECDiff.cpp">
       <Filter>DgnV8</Filter>
     </ClCompile>

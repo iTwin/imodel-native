@@ -331,10 +331,181 @@ BentleyStatus BisClassConverter::ConvertECClass(SchemaConversionContext& context
             return BSIERROR;
         }
 
+	BECN::ECSchemaR targetSchema = inputClass->GetSchemaR();
+	if (ShouldConvertECClassToMixin(targetSchema, *inputClass, context))
+		{
+		ECClassP appliesTo;
+		if (BSISUCCESS == FindAppliesToClass(appliesTo, context, targetSchema, *inputClass))
+			ConvertECClassToMixin(targetSchema, *inputClass, *appliesTo);
+		}
+
     return BSISUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Simi.Hartstein      04/2017
+//---------------------------------------------------------------------------------------
+//static
+bool BisClassConverter::ShouldConvertECClassToMixin(BECN::ECSchemaR targetSchema, BECN::ECClassR inputClass, SchemaConversionContext& context)
+	{
+	if (inputClass.GetClassModifier() != ECClassModifier::Abstract)
+		return false;
 
+	SchemaConversionContext::MixinContext* mixinContext = context.GetMixinContext(targetSchema);
+	if (mixinContext == nullptr)
+		return false;
+
+	BECN::ECClassCP baseInterface = mixinContext->first;
+	BECN::ECClassCP baseObject = mixinContext->second;
+	if (baseInterface == nullptr || baseObject == nullptr)
+		return false;
+
+	// check base class
+	for (auto baseClass : inputClass.GetBaseClasses())
+		{
+		if (baseClass->GetSchemaR().GetName().EqualsI(BIS_ECSCHEMA_NAME))
+			continue;
+		if (baseClass->IsEntityClass())
+			{
+			auto baseEntityClass = baseClass->GetEntityClassP();
+			if (!baseEntityClass->IsMixin() && !ShouldConvertECClassToMixin(baseEntityClass->GetSchemaR(), *baseEntityClass, context))
+				return false;
+			}
+		else
+			return false;
+		}
+
+	if (!inputClass.Is(baseInterface) || inputClass.Is(baseObject))
+		return false;
+
+	return true;
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Simi.Hartstein      04/2017
+//---------------------------------------------------------------------------------------
+//static
+void BisClassConverter::FindCommonBaseClass(ECClassP &commonClass, ECClassP currentClass, ECBaseClassesList const& classes, const bvector<ECClassCP> propogationFilter)
+	{
+	ECClassP tempCommonClass = currentClass;
+	for (const auto &secondConstraint : classes)
+		{
+		ECClassCP secondClass = secondConstraint;
+		if (secondClass->Is(tempCommonClass))
+			continue;
+
+		for (const auto baseClass : tempCommonClass->GetBaseClasses())
+			{
+			bool shouldPropogate = false;
+			for (const auto filterClass : propogationFilter)
+				{
+				if (baseClass->Is(filterClass))
+					{
+					shouldPropogate = true;
+					break;
+					}
+				}
+			if (!shouldPropogate)
+				continue;
+			
+			FindCommonBaseClass(commonClass, baseClass->GetEntityClassP(), classes, propogationFilter);
+			if (commonClass != nullptr)
+				return;
+			}
+
+		tempCommonClass = nullptr;
+		break;
+		}
+
+	if (nullptr != tempCommonClass)
+		commonClass = tempCommonClass;
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Simi.Hartstein      04/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus BisClassConverter::FindAppliesToClass(BECN::ECClassP& appliesTo, SchemaConversionContext& context, BECN::ECSchemaR targetSchema, BECN::ECClassR mixinClass)
+	{
+	auto appliesToMap = context.GetMixinAppliesToMapping();
+	if (appliesToMap.find(mixinClass.GetEntityClassCP()) != appliesToMap.end())
+		{
+		appliesTo = appliesToMap[mixinClass.GetEntityClassP()];
+		return BSISUCCESS;
+		}
+
+	SchemaConversionContext::MixinContext* mixinContext = context.GetMixinContext(targetSchema);
+	if (nullptr == mixinContext)
+		return BSIERROR;
+
+	BECN::ECClassCP baseObject = mixinContext->second;
+	if (baseObject == nullptr)
+		return BSIERROR;
+
+	bvector<ECClassCP> propogationFilter;
+	propogationFilter.push_back(baseObject);
+
+	BECN::ECDerivedClassesList derivedClasses = mixinClass.GetDerivedClasses();
+	BECN::ECDerivedClassesList searchClasses;
+	for (auto derived : derivedClasses)
+		{
+		BECN::ECClassP derivedAppliesTo;
+		// if concrete class
+		if (derived->Is(baseObject))
+			searchClasses.push_back(derived);
+		else if (BSISUCCESS == FindAppliesToClass(derivedAppliesTo, context, derived->GetSchemaR(), *derived))
+			searchClasses.push_back(derivedAppliesTo);
+		else
+			return BSIERROR;
+		}
+		
+	if (searchClasses.empty())
+		appliesTo = targetSchema.GetClassP(baseObject->GetName().c_str());
+	else
+		FindCommonBaseClass(appliesTo, searchClasses.front(), searchClasses, propogationFilter);
+	
+	if (appliesTo == nullptr)
+		return BSIERROR;
+	
+	return context.AddMixinAppliesToMapping(mixinClass.GetEntityClassCP(), appliesTo);
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Simi.Hartstein      04/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus BisClassConverter::ConvertECClassToMixin(BECN::ECSchemaR targetSchema, BECN::ECClassR inputClass, BECN::ECClassCR appliesTo)
+	{
+	if (ECClassModifier::Abstract != inputClass.GetClassModifier())
+		return BSIERROR;
+
+	IECInstancePtr mixinInstance = CoreCustomAttributeHelper::CreateCustomAttributeInstance("IsMixin");
+	if (!mixinInstance.IsValid())
+		return BSIERROR;
+
+	auto& coreCA = mixinInstance->GetClass().GetSchema();
+	if (!BECN::ECSchema::IsSchemaReferenced(targetSchema, coreCA))
+		targetSchema.AddReferencedSchema(const_cast<ECSchemaR>(coreCA));
+	ECValue appliesToClass(BECN::ECClass::GetQualifiedClassName(targetSchema, appliesTo).c_str());
+	
+	BECN::ECObjectsStatus status;
+	
+	status = mixinInstance->SetValue("AppliesToEntityClass", appliesToClass);
+	if (BECN::ECObjectsStatus::Success != status)
+		return BSIERROR;
+
+	status = inputClass.SetCustomAttribute(*mixinInstance);
+	if (BECN::ECObjectsStatus::Success != status)
+		return BSIERROR;
+
+	for (auto baseClass : inputClass.GetBaseClasses())
+		{
+		if (baseClass->GetSchemaR().GetName().EqualsI(BIS_ECSCHEMA_NAME))
+			inputClass.RemoveBaseClass(*baseClass);
+		}
+
+	return BSISUCCESS;
+	}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
@@ -364,8 +535,8 @@ BentleyStatus BisClassConverter::DoConvertECClass(SchemaConversionContext& conte
     BECN::ECClassP elementAspectClass = &inputClass;
     if (bisConversionRule != BisConversionRule::ToAspectOnly)
         {
-        //Original v8 ECClass becomes Element subclass
-        AddBaseClass(inputClass, *elementBisBaseClass);
+		//Original v8 ECClass becomes Element subclass
+		AddBaseClass(inputClass, *elementBisBaseClass);
         }
     bool toAspect = bisConversionRule == BisConversionRule::ToAspectOnly || hasSecondary;
 
@@ -850,25 +1021,92 @@ BentleyStatus BisClassConverter::ValidateClassProperties(SchemaConversionContext
     return BSISUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Simi.Hartstein      06/2017
+//---------------------------------------------------------------------------------------
+//static
+BentleyStatus BisClassConverter::CreateMixinContext(SchemaConversionContext::MixinContext& mixinContext, Converter& converter, ECSchemaReadContext& syncReadContext, ECSchemaP schema, bool autoDetect)
+	{
+	// autodetect SmartPlant schema
+	if (autoDetect && schema->GetName().StartsWithI("SP3D"))
+		{
+		ECClassCP baseInterface = schema->GetClassCP("BaseInterface");
+		ECClassCP baseObject = schema->GetClassCP("BaseObject");
+		if (baseInterface != nullptr && baseObject != nullptr)
+			{
+			mixinContext = SchemaConversionContext::MixinContext(baseInterface, baseObject);
+			return BSISUCCESS;
+			}
+		}
+
+	ECN::SchemaKey conversionKey(Utf8String(schema->GetName()).append("_DgnDbSync").c_str(), 1, 0);
+	ECN::ECSchemaPtr conversionSchema = syncReadContext.LocateSchema(conversionKey, ECN::SchemaMatchType::Latest);
+	if (conversionSchema == nullptr)
+		return BSIERROR;
+
+	ECN::IECInstancePtr mixinAttr = conversionSchema->GetCustomAttribute("DgnDbSyncV8", "MixinConversionContext");
+	if (mixinAttr == nullptr)
+		return BSIERROR;
+
+	auto reportMixinContextError = [](Utf8CP action, Utf8CP propVal, ECSchemaPtr schema, Converter& converter)
+		{
+		Utf8String error;
+		error.Sprintf("Could not %s '%s' specified in mixin context of ECSchema '%s'", action, propVal, schema->GetFullSchemaName());
+		converter.ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
+		return BSIERROR;
+		};
+
+	ECN::ECValue baseInterfaceValue, baseObjectValue;
+	ECN::ECObjectsStatus status = mixinAttr->GetValue(baseInterfaceValue, "BaseInterfaceClassName");
+	if (ECN::ECObjectsStatus::Success != status)
+		return reportMixinContextError("get value of property", "BaseInterfaceClassName", conversionSchema, converter);
+
+	status = mixinAttr->GetValue(baseObjectValue, "BaseObjectClassName");
+	if (ECN::ECObjectsStatus::Success != status)
+		return reportMixinContextError("get value of property", "BaseObjectClassName", conversionSchema, converter);
+
+	Utf8String alias, className;
+	status = ECClass::ParseClassName(alias, className, baseInterfaceValue.GetUtf8CP());
+	ECSchemaCP targetSchema = alias.empty() ? schema : schema->GetSchemaByAliasP(alias);
+	if (ECObjectsStatus::Success != status || nullptr == targetSchema)
+		return reportMixinContextError("find BaseInterface class", baseInterfaceValue.GetUtf8CP(), conversionSchema, converter);
+
+	BECN::ECClassCP baseInterface = targetSchema->GetClassCP(className.c_str());
+	if (nullptr == baseInterface)
+		return reportMixinContextError("find BaseInterface class", baseInterfaceValue.GetUtf8CP(), conversionSchema, converter);
+
+	status = ECClass::ParseClassName(alias, className, baseObjectValue.GetUtf8CP());
+	targetSchema = alias.empty() ? schema : schema->GetSchemaByAliasP(alias);
+	if (ECObjectsStatus::Success != status || nullptr == targetSchema)
+		return reportMixinContextError("find BaseObject class", baseObjectValue.GetUtf8CP(), conversionSchema, converter);
+
+	ECClassCP baseObject = targetSchema->GetClassCP(className.c_str());
+	if (nullptr == baseObject)
+		return reportMixinContextError("find BaseObject class", baseObjectValue.GetUtf8CP(), conversionSchema, converter);
+
+	mixinContext = SchemaConversionContext::MixinContext(baseInterface, baseObject);
+	return BSISUCCESS;
+	}
+
 //****************************************************************************************
 // ElementConverter::SchemaConversionContext
 //****************************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     03/2015
 //---------------------------------------------------------------------------------------
-BisClassConverter::SchemaConversionContext::SchemaConversionContext(Converter& converter, BECN::ECSchemaReadContext& readContext)
+BisClassConverter::SchemaConversionContext::SchemaConversionContext(Converter& converter, BECN::ECSchemaReadContext& schemaReadContext, BECN::ECSchemaReadContext& syncReadContext, bool autoDetectMixinParams)
     : m_converter(converter), m_domainRelationshipBaseClass(nullptr), m_defaultConstraintClass(nullptr)
     {
     //need a schema map keyed on name only. SchemaCache doesn't support that
     bvector<BECN::ECSchemaP> schemaCache;
-    readContext.GetCache().GetSchemas(schemaCache);
+    schemaReadContext.GetCache().GetSchemas(schemaCache);
 
     for (auto schema : schemaCache)
         m_inputSchemaMap[Utf8String(schema->GetName())] = schema;
 
 
     BECN::SchemaKey dgnSchemaKey(BIS_ECSCHEMA_NAME, 1, 0);
-    BECN::ECSchemaPtr dgnSchema = readContext.LocateSchema(dgnSchemaKey, BECN::SchemaMatchType::Latest);
+    BECN::ECSchemaPtr dgnSchema = schemaReadContext.LocateSchema(dgnSchemaKey, BECN::SchemaMatchType::Latest);
     if (dgnSchema == nullptr)
         {
         BeAssert(false && "Locating Dgn ECSchema failed");
@@ -881,7 +1119,7 @@ BisClassConverter::SchemaConversionContext::SchemaConversionContext(Converter& c
         }
 
     BECN::SchemaKey genericSchemaKey(GENERIC_DOMAIN_NAME, 1, 0);
-    BECN::ECSchemaPtr genericSchema = readContext.LocateSchema(genericSchemaKey, BECN::SchemaMatchType::Latest);
+    BECN::ECSchemaPtr genericSchema = schemaReadContext.LocateSchema(genericSchemaKey, BECN::SchemaMatchType::Latest);
     if (genericSchema == nullptr)
         {
         BeAssert(false && "Locating GenericDomain ECSchema failed");
@@ -894,7 +1132,7 @@ BisClassConverter::SchemaConversionContext::SchemaConversionContext(Converter& c
         }
 
     BECN::SchemaKey functionalSchemaKey(FUNCTIONAL_DOMAIN_NAME, 1, 0);
-    BECN::ECSchemaPtr functionalSchema = readContext.LocateSchema(functionalSchemaKey, BECN::SchemaMatchType::Latest);
+    BECN::ECSchemaPtr functionalSchema = schemaReadContext.LocateSchema(functionalSchemaKey, BECN::SchemaMatchType::Latest);
     if (functionalSchema == nullptr)
         {
         BeAssert(false && "Locating FunctionalDomain ECSchema failed");
@@ -905,6 +1143,20 @@ BisClassConverter::SchemaConversionContext::SchemaConversionContext(Converter& c
         //read context is owner of the schema, so just return raw pointer
         m_baseSchemaCache[FUNCTIONAL_DOMAIN_NAME] = functionalSchema.get();
         }
+
+	auto reportMixinContextError = [](Utf8CP action, Utf8CP propVal, ECSchemaPtr schema, Converter& converter)
+		{
+		Utf8String error;
+		error.Sprintf("Could not %s '%s' specified in mixin context of ECSchema '%s'", action, propVal, schema->GetFullSchemaName());
+		converter.ReportIssue(Converter::IssueSeverity::Error, Converter::IssueCategory::Sync(), Converter::Issue::Error(), error.c_str());
+		};
+
+	for (auto schema : schemaCache)
+		{
+		MixinContext mixinContext;
+		if (BSISUCCESS == CreateMixinContext(mixinContext, converter, syncReadContext, schema, autoDetectMixinParams))
+			m_mixinContextCache[schema] = mixinContext;
+		}
     }
 
 //---------------------------------------------------------------------------------------
@@ -984,10 +1236,20 @@ BECN::ECRelationshipClassCP BisClassConverter::SchemaConversionContext::GetDomai
         }
 
     ECClassCP abstractConstraint = inputClass.GetTarget().GetAbstractConstraint();
-    if (nullptr == abstractConstraint || abstractConstraint->Is(GetDefaultConstraintClass()))
+    if (nullptr == abstractConstraint || abstractConstraint->Is(GetDefaultConstraintClass()) || 
+		abstractConstraint->IsEntityClass() && abstractConstraint->GetEntityClassCP()->IsMixin())
         return m_domainRelationshipBaseClass;
     return m_aspectRelationshipBaseClass;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Simi.Hartstein      05/2017
+//---------------------------------------------------------------------------------------
+BisClassConverter::SchemaConversionContext::MixinContext* BisClassConverter::SchemaConversionContext::GetMixinContext(BECN::ECSchemaCR schema)
+	{
+	auto indexIt = m_mixinContextCache.find(&schema);
+	return (indexIt == m_mixinContextCache.end() ? nullptr : &(indexIt->second));
+	}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     04/2015
@@ -1004,6 +1266,26 @@ BentleyStatus BisClassConverter::SchemaConversionContext::AddClassMapping(BECN::
 
     return BSISUCCESS;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Simi.Hartstein      04/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus BisClassConverter::SchemaConversionContext::AddMixinAppliesToMapping(BECN::ECClassCP mixinClass, BECN::ECClassP appliesToClass)
+	{
+	BeAssert(m_mixinAppliesToMap.find(mixinClass) == m_mixinAppliesToMap.end());
+	m_mixinAppliesToMap.Insert(mixinClass, appliesToClass);
+	return BSISUCCESS;
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                 Simi.Hartstein      05/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus BisClassConverter::SchemaConversionContext::AddMixinContextMapping(BECN::ECSchemaCP schema, BisClassConverter::SchemaConversionContext::MixinContext context)
+	{
+	BeAssert(m_mixinContextCache.find(schema) == m_mixinContextCache.end());
+	m_mixinContextCache.Insert(schema, context);
+	return BSISUCCESS;
+	}
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                 Krischan.Eberle     04/2015

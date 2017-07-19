@@ -264,7 +264,7 @@ BentleyStatus   DwgImporter::_ImportLayerSection ()
             continue;
             }
 
-        if (this->_IsUpdating())
+        if (this->IsUpdating())
             {
             DgnCategoryId   categoryId = m_syncInfo.FindCategory (layer->GetObjectId(), dwgfileId);
             if (categoryId.IsValid())

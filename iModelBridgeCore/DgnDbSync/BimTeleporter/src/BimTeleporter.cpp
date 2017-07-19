@@ -17,8 +17,10 @@
 #include <BimTeleporter/BimTeleporter.h>
 #include "BimTeleporterInternal.h"
 
+#include <folly/futures/Future.h>
 #include <folly/ProducerConsumerQueue.h>
 #include <Bentley/BeThread.h>
+#include <folly/BeFolly.h>
 
 USING_NAMESPACE_BENTLEY_LOGGING
 USING_NAMESPACE_BENTLEY
@@ -220,6 +222,13 @@ Usage: %ls -i|--input= -o|--output= \
     return 1;
     }
 
+folly::Future<bool> BimTeleporter::ExportDgnDb(BisJson1Exporter0601* exporter)
+    {
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=] ()
+        {
+        return exporter->ExportDgnDb();
+        });
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            07/2016
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -272,8 +281,8 @@ int BimTeleporter::Run(int argc, WCharCP argv[])
 
     StopWatch totalTimer(true);
     std::thread consumer([&importer] { importer.CreateBim(); });
-    std::thread producer([&exporter] { exporter.ExportDgnDb(); });
-    producer.join();
+    auto future = ExportDgnDb(&exporter);
+    bool stat = future.get();
     importer.SetDone();
     consumer.join();
     totalTimer.Stop();

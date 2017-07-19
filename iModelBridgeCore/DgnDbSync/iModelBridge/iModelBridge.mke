@@ -35,12 +35,6 @@ $(o)iModelBridgeSyncInfoFile$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFile.c
 
 $(o)iModelBridgeSyncInfoFileChangeDetector$(oext) : $(_MakeFilePath)iModelBridgeSyncInfoFileChangeDetector.cpp $(iModelBridgeAPISrc)iModelBridge.h $(iModelBridgeAPISrc)iModelBridgeSyncInfoFile.h ${MultiCompileDepends}
 
-$(o)iModelBridgeFwk$(oext): $(_MakeFilePath)iModelBridgeFwk.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h ${MultiCompileDepends}
-
-$(o)Briefcase$(oext): $(_MakeFilePath)Briefcase.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h $(_MakeFilePath)DgnDbServerClientUtils.h ${MultiCompileDepends}
-
-$(o)DgnDbServerClientUtils$(oext): $(_MakeFilePath)DgnDbServerClientUtils.cpp $(BuildContext)PublicApi/WebServices/iModelHub/Client/ClientHelper.h $(_MakeFilePath)DgnDbServerClientUtils.h ${MultiCompileDepends}
-
 %include MultiCppCompileGo.mki
 
 #--------------------------------------------------------------------------------------
@@ -58,7 +52,7 @@ DLM_CREATE_LIB_CONTEXT_LINK = 1
 
 LINKER_LIBRARIES            = $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeXml$(libext)
-LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeLibXml2$(libext)
+LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)ECObjects$(libext)
@@ -68,9 +62,5 @@ LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BaseGeoCoord$(li
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
 LINKER_LIBRARIES            + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
-LINKER_LIBRARIeS            + $(ContextSubpartsLibs)$(libprefix)WebServicesClient$(stlibext)
-LINKER_LIBRARIeS            + $(ContextSubpartsLibs)$(libprefix)BeHttp$(stlibext)
-LINKER_LIBRARIeS            + $(ContextSubpartsLibs)$(libprefix)DgnClientFx$(stlibext)
-LINKER_LIBRARIeS            + $(ContextSubpartsLibs)$(libprefix)iModelHubClient$(stlibext)
 
 %include $(sharedMki)linkLibrary.mki

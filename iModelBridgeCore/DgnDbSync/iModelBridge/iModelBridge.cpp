@@ -7,12 +7,16 @@
 +--------------------------------------------------------------------------------------*/
 #include <iModelBridge/iModelBridge.h>
 #include <DgnPlatform/DgnGeoCoord.h>
+#include <BeSQLite/L10N.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_LOGGING
+USING_NAMESPACE_BENTLEY_SQLITE
 
 #undef LOG
 #define LOG (*LoggingManager::GetLogger(L"iModelBridge"))
+
+static L10NLookup* s_bridgeL10NLookup = NULL;
 
 // Helper class to ensure that bridge book mark functions are called
 struct CallBookmarkFunctions
@@ -65,6 +69,9 @@ static void queryAllModels(bvector<DgnModelId>& models, DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr iModelBridge::DoCreateDgnDb(bvector<DgnModelId>& jobModels, Utf8CP rootSubjectDescription)
     {
+    BeAssert(!_GetParams().GetInputFileName().empty());
+    BeAssert(!_GetParams().GetBriefcaseName().empty());
+
     CreateDgnDbParams createProjectParams;
     if (nullptr != rootSubjectDescription)
         createProjectParams.SetRootSubjectDescription(rootSubjectDescription);
@@ -169,6 +176,8 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db)
     {
+    BeAssert(!_GetParams().GetInputFileName().empty());
+
     _GetParams().SetIsCreatingNewDgnDb(false);
     _GetParams().SetIsUpdating(true);
 
@@ -412,4 +421,45 @@ BentleyStatus iModelBridge::Params::Validate()
         }
 
     return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson              07/17
+//---------------------------------------------------------------------------------------
+BentleyStatus iModelBridge::L10N::Initialize(BeSQLite::L10N::SqlangFiles const & bridgeSqlangFiles)
+    {
+    if (NULL != s_bridgeL10NLookup)
+        {
+        // should only call initialize once
+        BeAssert(false);
+        return BSISUCCESS;
+        }
+
+    if (!bridgeSqlangFiles.m_default.DoesPathExist())
+        {
+        // invalid last resort sqlang database
+        BeAssert(false);
+        return BSIERROR;
+        }
+
+    s_bridgeL10NLookup = new L10NLookup(bridgeSqlangFiles);
+    return BSISUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Sam.Wilson              07/17
+//---------------------------------------------------------------------------------------
+Utf8String iModelBridge::L10N::GetString(BeSQLite::L10N::NameSpace scope, BeSQLite::L10N::StringId name)
+    {
+    bool hasString = false;
+
+    if (NULL != s_bridgeL10NLookup)
+        {
+        Utf8String appString = s_bridgeL10NLookup->GetString(scope, name, &hasString);
+        if (!appString.empty() || hasString)
+            return appString;
+        }
+
+    // no bridge string found, search platform strings
+    return BeSQLite::L10N::GetString(scope, name, &hasString);
     }

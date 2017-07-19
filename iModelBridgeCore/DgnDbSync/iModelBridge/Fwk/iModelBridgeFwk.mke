@@ -21,9 +21,9 @@ iModelBridgeAPISrc     = $(SrcRoot)DgnDbSync/PublicAPI/iModelBridge/
 DLM_NAME        =% $(appName)
 CCompPDBName    =% $(appName)
 
-$(o)iModelBridgeFwkMain.obj: $(baseDir)iModelBridgeFwkMain.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h
+$(o)iModelBridgeFwkMain$(oext): $(baseDir)iModelBridgeFwkMain.cpp $(iModelBridgeAPISrc)iModelBridgeFwk.h
 
-objs = $(o)iModelBridgeFwkMain.obj
+objs = $(o)iModelBridgeFwkMain$(oext)
 
 #----------------------------------------------------------------------
 #   Link the executable
@@ -32,27 +32,32 @@ objs = $(o)iModelBridgeFwkMain.obj
 EXE_DEST     = $(o)
 EXE_NAME     = $(appname)
 EXE_OBJS     = $(objs)
-EXE_LOPT1    = -entry:wmainCRTStartup
 EXE_TMP_DIR  = $(o)
+EXE_CONTEXT_LOCATION = $(BuildContext)Delivery/exe/
 
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeHttp.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)Bentley.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)BeSQLite.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)DgnPlatform.lib
-LINKER_LIBRARIeS  + $(ContextSubpartsLibs)iModelHubClient.lib
-LINKER_LIBRARIeS  + $(ContextSubpartsLibs)iModelBridge.lib
-LINKER_LIBRARIeS  + $(ContextSubpartsLibs)BeJsonCpp.lib
-LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnView$(libext)
+%ifdef __unix
+
+%include $(SharedMki)rollUpSubPartsLibsThin.mki
+EXE_OBJS + $(THIN_ARCHIVE_PATH)
+
+%else
+
+EXE_LOPT1    = -entry:wmainCRTStartup
+
+EXE_OBJS  + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)iModelBridgeFwkLib$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)Bentley$(libext)
+%endif
 
 %include $(sharedMki)linktool.mki
 
+######### iModelBridgeGetAffinityHost.exe ############
+
 always:
-    ~linkfile "$(BuildContext)Delivery/$(appname)$(exeext)=$(o)$(appname)$(exeext)"
+    $(_bmake) $(baseDir)iModelBridgeGetAffinityHost.mke
 
-$(BuildContext)Delivery/$(appname)/iModelBridgeFwk.logging.config.xml : $(baseDir)logging.config.xml
-    $(LinkFirstDepToFirstTarget)
+######### iModelBridgeAssign.exe ############
 
-SQLANG_OutputDb     = $(o)iModelBridgeFwk_en-US.sqlang.db3
-SQLANG_DeliveryDir  = $(BuildContext)Delivery/
-SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
-%include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke
+always:
+    $(_bmake) $(baseDir)iModelBridgeAssignMain.mke

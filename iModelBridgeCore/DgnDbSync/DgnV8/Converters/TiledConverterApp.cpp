@@ -34,6 +34,7 @@ private:
     Dgn::SubjectCPtr _FindJob() override;
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
+    void _OnSourceFileDeleted() override;
 
 public:
     TiledConverterApp() {}
@@ -70,7 +71,7 @@ iModelBridge::CmdLineArgStatus TiledConverterApp::_ParseCommandLineArg(int iArg,
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TiledConverterApp::_Initialize(int argc, WCharCP argv[])
     {
-    m_params.SetRootFileName(_GetParams().GetInputFileName());
+    m_params.SetInputFileName(_GetParams().GetInputFileName());
     return T_Super::_Initialize(argc, argv);
     }
 
@@ -133,6 +134,14 @@ SubjectCPtr TiledConverterApp::_InitializeJob()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TiledConverterApp::_OnSourceFileDeleted()
+    {
+    m_converter->_OnSourceFileDeleted();
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus TiledConverterApp::_ConvertToBim(Dgn::SubjectCR jobSubject)
@@ -176,10 +185,21 @@ int wmain (int argc, wchar_t const* argv[])
     return app.Run(argc, argv);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-extern "C" EXPORT_ATTRIBUTE iModelBridge* iModelBridge_getInstance()
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
+iModelBridge* iModelBridge_getInstance(wchar_t const* bridgeName)
     {
+    BeAssert(0 == BentleyApi::BeStringUtilities::Wcsicmp(bridgeName, L"TiledDgnV8Bridge"));
     return new TiledConverterApp;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void iModelBridge_getAffinity(iModelBridge::BridgeAffinity& bridgeAffinity, BentleyApi::BeFileName const& thisLibraryPath, BentleyApi::BeFileName const& sourceFileName)
+    {
+    // I cannot tell if a given V8 file is part of a tiled file set or not. So, I cannot report any affinity to V8 files.
+    // The bridge fwk must some other means, perhaps direct user input, to determine when to use a tiled file bridge instead of a root model bridge.
+    bridgeAffinity.m_affinity = BentleyApi::Dgn::iModelBridge::Affinity::None;
     }

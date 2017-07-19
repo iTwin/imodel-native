@@ -53,5 +53,6 @@
         <OptionBool name="SkyBox" value="true"/>                    <!-- if true, add skybox to spatial views -->
         <OptionBool name="GroundPlane" value="true"/>               <!-- if true, add ground plane to spatial views -->
         <OptionDouble name="ThumbnailTimeout" value="30"/>          <!-- number of seconds to wait for each thumbnail to be generated -->
+        <OptionBool name="AutoDetectMixinParams" value="true"/>     <!-- if true, schemas will be automatically searched for mixin conversion parameters -->
     </Options>
 </ImportConfig>

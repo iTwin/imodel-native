@@ -85,118 +85,29 @@ static bool isImodelExt(BeFileNameCR fn)
     return ext.EqualsI(iModelBridgeSacAdapter::std_CompressedDgnDbExt());
     }
 
-#ifdef _WIN32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName iModelBridgeSacAdapter::GetExecutablePath(WCharCP argv0)
+void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge)
     {
-    HMODULE hModule = ::GetModuleHandleW(argv0);
-    wchar_t moduleFileName[MAX_PATH];
-    ::GetModuleFileNameW(hModule, moduleFileName, _countof(moduleFileName));
-    return BeFileName(moduleFileName);
-    }
-#elif defined(__linux)
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName iModelBridgeSacAdapter::GetExecutablePath(WCharCP argv0)
-    {
-    Utf8PrintfString exelink("/proc/%ld/exe", getpid());
+    BeFileName fwkAssets = Desktop::FileSystem::GetExecutableDir();
+    fwkAssets.AppendToPath(L"Assets");
 
-    char exepath[PATH_MAX + 1] = {0};
+    BeFileName fwkDb3 = fwkAssets;
+    fwkDb3.AppendToPath(L"sqlang");
+    fwkDb3.AppendToPath(L"iModelBridgeFwk_en-US.sqlang.db3");
 
-    ssize_t linklen = readlink(exelink.c_str(), exepath, _countof(exepath)-1);
-
-    if( linklen >= 0 )
-        exepath[linklen] = '\0';
-    else
-        exepath[0] = '\0';
-
-    return BeFileName(exepath, BentleyCharEncoding::Utf8);
-    }
-#else
-
-// *** NEEDS WORK: do something like this for MacOS. See "whereami.c"
-/*
-WAI_FUNCSPEC
-int WAI_PREFIX(getExecutablePath)(char* out, int capacity, int* dirname_length)
-{
-  char buffer1[PATH_MAX];
-  char buffer2[PATH_MAX];
-  char* path = buffer1;
-  char* resolved = NULL;
-  int length = -1;
-
-  for (;;)
-  {
-    uint32_t size = (uint32_t)sizeof(buffer1);
-    if (_NSGetExecutablePath(path, &size) == -1)
-    {
-      path = (char*)WAI_MALLOC(size);
-      if (!_NSGetExecutablePath(path, &size))
-        break;
-    }
-
-    resolved = realpath(path, buffer2);
-    if (!resolved)
-      break;
-
-    length = (int)strlen(resolved);
-    if (length <= capacity)
-    {
-      memcpy(out, resolved, length);
-
-      if (dirname_length)
-      {
-        int i;
-
-        for (i = length - 1; i >= 0; --i)
-        {
-          if (out[i] == '/')
-          {
-            *dirname_length = i;
-            break;
-          }
-        }
-      }
-    }
-
-    break;
-  }
-
-  if (path != buffer1)
-    WAI_FREE(path);
-
-  return length;
-}
-*/
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-BeFileName iModelBridgeSacAdapter::GetExecutablePath(WCharCP argv0)
-    {
-    // *** TBD: Fix up argv0 using cwd, etc.
-    return BeFileName(argv0);
-    }
-#endif
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      04/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void iModelBridgeSacAdapter::InitializeHost(iModelBridge& bridge, WCharCP sqlangRelPath)
-    {
-    WString bridgeSqlangRelpath(bridge._SupplySqlangRelPath());
-    if (WString::IsNullOrEmpty(sqlangRelPath))
-        sqlangRelPath = bridgeSqlangRelpath.c_str();
-
-    iModelBridgeKnownLocationsAdmin::SetAssetsDir(bridge._GetParams().GetAssetsDir()); // Note that we set up the host with the assets directory for the *the bridge*
-    static iModelBridgeBimHost s_host(bridge._GetParams().GetRepositoryAdmin(), sqlangRelPath);
+    static iModelBridgeBimHost s_host(bridge._GetParams().GetRepositoryAdmin(), fwkAssets, fwkDb3, ""); // *** TBD supply bridge name as product name
     DgnViewLib::Initialize(s_host, true);
 
     static PrintfProgressMeter s_meter;
     T_HOST.SetProgressMeter(&s_meter);
+
+    // Also initialize the bridge-specific L10N. This is not part of the host. We do 
+    // it here anyway, as a convenience to the standalone converter.
+    BeFileName bridgeSqlangPath(bridge._GetParams().GetAssetsDir());
+    bridgeSqlangPath.AppendToPath(bridge._SupplySqlangRelPath().c_str());
+    iModelBridge::L10N::Initialize(BeSQLite::L10N::SqlangFiles(bridgeSqlangPath));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -494,6 +405,14 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::Params::ParseCommandLineA
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static void unSupportedFwkArg(WCharCP arg)
+    {
+    LOG.warningv(L"%ls - this command-line option is not supported by the iModelFramework", arg);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iModelBridge::Params& bparams, int iArg, int argc, WCharCP argv[])
@@ -512,6 +431,7 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
 
     if (argv[iArg] == wcsstr(argv[iArg], L"--input-gcs=") || argv[iArg] == wcsstr(argv[iArg], L"--output-gcs="))
         {
+        unSupportedFwkArg(argv[iArg]);
         iModelBridge::GCSDefinition* gcs = (argv[iArg] == wcsstr(argv[iArg], L"--input-gcs="))? &bparams.m_inputGcs: &bparams.m_outputGcs;
         if (BSISUCCESS != iModelBridge::Params::ParseGcsSpec(*gcs, iModelBridge::GetArgValue(argv[iArg])))
             return iModelBridge::CmdLineArgStatus::Error;
@@ -520,6 +440,7 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
 
     if (argv[iArg] == wcsstr(argv[iArg], L"--geoCalculation="))
         {
+        unSupportedFwkArg(argv[iArg]);
         if (BSISUCCESS != iModelBridge::Params::ParseGCSCalculationMethod(bparams.m_gcsCalculationMethod, iModelBridge::GetArgValue(argv[iArg])))
             return iModelBridge::CmdLineArgStatus::Error;
         return iModelBridge::CmdLineArgStatus::Success;
@@ -533,12 +454,14 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
 
     if (0 == wcscmp(argv[iArg], L"--no-thumbnails"))
         {
+        unSupportedFwkArg(argv[iArg]);
         bparams.m_wantThumbnails = false;
         return iModelBridge::CmdLineArgStatus::Success;
         }
 
     if (argv[iArg] == wcsstr(argv[iArg], L"--thumbnailTimeout"))
         {
+        unSupportedFwkArg(argv[iArg]);
         WCharCP val = wcschr(argv[iArg], L'=');
         if (nullptr == val)
             {
@@ -557,6 +480,7 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
         }
     if (argv[iArg] == wcsstr(argv[iArg], L"--job-name="))
         {
+        unSupportedFwkArg(argv[iArg]);
         bparams.SetBridgeJobName(iModelBridge::GetArgValue(argv[iArg]).c_str());
         return iModelBridge::CmdLineArgStatus::Success;
         }
@@ -569,8 +493,8 @@ iModelBridge::CmdLineArgStatus iModelBridgeSacAdapter::ParseCommandLineArg(iMode
 void iModelBridgeSacAdapter::Init(iModelBridge::Params& bparams, int argc, WCharCP argv[])
     {
     bparams.m_isCreatingNewDb = false;
-    bparams.m_libraryDir = iModelBridgeSacAdapter::GetExecutablePath(argv[0]).GetDirectoryName();
-    bparams.m_assetsDir = bparams.m_libraryDir;
+    bparams.m_libraryDir = Desktop::FileSystem::GetExecutableDir();
+    bparams.m_assetsDir = bparams.m_libraryDir;     // When running in a standalone converter, the bridge is just part of the program, and so the bridge's assets are merged into the program's assets directory.
     bparams.m_assetsDir.AppendToPath(L"Assets");
     bparams.m_repoAdmin = new DgnPlatformLib::Host::RepositoryAdmin;
     }
@@ -701,7 +625,7 @@ BentleyStatus iModelBridgeSacAdapter::FixBriefcaseName(iModelBridge::Params& bpa
         BeFileName outputDir = fixedName.GetDirectoryName();
         if (!outputDir.DoesPathExist() && (BeFileNameStatus::Success != BeFileName::CreateNewDirectory(outputDir.c_str())))
             {
-            LOG.fatalv(L"Cannot create output directory <%ls>\n", outputDir.c_str());
+            LOG.fatalv(L"Cannot create output directory <%ls>", outputDir.c_str());
             return BSIERROR;
             }
         }
@@ -808,9 +732,11 @@ void iModelBridgeSacAdapter::ParseCommandLineForBeTest(iModelBridge& bridge, bve
     bvector<WString> unrecognizedArgs;
 
     Params saparams;
-    ASSERT_EQ(BSISUCCESS, ParseCommandLine(unrecognizedArgs, bridge._GetParams(), saparams, argc, argv));
+    if (BSISUCCESS != ParseCommandLine(unrecognizedArgs, bridge._GetParams(), saparams, argc, argv))
+        BeTest::Fail();
 
-    ASSERT_EQ(BSISUCCESS, bridge._GetParams().Validate());
+    if (BSISUCCESS != bridge._GetParams().Validate())
+        BeTest::Fail();
 
     FixBriefcaseName(bridge._GetParams());
 
@@ -825,7 +751,8 @@ void iModelBridgeSacAdapter::ParseCommandLineForBeTest(iModelBridge& bridge, bve
     for (int i=0; i<unrecognizedArgCount; ++i)
         {
         auto status = bridge._ParseCommandLineArg(i, unrecognizedArgCount, unrecognizedArgPtrs.data());
-        ASSERT_EQ(iModelBridge::CmdLineArgStatus::Success, status);
+        if (iModelBridge::CmdLineArgStatus::Success != status)
+            BeTest::Fail();
         }
     }
 

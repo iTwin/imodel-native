@@ -47,8 +47,6 @@ struct BimExporter0601
         void InitLogging(WCharCP argv0);
         WString GetArgValueW(WCharCP arg);
 
-        static BentleyStatus ReadJsonInputFromFile(Json::Value& jsonInput, BeFileName& jsonFilePath);
-
         int _PrintUsage(WCharCP programName);
         BentleyStatus _ParseCommandLine(WStringR errmsg, int argc, WCharCP argv[]);
         BentleyStatus _Initialize(int argc, WCharCP argv[]);

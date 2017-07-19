@@ -650,9 +650,9 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         }
     }
 
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Ridha.Malik                      04/17
-//+---------------+---------------+---------------+---------------+---------------+------*/
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      04/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, Attach3dmodeltoSheet)
     {
     LineUpFiles(L"Attach3dmodeltoSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
@@ -822,7 +822,7 @@ TEST_F(DrawingTests, AttachDwg)
         v8editor.AddLine(&eid, threeDModel);
         // and attach the model from dwg file as a reference to the 3d model in dgn file
         DgnV8Api::DgnAttachment* attachment1 = NULL;
-        AddAttachment(OutputFileName, threeDModel, L"Model",attachment1);
+        AddAttachment(OutputFileName, threeDModel, L"Model", attachment1);
         // Create a SheetModel1 ...
         Bentley::DgnModelP SheetModel = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet1", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
@@ -872,9 +872,10 @@ TEST_F(DrawingTests, AttachDwg)
         countElements(*physicalmodel2, 5);
         }
     }
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Ridha.Malik                      05/17
-//+---------------+---------------+---------------+---------------+---------------+------*/
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      05/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, AttachNameViewtoSheet)
     {
     LineUpFiles(L"Attach3dmodeltoSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName
@@ -942,9 +943,10 @@ TEST_F(DrawingTests, AttachNameViewtoSheet)
         countElementsInModelByClass(*sheetModel, getBisClassId(*db, "ViewAttachment"), 1);
         }
     }
-///*---------------------------------------------------------------------------------**//**
-//* @bsimethod                                    Ridha.Malik                      06/17
-//+---------------+---------------+---------------+---------------+---------------+------*/
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Ridha.Malik                      06/17
++---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(DrawingTests, MultipleSheets_WithNoAttachedModels)
     {
     LineUpFiles(L"MultipleSheet.ibim", L"Test3d.dgn", false); // defines m_dgnDbFileName, and m_v8FileName

@@ -104,6 +104,8 @@ $(DeliveryDgnDbPlatformLibs)BeHttp.lib : $(DgnDbDlls)BeHttp.lib
 
 $(DeliveryDgnDbPlatformLibs)BeJsonCpp.lib : $(DgnDbDlls)BeJsonCpp.lib
 
+$(DeliveryDgnDbPlatformLibs)BeFolly.lib : $(DgnDbDlls)BeFolly.lib
+
 
 always:
    !~@mkdir ${DeliveryDgnDbPlatformAssets}

@@ -21,7 +21,6 @@ DwgPubApi           = $(DgnDbSyncPubApi)Dwg/
 DwgDbPubApi         = $(DwgPubApi)PublicAPI/
 DwgDbLibName        = $(DWGTOOLKIT)DbExchange
 ContextDeliveryDir  = $(BuildContext)Delivery/$(DWGTOOLKIT)Importer/
-DwgCommonResDir     = $(OutputRootDir)Build/DwgCommonRes/
 
 o                   = $(OutputRootDir)Build/$(DWGTOOLKIT)Importer/
 always:
@@ -131,6 +130,7 @@ LINKER_LIBRARIES_DELAYLOADED = $(ContextSubpartsLibs)Bentley$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnPlatform$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)ImagePP$(libext)
 LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)Raster$(libext) 
+LINKER_LIBRARIES_DELAYLOADED + $(ContextSubpartsLibs)DgnView.lib
 
 %if $(DWGTOOLKIT) == "OpenDwg"
 
@@ -155,19 +155,3 @@ LINKER_LIBRARIES_DELAYLOADED + Msi$(libext)
 %endif  # DWGTOOLKIT
 
 %include $(sharedMki)LinkLibrary.mki
-
-
-$(ContextDeliveryDir)ConvertConfig.xsd : $(baseDir)Config/ConvertConfig.xsd
-    $(LinkFirstDepToFirstTarget)
-
-## Copy the config file out so we can edit it without changing the source:
-$(ContextDeliveryDir)ConvertConfig.xml : $(baseDir)Config/ConvertConfig.xml
-    LinkADeepCopy.py -s "$<" -d "$(DwgCommonResDir)ConvertConfig.xml" -l "$@"
-
-SQLANG_CHeader      = $(DwgPubApi)DwgImporter.h
-SQLANG_Xliff        = $(DwgCommonResDir)DwgImporter_en.xliff
-
-%include $(sharedMki)CHeaderToXliff.mki
-
-$(BuildContext)SubParts/xliffs/DwgImporter_en.xliff : $(SQLANG_Xliff)
-    $(LinkFirstDepToFirstTarget)

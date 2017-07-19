@@ -2,11 +2,11 @@
 |
 |     $Source: Dwg/Tests/Admins.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "Tests.h"
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      05/15
@@ -25,5 +25,5 @@ L10N::SqlangFiles ImporterTestsHost::_SupplySqlangFiles()
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnPlatformLib::Host::IKnownLocationsAdmin& ImporterTestsHost::_SupplyIKnownLocationsAdmin()
     {
-    return *new WindowsKnownLocationsAdmin();
+    return *new KnownDesktopLocationsAdmin();
     }

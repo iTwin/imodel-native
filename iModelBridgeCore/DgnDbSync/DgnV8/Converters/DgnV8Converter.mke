@@ -97,9 +97,3 @@ always:
 
 $(BuildContext)Delivery/$(appName).logging.config.xml : $(baseDir)logging.config.xml
     $(LinkFirstDepToFirstTarget)
-
-# Create the sqlang database - keep this consistent with ConverterApp::_SupplySqlangRelPath
-SQLANG_OutputDb     = $(o)DgnV8Converter_en-US.sqlang.db3
-SQLANG_DeliveryDir  = $(BuildContext)Delivery/
-SQLANG_XliffWildcard=$(BuildContext)SubParts/xliffs/*.xliff
-%include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke

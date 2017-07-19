@@ -22,6 +22,26 @@ BEGIN_BIM_TELEPORTER_NAMESPACE
 struct Reader;
 
 //---------------------------------------------------------------------------------------
+// @bsiclass                                   Carole.MacDonald            01/2016
+//---------------+---------------+---------------+---------------+---------------+-------
+struct SchemaRemapper : ECN::IECSchemaRemapper
+    {
+    private:
+        typedef bmap<Utf8String, Utf8String> T_propertyNameMappings;
+        typedef bmap<Utf8String, T_propertyNameMappings> T_ClassPropertiesMap;
+        mutable ECN::ECSchemaPtr m_convSchema;
+        mutable T_ClassPropertiesMap m_renamedClassProperties;
+
+        virtual bool _ResolvePropertyName(Utf8StringR serializedPropertyName, ECN::ECClassCR ecClass) const override;
+        virtual bool _ResolveClassName(Utf8StringR serializedClassName, ECN::ECSchemaCR ecSchema) const override;
+
+    public:
+        explicit SchemaRemapper() {}
+        ~SchemaRemapper() {}
+    };
+
+
+//---------------------------------------------------------------------------------------
 // @bsiclass                                   Carole.MacDonald            10/2016
 //---------------+---------------+---------------+---------------+---------------+-------
 struct BisJson1ImporterImpl : DgnImportContext
@@ -36,8 +56,10 @@ struct BisJson1ImporterImpl : DgnImportContext
         DgnDbPtr            m_dgndb;
         bmap<Utf8String, ECN::SchemaKey> m_schemaNameToKey;
         ECN::ECClassCP m_orthographicViewClass;
+        ECN::ECClassCP m_sheetViewClass;
         BeFile m_file;
         bool m_isDone;
+        SchemaRemapper m_remapper;
 
     protected:
         ECN::ECSchemaReadContextPtr m_schemaReadContext;
@@ -49,6 +71,7 @@ struct BisJson1ImporterImpl : DgnImportContext
             return m_dgndb.get();
             }
 
+        SchemaRemapper& GetRemapper() { return m_remapper; }
         BentleyStatus CreateSyncInfo();
 
     protected:
@@ -57,11 +80,11 @@ struct BisJson1ImporterImpl : DgnImportContext
         DgnCategoryId _RemapCategory(DgnCategoryId sourceId) override;
         DgnSubCategoryId _RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId) override;
         //DgnClassId _RemapClassId(DgnClassId sourceId) override;
-        //DgnMaterialId _RemapMaterialId(DgnMaterialId sourceId) override;
+        DgnMaterialId _RemapMaterialId(DgnMaterialId sourceId) override;
         //DgnTextureId _RemapTextureId(DgnTextureId sourceId) override;
         //DgnDbStatus _RemapGeometryStreamIds(GeometryStreamR geom) override;
         DgnFontId _RemapFont(DgnFontId) override;
-        //DgnStyleId _RemapLineStyleId(DgnStyleId sourceId) override;
+        DgnStyleId _RemapLineStyleId(DgnStyleId sourceId) override;
         BentleyStatus ImportJson(Json::Value& jsonInput);
 
     public:

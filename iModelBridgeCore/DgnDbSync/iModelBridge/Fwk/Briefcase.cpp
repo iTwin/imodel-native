@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelBridge/Briefcase.cpp $
+|     $Source: iModelBridge/Fwk/Briefcase.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -11,9 +11,6 @@
 #include <Bentley/Tasks/AsyncTasksManager.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <DgnPlatform/DgnPlatformLib.h>
-
-    // *** WIP_WSCLIENT - WSClient/DgnDbServer should not depend on DgnClientFx
-#include <DgnClientFx/DgnClientFxL10N.h>
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_TASKS
@@ -196,6 +193,8 @@ BentleyStatus iModelBridgeFwk::Briefcase_AcquireBriefcase()
         GetLogger().infov("%s - iModel not found in project\n", m_serverArgs.m_repositoryName.c_str());
         return BSIERROR;
         }
+
+    SaveBriefcaseId();
 
     return BSISUCCESS;
     }
@@ -390,13 +389,6 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     // Note that we use the framework's asset directory, which is different from the bridge's assets dir.
     BeFileName assetsDir = m_jobEnvArgs.m_fwkAssetsDir;
 
-    // *** TRICKY: We are *adding*  WSClient's sqlang files to the set of sqlang files that were *already registered* for the bridge (by the host)
-    BeFileName wsclientSqlangDir(assetsDir);
-    wsclientSqlangDir.AppendToPath(L"sqlang/DgnClientFx_en.sqlang.db3");
-    auto wsclientSqlangFiles = BeSQLite::L10N::SqlangFiles(wsclientSqlangDir);
-    auto bridgeSqlangFiles = T_HOST._SupplySqlangFiles();
-    DgnClientFx::DgnClientFxL10N::Initialize(bridgeSqlangFiles, wsclientSqlangFiles);
-
     m_lastServerError = EffectiveServerError::Unknown;
 
     Http::HttpClient::Initialize(assetsDir);
@@ -412,7 +404,7 @@ BentleyStatus iModelBridgeFwk::Briefcase_Initialize(int argc, WCharCP argv[])
     WebServices::WSError wserror;
     if (BSISUCCESS != m_clientUtils->QueryProjectId(&wserror, m_serverArgs.m_bcsProjectName))
         {
-        GetLogger().fatalv("Cannot find BCS project: [%s]", m_serverArgs.m_bcsProjectName.c_str());
+        GetLogger().fatalv("Cannot find iModelHub project: [%s]", m_serverArgs.m_bcsProjectName.c_str());
         if (wserror.GetStatus() != WebServices::WSError::Status::None)
             GetLogger().fatalv("%s - %s", wserror.GetDisplayMessage().c_str(), wserror.GetDisplayDescription().c_str());
         return BSIERROR;

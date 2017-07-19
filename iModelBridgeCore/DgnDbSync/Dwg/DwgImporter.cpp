@@ -11,19 +11,18 @@ USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_DWGDB
 USING_NAMESPACE_DGNDBSYNC_DWG
 
-static DgnPlatformLib::Host*        s_dgndbHost = nullptr;
 static const Utf8CP                 s_codeSpecName = "DWG";    // TBD: One authority per DWG file?
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DwgImporter::InitializeDgnHost (DgnPlatformLib::Host& dgndbHost)
+void            DwgImporter::Initialize (BeFileNameCP toolkitDir)
     {
-    // Initialize DgnPlatform host - DWG host is initialized in the constructor.
-    if (!dgndbHost.IsInitialized())
-        DgnPlatformLib::Initialize (dgndbHost, false);
-
-    s_dgndbHost = &dgndbHost;
+#ifdef BENTLEY_WIN32
+    // set search path for an installed toolkit, RealDWG or OpenDWG:
+    if (nullptr != toolkitDir && toolkitDir->DoesPathExist())
+        ::SetDllDirectoryW (toolkitDir->c_str());
+#endif
 
     DgnDomains::RegisterDomain (Raster::RasterDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
     }
@@ -71,66 +70,11 @@ void            DwgImporter::ImportAttributeDefinitionSchema (ECSchemaR attrdefS
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::CreateNewDgnDb (BeFileNameCR projectName)
+void   DwgImporter::GetOrCreateJobPartitions ()
     {
-    this->SetStepName (ProgressMessage::STEP_CREATING(), Utf8String(projectName).c_str());
-
-    BeFileName::BeDeleteFile (projectName);
-
-    CreateDgnDbParams   createParams;
-    createParams.SetOverwriteExisting (true);
-    createParams.SetRootSubjectDescription (m_options.GetDescription().c_str());
-    createParams.SetExpirationDate(m_options.GetExpirationDate());
-
-    Utf8String  subjectName(projectName.GetFileNameWithoutExtension());
-    createParams.SetRootSubjectName (subjectName.c_str());
-
-    DbResult    status = BE_SQLITE_ERROR;
-    m_dgndb = DgnDb::CreateDgnDb (&status, projectName, createParams);
-
-    if (!m_dgndb.IsValid())
-        {
-        this->ReportDbFileStatus (status, projectName);
-        return this->OnFatalError ();
-        }
-
-    if (BSISUCCESS != m_syncInfo.CreateEmptyFile(DwgSyncInfo::GetDbFileName(*m_dgndb)))
-        {
-        this->ReportSyncInfoIssue (DwgImporter::IssueSeverity::Fatal, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::CantCreateSyncInfo(), "");
-        return this->OnFatalError();
-        }
-
-    m_dgndb->AddIssueListener (m_issueReporter.GetECDbIssueListener());
-
-    // Create the "uncategorized" category for elements that can't be categorized without application/domain help
     this->InitUncategorizedCategory ();
     this->InitBusinessKeyCodeSpec ();
     this->InitSheetListModel ();
-
-    return this->AttachSyncInfo ();
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          01/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgImporter::OpenExistingDgnDb (BeFileNameCR projectName)
-    {
-    DbResult    status = BE_SQLITE_ERROR;
-    m_dgndb = DgnDb::OpenDgnDb (&status, projectName, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
-
-    if (!m_dgndb.IsValid())
-        {
-        this->ReportDbFileStatus (status, projectName);
-        return this->OnFatalError ();
-        }
-
-    m_dgndb->AddIssueListener (m_issueReporter.GetECDbIssueListener());
-
-    this->InitUncategorizedCategory ();
-    this->InitBusinessKeyCodeSpec ();
-    this->InitSheetListModel ();
-
-    return this->AttachSyncInfo ();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -138,15 +82,15 @@ BentleyStatus   DwgImporter::OpenExistingDgnDb (BeFileNameCR projectName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::InitSheetListModel ()
     {
-    Utf8CP  partitionName = "Converted Sheets";
-    DgnCode partitionCode = GroupInformationPartition::CreateCode(*m_dgndb->Elements().GetRootSubject(), partitionName);
+    Utf8CP  partitionName = "Imported Sheets";
+    DgnCode partitionCode = GroupInformationPartition::CreateCode(GetJobSubject(), partitionName);
     DgnElementId partitionId = m_dgndb->Elements().QueryElementIdByCode(partitionCode);
     m_sheetListModelId = DgnModelId(partitionId.GetValueUnchecked());
     
     if (m_sheetListModelId.IsValid())
         return  BSISUCCESS;
 
-    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*m_dgndb->Elements().GetRootSubject(), partitionName);
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(GetJobSubject(), partitionName);
     if (!partition.IsValid())
         return  BSIERROR;
 
@@ -166,7 +110,7 @@ DgnCode         DwgImporter::CreateCode (Utf8StringCR value) const
     {
     auto auth = m_dgndb->CodeSpecs().GetCodeSpec(m_businessKeyCodeSpecId);
     BeDataAssert(auth.IsValid());
-    return auth.IsValid() ? auth->CreateCode(value) : DgnCode();
+    return auth.IsValid() ? auth->CreateCode(GetImportJob().GetSubject(), value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -241,6 +185,8 @@ BentleyStatus   DwgImporter::AttachSyncInfo ()
         return this->OnFatalError (IssueCategory::Sync(), Issue::FatalError(), reason);
         }
 
+    m_dgndb->SaveChanges ();
+
     BeAssert(m_syncInfo.IsValid());
     BeAssert(!WasAborted());
 
@@ -250,35 +196,50 @@ BentleyStatus   DwgImporter::AttachSyncInfo ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DwgImporter::_AddFileInSyncInfo (DwgDbDatabaseP dwg, StableIdPolicy policy)
+DwgSyncInfo::DwgFileId  DwgImporter::_AddFileInSyncInfo (DwgDbDatabaseR dwg, StableIdPolicy policy)
     {
-    if (nullptr == dwg)
-        {
-        BeAssert (false && L"null DwgDbDatabase!");
-        return;
-        }
+    DwgSyncInfo::DwgFileId  fileId;
 
-    DwgSyncInfo::FileProvenance provenance(*dwg, m_syncInfo, policy);
+    // create file provenance and insert it into the sync info
+    DwgSyncInfo::FileProvenance provenance(dwg, m_syncInfo, policy);
     if (!provenance.FindByName(true))
         {
         provenance.Insert();
 
         if (LOG_IS_SEVERITY_ENABLED(LOG_TRACE))
-            LOG.tracev("+ %s => %lld", DwgHelper::ToUtf8CP(dwg->GetFileName()), provenance.m_syncId.GetValue());
+            LOG.tracev("+ %s => %lld", DwgHelper::ToUtf8CP(dwg.GetFileName()), provenance.GetDwgFileId().GetValue());
         }
 
-    dwg->SetFileIdPolicy (provenance.m_syncId.GetValue(), static_cast<uint32_t>(provenance.m_idPolicy));
+    fileId = provenance.GetDwgFileId ();
+    policy = provenance.GetIdPolicy ();
+
+    // set file id & policy in DwgDbSummaryInfo
+    dwg.SetFileIdPolicy (fileId.GetValue(), static_cast<uint32_t>(policy));
+
+    return  fileId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgSyncInfo::DwgFileId  DwgImporter::GetDwgFileId (DwgDbDatabaseR dwg, bool setIfNotExist)
+    {
+    DwgSyncInfo::DwgFileId  fileId = DwgSyncInfo::GetDwgFileId (dwg);
+    if (!fileId.IsValid() && setIfNotExist)
+        {
+        fileId = this->_AddFileInSyncInfo (dwg, this->_GetDwgFileIdPolicy());
+        BeAssert (fileId.IsValid() && "Unable to set/get DwgFileId from DWG file!");
+        }
+    return  fileId;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-StableIdPolicy  DwgImporter::_GetDwgFileIdPolicy (DwgDbDatabaseCR dwg) const
+StableIdPolicy  DwgImporter::_GetDwgFileIdPolicy () const
     {
-    if (StableIdPolicy::ByHash == m_options.GetStableIdPolicy())
-        StableIdPolicy::ByHash;
-
-    return StableIdPolicy::ById;
+    // let the bridge decide the ID policy
+    return m_options.GetStableIdPolicy();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -306,7 +267,7 @@ BentleyStatus   DwgImporter::OpenDwgFile (BeFileNameCR dwgdxfName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgImporter::ResolvedModelMapping   DwgImporter::GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans)
+ResolvedModelMapping    DwgImporter::GetModelFromSyncInfo (DwgDbObjectIdCR id, DwgDbDatabaseR dwg, TransformCR trans)
     {
     // retrieve a model by file & model instance ID of a model/paperspace block, xref insert or a raster image.
     if (!id.IsValid())
@@ -335,7 +296,7 @@ DwgImporter::ResolvedModelMapping   DwgImporter::GetModelFromSyncInfo (DwgDbObje
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgImporter::ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType sourceType)
+ResolvedModelMapping   DwgImporter::FindModel (DwgDbObjectIdCR dwgModelId, TransformCR trans, DwgSyncInfo::ModelSourceType sourceType)
     {
     // find cached model mapping by DWG model object ID
     ResolvedModelMapping    unresolved (dwgModelId);
@@ -737,7 +698,7 @@ DgnModelId      DwgImporter::CreateModel (DwgDbBlockTableRecordCR block, Utf8CP 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgImporter::ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR dwgBlock, TransformCR trans, DwgDbBlockReferenceCP xrefInsert, DwgDbDatabaseP xrefDwg)
+ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbBlockTableRecordCR dwgBlock, TransformCR trans, DwgDbBlockReferenceCP xrefInsert, DwgDbDatabaseP xrefDwg)
     {
     /*-----------------------------------------------------------------------------------
     This method either gets an existing DgnModel or creates a new one for a modelspace, a
@@ -763,7 +724,8 @@ DwgImporter::ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbB
         return  modelMap;
         }
 
-    if (this->_IsUpdating())
+    IDwgChangeDetector& changeDetector = this->_GetChangeDetector ();
+    if (this->IsUpdating())
         {
         if (DwgSyncInfo::ModelSourceType::XRefAttachment == sourceType)
             modelMap = this->GetModelFromSyncInfo (dwgModelId, *xrefDwg, trans);
@@ -776,7 +738,7 @@ DwgImporter::ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbB
             if (!this->FindModel(dwgModelId, trans, sourceType).IsValid())
                 this->AddToDwgModelMap (modelMap);
             // tell the updater about the coming DWG model object:
-            this->_OnModelSeen (modelMap);
+            changeDetector._OnModelSeen (*this, modelMap);
             return  modelMap;
             }
         // not found in syncinfo - may have to create a new one.
@@ -830,7 +792,7 @@ DwgImporter::ResolvedModelMapping DwgImporter::GetOrCreateModelFromBlock (DwgDbB
     // save in our list of known model mappings.
     this->AddToDwgModelMap (modelMap);
     // tell the updater about the newly discovered model
-    this->_OnModelInserted (modelMap);
+    changeDetector._OnModelInserted (*this, modelMap, xrefDwg);
 
     return  modelMap;
     }
@@ -859,6 +821,47 @@ void            DwgImporter::CompoundModelTransformBy (TransformR trans, DwgDbBl
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
+ResolvedModelMapping    DwgImporter::GetOrCreateRootModel ()
+    {
+    if (m_dwgdb.IsNull())
+        {
+        BeAssert (false && "DWG file is not opened yet!");
+        return  ResolvedModelMapping();
+        }
+
+    if (m_rootDwgModelMap.IsValid())
+        return  m_rootDwgModelMap;
+        
+    if (m_modelspaceId.IsNull())
+        m_modelspaceId = m_dwgdb->GetModelspaceId ();
+
+    m_rootDwgModelMap = this->FindModel(m_modelspaceId, m_rootTransform, DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
+    if (!m_rootDwgModelMap.IsValid())
+        {
+        DwgDbBlockTableRecordPtr    block(m_modelspaceId, DwgDbOpenMode::ForRead);
+        if (block.IsNull())
+            {
+            this->ReportError (IssueCategory::Unknown(), Issue::CannotOpenModelspace(), "when creating the root model!");
+            this->OnFatalError ();
+            return m_rootDwgModelMap;
+            }
+
+        // set root model transformation from modelspace block
+        this->ScaleModelTransformBy (m_rootTransform, *block.get());
+
+        m_rootDwgModelMap = this->GetOrCreateModelFromBlock (*block.get(), m_rootTransform);
+        if (!m_rootDwgModelMap.IsValid())
+            this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*block).c_str());
+        else
+            this->SetModelPropertiesFromModelspaceViewport (m_rootDwgModelMap.GetModel());
+        }
+
+    return m_rootDwgModelMap;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          01/16
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportDwgModels ()
     {
     // Create models from layout and xRef block definitions
@@ -867,35 +870,20 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
         return  BSIERROR;
 
     DwgDbSymbolTableIterator    iter = blockTable->NewIterator ();
-
     if (!iter.IsValid())
         return  BSIERROR;
 
     // create the root model from modelspace block first
-    if (m_modelspaceId.IsNull())
-        m_modelspaceId = blockTable->GetModelspaceId ();
-
-    ResolvedModelMapping    modelMap = this->FindModel(m_modelspaceId, m_rootTransform, DwgSyncInfo::ModelSourceType::ModelOrPaperSpace);
+    ResolvedModelMapping    modelMap = this->GetOrCreateRootModel ();
     if (!modelMap.IsValid())
-        {
-        DwgDbBlockTableRecordPtr    block(m_modelspaceId, DwgDbOpenMode::ForRead);
-        if (block.IsNull())
-            {
-            this->ReportError (IssueCategory::Unknown(), Issue::CannotOpenModelspace(), "when creating the root model!");
-            this->OnFatalError ();
-            return BSIERROR;
-            }
+        return  BSIERROR;
 
-        // set root model transformation from modelspace block
-        this->ScaleModelTransformBy (m_rootTransform, *block.get());
+    IDwgChangeDetector&     changeDetector = this->_GetChangeDetector ();
+    bool        hasPushedReferencesSubject = false;
+    SubjectCPtr parentSubject = this->GetSpatialParentSubject ();
+    BeAssert (parentSubject.IsValid() && "parent subject for spatial models not set yet!!");
 
-        modelMap = this->GetOrCreateModelFromBlock (*block.get(), m_rootTransform);
-        if (!modelMap.IsValid())
-            this->ReportError (IssueCategory::MissingData(), Issue::CantCreateModel(), IssueReporter::FmtModel(*block).c_str());
-        else
-            this->SetModelPropertiesFromModelspaceViewport (modelMap.GetModel());
-        }
-
+    // will collect attribute definitions from regular blocks
     ECSchemaPtr     attrdefSchema;
 
     // walk through all blocks and create models for paperspace and xref blocks:
@@ -942,7 +930,7 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
                 {
                 // add the new xref in local cache as well as in the syncInfo:
                 m_loadedXrefFiles.push_back (xref);
-                this->_AddFileInSyncInfo (xref.GetDatabase(), this->_GetDwgFileIdPolicy(*xref.GetDatabase()));
+                this->_AddFileInSyncInfo (xref.GetDatabaseR(), this->_GetDwgFileIdPolicy());
                 }
             else
                 {
@@ -1004,7 +992,7 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
 
                     this->CompoundModelTransformBy (xtrans, *insert.get());
 
-                    modelMap = this->GetOrCreateModelFromBlock (*block.get(), xtrans, insert.get(), xref.GetDatabase());
+                    modelMap = this->GetOrCreateModelFromBlock (*block.get(), xtrans, insert.get(), xref.GetDatabaseP());
 
                     DgnModelP   model = nullptr;
                     if (!modelMap.IsValid() || (model = modelMap.GetModel()) == nullptr)
@@ -1016,7 +1004,23 @@ BentleyStatus   DwgImporter::_ImportDwgModels ()
                     xref.AddDgnModelId (model->GetModelId());
 
                     // give the updater a chance to cache skipped models as we may not see xref inserts during importing phapse:
-                    this->_ShouldSkipModel (modelMap);
+                    changeDetector._ShouldSkipModel (*this, modelMap);
+
+                    if (!hasPushedReferencesSubject && parentSubject.IsValid())
+                        {
+                        SubjectCPtr refsSubject = this->GetOrCreateModelSubject (*parentSubject, model->GetName(), ModelSubjectType::References);
+                        if (refsSubject.IsValid())
+                            {
+                            // set the root model subject as spatial parent
+                            this->SetSpatialParentSubject (*refsSubject);
+                            hasPushedReferencesSubject = true;
+                            }
+                        else
+                            {
+                            ReportError (IssueCategory::Unsupported(), Issue::Error(), Utf8PrintfString("Failed to create references subject. Parent[%s]. XRef[%s].", IssueReporter::FmtModel(*parentBlock).c_str(), IssueReporter::FmtXReference(*block).c_str()).c_str());
+                            BeAssert (false && "Failed creating xrefrences subject!");
+                            }
+                        }
 
                     // if the instance is in the modelspace, add it to modelspace xref list:
                     if (m_modelspaceId == parentId)
@@ -1072,22 +1076,277 @@ BentleyStatus   DwgImporter::_ImportSpaces ()
     if (m_modelspaceUnits == StandardUnit::None)
         m_modelspaceUnits = m_options.GetUnspecifiedBlockUnits ();
 
-    // add current DWG file into syncinfo:
-    StableIdPolicy  policy = this->_GetDwgFileIdPolicy (*m_dwgdb);
-    this->_AddFileInSyncInfo (m_dwgdb.get(), policy);
-
     return  BSISUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Don.Fu          03/16
+* @bsimethod                                    Sam.Wilson                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void            DwgImporter::_AddDefaultRootGuestSyncInfo ()
+SubjectCPtr DwgImporter::GetOrCreateModelSubject (SubjectCR parent, Utf8StringCR modelName, ModelSubjectType stype)
     {
-    DwgSyncInfo::DwgModelSource rootSource(m_modelspaceId);
-    DwgSyncInfo::ImportJob          importJob(rootSource, DwgSyncInfo::ImportJob::Type::RootModels);
+    Json::Value modelProps(Json::nullValue);
+    modelProps["Type"] = (ModelSubjectType::Hierarchy==stype)? "Hierarchy": "References";
 
-    m_syncInfo.InsertImportJob(importJob);
+    for (auto childid : parent.QueryChildren())
+        {
+        auto subj = GetDgnDb().Elements().Get<Subject>(childid);
+        if (subj.IsValid() && modelName.Equals(subj->GetCode().GetValueCP()) && (modelProps == subj->GetSubjectJsonProperties().GetMember(Subject::json_Model())))
+            return subj;
+        }
+
+    BeAssert((!IsUpdating() || (ModelSubjectType::Hierarchy != stype)) && "You create a hierarchy subject once when you create the job");
+
+    SubjectPtr ed = Subject::Create(parent, modelName.c_str());
+
+    ed->SetSubjectJsonProperties(Subject::json_Model(), modelProps);
+
+    return ed->InsertT<Subject>();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+SubjectCPtr DwgImporter::GetJobHierarchySubject ()
+    {
+    auto const& jobsubj = GetJobSubject();
+    auto childids = jobsubj.QueryChildren();
+    for (auto childid : childids)
+        {
+        auto subj = GetDgnDb().Elements().Get<Subject>(childid);
+        if (subj.IsValid() && subj->GetSubjectJsonProperties(Subject::json_Model()).GetMember("Type") == "Hierarchy")
+            return subj;
+        }
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      02/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DwgImporter::ValidateJob ()
+    {
+    auto const& jobsubj = GetJobSubject();
+    if (!jobsubj.GetElementId().IsValid())
+        {
+        BeAssert(false && "job subject must be persistent in the BIM");
+        _OnFatalError();
+        return;
+        }
+    auto jchildids = jobsubj.QueryChildren();
+    auto hcount = 0;
+    for (auto jchildid : jchildids)
+        {
+        auto subj = GetDgnDb().Elements().Get<Subject>(jchildid);
+        if (subj.IsValid() && subj->GetSubjectJsonProperties(Subject::json_Model()).GetMember("Type") == "Hierarchy")
+            ++hcount;
+        }
+    if (hcount != 1)
+        {
+        BeAssert(false && "there should be exactly 1 job hierarchy subject under the job subject");
+        _OnFatalError();
+        return;
+        }
+
+    auto hchildids = jobsubj.QueryChildren();
+    auto rcount = 0;
+    for (auto hchildid : hchildids)
+        {
+        auto subj = GetDgnDb().Elements().Get<Subject>(hchildid);
+        if (subj.IsValid() && subj->GetSubjectJsonProperties(Subject::json_Model()).GetMember("Type") == "References")
+            ++rcount;
+        }
+    if ((rcount != 0) && (rcount != 1))
+        {
+        BeAssert(false && "there should be 0 or 1 references subject under the hierarchy subject");
+        _OnFatalError();
+        return;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DwgImporter::ComputeDefaultImportJobName (Utf8StringCR rootModelName)
+    {
+    DgnElements&    bimElements = this->GetDgnDb().Elements ();
+
+    Utf8String  rootFileName (BeFileName::GetFileNameWithoutExtension(this->GetRootDwgFileName()).c_str());
+    size_t      dotAt = rootFileName.find (".");
+    if (dotAt != Utf8String::npos)
+        rootFileName.erase(dotAt);
+
+    Utf8String  jobName = iModelBridge::str_BridgeType_DWG() + Utf8String(":") + rootFileName + Utf8String(", ") + rootModelName;
+    DgnCode     code = Subject::CreateCode (*bimElements.GetRootSubject(), jobName.c_str());
+
+    // create a unique job name
+    size_t  count = 0;
+    while (bimElements.QueryElementIdByCode(code).IsValid())
+        {
+        Utf8String  uniqueJobName(jobName);
+        uniqueJobName.append (Utf8PrintfString("%d", ++count).c_str());
+        code = Subject::CreateCode (*bimElements.GetRootSubject(), uniqueJobName.c_str());
+        }
+
+    m_options.SetBridgeJobName (jobName);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter::ImportJobCreateStatus   DwgImporter::InitializeJob (Utf8CP comments, DwgSyncInfo::ImportJob::Type jobType)
+    {
+    // will create a new ImportJob - don't call this if updating!
+    if (this->IsUpdating())
+        return ImportJobCreateStatus::FailedExistingRoot;
+
+    if (!m_dwgdb.IsValid())
+        {
+        BeAssert (false && "Root DWG file not open!");
+        return ImportJobCreateStatus::FailedInsertFailure;
+        }
+
+    // get the modelspace name
+    DwgDbBlockTableRecordPtr    modelspaceBlock(m_dwgdb->GetModelspaceId(), DwgDbOpenMode::ForRead);
+    if (DwgDbStatus::Success != modelspaceBlock.OpenStatus())
+        {
+        BeAssert (false && "The ModelSpace block not available the import job!");
+        return ImportJobCreateStatus::FailedInsertFailure;
+        }
+
+    Utf8String  modelspaceName(modelspaceBlock->GetName().c_str());
+    if (modelspaceName.empty())
+        modelspaceName.assign ("Model");
+
+    Utf8String  jobName = this->GetOptions().GetBridgeJobName ();
+    if (jobName.empty())
+        {
+        this->ComputeDefaultImportJobName (modelspaceName);
+        jobName = this->GetOptions().GetBridgeJobName();
+        }
+    else
+        {
+        if (!jobName.StartsWithI(iModelBridge::str_BridgeType_DWG()))
+            {
+            jobName = iModelBridge::str_BridgeType_DWG();
+            jobName.append(":");
+            jobName.append(this->GetOptions().GetBridgeJobName());
+            }
+        }
+    BeAssert (!jobName.empty() && "Bridge job not defined!");
+
+    if (this->FindSoleImportJobForFile(this->GetDwgDb()).IsValid())
+        return ImportJobCreateStatus::FailedExistingRoot;
+
+    // 1. Map in the root file.
+    auto    fileId = this->GetDwgFileId (this->GetDwgDb());
+    // NB! file might already be in syncinfo! The logic that tries to detect an existing Job puts it there!
+    DwgSyncInfo::FileById   syncInfoFiles (this->GetDgnDb(), fileId);
+    DwgSyncInfo::FileIterator::Entry syncInfoFile = syncInfoFiles.begin();
+    if (syncInfoFile == syncInfoFiles.end())
+        {
+        BeAssert(false);
+        return ImportJobCreateStatus::FailedExistingNonRootModel;
+        }
+
+    // set default change detector (no-op):
+    this->_SetChangeDetector (false);
+
+    // 2. Create a subject, as a child of the rootsubject
+    SubjectPtr  newSubject = Subject::Create (*this->GetDgnDb().Elements().GetRootSubject(), jobName);
+    if (!newSubject.IsValid())
+        return ImportJobCreateStatus::FailedInsertFailure;
+
+    Json::Value dwgJobProps(Json::objectValue);
+    dwgJobProps["ImporterType"] = (int)jobType;
+    dwgJobProps["NamePrefix"] = this->GetImportJobNamePrefix ();
+    dwgJobProps["DwgFile"] = syncInfoFile.GetUniqueName();
+
+    Json::Value jobProps(Json::objectValue);
+    if (!Utf8String::IsNullOrEmpty(comments))
+        jobProps["Comments"] = comments;
+    jobProps[iModelBridge::str_BridgeType_DWG()] = dwgJobProps;
+
+    newSubject->SetSubjectJsonProperties(Subject::json_Job(), jobProps);
+
+    SubjectCPtr jobSubject = newSubject->InsertT<Subject>();
+    if (!jobSubject.IsValid())
+        return ImportJobCreateStatus::FailedInsertFailure;
+
+    // 3. Set up m_importJob with the subject. That leaves out the syncinfo part, but we don't need that yet. 
+    //      We do need m_importJob to be defined and it must have its subject at this point, as GetOrCreateJobPartitions 
+    //      and GetModelForDgnV8Model refer to the subject in it.
+    m_importJob = ResolvedImportJob (*jobSubject);
+
+    // 4. Create the job-specific stuff in the DgnDb (relative to the job subject).
+    this->GetOrCreateJobPartitions ();
+
+    //  ... and create and push the root model's "hierarchy" subject. The root model's physical partition will be a child of that.
+    Utf8String  mastermodelName = this->_ComputeModelName (*modelspaceBlock.get());
+    m_spatialParentSubject = this->GetOrCreateModelSubject(this->GetJobSubject(), mastermodelName, ModelSubjectType::Hierarchy);
+    if (!m_spatialParentSubject.IsValid())
+        {
+        BeAssert (false && "Failed creating parent model subject");
+        return ImportJobCreateStatus::FailedInsertFailure;
+        }
+
+    // 5. Map the root model into the DgnDb. Note that this will generally create a partition, which is relative to the job subject,
+    //    So, the job subject and its framework must be created first.
+    this->GetOrCreateRootModel ();
+    if (!m_rootDwgModelMap.IsValid())
+        {
+        BeAssert (false && "No root DWG model!");
+        return ImportJobCreateStatus::FailedInsertFailure;
+        }
+
+    // 6. Now that we have the root model's syncinfo id, we can define the syncinfo part of the importjob.
+    DwgSyncInfo::ImportJob  importJob;
+    importJob.SetDwgModelSyncInfoId (m_rootDwgModelMap.GetModelSyncInfoId());
+    importJob.SetPrefix (this->GetImportJobNamePrefix());
+    importJob.SetType (jobType);
+    importJob.SetSubjectId (jobSubject->GetElementId());
+    if (BSISUCCESS != this->GetSyncInfo().InsertImportJob(importJob))
+        return ImportJobCreateStatus::FailedExistingRoot;
+
+    m_importJob.GetImportJob() = importJob;     // Update the syncinfo part of the import job
+
+    return ImportJobCreateStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DwgImporter::ImportJobLoadStatus DwgImporter::FindJob ()
+    {
+    // there is only one root model for a DWG file.
+    m_importJob = this->FindSoleImportJobForFile (this->GetDwgDb());
+    if (!m_importJob.IsValid())
+        return ImportJobLoadStatus::FailedNotFound;
+
+    // *** TRICKY: If this is called by the framework as a check *after* it calls _IntializeJob, then don't change the change detector!
+    if (IsUpdating())
+        this->_SetChangeDetector (true);
+
+    this->GetDwgFileId (this->GetDwgDb(), true);
+    this->GetOrCreateJobPartitions ();
+    this->GetOrCreateRootModel ();
+    this->CheckSameRootModelAndUnits ();
+
+    // There's only one hierarchy subject for a job. Look it up.
+    auto found = this->GetJobHierarchySubject ();
+    if (found.IsValid())
+        this->SetSpatialParentSubject (*found);
+    else
+        return ImportJobLoadStatus::FailedNotFound;
+
+    return ImportJobLoadStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Don.Fu          04/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void            DwgImporter::_BeginImport ()
+    {
+    this->_GetChangeDetector()._Prepare (*this);
+    m_dgndb->AddIssueListener (m_issueReporter.GetECDbIssueListener());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1097,12 +1356,54 @@ void            DwgImporter::_FinishImport ()
     {
     _PostProcessViewports ();
     _EmbedFonts ();
-    _AddDefaultRootGuestSyncInfo ();
 
     m_dgndb->GeoLocation().InitializeProjectExtents();
 
-    if (m_defaultViewId.IsValid() && _IsCreatingNewDgnDb())
+    if (m_defaultViewId.IsValid() && IsCreatingNewDgnDb())
         GetDgnDb().SaveProperty(DgnViewProperty::DefaultView(), &m_defaultViewId, sizeof(m_defaultViewId));
+
+    IDwgChangeDetector& changeDetector = _GetChangeDetector ();
+    if (IsUpdating())
+        {
+        DwgDbDatabaseP  dwg = m_dwgdb.get ();
+
+        // begin element/mode deletion marked up by the change detector:
+        if (nullptr != dwg)
+            {
+            changeDetector._DetectDeletedElementsInFile (*this, *dwg);
+            changeDetector._DetectDeletedModelsInFile (*this, *dwg);
+            }
+        for (auto& xref : m_loadedXrefFiles)
+            {
+            if (nullptr != (dwg = xref.GetDatabaseP()))
+                {
+                changeDetector._DetectDeletedElementsInFile (*this, *dwg);
+                changeDetector._DetectDeletedModelsInFile (*this, *dwg);
+                }
+            }
+        // done deletion
+        changeDetector._DetectDeletedElementsEnd (*this);
+        changeDetector._DetectDeletedModelsEnd (*this);
+
+        // update syncinfo for master DWG file
+        DwgSyncInfo&    syncInfo = GetSyncInfo ();
+        StableIdPolicy  policy = GetCurrentIdPolicy ();
+        DwgSyncInfo::FileProvenance     masterProv(*m_dwgdb.get(), syncInfo, policy);
+        masterProv.Update ();
+
+        // update syncinfo for xref files
+        for (auto& xref : m_loadedXrefFiles)
+            {
+            if (nullptr != (dwg = xref.GetDatabaseP()))
+                {
+                DwgSyncInfo::FileProvenance xrefProv(*dwg, syncInfo, policy);
+                xrefProv.Update ();
+                }
+            }
+        }
+    changeDetector._Cleanup (*this);
+
+    ValidateJob ();
 
     // WIP - thumbnails
     // GenerateThumbnails ();
@@ -1144,7 +1445,9 @@ BentleyStatus   DwgImporter::Process ()
         return  BSIERROR;
         }
 
-    m_modelspaceId = m_dwgdb->GetModelspaceId ();
+    // Initializing ImportJob should have set the root model ID, but check it anyway.
+    if (m_modelspaceId.IsNull())
+        m_modelspaceId = m_dwgdb->GetModelspaceId ();
 
     this->_BeginImport ();
     if (this->WasAborted())
@@ -1224,10 +1527,9 @@ BentleyStatus   DwgImporter::Process ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          01/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgImporter::DwgImporter (DwgImporter::Options& options) : m_syncInfo(*this), m_config(options.GetConfigFile(), *this), m_dgndb(), m_dwgdb(), m_loadedFonts(*this), m_issueReporter(options.GetReportFile())
+DwgImporter::DwgImporter (DwgImporter::Options const& options) : m_options(options), m_syncInfo(*this), m_config(options.GetConfigFile(), *this), m_dgndb(), m_dwgdb(), m_loadedFonts(*this), m_issueReporter(options.GetReportFileName())
     {
     m_wasAborted = false;
-    m_options = options;
     m_rootFileName.Clear ();
     m_rootTransform.InitIdentity ();
     m_fileCount = 0;
@@ -1271,9 +1573,6 @@ DwgImporter::~DwgImporter ()
     {
     if (m_issueReporter.HasIssues())
         m_issueReporter.CloseReport ();
-
-    if (nullptr != m_options.GetProgressMeter())
-        DgnPlatformLib::QueryHost()->SetProgressMeter (nullptr);
 
     m_modelspaceXrefs.clear ();
     m_paperspaceXrefs.clear ();
@@ -1547,7 +1846,7 @@ BentleyStatus   ImportRule::ComputeNewName(Utf8StringR newName, Utf8StringCR mod
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t        DwgImporter::Options::GetDgnLineWeight (DwgDbLineWeight dwgWeight)
+uint32_t        DwgImporter::Options::GetDgnLineWeight (DwgDbLineWeight dwgWeight) const
     {
     auto    found = m_lineweightMapping.find (dwgWeight);
     if (found != m_lineweightMapping.end())

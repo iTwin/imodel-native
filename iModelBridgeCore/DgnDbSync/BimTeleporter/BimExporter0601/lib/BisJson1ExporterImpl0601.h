@@ -25,7 +25,7 @@
 
 BEGIN_BIM_EXPORTER_NAMESPACE
 
-struct WindowsKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
+struct KnownDesktopLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     {
     BeFileName m_tempDirectory;
     BeFileName m_executableDirectory;
@@ -35,9 +35,9 @@ struct WindowsKnownLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
     virtual BeFileNameCR _GetDgnPlatformAssetsDirectory() override { return m_assetsDirectory; }
 
     //---------------------------------------------------------------------------------------
-    // @bsimethod                                                   BentleySystems
+    // @bsiclass                                                   BentleySystems
     //---------------------------------------------------------------------------------------
-    WindowsKnownLocationsAdmin()
+    KnownDesktopLocationsAdmin()
         {
         // use the standard Windows temporary directory
         wchar_t tempPathW[MAX_PATH];
@@ -72,10 +72,14 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         ECN::ECClassCP      m_viewDefinition2dClass;
         ECN::ECClassId      m_spatialViewDefinitionId;
         ECN::ECClassCP      m_cameraViewDefinitionClass;
+        ECN::ECClassCP      m_drawingViewDefinitionClass;
+        ECN::ECClassCP      m_sheetViewDefinitionClass;
         ECN::ECClassCP      m_categoryClass;
         ECN::ECClassCP      m_subCategoryClass;
         ECN::ECClassCP      m_linkModelClass;
+        ECN::ECClassCP      m_annotationTextStyle;
 
+        Dgn::DgnElementId        m_jobSubjectId;
         Dgn::DgnElementId        m_documentListModelId;
         Dgn::DgnElementId        m_sheetListModelId;
         bmap<Utf8String, Utf8String> m_authorityIds;
@@ -97,6 +101,9 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, uint64_t id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, Utf8CP id);
         void MakeNavigationProperty(Json::Value& out, Utf8CP propertyName, Json::Value& id);
+        BentleyStatus ExportFonts(Json::Value& out);
+        BentleyStatus ExportGeometryParts(Json::Value& out);
+        BentleyStatus ExportLineStyles(Json::Value& out);
         BentleyStatus ExportAuthorities(Json::Value& out);
         BentleyStatus ExportViews(Json::Value& out);
         BentleyStatus ExportCategories(Json::Value& out);
@@ -110,7 +117,8 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         BentleyStatus ExportElements(Json::Value& out, DgnModelId parentModel);
         BentleyStatus ExportElements(Json::Value& out, Utf8CP schemaName, Utf8CP className, DgnModelId parentModel, Utf8CP whereClause = nullptr, bool sendToQueue = true);
         BentleyStatus ExportNamedGroups(Json::Value& out);
-        BentleyStatus ExportRelationships(Json::Value& out);
+        BentleyStatus ExportElementHasLinks(Json::Value& out);
+        BentleyStatus ExportV8Relationships(Json::Value& out);
         DgnElementId CreateCodeSpec(Json::Value& out, uint8_t codeSpecType, Utf8CP name);
         DgnElementId CreateSubjectElement(Utf8CP subjectName, Json::Value& out);
         DgnElementId CreatePartitionElement(DgnModelCR model, DgnElementId subject, Json::Value& out);
@@ -122,6 +130,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         BentleyStatus InitDrawingListModel(Json::Value& out);
         BentleyStatus InitSheetListModel(Json::Value& out);
         Utf8String RemapResourceAuthority(Json::Value& obj, ECN::ECClassCP elementClass);
+        void HandleAnnotationTextStyle(Json::Value& obj, DgnElementId id);
 
         //! Report progress and detect if user has indicated that he wants to cancel.
         void ReportProgress() const;
@@ -140,7 +149,7 @@ struct BisJson1ExporterImpl : DgnPlatformLib::Host
         //! Get the progress meter, if any.
 
         virtual void                        _SupplyProductName(Utf8StringR name) override { name.assign("BimTeleporter"); }
-        virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new WindowsKnownLocationsAdmin(); };
+        virtual IKnownLocationsAdmin&       _SupplyIKnownLocationsAdmin() override { return *new KnownDesktopLocationsAdmin(); };
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
 

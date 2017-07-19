@@ -307,7 +307,7 @@ $(modifiedHeadersOutputBaseDir).stamp : $[@wildcard $(DgnV8Sdk)PublicAPI/*.h]
     !~@mkdir ${modifiedHeadersOutputBaseDir}
     !~@mkdir $(o)
     ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedHeadersOutputBaseDir} -d$(DgnV8Sdk)PublicAPI $(cleanopt) --includeDirPrefix=$(includeDirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefix
-    CopyWithSymlinks.py $(DgnPlatformV8BuildContext)VendorAPI ${modifiedHeadersOutputBaseDir}
+    ModifyIncludes.py $(PUBLISH_VERBOSE) -o${modifiedHeadersOutputBaseDir} -d$(DgnV8Sdk)VendorAPI $(cleanopt) --includeDirPrefix=$(includeDirPrefix) --symbolPrefix="DGNV8" --symbolsToPrefix=$(o)symbolsToPrefix    
     >$(o)replacements
 \"Bentley.h\"!<VersionedDgnV8Api\/Bentley\/Bentley.h>
 \"BeAssert.h\"!<VersionedDgnV8Api\/Bentley\/BeAssert.h>
@@ -323,6 +323,7 @@ $(modifiedHeadersOutputBaseDir).stamp : $[@wildcard $(DgnV8Sdk)PublicAPI/*.h]
 \<GeoCoord\/basegeocoord.h\>!<VersionedDgnV8Api\/GeoCoord\/basegeocoord.h>
 \<Mstn\/RealDwg\/rDwgAPI.h\>!<VersionedDgnV8Api\/Mstn\/RealDWG\/rDwgAPI.h>
 \<realdwg\/base\/dbmain.h\>!<VersionedDgnV8Api\/realdwg\/base\/dbmain.h>
+\<TerrainModel\/TerrainModel.h\>!<VersionedDgnV8Api\/TerrainModel\/TerrainModel.h>
     <
     python $(bsiScripts)RegexListReplace.py $(o)replacements ${modifiedHeadersOutputBaseDir}
     >$@

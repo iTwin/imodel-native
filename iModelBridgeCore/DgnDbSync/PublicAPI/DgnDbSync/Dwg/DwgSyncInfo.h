@@ -112,6 +112,7 @@ struct DwgSyncInfo
         bool            FindByName (bool fillLastModData);
         bool            IsValid () const {return m_syncId.IsValid();}
         DwgFileId       GetDwgFileId () const { return m_syncId; }
+        StableIdPolicy  GetIdPolicy () const { return m_idPolicy; }
         };
 
     struct FileIterator : BeSQLite::DbTableIterator
@@ -138,6 +139,14 @@ struct DwgSyncInfo
         typedef Entry iterator;
         DGNDBSYNC_EXPORT const_iterator begin() const;
         const_iterator end() const {return Entry (NULL, false);}
+        };
+
+    struct FileById : FileIterator
+        {
+        FileById (DgnDbCR db, DwgFileId fileId) : FileIterator(db, "Id=?")
+            {
+            GetStatement()->BindInt(1, fileId.GetValue());
+            }
         };
 
     struct DwgModelId
@@ -285,30 +294,33 @@ struct DwgSyncInfo
     struct ImportJob
         {
         //!< The type of converter used to create the ibim. NB This is persistent data. Do not change.
-        enum class Type {RootModels, TiledFile};
-
-        //! Policy for converting 2-D models. NB This is persistent data. Do not change.
-        enum class Convert2dModels 
+        enum class Type
             {
-            No=0,       //!< Do not convert 2-D models
-            Yes=1,      //!< Do convert 2-D models
-            Only2d=2    //!< Convert @em only 2-D models; do not convert 3-D models
+            RootModels,
+            TiledFile       // not implemented yet
             };
 
-        DwgModelSource  m_dwgRootModel;
-        Type            m_type;
-        Convert2dModels m_convert2dModels;      // future use
-        Utf8String      m_prefix;               // future use
+    private:
+        DwgModelSyncInfoId  m_dwgRootModel;
+        DgnElementId        m_subjectId;
+        Type                m_type;
+        Utf8String          m_prefix;
 
-        ImportJob (DwgModelSource rootModel, Type type) : m_dwgRootModel(rootModel), m_type(type), m_convert2dModels(Convert2dModels::No) {}
-        ImportJob () : m_dwgRootModel(DwgFileId(), DwgModelId()), m_type(Type::RootModels), m_convert2dModels(Convert2dModels::No) {}
-
+    public:
         static Utf8String       GetSelectSql ();
         void                    FromSelect (BeSQLite::Statement&);
         BeSQLite::DbResult      Insert (BeSQLite::Db&) const;
-        static BentleyStatus    FindById (ImportJob&, DgnDbCR&, DwgSyncInfo::DwgModelSource const&);
+        static BentleyStatus    FindById (ImportJob&, DgnDbCR, DwgModelSyncInfoId const&);
         static void             CreateTable (BeSQLite::Db&);
-        };
+        Type    GetType () const { return m_type; }
+        void    SetType (Type t) { m_type = t; }
+        Utf8StringCR  GetPrefix () const { return m_prefix; }
+        void  SetPrefix (Utf8StringCR p) { m_prefix = p; }
+        DgnElementId GetSubjectId () const { return m_subjectId; }
+        void SetSubjectId (DgnElementId id) { m_subjectId = id; }
+        DwgModelSyncInfoId const& GetDwgModelSyncInfoId () const { return m_dwgRootModel; }
+        void SetDwgModelSyncInfoId (DwgModelSyncInfoId const& m) { m_dwgRootModel = m; }
+        };  // ImportJob
 
     struct ImportJobIterator : BeSQLite::DbTableIterator
         {
@@ -328,7 +340,7 @@ struct DwgSyncInfo
         typedef Entry iterator;
         DGNDBSYNC_EXPORT const_iterator begin() const;
         const_iterator end() const {return Entry (NULL, false);}
-        };
+        };  // ImportJobIterator
 
     //! Sync info for a layer
     struct Layer
@@ -419,9 +431,64 @@ struct DwgSyncInfo
 
         explicit DwgObjectProvenance (BeSQLite::StatementP);
         DwgObjectProvenance (DwgDbObjectCR, DwgSyncInfo&, StableIdPolicy, bool hash2nd = false);
+        DwgObjectProvenance () {}
         BentleyStatus  CreateBlockHash (DwgDbObjectIdCR blockId);
         bool HasSecondaryHash () const { return !m_secondaryHash.IsNull(); }
         bool IsSame (DwgObjectProvenance const& other, bool check2nd = false) const { return m_primaryHash.IsSame(other.m_primaryHash) && (!check2nd || m_secondaryHash.IsSame(other.m_secondaryHash)); }
+        DwgObjectHash const& GetPrimaryHash () const { return m_primaryHash; }
+        void SetPrimaryHash (DwgObjectHash const& h) { m_primaryHash = h; }
+        DwgObjectHash const& GetSecondaryHash () const { return m_secondaryHash; }
+        void SetSecondaryHash (DwgObjectHash const& h) { m_secondaryHash = h; }
+        };  // DwgObjectProvenance
+
+    //! Uniquely identifies a DWG object
+    struct DwgObjectSource
+        {
+        DwgModelSyncInfoId  m_modelSyncInfoId;
+        uint64_t            m_dwgObjectHandle;
+
+        DwgObjectSource (DwgDbObjectCR o, DwgModelSyncInfoId m) : m_modelSyncInfoId(m), m_dwgObjectHandle(o.GetObjectId().ToUInt64()) {}
+        DwgObjectSource (uint64_t h, DwgModelSyncInfoId m) : m_modelSyncInfoId(m), m_dwgObjectHandle(h) {}
+        DwgObjectSource() : m_dwgObjectHandle(0) {}
+        bool IsValid() const { return m_modelSyncInfoId.IsValid() && m_dwgObjectHandle != 0; }
+        };  // DwgObjectSource
+
+    struct CompareDwgObjectSource
+        {
+        bool operator()(DwgSyncInfo::DwgObjectSource const& lhs, DwgSyncInfo::DwgObjectSource const& rhs) const 
+            {
+            if (lhs.m_modelSyncInfoId < rhs.m_modelSyncInfoId)
+                return true;
+            if (lhs.m_modelSyncInfoId != rhs.m_modelSyncInfoId)
+                return false;
+            return lhs.m_dwgObjectHandle < rhs.m_dwgObjectHandle;
+            }
+        };
+
+    typedef BentleyApi::bset<DwgObjectSource, CompareDwgObjectSource> T_DwgObjectSourceSet;
+    typedef BentleyApi::bmap<DwgObjectSource, T_DwgObjectSourceSet, CompareDwgObjectSource> T_DwgObjectMapOfDwgObjectSourceSet;
+
+    //! Full details of how a DWG object is mapped to a BIM element.
+    struct DwgObjectMapping : DwgObjectSource
+        {
+        DgnElementId        m_elementId;
+        DwgObjectProvenance m_provenance;
+
+        DwgObjectMapping (DgnElementId id, DwgDbObjectCR o, DwgModelSyncInfoId m, DwgObjectProvenance const& p) :
+            DwgObjectSource(o, m), m_elementId(id), m_provenance(p) {}
+
+        DwgObjectMapping (DgnElementId id, uint64_t h, DwgModelSyncInfoId m, DwgObjectProvenance const& p) :
+            DwgObjectSource(h, m), m_elementId(id), m_provenance(p) {}
+
+        DwgObjectMapping() {}
+
+        DgnElementId GetElementId() const {return m_elementId;}
+        bool IsValid() const {return DwgObjectSource::IsValid() && m_elementId.IsValid();}
+        };  // DwgObjectMapping
+
+    struct CompareDwgObjectMappingByElementId
+        {
+        bool operator()(DwgSyncInfo::DwgObjectMapping const& lhs, DwgSyncInfo::DwgObjectMapping const& rhs) const { return lhs.m_elementId.GetValueUnchecked() < rhs.m_elementId.GetValueUnchecked(); }
         };
 
     //! Sync info for an object holds a mapping between and an entity in DgnDb and an object in a dwg model,
@@ -436,11 +503,12 @@ struct DwgSyncInfo
                 Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
 
             public:
-                DGNDBSYNC_EXPORT DgnElementId GetElementId();
-                DGNDBSYNC_EXPORT DwgFileId GetDwgFileId();
-                DGNDBSYNC_EXPORT DwgModelSyncInfoId GetDwgModelSyncInfoId();
-                DGNDBSYNC_EXPORT uint64_t GetDwgObjectId();
-                DGNDBSYNC_EXPORT DwgObjectProvenance GetProvenance();
+                DGNDBSYNC_EXPORT DgnElementId GetElementId() const;
+                DGNDBSYNC_EXPORT DwgFileId GetDwgFileId() const;
+                DGNDBSYNC_EXPORT DwgModelSyncInfoId GetDwgModelSyncInfoId() const;
+                DGNDBSYNC_EXPORT uint64_t GetDwgObjectId() const;
+                DGNDBSYNC_EXPORT DwgObjectProvenance GetProvenance() const;
+                DGNDBSYNC_EXPORT DwgObjectMapping GetObjectMapping() const;
                 Entry const& operator* () const {return *this;}
             };
 
@@ -551,6 +619,7 @@ public:
 
     //! Get the name of the .syncinfo file
     DGNDBSYNC_EXPORT static BeFileName GetDbFileName (DgnDb&);
+    DGNDBSYNC_EXPORT static BeFileName GetDbFileName (BeFileNameCR);
 
     //! Call this to attach a synchinfo file to a project.
     DGNDBSYNC_EXPORT BentleyStatus AttachToProject (DgnDb& targetProject, BeFileNameCR dbName);
@@ -565,7 +634,7 @@ public:
     //! Create an empty .syncinfo file. Then attach it to the project.
     //! @param[in] dbName The name of the syncinfo file
     //! @param[in] deleteIfExists If true, any existing .syncinfo file with the same name is deleted
-    DGNDBSYNC_EXPORT BentleyStatus CreateEmptyFile (BeFileNameCR dbName, bool deleteIfExists=true);
+    DGNDBSYNC_EXPORT static BentleyStatus CreateEmptyFile (BeFileNameCR dbName, bool deleteIfExists=true);
 
     //! Query if the DwgSyncInfo is valid (created or read)
     bool IsValid() const {return m_isValid;}
@@ -607,7 +676,7 @@ public:
     //! Create sync info for a DWG model/layout/xref/raster
     //! @param[out] minfo   The newly inserted sync info for the model
     //! @param[in] modelid  The model in the DgnDb to which this dwg layout block model is mapped
-    //! @param[in] block The dwg layout block model (modelspace or a paperspace)
+    //! @param[in] block The dwg layout block model (a modelspace or a paperspace)
     //! @param[in] transform The transform from the dwg layout block model to the DgnDb model
     //! @return non-zero error status if the new sync info could not be created
     DGNDBSYNC_EXPORT BentleyStatus InsertModel (DwgModelMapping& minfo, DgnModelId modelId, DwgDbBlockTableRecordCR block, TransformCR transform);
@@ -687,6 +756,8 @@ public:
     DGNDBSYNC_EXPORT BentleyStatus InsertElement (DgnElementId id, DwgDbEntityCR en, DwgObjectProvenance const& lmt, DwgModelSyncInfoId const& modelSyncId);
     DGNDBSYNC_EXPORT BentleyStatus UpdateElement (DgnElementId id, DwgDbEntityCR en, DwgObjectProvenance const& lmt);
     DGNDBSYNC_EXPORT bool TryFindElement (DgnElementId&, DwgDbObjectCP, DwgModelSyncInfoId const&) const;
+    //! Check if the specified BIM element is mapped to the same DWG object as any element in the specified set.
+    DGNDBSYNC_EXPORT bool IsMappedToSameDwgObject (DgnElementId elementId, DgnElementIdSet const& known) const;
 
     //! Record sync info for a layer.
     //! @param[out] info        Sync info for the layer
@@ -718,7 +789,7 @@ public:
     //! Look up a record in the ImportJob table
     //! @param[out] importJob       The gtest data, if found
     //! @param[in] dwgModel      Identifies the DWG root model in syncinfo
-    DGNDBSYNC_EXPORT BentleyStatus FindImportJobById(ImportJob& importJob, DwgModelSource const& dwgModel);
+    DGNDBSYNC_EXPORT BentleyStatus FindImportJobById(ImportJob& importJob, DwgModelSyncInfoId const& dwgModel);
 
     //! Record the fact that the specified importJob has been converted and stored in the DgnDb
     //! @param importJob    The importJob info to insert

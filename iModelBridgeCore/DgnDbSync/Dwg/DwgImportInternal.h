@@ -18,10 +18,10 @@
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeFileListIterator.h>
+#include <Bentley/Desktop/FileSystem.h>
 
 #include <BeSQLite/BeSQLite.h>
 #include <DgnPlatform/DgnPlatform.h>
-#include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnDb.h>
 #include <DgnPlatform/DgnCoreAPI.h>
 #include <DgnPlatform/GenericDomain.h>
@@ -273,10 +273,10 @@ public:
     // create a sheet view for the overall layout viewport
     DgnViewId       CreateSheetView (DgnModelId sheetId, Utf8StringCR proposedName);
     // create a view attachment element in a sheet model for a viewport entity in a paperspace
-    DgnElementId    CreateViewAttachment (DgnModelR sheetModel, DgnViewId viewId, DwgSyncInfo::DwgModelSyncInfoId const& modelSyncId);
+    DgnElementPtr   CreateViewAttachment (DgnModelCR sheetModel, DgnViewId viewId);
     // Corresponding Update methods
     BentleyStatus   UpdateSpatialView (DgnViewId viewId);
-    BentleyStatus   UpdateViewAttachment (DgnElementId attachId, DgnViewId viewId, DwgSyncInfo::DwgObjectProvenance const& objProv, DwgImporter::ElementImportInputs& inputs);
+    DgnElementPtr   UpdateViewAttachment (DgnElementId attachId, DgnViewId viewId);
 
     bool    ValidateViewName (Utf8StringR viewNameInOut, DgnViewId& viewIdOut);
     void    SetBackgroundColor (ColorDefCR color) { m_backgroundColor = color; }

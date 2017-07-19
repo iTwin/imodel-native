@@ -520,7 +520,6 @@ TEST_F(ECConversionTests, ECXAdata)
     DoConvert(m_dgnDbFileName, m_v8FileName);
 
     DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
-    db->Schemas().CreateClassViewsInDb();
     EC::ECSqlStatement stmt;
     EXPECT_EQ(EC::ECSqlStatus::Success, stmt.Prepare(*db, "SELECT * FROM test.TestClass"));
     BentleyApi::Dgn::DgnElementId bimeid;

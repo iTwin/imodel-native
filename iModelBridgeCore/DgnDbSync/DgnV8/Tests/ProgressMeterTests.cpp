@@ -62,7 +62,7 @@ TEST_F(ProgressMeterTests, ProgressOnAbort)
     // *** TRICKY: the converter takes a reference to and will MODIFY its Params. Make a copy, so that it does not pollute m_params.
     RootModelConverter::RootModelSpatialParams params(m_params);
 
-    params.SetRootFileName(m_v8FileName);
+    params.SetInputFileName(m_v8FileName);
     RootModelConverter creator(params);
     creator.SetWantDebugCodes(true);
     auto db = OpenExistingDgnDb(m_dgnDbFileName);

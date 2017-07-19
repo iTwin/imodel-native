@@ -198,6 +198,9 @@ struct SyncInfo
         bool m_isValid;
         bmap<CodeSpecId, CodeSpecId> m_codeSpecMap;
         bmap<DgnCategoryId, DgnCategoryId> m_categoryMap;
+        bmap<DgnFontId, DgnFontId> m_fontMap;
+        bmap<DgnStyleId, DgnStyleId> m_styleMap;
+        bmap<LsComponentId, LsComponentId> m_componentMap;
 
     protected:
         BeSQLite::DbResult InsertFile(DbFileProvenance& provenance, FileInfo const& info);
@@ -262,6 +265,15 @@ struct SyncInfo
 
         BentleyStatus InsertSubCategory(DgnCategoryId catId, DgnSubCategoryId oldId, DgnSubCategoryId newId);
         DgnSubCategoryId LookupSubCategory(DgnCategoryId catId, DgnSubCategoryId oldId);
+
+        BentleyStatus InsertFont(DgnFontId oldId, DgnFontId newId);
+        DgnFontId LookupFont(DgnFontId oldId);
+
+        BentleyStatus InsertStyle(DgnStyleId oldId, DgnStyleId newId);
+        DgnStyleId LookupStyle(DgnStyleId oldId);
+
+        BentleyStatus InsertLsComponent(LsComponentId oldId, LsComponentId newId);
+        LsComponentId LookupLsComponent(LsComponentId);
 
         DgnElementId LookupElement(DgnElementId oldId);
         DgnModelId LookupModel(DgnModelId oldId);

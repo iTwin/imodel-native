@@ -20,6 +20,22 @@
     #define IMODEL_BRIDGE_EXPORT IMPORT_ATTRIBUTE
 #endif
 
+//! @brief Begins a table of translatable strings contained in an iModelBridge.
+//! This macro defines a struct called STRUCT_NAME that has entries for a group of transatable strings.
+//! The struct has a GetString function that calls iModelBridge::GetString using the specified NAMESPACE_NAME.
+//! The struct also has a GetNameSpace function that returns NAMESPACE_NAME as a constant string.
+#define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START(STRUCT_NAME,NAMESPACE_NAME)\
+    struct STRUCT_NAME\
+        {\
+        typedef BeSQLite::L10N::NameSpace NameSpace;\
+        typedef BeSQLite::L10N::StringId StringId;\
+        static NameSpace GetNameSpace() {return NameSpace(#NAMESPACE_NAME);}\
+        static Utf8String GetString(StringId id) {return iModelBridge::L10N::GetString(GetNameSpace(), id);}\
+        static WString    GetStringW(StringId id) {return WString(GetString(id).c_str(), BentleyCharEncoding::Utf8);}\
+
+//! @brief Eneds a table of translatable strings contained in an iModelBridge.
+#define IMODELBRIDGEFX_TRANSLATABLE_STRINGS_END };
+
 BEGIN_BENTLEY_DGN_NAMESPACE
 
 struct iModelBridgeFwk;
@@ -32,12 +48,14 @@ An iModel "bridge" converts data from an external data source into a BIM.
 
 See @ref ANCHOR_TypicalBridgeConversionLogic "iModelBridge conversion logic pattern" for details on how to write bridge conversion logic.
 
-A bridge is normally called as part of a @ref ANCHOR_BridgeJob "job" by the @ref GROUP_iModelBridgeFwk "iModelBridge Framework"
+A bridge is normally called as part of a @ref ANCHOR_iModelBridgeJobOverview "job" by the @ref GROUP_iModelBridgeFwk "iModelBridge Framework"
 as part of a process of reacting to changes to source documents and then converting those changes and updating an iModel.
 A bridge may also be called by a @ref BentleyApi::Dgn::iModelBridgeSacAdapter "standalone converter" in order to write to a standalone dgndb file.
 A @ref BentleyApi::Dgn::iModelBridgeSacAdapter "standalone converter" may be written in order to @em test a bridge's conversion logic.
 
-A bridge must be @ref ANCHOR_BridgeLoading "implemented by a shared library".
+A bridge must be @ref ANCHOR_BridgeLoading "implemented by a shared library", and it must @ref ANCHOR_BridgeRegistration "be registered" and must report its document @ref iModelBridge_getAffinity "affinity".
+
+Also see @ref ANCHOR_BridgeConfig "bridge-specific configuration".
 
 Here is a summary of the process that is conducted by the framework. The process shown here is for the case of a bridge doing an incremental update.
 The process of creating a new BIM is essentially similar. The differences are noted below.
@@ -54,7 +72,7 @@ The framework then makes the following calls on the bridge object:
 registered by the bridge in its _Initialize method are imported into the BIM and are up to date. 
 -# iModelBridge::_OnConvertToBim
 -# iModelBridge::_OpenSource
--# Find or initialize the @ref ANCHOR_BridgeJob "job"
+-# Find or initialize the @ref ANCHOR_BridgeJobSubject "job subject"
     -# iModelBridge::_GetParams().SetIsUpdating (true);
     -# jobsubject = iModelBridge::_FindJob
     -# If jobsubject.IsInvalid
@@ -94,6 +112,15 @@ All coordinates and distances in an iModel must be stored in meters, and so the 
 If the target iModel has a Geographic Coordinate System (GCS), the bridge must transform the source data into that GCS.
 Similarly, if the iModel has a global origin, the bridge must subtract off that global origin from the source data as part of the conversion.
 Call DgnDb::GeoLocation::GetDgnGCS to get the details of the iModel's GCS and global origin.
+
+<h2>Bridge Assets</h2>
+The bridge's assets are in the directory identified by iModelBridge::Params::GetAssetsDir.
+The bridge's assets are separate from the framework's assets. The DgnPlatformLib::Host::IKnownLocationsAdmin::GetDgnPlatformAssetsDirectory points to the assets of the framework, not the bridge.
+
+<h2>Translatable Strings</h2>
+A bridge should call BentleyApi::Dgn::iModelBridge::L10N::GetString to look up its own translatable strings.
+A bridge must override _SupplySqlangRelPath to specify the location of its .db3 file, relative to its own assets directory.
+A bridge must define its own translatable string tables using the IMODELBRIDGEFX_TRANSLATABLE_STRINGS_START macro, and @em not the BENTLEY_TRANSLATABLE_STRINGS_START macro.
 */
 
 //=======================================================================================
@@ -109,6 +136,18 @@ struct iModelBridge
     // *** NEEDS WORK: We need some kind of registry of unique bridge types. This can then be
     // ***              used by a given bridge to help make its job name unique in the iModel's dictionary model.
     static Utf8CP str_BridgeType_DgnV8() {return "DgnV8";}
+    static Utf8CP str_BridgeType_DWG() {return "DWG";}
+
+    //! The bridge's affinity to some source file.
+    enum Affinity {None, Low, Medium, High, ExactMatch};
+
+    //! Identifies a bridge that has some affinity to a requested source file
+    struct BridgeAffinity
+        {
+        WString m_bridgeRegSubKey;          //!< The @ref ANCHOR_BridgeRegistration "subkey" that identifies the bridge in the registry.
+        iModelBridge::Affinity m_affinity;  //!< The affinity of the bridge for the requested source file.
+        BridgeAffinity() : m_affinity(Affinity::None) {}
+        };
 
     enum class CmdLineArgStatus{Success, Error, NotRecognized};
 
@@ -147,6 +186,7 @@ struct iModelBridge
         bool m_wantThumbnails = true;
         BeFileName m_inputFileName;
         BeFileName m_drawingsDirs;
+        bvector<BeFileName> m_drawingAndSheetFiles;
         // *** TBD: location of mangaged workspace
         GCSDefinition m_inputGcs;
         GCSDefinition m_outputGcs;
@@ -180,9 +220,11 @@ struct iModelBridge
         bool IsUpdating() const {return m_isUpdating;} //!< True if the bridge is updating an existing job subject and its contents from a previous conversion.
         BeFileNameCR GetBriefcaseName() const {return m_briefcaseName;} //!< The name of the BIM that is being updated
         BeFileNameCR GetInputFileName() const {return m_inputFileName;} //!< The name of the input file that is to be read and converted and/or scanned for changes.
+        void SetInputFileName(BeFileNameCR fn) {m_inputFileName=fn;} //!< Set the name of the input file that is to be read and converted and/or scanned for changes.
         BeFileNameCR GetAssetsDir() const {return m_assetsDir;} //!< The bridge library's assets directory
         BeFileNameCR GetLibraryDir() const {return m_libraryDir;} //!< The directory from which the bridge library itself was loaded 
         BeFileNameCR GetDrawingsDirs() const {return m_drawingsDirs;} //!< The top-level directory to scan for other files that may contain drawings and sheets
+        bvector<BeFileName> const& GetDrawingAndSheetFiles() const {return m_drawingAndSheetFiles;} //!< The list of files to search for drawings and sheets
         BeFileNameCR GetReportFileName() const {return m_reportFileName;} //!< Where to write a report of results and issues that occurred during the conversion. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues and logging".
         //! Once the BIM name has been set, the framework calls this to compute the report file name. This is also called automatically by Validate.
         DgnPlatformLib::Host::RepositoryAdmin* GetRepositoryAdmin() const {return m_repoAdmin;} //!< The repository admin
@@ -228,11 +270,25 @@ struct iModelBridge
 
     //! @}
 
-
 public:
     //! Supply the relative path to the .db3 file that contains translatable strings used by the bridge. 
-    //! Must be relative to the directory returned by DgnPlatformLib::QueryHost().GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory()
+    //! Must be relative to the directory returned by iModelBridge::Params::GetAssetsDir.
+    //! @see GetString
     virtual WString _SupplySqlangRelPath() = 0;
+
+    struct L10N
+        {
+        //! Initialize the bridge L10N with the specified files. This is normally called by iModelBridgeFwk on behalf of a bridge.
+        //! @see _SupplySqlangRelPath
+        IMODEL_BRIDGE_EXPORT static BentleyStatus Initialize(BeSQLite::L10N::SqlangFiles const&);
+
+        //! Retrieve a localized string by Namespace and Name. This function looks in both the db3 file specified by _SupplySqlangRelPath and in the platform/framework db3.
+        //! @param[in] nameSpace the namespace of the string.
+        //! @param[in] name the name of the string.
+        //! @note internal framework strings are also searched
+        //! @see _SupplySqlangRelPath
+        IMODEL_BRIDGE_EXPORT static Utf8String GetString(BeSQLite::L10N::NameSpace nameSpace, BeSQLite::L10N::StringId name);
+        };
 
     //! Return the Params struct that holds all of the parameters for the bridge.
     //! @note The @ref GROUP_iModelBridgeFwk "framework" may use this function to update bridge parameters in the course of executing a job.
@@ -308,7 +364,7 @@ public:
     //! @param updateStatus non-zero error status if any step in the conversion failed. If so, the conversion will be rolled back.
     virtual void _CloseSource(BentleyStatus updateStatus) {}
 
-    //! Try to find an existing @ref ANCHOR_BridgeJob "job" in the BIM.
+    //! Try to find an existing @ref ANCHOR_BridgeJobSubject "job subject" in the BIM.
     //! This is called prior to _ConvertToBim.
     //! <p>Normally, the bridge should look up a job subject element by its code. 
     //! <p>If _FindJob does detect an existing job, that means that this is an update.
@@ -316,7 +372,7 @@ public:
     //! @return null if the BIM does not contain a job subject for this bridge and this data source.
     virtual SubjectCPtr _FindJob() = 0;
 
-    //! Create a @ref ANCHOR_BridgeJob "job" subject element and all infrastructure elements and models below it.
+    //! Create a @ref ANCHOR_BridgeJobSubject "job subject" element and all fixed infrastructure elements and models below it.
     //! This is called once in the life of a bridge and is called only if _FindJob returned an invalid element ptr.
     //! <p>In this function, the bridge should create a job subject element. The new job subject element should be inserted
     //! in the dictionary model as a child of the iModel's root subject.
@@ -328,7 +384,7 @@ public:
     //! (The platform takes care of importing the BIS core domain and schema. The bridge does not have to do that.)
     //! If the bridge may convert any external ECSchemas during this initial conversion, then _InitializeJob is the time to prepare for that.
     //! @note The job subject's code must have a name that is unique among all job subjects that are chlidren of the root subject.
-    //! @note All other subjects, partitions, and definitions created by a bridge for a given data source should be scoped to its job subject. See @ref ANCHOR_BridgeJob "bridge job".
+    //! @note All other subjects, partitions, and definitions created by a bridge for a given data source should be scoped to its job subject. See @ref ANCHOR_BridgeJobSubject "bridge job subject".
     //! @return null if the bridge could not create a job subject for this bridge and this data source.
     virtual SubjectCPtr _InitializeJob() = 0;
 
@@ -345,13 +401,18 @@ public:
     //! The bridge's _ConvertToBim logic can be the same for the initial conversion and for updates. _ConvertToBim 
     //! should always use a @ref GROUP_syncinfo "change detector" and simply adopt a nop change detector in the case of the initial conversion. 
     //! <p>
-    //! @note The bridge should create all subjects, views, categories, and other definitions as children (perhaps indirectly) of its @ref ANCHOR_BridgeJob "job subject". 
+    //! @note The bridge should create all subjects, views, categories, and other definitions as children (perhaps indirectly) of its @ref ANCHOR_BridgeJobSubject "job subject". 
     //! @note _ConvertToBim must not call SaveChanges on the BIM. If it does, the job will be terminated and all changes rolled back and lost.
     //! @note _ConvertToBim must not attempt to create temp tables or call Db::AttachDb. See #_OnConvertToBim.
     //! @param[in] jobSubject The bridge's job subject, as returned by _FindJob or _IntializeJob.
     //! @return non-zero error status if the bridge cannot conversion the BIM. See @ref ANCHOR_BridgeIssuesAndLogging "reporting issues" 
     //! @see _OnConvertToBim
     virtual BentleyStatus _ConvertToBim(SubjectCR jobSubject) = 0;
+
+    //! Called when the framework detects that a input file has been removed from the job and is presumably deleted in the ProjectWise source.
+    //! The bridge should delete all models and elements in the briefcase that came from this file.
+    //! @note In this scenario, the framework calls _Initialize and then this function. None of the other conversion-related setup functions are called.
+    virtual void _OnSourceFileDeleted() = 0;
 
     //! Returns true if the DgnDb itself is being generated from an empty file (rare).
     bool IsCreatingNewDgnDb() {return _GetParams().IsCreatingNewDgnDb();}
@@ -395,14 +456,31 @@ public:
 
 END_BENTLEY_DGN_NAMESPACE
 
-/*! \typedef typedef BentleyApi::Dgn::iModelBridge* (*T_iModelBridge_getInstance)();
- *  \brief The signature of the extern "C" function that a shared library must implement in order to create and return its iModelBridge object.
- *  Note that the iModelBridge_getInstance function must have extern "C" linkage.
- *  Note that the iModelBridge_getInstance function must be exported.
+/*! \typedef typedef BentleyApi::Dgn::iModelBridge* T_iModelBridge_getInstance(wchar_t const* regSubKey);
+ *  \brief The signature of the <code>iModelBridge_getInstance</code> function that a shared library must implement in order to @ref iModelBridge_getInstance "supply a bridge to the framework".
+ *  Note that the iModelBridge_getInstance function must have extern "C" linkage and must be exported.
+ *  \param[in] regSubKey The @ref ANCHOR_BridgeRegistration "subkey" of the bridge to load. This is the string returned by the T_iModelBridge_getAffinity function.
  *  \return An iModelBridge object.
  * @ingroup GROUP_iModelBridge
  */
 extern "C" 
     {
-    typedef BentleyApi::Dgn::iModelBridge* (*T_iModelBridge_getInstance)();
+    typedef BentleyApi::Dgn::iModelBridge* T_iModelBridge_getInstance(wchar_t const* regSubKey);
+    };
+
+/*! \typedef typedef void T_iModelBridge_getAffinity (BentleyApi::Dgn::iModelBridge::BridgeAffinity& bridgeaffinity, BentleyApi::BeFileName const& bridgeLibraryPath, BentleyApi::BeFileName const& sourceFileName);
+ *  \brief The signature of the <code>iModelBridge_getAffinity</code> function that a shared library must implement in order to @ref iModelBridge_getAffinity "report the affinity of a bridge for a source document to the framework".
+ *  Note that the iModelBridge_getAffinity function must have extern "C" linkage and must be exported.
+ *  \param[out] bridgeAffinity      Return the bridge, if any, that could convert this source document. 
+ *  \param[in] affinityLibraryPath  The full path to the affinity library that implements this function. This is a convenience, in case this function needs to locate assets relative to itself.
+ *  \param[in] sourceFIleName       The name of the source file to check
+ *  @note If set, the value in bridgeAffinity.m_bridgeRegSubKey must match the @ref ANCHOR_BridgeRegistration "subkey" of a bridge in the registry.
+ *  @note This function will be called in a separate process from the bridge. The iModelBridge_getAffinity function can (and must) do its own initialization as required to compute affinity.
+ * @ingroup GROUP_iModelBridge
+ */
+extern "C" 
+    {
+    typedef void T_iModelBridge_getAffinity (BentleyApi::Dgn::iModelBridge::BridgeAffinity& bridgeAffinity, 
+                                             BentleyApi::BeFileName const& affinityLibraryPath, 
+                                             BentleyApi::BeFileName const& sourceFileName);
     };

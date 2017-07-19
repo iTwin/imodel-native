@@ -615,7 +615,7 @@ BentleyStatus   DwgImporter::_ImportLineTypeSection ()
         else
             LOG_LINETYPE.tracev ("Processinging DWG Linetype %ls", name.c_str());
 
-        if (this->_IsUpdating())
+        if (this->IsUpdating())
             {
             // this is an unscaled linestyle
             DgnStyleId  lstyleId = m_syncInfo.FindLineStyle (linetype->GetObjectId());

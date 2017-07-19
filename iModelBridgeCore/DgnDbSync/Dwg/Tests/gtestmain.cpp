@@ -2,7 +2,7 @@
 |
 |     $Source: Dwg/Tests/gtestmain.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #if defined (BENTLEY_WIN32)
@@ -151,16 +151,6 @@ class BeGTestListener : public ::testing::EmptyTestEventListener
     };
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/2013
-+---------------+---------------+---------------+---------------+---------------+------*/
-struct GtestFailureHandler : BeTest::IFailureHandler
-    {
-    virtual void _OnAssertionFailure (WCharCP msg) THROW_SPECIFIER(CharCP) {FAIL() << msg;}
-    virtual void _OnUnexpectedResult (WCharCP msg) THROW_SPECIFIER(CharCP) {FAIL() << msg;}
-    virtual void _OnFailureHandled() {;}
-    };
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      10/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
 extern "C" int main (int argc, char **argv) 
@@ -178,9 +168,7 @@ extern "C" int main (int argc, char **argv)
     BeTest::Initialize (*hostPtr);
 
     BeTest::SetRunningUnderGtest ();
-
-    GtestFailureHandler gtestFailureHandler;
-    BeTest::SetIFailureHandler (gtestFailureHandler);
+    BeTest::SetAssertionFailureHandler([](WCharCP msg) {FAIL() << msg;});
 
     if (::testing::GTEST_FLAG(filter).empty() || ::testing::GTEST_FLAG(filter) == "*")
         { // use ignore lists if the user did not specify any filters on the command line

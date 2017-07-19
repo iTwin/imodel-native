@@ -34,7 +34,6 @@ struct BisJson1Exporter0601
     {
     private:
         BentleyG0601::Dgn::BimTeleporter::BisJson1ExporterImpl *m_exporter;
-        bool _ExportDgnDb();
 
     public:
         BIM_EXPORTER_EXPORT BisJson1Exporter0601(wchar_t const* dbPath);

@@ -457,7 +457,12 @@ BentleyStatus Converter::ConvertMaterialTextureMapImage(Json::Value& textureMap,
 
     Point2d size = imageSource.GetSize();
     DgnTexture texture(DgnTexture::CreateParams(GetDgnDb().GetDictionaryModel(), Utf8String(fileName), imageSource, size.x, size.y));
-    texture.Insert();
+    
+    DgnDbStatus insertStatus = DgnDbStatus::Success;
+    texture.Insert (&insertStatus);
+    if (DgnDbStatus::DuplicateCode == insertStatus)
+        return ERROR; //Early exit to avoid assert when code already exists. (This happens in context of repeated DgnDbSync from bridge).
+
     DgnTextureId textureId = texture.GetTextureId();
 
     if (!textureId.IsValid())

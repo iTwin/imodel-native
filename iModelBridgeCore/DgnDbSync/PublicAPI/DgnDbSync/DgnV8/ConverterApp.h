@@ -10,7 +10,7 @@
 #include <DgnDbSync/DgnV8/Converter.h>
 #include <DgnPlatform/DgnProgressMeter.h>
 #include <Bentley/BeFileListIterator.h>
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <DgnPlatform/DgnCoreAPI.h>
 #include <ThreeMx/ThreeMxApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
@@ -97,6 +97,7 @@ protected:
     Dgn::SubjectCPtr _FindJob() override;
     BentleyStatus _OpenSource() override;
     void _CloseSource(BentleyStatus) override;
+    void _OnSourceFileDeleted() override;
 
 public:
     RootModelConverterApp()
@@ -112,3 +113,9 @@ public:
 
 
 END_DGNDBSYNC_DGNV8_NAMESPACE
+
+extern "C"
+    {
+    EXPORT_ATTRIBUTE T_iModelBridge_getAffinity iModelBridge_getAffinity;
+    EXPORT_ATTRIBUTE T_iModelBridge_getInstance iModelBridge_getInstance;
+    }
