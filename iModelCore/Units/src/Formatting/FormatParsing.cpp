@@ -1838,73 +1838,146 @@ Utf8PrintfString FormatParsingSegment::ToText(int n)
 // FormatParsingSet Methods
 //
 //===================================================
+void FormatParsingSet::Init(Utf8CP input, size_t start, BEU::UnitCP unit)
+    {
+    m_input = input;
+    m_start = start;
+    m_unit = unit;
+    FormatParsingSegment fps;
+    //Utf8CP tail = input;
+    NumberGrabber ng;
+    bvector<CursorScanPoint> m_symbs;
+    bool revs = false;
+    CursorScanPoint csp = CursorScanPoint();
+    size_t ind = start;
+    size_t ind0 = start;
+    bool initVect = true;
+
+    if (!Utf8String::IsNullOrEmpty(input))
+        {
+        ng = NumberGrabber();
+        while (!ng.IsEndOfLine())
+            {
+            ng.Grab(m_input, ind);
+            if (ng.GetLength() > 0)  // a number is detected
+                {
+                if (m_symbs.size() > 0)
+                    {
+                    fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+                    m_segs.push_back(fps);
+                    m_symbs.clear();
+                    }
+
+                fps = FormatParsingSegment(ng);
+                m_segs.push_back(fps);
+                ind = ng.GetNextIndex();
+                initVect = true;
+                }
+            else
+                {
+                if (initVect) ind0 = ind;
+                initVect = false;
+                csp = CursorScanPoint(m_input, ind, revs);
+                if (csp.IsSpace())
+                    {
+                    if (m_symbs.size() > 0)
+                        {
+                        fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+                        m_segs.push_back(fps);
+                        m_symbs.clear();
+                        ind = csp.GetIndex();
+                        ind0 = ind;
+                        }
+                    while (csp.IsSpace()) { csp.Iterate(m_input, revs); }
+                    ind = csp.GetIndex();
+                    ind0 = ind;
+                    }
+                if (csp.IsEndOfLine())
+                    break;
+                m_symbs.push_back(csp);
+                ind = csp.GetIndex();
+                }
+            }
+        if (m_symbs.size() > 0)
+            {
+            fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+            m_segs.push_back(fps);
+            }
+        }
+    }
+
+FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit)
+    {
+    Init(input, start, unit);
+    }
 
 FormatParsingSet::FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName)
     {
-     m_input = input;
-     m_start = start;
-     m_unit = (nullptr == unitName)? nullptr :  BEU::UnitRegistry::Instance().LookupUnit(unitName);
-     FormatParsingSegment fps;
-     //Utf8CP tail = input;
-     NumberGrabber ng;
-     bvector<CursorScanPoint> m_symbs;
-     bool revs = false;
-     CursorScanPoint csp = CursorScanPoint();
-     size_t ind = start;
-     size_t ind0 = start;
-     bool initVect = true;
+    BEU::UnitCP unit = (nullptr == unitName) ? nullptr : BEU::UnitRegistry::Instance().LookupUnit(unitName);
+    Init(input, start, unit);
+     //m_input = input;
+     //m_start = start;
+     //FormatParsingSegment fps;
+     ////Utf8CP tail = input;
+     //NumberGrabber ng;
+     //bvector<CursorScanPoint> m_symbs;
+     //bool revs = false;
+     //CursorScanPoint csp = CursorScanPoint();
+     //size_t ind = start;
+     //size_t ind0 = start;
+     //bool initVect = true;
 
-     if (!Utf8String::IsNullOrEmpty(input))
-         {
-         ng = NumberGrabber();
-         while (!ng.IsEndOfLine())
-             {
-             ng.Grab(m_input, ind);
-             if (ng.GetLength() > 0)  // a number is detected
-                 {
-                 if (m_symbs.size() > 0)
-                     {
-                     fps = FormatParsingSegment(m_symbs, ind0, m_unit);
-                     m_segs.push_back(fps);
-                     m_symbs.clear();
-                     }
+     //if (!Utf8String::IsNullOrEmpty(input))
+     //    {
+     //    ng = NumberGrabber();
+     //    while (!ng.IsEndOfLine())
+     //        {
+     //        ng.Grab(m_input, ind);
+     //        if (ng.GetLength() > 0)  // a number is detected
+     //            {
+     //            if (m_symbs.size() > 0)
+     //                {
+     //                fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+     //                m_segs.push_back(fps);
+     //                m_symbs.clear();
+     //                }
 
-                 fps = FormatParsingSegment(ng);
-                 m_segs.push_back(fps);
-                 ind = ng.GetNextIndex();
-                 initVect = true;
-                 }
-             else
-                 {
-                 if (initVect) ind0 = ind;
-                 initVect = false;
-                 csp = CursorScanPoint(m_input, ind, revs);
-                 if(csp.IsSpace())
-                     {
-                     if (m_symbs.size() > 0)
-                         {
-                         fps = FormatParsingSegment(m_symbs, ind0, m_unit);
-                         m_segs.push_back(fps);
-                         m_symbs.clear();
-                         ind = csp.GetIndex();
-                         ind0 = ind;
-                         }
-                     while (csp.IsSpace()) { csp.Iterate(m_input, revs); }
-                     ind = csp.GetIndex();
-                     ind0 = ind;
-                     }                 
-                 if (csp.IsEndOfLine())
-                     break;
-                 m_symbs.push_back(csp);
-                 ind = csp.GetIndex();
-                 }
-             }
-         if (m_symbs.size() > 0)
-             {
-             fps = FormatParsingSegment(m_symbs, ind0, m_unit);
-             m_segs.push_back(fps);
-             }
-         }
+     //            fps = FormatParsingSegment(ng);
+     //            m_segs.push_back(fps);
+     //            ind = ng.GetNextIndex();
+     //            initVect = true;
+     //            }
+     //        else
+     //            {
+     //            if (initVect) ind0 = ind;
+     //            initVect = false;
+     //            csp = CursorScanPoint(m_input, ind, revs);
+     //            if(csp.IsSpace())
+     //                {
+     //                if (m_symbs.size() > 0)
+     //                    {
+     //                    fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+     //                    m_segs.push_back(fps);
+     //                    m_symbs.clear();
+     //                    ind = csp.GetIndex();
+     //                    ind0 = ind;
+     //                    }
+     //                while (csp.IsSpace()) { csp.Iterate(m_input, revs); }
+     //                ind = csp.GetIndex();
+     //                ind0 = ind;
+     //                }                 
+     //            if (csp.IsEndOfLine())
+     //                break;
+     //            m_symbs.push_back(csp);
+     //            ind = csp.GetIndex();
+     //            }
+     //        }
+     //    if (m_symbs.size() > 0)
+     //        {
+     //        fps = FormatParsingSegment(m_symbs, ind0, m_unit);
+     //        m_segs.push_back(fps);
+     //        }
+     //    }
     }
 
 Utf8String FormatParsingSet::GetSignature(bool distinct)

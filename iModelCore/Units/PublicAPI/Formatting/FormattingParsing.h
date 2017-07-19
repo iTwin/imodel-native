@@ -181,8 +181,11 @@ struct FormatParsingSet
         bvector<FormatParsingSegment> m_segs;
         BEU::UnitCP m_unit;     // optional reference to a "quantity" unit
 
+        UNITS_EXPORT void Init(Utf8CP input, size_t start, BEU::UnitCP unit);
+
     public:
         UNITS_EXPORT FormatParsingSet(Utf8CP input, size_t start, Utf8CP unitName = nullptr);// : m_input(input), m_start(start) { m_segs.clear(); }
+        UNITS_EXPORT FormatParsingSet(Utf8CP input, size_t start, BEU::UnitCP unit = nullptr);// : m_input(input), m_start(start) { m_segs.clear(); }
         void AddSegment(FormatParsingSegmentCR seg) { m_segs.push_back(seg); }
         bvector<FormatParsingSegment> GetSegments() { return m_segs; }
         UNITS_EXPORT Utf8String GetSignature(bool distinct = true);
