@@ -1246,6 +1246,7 @@ struct Fts5Token {
 /* Parse a MATCH expression. */
 static int sqlite3Fts5ExprNew(
   Fts5Config *pConfig, 
+  int iCol,                       /* Column on LHS of MATCH operator */
   const char *zExpr,
   Fts5Expr **ppNew, 
   char **pzErr
@@ -1330,7 +1331,7 @@ static void sqlite3Fts5ParseNearsetFree(Fts5ExprNearset*);
 static void sqlite3Fts5ParseNodeFree(Fts5ExprNode*);
 
 static void sqlite3Fts5ParseSetDistance(Fts5Parse*, Fts5ExprNearset*, Fts5Token*);
-static void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNearset*, Fts5Colset*);
+static void sqlite3Fts5ParseSetColset(Fts5Parse*, Fts5ExprNode*, Fts5Colset*);
 static Fts5Colset *sqlite3Fts5ParseColsetInvert(Fts5Parse*, Fts5Colset*);
 static void sqlite3Fts5ParseFinished(Fts5Parse *pParse, Fts5ExprNode *p);
 static void sqlite3Fts5ParseNear(Fts5Parse *pParse, Fts5Token*);
@@ -1387,12 +1388,12 @@ static int sqlite3Fts5UnicodeFold(int c, int bRemoveDiacritic);
 #define FTS5_NOT                              3
 #define FTS5_TERM                             4
 #define FTS5_COLON                            5
-#define FTS5_LP                               6
-#define FTS5_RP                               7
-#define FTS5_MINUS                            8
-#define FTS5_LCP                              9
-#define FTS5_RCP                             10
-#define FTS5_STRING                          11
+#define FTS5_MINUS                            6
+#define FTS5_LCP                              7
+#define FTS5_RCP                              8
+#define FTS5_STRING                           9
+#define FTS5_LP                              10
+#define FTS5_RP                              11
 #define FTS5_COMMA                           12
 #define FTS5_PLUS                            13
 #define FTS5_STAR                            14
@@ -1528,16 +1529,16 @@ typedef union {
 #define sqlite3Fts5ParserARG_PDECL ,Fts5Parse *pParse
 #define sqlite3Fts5ParserARG_FETCH Fts5Parse *pParse = fts5yypParser->pParse
 #define sqlite3Fts5ParserARG_STORE fts5yypParser->pParse = pParse
-#define fts5YYNSTATE             29
-#define fts5YYNRULE              26
-#define fts5YY_MAX_SHIFT         28
-#define fts5YY_MIN_SHIFTREDUCE   45
-#define fts5YY_MAX_SHIFTREDUCE   70
-#define fts5YY_MIN_REDUCE        71
-#define fts5YY_MAX_REDUCE        96
-#define fts5YY_ERROR_ACTION      97
-#define fts5YY_ACCEPT_ACTION     98
-#define fts5YY_NO_ACTION         99
+#define fts5YYNSTATE             33
+#define fts5YYNRULE              27
+#define fts5YY_MAX_SHIFT         32
+#define fts5YY_MIN_SHIFTREDUCE   50
+#define fts5YY_MAX_SHIFTREDUCE   76
+#define fts5YY_MIN_REDUCE        77
+#define fts5YY_MAX_REDUCE        103
+#define fts5YY_ERROR_ACTION      104
+#define fts5YY_ACCEPT_ACTION     105
+#define fts5YY_NO_ACTION         106
 /************* End control #defines *******************************************/
 
 /* Define the fts5yytestcase() macro to be a no-op if is not already defined
@@ -1609,50 +1610,54 @@ typedef union {
 **  fts5yy_default[]       Default action for each state.
 **
 *********** Begin parsing tables **********************************************/
-#define fts5YY_ACTTAB_COUNT (85)
+#define fts5YY_ACTTAB_COUNT (98)
 static const fts5YYACTIONTYPE fts5yy_action[] = {
- /*     0 */    98,   16,   51,    5,   53,   27,   83,    7,   26,   15,
- /*    10 */    51,    5,   53,   27,   13,   69,   26,   48,   51,    5,
- /*    20 */    53,   27,   19,   11,   26,    9,   20,   51,    5,   53,
- /*    30 */    27,   13,   22,   26,   28,   51,    5,   53,   27,   68,
- /*    40 */     1,   26,   19,   11,   17,    9,   52,   10,   53,   27,
- /*    50 */    23,   24,   26,   54,    3,    4,    2,   26,    6,   21,
- /*    60 */    49,   71,    3,    4,    2,    7,   56,   59,   55,   59,
- /*    70 */     4,    2,   12,   69,   58,   60,   18,   67,   62,   69,
- /*    80 */    25,   66,    8,   14,    2,
+ /*     0 */   105,   19,   63,    6,   26,   66,   65,   24,   24,   17,
+ /*    10 */    63,    6,   26,   16,   65,   54,   24,   18,   63,    6,
+ /*    20 */    26,   10,   65,   12,   24,   75,   59,   63,    6,   26,
+ /*    30 */    13,   65,   75,   24,   20,   63,    6,   26,   74,   65,
+ /*    40 */    56,   24,   27,   63,    6,   26,   73,   65,   21,   24,
+ /*    50 */    23,   15,   30,   11,    1,   64,   22,   25,    9,   65,
+ /*    60 */     7,   24,    3,    4,    5,    3,    4,    5,    3,   77,
+ /*    70 */     4,    5,    3,   61,   23,   15,   60,   11,   80,   12,
+ /*    80 */     2,   13,   68,   10,   29,   52,   55,   75,   31,   32,
+ /*    90 */     8,   28,    5,    3,   51,   55,   72,   14,
 };
 static const fts5YYCODETYPE fts5yy_lookahead[] = {
- /*     0 */    16,   17,   18,   19,   20,   21,    5,    6,   24,   17,
- /*    10 */    18,   19,   20,   21,   11,   14,   24,   17,   18,   19,
- /*    20 */    20,   21,    8,    9,   24,   11,   17,   18,   19,   20,
- /*    30 */    21,   11,   12,   24,   17,   18,   19,   20,   21,   26,
- /*    40 */     6,   24,    8,    9,   22,   11,   18,   11,   20,   21,
- /*    50 */    24,   25,   24,   20,    1,    2,    3,   24,   23,   24,
- /*    60 */     7,    0,    1,    2,    3,    6,   10,   11,   10,   11,
- /*    70 */     2,    3,    9,   14,   11,   11,   22,   26,    7,   14,
- /*    80 */    13,   11,    5,   11,    3,
+ /*     0 */    16,   17,   18,   19,   20,   22,   22,   24,   24,   17,
+ /*    10 */    18,   19,   20,    7,   22,    9,   24,   17,   18,   19,
+ /*    20 */    20,   10,   22,    9,   24,   14,   17,   18,   19,   20,
+ /*    30 */     9,   22,   14,   24,   17,   18,   19,   20,   26,   22,
+ /*    40 */     9,   24,   17,   18,   19,   20,   26,   22,   21,   24,
+ /*    50 */     6,    7,   13,    9,   10,   18,   21,   20,    5,   22,
+ /*    60 */     5,   24,    3,    1,    2,    3,    1,    2,    3,    0,
+ /*    70 */     1,    2,    3,   11,    6,    7,   11,    9,    5,    9,
+ /*    80 */    10,    9,   11,   10,   12,    8,    9,   14,   24,   25,
+ /*    90 */    23,   24,    2,    3,    8,    9,    9,    9,
 };
-#define fts5YY_SHIFT_USE_DFLT (85)
-#define fts5YY_SHIFT_COUNT    (28)
+#define fts5YY_SHIFT_USE_DFLT (98)
+#define fts5YY_SHIFT_COUNT    (32)
 #define fts5YY_SHIFT_MIN      (0)
-#define fts5YY_SHIFT_MAX      (81)
+#define fts5YY_SHIFT_MAX      (90)
 static const unsigned char fts5yy_shift_ofst[] = {
- /*     0 */    34,   34,   34,   34,   34,   14,   20,    3,   36,    1,
- /*    10 */    59,   64,   64,   65,   65,   53,   61,   56,   58,   63,
- /*    20 */    68,   67,   70,   67,   71,   72,   67,   77,   81,
+ /*     0 */    44,   44,   44,   44,   44,   44,   68,   70,   72,   14,
+ /*    10 */    21,   73,   11,   18,   18,   31,   31,   62,   65,   69,
+ /*    20 */    90,   77,   86,    6,   39,   53,   55,   59,   39,   87,
+ /*    30 */    88,   39,   71,
 };
-#define fts5YY_REDUCE_USE_DFLT (-17)
-#define fts5YY_REDUCE_COUNT (14)
-#define fts5YY_REDUCE_MIN   (-16)
-#define fts5YY_REDUCE_MAX   (54)
+#define fts5YY_REDUCE_USE_DFLT (-18)
+#define fts5YY_REDUCE_COUNT (16)
+#define fts5YY_REDUCE_MIN   (-17)
+#define fts5YY_REDUCE_MAX   (67)
 static const signed char fts5yy_reduce_ofst[] = {
- /*     0 */   -16,   -8,    0,    9,   17,   28,   26,   35,   33,   13,
- /*    10 */    13,   22,   54,   13,   51,
+ /*     0 */   -16,   -8,    0,    9,   17,   25,   37,  -17,   64,  -17,
+ /*    10 */    67,   12,   12,   12,   20,   27,   35,
 };
 static const fts5YYACTIONTYPE fts5yy_default[] = {
- /*     0 */    97,   97,   97,   97,   97,   76,   91,   97,   97,   96,
- /*    10 */    96,   97,   97,   96,   96,   97,   97,   97,   97,   97,
- /*    20 */    73,   89,   97,   90,   97,   97,   87,   97,   72,
+ /*     0 */   104,  104,  104,  104,  104,  104,   89,  104,   98,  104,
+ /*    10 */   104,  103,  103,  103,  103,  104,  104,  104,  104,  104,
+ /*    20 */    85,  104,  104,  104,   94,  104,  104,   84,   96,  104,
+ /*    30 */   104,   97,  104,
 };
 /********** End of lemon-generated parsing tables *****************************/
 
@@ -1758,11 +1763,11 @@ static void sqlite3Fts5ParserTrace(FILE *TraceFILE, char *zTracePrompt){
 ** are required.  The following table supplies these names */
 static const char *const fts5yyTokenName[] = { 
   "$",             "OR",            "AND",           "NOT",         
-  "TERM",          "COLON",         "LP",            "RP",          
-  "MINUS",         "LCP",           "RCP",           "STRING",      
+  "TERM",          "COLON",         "MINUS",         "LCP",         
+  "RCP",           "STRING",        "LP",            "RP",          
   "COMMA",         "PLUS",          "STAR",          "error",       
   "input",         "expr",          "cnearset",      "exprlist",    
-  "nearset",       "colset",        "colsetlist",    "nearphrases", 
+  "colset",        "colsetlist",    "nearset",       "nearphrases", 
   "phrase",        "neardist_opt",  "star_opt",    
 };
 #endif /* NDEBUG */
@@ -1772,31 +1777,32 @@ static const char *const fts5yyTokenName[] = {
 */
 static const char *const fts5yyRuleName[] = {
  /*   0 */ "input ::= expr",
- /*   1 */ "expr ::= expr AND expr",
- /*   2 */ "expr ::= expr OR expr",
- /*   3 */ "expr ::= expr NOT expr",
- /*   4 */ "expr ::= LP expr RP",
- /*   5 */ "expr ::= exprlist",
- /*   6 */ "exprlist ::= cnearset",
- /*   7 */ "exprlist ::= exprlist cnearset",
- /*   8 */ "cnearset ::= nearset",
- /*   9 */ "cnearset ::= colset COLON nearset",
- /*  10 */ "colset ::= MINUS LCP colsetlist RCP",
- /*  11 */ "colset ::= LCP colsetlist RCP",
- /*  12 */ "colset ::= STRING",
- /*  13 */ "colset ::= MINUS STRING",
- /*  14 */ "colsetlist ::= colsetlist STRING",
- /*  15 */ "colsetlist ::= STRING",
- /*  16 */ "nearset ::= phrase",
- /*  17 */ "nearset ::= STRING LP nearphrases neardist_opt RP",
- /*  18 */ "nearphrases ::= phrase",
- /*  19 */ "nearphrases ::= nearphrases phrase",
- /*  20 */ "neardist_opt ::=",
- /*  21 */ "neardist_opt ::= COMMA STRING",
- /*  22 */ "phrase ::= phrase PLUS STRING star_opt",
- /*  23 */ "phrase ::= STRING star_opt",
- /*  24 */ "star_opt ::= STAR",
- /*  25 */ "star_opt ::=",
+ /*   1 */ "colset ::= MINUS LCP colsetlist RCP",
+ /*   2 */ "colset ::= LCP colsetlist RCP",
+ /*   3 */ "colset ::= STRING",
+ /*   4 */ "colset ::= MINUS STRING",
+ /*   5 */ "colsetlist ::= colsetlist STRING",
+ /*   6 */ "colsetlist ::= STRING",
+ /*   7 */ "expr ::= expr AND expr",
+ /*   8 */ "expr ::= expr OR expr",
+ /*   9 */ "expr ::= expr NOT expr",
+ /*  10 */ "expr ::= colset COLON LP expr RP",
+ /*  11 */ "expr ::= LP expr RP",
+ /*  12 */ "expr ::= exprlist",
+ /*  13 */ "exprlist ::= cnearset",
+ /*  14 */ "exprlist ::= exprlist cnearset",
+ /*  15 */ "cnearset ::= nearset",
+ /*  16 */ "cnearset ::= colset COLON nearset",
+ /*  17 */ "nearset ::= phrase",
+ /*  18 */ "nearset ::= STRING LP nearphrases neardist_opt RP",
+ /*  19 */ "nearphrases ::= phrase",
+ /*  20 */ "nearphrases ::= nearphrases phrase",
+ /*  21 */ "neardist_opt ::=",
+ /*  22 */ "neardist_opt ::= COMMA STRING",
+ /*  23 */ "phrase ::= phrase PLUS STRING star_opt",
+ /*  24 */ "phrase ::= STRING star_opt",
+ /*  25 */ "star_opt ::= STAR",
+ /*  26 */ "star_opt ::=",
 };
 #endif /* NDEBUG */
 
@@ -1926,16 +1932,16 @@ static void fts5yy_destructor(
  sqlite3Fts5ParseNodeFree((fts5yypminor->fts5yy24)); 
 }
       break;
-    case 20: /* nearset */
+    case 20: /* colset */
+    case 21: /* colsetlist */
+{
+ sqlite3_free((fts5yypminor->fts5yy11)); 
+}
+      break;
+    case 22: /* nearset */
     case 23: /* nearphrases */
 {
  sqlite3Fts5ParseNearsetFree((fts5yypminor->fts5yy46)); 
-}
-      break;
-    case 21: /* colset */
-    case 22: /* colsetlist */
-{
- sqlite3_free((fts5yypminor->fts5yy11)); 
 }
       break;
     case 24: /* phrase */
@@ -2195,23 +2201,24 @@ static const struct {
   unsigned char nrhs;     /* Number of right-hand side symbols in the rule */
 } fts5yyRuleInfo[] = {
   { 16, 1 },
+  { 20, 4 },
+  { 20, 3 },
+  { 20, 1 },
+  { 20, 2 },
+  { 21, 2 },
+  { 21, 1 },
   { 17, 3 },
   { 17, 3 },
   { 17, 3 },
+  { 17, 5 },
   { 17, 3 },
   { 17, 1 },
   { 19, 1 },
   { 19, 2 },
   { 18, 1 },
   { 18, 3 },
-  { 21, 4 },
-  { 21, 3 },
-  { 21, 1 },
-  { 21, 2 },
-  { 22, 2 },
   { 22, 1 },
-  { 20, 1 },
-  { 20, 5 },
+  { 22, 5 },
   { 23, 1 },
   { 23, 2 },
   { 25, 0 },
@@ -2286,87 +2293,94 @@ static void fts5yy_reduce(
       case 0: /* input ::= expr */
 { sqlite3Fts5ParseFinished(pParse, fts5yymsp[0].minor.fts5yy24); }
         break;
-      case 1: /* expr ::= expr AND expr */
-{
-  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_AND, fts5yymsp[-2].minor.fts5yy24, fts5yymsp[0].minor.fts5yy24, 0);
-}
-  fts5yymsp[-2].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
-        break;
-      case 2: /* expr ::= expr OR expr */
-{
-  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_OR, fts5yymsp[-2].minor.fts5yy24, fts5yymsp[0].minor.fts5yy24, 0);
-}
-  fts5yymsp[-2].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
-        break;
-      case 3: /* expr ::= expr NOT expr */
-{
-  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_NOT, fts5yymsp[-2].minor.fts5yy24, fts5yymsp[0].minor.fts5yy24, 0);
-}
-  fts5yymsp[-2].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
-        break;
-      case 4: /* expr ::= LP expr RP */
-{fts5yymsp[-2].minor.fts5yy24 = fts5yymsp[-1].minor.fts5yy24;}
-        break;
-      case 5: /* expr ::= exprlist */
-      case 6: /* exprlist ::= cnearset */ fts5yytestcase(fts5yyruleno==6);
-{fts5yylhsminor.fts5yy24 = fts5yymsp[0].minor.fts5yy24;}
-  fts5yymsp[0].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
-        break;
-      case 7: /* exprlist ::= exprlist cnearset */
-{
-  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseImplicitAnd(pParse, fts5yymsp[-1].minor.fts5yy24, fts5yymsp[0].minor.fts5yy24);
-}
-  fts5yymsp[-1].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
-        break;
-      case 8: /* cnearset ::= nearset */
-{ 
-  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, fts5yymsp[0].minor.fts5yy46); 
-}
-  fts5yymsp[0].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
-        break;
-      case 9: /* cnearset ::= colset COLON nearset */
-{ 
-  sqlite3Fts5ParseSetColset(pParse, fts5yymsp[0].minor.fts5yy46, fts5yymsp[-2].minor.fts5yy11);
-  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, fts5yymsp[0].minor.fts5yy46); 
-}
-  fts5yymsp[-2].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
-        break;
-      case 10: /* colset ::= MINUS LCP colsetlist RCP */
+      case 1: /* colset ::= MINUS LCP colsetlist RCP */
 { 
     fts5yymsp[-3].minor.fts5yy11 = sqlite3Fts5ParseColsetInvert(pParse, fts5yymsp[-1].minor.fts5yy11);
 }
         break;
-      case 11: /* colset ::= LCP colsetlist RCP */
+      case 2: /* colset ::= LCP colsetlist RCP */
 { fts5yymsp[-2].minor.fts5yy11 = fts5yymsp[-1].minor.fts5yy11; }
         break;
-      case 12: /* colset ::= STRING */
+      case 3: /* colset ::= STRING */
 {
   fts5yylhsminor.fts5yy11 = sqlite3Fts5ParseColset(pParse, 0, &fts5yymsp[0].minor.fts5yy0);
 }
   fts5yymsp[0].minor.fts5yy11 = fts5yylhsminor.fts5yy11;
         break;
-      case 13: /* colset ::= MINUS STRING */
+      case 4: /* colset ::= MINUS STRING */
 {
   fts5yymsp[-1].minor.fts5yy11 = sqlite3Fts5ParseColset(pParse, 0, &fts5yymsp[0].minor.fts5yy0);
   fts5yymsp[-1].minor.fts5yy11 = sqlite3Fts5ParseColsetInvert(pParse, fts5yymsp[-1].minor.fts5yy11);
 }
         break;
-      case 14: /* colsetlist ::= colsetlist STRING */
+      case 5: /* colsetlist ::= colsetlist STRING */
 { 
   fts5yylhsminor.fts5yy11 = sqlite3Fts5ParseColset(pParse, fts5yymsp[-1].minor.fts5yy11, &fts5yymsp[0].minor.fts5yy0); }
   fts5yymsp[-1].minor.fts5yy11 = fts5yylhsminor.fts5yy11;
         break;
-      case 15: /* colsetlist ::= STRING */
+      case 6: /* colsetlist ::= STRING */
 { 
   fts5yylhsminor.fts5yy11 = sqlite3Fts5ParseColset(pParse, 0, &fts5yymsp[0].minor.fts5yy0); 
 }
   fts5yymsp[0].minor.fts5yy11 = fts5yylhsminor.fts5yy11;
         break;
-      case 16: /* nearset ::= phrase */
+      case 7: /* expr ::= expr AND expr */
+{
+  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_AND, fts5yymsp[-2].minor.fts5yy24, fts5yymsp[0].minor.fts5yy24, 0);
+}
+  fts5yymsp[-2].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
+        break;
+      case 8: /* expr ::= expr OR expr */
+{
+  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_OR, fts5yymsp[-2].minor.fts5yy24, fts5yymsp[0].minor.fts5yy24, 0);
+}
+  fts5yymsp[-2].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
+        break;
+      case 9: /* expr ::= expr NOT expr */
+{
+  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_NOT, fts5yymsp[-2].minor.fts5yy24, fts5yymsp[0].minor.fts5yy24, 0);
+}
+  fts5yymsp[-2].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
+        break;
+      case 10: /* expr ::= colset COLON LP expr RP */
+{
+  sqlite3Fts5ParseSetColset(pParse, fts5yymsp[-1].minor.fts5yy24, fts5yymsp[-4].minor.fts5yy11);
+  fts5yylhsminor.fts5yy24 = fts5yymsp[-1].minor.fts5yy24;
+}
+  fts5yymsp[-4].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
+        break;
+      case 11: /* expr ::= LP expr RP */
+{fts5yymsp[-2].minor.fts5yy24 = fts5yymsp[-1].minor.fts5yy24;}
+        break;
+      case 12: /* expr ::= exprlist */
+      case 13: /* exprlist ::= cnearset */ fts5yytestcase(fts5yyruleno==13);
+{fts5yylhsminor.fts5yy24 = fts5yymsp[0].minor.fts5yy24;}
+  fts5yymsp[0].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
+        break;
+      case 14: /* exprlist ::= exprlist cnearset */
+{
+  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseImplicitAnd(pParse, fts5yymsp[-1].minor.fts5yy24, fts5yymsp[0].minor.fts5yy24);
+}
+  fts5yymsp[-1].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
+        break;
+      case 15: /* cnearset ::= nearset */
+{ 
+  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, fts5yymsp[0].minor.fts5yy46); 
+}
+  fts5yymsp[0].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
+        break;
+      case 16: /* cnearset ::= colset COLON nearset */
+{ 
+  fts5yylhsminor.fts5yy24 = sqlite3Fts5ParseNode(pParse, FTS5_STRING, 0, 0, fts5yymsp[0].minor.fts5yy46); 
+  sqlite3Fts5ParseSetColset(pParse, fts5yylhsminor.fts5yy24, fts5yymsp[-2].minor.fts5yy11);
+}
+  fts5yymsp[-2].minor.fts5yy24 = fts5yylhsminor.fts5yy24;
+        break;
+      case 17: /* nearset ::= phrase */
 { fts5yylhsminor.fts5yy46 = sqlite3Fts5ParseNearset(pParse, 0, fts5yymsp[0].minor.fts5yy53); }
   fts5yymsp[0].minor.fts5yy46 = fts5yylhsminor.fts5yy46;
         break;
-      case 17: /* nearset ::= STRING LP nearphrases neardist_opt RP */
+      case 18: /* nearset ::= STRING LP nearphrases neardist_opt RP */
 {
   sqlite3Fts5ParseNear(pParse, &fts5yymsp[-4].minor.fts5yy0);
   sqlite3Fts5ParseSetDistance(pParse, fts5yymsp[-2].minor.fts5yy46, &fts5yymsp[-1].minor.fts5yy0);
@@ -2374,40 +2388,40 @@ static void fts5yy_reduce(
 }
   fts5yymsp[-4].minor.fts5yy46 = fts5yylhsminor.fts5yy46;
         break;
-      case 18: /* nearphrases ::= phrase */
+      case 19: /* nearphrases ::= phrase */
 { 
   fts5yylhsminor.fts5yy46 = sqlite3Fts5ParseNearset(pParse, 0, fts5yymsp[0].minor.fts5yy53); 
 }
   fts5yymsp[0].minor.fts5yy46 = fts5yylhsminor.fts5yy46;
         break;
-      case 19: /* nearphrases ::= nearphrases phrase */
+      case 20: /* nearphrases ::= nearphrases phrase */
 {
   fts5yylhsminor.fts5yy46 = sqlite3Fts5ParseNearset(pParse, fts5yymsp[-1].minor.fts5yy46, fts5yymsp[0].minor.fts5yy53);
 }
   fts5yymsp[-1].minor.fts5yy46 = fts5yylhsminor.fts5yy46;
         break;
-      case 20: /* neardist_opt ::= */
+      case 21: /* neardist_opt ::= */
 { fts5yymsp[1].minor.fts5yy0.p = 0; fts5yymsp[1].minor.fts5yy0.n = 0; }
         break;
-      case 21: /* neardist_opt ::= COMMA STRING */
+      case 22: /* neardist_opt ::= COMMA STRING */
 { fts5yymsp[-1].minor.fts5yy0 = fts5yymsp[0].minor.fts5yy0; }
         break;
-      case 22: /* phrase ::= phrase PLUS STRING star_opt */
+      case 23: /* phrase ::= phrase PLUS STRING star_opt */
 { 
   fts5yylhsminor.fts5yy53 = sqlite3Fts5ParseTerm(pParse, fts5yymsp[-3].minor.fts5yy53, &fts5yymsp[-1].minor.fts5yy0, fts5yymsp[0].minor.fts5yy4);
 }
   fts5yymsp[-3].minor.fts5yy53 = fts5yylhsminor.fts5yy53;
         break;
-      case 23: /* phrase ::= STRING star_opt */
+      case 24: /* phrase ::= STRING star_opt */
 { 
   fts5yylhsminor.fts5yy53 = sqlite3Fts5ParseTerm(pParse, 0, &fts5yymsp[-1].minor.fts5yy0, fts5yymsp[0].minor.fts5yy4);
 }
   fts5yymsp[-1].minor.fts5yy53 = fts5yylhsminor.fts5yy53;
         break;
-      case 24: /* star_opt ::= STAR */
+      case 25: /* star_opt ::= STAR */
 { fts5yymsp[0].minor.fts5yy4 = 1; }
         break;
-      case 25: /* star_opt ::= */
+      case 26: /* star_opt ::= */
 { fts5yymsp[1].minor.fts5yy4 = 0; }
         break;
       default:
@@ -3449,9 +3463,11 @@ static void sqlite3Fts5BufferAppendBlob(
   const u8 *pData
 ){
   assert_nc( *pRc || nData>=0 );
-  if( fts5BufferGrow(pRc, pBuf, nData) ) return;
-  memcpy(&pBuf->p[pBuf->n], pData, nData);
-  pBuf->n += nData;
+  if( nData ){
+    if( fts5BufferGrow(pRc, pBuf, nData) ) return;
+    memcpy(&pBuf->p[pBuf->n], pData, nData);
+    pBuf->n += nData;
+  }
 }
 
 /*
@@ -3628,8 +3644,8 @@ static void *sqlite3Fts5MallocZero(int *pRc, int nByte){
   void *pRet = 0;
   if( *pRc==SQLITE_OK ){
     pRet = sqlite3_malloc(nByte);
-    if( pRet==0 && nByte>0 ){
-      *pRc = SQLITE_NOMEM;
+    if( pRet==0 ){
+      if( nByte>0 ) *pRc = SQLITE_NOMEM;
     }else{
       memset(pRet, 0, nByte);
     }
@@ -4950,6 +4966,7 @@ static void fts5ParseFree(void *p){ sqlite3_free(p); }
 
 static int sqlite3Fts5ExprNew(
   Fts5Config *pConfig,            /* FTS5 Configuration */
+  int iCol,
   const char *zExpr,              /* Expression text */
   Fts5Expr **ppNew, 
   char **pzErr
@@ -4973,6 +4990,18 @@ static int sqlite3Fts5ExprNew(
     sqlite3Fts5Parser(pEngine, t, token, &sParse);
   }while( sParse.rc==SQLITE_OK && t!=FTS5_EOF );
   sqlite3Fts5ParserFree(pEngine, fts5ParseFree);
+
+  /* If the LHS of the MATCH expression was a user column, apply the
+  ** implicit column-filter.  */
+  if( iCol<pConfig->nCol && sParse.pExpr && sParse.rc==SQLITE_OK ){
+    int n = sizeof(Fts5Colset);
+    Fts5Colset *pColset = (Fts5Colset*)sqlite3Fts5MallocZero(&sParse.rc, n);
+    if( pColset ){
+      pColset->nCol = 1;
+      pColset->aiCol[0] = iCol;
+      sqlite3Fts5ParseSetColset(&sParse, sParse.pExpr, pColset);
+    }
+  }
 
   assert( sParse.rc!=SQLITE_OK || sParse.zErr==0 );
   if( sParse.rc==SQLITE_OK ){
@@ -6623,25 +6652,110 @@ static Fts5Colset *sqlite3Fts5ParseColset(
   return pRet;
 }
 
+/*
+** If argument pOrig is NULL, or if (*pRc) is set to anything other than
+** SQLITE_OK when this function is called, NULL is returned. 
+**
+** Otherwise, a copy of (*pOrig) is made into memory obtained from
+** sqlite3Fts5MallocZero() and a pointer to it returned. If the allocation
+** fails, (*pRc) is set to SQLITE_NOMEM and NULL is returned.
+*/
+static Fts5Colset *fts5CloneColset(int *pRc, Fts5Colset *pOrig){
+  Fts5Colset *pRet;
+  if( pOrig ){
+    int nByte = sizeof(Fts5Colset) + (pOrig->nCol-1) * sizeof(int);
+    pRet = (Fts5Colset*)sqlite3Fts5MallocZero(pRc, nByte);
+    if( pRet ){ 
+      memcpy(pRet, pOrig, nByte);
+    }
+  }else{
+    pRet = 0;
+  }
+  return pRet;
+}
+
+/*
+** Remove from colset pColset any columns that are not also in colset pMerge.
+*/
+static void fts5MergeColset(Fts5Colset *pColset, Fts5Colset *pMerge){
+  int iIn = 0;          /* Next input in pColset */
+  int iMerge = 0;       /* Next input in pMerge */
+  int iOut = 0;         /* Next output slot in pColset */
+
+  while( iIn<pColset->nCol && iMerge<pMerge->nCol ){
+    int iDiff = pColset->aiCol[iIn] - pMerge->aiCol[iMerge];
+    if( iDiff==0 ){
+      pColset->aiCol[iOut++] = pMerge->aiCol[iMerge];
+      iMerge++;
+      iIn++;
+    }else if( iDiff>0 ){
+      iMerge++;
+    }else{
+      iIn++;
+    }
+  }
+  pColset->nCol = iOut;
+}
+
+/*
+** Recursively apply colset pColset to expression node pNode and all of
+** its decendents. If (*ppFree) is not NULL, it contains a spare copy
+** of pColset. This function may use the spare copy and set (*ppFree) to
+** zero, or it may create copies of pColset using fts5CloneColset().
+*/
+static void fts5ParseSetColset(
+  Fts5Parse *pParse, 
+  Fts5ExprNode *pNode, 
+  Fts5Colset *pColset,
+  Fts5Colset **ppFree
+){
+  if( pParse->rc==SQLITE_OK ){
+    assert( pNode->eType==FTS5_TERM || pNode->eType==FTS5_STRING 
+         || pNode->eType==FTS5_AND  || pNode->eType==FTS5_OR
+         || pNode->eType==FTS5_NOT  || pNode->eType==FTS5_EOF
+    );
+    if( pNode->eType==FTS5_STRING || pNode->eType==FTS5_TERM ){
+      Fts5ExprNearset *pNear = pNode->pNear;
+      if( pNear->pColset ){
+        fts5MergeColset(pNear->pColset, pColset);
+        if( pNear->pColset->nCol==0 ){
+          pNode->eType = FTS5_EOF;
+          pNode->xNext = 0;
+        }
+      }else if( *ppFree ){
+        pNear->pColset = pColset;
+        *ppFree = 0;
+      }else{
+        pNear->pColset = fts5CloneColset(&pParse->rc, pColset);
+      }
+    }else{
+      int i;
+      assert( pNode->eType!=FTS5_EOF || pNode->nChild==0 );
+      for(i=0; i<pNode->nChild; i++){
+        fts5ParseSetColset(pParse, pNode->apChild[i], pColset, ppFree);
+      }
+    }
+  }
+}
+
+/*
+** Apply colset pColset to expression node pExpr and all of its descendents.
+*/
 static void sqlite3Fts5ParseSetColset(
   Fts5Parse *pParse, 
-  Fts5ExprNearset *pNear, 
+  Fts5ExprNode *pExpr, 
   Fts5Colset *pColset 
 ){
+  Fts5Colset *pFree = pColset;
   if( pParse->pConfig->eDetail==FTS5_DETAIL_NONE ){
     pParse->rc = SQLITE_ERROR;
     pParse->zErr = sqlite3_mprintf(
       "fts5: column queries are not supported (detail=none)"
     );
-    sqlite3_free(pColset);
-    return;
-  }
-
-  if( pNear ){
-    pNear->pColset = pColset;
   }else{
-    sqlite3_free(pColset);
+    fts5ParseSetColset(pParse, pExpr, pColset, &pFree);
   }
+  sqlite3_free(pFree);
 }
 
 static void fts5ExprAssignXNext(Fts5ExprNode *pNode){
@@ -7095,7 +7209,7 @@ static void fts5ExprFunction(
 
   rc = sqlite3Fts5ConfigParse(pGlobal, db, nConfig, azConfig, &pConfig, &zErr);
   if( rc==SQLITE_OK ){
-    rc = sqlite3Fts5ExprNew(pConfig, zExpr, &pExpr, &zErr);
+    rc = sqlite3Fts5ExprNew(pConfig, pConfig->nCol, zExpr, &pExpr, &zErr);
   }
   if( rc==SQLITE_OK ){
     char *zText;
@@ -7492,9 +7606,10 @@ struct Fts5Hash {
 
 /*
 ** Each entry in the hash table is represented by an object of the 
-** following type. Each object, its key (zKey[]) and its current data
-** are stored in a single memory allocation. The position list data 
-** immediately follows the key data in memory.
+** following type. Each object, its key (a nul-terminated string) and 
+** its current data are stored in a single memory allocation. The 
+** key immediately follows the object in memory. The position list
+** data immediately follows the key data in memory.
 **
 ** The data that follows the key is in a similar, but not identical format
 ** to the doclist data stored in the database. It is:
@@ -7518,20 +7633,20 @@ struct Fts5HashEntry {
   int nAlloc;                     /* Total size of allocation */
   int iSzPoslist;                 /* Offset of space for 4-byte poslist size */
   int nData;                      /* Total bytes of data (incl. structure) */
-  int nKey;                       /* Length of zKey[] in bytes */
+  int nKey;                       /* Length of key in bytes */
   u8 bDel;                        /* Set delete-flag @ iSzPoslist */
   u8 bContent;                    /* Set content-flag (detail=none mode) */
   i16 iCol;                       /* Column of last value written */
   int iPos;                       /* Position of last value written */
   i64 iRowid;                     /* Rowid of last value written */
-  char zKey[8];                   /* Nul-terminated entry key */
 };
 
 /*
-** Size of Fts5HashEntry without the zKey[] array.
+** Eqivalent to:
+**
+**   char *fts5EntryKey(Fts5HashEntry *pEntry){ return zKey; }
 */
-#define FTS5_HASHENTRYSIZE (sizeof(Fts5HashEntry)-8)
-
+#define fts5EntryKey(p) ( ((char *)(&(p)[1])) )
 
 
 /*
@@ -7626,10 +7741,11 @@ static int fts5HashResize(Fts5Hash *pHash){
 
   for(i=0; i<pHash->nSlot; i++){
     while( apOld[i] ){
-      int iHash;
+      unsigned int iHash;
       Fts5HashEntry *p = apOld[i];
       apOld[i] = p->pHashNext;
-      iHash = fts5HashKey(nNew, (u8*)p->zKey, (int)strlen(p->zKey));
+      iHash = fts5HashKey(nNew, (u8*)fts5EntryKey(p),
+                          (int)strlen(fts5EntryKey(p)));
       p->pHashNext = apNew[iHash];
       apNew[iHash] = p;
     }
@@ -7700,9 +7816,10 @@ static int sqlite3Fts5HashWrite(
   /* Attempt to locate an existing hash entry */
   iHash = fts5HashKey2(pHash->nSlot, (u8)bByte, (const u8*)pToken, nToken);
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
-    if( p->zKey[0]==bByte 
+    char *zKey = fts5EntryKey(p);
+    if( zKey[0]==bByte 
      && p->nKey==nToken
-     && memcmp(&p->zKey[1], pToken, nToken)==0 
+     && memcmp(&zKey[1], pToken, nToken)==0 
     ){
       break;
     }
@@ -7711,7 +7828,8 @@ static int sqlite3Fts5HashWrite(
   /* If an existing hash entry cannot be found, create a new one. */
   if( p==0 ){
     /* Figure out how much space to allocate */
-    int nByte = FTS5_HASHENTRYSIZE + (nToken+1) + 1 + 64;
+    char *zKey;
+    int nByte = sizeof(Fts5HashEntry) + (nToken+1) + 1 + 64;
     if( nByte<128 ) nByte = 128;
 
     /* Grow the Fts5Hash.aSlot[] array if necessary. */
@@ -7724,14 +7842,15 @@ static int sqlite3Fts5HashWrite(
     /* Allocate new Fts5HashEntry and add it to the hash table. */
     p = (Fts5HashEntry*)sqlite3_malloc(nByte);
     if( !p ) return SQLITE_NOMEM;
-    memset(p, 0, FTS5_HASHENTRYSIZE);
+    memset(p, 0, sizeof(Fts5HashEntry));
     p->nAlloc = nByte;
-    p->zKey[0] = bByte;
-    memcpy(&p->zKey[1], pToken, nToken);
-    assert( iHash==fts5HashKey(pHash->nSlot, (u8*)p->zKey, nToken+1) );
+    zKey = fts5EntryKey(p);
+    zKey[0] = bByte;
+    memcpy(&zKey[1], pToken, nToken);
+    assert( iHash==fts5HashKey(pHash->nSlot, (u8*)zKey, nToken+1) );
     p->nKey = nToken;
-    p->zKey[nToken+1] = '\0';
-    p->nData = nToken+1 + 1 + FTS5_HASHENTRYSIZE;
+    zKey[nToken+1] = '\0';
+    p->nData = nToken+1 + 1 + sizeof(Fts5HashEntry);
     p->pHashNext = pHash->aSlot[iHash];
     pHash->aSlot[iHash] = p;
     pHash->nEntry++;
@@ -7849,9 +7968,11 @@ static Fts5HashEntry *fts5HashEntryMerge(
       p1 = 0;
     }else{
       int i = 0;
-      while( p1->zKey[i]==p2->zKey[i] ) i++;
+      char *zKey1 = fts5EntryKey(p1);
+      char *zKey2 = fts5EntryKey(p2);
+      while( zKey1[i]==zKey2[i] ) i++;
 
-      if( ((u8)p1->zKey[i])>((u8)p2->zKey[i]) ){
+      if( ((u8)zKey1[i])>((u8)zKey2[i]) ){
         /* p2 is smaller */
         *ppOut = p2;
         ppOut = &p2->pScanNext;
@@ -7894,7 +8015,7 @@ static int fts5HashEntrySort(
   for(iSlot=0; iSlot<pHash->nSlot; iSlot++){
     Fts5HashEntry *pIter;
     for(pIter=pHash->aSlot[iSlot]; pIter; pIter=pIter->pHashNext){
-      if( pTerm==0 || 0==memcmp(pIter->zKey, pTerm, nTerm) ){
+      if( pTerm==0 || 0==memcmp(fts5EntryKey(pIter), pTerm, nTerm) ){
         Fts5HashEntry *pEntry = pIter;
         pEntry->pScanNext = 0;
         for(i=0; ap[i]; i++){
@@ -7927,16 +8048,18 @@ static int sqlite3Fts5HashQuery(
   int *pnDoclist                  /* OUT: Size of doclist in bytes */
 ){
   unsigned int iHash = fts5HashKey(pHash->nSlot, (const u8*)pTerm, nTerm);
+  char *zKey = 0;
   Fts5HashEntry *p;
 
   for(p=pHash->aSlot[iHash]; p; p=p->pHashNext){
-    if( memcmp(p->zKey, pTerm, nTerm)==0 && p->zKey[nTerm]==0 ) break;
+    zKey = fts5EntryKey(p);
+    if( memcmp(zKey, pTerm, nTerm)==0 && zKey[nTerm]==0 ) break;
   }
 
   if( p ){
     fts5HashAddPoslistSize(pHash, p);
-    *ppDoclist = (const u8*)&p->zKey[nTerm+1];
-    *pnDoclist = p->nData - (FTS5_HASHENTRYSIZE + nTerm + 1);
+    *ppDoclist = (const u8*)&zKey[nTerm+1];
+    *pnDoclist = p->nData - (sizeof(Fts5HashEntry) + nTerm + 1);
   }else{
     *ppDoclist = 0;
     *pnDoclist = 0;
@@ -7969,11 +8092,12 @@ static void sqlite3Fts5HashScanEntry(
 ){
   Fts5HashEntry *p;
   if( (p = pHash->pScan) ){
-    int nTerm = (int)strlen(p->zKey);
+    char *zKey = fts5EntryKey(p);
+    int nTerm = (int)strlen(zKey);
     fts5HashAddPoslistSize(pHash, p);
-    *pzTerm = p->zKey;
-    *ppDoclist = (const u8*)&p->zKey[nTerm+1];
-    *pnDoclist = p->nData - (FTS5_HASHENTRYSIZE + nTerm + 1);
+    *pzTerm = zKey;
+    *ppDoclist = (const u8*)&zKey[nTerm+1];
+    *pnDoclist = p->nData - (sizeof(Fts5HashEntry) + nTerm + 1);
   }else{
     *pzTerm = 0;
     *ppDoclist = 0;
@@ -10862,7 +10986,8 @@ static void fts5MultiIterNext2(
 ){
   assert( pIter->bSkipEmpty );
   if( p->rc==SQLITE_OK ){
-    do {
+    *pbNewTerm = 0;
+    do{
       int iFirst = pIter->aFirst[1].iFirst;
       Fts5SegIter *pSeg = &pIter->aSeg[iFirst];
       int bNewTerm = 0;
@@ -10875,8 +11000,6 @@ static void fts5MultiIterNext2(
         fts5MultiIterAdvanced(p, pIter, iFirst, 1);
         fts5MultiIterSetEof(pIter);
         *pbNewTerm = 1;
-      }else{
-        *pbNewTerm = 0;
       }
       fts5AssertMultiIterSetup(p, pIter);
 
@@ -11142,23 +11265,23 @@ static int fts5IndexExtractCol(
   return p - (*pa);
 }
 
-static int fts5IndexExtractColset (
+static void fts5IndexExtractColset(
+  int *pRc,
   Fts5Colset *pColset,            /* Colset to filter on */
   const u8 *pPos, int nPos,       /* Position list */
   Fts5Buffer *pBuf                /* Output buffer */
 ){
-  int rc = SQLITE_OK;
-  int i;
-
-  fts5BufferZero(pBuf);
-  for(i=0; i<pColset->nCol; i++){
-    const u8 *pSub = pPos;
-    int nSub = fts5IndexExtractCol(&pSub, nPos, pColset->aiCol[i]);
-    if( nSub ){
-      fts5BufferAppendBlob(&rc, pBuf, nSub, pSub);
+  if( *pRc==SQLITE_OK ){
+    int i;
+    fts5BufferZero(pBuf);
+    for(i=0; i<pColset->nCol; i++){
+      const u8 *pSub = pPos;
+      int nSub = fts5IndexExtractCol(&pSub, nPos, pColset->aiCol[i]);
+      if( nSub ){
+        fts5BufferAppendBlob(pRc, pBuf, nSub, pSub);
+      }
     }
   }
-  return rc;
 }
 
 /*
@@ -11282,8 +11405,9 @@ static void fts5IterSetOutputs_Full(Fts5Iter *pIter, Fts5SegIter *pSeg){
       pIter->base.nData = fts5IndexExtractCol(&a, pSeg->nPos,pColset->aiCol[0]);
       pIter->base.pData = a;
     }else{
+      int *pRc = &pIter->pIndex->rc;
       fts5BufferZero(&pIter->poslist);
-      fts5IndexExtractColset(pColset, a, pSeg->nPos, &pIter->poslist);
+      fts5IndexExtractColset(pRc, pColset, a, pSeg->nPos, &pIter->poslist);
       pIter->base.pData = pIter->poslist.p;
       pIter->base.nData = pIter->poslist.n;
     }
@@ -11828,9 +11952,6 @@ static void fts5WriteFlushLeaf(Fts5Index *p, Fts5SegWriter *pWriter){
   Fts5PageWriter *pPage = &pWriter->writer;
   i64 iRowid;
 
-static int nCall = 0;
-nCall++;
-
   assert( (pPage->pgidx.n==0)==(pWriter->bFirstTermInPage) );
 
   /* Set the szLeaf header field. */
@@ -12179,6 +12300,7 @@ static void fts5IndexMergeLevel(
   int bOldest;                    /* True if the output segment is the oldest */
   int eDetail = p->pConfig->eDetail;
   const int flags = FTS5INDEX_QUERY_NOOUTPUT;
+  int bTermWritten = 0;           /* True if current term already output */
 
   assert( iLvl<pStruct->nLevel );
   assert( pLvl->nMerge<=pLvl->nSeg );
@@ -12232,18 +12354,22 @@ static void fts5IndexMergeLevel(
     int nTerm;
     const u8 *pTerm;
 
-    /* Check for key annihilation. */
-    if( pSegIter->nPos==0 && (bOldest || pSegIter->bDel==0) ) continue;
-
     pTerm = fts5MultiIterTerm(pIter, &nTerm);
     if( nTerm!=term.n || memcmp(pTerm, term.p, nTerm) ){
       if( pnRem && writer.nLeafWritten>nRem ){
         break;
       }
+      fts5BufferSet(&p->rc, &term, nTerm, pTerm);
+      bTermWritten =0;
+    }
 
+    /* Check for key annihilation. */
+    if( pSegIter->nPos==0 && (bOldest || pSegIter->bDel==0) ) continue;
+
+    if( p->rc==SQLITE_OK && bTermWritten==0 ){
       /* This is a new term. Append a term to the output segment. */
       fts5WriteAppendTerm(p, &writer, nTerm, pTerm);
-      fts5BufferSet(&p->rc, &term, nTerm, pTerm);
+      bTermWritten = 1;
     }
 
     /* Append the rowid to the output */
@@ -13075,7 +13201,7 @@ static void fts5SetupPrefixIter(
     if( pData ){
       pData->p = (u8*)&pData[1];
       pData->nn = pData->szLeaf = doclist.n;
-      memcpy(pData->p, doclist.p, doclist.n);
+      if( doclist.n ) memcpy(pData->p, doclist.p, doclist.n);
       fts5MultiIterNew2(p, pData, bDesc, ppIter);
     }
     fts5BufferFree(&doclist);
@@ -13314,7 +13440,7 @@ static int sqlite3Fts5IndexQuery(
 
   if( sqlite3Fts5BufferSize(&p->rc, &buf, nToken+1)==0 ){
     int iIdx = 0;                 /* Index to search */
-    memcpy(&buf.p[1], pToken, nToken);
+    if( nToken ) memcpy(&buf.p[1], pToken, nToken);
 
     /* Figure out which index to search and set iIdx accordingly. If this
     ** is a prefix query for which there is no prefix index, set iIdx to
@@ -13363,7 +13489,7 @@ static int sqlite3Fts5IndexQuery(
     }
 
     if( p->rc ){
-      sqlite3Fts5IterClose(&pRet->base);
+      sqlite3Fts5IterClose((Fts5IndexIter*)pRet);
       pRet = 0;
       fts5CloseReader(p);
     }
@@ -14981,6 +15107,7 @@ static void fts5SetUniqueFlag(sqlite3_index_info *pIdxInfo){
 static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
   Fts5Table *pTab = (Fts5Table*)pVTab;
   Fts5Config *pConfig = pTab->pConfig;
+  const int nCol = pConfig->nCol;
   int idxFlags = 0;               /* Parameter passed through to xFilter() */
   int bHasMatch;
   int iNext;
@@ -15006,24 +15133,34 @@ static int fts5BestIndexMethod(sqlite3_vtab *pVTab, sqlite3_index_info *pInfo){
 
   int aColMap[3];
   aColMap[0] = -1;
-  aColMap[1] = pConfig->nCol;
-  aColMap[2] = pConfig->nCol+1;
+  aColMap[1] = nCol;
+  aColMap[2] = nCol+1;
 
   /* Set idxFlags flags for all WHERE clause terms that will be used. */
   for(i=0; i<pInfo->nConstraint; i++){
     struct sqlite3_index_constraint *p = &pInfo->aConstraint[i];
-    int j;
-    for(j=0; j<ArraySize(aConstraint); j++){
-      struct Constraint *pC = &aConstraint[j];
-      if( p->iColumn==aColMap[pC->iCol] && p->op & pC->op ){
-        if( p->usable ){
+    int iCol = p->iColumn;
+
+    if( (p->op==SQLITE_INDEX_CONSTRAINT_MATCH && iCol>=0 && iCol<=nCol)
+     || (p->op==SQLITE_INDEX_CONSTRAINT_EQ && iCol==nCol)
+    ){
+      /* A MATCH operator or equivalent */
+      if( p->usable ){
+        idxFlags = (idxFlags & 0xFFFF) | FTS5_BI_MATCH | (iCol << 16);
+        aConstraint[0].iConsIndex = i;
+      }else{
+        /* As there exists an unusable MATCH constraint this is an 
+        ** unusable plan. Set a prohibitively high cost. */
+        pInfo->estimatedCost = 1e50;
+        return SQLITE_OK;
+      }
+    }else{
+      int j;
+      for(j=1; j<ArraySize(aConstraint); j++){
+        struct Constraint *pC = &aConstraint[j];
+        if( iCol==aColMap[pC->iCol] && p->op & pC->op && p->usable ){
           pC->iConsIndex = i;
           idxFlags |= pC->fts5op;
-        }else if( j==0 ){
-          /* As there exists an unusable MATCH constraint this is an 
-          ** unusable plan. Set a prohibitively high cost. */
-          pInfo->estimatedCost = 1e50;
-          return SQLITE_OK;
         }
       }
     }
@@ -15598,6 +15735,7 @@ static int fts5FilterMethod(
   sqlite3_value *pRowidEq = 0;    /* rowid = ? expression (or NULL) */
   sqlite3_value *pRowidLe = 0;    /* rowid <= ? expression (or NULL) */
   sqlite3_value *pRowidGe = 0;    /* rowid >= ? expression (or NULL) */
+  int iCol;                       /* Column on LHS of MATCH operator */
   char **pzErrmsg = pConfig->pzErrmsg;
 
   UNUSED_PARAM(zUnused);
@@ -15628,6 +15766,8 @@ static int fts5FilterMethod(
   if( BitFlagTest(idxNum, FTS5_BI_ROWID_EQ) ) pRowidEq = apVal[iVal++];
   if( BitFlagTest(idxNum, FTS5_BI_ROWID_LE) ) pRowidLe = apVal[iVal++];
   if( BitFlagTest(idxNum, FTS5_BI_ROWID_GE) ) pRowidGe = apVal[iVal++];
+  iCol = (idxNum>>16);
+  assert( iCol>=0 && iCol<=pConfig->nCol );
   assert( iVal==nVal );
   bOrderByRank = ((idxNum & FTS5_BI_ORDER_RANK) ? 1 : 0);
   pCsr->bDesc = bDesc = ((idxNum & FTS5_BI_ORDER_DESC) ? 1 : 0);
@@ -15674,7 +15814,7 @@ static int fts5FilterMethod(
         rc = fts5SpecialMatch(pTab, pCsr, &zExpr[1]);
       }else{
         char **pzErr = &pTab->base.zErrMsg;
-        rc = sqlite3Fts5ExprNew(pConfig, zExpr, &pCsr->pExpr, pzErr);
+        rc = sqlite3Fts5ExprNew(pConfig, iCol, zExpr, &pCsr->pExpr, pzErr);
         if( rc==SQLITE_OK ){
           if( bOrderByRank ){
             pCsr->ePlan = FTS5_PLAN_SORTED_MATCH;
@@ -17089,7 +17229,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2017-04-11 20:48:30 7aae5c0f99aa2fda85654242cfc9e23a0f981d9ce4ab17610d619cd208540b3d", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2017-06-24 19:21:48 c8186874b3fec737445ad5c4ba3eaecd922af664b387d89dc31eea60476a0294", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){

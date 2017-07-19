@@ -183,9 +183,9 @@ TEST(BeSQLiteDb, AssignBriefcaseIdInReadonlyMode)
     ASSERT_EQ(BE_SQLITE_OK, stat) << L"Reopening test Bim '" << dbPath.c_str() << L"' failed.";
 
     BeTest::SetFailOnAssert(false);
-    stat = db.AssignBriefcaseId(BeBriefcaseId(12345));
+    stat = db.SetAsBriefcase(BeBriefcaseId(12345));
     BeTest::SetFailOnAssert(true);
-    ASSERT_EQ(BE_SQLITE_READONLY, stat) << L"Calling AssignBriefcaseId on readonly Bim file is expected to fail.";
+    ASSERT_EQ(BE_SQLITE_READONLY, stat) << L"Calling SetAsBriefcase on readonly Bim file is expected to fail.";
     }
 
 //---------------------------------------------------------------------------------------
@@ -230,7 +230,7 @@ TEST(BeSQLiteDb, AssignBriefcaseId)
     //now change briefcase id. This should truncate be_local and reinsert the new briefcase id
     const BeBriefcaseId currentBriefcaseId = db.GetBriefcaseId();
     expectedBriefcaseId = currentBriefcaseId.GetNextBriefcaseId();
-    stat = db.AssignBriefcaseId(expectedBriefcaseId);
+    stat = db.SetAsBriefcase(expectedBriefcaseId);
     ASSERT_EQ(BE_SQLITE_OK, stat) << "Changing the briefcase id is not expected to fail.";
     }
 
