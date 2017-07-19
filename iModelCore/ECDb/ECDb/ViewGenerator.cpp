@@ -735,6 +735,7 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
 //---------------------------------------------------------------------------------------
 BentleyStatus ViewGenerator::RenderNullView(NativeSqlBuilder& viewSql, Context& ctx, ClassMap const& classMap)
     {
+    viewSql.Clear();
     SearchPropertyMapVisitor visitor(PropertyMap::Type::System | PropertyMap::Type::SingleColumnData);
     classMap.GetPropertyMaps().AcceptVisitor(visitor);
     if (ctx.GetViewType() == ViewType::SelectFromView)
@@ -876,7 +877,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             if (!partition->CanQuery())
                 continue;
 
-            const bool isSelf = partition->GetSourceECClassId().GetId() == partition->GetTargetECClassId().GetId();
+            const bool isSelf = partition->GetSourceECClassId()->GetId() == partition->GetTargetECClassId()->GetId();
             const bool  appendAlias = unionList.empty();
             NativeSqlBuilder view;
             view.Append("SELECT ");
@@ -894,11 +895,11 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             view.Append(partition->GetSourceECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECInstanceId).AppendComma();
 
             //SourceECClassID
-            if (partition->GetSourceECClassId().IsVirtual())
+            if (partition->GetSourceECClassId()->IsVirtual())
                 {
                 // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
                 // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
-                std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetSourceECClassId().GetTable());
+                std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetSourceECClassId()->GetTable());
                 BeAssert(classIds.size() == 1);
                 if (classIds.size() != 1)
                     return ERROR;
@@ -908,19 +909,19 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
             else
                 {
                 if (isSelf && relationMap.GetReferencedEnd() == ECRelationshipEnd_Source)
-                    view.Append(otherEndAlias, partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+                    view.Append(otherEndAlias, *partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
                 else
-                    view.Append(partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+                    view.Append(*partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
                 }
             //TargetECInstanceId
             view.Append(partition->GetTargetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECInstanceId).AppendComma();
 
             //TargetECClassId
-            if (partition->GetTargetECClassId().IsVirtual())
+            if (partition->GetTargetECClassId()->IsVirtual())
                 {
                 // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
                 // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
-                std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetTargetECClassId().GetTable());
+                std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetTargetECClassId()->GetTable());
                 BeAssert(classIds.size() == 1);
                 if (classIds.size() != 1)
                     return ERROR;
@@ -931,13 +932,13 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
                 {
 
                 if (isSelf && relationMap.GetReferencedEnd() == ECRelationshipEnd_Target)
-                    view.Append(otherEndAlias, partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+                    view.Append(otherEndAlias, *partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
                 else
-                    view.Append(partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+                    view.Append(*partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
                 }
             //FROM
             view.Append(" FROM ").Append(partition->GetECInstanceId().GetTable());
-            DbColumn const& refClassId = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECClassId() : partition->GetTargetECClassId();
+            DbColumn const& refClassId = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassId() : *partition->GetTargetECClassId();
             DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceId() : partition->GetTargetECInstanceId();
             if (refClassId.GetPersistenceType() == PersistenceType::Physical)
                 {
@@ -1158,7 +1159,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                     {
                     DataPropertyMap const& dataPropertyMap = propertyMap->GetAs<DataPropertyMap>();
                     if (&dataPropertyMap.GetTable() != &contextTable)
-                        requireJoinTo.insert (&dataPropertyMap.GetTable());
+                        requireJoinTo.insert(&dataPropertyMap.GetTable());
                     }
 
                 propertyMaps.push_back(std::make_pair(propertyMap, nullptr));
@@ -1244,7 +1245,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
                     propertySqlList.back().AppendSpace().AppendEscaped(colAlias);
                     }
                 }
-                
+
             continue;
             }
 
@@ -1255,7 +1256,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
             {
             ToSqlVisitor toSqlVisitor(ctx, dataProperty.GetTable(), dataProperty.GetTable().GetName().c_str(), ToSqlVisitor::ColumnAliasMode::NoAlias);
             if (baseClass && baseClass->IsMixin())
-                   toSqlVisitor.DoNotAddColumnAliasForComputedExpression();
+                toSqlVisitor.DoNotAddColumnAliasForComputedExpression();
 
             if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
                 {
@@ -1308,9 +1309,6 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 
         //no join needed
         ToSqlVisitor toSqlVisitor(ctx, contextTable, systemContextTableAlias, ToSqlVisitor::ColumnAliasMode::NoAlias);
-        if (baseClass && baseClass->IsMixin())
-            toSqlVisitor.DoNotAddColumnAliasForComputedExpression();
-
         if (SUCCESS != dataProperty.AcceptVisitor(toSqlVisitor) || toSqlVisitor.GetResultSet().empty())
             {
             BeAssert(false);

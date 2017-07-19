@@ -22,6 +22,7 @@
     <ClCompile Include="Performance\PerformanceCRUDTestsHelper.cpp" />
     <ClCompile Include="Performance\PerformanceECDbMapCATests.cpp" />
     <ClCompile Include="Performance\PerformanceECDbReferentialIntegrityTests.cpp" />
+    <ClCompile Include="Performance\PerformanceECDbTests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceECSqlSelectAdapterTests.cpp" />
     <ClCompile Include="Performance\PerformanceECInstanceInserterTests.cpp" />
     <ClCompile Include="Performance\PerformanceECSqlVsSqliteTests.cpp" />
@@ -40,7 +41,6 @@
     <ClCompile Include="Published\BulkCrudTestFixture.cpp" />
     <ClCompile Include="Published\BulkCrudTests.cpp" />
     <ClCompile Include="Published\ChangeSummaryTests.cpp" />
-    <ClCompile Include="Published\DataTable.cpp" />
     <ClCompile Include="Published\DateTimeTests.cpp" />
     <ClCompile Include="Published\DbMappingTests.cpp" />
     <ClCompile Include="Published\ECCrudWriteTokenTests.cpp" />
@@ -61,6 +61,7 @@
     <ClCompile Include="Published\ECSqlStatementTests.cpp" />
     <ClCompile Include="Published\FileInfoTests.cpp" />
     <ClCompile Include="Published\FSRTests.cpp" />
+    <ClCompile Include="Published\IndexTests.cpp" />
     <ClCompile Include="Published\JoinedTableTests.cpp" />
     <ClCompile Include="Published\JsonInserterTests.cpp" />
     <ClCompile Include="Published\JsonLibraryTests.cpp" />
@@ -87,7 +88,6 @@
     <ClInclude Include="Performance\PerformanceTests.h" />
     <ClInclude Include="Performance\ProfileBreak.h" />
     <ClInclude Include="Published\BulkCrudTestFixture.h" />
-    <ClInclude Include="Published\DataTable.h" />
     <ClInclude Include="Published\ECDbPublishedTests.h" />
     <ClInclude Include="Published\ECSqlExecutionFrameworkHelper.h" />
     <ClInclude Include="Published\ECSqlStatementTestFixture.h" />

@@ -74,12 +74,14 @@ struct SchemaWriter final : NonCopyableClass
 
         BentleyStatus ValidateSchemasPreImport(bvector<ECN::ECSchemaCP> const& primarySchemasOrderedByDependencies) const;
 
+        BentleyStatus UpdateBaseClasses(BaseClassChanges&, ECN::ECClassCR, ECN::ECClassCR);
         IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
-
+        static bool IsChangeToBaseClassIsSupported(ECN::ECClassCR baseClass);
     public:
         explicit SchemaWriter(ECDbCR ecdb, SchemaImportContext& ctx) : m_ecdb(ecdb), m_ctx(ctx)
             {
             m_schemaUpgradeCustomAttributeValidator.Accept("ECDbMap:DbIndexList.Indexes.Name");
+            m_schemaUpgradeCustomAttributeValidator.Reject("CoreCustomAttributes:IsMixin.*");
             m_schemaUpgradeCustomAttributeValidator.Reject("ECDbMap:*");
             }
 

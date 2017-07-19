@@ -39,7 +39,7 @@ private:
 
 public :
     InsertStatementExp (std::unique_ptr<ClassNameExp>& classNameExp, std::unique_ptr<PropertyNameListExp>& propertyNameListExp,
-                         std::unique_ptr<ValueExpListExp>& valuesExp);
+                        std::vector<std::unique_ptr<ValueExp>>& valuesExp);
 
     ClassNameExp const* GetClassNameExp () const;
     PropertyNameListExp const* GetPropertyNameListExp () const;

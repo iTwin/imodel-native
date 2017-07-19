@@ -128,10 +128,8 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
     // Get flat list of relationship source and target classes. 
     // It also consider IsPolymorphic attribute on source and target constraint in ECSchema
     ECSqlParseContext::ClassListById sourceList, targetList;
-    bool sourceContainsAnyClass = false;
-    bool targetContainsAnyClass = false;
-    ctx.GetConstraintClasses(sourceList, relationshipClass->GetSource(), &sourceContainsAnyClass);
-    ctx.GetConstraintClasses(targetList, relationshipClass->GetTarget(), &targetContainsAnyClass);
+    ctx.GetConstraintClasses(sourceList, relationshipClass->GetSource());
+    ctx.GetConstraintClasses(targetList, relationshipClass->GetTarget());
 
     //We will attempt to resolve toClassName
     auto& toECClass = toEP.GetClassNameRef()->GetInfo().GetMap().GetClass();
@@ -147,27 +145,8 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
 
     if (toEP.GetLocation() == ClassLocation::NotResolved)
         {
-        if (sourceContainsAnyClass && targetContainsAnyClass)
-            {
-            ctx.Issues().Report("'%s' class is not related to by the relationship '%s' as both relationship endpoint contain 'AnyClass'.", toECClass.GetFullName(), relationshipClass->GetFullName());
-            return ERROR;
-            }
-
-        if (sourceContainsAnyClass)
-            {
-            toEP.SetLocation(ClassLocation::ExistInSource, true);
-            toEP.SetAnyClass(true);
-            }
-        else if (targetContainsAnyClass)
-            {
-            toEP.SetLocation(ClassLocation::ExistInTarget, true);
-            toEP.SetAnyClass(true);
-            }
-        else
-            {
-            ctx.Issues().Report("'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
-            return ERROR;
-            }
+        ctx.Issues().Report("'%s' class is not related to by the relationship '%s'", toECClass.GetFullName(), relationshipClass->GetFullName());
+        return ERROR;
         }
 
     bmap<ECClassId, ClassNameExp const*> fromClassExistsInSourceList;
@@ -190,16 +169,12 @@ BentleyStatus ECRelationshipJoinExp::ResolveRelationshipEnds(ECSqlParseContext& 
             auto itor = sourceList.find(fromClassId);
             if (itor != sourceList.end())
                 fromClassExistsInSourceList[fromClassId] = &fromClassNameExpression;
-            else if (sourceContainsAnyClass && fromClassExistsInSourceList.empty()) //only the first class found is use as source
-                fromClassExistsInSourceList[fromClassId] = &fromClassNameExpression;
             }
 
         if (fromClassExistsInTargetList.find(fromClassId) == fromClassExistsInTargetList.end())
             {
             auto itor = targetList.find(fromClassId);
             if (itor != targetList.end())
-                fromClassExistsInTargetList[fromClassId] = &fromClassNameExpression;
-            else if (targetContainsAnyClass && fromClassExistsInTargetList.empty()) //only the first class found is use as target
                 fromClassExistsInTargetList[fromClassId] = &fromClassNameExpression;
             }
         }

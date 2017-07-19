@@ -198,9 +198,7 @@ struct ECValueBindingInfoCollection final
                     {}
                 ~const_iterator() {}
                 //copyable
-                const_iterator(const_iterator const& rhs)
-                    : m_iterator(rhs.m_iterator)
-                    {}
+                const_iterator(const_iterator const& rhs) : m_iterator(rhs.m_iterator) {}
                 const_iterator& operator= (const_iterator const& rhs)
                     {
                     if (this != &rhs)
@@ -209,11 +207,9 @@ struct ECValueBindingInfoCollection final
                     return *this;
                     }
                 //moveable
-                const_iterator(const_iterator&& rhs)
-                    : m_iterator(std::move(rhs.m_iterator))
-                    {}
+                const_iterator(const_iterator&& rhs) : m_iterator(std::move(rhs.m_iterator)) {}
 
-                const_iterator& operator= (const_iterator&& rhs)
+                const_iterator& operator=(const_iterator&& rhs)
                     {
                     if (this != &rhs)
                         m_iterator = std::move(rhs.m_iterator);
@@ -221,25 +217,11 @@ struct ECValueBindingInfoCollection final
                     return *this;
                     }
 
-                ECValueBindingInfo const* operator* () const
-                    {
-                    return m_iterator->get();
-                    }
+                bool operator== (const_iterator const& rhs) const { return m_iterator == rhs.m_iterator; }
+                bool operator!= (const_iterator const& rhs) const { return !(*this == rhs); }
 
-                const_iterator& operator++ ()
-                    {
-                    m_iterator++;
-                    return *this;
-                    }
-                bool operator== (const_iterator const& rhs) const
-                    {
-                    return m_iterator == rhs.m_iterator;
-                    }
-
-                bool operator!= (const_iterator const& rhs) const
-                    {
-                    return !(*this == rhs);
-                    }
+                ECValueBindingInfo const* operator* () const { return m_iterator->get();  }
+                const_iterator& operator++ () { m_iterator++; return *this; }
             };
 
     private:

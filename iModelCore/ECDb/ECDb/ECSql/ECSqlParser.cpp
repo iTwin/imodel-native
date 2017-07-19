@@ -118,6 +118,18 @@ std::unique_ptr<Exp> ECSqlParser::Parse(ECDbCR ecdb, Utf8CP ecsql) const
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus ECSqlParser::ParseSingleSelectStatement(std::unique_ptr<SingleSelectStatementExp>& exp, OSQLParseNode const* parseNode) const
     {
+    BeAssert(parseNode != nullptr);
+    if (SQL_ISRULE(parseNode, values_or_query_spec))
+        {
+        //values_or_query_spec
+        std::vector<std::unique_ptr<ValueExp>> valueExpList;
+        if (SUCCESS != ParseValuesOrQuerySpec(valueExpList, *parseNode))
+            return ERROR;
+
+        exp = std::make_unique<SingleSelectStatementExp>(valueExpList);
+        return SUCCESS;
+        }
+
     SqlSetQuantifier opt_all_distinct;
     if (SUCCESS != ParseAllOrDistinctToken(opt_all_distinct, parseNode->getChild(1)))
         return ERROR;
@@ -268,12 +280,19 @@ BentleyStatus ECSqlParser::ParseInsertStatement(std::unique_ptr<InsertStatementE
     if (SUCCESS != stat)
         return stat;
 
-    std::unique_ptr<ValueExpListExp> valuesOrQuerySpecExp = nullptr;
-    stat = ParseValuesOrQuerySpec(valuesOrQuerySpecExp, parseNode.getChild(4));
+    OSQLParseNode const* valuesOrQuerySpecNode = parseNode.getChild(4);
+    if (valuesOrQuerySpecNode == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    std::vector<std::unique_ptr<ValueExp>> valueExpList;
+    stat = ParseValuesOrQuerySpec(valueExpList, *valuesOrQuerySpecNode);
     if (SUCCESS != stat)
         return stat;
 
-    insertExp = std::make_unique<InsertStatementExp>(classNameExp, insertPropertyNameListExp, valuesOrQuerySpecExp);
+    insertExp = std::make_unique<InsertStatementExp>(classNameExp, insertPropertyNameListExp, valueExpList);
     return SUCCESS;
     }
 
@@ -2008,26 +2027,31 @@ BentleyStatus ECSqlParser::ParseSubquery(std::unique_ptr<SubqueryExp>& exp, OSQL
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                04/2015
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseRowValueConstructorCommalist(std::unique_ptr<ValueExpListExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseRowValueConstructorCommalist(std::vector<std::unique_ptr<ValueExp>>& valueExpList, OSQLParseNode const& parseNode) const
     {
-    if (!SQL_ISRULE(parseNode, row_value_constructor_commalist))
+    if (!SQL_ISRULE(&parseNode, row_value_constructor_commalist))
         {
         BeAssert(false && "Invalid grammar. Expecting row_value_constructor_commalist");
         return ERROR;
         }
 
-    std::unique_ptr<ValueExpListExp> valueListExp = std::make_unique<ValueExpListExp>();
-    const size_t childCount = parseNode->count();
+    const size_t childCount = parseNode.count();
     for (size_t i = 0; i < childCount; i++)
         {
+        OSQLParseNode const* childNode = parseNode.getChild(i);
+        if (childNode == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
         std::unique_ptr<ValueExp> valueExp = nullptr;
-        if (SUCCESS != ParseRowValueConstructor(valueExp, parseNode->getChild(i)))
+        if (SUCCESS != ParseRowValueConstructor(valueExp, childNode))
             return ERROR;
 
-        valueListExp->AddValueExp(valueExp);
+        valueExpList.push_back(std::move(valueExp));
         }
 
-    exp = std::move(valueListExp);
     return SUCCESS;
     }
 
@@ -2556,18 +2580,24 @@ BentleyStatus ECSqlParser::ParseValueExpCommalist(std::unique_ptr<ValueExpListEx
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-BentleyStatus ECSqlParser::ParseValuesOrQuerySpec(std::unique_ptr<ValueExpListExp>& exp, OSQLParseNode const* parseNode) const
+BentleyStatus ECSqlParser::ParseValuesOrQuerySpec(std::vector<std::unique_ptr<ValueExp>>& valeExpList, OSQLParseNode const& parseNode) const
     {
-    if (!SQL_ISRULE(parseNode, values_or_query_spec))
+    if (!SQL_ISRULE(&parseNode, values_or_query_spec))
         {
         BeAssert(false && "Invalid grammar. Expecting values_or_query_spec");
         return ERROR;
         }
 
     //1st: VALUES, 2nd:(, 3rd: row_value_constructor_commalist, 4th:)
-    BeAssert(parseNode->count() == 4);
-    OSQLParseNode const* listNode = parseNode->getChild(2);
-    return ParseRowValueConstructorCommalist(exp, listNode);
+    BeAssert(parseNode.count() == 4);
+    OSQLParseNode const* listNode = parseNode.getChild(2);
+    if (listNode == nullptr)
+        {
+        BeAssert(false);
+        return ERROR;
+        }
+
+    return ParseRowValueConstructorCommalist(valeExpList, *listNode);
     }
 
 //-----------------------------------------------------------------------------------------
@@ -2747,15 +2777,10 @@ void ECSqlParseContext::GetSubclasses(ClassListById& classes, ECClassCR ecClass)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       08/2013
 //+---------------+---------------+---------------+---------------+---------------+------
-void ECSqlParseContext::GetConstraintClasses(ClassListById& classes, ECRelationshipConstraintCR constraintEnd, bool* containAnyClass)
+void ECSqlParseContext::GetConstraintClasses(ClassListById& classes, ECRelationshipConstraintCR constraintEnd)
     {
-    if (containAnyClass)
-        *containAnyClass = false;
     for (auto ecClass : constraintEnd.GetConstraintClasses())
         {
-        if (containAnyClass && !(*containAnyClass) && ecClass->GetName() == "AnyClass" && ecClass->GetSchema().GetName() == "Bentley_Standard_Classes")
-            *containAnyClass = true;
-
         if (classes.find(ecClass->GetId()) == classes.end())
             {
             classes[ecClass->GetId()] = ecClass;
@@ -2774,11 +2799,7 @@ bool ECSqlParseContext::IsEndClassOfRelationship(ECClassCR searchClass, ECRelati
         (searchEnd == ECRelationshipEnd::ECRelationshipEnd_Source) ? relationshipClass.GetSource() : relationshipClass.GetTarget();
 
     bmap<ECClassId, ECClassCP> classes;
-    bool containsAnyClass = false;
-    GetConstraintClasses(classes, constraintEnd, &containsAnyClass);
-    if (containsAnyClass)
-        return true;
-
+    GetConstraintClasses(classes, constraintEnd);
     return classes.find(searchClass.GetId()) != classes.end();
     }
 

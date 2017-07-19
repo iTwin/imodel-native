@@ -21,21 +21,6 @@ RelationshipClassMap::RelationshipClassMap(ECDb const& ecdb, Type type, ECN::ECC
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                        12/13
-//---------------------------------------------------------------------------------------
-//static
-bool RelationshipClassMap::ConstraintIncludesAnyClass(ECN::ECRelationshipConstraintClassList const& constraintClasses)
-    {
-    for (ECClassCP constraintClass : constraintClasses)
-        {
-        if (IsAnyClass(*constraintClass))
-            return true;
-        }
-
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  07/2014
 //---------------------------------------------------------------------------------------
 RelationshipConstraintMap const& RelationshipClassMap::GetConstraintMap(ECN::ECRelationshipEnd constraintEnd) const
@@ -90,21 +75,23 @@ uint64_t RelationshipClassEndTableMap::Partition::QuickHash64(Utf8CP str, uint64
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-RelationshipClassEndTableMap::Partition::Partition(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const& sourceClassId, DbColumn const& targetId, DbColumn const& targetClassId)
+RelationshipClassEndTableMap::Partition::Partition(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const* sourceClassId, DbColumn const& targetId, DbColumn const* targetClassId)
     :m_ecInstanceId(ecInstanceId), m_ecClassId(ecClassId), m_sourceId(sourceId), m_sourceClassId(sourceClassId), m_targetId(targetId), m_targetClassId(targetClassId), m_hashCode(0)
     {
     m_hashCode = QuickHash64(ecInstanceId.GetName().c_str(), m_hashCode);
     m_hashCode = QuickHash64(ecClassId.GetName().c_str(), m_hashCode);
     m_hashCode = QuickHash64(sourceId.GetName().c_str(), m_hashCode);
-    m_hashCode = QuickHash64(sourceClassId.GetName().c_str(), m_hashCode);
+    if (sourceClassId)
+        m_hashCode = QuickHash64(sourceClassId->GetName().c_str(), m_hashCode);
     m_hashCode = QuickHash64(targetId.GetName().c_str(), m_hashCode);
-    m_hashCode = QuickHash64(targetClassId.GetName().c_str(), m_hashCode);
+    if (m_targetClassId)
+        m_hashCode = QuickHash64(targetClassId->GetName().c_str(), m_hashCode);
     }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                   Affan.Khan                         06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-std::unique_ptr<RelationshipClassEndTableMap::Partition> RelationshipClassEndTableMap::Partition::Create(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const& sourceClassId, DbColumn const& targetId, DbColumn const& targetClassId, ECN::ECRelationshipEnd fromEnd)
+std::unique_ptr<RelationshipClassEndTableMap::Partition> RelationshipClassEndTableMap::Partition::Create(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const* sourceClassId, DbColumn const& targetId, DbColumn const* targetClassId, ECN::ECRelationshipEnd fromEnd)
     {
     return std::unique_ptr<Partition>(new Partition(ecInstanceId, ecClassId, sourceId, sourceClassId, targetId, targetClassId));
     }
@@ -227,11 +214,10 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::InsertPartition(std::
 BentleyStatus RelationshipClassEndTableMap::PartitionView::ResurrectPartition(std::vector<DbTable const*> const& tables, DbColumn const& navId, DbColumn const& navRelECClassId)
     {
     PRECONDITION(navId.GetTable().GetId() == navRelECClassId.GetTable().GetId(), ERROR);
-    PRECONDITION(!tables.empty(), ERROR);
-    PRECONDITION(tables.size() == 1, ERROR);
+    PRECONDITION(tables.size() <= 1, ERROR);
 
     DbTable const& table = navId.GetTable();
-    DbColumn const* fromEndClassId = tables.front()->FindFirst(DbColumn::Kind::ECClassId);
+    DbColumn const* fromEndClassId = tables.empty() ? nullptr : tables.front()->FindFirst(DbColumn::Kind::ECClassId);
     DbColumn const* toEndClassId = navId.GetTable().FindFirst(DbColumn::Kind::ECClassId);
     DbColumn const* ecInstnaceId = table.FindFirst(DbColumn::Kind::ECInstanceId);
     DbColumn const* ecClassId = &navRelECClassId;
@@ -243,11 +229,9 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::ResurrectPartition(st
     PRECONDITION(ecInstnaceId != nullptr, ERROR);
     PRECONDITION(ecClassId != nullptr, ERROR);
     PRECONDITION(sourceECInstanceId != nullptr, ERROR);
-    PRECONDITION(sourceECClassId != nullptr, ERROR);
     PRECONDITION(targetECInstanceId != nullptr, ERROR);
-    PRECONDITION(targetECClassId != nullptr, ERROR);
 
-    return InsertPartition(Partition::Create(*ecInstnaceId, *ecClassId, *sourceECInstanceId, *sourceECClassId, *targetECInstanceId, *targetECClassId, GetFromEnd()), true);
+    return InsertPartition(Partition::Create(*ecInstnaceId, *ecClassId, *sourceECInstanceId, sourceECClassId, *targetECInstanceId, targetECClassId, GetFromEnd()), true);
     }
 
 //--------------------------------------------------------------------------------------
@@ -261,9 +245,9 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::AddDefaultPartition()
             m_relationshipMap.GetECInstanceIdPropertyMap()->FindDataPropertyMap(*table)->GetColumn(),
             m_relationshipMap.GetECClassIdPropertyMap()->FindDataPropertyMap(*table)->GetColumn(),
             m_relationshipMap.GetSourceECInstanceIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
-            m_relationshipMap.GetSourceECClassIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
+            &m_relationshipMap.GetSourceECClassIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
             m_relationshipMap.GetTargetECInstanceIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
-            m_relationshipMap.GetTargetECClassIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
+            &m_relationshipMap.GetTargetECClassIdPropMap()->FindDataPropertyMap(*table)->GetColumn(),
             GetFromEnd()), true);
     }
 //--------------------------------------------------------------------------------------
@@ -592,7 +576,7 @@ ClassMappingStatus RelationshipClassEndTableMap::_Map(ClassMappingContext& ctx)
 
     //End table relationship is always mapped to virtual table.
     //we use nav properties to generate views dynamically
-    if (SUCCESS != ClassMapper::TableMapper::MapToTable(*this, ctx.GetClassMappingInfo()))
+    if (SUCCESS != DbMappingManager::Tables::MapToTable(ctx.GetImportCtx(), *this, ctx.GetClassMappingInfo()))
         return ClassMappingStatus::Error;
 
     if (SUCCESS != MapSystemColumns())
@@ -917,7 +901,7 @@ DbColumn* RelationshipClassLinkTableMap::ConfigureForeignECClassIdKey(ClassMappi
         return nullptr;
         }
 
-    if (ConstraintIncludesAnyClass(foreignEndConstraint.GetConstraintClasses()) || foreignEndTableCount > 1)
+    if (foreignEndTableCount > 1)
         {
         //! We will create ECClassId column in this case
         endECClassIdColumn = CreateConstraintColumn(columnName.c_str(), PersistenceType::Physical);
@@ -1035,27 +1019,27 @@ void RelationshipClassLinkTableMap::AddIndices(ClassMappingContext& ctx, bool al
 void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportContext, RelationshipIndexSpec spec, bool isUniqueIndex)
     {
     // Setup name of the index
-    Nullable<Utf8String> name(isUniqueIndex ? "uix_" : "ix_");
-    name.ValueR().append(GetClass().GetSchema().GetAlias()).append("_").append(GetClass().GetName()).append("_");
+    Utf8String name(isUniqueIndex ? "uix_" : "ix_");
+    name.append(GetClass().GetSchema().GetAlias()).append("_").append(GetClass().GetName()).append("_");
 
     switch (spec)
         {
             case RelationshipIndexSpec::Source:
-                name.ValueR().append("source");
+                name.append("source");
                 break;
             case RelationshipIndexSpec::Target:
-                name.ValueR().append("target");
+                name.append("target");
                 break;
             case RelationshipIndexSpec::SourceAndTarget:
-                name.ValueR().append("sourcetarget");
+                name.append("sourcetarget");
                 break;
             default:
                 BeAssert(false);
                 break;
         }
-    
+
     auto sourceECInstanceIdColumn = &GetSourceECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
-    auto sourceECClassIdColumn =  GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
+    auto sourceECClassIdColumn = GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetSourceECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
     auto targetECInstanceIdColumn = &GetTargetECInstanceIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn();
     auto targetECClassIdColumn = GetTargetECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable()) != nullptr ? &GetTargetECClassIdPropMap()->FindDataPropertyMap(GetPrimaryTable())->GetColumn() : nullptr;
 
@@ -1078,11 +1062,13 @@ void RelationshipClassLinkTableMap::AddIndex(SchemaImportContext& schemaImportCo
                 break;
         }
 
-    GetDbMap().GetDbSchemaR().CreateIndex(GetPrimaryTable(), name, isUniqueIndex, columns, false,
-                                            true, GetClass().GetId(),
-                                            //if a partial index is created, it must only apply to this class,
-                                            //not to subclasses, as constraints are not inherited by relationships
-                                            false);
+    if (SUCCESS != DbMappingManager::Tables::CreateIndex(schemaImportContext, GetPrimaryTable(), name, isUniqueIndex, columns, false, true, GetClass().GetId(),
+                                                         //if a partial index is created, it must only apply to this class,
+                                                         //not to subclasses, as constraints are not inherited by relationships
+                                                         false))
+        {
+        BeAssert(false && "Failed to create index for link table relationship");
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1341,11 +1327,10 @@ void RelationshipClassLinkTableMap::DetermineConstraintClassIdColumnHandling(boo
     {
     //A constraint class id column is needed if 
     // * the map strategy implies that multiple classes are stored in the same table or
-    // * the constraint includes the AnyClass or 
     // * it has more than one classes including subclasses in case of a polymorphic constraint. 
     //So we first determine whether a constraint class id column is needed
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
-    addConstraintClassIdColumnNeeded = constraintClasses.size() > 1 || ConstraintIncludesAnyClass(constraintClasses);
+    addConstraintClassIdColumnNeeded = constraintClasses.size() > 1 ;
     //if constraint is polymorphic, and if addConstraintClassIdColumnNeeded is not true yet,
     //we also need to check if the constraint classes have subclasses. If there is at least one, addConstraintClassIdColumnNeeded
     //is set to true;

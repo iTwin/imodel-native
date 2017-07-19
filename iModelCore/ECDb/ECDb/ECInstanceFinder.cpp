@@ -195,7 +195,7 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
         " JOIN ec_RelationshipConstraint ForeignEndConstraint ON ForeignEndConstraint.RelationshipClassId = ECRelationshipClass.Id "
         " JOIN ec_RelationshipConstraintClass ForeignEndConstraintClass ON ForeignEndConstraintClass.ConstraintId=ForeignEndConstraint.Id "
         " JOIN BaseClassesOfEndClass"
-        " WHERE ForeignEndConstraintClass.ClassId IN (:endClassId, :anyClassId)"
+        " WHERE ForeignEndConstraintClass.ClassId = :endClassId "
                                               "   OR (ForeignEndConstraint.IsPolymorphic = " SQLVAL_True " AND ForeignEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)");
     if (BE_SQLITE_OK != result)
         {
@@ -204,14 +204,6 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
         }
 
     SchemaManager const& schemaManager = ecDb.Schemas();
-
-    ECClassCP anyClass = schemaManager.GetClass("Bentley_Standard_Classes", "AnyClass");
-    if (anyClass != nullptr)
-        {
-        int anyClassIdx = stmt->GetParameterIndex(":anyClassId");
-        stmt->BindId(anyClassIdx, anyClass->GetId());
-        }
-
     ECClassCP foreignEndClass = schemaManager.GetClass(foreignEndClassId);
     BeAssert(foreignEndClass != nullptr);
     int endClassIdx = stmt->GetParameterIndex(":endClassId");

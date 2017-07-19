@@ -111,7 +111,7 @@ ClassMappingStatus ClassMap::_Map(ClassMappingContext& ctx)
 //---------------------------------------------------------------------------------------
 ClassMappingStatus ClassMap::DoMapPart1(ClassMappingContext& ctx)
     {
-    if (SUCCESS != ClassMapper::TableMapper::MapToTable(*this, ctx.GetClassMappingInfo()))
+    if (SUCCESS != DbMappingManager::Tables::MapToTable(ctx.GetImportCtx(), *this, ctx.GetClassMappingInfo()))
         return ClassMappingStatus::Error;
     
     if (SUCCESS != MapSystemColumns())
@@ -235,23 +235,14 @@ BentleyStatus ClassMap::CreateCurrentTimeStampTrigger(PrimitiveECPropertyCR curr
     return table.CreateTrigger(triggerName.c_str(), DbTrigger::Type::After, whenCondition.c_str(), body.c_str());
     }
 
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                Affan.Khan           06/2015
-//---------------------------------------------------------------------------------------
-ClassMappingStatus ClassMap::MapNavigationProperty(SchemaImportContext& ctx, NavigationPropertyMap& navPropMap)
-    {
-    return ctx.MapNavigationProperty(navPropMap);
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
 ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
     {
     bvector<ClassMap const*> tphBaseClassMaps;
-    ClassMapper::PropertyMapInheritanceMode inheritanceMode = ClassMapper::GetPropertyMapInheritanceMode(m_mapStrategyExtInfo);
-    if (inheritanceMode != ClassMapper::PropertyMapInheritanceMode::NotInherited)
+    DbMappingManager::Classes::PropertyMapInheritanceMode inheritanceMode = DbMappingManager::Classes::GetPropertyMapInheritanceMode(m_mapStrategyExtInfo);
+    if (inheritanceMode != DbMappingManager::Classes::PropertyMapInheritanceMode::NotInherited)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
@@ -272,10 +263,19 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
         {
         if (property->GetIsNavigation() && &property->GetClass() == &m_ecClass)
             {
-            //WIP_RELMAP_REFACTOR extract ForeignKeyConstraint on nav prop for later use during mapping the relationship
+            //WIP_CLEANUP extract ForeignKeyConstraint on nav prop for later use during mapping the relationship
             //WIP this can be changed once relationship mapping is refactored
             if (ctx.GetImportCtx().CacheFkConstraintCA(*property->GetAsNavigationProperty()))
                 {
+                //WIP_CLEANUP This is a bad location for it. When the hold piece of code is cleaned up make sure to move it as well
+                if (GetMapStrategy().GetStrategy() == MapStrategy::ExistingTable)
+                    {
+                    Issues().Report("Failed to map ECClass %s. Its navigation property %s has the ForeignKeyConstraint custom attribute which cannot be applied for MapStrategy 'ExistingTable'.",
+                                        m_ecClass.GetFullName(), property->GetName().c_str());
+
+                    return ClassMappingStatus::Error;
+                    }
+
                 SchemaPolicy const* noAdditionalForeignKeyConstraintsPolicy = nullptr;
                 if (ctx.GetImportCtx().GetSchemaPolicies().IsOptedIn(noAdditionalForeignKeyConstraintsPolicy, SchemaPolicy::Type::NoAdditionalForeignKeyConstraints))
                     {
@@ -287,7 +287,7 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             }
 
         if (&property->GetClass() == &m_ecClass ||
-            inheritanceMode == ClassMapper::PropertyMapInheritanceMode::NotInherited)
+            inheritanceMode == DbMappingManager::Classes::PropertyMapInheritanceMode::NotInherited)
             {
             //Property map that should not be inherited -> must be mapped
             propertiesToMap.push_back(property);
@@ -322,27 +322,28 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
             NavigationPropertyMap const& navPropertyMap = propertyMap->GetAs<NavigationPropertyMap>();
             if (!navPropertyMap.IsComplete())
                 {
-                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
-                if (navMapStatus != ClassMappingStatus::Success)
-                    return navMapStatus;
+                ClassMappingStatus stat = DbMappingManager::Classes::MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
+                if (ClassMappingStatus::Success != stat)
+                    return stat;
                 }
             }
         }
 
     for (ECPropertyCP property : propertiesToMap)
         {
-        PropertyMap* propMap = ClassMapper::MapProperty(*this, *property);
+        PropertyMap* propMap = DbMappingManager::Classes::MapProperty(ctx.GetImportCtx(), *this, *property);
         if (propMap == nullptr)
             return ClassMappingStatus::Error;
 
         if (property->GetIsNavigation())
             {
+            //WIP_CLEANUP code redundant to a few lines above.
             NavigationPropertyMap const& navPropertyMap = propMap->GetAs<NavigationPropertyMap>();
             if (!navPropertyMap.IsComplete())
                 {
-                ClassMappingStatus navMapStatus = MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
-                if (navMapStatus != ClassMappingStatus::Success)
-                    return navMapStatus;
+                ClassMappingStatus stat = DbMappingManager::Classes::MapNavigationProperty(ctx.GetImportCtx(), const_cast<NavigationPropertyMap&>(navPropertyMap));
+                if (ClassMappingStatus::Success != stat)
+                    return stat;
                 }
             }
         }
@@ -350,83 +351,6 @@ ClassMappingStatus ClassMap::MapProperties(ClassMappingContext& ctx)
     return ClassMappingStatus::Success;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Affan.Khan                           09/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ClassMap::CreateUserProvidedIndexes(SchemaImportContext& schemaImportContext, std::vector<IndexMappingInfoPtr> const& indexInfoList) const
-    {
-    int i = 0;
-    for (IndexMappingInfoPtr const& indexInfo : indexInfoList)
-        {
-        i++;
-
-        std::vector<DbColumn const*> totalColumns;
-        NativeSqlBuilder whereExpression;
-
-        for (Utf8StringCR propertyAccessString : indexInfo->GetProperties())
-            {
-            PropertyMap const* propertyMap = GetPropertyMaps().Find(propertyAccessString.c_str());
-            if (propertyMap == nullptr)
-                {
-                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                   "The specified ECProperty '%s' does not exist or is not mapped.",
-                              i, GetClass().GetFullName(), propertyAccessString.c_str());
-                return ERROR;
-                }
-
-            ECPropertyCR prop = propertyMap->GetProperty();
-            if (!prop.GetIsPrimitive())
-                {
-                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                              "The specified ECProperty '%s' is not of a primitive type.",
-                              i, GetClass().GetFullName(), propertyAccessString.c_str());
-                return ERROR;
-                }
-
-            DbTable const& table = GetJoinedOrPrimaryTable();
-            GetColumnsPropertyMapVisitor columnVisitor(table);
-            propertyMap->AcceptVisitor(columnVisitor);
-            if (columnVisitor.GetVirtualColumnCount() > 0)
-                {
-                Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid: "
-                                "The specified ECProperty '%s' is mapped to a virtual column.",
-                                i, GetClass().GetFullName(), propertyAccessString.c_str());
-                return ERROR;
-                }
-
-            if (columnVisitor.GetColumnCount() == 0)
-                {
-                if (m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() != JoinedTableInfo::None)
-                    {
-                    Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid. "
-                                    "The properties that make up the index are mapped to different tables because the 'JoinedTablePerDirectSubclass' custom attribute "
-                                    "is applied to this class hierarchy.",
-                                    i, GetClass().GetFullName());
-                    }
-                else
-                    {
-                    Issues().Report("DbIndex custom attribute #%d on ECClass '%s' is invalid. "
-                                    "The properties that make up the index are mapped to different tables.",
-                                    i, GetClass().GetFullName());
-
-                    BeAssert(false && "Properties of DbIndex are mapped to different tables although JoinedTable option is not applied.");
-                    }
-
-                return ERROR;
-                }
-
-            totalColumns.insert(totalColumns.end(), columnVisitor.GetColumns().begin(), columnVisitor.GetColumns().end());
-            }
-
-        if (nullptr == GetDbMap().GetDbSchemaR().CreateIndex(GetJoinedOrPrimaryTable(), indexInfo->GetName(), indexInfo->GetIsUnique(),
-                                                                      totalColumns, indexInfo->IsAddPropsAreNotNullWhereExp(), false, GetClass().GetId()))
-            {
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                           07/2012
@@ -555,8 +479,8 @@ BentleyStatus ClassMap::_Load(ClassMapLoadContext& ctx, DbClassMapLoadContext co
 BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoadContext const& dbCtx)
     {
     bvector<ClassMap const*> tphBaseClassMaps;
-    ClassMapper::PropertyMapInheritanceMode inheritanceMode = ClassMapper::GetPropertyMapInheritanceMode(m_mapStrategyExtInfo);
-    if (inheritanceMode != ClassMapper::PropertyMapInheritanceMode::NotInherited)
+    DbMappingManager::Classes::PropertyMapInheritanceMode inheritanceMode = DbMappingManager::Classes::GetPropertyMapInheritanceMode(m_mapStrategyExtInfo);
+    if (inheritanceMode != DbMappingManager::Classes::PropertyMapInheritanceMode::NotInherited)
         {
         for (ECClassCP baseClass : m_ecClass.GetBaseClasses())
             {
@@ -576,7 +500,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
     for (ECPropertyCP property : m_ecClass.GetProperties(true))
         {
         DataPropertyMap const*  tphBaseClassPropMap = nullptr;
-        if (&property->GetClass() != &m_ecClass && inheritanceMode == ClassMapper::PropertyMapInheritanceMode::Clone)
+        if (&property->GetClass() != &m_ecClass && inheritanceMode == DbMappingManager::Classes::PropertyMapInheritanceMode::Clone)
             {
             for (ClassMap const* baseClassMap : tphBaseClassMaps)
                 {
@@ -591,7 +515,7 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 
         if (tphBaseClassPropMap == nullptr)
             {
-            if (ClassMapper::LoadPropertyMap(*this, *property, dbCtx) == nullptr)
+            if (DbMappingManager::Classes::LoadPropertyMap(dbCtx, *this, *property) == nullptr)
                 m_failedToLoadProperties.push_back(property);
 
             continue;
@@ -620,7 +544,7 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
         UpdateColumnResolutionScope columnResolutionScope(*this);
         for (ECPropertyCP property : m_failedToLoadProperties)
             {
-            PropertyMap const* propMap = ClassMapper::MapProperty(*this, *property);
+            PropertyMap const* propMap = DbMappingManager::Classes::MapProperty(ctx, *this, *property);
             if (propMap == nullptr)
                 return ERROR;
 
@@ -633,15 +557,15 @@ BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
             //Nav property maps cannot be saved here as they are not yet mapped.
             if (propMap->GetType() == PropertyMap::Type::Navigation)
                 {
-                NavigationPropertyMap & navPropMap = const_cast<NavigationPropertyMap&>(propMap->GetAs<NavigationPropertyMap>());
-                if (MapNavigationProperty(ctx, navPropMap) != ClassMappingStatus::Success)
+                NavigationPropertyMap& navPropMap = const_cast<NavigationPropertyMap&>(propMap->GetAs<NavigationPropertyMap>());
+                if (ClassMappingStatus::Success != DbMappingManager::Classes::MapNavigationProperty(ctx, navPropMap))
                     return ERROR;
                 }
 
             //! ECSchema update added new property for which we need to save property map
             DbMapSaveContext ctx(m_ecdb);
             //First make sure table is updated on disk. The table must already exist for this operation to work.
-            if (GetDbMap().GetDbSchema().UpdateTableOnDisk(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
+            if (GetDbMap().GetDbSchema().UpdateTableInDb(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
                 {
                 BeAssert(false && "Failed to save table");
                 return ERROR;
@@ -793,15 +717,8 @@ BentleyStatus ClassMap::MapSystemColumns()
             return ERROR;
             }
 
-        //WIP: If we push it at back it will break some code that presume that first table is the correct one.
-        // The order should not be important
-#ifndef NOT_A_GOOD_SOLUTION
         ecInstanceIdColumns.insert(ecInstanceIdColumns.begin(), ecInstanceIdColumn);
         ecClassIdColumns.insert(ecClassIdColumns.begin(), ecClassIdColumn);
-#else //This is the right way because order should not be important and anycode that depend on order should be corrected.
-        ecInstanceIdColumns.push_back(ecInstanceIdColumn);
-        ecClassIdColumns.push_back(ecClassIdColumn);
-#endif
         }
 
     if (ecInstanceIdColumns.empty() || ecClassIdColumns.empty())
@@ -842,7 +759,6 @@ ClassMapColumnFactory const& ClassMap::GetColumnFactory() const
     return *m_columnFactory;
     }
 
-//************************** ClassMapLoadContext ***************************************************
 //************************** NotMappedClassMap ***************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle  02/2014

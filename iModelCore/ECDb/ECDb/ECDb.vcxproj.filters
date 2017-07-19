@@ -309,9 +309,6 @@
     <ClInclude Include="ClassMapPersistenceManager.h">
       <Filter>DbMap</Filter>
     </ClInclude>
-    <ClInclude Include="ClassMapper.h">
-      <Filter>DbMap</Filter>
-    </ClInclude>
     <ClInclude Include="SqlNames.h" />
     <ClInclude Include="PropertyMap.h">
       <Filter>DbMap</Filter>
@@ -402,6 +399,9 @@
       <Filter>DbMap</Filter>
     </ClInclude>
     <ClInclude Include="DbMapValidator.h">
+      <Filter>DbMap</Filter>
+    </ClInclude>
+    <ClInclude Include="DbMappingManager.h">
       <Filter>DbMap</Filter>
     </ClInclude>
   </ItemGroup>
@@ -650,9 +650,6 @@
     <ClCompile Include="ClassMapPersistenceManager.cpp">
       <Filter>DbMap</Filter>
     </ClCompile>
-    <ClCompile Include="ClassMapper.cpp">
-      <Filter>DbMap</Filter>
-    </ClCompile>
     <ClCompile Include="PropertyMap.cpp">
       <Filter>DbMap</Filter>
     </ClCompile>
@@ -739,6 +736,9 @@
       <Filter>DbMap</Filter>
     </ClCompile>
     <ClCompile Include="DbMapValidator.cpp">
+      <Filter>DbMap</Filter>
+    </ClCompile>
+    <ClCompile Include="DbMappingManager.cpp">
       <Filter>DbMap</Filter>
     </ClCompile>
   </ItemGroup>

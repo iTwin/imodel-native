@@ -145,19 +145,13 @@ BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
         if (SUCCESS != m_classMapCA.TryGetMapStrategy(mapStrategyStr))
             return ERROR;
 
-        if (mapStrategyStr.IsNull())
+        if (!mapStrategyStr.IsNull())
             {
-            m_hasMapStrategy = false;
-            //only set this to default in case using code calls GetStrategy without
-            //checking for m_hasMapStrategy
-            m_mapStrategy = MapStrategyExtendedInfo::DEFAULT; 
-            }
-        else
-            {
-            if (SUCCESS != TryParse(m_mapStrategy, mapStrategyStr.Value().c_str(), ecClass))
+            MapStrategy strat;
+            if (SUCCESS != TryParse(strat, mapStrategyStr.Value().c_str(), ecClass))
                 return ERROR;
 
-            m_hasMapStrategy = true;
+            m_mapStrategy = strat;
             }
         }
 
@@ -166,7 +160,6 @@ BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
     if (ecClass.IsEntityClass())
         m_hasJoinedTablePerDirectSubclassOption = ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(*ecClass.GetEntityClassCP());
 
-    ECDbMapCustomAttributeHelper::TryGetDbIndexList(m_dbIndexListCA, ecClass);
     return SUCCESS;
     }
 

@@ -166,9 +166,6 @@
     <ClCompile Include="Published\BulkCrudTestFixture.cpp">
       <Filter>Published\BulkCrudTestFramework</Filter>
     </ClCompile>
-    <ClCompile Include="Published\DataTable.cpp">
-      <Filter>Published</Filter>
-    </ClCompile>
     <ClCompile Include="Published\SchemaPolicyTests.cpp">
       <Filter>Published</Filter>
     </ClCompile>
@@ -183,6 +180,12 @@
     </ClCompile>
     <ClCompile Include="Published\ECSqlPrepareTests.cpp">
       <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\IndexTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
+    <ClCompile Include="Performance\PerformanceECDbTests.cpp">
+      <Filter>Performance</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -221,9 +224,6 @@
     </ClInclude>
     <ClInclude Include="Published\BulkCrudTestFixture.h">
       <Filter>Published\BulkCrudTestFramework</Filter>
-    </ClInclude>
-    <ClInclude Include="Published\DataTable.h">
-      <Filter>Published</Filter>
     </ClInclude>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\TestHelper.h">
       <Filter>BackDoor</Filter>

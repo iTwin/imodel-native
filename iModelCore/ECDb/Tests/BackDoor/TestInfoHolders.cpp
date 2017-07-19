@@ -445,39 +445,37 @@ IndexInfo::WhereClause&  IndexInfo::WhereClause::AppendNotNullFilter(std::vector
 //--------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                 06/17
 //+---------------+---------------+---------------+---------------+---------------+------
-void PrintTo(MapStrategy mapStrategy, std::ostream* os)
+Utf8CP MapStrategyInfo::MapStrategyToString(MapStrategy strat)
     {
-    switch (mapStrategy)
+    switch (strat)
         {
             case MapStrategy::ExistingTable:
-                *os << "MapStrategy::ExistingTable";
-                break;
+                return ENUM_TOSTRING(MapStrategy::ExistingTable);
 
             case MapStrategy::ForeignKeyRelationshipInSourceTable:
-                *os << "MapStrategy::ForeignKeyRelationshipInSourceTable";
-                break;
+                return ENUM_TOSTRING(MapStrategy::ForeignKeyRelationshipInSourceTable);
 
             case MapStrategy::ForeignKeyRelationshipInTargetTable:
-                *os << "MapStrategy::ForeignKeyRelationshipInTargetTable";
-                break;
+                return ENUM_TOSTRING(MapStrategy::ForeignKeyRelationshipInTargetTable);
 
             case MapStrategy::NotMapped:
-                *os << "MapStrategy::NotMapped";
-                break;
+                return ENUM_TOSTRING(MapStrategy::NotMapped);
 
             case MapStrategy::OwnTable:
-                *os << "MapStrategy::OwnTable";
-                break;
+                return ENUM_TOSTRING(MapStrategy::OwnTable);
 
             case MapStrategy::TablePerHierarchy:
-                *os << "MapStrategy::TablePerHierarchy";
-                break;
+                return ENUM_TOSTRING(MapStrategy::TablePerHierarchy);
 
             default:
-                BeAssert(false && "MapStrategy enum has changed. Adjust this method");
-                return;
+                BeAssert(false);
+                return "";
         }
     }
+//--------------------------------------------------------------------------------------
+// @bsimethod                                     Krischan.Eberle                 06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+void PrintTo(MapStrategy mapStrategy, std::ostream* os) { *os << MapStrategyInfo::MapStrategyToString(mapStrategy); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                     Krischan.Eberle                 06/17
@@ -543,6 +541,8 @@ void PrintTo(MapStrategyInfo::TablePerHierarchyInfo const& tphInfo, std::ostream
                 return;
         }
     }
+
+
 
 END_ECDBUNITTESTS_NAMESPACE
 

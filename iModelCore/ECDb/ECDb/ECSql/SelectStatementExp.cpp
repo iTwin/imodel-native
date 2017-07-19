@@ -639,17 +639,19 @@ Exp::FinalizeParseStatus SelectClauseExp::_FinalizeParsing(ECSqlParseContext& ct
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        void const* finalizeParseArgs = ctx.GetFinalizeParseArg();
-        BeAssert(finalizeParseArgs != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
-        RangeClassInfo::List const* rangeClassRefList = static_cast<RangeClassInfo::List const*> (finalizeParseArgs);
-        BeAssert(rangeClassRefList != nullptr);
-        if (SUCCESS != ReplaceAsteriskExpressions(ctx, *rangeClassRefList))
+        if (!GetParent()->GetAs<SingleSelectStatementExp>().IsRowConstructor())
             {
-            ctx.Issues().Report("Asterisk replacement in select clause failed unexpectedly.");
-            return FinalizeParseStatus::Error;
+            void const* finalizeParseArgs = ctx.GetFinalizeParseArg();
+            BeAssert(finalizeParseArgs != nullptr && "SelectClauseExp::_FinalizeParsing: ECSqlParseContext::GetFinalizeParseArgs is expected to return a RangeClassRefList.");
+            RangeClassInfo::List const* rangeClassRefList = static_cast<RangeClassInfo::List const*> (finalizeParseArgs);
+            BeAssert(rangeClassRefList != nullptr);
+            if (SUCCESS != ReplaceAsteriskExpressions(ctx, *rangeClassRefList))
+                {
+                ctx.Issues().Report("Asterisk replacement in select clause failed unexpectedly.");
+                return FinalizeParseStatus::Error;
+                }
             }
         }
-
     return FinalizeParseStatus::Completed;
     }
 
@@ -674,10 +676,10 @@ void SelectClauseExp::_ToECSql(ECSqlRenderContext& ctx) const
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
 SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionType, std::unique_ptr<SelectClauseExp> selection, std::unique_ptr<FromExp> from, std::unique_ptr<WhereExp> where, std::unique_ptr<OrderByExp> orderby, std::unique_ptr<GroupByExp> groupby, std::unique_ptr<HavingExp> having, std::unique_ptr<LimitOffsetExp> limitOffsetExp, std::unique_ptr<OptionsExp> optionsExp)
-    : QueryExp(Type::SingleSelect), m_selectionType(selectionType), m_whereClauseIndex(UNSET_CHILDINDEX), m_orderByClauseIndex(UNSET_CHILDINDEX), m_groupByClauseIndex(UNSET_CHILDINDEX), m_havingClauseIndex(UNSET_CHILDINDEX), m_limitOffsetClauseIndex(UNSET_CHILDINDEX), m_optionsClauseIndex(UNSET_CHILDINDEX)
+    : QueryExp(Type::SingleSelect), m_selectionType(selectionType)
     {
     //WARNING: Do not change the order of following
-    m_fromClauseIndex = AddChild(std::move(from));
+    m_fromClauseIndex = (int) AddChild(std::move(from));
     m_selectClauseIndex = AddChild(std::move(selection));
 
     if (where != nullptr)
@@ -697,6 +699,23 @@ SingleSelectStatementExp::SingleSelectStatementExp(SqlSetQuantifier selectionTyp
 
     if (optionsExp != nullptr)
         m_optionsClauseIndex = (int) AddChild(std::move(optionsExp));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Affan.Khan                       05/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+SingleSelectStatementExp::SingleSelectStatementExp(std::vector<std::unique_ptr<ValueExp>>& valueExpList) : QueryExp(Type::SingleSelect)
+    {
+    std::unique_ptr<SelectClauseExp> selectClauseExp = std::make_unique<SelectClauseExp>();
+    int expIx = 0;
+    for (std::unique_ptr<ValueExp>& valueExp : valueExpList)
+        {
+        expIx++;
+        std::unique_ptr<DerivedPropertyExp> derivedPropertyExp = std::make_unique<DerivedPropertyExp>(std::move(valueExp), nullptr /* SqlPrintfString("Column%d", expIx)*/);
+        selectClauseExp->AddProperty(std::move(derivedPropertyExp));
+        }
+
+    m_selectClauseIndex = AddChild(std::move(selectClauseExp));
     }
 
 //-----------------------------------------------------------------------------------------
@@ -733,8 +752,11 @@ Exp::FinalizeParseStatus SingleSelectStatementExp::_FinalizeParsing(ECSqlParseCo
     {
     if (mode == Exp::FinalizeParseMode::BeforeFinalizingChildren)
         {
-        m_finalizeParsingArgCache = GetFrom()->FindRangeClassRefExpressions();
-        ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
+        if (!IsRowConstructor())
+            {
+            m_finalizeParsingArgCache = GetFrom()->FindRangeClassRefExpressions();
+            ctx.PushFinalizeParseArg(&m_finalizeParsingArgCache);
+            }
         return FinalizeParseStatus::NotCompleted;
         }
     else
@@ -760,6 +782,12 @@ Utf8String SingleSelectStatementExp::_ToString() const
 //+---------------+---------------+---------------+---------------+---------------+--------
 void SingleSelectStatementExp::_ToECSql(ECSqlRenderContext& ctx) const
     {
+    if (IsRowConstructor())
+        {        
+        ctx.AppendToECSql("VALUES (").AppendToECSql(*GetSelection()).AppendToECSql(")");
+        return;
+        }
+
     ctx.AppendToECSql("SELECT ");
 
     Utf8String selectionType = ExpHelper::ToSql(GetSelectionType());

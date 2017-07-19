@@ -160,7 +160,7 @@ BentleyStatus SchemaManager::ImportSchemas(bvector<ECSchemaCP> const& schemas, S
     {
     PERFLOG_START("ECDb", "Schema import");
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("Begin SchemaManager::ImportSchemas");
-    SchemaImportContext ctx(options);
+    SchemaImportContext ctx(m_ecdb, options);
     const BentleyStatus stat = DoImportSchemas(ctx, schemas, schemaImportToken);
     STATEMENT_DIAGNOSTICS_LOGCOMMENT("End SchemaManager::ImportSchemas");
     m_ecdb.ClearECDbCache();

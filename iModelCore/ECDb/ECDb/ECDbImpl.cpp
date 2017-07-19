@@ -11,6 +11,16 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                07/2017
+//---------------+---------------+---------------+---------------+---------------+------
+//static
+//no need to release a static non-POD variable (Bentley C++ coding standards)
+bvector<Utf8CP> const* IdSequences::s_sequenceNames = new bvector<Utf8CP> {"ec_instanceidsequence", "ec_schemaidsequence","ec_schemarefidsequence", "ec_classidsequence","ec_classhasbaseclassesidsequence",
+"ec_propertyidsequence","ec_propertypathidsequence",
+"ec_relconstraintidsequence", "ec_relconstraintclassidsequence",
+"ec_customattributeidsequence", "ec_enumidsequence","ec_koqidsequence", "ec_propertycategoryidsequence", "ec_propertymapidsequence",
+"ec_tableidsequence","ec_columnidsequence", "ec_indexidsequence", "ec_indexcolumnidsequence"};
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2012
