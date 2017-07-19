@@ -49,9 +49,11 @@ typedef bmap<Utf8CP, ECClassP,       less_str>  ClassMap;
 typedef bmap<Utf8CP, ECEnumerationP, less_str>  EnumerationMap;
 typedef bvector<ECEnumeratorP>                  EnumeratorList;
 typedef bmap<Utf8CP, KindOfQuantityP, less_str> KindOfQuantityMap;
+using PropertyCategoryMap = bmap<Utf8CP, PropertyCategoryP, less_str>;
 
 /*---------------------------------------------------------------------------------**//**
-* Used to hold property name and display label forECProperty, ECClass, and ECSchema.
+* Used to hold property name and display label for ECSchema, ECClass, ECProperty, 
+* ECEnumeration, KindOfQuantity and PropertyCategory
 * Property name supports only a limited set of characters; unsupported characters must
 * be escaped as "__x####__" where "####" is a UTF-16 character code.
 * If no explicit display label is provided, the property name is used as the display
@@ -77,10 +79,10 @@ public:
     };
 
 //=======================================================================================
-//! Handles validation, encoding, and decoding of names for ECSchemas, ECClasses, and
-//! ECProperties.
-//! The names of ECSchemas, ECClasses, and ECProperties must conform to the following
-//! rules:
+//! Handles validation, encoding, and decoding of names for ECSchemas, ECClasses, 
+//! ECProperties, ECEnumerations, KindOfQuantities and PropertyCategories.
+//! The names of ECSchemas, ECClasses, ECProperties, ECEnumerations, KindOfQuantities,
+//! PropertyCategories must conform to the following rules:
 //!     -Contains only alphanumeric characters in the ranges ['A'..'Z'], ['a'..'z'], ['0'..'9'], and ['_']
 //!     -Contains at least one character
 //!     -Does not begin with a digit
@@ -617,6 +619,71 @@ public:
     };
 
 //=======================================================================================
+//! The in-memory representation of a PropertyCategory as defined by ECSchemaXML
+//! @bsiclass
+//=======================================================================================
+struct PropertyCategory : NonCopyableClass
+{
+    friend struct ECSchema; // needed for SetName() method 
+    friend struct SchemaXmlWriter; // needed for WriteXml() method
+    friend struct SchemaXmlReaderImpl; // needed for ReadXml() method
+
+private:
+    uint32_t m_priority;
+    Utf8String m_description;
+    ECValidatedName m_validatedName;
+    ECSchemaCR m_schema;
+
+    mutable PropertyCategoryId m_propertyCategoryId;
+    mutable Utf8String m_fullName;
+
+    SchemaReadStatus ReadXml(BeXmlNodeR propertyCategoryNode, ECSchemaReadContextR context);
+    SchemaWriteStatus WriteXml(BeXmlWriterR xmlWriter, ECVersion ecXmlVersion) const;
+
+    ECObjectsStatus SetName(Utf8CP name);
+
+protected:
+    PropertyCategory(ECSchemaCR schema) : m_schema(schema), m_priority(0) {};
+    ~PropertyCategory() {};
+
+public:
+    //! The ECSchema that this PropertyCategory is defined in
+    ECSchemaCR GetSchema() const {return m_schema;}
+
+    //! The name of this PropertyCategory
+    Utf8StringCR GetName() const {return m_validatedName.GetName();}
+    //! The fully qualified name of this PropertyCategory the following format, {SchemaName}:{PropertyCategoryName}.
+    ECOBJECTS_EXPORT Utf8StringCR GetFullName() const;
+    //! Gets a qualified name of the PropertyCategory, prefixed by the schema alias if it does not match the primary schema.
+    ECOBJECTS_EXPORT Utf8String GetQualifiedName(ECSchemaCR primarySchema) const;
+
+    //! Sets the description of this PropertyCategory
+    //! @param[in]  description  The new value to set as the description
+    ECObjectsStatus SetDescription(Utf8CP description) {m_description = description; return ECObjectsStatus::Success;}
+    ECOBJECTS_EXPORT Utf8StringCR GetDescription() const; //!< Gets the description of this PropertyCategory
+    Utf8StringCR GetInvariantDescription() const {return m_description;} //!< Gets the invariant description of this PropertyCategory.
+
+    //! Sets the display label for this PropertyCategory
+    //! @param[in]  displayLabel  The new value to set as the display label
+    ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8CP displayLabel);
+    //! Gets the DisplayLabel for this PropertyCategory.  If a DisplayLabel has not been explicitly set, returns the name of the PropertyCategory.
+    ECOBJECTS_EXPORT Utf8StringCR GetDisplayLabel() const;
+    Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();} 
+    bool GetIsDisplayLabelDefined() const {return m_validatedName.IsDisplayLabelDefined();}
+
+    //! Sets the priority for this PropertyCategory
+    //! @param[in]  priority  The priority to set
+    ECObjectsStatus SetPriority(uint32_t priority) {m_priority = priority; return ECObjectsStatus::Success;}
+    uint32_t GetPriority() const {return m_priority;} //!< Gets the priority for this PropertyCategory
+
+    //! Return unique id (May return 0 until it has been explicitly set by ECDb or a similar system)
+    PropertyCategoryId    GetId() const { BeAssert(HasId()); return m_propertyCategoryId; }
+    //! Intended to be called by ECDb or a similar system
+    void SetId(PropertyCategoryId id) {BeAssert(!m_propertyCategoryId.IsValid()); m_propertyCategoryId = id;}
+    bool HasId() const {return m_propertyCategoryId.IsValid();}
+};
+
+//=======================================================================================
 //! The in-memory representation of an ECProperty as defined by ECSchemaXML
 //! @bsiclass
 //=======================================================================================
@@ -625,6 +692,8 @@ struct EXPORT_VTABLE_ATTRIBUTE ECProperty /*abstract*/ : public IECCustomAttribu
 friend struct ECClass;
 
 private:
+    bool                    m_priorityExplicitlySet;
+    int32_t                 m_priority;
     Utf8String              m_description;
     ECValue                 m_minimumValue;
     ECValue                 m_maximumValue;
@@ -632,6 +701,7 @@ private:
     uint32_t                m_maximumLength;
     ECValidatedName         m_validatedName;
     KindOfQuantityCP        m_kindOfQuantity;
+    PropertyCategoryCP      m_propertyCategory;
     mutable ECPropertyId    m_ecPropertyId;
     bool                    m_readOnly;
     ECClassCR               m_class;
@@ -646,6 +716,7 @@ protected:
     virtual ~ECProperty();
 
     ECObjectsStatus                     SetName (Utf8StringCR name);
+    SchemaReadStatus                    ReadMinMaxXml(BeXmlNodeR propertyNode);
 
     virtual SchemaReadStatus            _ReadXml (BeXmlNodeR propertyNode, ECSchemaReadContextR schemaContext);
     virtual SchemaWriteStatus           _WriteXml (BeXmlWriterR xmlWriter, ECVersion ecXmlVersion);
@@ -810,6 +881,15 @@ public:
     //! @remarks Supports only primitive types ::PRIMITIVETYPE_String and ::PRIMITIVETYPE_Binary.
     uint32_t           GetMinimumLength() const {return m_minimumLength;}
 
+    //! Sets the priority for this ECProperty. The default priority is 0.
+    //! @param[in]  priority The value to set as the priority
+    ECObjectsStatus SetPriority(int32_t priority) {m_priority = priority; m_priorityExplicitlySet = true; return ECObjectsStatus::Success;}
+    //! Gets the priority for this ECProperty if it is set locally, otherwise will return it's base property priority if one exists.
+    //! @return 0 if the priority is never set.
+    ECOBJECTS_EXPORT int32_t GetPriority() const;
+    //! Gets whether the priority is set locally.
+    bool IsPriorityLocallyDefined() const {return m_priorityExplicitlySet;}
+
     //! Sets whether this ECProperty's value is read only
     ECOBJECTS_EXPORT ECObjectsStatus    SetIsReadOnly(bool value);
     //! Gets whether this ECProperty's value is read only
@@ -843,6 +923,15 @@ public:
 
     //! Sets the KindOfQuantity of this property, provide nullptr to unset.
     ECOBJECTS_EXPORT ECObjectsStatus SetKindOfQuantity(KindOfQuantityCP kindOfQuantity);
+
+    //! Gets the PropertyCategory of this property or nullptr, if none has been set and cannot be inherited from base property
+    ECOBJECTS_EXPORT PropertyCategoryCP GetCategory() const;
+
+    //! Sets the PropertyCategory of this property, provide nullptr to unset.
+    ECOBJECTS_EXPORT ECObjectsStatus SetCategory(PropertyCategoryCP propertyCategory);
+
+    //! Returns whether the PropertyCategory has been set explicitly and not inherited from base property
+    bool IsCategoryDefinedLocally() const {return nullptr != m_propertyCategory;}
 
     //! Returns whether this property has an extended type specified
     ECOBJECTS_EXPORT bool               HasExtendedType() const;
@@ -1117,6 +1206,7 @@ struct EXPORT_VTABLE_ATTRIBUTE NavigationECProperty : public ECProperty
 DEFINE_T_SUPER(ECProperty)
 
 friend struct ECEntityClass;
+friend struct ECRelationshipClass;
 friend struct ECClass;
 private:
     ECRelationshipClassCP       m_relationshipClass;
@@ -1232,7 +1322,7 @@ public:
 
 typedef bvector<ECClassP> ECBaseClassesList;
 typedef bvector<ECClassP> ECDerivedClassesList;
-typedef bvector<ECEntityClassCP> ECRelationshipConstraintClassList;
+typedef bvector<ECClassCP> ECRelationshipConstraintClassList;
 typedef bool (*TraversalDelegate) (ECClassCP, const void *);
 struct SchemaXmlReader;
 struct SchemaXmlWriter;
@@ -1280,6 +1370,8 @@ private:
 
     PropertyMap                     m_propertyMap;
     PropertyList                    m_propertyList;
+    mutable bool                    m_propertyCountCached;
+    mutable uint16_t                m_propertyCount;
     mutable StandaloneECEnablerPtr  m_defaultStandaloneEnabler;
     bvector<Utf8String> m_xmlComments;
     bmap<Utf8String, bvector<Utf8String>> m_contentXmlComments;
@@ -1638,7 +1730,7 @@ friend struct SchemaXmlReaderImpl;
         ~ECEnumeration();
 
         // schemas index enumeration by name so publicly name can not be reset
-        void SetName(Utf8CP name);
+        ECObjectsStatus SetName(Utf8CP name);
 
         //! Sets the PrimitiveType of this Enumeration.  The default type is ::PRIMITIVETYPE_Integer
         ECObjectsStatus SetType(PrimitiveType value);
@@ -1802,7 +1894,7 @@ struct KindOfQuantity : NonCopyableClass
         ~KindOfQuantity() {};
 
         // schemas index KindOfQuantity by name so publicly name can not be reset
-        void SetName(Utf8CP name);
+        ECObjectsStatus SetName(Utf8CP name);
         bool Verify() const;
 
         SchemaReadStatus ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context);
@@ -1832,7 +1924,7 @@ struct KindOfQuantity : NonCopyableClass
         
         //! Sets the display label of this KindOfQuantity
         //! @param[in]  value  The new value to apply
-        ECOBJECTS_EXPORT void SetDisplayLabel(Utf8CP value);
+        ECOBJECTS_EXPORT ECObjectsStatus SetDisplayLabel(Utf8CP value);
 
         //! Gets the invariant display label of this KindOfQuantity. If no display label has been set explicitly, it will return the name of the KindOfQuantity.
         Utf8StringCR GetInvariantDisplayLabel() const {return m_validatedName.GetDisplayLabel();}
@@ -1842,7 +1934,7 @@ struct KindOfQuantity : NonCopyableClass
 
         //! Sets the description of this KindOfQuantity
         //! @param[in]  value  The new value to apply
-        void SetDescription(Utf8CP value) {m_description = value;}
+        ECObjectsStatus SetDescription(Utf8CP value) {m_description = value; return ECObjectsStatus::Success;}
 
         //! Gets the invariant description of this KindOfQuantity.
         Utf8StringCR GetInvariantDescription() const {return m_description;}
@@ -1871,10 +1963,17 @@ struct KindOfQuantity : NonCopyableClass
         Formatting::FormatUnitSet GetDefaultPresentationUnit() const { return m_presentationFUS.size() > 0 ? *(m_presentationFUS.begin()) : m_persistenceFUS; };
         ECOBJECTS_EXPORT Formatting::FormatUnitSetCP GetPresentationFUS(size_t indx) const;
         ECOBJECTS_EXPORT Utf8String GetPresentationFUSDescriptor(size_t indx, bool useAlias) const;
+
+        //! Adds the FormatUnitSet to the list of presentation Units.
+        //! @param[in]  value  The new FormatUnitSet to add to the list of presentation units
+        //! @return ECObjectsStatus::InvalidFormatUnitSet if there is a problem detected, otherwise ECObjectsStatus::Success.
+        ECOBJECTS_EXPORT bool AddPresentationUnit(Formatting::FormatUnitSet value);
+        //! Removes the specified presentation Unit from this KindOfQuantity
+        ECOBJECTS_EXPORT void RemovePresentationUnit(Formatting::FormatUnitSet value);
+        //! Removes all presentation Units from this KindOfQuantity
+        void RemoveAllPresentationUnits() {m_presentationFUS.clear();}
         //! Gets a list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
         bvector<Formatting::FormatUnitSet> const& GetPresentationUnitList() const { return m_presentationFUS; }
-        //! Gets an editable list of alternative Unit’s appropriate for presenting quantities on the UI and available for the user selection.
-        bvector<Formatting::FormatUnitSet>& GetPresentationUnitListR() { return m_presentationFUS; }
         //! Returns true if one or more presentation units exist
         bool HasPresentationUnits() const { return m_presentationFUS.size() > 0; }
 
@@ -2138,12 +2237,12 @@ struct EXPORT_VTABLE_ATTRIBUTE ECRelationshipConstraint : IECCustomAttributeCont
 friend struct ECRelationshipClass;
 
 private:
-    bool                        m_isSource;
-    bool                        m_isPolymorphic;
-    bool                        m_verify;
-    bool                        m_verified;
+    bool m_isSource;
+    bool m_isPolymorphic;
+    bool m_verify;
+    bool m_verified;
     Utf8String                  m_roleLabel;
-    ECEntityClassCP             m_abstractConstraint;
+    ECClassCP                   m_abstractConstraint;
     ECRelationshipClassP        m_relClass;
     RelationshipMultiplicity*   m_multiplicity;
     ECRelationshipConstraintClassList    m_constraintClasses;
@@ -2151,25 +2250,27 @@ private:
     ECObjectsStatus             SetMultiplicity(uint32_t& lowerLimit, uint32_t& upperLimit);
     ECObjectsStatus             SetMultiplicity(Utf8CP multiplicity, bool validate);
 
+    ECObjectsStatus             AddClass(ECClassCR classConstraint);
+    ECObjectsStatus             RemoveClass(ECClassCR classConstraint);
+    ECObjectsStatus             SetAbstractConstraint(ECClassCR abstractConstraint);
     ECObjectsStatus             SetAbstractConstraint(Utf8CP value, bool validate);
 
     // Legacy: Only used for version 3.0 and previous
     ECObjectsStatus             SetCardinality(Utf8CP multiplicity);
-
-    ECObjectsStatus             _SetRoleLabel(Utf8CP value);
 
     SchemaWriteStatus           WriteXml (BeXmlWriterR xmlWriter, Utf8CP elementName, ECVersion ecXmlVersion) const;
     SchemaReadStatus            ReadXml (BeXmlNodeR constraintNode, ECSchemaReadContextR schemaContext);
 
     bool                        IsValid(bool resolveIssues);
     ECObjectsStatus             ValidateBaseConstraint(ECRelationshipConstraintCR baseConstraint) const;
-    ECObjectsStatus             ValidateAbstractConstraint(ECEntityClassCP abstractConstraint, bool resolveIssues = false);
-    ECObjectsStatus             ValidateAbstractConstraint(bool resolveIssues = false) {return ValidateAbstractConstraint(GetAbstractConstraint(), resolveIssues);}
-    ECObjectsStatus             ValidateRoleLabel(bool resolveIssues = false);
-    ECObjectsStatus             ValidateClassConstraint() const;
-    ECObjectsStatus             ValidateClassConstraint(ECEntityClassCR constraintClass) const;
-    ECObjectsStatus             ValidateMultiplicityConstraint(bool resolveIssues = false) const;
-    ECObjectsStatus             ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
+
+    ECObjectsStatus ValidateAbstractConstraint(ECClassCP abstractConstraint, bool resolveIssues = false);
+    ECObjectsStatus ValidateAbstractConstraint(bool resolveIssues = false) { return ValidateAbstractConstraint(GetAbstractConstraint(), resolveIssues); }
+    ECObjectsStatus ValidateRoleLabel(bool resolveIssues = false);
+    ECObjectsStatus ValidateClassConstraint() const;
+    ECObjectsStatus ValidateClassConstraint(ECClassCR constraintClass) const;
+    ECObjectsStatus ValidateMultiplicityConstraint(bool resolveIssues = false) const;
+    ECObjectsStatus ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
 
     ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify)
         : m_isSource(isSource), m_verify(verify), m_relClass(relationshipClass), m_multiplicity(&s_zeroOneMultiplicity),
@@ -2196,13 +2297,10 @@ public:
     
     //! Get the invariant label of the constraint role in the relationship.
     //! @remarks If the role label is not defined on this constraint it will be inherited from its base constraint, if one exists.
-    ECOBJECTS_EXPORT Utf8String const GetInvariantRoleLabel() const;
+    Utf8String const GetInvariantRoleLabel() const {return m_roleLabel;}
 
     //! Determine whether the label of the constraint role has been set explicitly set on this constraint or inherited from a base constraint.
     bool IsRoleLabelDefined() const {return GetInvariantRoleLabel().length() > 0;}
-    
-    //! Determine whether the label of the constraint role has been set explicitly set on this constraint and not inherited from a base constraint.
-    bool IsRoleLabelDefinedLocally() const {return m_roleLabel.length() > 0;}
 
     //! Sets the bool value of whether this constraint can also relate to instances of subclasses of classes applied to the constraint.
     //! @param[in] isPolymorphic String representation of true/false
@@ -2223,7 +2321,7 @@ public:
     //! Set the multiplicity of the constraint using the string format of RelationshipMultiplicity. Multiplicity is not set if input string cannot be parsed.
     //! @param[in] multiplicity The string representation of a multiplicity
     //! @return An error if it fails to parse the multiplicity string into a valid RelationshipMultiplicity.
-    ECObjectsStatus SetMultiplicity(Utf8CP multiplicity) {return SetMultiplicity(multiplicity, m_verify);}
+    ECOBJECTS_EXPORT ECObjectsStatus SetMultiplicity(Utf8CP multiplicity);
 
     //! Get the RelationshipMultiplicity of the constraint in the relationship
     RelationshipMultiplicityCR GetMultiplicity() const {return *m_multiplicity;}
@@ -2231,44 +2329,51 @@ public:
     //! Set the abstract constraint class by input string of format {SchemaName}:{ClassName}. All of the constraint classes must be or derive from. 
     //! @param[in] abstractConstraint String representation of the full name of an ECEntityClass
     //! @return ::Success if the abstract constraint can be parsed into a valid ECEntityClass
-    ECObjectsStatus SetAbstractConstraint(Utf8CP abstractConstraint) {return SetAbstractConstraint(abstractConstraint, m_verify);}
+    ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(Utf8CP abstractConstraint);
     
     //! Set the abstract constraint class of the constraint in the relationship. 
     //! @remarks The specified class must be a base class class of all constraint classes defined in
     //! @param[in] abstractConstraint The ECEntityClass to be set as the abstract constraint of the constraint in the relationship
     ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(ECEntityClassCR abstractConstraint);
-    
+
+    //! Set the abstract constraint class of the constraint in the relationship. 
+    //! @remarks The specified class must be a base class class of all constraint classes defined in
+    //! @param[in] abstractConstraint The ECRelationshipClass to be set as the abstract constraint of the constraint in the relationship
+    ECOBJECTS_EXPORT ECObjectsStatus SetAbstractConstraint(ECRelationshipClassCR abstractConstraint);
+
     //! Get the abstract constraint class for this ECRelationshipConstraint. 
     //! @remarks If the abstract constraint is not explicitly defined locally, it will be inherited from its base constraint, if one exists.
     //! If one does not exist and there is only one constraint class, that constraint class will be returned. If fail to find a valid class
     //! nullptr will be returned.
-    //! @return The abstract constraint, ECEntityClass, if one is defined, if one cannot be found nullptr is returned.
-    ECOBJECTS_EXPORT ECEntityClassCP const GetAbstractConstraint() const;
+    //! @return The abstract constraint, an ECEntityClass or ECRelationshipClass, if one is defined, if one cannot be found nullptr is returned.
+    ECOBJECTS_EXPORT ECClassCP const GetAbstractConstraint() const;
     
-    //! Determine whether the abstract constraint is set in this constraint or in a base constraint.
-    ECOBJECTS_EXPORT bool IsAbstractConstraintDefined() const;
-
-    //! Determine whether the abstract constraint is explicitly or implicitly set on this constraint.
-    bool IsAbstractConstraintDefinedLocally() const {return nullptr != m_abstractConstraint;}
+    //! Determine whether the abstract constraint is set in this constraint.
+    bool IsAbstractConstraintDefined() const {return nullptr != m_abstractConstraint;}
 
     //! Add the specified entity class to the constraint. 
     //! @param[in] classConstraint  The ECEntityClass to add as a constraint class
     //! @note If the class does not derive from the abstract constraint it will fail to be added and an error will be returned.
     ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECEntityClassCR classConstraint);
 
-    //! Remove the specified class from the constraint.
-    //! @param[in] classConstraint  The class to remove from the constraint class list
+    //! Remove the specified entity class from the constraint.
+    //! @param[in] classConstraint  The ECEntityClass to remove from the constraint class list
     ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECEntityClassCR classConstraint);
 
+    //! Add the specified relationship class to the constraint. 
+    //! @param[in] classConstraint  The ECRelationshipClass to add as a constraint class
+    //! @note If the class does not derive from the abstract constraint it will fail to be added and an error will be returned.
+    ECOBJECTS_EXPORT ECObjectsStatus AddClass(ECRelationshipClassCR classConstraint);
+
+    //! Remove the specified relationship class from the constraint.
+    //! @param[in] classConstraint  The ECRelationshipClass to remove from the constraint class list
+    ECOBJECTS_EXPORT ECObjectsStatus RemoveClass(ECRelationshipClassCR classConstraint);
+
     //! Removes all constraint classes.
-    ECOBJECTS_EXPORT void RemoveConstraintClasses();
+    void RemoveConstraintClasses() {m_constraintClasses.clear();}
 
     //! Returns the classes applied to the constraint.
-    //! @remarks If there are no classes defined in this constraint, the classes from the constraint in the base relationship, if one exists, will be returned.
-    ECOBJECTS_EXPORT ECRelationshipConstraintClassList const & GetConstraintClasses() const;
-
-    //! Determine whether the constraint classes are defined in this constraint of the relationship and not inherited from a constraint in a base relationship.
-    bool AreConstraintClassesDefinedLocally() const {return m_constraintClasses.size() > 0;}
+    ECRelationshipConstraintClassList const & GetConstraintClasses() const {return m_constraintClasses;}
 
     ECOBJECTS_EXPORT bool SupportsClass(ECClassCR ecClass) const;
     
@@ -2356,6 +2461,15 @@ public:
     //! @param[in] end The end to get the property name from.
     //! @return ::Success if the relationship class supports ordered relationships has a valid property name, otherwise ::Error.
     ECOBJECTS_EXPORT ECObjectsStatus GetOrderedRelationshipPropertyName(Utf8String& propertyName, ECRelationshipEnd end) const;
+
+    //! Creates a navigation property object using the relationship class and direction.  To succeed the relationship class, direction and name must all be valid.
+    // @param[out]  ecProperty          Outputs the property if successfully created
+    // @param[in]   name                The name for the navigation property.  Must be a valid ECName
+    // @param[in]   relationshipClass   The relationship class this navigation property will traverse.  Must list this class as an endpoint constraint.  The multiplicity of the other constraint determiness if the nav prop is a primitive or an array.
+    // @param[in]   direction           The direction the relationship will be traversed.  Forward indicates that this class is a source constraint, Backward indicates that this class is a target constraint.
+    // @param[in]   type                The type of the navigation property.  Should match type used for InstanceIds in the current session.  Default is string.
+    // @param[in]   verify              If true the relationshipClass an direction will be verified to ensure the navigation property fits within the relationship constraints.  Default is true.  If not verified at creation the Verify method must be called before the navigation property is used or it's type descriptor will not be valid.
+    ECOBJECTS_EXPORT ECObjectsStatus CreateNavigationProperty(NavigationECPropertyP& ecProperty, Utf8StringCR name, ECRelationshipClassCR relationshipClass, ECRelatedInstanceDirection direction, PrimitiveType type = PRIMITIVETYPE_Long, bool verify = true);
 
     //! Returns true if successfully verifies the relationship, otherwise false.
     ECOBJECTS_EXPORT bool Verify() const;
@@ -2770,162 +2884,98 @@ struct SchemaMapExact:bmap<SchemaKey, ECSchemaPtr, SchemaKeyLessThan <SchemaMatc
 typedef SchemaMapExact                  ECSchemaReferenceList;
 typedef const ECSchemaReferenceList&    ECSchemaReferenceListCR;
 
-//=======================================================================================
-//! Supports STL like iterator of classes in a schema
-//! @bsiclass
-//=======================================================================================
-struct ECClassContainer
+template <typename CONTAINER_MAP_TYPE, typename MAP_TYPE>
+struct SchemaItemContainer
 {
 private:
-    friend struct ECSchema;
-    friend struct ECClass;
-    friend struct ECRelationshipConstraint;
+    CONTAINER_MAP_TYPE const& m_map;
 
-    ClassMap const&     m_classMap;
-
-public:
-    ECOBJECTS_EXPORT ECClassContainer (ClassMap const& classMap) : m_classMap (classMap) {}; //public for test purposes only
+protected:
+    SchemaItemContainer(CONTAINER_MAP_TYPE const& map) : m_map(map) {};
 
 public:
+    
     //=======================================================================================
     // @bsistruct
     //=======================================================================================
     struct IteratorState : RefCountedBase
-        {
+    {
+    private:
         friend struct const_iterator;
-        public:
-            ClassMap::const_iterator     m_mapIterator;
+    public:
+        typename CONTAINER_MAP_TYPE::const_iterator     m_mapIterator;
 
-            IteratorState (ClassMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
-            static RefCountedPtr<IteratorState> Create (ClassMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
-        };
+        IteratorState (typename CONTAINER_MAP_TYPE::const_iterator mapIterator) { m_mapIterator = mapIterator; };
+        static RefCountedPtr<IteratorState> Create (typename CONTAINER_MAP_TYPE::const_iterator mapIterator) { return new IteratorState(mapIterator); };
+    };
 
     //=======================================================================================
     // @bsistruct
     //=======================================================================================
-    struct const_iterator : std::iterator<std::forward_iterator_tag, ECClassP const>
+    struct const_iterator : std::iterator<std::forward_iterator_tag, MAP_TYPE const*>
     {
     private:
-        friend struct ECClassContainer;
+        friend struct SchemaItemContainer;
         RefCountedPtr<IteratorState>   m_state;
 
-        const_iterator (ClassMap::const_iterator mapIterator) { m_state = IteratorState::Create (mapIterator); };
+        const_iterator (typename CONTAINER_MAP_TYPE::const_iterator mapIterator) { m_state = IteratorState::Create (mapIterator); };
         const_iterator (char* ) {;} // must publish at least one private constructor to prevent instantiation
 
     public:
-        ECOBJECTS_EXPORT const_iterator&     operator++(); //!< Increments the iterator
-        ECOBJECTS_EXPORT bool                operator!=(const_iterator const& rhs) const; //!< Checks for inequality
-        ECOBJECTS_EXPORT bool                operator==(const_iterator const& rhs) const; //!< Checks for equality
-        ECOBJECTS_EXPORT ECClassP const&     operator* () const; //!< Returns the value at the current location
+        const_iterator& operator++()
+            {
+            m_state->m_mapIterator++;
+            return *this;
+            }
+        
+        bool operator!=(const_iterator const& rhs) const
+            {
+            return (m_state->m_mapIterator != rhs.m_state->m_mapIterator);
+            }
+        
+        bool operator==(const_iterator const& rhs) const
+            {
+            return (m_state->m_mapIterator == rhs.m_state->m_mapIterator);
+            }
+        
+        MAP_TYPE const& operator* () const
+            {
+            #ifdef CREATES_A_TEMP
+                bpair<WCharCP , MAP_TYPE*> const& mapPair = *(m_state->m_mapIterator);
+                return mapPair.second;
+            #else
+                return m_state->m_mapIterator->second;
+            #endif
+            }
     };
 
-public:
-    ECOBJECTS_EXPORT const_iterator begin () const; //!< Returns the beginning of the iterator
-    ECOBJECTS_EXPORT const_iterator end ()   const; //!< Returns the end of the iterator
-
+    const_iterator begin() const { return SchemaItemContainer<CONTAINER_MAP_TYPE, MAP_TYPE>::const_iterator(m_map.begin()); } //!< Returns the beginning of the iterator
+    const_iterator end()   const { return SchemaItemContainer<CONTAINER_MAP_TYPE, MAP_TYPE>::const_iterator(m_map.end()); } //!< Returns the end of the iterator
 };
 
-//=======================================================================================
-//! Supports STL like iterator of enumerations in a schema
-//! @bsiclass
-//=======================================================================================
-struct ECEnumerationContainer
-    {
-    private:
-        friend struct ECSchema;
-        friend struct ECEnumeration;
+struct PropertyCategoryContainer : SchemaItemContainer<PropertyCategoryMap, PropertyCategoryP>
+{
+    friend struct ECSchema;
+    using SchemaItemContainer<PropertyCategoryMap, PropertyCategoryP>::SchemaItemContainer;
+};
 
-        EnumerationMap const&     m_enumerationMap;
-        ECEnumerationContainer(EnumerationMap const& enumerationMap) : m_enumerationMap(enumerationMap) {}; //public for test purposes only
+struct ECClassContainer : SchemaItemContainer<ClassMap, ECClassP>
+{
+    friend struct ECSchema;
+    using SchemaItemContainer<ClassMap, ECClassP>::SchemaItemContainer;
+};
 
-    public:
-        //=======================================================================================
-        // @bsistruct
-        //=======================================================================================
-        struct IteratorState : RefCountedBase
-            {
-            friend struct const_iterator;
-            public:
-                EnumerationMap::const_iterator     m_mapIterator;
+struct ECEnumerationContainer : SchemaItemContainer<EnumerationMap, ECEnumerationP>
+{
+    friend struct ECSchema;
+    using SchemaItemContainer<EnumerationMap, ECEnumerationP>::SchemaItemContainer;
+};
 
-                IteratorState(EnumerationMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
-                static RefCountedPtr<IteratorState> Create(EnumerationMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
-            };
-
-        //=======================================================================================
-        // @bsistruct
-        //=======================================================================================
-        struct const_iterator : std::iterator<std::forward_iterator_tag, ECEnumerationP const>
-            {
-            private:
-                friend struct ECEnumerationContainer;
-                RefCountedPtr<IteratorState>   m_state;
-
-                const_iterator(EnumerationMap::const_iterator mapIterator) { m_state = IteratorState::Create(mapIterator); };
-                const_iterator(char*) { ; } // must publish at least one private constructor to prevent instantiation
-
-            public:
-                ECOBJECTS_EXPORT const_iterator&       operator++(); //!< Increments the iterator
-                ECOBJECTS_EXPORT bool                  operator!=(const_iterator const& rhs) const; //!< Checks for inequality
-                ECOBJECTS_EXPORT bool                  operator==(const_iterator const& rhs) const; //!< Checks for equality
-                ECOBJECTS_EXPORT ECEnumerationP const& operator* () const; //!< Returns the value at the current location
-            };
-
-    public:
-        const_iterator begin() const { return ECEnumerationContainer::const_iterator(m_enumerationMap.begin()); } //!< Returns the beginning of the iterator
-        const_iterator end()   const { return ECEnumerationContainer::const_iterator(m_enumerationMap.end()); } //!< Returns the end of the iterator
-    };
-
-//=======================================================================================
-//! Supports STL like iterator of kind of quantities in a schema
-//! @bsiclass
-//=======================================================================================
-struct KindOfQuantityContainer
-    {
-    private:
-        friend struct ECSchema;
-        friend struct KindOfQuantity;
-
-        KindOfQuantityMap const&     m_koqMap;
-        KindOfQuantityContainer(KindOfQuantityMap const& koqMap) : m_koqMap(koqMap) {}; //public for test purposes only
-
-    public:
-        //=======================================================================================
-        // @bsistruct
-        //=======================================================================================
-        struct IteratorState : RefCountedBase
-            {
-            friend struct const_iterator;
-            public:
-                KindOfQuantityMap::const_iterator     m_mapIterator;
-
-                IteratorState(KindOfQuantityMap::const_iterator mapIterator) { m_mapIterator = mapIterator; };
-                static RefCountedPtr<IteratorState> Create(KindOfQuantityMap::const_iterator mapIterator) { return new IteratorState(mapIterator); };
-            };
-
-        //=======================================================================================
-        // @bsistruct
-        //=======================================================================================
-        struct const_iterator : std::iterator<std::forward_iterator_tag, KindOfQuantityP const>
-            {
-            private:
-                friend struct KindOfQuantityContainer;
-                RefCountedPtr<IteratorState>   m_state;
-
-                const_iterator(KindOfQuantityMap::const_iterator mapIterator) { m_state = IteratorState::Create(mapIterator); };
-                const_iterator(char*) { ; } // must publish at least one private constructor to prevent instantiation
-
-            public:
-                ECOBJECTS_EXPORT const_iterator&       operator++(); //!< Increments the iterator
-                ECOBJECTS_EXPORT bool                  operator!=(const_iterator const& rhs) const; //!< Checks for inequality
-                ECOBJECTS_EXPORT bool                  operator==(const_iterator const& rhs) const; //!< Checks for equality
-                ECOBJECTS_EXPORT KindOfQuantityP const& operator* () const; //!< Returns the value at the current location
-            };
-
-    public:
-        const_iterator begin() const { return KindOfQuantityContainer::const_iterator(m_koqMap.begin()); } //!< Returns the beginning of the iterator
-        const_iterator end()   const { return KindOfQuantityContainer::const_iterator(m_koqMap.end()); } //!< Returns the end of the iterator
-    };
+struct KindOfQuantityContainer : SchemaItemContainer<KindOfQuantityMap, KindOfQuantityP>
+{
+    friend struct ECSchema;
+    using SchemaItemContainer<KindOfQuantityMap, KindOfQuantityP>::SchemaItemContainer;
+};
 
 //=======================================================================================
 //! Interface to find a standalone enabler, typically for an embedded ECStruct in an ECInstance.
@@ -3066,7 +3116,8 @@ enum class ECSchemaElementType
     {
     ECClass,
     ECEnumeration,
-    KindOfQuantity
+    KindOfQuantity,
+    PropertyCategory
     };
 
 //=======================================================================================
@@ -3119,6 +3170,7 @@ private:
     ECClassContainer        m_classContainer;
     ECEnumerationContainer  m_enumerationContainer;
     KindOfQuantityContainer m_kindOfQuantityContainer;
+    PropertyCategoryContainer m_propertyCategoryContainer;
 
     ECVersion               m_ecVersion;
 
@@ -3129,6 +3181,7 @@ private:
     ClassMap                    m_classMap;
     EnumerationMap              m_enumerationMap;
     KindOfQuantityMap           m_kindOfQuantityMap;
+    PropertyCategoryMap         m_propertyCategoryMap;
     ECSchemaReferenceList       m_refSchemaList;
     bool                        m_isSupplemented;
     bool                        m_hasExplicitDisplayLabel;
@@ -3150,6 +3203,7 @@ private:
     ECObjectsStatus AddClass(ECClassP pClass, bool resolveConflicts = false);
     ECObjectsStatus AddEnumeration(ECEnumerationP pEnumeration);
     ECObjectsStatus AddKindOfQuantity(KindOfQuantityP valueToAdd);
+    ECObjectsStatus AddPropertyCategory(PropertyCategoryP propertyCategoryToAdd);
     ECObjectsStatus SetVersionFromString(Utf8CP versionString);
     ECObjectsStatus CopyConstraints(ECRelationshipConstraintR toRelationshipConstraint, ECRelationshipConstraintR fromRelationshipConstraint);
     ECObjectsStatus SetECVersion(ECVersion ecVersion);
@@ -3215,6 +3269,16 @@ public:
     //! Returns true if the original xml version is less than the input ECVersion
     bool OriginalECXmlVersionLessThan(ECVersion version) const { return ((m_originalECXmlVersionMajor << 16) | m_originalECXmlVersionMinor) < static_cast<uint32_t>(version); }
 
+    uint32_t GetOriginalECXmlVersionMajor() const {return m_originalECXmlVersionMajor;} //!< Gets the original major xml version.
+    uint32_t GetOriginalECXmlVersionMinor() const {return m_originalECXmlVersionMinor;} //!< Gets the original minor xml version.
+
+    //! Sets the original ECXml version of the schema. 
+    //! @remarks This method is intended for internal use only.
+    //! @param[in] major The version number to set as the major ECXml version
+    //! @param[in] minor The version number to set as the minor ECXml version
+    //! @return ECObjectsStatus::Success if the ECXml version is successfully set.
+    ECObjectsStatus SetOriginalECXmlVersion(uint32_t major, uint32_t minor) { m_originalECXmlVersionMajor = major; m_originalECXmlVersionMinor = minor; return ECObjectsStatus::Success; }
+
     ECVersion GetECVersion() const {return m_ecVersion;} //!< Gets the EC Version of the schema.
     bool IsECVersion(ECVersion ecVersion) const {return m_ecVersion == ecVersion;} //!< Returns true if this schema's EC version matches the given ECVersion
 
@@ -3229,7 +3293,10 @@ public:
     uint32_t GetKindOfQuantityCount() const {return (uint32_t) m_kindOfQuantityMap.size();} //!< Gets the number of kind of quantity in the schema
     ECOBJECTS_EXPORT ECObjectsStatus DeleteKindOfQuantity(KindOfQuantityR kindOfQuantity); //!< Removes a kind of quantity from this schema.
     
-    
+    PropertyCategoryContainerCR GetPropertyCategories() const {return m_propertyCategoryContainer;} //!< Returns an iterable container of PropertyCategories sorted by name. For unsorted called overload.
+    uint32_t GetPropertyCategoryCount() const {return (uint32_t) m_propertyCategoryMap.size();} //!< Gets the number of PropertyCategories in the schema.
+    ECOBJECTS_EXPORT ECObjectsStatus DeletePropertyCategory(PropertyCategoryR propertyCategory); //!< Removes a PropertyCategory from this schema.
+
     //! Indicates whether this schema is a so-called @b dynamic schema by
     //! checking whether the @b DynamicSchema custom attribute from the standard schema @b CoreCustomAttributes
     //! is assigned to the schema.
@@ -3341,6 +3408,12 @@ public:
     //! @return A status code indicating whether or not the enumeration was successfully created and added to the schema
     ECOBJECTS_EXPORT ECObjectsStatus CreateEnumeration(ECEnumerationP& ecEnumeration, Utf8CP name, PrimitiveType type);
 
+    //! Creates a new PropertyCategory and adds it to the schema.
+    //! @param[out] propertyCategory If successful, will contain a new PropertyCategory object
+    //! @param[in] name              Name of the propertyCategory to create
+    //! @return A status code indicating whether or not the property category was successfully created and added to the schema
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePropertyCategory(PropertyCategoryP& propertyCategory, Utf8CP name);
+
     //! Get a schema by alias within the context of this schema and its referenced schemas.
     //! @param[in]  alias   The alias of the schema to lookup in the context of this schema and it's references.
     //!                     Passing an empty alias will return a pointer to the current schema.
@@ -3382,6 +3455,16 @@ public:
     //! @param[in]  name     The name of the kind of quantity to lookup.  This must be an unqualified (short) name.
     //! @return   A const pointer to an ECN::KindOfQuantity if the named enumeration exists in within the current schema; otherwise, nullptr
     ECOBJECTS_EXPORT KindOfQuantityP GetKindOfQuantityP(Utf8CP name);
+
+    //! Get a property category by name within the context of this schema.
+    //! @param[in]  name     The name of the property category to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::PropertyCategory if the named property category exists in within the current schema; otherwise, nullptr
+    PropertyCategoryCP GetPropertyCategoryCP(Utf8CP name) const {return const_cast<ECSchemaP> (this)->GetPropertyCategoryP(name);}
+
+    //! Get a property category by name within the context of this schema.
+    //! @param[in]  name     The name of the property category to lookup.  This must be an unqualified (short) name.
+    //! @return   A const pointer to an ECN::PropertyCategory if the named property category exists in within the current schema; otherwise, nullptr
+    ECOBJECTS_EXPORT PropertyCategoryP GetPropertyCategoryP(Utf8CP name);
 
     //! Gets the other schemas that are used by classes within this schema.
     //! Referenced schemas are the schemas that contain definitions of base classes,
@@ -3471,6 +3554,11 @@ public:
     //! @param[out] targetKOQ If successful, will contain a new KindOfQuantity object that is a copy of the sourceKOQ
     //! @param[in]  sourceKOQ The kind of quantity to copy
     ECOBJECTS_EXPORT ECObjectsStatus CopyKindOfQuantity(KindOfQuantityP& targetKOQ, KindOfQuantityCR sourceKOQ);
+
+    //! Given a source PropertyCategory, will copy that PropertyCategory into this schema if it does not already exist
+    //! @param[out] targetPropCategory If successful, will contain a new PropertyCategory object that is a copy of the sourcePropCategory
+    //! @param[in]  sourcePropCategory The PropertyCategory to copy
+    ECOBJECTS_EXPORT ECObjectsStatus CopyPropertyCategory(PropertyCategoryP& targetPropCategory, PropertyCategoryCR sourcePropCategory);
 
     //! Copies this schema
     //! @param[out] schemaOut   If successful, will contain a copy of this schema

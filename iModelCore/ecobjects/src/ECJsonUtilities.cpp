@@ -410,13 +410,13 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                 continue;
                 }
 
-            if (!childJsonValue.isObject() || !childJsonValue.isMember(ECINSTANCE_ID_ATTRIBUTE))
+            if (!childJsonValue.isObject() || !childJsonValue.isMember(JSON_NAVIGATION_ID_KEY))
                 {
                 status = ERROR;
                 continue;
                 }
 
-            const uint64_t navId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[ECINSTANCE_ID_ATTRIBUTE], INT64_C(0));
+            const uint64_t navId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[JSON_NAVIGATION_ID_KEY], INT64_C(0));
             if (navId == INT64_C(0))
                 {
                 status = ERROR;
@@ -424,14 +424,14 @@ BentleyStatus ECJsonUtilities::ECInstanceFromJson(IECInstanceR instance, const J
                 }
 
             ECValue v;
-            if (!childJsonValue.isMember(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
+            if (!childJsonValue.isMember(JSON_NAVIGATION_RELECCLASSID_KEY))
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
                     status = ERROR;
                 }
             else
                 {
-                const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE], INT64_C(0));
+                const uint64_t relClassId = (uint64_t) BeJsonUtilities::Int64FromValue(childJsonValue[JSON_NAVIGATION_RELECCLASSID_KEY], INT64_C(0));
                 if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), ECClassId(relClassId)))
                     status = ERROR;
                 }
@@ -889,14 +889,14 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
 
             RapidJsonValueCR json = it->value;
 
-            if (!json.IsObject() || !json.HasMember(ECINSTANCE_ID_ATTRIBUTE))
+            if (!json.IsObject() || !json.HasMember(JSON_NAVIGATION_ID_KEY))
                 {
                 status = ERROR;
                 LogJsonParseError(json, instance.GetClass(), accessString);
                 continue;
                 }
 
-            const uint64_t navId = (uint64_t) Int64FromJson(json[ECINSTANCE_ID_ATTRIBUTE], INT64_C(0));
+            const uint64_t navId = (uint64_t) Int64FromJson(json[JSON_NAVIGATION_ID_KEY], INT64_C(0));
             if (navId == INT64_C(0))
                 {
                 status = ERROR;
@@ -905,7 +905,7 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
                 }
 
             ECValue v;
-            if (!json.HasMember(ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE))
+            if (!json.HasMember(JSON_NAVIGATION_RELECCLASSID_KEY))
                 {
                 if (ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId)))
                     {
@@ -915,7 +915,7 @@ BentleyStatus ECRapidJsonUtilities::ECInstanceFromJson(ECN::IECInstanceR instanc
                 }
             else
                 {
-                const uint64_t relClassId = (uint64_t) Int64FromJson(json[ECINSTANCE_RELATIONSHIPID_ATTTRIBUTE], INT64_C(0));
+                const uint64_t relClassId = (uint64_t) Int64FromJson(json[JSON_NAVIGATION_RELECCLASSID_KEY], INT64_C(0));
                 if (relClassId == INT64_C(0) || ECObjectsStatus::Success != v.SetNavigationInfo(BeInt64Id(navId), ECClassId(relClassId)))
                     {
                     status = ERROR;

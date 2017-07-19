@@ -479,7 +479,6 @@ bool requireSchemaReference
     CustomAttributeContainerType containerType = _GetContainerType();
     if (!caClass->CanBeAppliedTo(containerType))
         {
-        BeAssert(false);
         Utf8String caContainerTypeString = ECXml::ContainerTypeToString(caClass->GetContainerType());
         Utf8String containerTypeString = ECXml::ContainerTypeToString(containerType);
         LOG.errorv("Cannot add custom attribute of class %s:%s to a container of type %s because the custom attribute has an incompatible 'appliesTo' attribute of %s",

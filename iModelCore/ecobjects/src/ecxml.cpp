@@ -2,7 +2,7 @@
 |
 |     $Source: src/ecxml.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "ECObjectsPch.h"
@@ -420,6 +420,40 @@ ECObjectsStatus ECXml::ParseContainerString(CustomAttributeContainerType& contai
             return ECObjectsStatus::ParseError;
             }
         }
+    return ECObjectsStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+//static 
+ECObjectsStatus ECXml::ParseFullyQualifiedName(Utf8StringR alias, Utf8StringR typeName, Utf8StringCR stringToParse)
+    {
+    if (0 == stringToParse.length())
+        {
+        return ECObjectsStatus::ParseError;
+        }
+
+    Utf8String::size_type colonIndex = stringToParse.find(':');
+    if (Utf8String::npos == colonIndex)
+        {
+        alias.clear();
+        typeName = stringToParse;
+        return ECObjectsStatus::Success;
+        }
+
+    if (stringToParse.length() == colonIndex + 1)
+        {
+        return ECObjectsStatus::ParseError;
+        }
+
+    if (0 == colonIndex)
+        alias.clear();
+    else
+        alias = stringToParse.substr(0, colonIndex);
+
+    typeName = stringToParse.substr(colonIndex + 1);
+
     return ECObjectsStatus::Success;
     }
 

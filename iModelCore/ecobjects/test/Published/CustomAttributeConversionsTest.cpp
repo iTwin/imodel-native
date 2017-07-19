@@ -8,11 +8,44 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-using namespace BentleyApi::ECN;
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct RelationshipConversionTest : ECTestFixture {};
+
+struct PropertyPriorityCustomAttributeConversionTest : ECTestFixture
+    {
+    ECSchemaPtr m_becaSchema;
+
+    virtual void SetUp() override
+        {
+        ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaKey key("EditorCustomAttributes", 1, 3);
+        m_becaSchema = ECSchema::LocateSchema(key, *schemaContext);
+        ASSERT_TRUE(m_becaSchema.IsValid());
+
+        ECTestFixture::SetUp();
+        }
+
+    ECClassCP GetPropertyPriorityClass() const
+        {
+        if (!m_becaSchema.IsValid())
+            return nullptr;
+        return m_becaSchema->GetClassCP("PropertyPriority");
+        }
+
+    void CheckForPropertyPriorityCALocally(ECPropertyCP prop, bool shouldCAExist)
+        {
+        EXPECT_EQ(shouldCAExist, prop->IsDefinedLocal(*GetPropertyPriorityClass())) << "The property " << prop->GetClass().GetFullName() << "." << prop->GetName().c_str() << " didn't validate properly.";
+        }
+
+    void CheckForPropertyPriorityCA(ECPropertyCP prop, bool shouldCAExist)
+        {
+        auto caInstance = prop->GetCustomAttribute(*GetPropertyPriorityClass());
+        EXPECT_EQ(shouldCAExist, caInstance.IsValid()) << "The property " << prop->GetClass().GetFullName() << "." << prop->GetName().c_str() << " didn't validate properly.";
+        }
+    };
 
 struct StandardCustomAttributeConversionTests : ECTestFixture 
     {
@@ -2068,6 +2101,1035 @@ TEST_F(StandardCustomAttributeConversionTests, TestSupplementedSchemaConversion)
     EXPECT_EQ(ECObjectsStatus::Success, suppInfo->GetSupplementalSchemaNames(suppSchemaNames));
     EXPECT_EQ(1, suppSchemaNames.size());
     EXPECT_STREQ("TestSchema_Supplemental_Testing.01.00.00", suppSchemaNames[0].c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void TestDropAllOldCustomAttributesWithAConversion(ECSchemaCR oldStandardSchema, Utf8CP caClassName, bool shouldBeRemoved = true)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+                <ECClass typeName="A" isDomainClass="true"/>
+                <ECClass typeName="B" isDomainClass="true"/>
+                <ECRelationshipClass typeName="ARelB" isDomainClass="true" strength="referencing" strengthDirection="forward">
+                    <ECCustomAttributes>
+                        <ReferenceTypeRelationship xmlns="Bentley_Standard_CustomAttributes.01.13"/>
+                    </ECCustomAttributes>
+                    <Source cardinality="(1,1)" polymorphic="true">
+                        <Class class="A"/>
+                    </Source>
+                    <Target cardinality="(1,1)" polymorphic="true">
+                        <Class class="B"/>
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    ECClassCP relClass = schema->GetClassCP("ARelB");
+    EXPECT_TRUE(nullptr != relClass);
+
+    ECClassCP caClass = oldStandardSchema.GetClassCP(caClassName);
+    EXPECT_TRUE(nullptr != caClass);
+    EXPECT_TRUE(relClass->IsDefinedLocal(*caClass));
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+    ECClassCP relClassAfterConv = schema->GetClassCP("ARelB");
+    EXPECT_TRUE(nullptr != relClassAfterConv);
+    EXPECT_FALSE(relClassAfterConv->IsDefinedLocal(*caClass));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, DropAllOldCustomAttributesWithoutAConversion)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+                <ECClass typeName="A" isDomainClass="true"/>
+                <ECClass typeName="B" isDomainClass="true"/>
+                <ECRelationshipClass typeName="ARelB" isDomainClass="true" strength="referencing" strengthDirection="forward">
+                    <ECCustomAttributes>
+                        <ReferenceTypeRelationship xmlns="Bentley_Standard_CustomAttributes.01.13"/>
+                    </ECCustomAttributes>
+                    <Source cardinality="(1,1)" polymorphic="true">
+                        <Class class="A"/>
+                    </Source>
+                    <Target cardinality="(1,1)" polymorphic="true">
+                        <Class class="B"/>
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    ECClassCP relClass = schema->GetClassCP("ARelB");
+    EXPECT_TRUE(nullptr != relClass);
+
+    ECClassCP caClass = StandardCustomAttributeHelper::GetCustomAttributeClass("ReferenceTypeRelationship");
+    EXPECT_TRUE(nullptr != caClass);
+    EXPECT_TRUE(relClass->IsDefinedLocal(*caClass));
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+    ECClassCP relClassAfterConv = schema->GetClassCP("ARelB");
+    EXPECT_TRUE(nullptr != relClassAfterConv);
+    EXPECT_FALSE(relClassAfterConv->IsDefinedLocal(*caClass));
+    }
+
+void propertyCategoryHasSameValuesAsCategoryCA (IECInstanceCP categoryCA, PropertyCategoryCP propertyCategory)
+    {
+    ECValue value;
+    categoryCA->GetValue(value, "Name");
+    EXPECT_STREQ(value.GetUtf8CP(), propertyCategory->GetName().c_str()) << "Category 'Name' doesn't match converted PropertyCategory.Name";
+    categoryCA->GetValue(value, "DisplayLabel");
+    EXPECT_STREQ(value.GetUtf8CP(), propertyCategory->GetDisplayLabel().c_str()) << "Category 'DisplayLabel' doesn't match converted PropertyCategory.DisplayLabel";
+    categoryCA->GetValue(value, "Description");
+    EXPECT_STREQ(value.GetUtf8CP(), propertyCategory->GetDescription().c_str()) << "Category 'Description' doesn't match converted PropertyCategory.Description";
+    categoryCA->GetValue(value, "Priority");
+    EXPECT_EQ(value.GetInteger(), propertyCategory->GetPriority()) << "Category 'Priority' doesn't match converted PropertyCategory.Priority";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_NoConflicts)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="A" isDomainClass="true">
+                    <ECProperty propertyName="A1" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana</Name>
+                                <DisplayLabel>Banana Info</DisplayLabel>
+                                <Description>Banana Properties</Description>
+                                <Priority>1</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A2" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Apple</Name>
+                                <DisplayLabel>Apple Info</DisplayLabel>
+                                <Description>Apple Properties</Description>
+                                <Priority>42</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    ECClassCP aClass = schema->GetClassCP("A");
+    ASSERT_TRUE(nullptr != aClass);
+    ECPropertyCP a1Prop = aClass->GetPropertyP("A1");
+    ASSERT_TRUE(nullptr != a1Prop);
+    IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    ECPropertyCP a2Prop = aClass->GetPropertyP("A2");
+    ASSERT_TRUE(nullptr != a2Prop);
+    IECInstancePtr appleCatCA = a2Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+    ECClassCP aConvClass = schema->GetClassCP("A");
+    EXPECT_TRUE(nullptr != aConvClass);
+
+    EXPECT_EQ(2, schema->GetPropertyCategoryCount());
+
+    PropertyCategoryCP bCat = schema->GetPropertyCategoryCP("Banana");
+    ASSERT_NE(nullptr, bCat);
+    PropertyCategoryCP aCat = schema->GetPropertyCategoryCP("Apple");
+    ASSERT_NE(nullptr, aCat);
+
+    propertyCategoryHasSameValuesAsCategoryCA(bananaCatCA.get(), bCat);
+    propertyCategoryHasSameValuesAsCategoryCA(appleCatCA.get(), aCat);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_ConflictingCategories)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="A" isDomainClass="true">
+                    <ECProperty propertyName="A1" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana</Name>
+                                <DisplayLabel>Banana Info</DisplayLabel>
+                                <Description>Banana Properties</Description>
+                                <Priority>1</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A2" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana</Name>
+                                <DisplayLabel>Apple Info</DisplayLabel>
+                                <Description>Apple Properties</Description>
+                                <Priority>42</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    ECClassCP aClass = schema->GetClassCP("A");
+    ASSERT_TRUE(nullptr != aClass);
+    ECPropertyCP a1Prop = aClass->GetPropertyP("A1");
+    ASSERT_TRUE(nullptr != a1Prop);
+    IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+    ECClassCP aConvClass = schema->GetClassCP("A");
+    EXPECT_TRUE(nullptr != aConvClass);
+
+    EXPECT_EQ(1, schema->GetPropertyCategoryCount()) << "Expected categories to be merged because their names were the same";
+
+    PropertyCategoryCP bCat = schema->GetPropertyCategoryCP("Banana");
+    ASSERT_NE(nullptr, bCat);
+
+    propertyCategoryHasSameValuesAsCategoryCA(bananaCatCA.get(), bCat);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_CategoryNameConflictsWithOtherElement)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="A" isDomainClass="true">
+                    <ECProperty propertyName="A1" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana</Name>
+                                <DisplayLabel>Banana Info</DisplayLabel>
+                                <Description>Banana Properties</Description>
+                                <Priority>1</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A2" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana</Name>
+                                <DisplayLabel>Apple Info</DisplayLabel>
+                                <Description>Apple Properties</Description>
+                                <Priority>42</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+                <ECClass typeName="Banana" isDomainClass="true" />
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    ECClassCP aClass = schema->GetClassCP("A");
+    ASSERT_TRUE(nullptr != aClass);
+    ECPropertyCP a1Prop = aClass->GetPropertyP("A1");
+    ASSERT_TRUE(nullptr != a1Prop);
+    IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+    ECClassCP aConvClass = schema->GetClassCP("A");
+    EXPECT_TRUE(nullptr != aConvClass);
+
+    EXPECT_EQ(1, schema->GetPropertyCategoryCount()) << "Expected categories to be merged because their names were the same";
+
+    PropertyCategoryCP bCat = schema->GetPropertyCategoryCP("Banana_Category");
+    ASSERT_NE(nullptr, bCat);
+
+    // Modify Banana category CA to match the rename
+    ECValue nameValue("Banana_Category");
+    bananaCatCA->SetValue("Name", nameValue);
+    propertyCategoryHasSameValuesAsCategoryCA(bananaCatCA.get(), bCat);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, CategoryCustomAttribute_NameNotValid)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="A" isDomainClass="true">
+                    <ECProperty propertyName="A1" typeName="string">
+                        <ECCustomAttributes>
+                            <Category xmlns="EditorCustomAttributes.01.03">
+                                <Name>Banana Space</Name>
+                                <DisplayLabel>Banana Info</DisplayLabel>
+                                <Description>Banana Properties</Description>
+                                <Priority>1</Priority>
+                            </Category>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+    ECClassCP aClass = schema->GetClassCP("A");
+    ASSERT_TRUE(nullptr != aClass);
+    ECPropertyCP a1Prop = aClass->GetPropertyP("A1");
+    ASSERT_TRUE(nullptr != a1Prop);
+    IECInstancePtr bananaCatCA = a1Prop->GetCustomAttribute("EditorCustomAttributes", "Category");
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+    ECClassCP aConvClass = schema->GetClassCP("A");
+    EXPECT_TRUE(nullptr != aConvClass);
+
+    EXPECT_EQ(1, schema->GetPropertyCategoryCount()) << "Expected categories to be merged because their names were the same";
+
+    Utf8String encodedName = ECNameValidation::EncodeToValidName("Banana Space");
+    PropertyCategoryCP bCat = schema->GetPropertyCategoryCP(encodedName.c_str());
+    ASSERT_NE(nullptr, bCat);
+
+    ECValue nameValue(encodedName.c_str());
+    bananaCatCA->SetValue("Name", nameValue);
+    propertyCategoryHasSameValuesAsCategoryCA(bananaCatCA.get(), bCat);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyPriorityCustomAttributeConversionTest, LocallyDefinedPropertyPriority)
+    {
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="propWithPriority" typeName="string">
+                    <ECCustomAttributes>
+                        <PropertyPriority xmlns="EditorCustomAttributes.01.03">
+                            <Priority>3</Priority>
+                        </PropertyPriority>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    ECClassCP ecClass = schema->GetClassCP("A");
+    ECPropertyCP ecProp = ecClass->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(ecProp, true);
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+
+    ECClassCP afterConv = schema->GetClassCP("A");
+    ECPropertyCP afterConvProp = afterConv->GetPropertyP("propWithPriority");
+    EXPECT_EQ(3, afterConvProp->GetPriority());
+    CheckForPropertyPriorityCALocally(afterConvProp, false);
+    }
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="propWithPriority" typeName="string">
+                    <ECCustomAttributes>
+                        <PropertyPriority xmlns="EditorCustomAttributes.01.03">
+                            <Priority>-3</Priority>
+                        </PropertyPriority>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    ECClassCP ecClass = schema->GetClassCP("A");
+    ECPropertyCP ecProp = ecClass->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(ecProp, true);
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+
+    ECClassCP afterConv = schema->GetClassCP("A");
+    ECPropertyCP afterConvProp = afterConv->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(ecProp, false);
+    EXPECT_EQ(-3, afterConvProp->GetPriority());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyPriorityCustomAttributeConversionTest, PropertyPriorityOverride)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="propWithPriority" typeName="string">
+                    <ECCustomAttributes>
+                        <PropertyPriority xmlns="EditorCustomAttributes.01.03">
+                            <Priority>3</Priority>
+                        </PropertyPriority>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+            <ECClass typeName="B" isDomainClass="true">
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName="propWithPriority" typeName="string">
+                    <ECCustomAttributes>
+                        <PropertyPriority xmlns="EditorCustomAttributes.01.03">
+                            <Priority>-4</Priority>
+                        </PropertyPriority>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    ECClassCP classA = schema->GetClassCP("A");
+    ECPropertyCP propA = classA->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(propA, true);
+
+    ECClassCP classB = schema->GetClassCP("B");
+    ECPropertyCP propB = classB->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(propB, true);
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+
+    ECClassCP afterConvClassA = schema->GetClassCP("A");
+    ECPropertyCP afterConvPropA = afterConvClassA->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(afterConvPropA, false);
+    EXPECT_EQ(3, afterConvPropA->GetPriority());
+
+    ECClassCP afterConvClassB = schema->GetClassCP("B");
+    ECPropertyCP afterConvPropB = afterConvClassB->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(afterConvPropB, false);
+    EXPECT_EQ(-4, afterConvPropB->GetPriority());
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyPriorityCustomAttributeConversionTest, PropertyPriorityInherited)
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="propWithPriority" typeName="string">
+                    <ECCustomAttributes>
+                        <PropertyPriority xmlns="EditorCustomAttributes.01.03">
+                            <Priority>3</Priority>
+                        </PropertyPriority>
+                    </ECCustomAttributes>
+                </ECProperty>
+            </ECClass>
+            <ECClass typeName="B" isDomainClass="true">
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName="propWithPriority" typeName="string"/>
+            </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    {
+    ECClassCP classA = schema->GetClassCP("A");
+    ECPropertyP propA = classA->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(propA, true);
+
+    ECClassCP classB = schema->GetClassCP("B");
+    ECPropertyP propB = classB->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(propB, false);
+    }
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+
+    {
+    ECClassCP classA = schema->GetClassCP("A");
+    ECPropertyP propA = classA->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(propA, false);
+    EXPECT_TRUE(propA->IsPriorityLocallyDefined());
+    EXPECT_EQ(3, propA->GetPriority());
+
+    ECClassCP classB = schema->GetClassCP("B");
+    ECPropertyP propB = classB->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(propB, false);
+    EXPECT_FALSE(propB->IsPriorityLocallyDefined());
+    EXPECT_EQ(3, propB->GetPriority());
+    }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Caleb.Shafer                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PropertyPriorityCustomAttributeConversionTest, PropertyPriorityInherited_Supplemental)
+    {
+    Utf8CP schemaXML = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='Test' version='78.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+            <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+                <ECProperty propertyName='propWithPriority' typeName='int' displayLabel='Title' />
+            </ECClass>
+            <ECClass typeName='B' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+                <BaseClass>A</BaseClass>
+                <ECProperty propertyName='propWithPriority' typeName='int' displayLabel='Title' />
+            </ECClass>
+        </ECSchema>)xml";
+    Utf8CP supSchemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+        <ECSchema schemaName='Test_Supplemental_PropertyPriority' version='78.00' nameSpacePrefix='tr_sv' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+           <ECSchemaReference name='Bentley_Standard_CustomAttributes' version='01.13' prefix='bsca' />
+           <ECSchemaReference name='EditorCustomAttributes' version='01.00' prefix='beca' />
+           <ECCustomAttributes>
+               <SupplementalSchemaMetaData xmlns='Bentley_Standard_CustomAttributes.01.05'>
+                   <PrimarySchemaName>Test</PrimarySchemaName>
+                   <PrimarySchemaMajorVersion>78</PrimarySchemaMajorVersion>
+                   <PrimarySchemaMinorVersion>0</PrimarySchemaMinorVersion>
+                   <Precedence>400</Precedence>
+               </SupplementalSchemaMetaData>
+           </ECCustomAttributes>
+           <ECClass typeName='A' isStruct='false' isCustomAttributeClass='false' isDomainClass='true'>
+               <ECProperty propertyName='propWithPriority' typeName='string' displayLabel='Title'>
+                   <ECCustomAttributes>
+                       <PropertyPriority xmlns="EditorCustomAttributes.01.03">
+                            <Priority>3</Priority>
+                        </PropertyPriority>
+                   </ECCustomAttributes>
+               </ECProperty>
+           </ECClass>
+        </ECSchema>)xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXML, *context));
+    ECSchemaPtr supSchema;
+    ECSchema::ReadFromXmlString(supSchema, supSchemaXml, *context);
+    bvector<ECSchemaP> supSchemas;
+    supSchemas.push_back(supSchema.get());
+    SupplementedSchemaBuilder builder;
+    ASSERT_EQ(SupplementedSchemaStatus::Success, builder.UpdateSchema(*schema.get(), supSchemas, true)) << "Failed to supplement schema";
+    ASSERT_TRUE(schema->IsSupplemented()) << "Schema returned success but was not supplemented";
+
+    {
+    ECClassCP classA = schema->GetClassCP("A");
+    ECPropertyCP propA = classA->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCA(propA, true); // Don't check locally because it is defined in a supplemental schema
+
+    ECClassCP classB = schema->GetClassCP("B");
+    ECPropertyCP propB = classB->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(propB, false);
+    }
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size()); //CoreCustomAttributes schema referenced for new Supplemental info
+
+    {
+    ECClassCP classA = schema->GetClassCP("A");
+    ECPropertyP propA = classA->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(propA, false);
+    EXPECT_TRUE(propA->IsPriorityLocallyDefined());
+    EXPECT_EQ(3, propA->GetPriority());
+
+    ECClassCP classB = schema->GetClassCP("B");
+    ECPropertyP propB = classB->GetPropertyP("propWithPriority");
+    CheckForPropertyPriorityCALocally(propB, false);
+    EXPECT_FALSE(propB->IsPriorityLocallyDefined());
+    EXPECT_EQ(3, propB->GetPriority());
+    }
+    }
+
+void verifyHidden(ECPropertyCP ecProperty)
+    {
+    IECInstancePtr hiddenPropertyCA = ecProperty->GetCustomAttribute("CoreCustomAttributes", "HiddenProperty");
+    EXPECT_TRUE(hiddenPropertyCA.IsValid()) << "Expected to find the 'HiddenProperty' Custom Attribute on " <<
+        ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    ECValue value;
+    EXPECT_EQ(ECObjectsStatus::Success, hiddenPropertyCA->GetValue(value, "Show"))
+        << "Failed to get the 'Show' value for " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    EXPECT_TRUE(value.IsNull() || !value.GetBoolean()) <<
+        "Expected 'HiddenProperty.Show' CA value on " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str() <<
+        " to be unset or set to false to be considered hidden";
+    }
+
+void verifyShown(ECPropertyCP ecProperty)
+    {
+    IECInstancePtr hiddenPropertyCA = ecProperty->GetCustomAttribute("CoreCustomAttributes", "HiddenProperty");
+    EXPECT_TRUE(hiddenPropertyCA.IsValid()) << "Expected to find the 'HiddenProperty' Custom Attribute on " <<
+        ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    ECValue value;
+    EXPECT_EQ(ECObjectsStatus::Success, hiddenPropertyCA->GetValue(value, "Show"))
+        << "Failed to get the 'Show' value for " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str();
+
+    EXPECT_TRUE(!value.IsNull() || value.GetBoolean()) <<
+        "Expected 'HiddenProperty.Show' CA value on " << ecProperty->GetClass().GetFullName() << "." << ecProperty->GetName().c_str() <<
+        " to be set to true to be considered shown";
+    }
+
+void verifySchemaReferencesOnlyCoreCAs(ECSchemaCP convertedSchema)
+    {
+    EXPECT_EQ(1, convertedSchema->GetReferencedSchemas().size()) << "Expected only one schema reference";
+    EXPECT_STREQ("CoreCustomAttributes", convertedSchema->GetReferencedSchemas().begin()->second->GetName().c_str()) <<
+        "The only referenced schema does not have the correct name.";
+    }
+
+void verifyHiddenPropertyAppliedCorrectly(ECSchemaCP convertedSchema)
+    {
+    verifySchemaReferencesOnlyCoreCAs(convertedSchema);
+
+    for (auto ecClass : convertedSchema->GetClasses())
+        {
+        for (auto ecProperty : ecClass->GetProperties(false))
+            {
+            if (ecProperty->GetDescription().Equals("Hide"))
+                verifyHidden(ecProperty);
+            else if (ecProperty->GetDescription().Equals("Show"))
+                verifyShown(ecProperty);
+            else
+                EXPECT_TRUE(false) << "The property " << ecClass->GetFullName() << "." << ecProperty->GetName().c_str() << " does not specify 'Hide' or a 'Show' property its description";
+            }
+        }
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, HidePropertyCustomAttribute)
+    {
+    // Property description defines if we expect the property to be shown or hidden
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+            <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECSchemaReference name="EditorCustomAttributes" version="1.03" prefix="beca"/>
+                <ECClass typeName="A" isDomainClass="true">
+                    <ECProperty propertyName="A1" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03"/>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A2" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>true</If2D>
+                                <If3D>true</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A3" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>true</If2D>
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A4" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                                <If3D>true</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A5" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If>some expression</If>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A6" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+                <ECClass typeName="B" isDomainClass="true">
+                    <BaseClass>A</BaseClass>
+                    <ECProperty propertyName="A1" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A2" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If3D>false</If3D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A3" typeName="string" description="Show">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>false</If2D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                    <ECProperty propertyName="A6" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EditorCustomAttributes.01.03">
+                                <If2D>true</If2D>
+                            </HideProperty>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECClass>
+                <ECRelationshipClass typeName="ARelB" isDomainClass="true" strength="referencing" strengthDirection="forward">
+                    <Source cardinality="(1,1)" polymorphic="true">
+                        <Class class="A"/>
+                    </Source>
+                    <Target cardinality="(1,1)" polymorphic="true">
+                        <Class class="B"/>
+                    </Target>
+                    <ECProperty propertyName="AB1" typeName="string" description="Hide">
+                        <ECCustomAttributes>
+                            <HideProperty xmlns="EDitorCustomAttributes.01.03"/>
+                        </ECCustomAttributes>
+                    </ECProperty>
+                </ECRelationshipClass>
+            </ECSchema>
+        )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+
+    verifyHiddenPropertyAppliedCorrectly(schema.get());
+    }
+
+void verifyHiddenSchemaAppliedCorrectly(Utf8CP schemaXml)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+
+    IECInstancePtr hiddenSchemaCA = schema->GetCustomAttribute("CoreCustomAttributes", "HiddenSchema");
+    if (schema->GetDescription().Equals("Hide"))
+        {
+        verifySchemaReferencesOnlyCoreCAs(schema.get());
+        ASSERT_TRUE(hiddenSchemaCA.IsValid()) << schema->GetName().c_str() << " expected to be hidden but 'HiddenSchema' CA not found";
+        ECValue showClassesValue;
+        ASSERT_EQ(ECObjectsStatus::Success, hiddenSchemaCA->GetValue(showClassesValue, "ShowClasses"));
+        EXPECT_TRUE(showClassesValue.IsNull() || !showClassesValue.GetBoolean()) <<
+            "Schema should be hidden based on the legacy DisplayOptions CA, we lack the information to ever set 'ShowClasses' to true so it should be unset or set to false";
+        }
+    else if (schema->GetDescription().Equals("Show"))
+        {
+        EXPECT_EQ(0, schema->GetReferencedSchemas().size());
+        EXPECT_FALSE(hiddenSchemaCA.IsValid()) << schema->GetName().c_str() << " expected to be shown but 'HiddenSchema' CA found";
+        }
+    else
+        EXPECT_TRUE(false) << schema->GetName().c_str() << " schema does not specify 'Hide' or 'Show' in its description";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, DisplayOptionsCustomAttribute_AppliedToSchema)
+    {
+    // Schema description defines if we expect the property to be shown or hidden
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <Hidden>true</Hidden>
+                    <HideInstances>true</HideInstances>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml);
+
+    Utf8CP schemaXml2 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <Hidden>true</Hidden>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml2);
+
+    Utf8CP schemaXml3 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>true</HideInstances>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml3);
+
+    // This is imperfect but follows how presentation rules handles the legacy CA.
+    Utf8CP schemaXml4 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>true</HideInstances>
+                    <Hidden>false</Hidden>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml4);
+
+    // This is imperfect but follows how presentation rules handles the legacy CA.
+    Utf8CP schemaXml5 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Hide">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>false</HideInstances>
+                    <Hidden>true</Hidden>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml5);
+
+    Utf8CP schemaXml6 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Show">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>false</HideInstances>
+                    <Hidden>false</Hidden>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml6);
+
+    // Hide related is ignored by presentation rules so we ignore it during conversion.
+    Utf8CP schemaXml7 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Show">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECCustomAttributes>
+                <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <HideInstances>false</HideInstances>
+                    <Hidden>false</Hidden>
+                    <HideRelated>true</HideRelated>
+                </DisplayOptions>
+            </ECCustomAttributes>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml7);
+
+    Utf8CP schemaXml8 = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0" description="Show">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECClass typeName="A" isDomainClass="true">
+                <ECProperty propertyName="A1" typeName="string"/>
+                <ECProperty propertyName="A2" typeName="string"/>
+            </ECClass>
+        </ECSchema>
+    )xml";
+    verifyHiddenSchemaAppliedCorrectly(schemaXml8);
+    }
+
+void verifyClassHidden(ECClassCP ecClass)
+    {
+    IECInstancePtr hiddenClassCA = ecClass->GetCustomAttribute("CoreCustomAttributes", "HiddenClass");
+    ASSERT_TRUE(hiddenClassCA.IsValid()) << ecClass->GetName().c_str() << " should be hidden but does not have the 'HiddenClass' CA";
+    ECValue showValue;
+    EXPECT_EQ(ECObjectsStatus::Success, hiddenClassCA->GetValue(showValue, "Show"));
+    EXPECT_TRUE(showValue.IsNull() || !showValue.GetBoolean()) << "Expected class '" << ecClass->GetName().c_str() <<
+        "' to be hidden but the HiddenClass.Show value was set to true.";
+    }
+
+void verifyClassNotHidden(ECClassCP ecClass)
+    {
+    IECInstancePtr hiddenClassCA = ecClass->GetCustomAttribute("CoreCustomAttributes", "HiddenClass");
+    if (hiddenClassCA.IsNull() || !hiddenClassCA.IsValid())
+        return;
+
+    ECValue showValue;
+    EXPECT_EQ(ECObjectsStatus::Success, hiddenClassCA->GetValue(showValue, "Show"));
+    EXPECT_TRUE(!showValue.IsNull() && showValue.GetBoolean()) << "Expected class '" << ecClass->GetName().c_str() <<
+        "' to be shown but the HiddenClass.Show value was not set or set to false.";
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                    Colin.Kerr                 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(StandardCustomAttributeConversionTests, DisplayOptionsCustomAttribute_AppliedToClass)
+    {
+    // Class description defines if we expect the property to be shown or hidden
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" namespacePrefix="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+            <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.13" prefix="bsca"/>
+            <ECClass typeName="A" isDomainClass="true" description="Hide">
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <Hidden>true</Hidden>
+                        <HideInstances>true</HideInstances>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+            <ECClass typeName="B" isDomainClass="true" description="Show">
+                <BaseClass>A</BaseClass>
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <Hidden>false</Hidden>
+                        <HideInstances>false</HideInstances>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+            <ECClass typeName="C" isDomainClass="true" description="Show">
+                <BaseClass>A</BaseClass>
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <Hidden>false</Hidden>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+            <ECClass typeName="D" isDomainClass="true" description="Show">
+                <BaseClass>A</BaseClass>
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <HideInstances>false</HideInstances>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+            <ECClass typeName="E" isDomainClass="true" description="Hide">
+                <ECCustomAttributes>
+                    <DisplayOptions xmlns="Bentley_Standard_CustomAttributes.01.13">
+                        <Hidden>true</Hidden>
+                        <HideInstances>true</HideInstances>
+                        <HideRelated>false</HideRelated>
+                    </DisplayOptions>
+                </ECCustomAttributes>
+            </ECClass>
+        </ECSchema>
+    )xml";
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    ASSERT_TRUE(schema.IsValid());
+    EXPECT_EQ(1, schema->GetReferencedSchemas().size());
+
+    EXPECT_TRUE(ECSchemaConverter::Convert(*schema));
+    verifySchemaReferencesOnlyCoreCAs(schema.get());
+
+    for (const auto& ecClass : schema->GetClasses())
+        {
+        if (ecClass->GetDescription().Equals("Hide"))
+            verifyClassHidden(ecClass);
+        else if (ecClass->GetDescription().Equals("Show"))
+            verifyClassNotHidden(ecClass);
+        else
+            EXPECT_TRUE(false) << ecClass->GetName().c_str() <<
+            " class must specify 'Hide' or 'Show' in its description to identify it as a class that should be hidden or shown";
+        }
     }
 
 //---------------------------------------------------------------------------------------

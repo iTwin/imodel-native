@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="Source Files\CustomAttributeConversion">
+      <UniqueIdentifier>{11adc197-be69-46d3-9656-cb9acd7813ad}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Published\MacroTests.cpp">
@@ -57,15 +60,6 @@
     <ClCompile Include="TestFixture\TestFixture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\ValueValidationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\CustomAttributeConversionsTest.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Published\SchemaVersionConverstionTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Published\ExtendedTypeTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -94,6 +88,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Published\MixinTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\KindOfQuantityTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\SchemaVersionConversionTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\PropertyCategoryTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\PropertyTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\CustomAttributeConversionsTest.cpp">
+      <Filter>Source Files\CustomAttributeConversion</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\CustomAttributeUnitsConversionTests.cpp">
+      <Filter>Source Files\CustomAttributeConversion</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\ECEnumerationTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

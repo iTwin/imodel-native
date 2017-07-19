@@ -36,22 +36,13 @@
     <ClCompile Include="NonPublished\AdhocPropertyTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="NonPublished\CGBinarySerializationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="NonPublished\SchemaLocalizationTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\PropertyOverrideTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\AccessorTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\ValueTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NonPublished\CGSerializationTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="NonPublished\SchemaTests.cpp">

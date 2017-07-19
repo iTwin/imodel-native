@@ -13,10 +13,14 @@ BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Robert.Schili                  02/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void KindOfQuantity::SetName(Utf8CP name)
+ECObjectsStatus KindOfQuantity::SetName(Utf8CP name)
     {
+    if (!ECNameValidation::IsValidName(name))
+        return ECObjectsStatus::InvalidName;
+
     m_validatedName.SetName(name);
     m_fullName = GetSchema().GetName() + ":" + GetName();
+    return ECObjectsStatus::Success;
     }
 
 //TODO: add string representation for FUS once we can call ToText on invalid FUS.
@@ -79,7 +83,7 @@ Utf8String KindOfQuantity::GetQualifiedName(ECSchemaCR primarySchema) const
     }
 
 //Following two methods need to be exported as the ValidatedName struct does not export its methods.
-void KindOfQuantity::SetDisplayLabel(Utf8CP value) { m_validatedName.SetDisplayLabel(value); }
+ECObjectsStatus KindOfQuantity::SetDisplayLabel(Utf8CP value) {m_validatedName.SetDisplayLabel(value); return ECObjectsStatus::Success;}
 
 ECObjectsStatus KindOfQuantity::ParseName(Utf8StringR alias, Utf8StringR kindOfQuantityName, Utf8StringCR stringToParse)
     {
@@ -125,6 +129,28 @@ Utf8StringCR KindOfQuantity::GetDisplayLabel() const
 Utf8StringCR KindOfQuantity::GetDescription() const 
     { 
     return GetSchema().GetLocalizedStrings().GetKindOfQuantityDescription(*this, m_description); 
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool KindOfQuantity::AddPresentationUnit(Formatting::FormatUnitSet presentationFUS)
+    {
+    if (presentationFUS.HasProblem())
+        return false;
+
+    m_presentationFUS.push_back(presentationFUS);
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+void KindOfQuantity::RemovePresentationUnit(Formatting::FormatUnitSet presentationFUS)
+    {
+    for (auto itor = m_presentationFUS.begin(); itor != m_presentationFUS.end(); itor++)
+        if (Units::Unit::AreEqual(itor->GetUnit(), presentationFUS.GetUnit()))
+            m_presentationFUS.erase(itor);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -190,28 +216,14 @@ SchemaWriteStatus KindOfQuantity::WriteXml (BeXmlWriterR xmlWriter, ECVersion ec
 SchemaReadStatus KindOfQuantity::ReadXml(BeXmlNodeR kindOfQuantityNode, ECSchemaReadContextR context)
     {
     Utf8String value;      // used by the macros.
+
     if (GetName().length() == 0)
-        {
-        if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, TYPE_NAME_ATTRIBUTE))
-            {
-            LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", TYPE_NAME_ATTRIBUTE, kindOfQuantityNode.GetName());
-            return SchemaReadStatus::InvalidECSchemaXml;
-            }
+        READ_REQUIRED_XML_ATTRIBUTE(kindOfQuantityNode, TYPE_NAME_ATTRIBUTE, this, Name, kindOfQuantityNode.GetName())
 
-        SetName(value.c_str());
-        }
+    READ_OPTIONAL_XML_ATTRIBUTE(kindOfQuantityNode, DISPLAY_LABEL_ATTRIBUTE, this, DisplayLabel)
+    READ_OPTIONAL_XML_ATTRIBUTE(kindOfQuantityNode, DESCRIPTION_ATTRIBUTE, this, Description)
 
-    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, DESCRIPTION_ATTRIBUTE))
-        {
-        SetDescription(value.c_str());
-        }
-
-    if (BEXML_Success == kindOfQuantityNode.GetAttributeStringValue(value, DISPLAY_LABEL_ATTRIBUTE))
-        {
-        SetDisplayLabel(value.c_str());
-        }
-    
-    if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE))
+    if (BEXML_Success != kindOfQuantityNode.GetAttributeStringValue(value, PERSISTENCE_UNIT_ATTRIBUTE) || Utf8String::IsNullOrEmpty(value.c_str()))
         {
         LOG.errorv("Invalid ECSchemaXML: %s element must contain a %s attribute", kindOfQuantityNode.GetName(), PERSISTENCE_UNIT_ATTRIBUTE);
         return SchemaReadStatus::InvalidECSchemaXml;
@@ -324,6 +336,3 @@ Json::Value KindOfQuantity::GetPresentationsJson(bool useAlias) const
     }
 
 END_BENTLEY_ECOBJECT_NAMESPACE
-
-
-

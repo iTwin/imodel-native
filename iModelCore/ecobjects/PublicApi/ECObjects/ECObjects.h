@@ -57,13 +57,16 @@ EC_TYPEDEFS(ECStructClass);
 EC_TYPEDEFS(ECRelationshipClass);
 EC_TYPEDEFS(ECRelationshipConstraint);
 EC_TYPEDEFS(RelationshipMultiplicity);
+EC_TYPEDEFS(ECSchemaCache);
+EC_TYPEDEFS(PropertyCategory);
+EC_TYPEDEFS(PropertyCategoryContainer);
+
 EC_TYPEDEFS(IECInstance);
 EC_TYPEDEFS(IECInstanceInterface);
 EC_TYPEDEFS(IECRelationshipInstance);
 EC_TYPEDEFS(IECSchemaLocater);
 EC_TYPEDEFS(IECCustomAttributeContainer);
 EC_TYPEDEFS(ECInstanceReadContext);
-EC_TYPEDEFS(ECSchemaCache);
 EC_TYPEDEFS(ECPropertyValue);
 EC_TYPEDEFS(IECWipRelationshipInstance);
 EC_TYPEDEFS(ECRelationshipInstanceHolder);
@@ -103,9 +106,9 @@ EC_TYPEDEFS (Unit);
 EC_TYPEDEFS (UnitConverter);
 
 #ifndef DOCUMENTATION_GENERATOR
-EC_TYPEDEFS (AdhocPropertyMetadata);
-EC_TYPEDEFS (AdhocPropertyQuery);
-EC_TYPEDEFS (AdhocPropertyEdit);
+EC_TYPEDEFS (AdHocPropertyMetadata);
+EC_TYPEDEFS (AdHocPropertyQuery);
+EC_TYPEDEFS (AdHocPropertyEdit);
 #endif
 
 struct IStream;
@@ -174,6 +177,7 @@ enum class ECObjectsStatus
     InvalidPrimitiveOverrride,
     UnableToSetMixinCustomAttribute,
     KindOfQuantityNotCompatible,
+    InvalidFormatUnitSet,
     };
 
 //! Result status for deserializing an ECSchema from Xml
@@ -540,6 +544,14 @@ struct ECEnumerationId : BeInt64Id
 struct KindOfQuantityId : BeInt64Id
     {
     BEINT64_ID_DECLARE_MEMBERS(KindOfQuantityId, BeInt64Id)
+    };
+
+//=======================================================================================
+//! @bsiclass
+//=======================================================================================
+struct PropertyCategoryId : BeInt64Id
+    {
+    BEINT64_ID_DECLARE_MEMBERS(PropertyCategoryId, BeInt64Id)
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

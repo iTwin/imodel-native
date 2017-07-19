@@ -50,7 +50,6 @@
   <ItemDefinitionGroup>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AdHocJsonContainer.cpp" />
     <ClCompile Include="CalculatedProperty.cpp" />
     <ClCompile Include="DateTimeInfoAccessor.cpp" />
     <ClCompile Include="DesignByContract.cpp" />
@@ -58,14 +57,12 @@
     <ClCompile Include="ECcontext.cpp" />
     <ClCompile Include="ECCustomAttribute.cpp" />
     <ClCompile Include="ECDBuffer.cpp" />
-    <ClCompile Include="ECDiff.cpp" />
     <ClCompile Include="ECEnabler.cpp" />
     <ClCompile Include="ECInstance.cpp" />
     <ClCompile Include="ECJsonUtilities.cpp" />
     <ClCompile Include="ECObjectsPch.cpp" />
     <ClCompile Include="ECProperty.cpp" />
     <ClCompile Include="ECQuantityFormatting.cpp" />
-    <ClCompile Include="ecprovider.cpp" />
     <ClCompile Include="ECRelationshipPath.cpp" />
     <ClCompile Include="ECSchema.cpp" />
     <ClCompile Include="ECEnumeration.cpp" />
@@ -108,6 +105,7 @@
     <ClCompile Include="presentation\PresentationRules\SortingRule.cpp" />
     <ClCompile Include="presentation\PresentationRules\StyleOverride.cpp" />
     <ClCompile Include="presentation\PresentationRules\UserSettingsGroup.cpp" />
+    <ClCompile Include="PropertyCategory.cpp" />
     <ClCompile Include="SchemaLocalizedStrings.cpp" />
     <ClCompile Include="SchemaResourceKeyHelper.cpp" />
     <ClCompile Include="SchemaXml.cpp" />
@@ -125,7 +123,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\DesignByContract.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECContext.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECDBuffer.h" />
-    <ClInclude Include="..\PublicApi\ECObjects\ECDiff.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECEnabler.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressionNode.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECExpressions.h" />
@@ -140,7 +137,6 @@
     <ClInclude Include="..\PublicApi\ECObjects\ECSchemaValidator.h" />
     <ClInclude Include="..\PublicApi\ECObjects\ECValue.h" />
     <ClInclude Include="..\PublicApi\ECObjects\PresentationMetadataHelper.h" />
-    <ClInclude Include="..\PublicApi\ECObjects\SchemaDiff.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaLocalizedStrings.h" />
     <ClInclude Include="..\PublicApi\ECObjects\SchemaResourceKeyHelper.h" />
     <ClInclude Include="..\PublicApi\ECObjects\StandaloneECRelationshipInstance.h" />

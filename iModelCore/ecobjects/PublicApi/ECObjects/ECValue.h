@@ -702,7 +702,7 @@ struct ECValue
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct AdhocPropertyMetadata
+struct AdHocPropertyMetadata
     {
     protected:
         enum class Index
@@ -718,14 +718,14 @@ struct AdhocPropertyMetadata
             MAX
             };
     private:
-        friend struct AdhocPropertyQuery;
-        friend struct AdhocPropertyEdit;
+        friend struct AdHocPropertyQuery;
+        friend struct AdHocPropertyEdit;
 
         Utf8String              m_metadataPropertyNames[(size_t) Index::MAX];    // the property names within the struct class holding the ad-hoc values and metadata
         uint32_t                m_containerIndex;                       // the property index of the struct array holding ad-hoc properties within the host's ECClass
 
-        AdhocPropertyMetadata(ECEnablerCR enabler, Utf8CP containerAccessString, bool loadMetadata);
-        AdhocPropertyMetadata(ECEnablerCR enabler, uint32_t containerPropertyIndex, bool loadMetadata);
+        AdHocPropertyMetadata(ECEnablerCR enabler, Utf8CP containerAccessString, bool loadMetadata);
+        AdHocPropertyMetadata(ECEnablerCR enabler, uint32_t containerPropertyIndex, bool loadMetadata);
 
         bool                    Init(ECEnablerCR enabler, uint32_t containerPropertyIndex, bool loadMetadata);
     protected:
@@ -735,8 +735,8 @@ struct AdhocPropertyMetadata
         static bool             PrimitiveTypeForCode(PrimitiveType& primType, int32_t code);
         static bool             CodeForPrimitiveType(int32_t& code, PrimitiveType primType);
     public:
-        ECOBJECTS_EXPORT AdhocPropertyMetadata(ECEnablerCR enabler, Utf8CP containerAccessString);
-        ECOBJECTS_EXPORT AdhocPropertyMetadata(ECEnablerCR enabler, uint32_t containerPropertyIndex);
+        ECOBJECTS_EXPORT AdHocPropertyMetadata(ECEnablerCR enabler, Utf8CP containerAccessString);
+        ECOBJECTS_EXPORT AdHocPropertyMetadata(ECEnablerCR enabler, uint32_t containerPropertyIndex);
 
         ECOBJECTS_EXPORT bool   IsSupported() const;
         uint32_t                GetContainerPropertyIndex() const { return m_containerIndex; }
@@ -750,20 +750,20 @@ typedef RefCountedPtr<StandaloneECEnabler>  StandaloneECEnablerPtr;
 * Provides read-only access to ad-hoc properties defined on an IECInstance.
 * Ad-hoc properties are name-value pairs stored in a struct array property on an IECInstance.
 * In order for an IECInstance to support ad-hoc properties, its ECClass must define an
-* AdhocPropertySpecification custom attribute containing the name of a struct array property
-* with an attached AdhocPropertyContainerDefinition custom attribute specifying, at minimum,
+* AdHocPropertySpecification custom attribute containing the name of a struct array property
+* with an attached AdHocPropertyContainerDefinition custom attribute specifying, at minimum,
 * the names of properties to hold the name and value of each ad-hoc property. Additional
 * property names can specify metadata like primitive type, dispaly label, extended type,
 * EC unit name, and read-only state.
 * @bsistruct                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct AdhocPropertyQuery : AdhocPropertyMetadata
+struct AdHocPropertyQuery : AdHocPropertyMetadata
     {
     private:
         IECInstanceCR           m_host;
     public:
-        ECOBJECTS_EXPORT AdhocPropertyQuery(IECInstanceCR host, Utf8CP containerAccessString);
-        ECOBJECTS_EXPORT AdhocPropertyQuery(IECInstanceCR host, uint32_t containerPropertyIndex);
+        ECOBJECTS_EXPORT AdHocPropertyQuery(IECInstanceCR host, Utf8CP containerAccessString);
+        ECOBJECTS_EXPORT AdHocPropertyQuery(IECInstanceCR host, uint32_t containerPropertyIndex);
 
         IECInstanceCR                       GetHost() const { return m_host; }
 
@@ -795,11 +795,11 @@ struct AdhocPropertyQuery : AdhocPropertyMetadata
 * Provides read-write access to ad-hoc properties defined on an IECInstance.
 * @bsistruct                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct AdhocPropertyEdit : AdhocPropertyQuery
+struct AdHocPropertyEdit : AdHocPropertyQuery
     {
     public:
-        ECOBJECTS_EXPORT AdhocPropertyEdit(IECInstanceR host, Utf8CP containerAccessString);
-        ECOBJECTS_EXPORT AdhocPropertyEdit(IECInstanceR host, uint32_t containerPropertyIndex);
+        ECOBJECTS_EXPORT AdHocPropertyEdit(IECInstanceR host, Utf8CP containerAccessString);
+        ECOBJECTS_EXPORT AdHocPropertyEdit(IECInstanceR host, uint32_t containerPropertyIndex);
 
         IECInstanceR            GetHostR() { return const_cast<IECInstanceR>(GetHost()); }
 
@@ -812,7 +812,7 @@ struct AdhocPropertyEdit : AdhocPropertyQuery
         ECOBJECTS_EXPORT ECObjectsStatus    Add(Utf8CP name, ECValueCR v, Utf8CP displayLabel = nullptr, Utf8CP unitName = nullptr, Utf8CP extendedTypeName = nullptr, bool isReadOnly = false, bool hidden = false);
         ECOBJECTS_EXPORT ECObjectsStatus    Remove(uint32_t index);
         ECOBJECTS_EXPORT ECObjectsStatus    Clear();
-        ECOBJECTS_EXPORT ECObjectsStatus    CopyFrom(AdhocPropertyQueryCR src, bool preserveValues);
+        ECOBJECTS_EXPORT ECObjectsStatus    CopyFrom(AdHocPropertyQueryCR src, bool preserveValues);
 
         // For setting additional ad-hoc metadata
         ECOBJECTS_EXPORT ECObjectsStatus    SetValue(uint32_t index, Utf8CP accessor, ECValueCR v);
@@ -823,12 +823,12 @@ struct AdhocPropertyEdit : AdhocPropertyQuery
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   12/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct AdhocContainerPropertyIndexCollection
+struct AdHocContainerPropertyIndexCollection
     {
     private:
         ECEnablerCR     m_enabler;
     public:
-        AdhocContainerPropertyIndexCollection(ECEnablerCR enabler) : m_enabler(enabler) {}
+        AdHocContainerPropertyIndexCollection(ECEnablerCR enabler) : m_enabler(enabler) {}
 
         struct const_iterator : std::iterator<std::forward_iterator_tag, uint32_t const>
             {
@@ -920,7 +920,7 @@ struct ECValueAccessor
     private:
         //"BACK" OF VECTOR IS DEEPEST ELEMENT
         LocationVector          m_locationVector;
-        bool                    m_isAdhoc;
+        bool                    m_isAdHoc;
 
         const LocationVector&   GetLocationVector() const;
 
@@ -928,7 +928,7 @@ struct ECValueAccessor
     public:
 #ifndef DOCUMENTATION_GENERATOR
         LocationVector const &   GetLocationVectorCR() const;
-        bool                                IsAdhocProperty() const { return m_isAdhoc; }
+        bool                                IsAdHocProperty() const { return m_isAdHoc; }
 
         ECOBJECTS_EXPORT Location&          operator[] (uint32_t depth);
 
@@ -1028,7 +1028,7 @@ struct ECValueAccessor
         ECOBJECTS_EXPORT Utf8String             GetPropertyName() const;
 
         //! Constructs an empty ECValueAccessor.
-        ECOBJECTS_EXPORT ECValueAccessor() : m_isAdhoc(false) {}
+        ECOBJECTS_EXPORT ECValueAccessor() : m_isAdHoc(false) {}
 
         //! Constructs a copy of a ECValueAccessor.
         //! @param[in]      accessor         The accessor to be copied.
@@ -1068,7 +1068,7 @@ struct ECValueAccessor
         //! @private
         ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor(ECValueAccessor& va, ECEnablerCR enabler, Utf8CP managedPropertyAccessor);
 #ifndef DOCUMENTATION_GENERATOR
-        ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor(ECValueAccessor& va, IECInstanceCR instance, Utf8CP managedPropertyAccessor, bool includeAdhocs);
+        ECOBJECTS_EXPORT static ECObjectsStatus PopulateValueAccessor(ECValueAccessor& va, IECInstanceCR instance, Utf8CP managedPropertyAccessor, bool includeAdHocs);
         // We have modified an ECClass and have an ECValueAccessor defined in terms of the old ECClass. Remap it to refer to the new ECClass.
         ECOBJECTS_EXPORT static ECObjectsStatus RemapValueAccessor(ECValueAccessor& newVa, ECEnablerCR newEnabler, ECValueAccessorCR oldVa, IECSchemaRemapperCR remapper);
         // We have modified an ECClass and have an access string defined in terms of the old ECClass. Populate it according to the new ECClass, remapping property names as appropriate.

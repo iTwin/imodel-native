@@ -2,7 +2,7 @@
 |
 |     $Source: test/NonPublished/AdhocPropertyTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -12,14 +12,14 @@
 #include <ECObjects/StandaloneECInstance.h>
 #include <ECObjects/ECValue.h>
 
-using namespace BentleyApi::ECN;
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 /*---------------------------------------------------------------------------------**//**
 * @bsiclass                                                    Paul.Connelly   10/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct AdhocPropertyTest : ECTestFixture
+struct AdHocPropertyTest : ECTestFixture
     {
     protected:
         ECSchemaPtr         m_schema;
@@ -28,7 +28,7 @@ struct AdhocPropertyTest : ECTestFixture
         Utf8CP const s_schemaXml =
             "<?xml version='1.0' encoding='utf-8'?>"
             "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-            "   <ECStructClass typeName = 'AdhocHolder'>"
+            "   <ECStructClass typeName = 'AdHocHolder'>"
             "       <ECCustomAttributes>"
             "           <AdhocPropertyContainerDefinition xmlns='Bentley_Standard_CustomAttributes.01.10'>"
             "               <NameProperty>Name</NameProperty>"
@@ -48,16 +48,16 @@ struct AdhocPropertyTest : ECTestFixture
             "       <ECProperty propertyName='ExtendType' typeName='string' />"
             "       <ECProperty propertyName='IsReadOnly' typeName='boolean' />"
             "   </ECStructClass>"
-            "   <ECEntityClass typeName = 'NoAdhocs'>"
-            "       <ECProperty propertyName = 'NotAdhoc' typeName = 'string' />"
+            "   <ECEntityClass typeName = 'NoAdHocs'>"
+            "       <ECProperty propertyName = 'NotAdHoc' typeName = 'string' />"
             "   </ECEntityClass>"
-            "   <ECEntityClass typeName = 'Adhocs'>"
+            "   <ECEntityClass typeName = 'AdHocs'>"
             "       <ECCustomAttributes>"
             "           <AdhocPropertySpecification xmlns='Bentley_Standard_CustomAttributes.01.10'>"
-            "               <AdhocPropertyContainer>AdhocHolder</AdhocPropertyContainer>"
+            "               <AdHocPropertyContainer>AdHocHolder</AdHocPropertyContainer>"
             "           </AdhocPropertySpecification>"
             "       </ECCustomAttributes>"
-            "       <ECStructArrayProperty propertyName = 'AdhocHolder' typeName = 'AdhocHolder' />"
+            "       <ECStructArrayProperty propertyName = 'AdHocHolder' typeName = 'AdHocHolder' />"
             "   </ECEntityClass>"
             "</ECSchema>";
 
@@ -70,158 +70,158 @@ struct AdhocPropertyTest : ECTestFixture
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdhocPropertyTest, SwapAdhocProperties)
+TEST_F(AdHocPropertyTest, SwapAdHocProperties)
     {
-    IECInstancePtr instance = m_schema->GetClassP("Adhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
-    AdhocPropertyEdit adhocs(*instance, "AdhocHolder");
-    EXPECT_TRUE(adhocs.IsSupported());
-    EXPECT_EQ(0, adhocs.GetCount());
+    IECInstancePtr instance = m_schema->GetClassP("adHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
+    AdHocPropertyEdit adHocs(*instance, "AdHocHolder");
+    EXPECT_TRUE(adHocs.IsSupported());
+    EXPECT_EQ(0, adHocs.GetCount());
 
-    //Add 1st adhoc Property
+    //Add 1st AdHoc Property
     ECValue v;
     uint32_t propertyOneIdx;
     v.SetUtf8CP("property one", false);
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Add("propertyone", v, "Property One"));
-    EXPECT_EQ(1, adhocs.GetCount());
-    EXPECT_TRUE(adhocs.GetPropertyIndex(propertyOneIdx, "propertyone"));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.Add("propertyone", v, "Property One"));
+    EXPECT_EQ(1, adHocs.GetCount());
+    EXPECT_TRUE(adHocs.GetPropertyIndex(propertyOneIdx, "propertyone"));
 
     //test metadata
     bool isReadOnly;
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.IsReadOnly(isReadOnly, propertyOneIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.IsReadOnly(isReadOnly, propertyOneIdx));
     EXPECT_FALSE(isReadOnly);
 
     bool isHidden;
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.IsHidden(isHidden, propertyOneIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.IsHidden(isHidden, propertyOneIdx));
     EXPECT_FALSE(isHidden);
 
     Utf8String str;
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetDisplayLabel(str, propertyOneIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetDisplayLabel(str, propertyOneIdx));
     EXPECT_TRUE(str.Equals("Property One"));
     PrimitiveType type;
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetPrimitiveType(type, propertyOneIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetPrimitiveType(type, propertyOneIdx));
     EXPECT_TRUE(PRIMITIVETYPE_String == type);
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetUnitName(str, propertyOneIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetUnitName(str, propertyOneIdx));
     EXPECT_TRUE(str.empty());
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetExtendedTypeName(str, propertyOneIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetExtendedTypeName(str, propertyOneIdx));
     EXPECT_TRUE(str.empty());
 
     //test value
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetValue(v, propertyOneIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetValue(v, propertyOneIdx));
     EXPECT_EQ(0, strcmp(v.GetUtf8CP(), "property one"));
 
     //test value from instance
     EXPECT_EQ(ECObjectsStatus::PropertyNotFound, instance->GetValue(v, "propertyone"));
-    EXPECT_EQ(ECObjectsStatus::Success, instance->GetValueOrAdhoc(v, "propertyone"));    // include ad-hoc properties
+    EXPECT_EQ(ECObjectsStatus::Success, instance->GetValueOrAdHoc(v, "propertyone"));    // include ad-hoc properties
     EXPECT_EQ(0, strcmp(v.GetUtf8CP(), "property one"));
 
-    //Add 2nd adhoc Property
+    //Add 2nd AdHoc Property
     ECValue v1;
     uint32_t propertyTwoIdx;
     v1.SetUtf8CP("property", false);
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Add("property2", v));
-    EXPECT_EQ(2, adhocs.GetCount());
-    EXPECT_TRUE(adhocs.GetPropertyIndex(propertyTwoIdx, "property2"));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.Add("property2", v));
+    EXPECT_EQ(2, adHocs.GetCount());
+    EXPECT_TRUE(adHocs.GetPropertyIndex(propertyTwoIdx, "property2"));
 
     //set additional metadata
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.SetIsReadOnly(propertyTwoIdx, true));
-    EXPECT_EQ(ECObjectsStatus::OperationNotSupported, adhocs.SetIsHidden(propertyTwoIdx, false));//cross check why ishidden can't be set
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.SetDisplayLabel(propertyTwoIdx, "Property Two"));
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.SetName(propertyTwoIdx, "propertytwo"));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetIsReadOnly(propertyTwoIdx, true));
+    EXPECT_EQ(ECObjectsStatus::OperationNotSupported, adHocs.SetIsHidden(propertyTwoIdx, false));//cross check why ishidden can't be set
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetDisplayLabel(propertyTwoIdx, "Property Two"));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetName(propertyTwoIdx, "propertytwo"));
     v1.SetUtf8CP("property two", false);
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.SetValue(propertyTwoIdx, v1));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetValue(propertyTwoIdx, v1));
 
     //Swap properties based on index
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Swap(propertyOneIdx, propertyTwoIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.Swap(propertyOneIdx, propertyTwoIdx));
 
     //verify display label after swap
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetDisplayLabel(str, propertyOneIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetDisplayLabel(str, propertyOneIdx));
     EXPECT_TRUE(str.Equals("Property Two"));
 
-    //remove adhoc property
-    EXPECT_EQ(2, adhocs.GetCount());
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Remove(propertyOneIdx));
-    EXPECT_EQ(1, adhocs.GetCount());
-    EXPECT_FALSE(adhocs.GetPropertyIndex(propertyOneIdx, "time"));
-    EXPECT_TRUE(adhocs.GetPropertyIndex(propertyOneIdx, "propertyone"));
+    //remove AdHoc property
+    EXPECT_EQ(2, adHocs.GetCount());
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.Remove(propertyOneIdx));
+    EXPECT_EQ(1, adHocs.GetCount());
+    EXPECT_FALSE(adHocs.GetPropertyIndex(propertyOneIdx, "time"));
+    EXPECT_TRUE(adHocs.GetPropertyIndex(propertyOneIdx, "propertyone"));
 
-    //remove all adhoc properties
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Clear());
-    EXPECT_EQ(0, adhocs.GetCount());
+    //remove all AdHoc properties
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.Clear());
+    EXPECT_EQ(0, adHocs.GetCount());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdhocPropertyTest, InvalidCases)
+TEST_F(AdHocPropertyTest, InvalidCases)
     {
-    IECInstancePtr noAdhocs = m_schema->GetClassP("NoAdhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
-    EXPECT_FALSE(AdhocPropertyQuery(*noAdhocs, "NONE").IsSupported());
+    IECInstancePtr noAdHocs = m_schema->GetClassP("NoAdHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_FALSE(AdHocPropertyQuery(*noAdHocs, "NONE").IsSupported());
 
-    IECInstancePtr instance = m_schema->GetClassP("Adhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
-    AdhocPropertyEdit adhocs(*instance, "AdhocHolder");
-    EXPECT_TRUE(adhocs.IsSupported());
-    EXPECT_EQ(0, adhocs.GetCount());
+    IECInstancePtr instance = m_schema->GetClassP("AdHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
+    AdHocPropertyEdit adHocs(*instance, "AdHocHolder");
+    EXPECT_TRUE(adHocs.IsSupported());
+    EXPECT_EQ(0, adHocs.GetCount());
 
-    //Try to find non-existent adhoc
+    //Try to find non-existent AdHoc
     uint32_t propIdx;
-    EXPECT_FALSE(adhocs.GetPropertyIndex(propIdx, "DoesNotExist"));
+    EXPECT_FALSE(adHocs.GetPropertyIndex(propIdx, "DoesNotExist"));
 
     //Name must be valid
     ECValue v;
-    EXPECT_EQ(ECObjectsStatus::Error, adhocs.Add(nullptr, v));
-    EXPECT_EQ(ECObjectsStatus::Error, adhocs.Add("Not a Valid EC Name", v));
+    EXPECT_EQ(ECObjectsStatus::Error, adHocs.Add(nullptr, v));
+    EXPECT_EQ(ECObjectsStatus::Error, adHocs.Add("Not a Valid EC Name", v));
 
     //Value must be null or primitive
-    v.SetStruct(m_schema->GetClassP("AdhocHolder")->GetDefaultStandaloneEnabler()->CreateInstance().get());
-    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, adhocs.Add("Struct", v));
+    v.SetStruct(m_schema->GetClassP("AdHocHolder")->GetDefaultStandaloneEnabler()->CreateInstance().get());
+    EXPECT_EQ(ECObjectsStatus::DataTypeMismatch, adHocs.Add("Struct", v));
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdhocPropertyTest, AddPropertyWithOptionalMetadata)
+TEST_F(AdHocPropertyTest, AddPropertyWithOptionalMetadata)
     {
-    IECInstancePtr instance = m_schema->GetClassP("Adhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
-    AdhocPropertyEdit adhocs(*instance, "AdhocHolder");
-    EXPECT_TRUE(adhocs.IsSupported());
-    EXPECT_EQ(0, adhocs.GetCount());
+    IECInstancePtr instance = m_schema->GetClassP("AdHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
+    AdHocPropertyEdit adHocs(*instance, "AdHocHolder");
+    EXPECT_TRUE(adHocs.IsSupported());
+    EXPECT_EQ(0, adHocs.GetCount());
 
     // add with additional optional metadata
     ECValue v;
     uint32_t propIdx;
 
     v.SetDouble(1234.0);
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Add("DoorHeight", v, "Door Height", "Meters", "Distance", true, false));
-    EXPECT_EQ(1, adhocs.GetCount());
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.Add("DoorHeight", v, "Door Height", "Meters", "Distance", true, false));
+    EXPECT_EQ(1, adHocs.GetCount());
 
-    EXPECT_TRUE(adhocs.GetPropertyIndex(propIdx, "DoorHeight"));
+    EXPECT_TRUE(adHocs.GetPropertyIndex(propIdx, "DoorHeight"));
 
     Utf8String str;
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetName(str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetName(str, propIdx));
     EXPECT_TRUE(str.Equals("DoorHeight"));
 
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetDisplayLabel(str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetDisplayLabel(str, propIdx));
     EXPECT_TRUE(str.Equals("Door Height"));
 
     PrimitiveType type;
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetPrimitiveType(type, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetPrimitiveType(type, propIdx));
     EXPECT_TRUE(PRIMITIVETYPE_Double == type);
 
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetExtendedTypeName(str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetExtendedTypeName(str, propIdx));
     EXPECT_TRUE(str.Equals("Distance"));
 
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetUnitName(str, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetUnitName(str, propIdx));
     EXPECT_TRUE(str.Equals("Meters"));
 
     bool isReadOnly;
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.IsReadOnly(isReadOnly, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.IsReadOnly(isReadOnly, propIdx));
     EXPECT_TRUE(isReadOnly);
 
     bool isHidden;
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.IsHidden(isHidden, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.IsHidden(isHidden, propIdx));
     EXPECT_FALSE(isHidden);
 
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetValue(v, propIdx));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetValue(v, propIdx));
     EXPECT_TRUE(v.IsDouble());
     EXPECT_EQ(v.GetDouble(), 1234.0);
     }
@@ -229,12 +229,12 @@ TEST_F(AdhocPropertyTest, AddPropertyWithOptionalMetadata)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdhocPropertyTest, VerifyReadOnlyAdhocProperty)
+TEST_F(AdHocPropertyTest, VerifyReadOnlyAdHocProperty)
     {
-    IECInstancePtr instance = m_schema->GetClassP("Adhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
-    AdhocPropertyEdit adhocs(*instance, "AdhocHolder");
-    EXPECT_TRUE(adhocs.IsSupported());
-    EXPECT_EQ(0, adhocs.GetCount());
+    IECInstancePtr instance = m_schema->GetClassP("AdHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
+    AdHocPropertyEdit adHocs(*instance, "AdHocHolder");
+    EXPECT_TRUE(adHocs.IsSupported());
+    EXPECT_EQ(0, adHocs.GetCount());
 
     // add with additional optional metadata
     ECValue v;
@@ -242,23 +242,23 @@ TEST_F(AdhocPropertyTest, VerifyReadOnlyAdhocProperty)
 
     v.SetDouble(1234.0);
     v.SetIsReadOnly(true);
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Add("DoorHeight", v, "Door Height", "Meters", "Distance", true));
-    EXPECT_EQ(1, adhocs.GetCount());
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.Add("DoorHeight", v, "Door Height", "Meters", "Distance", true));
+    EXPECT_EQ(1, adHocs.GetCount());
     EXPECT_TRUE(v.IsReadOnly());
 
-    EXPECT_TRUE(adhocs.GetPropertyIndex(propIdx, "DoorHeight"));
+    EXPECT_TRUE(adHocs.GetPropertyIndex(propIdx, "DoorHeight"));
 
     //Property is read-only
     v.SetDouble(5678.0);
-    EXPECT_TRUE(instance->IsPropertyOrAdhocReadOnly("DoorHeight"));
+    EXPECT_TRUE(instance->IsPropertyOrAdHocReadOnly("DoorHeight"));
     EXPECT_EQ(ECObjectsStatus::PropertyNotFound, instance->SetValue("DoorHeight", v));
-    EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->SetValueOrAdhoc("DoorHeight", v));
+    EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->SetValueOrAdHoc("DoorHeight", v));
     EXPECT_EQ(ECObjectsStatus::PropertyNotFound, instance->ChangeValue("DoorHeight", v));
-    EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->ChangeValueOrAdhoc("DoorHeight", v));
+    EXPECT_EQ(ECObjectsStatus::UnableToSetReadOnlyProperty, instance->ChangeValueOrAdHoc("DoorHeight", v));
 
-    //can set read-only property through adhoc API
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.SetValue(propIdx, v));
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.GetValue(v, propIdx));
+    //can set read-only property through AdHoc API
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.SetValue(propIdx, v));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.GetValue(v, propIdx));
     EXPECT_EQ(v.GetDouble(), 5678.0);
     EXPECT_FALSE(v.IsReadOnly());
     }
@@ -266,20 +266,20 @@ TEST_F(AdhocPropertyTest, VerifyReadOnlyAdhocProperty)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     06/16
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(AdhocPropertyTest, GetAdhocPropertyUsingECValueAccessor)
+TEST_F(AdHocPropertyTest, GetAdHocPropertyUsingECValueAccessor)
     {
-    IECInstancePtr instance = m_schema->GetClassP("Adhocs")->GetDefaultStandaloneEnabler()->CreateInstance();
-    AdhocPropertyEdit adhocs(*instance, "AdhocHolder");
-    EXPECT_TRUE(adhocs.IsSupported());
-    EXPECT_EQ(0, adhocs.GetCount());
+    IECInstancePtr instance = m_schema->GetClassP("AdHocs")->GetDefaultStandaloneEnabler()->CreateInstance();
+    AdHocPropertyEdit adHocs(*instance, "AdHocHolder");
+    EXPECT_TRUE(adHocs.IsSupported());
+    EXPECT_EQ(0, adHocs.GetCount());
 
-    //Add 1st adhoc Property
+    //Add 1st AdHoc Property
     ECValue v;
     uint32_t propertyOneIdx;
     v.SetUtf8CP("property one", false);
-    EXPECT_EQ(ECObjectsStatus::Success, adhocs.Add("propertyone", v, "Property One"));
-    EXPECT_EQ(1, adhocs.GetCount());
-    EXPECT_TRUE(adhocs.GetPropertyIndex(propertyOneIdx, "propertyone"));
+    EXPECT_EQ(ECObjectsStatus::Success, adHocs.Add("propertyone", v, "Property One"));
+    EXPECT_EQ(1, adHocs.GetCount());
+    EXPECT_TRUE(adHocs.GetPropertyIndex(propertyOneIdx, "propertyone"));
 
     // Test accessing ad-hocs using ECValueAccessor
     ECValueAccessor va;

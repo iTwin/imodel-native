@@ -2,14 +2,16 @@
 |
 |     $Source: test/NonPublished/SchemaTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-using namespace BentleyApi::ECN;
+USING_NAMESPACE_BENTLEY_EC
+
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(ECObjectsStatus::Success == EXPR)
+
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct SchemaTest : ECTestFixture {};
@@ -34,79 +36,6 @@ struct TestCopySchema : ECTestFixture
             m_schemaContext->RemoveSchemaLocater (*m_schemaLocater);
             }
     };
-
-//---------------------------------------------------------------------------------**//**
-// @bsimethod                                   Raimondas.Rimkus                   02/13
-// +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F (SchemaTest, ShouldBeAbleToIterateOverECClassContainer)
-    {
-    ECSchemaPtr schema;
-    ECEntityClassP foo;
-    ECEntityClassP bar;
-
-    ECSchema::CreateSchema (schema, "TestSchema", "test", 5, 5, 5);
-    schema->CreateEntityClass (foo, "foo");
-    schema->CreateEntityClass (bar, "bar");
-
-    ClassMap classMap;
-    classMap.insert (bpair<Utf8CP, ECClassP> (foo->GetName ().c_str (), foo));
-    classMap.insert (bpair<Utf8CP, ECClassP> (bar->GetName ().c_str (), bar));
-
-    int count = 0;
-    ECClassContainer container (classMap);
-    for (ECClassContainer::const_iterator cit = container.begin (); cit != container.end (); ++cit)
-        {
-        ECClassCP ecClass = *cit;
-        Utf8String name = ecClass->GetName ();
-        count++;
-        }
-    ASSERT_EQ (2, count);
-
-    for (ECClassCP ecClass : container)
-        {
-        Utf8String name = ecClass->GetName ();
-        count++;
-        }
-    ASSERT_EQ (4, count);
-    }
-
-//---------------------------------------------------------------------------------**//**
-// @bsimethod                                   Raimondas.Rimkus                   02/13
-// +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F (SchemaTest, TestGetClassCount)
-    {
-    ECSchemaPtr schema;
-    ECEntityClassP foo;
-    ECEntityClassP bar;
-
-    ECSchema::CreateSchema (schema, "TestSchema", "test", 5, 5, 5);
-    schema->CreateEntityClass (foo, "foo");
-    schema->CreateEntityClass (bar, "bar");
-
-    ClassMap classMap;
-    classMap.insert (bpair<Utf8CP, ECClassP> (foo->GetName ().c_str (), foo));
-    classMap.insert (bpair<Utf8CP, ECClassP> (bar->GetName ().c_str (), bar));
-
-    int count = 0;
-    ECClassContainer container (classMap);
-    for (ECClassContainer::const_iterator cit = container.begin (); cit != container.end (); ++cit)
-        {
-        ECClassCP ecClass = *cit;
-        Utf8String name = ecClass->GetName ();
-        //printf("ECClass=0x%lx, name=%s\n", (uintptr_t)ecClass, name.c_str());
-        count++;
-        }
-    ASSERT_EQ (2, count);
-
-    for (ECClassCP ecClass : container)
-        {
-        Utf8String name = ecClass->GetName ();
-        //printf("ECClass=0x%lx, name=%s\n", (uintptr_t)ecClass, name.c_str());
-        count++;
-        }
-    ASSERT_EQ (4, count);
-    ASSERT_EQ (2, schema->GetClassCount ());
-    }
 
 //---------------------------------------------------------------------------------**//**
 // @bsimethod                                   Raimondas.Rimkus                   02/13
