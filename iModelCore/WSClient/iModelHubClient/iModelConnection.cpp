@@ -605,7 +605,7 @@ Utf8StringCR                     value
     EncodeIdString(encodedValue);
     encodedValue = UriEncode(encodedValue);
     
-    idString.Sprintf("%s-%s-%s", FormatBeInt64Id(codeSpecId), encodedScope.c_str(), encodedValue.c_str());
+    idString.Sprintf("%s-%s-%s", FormatBeInt64Id(codeSpecId).c_str(), encodedScope.c_str(), encodedValue.c_str());
 
     return idString;
     }
@@ -879,9 +879,9 @@ const BeBriefcaseId*  briefcaseId
     {
     Utf8String idString;
     if (nullptr == briefcaseId)
-        idString.Sprintf("%d-%s", (int) lock.GetType(), FormatBeInt64Id(lock.GetId()));
+        idString.Sprintf("%d-%s", (int) lock.GetType(), FormatBeInt64Id(lock.GetId()).c_str());
     else
-        idString.Sprintf("%d-%s-%u", (int) lock.GetType(), FormatBeInt64Id(lock.GetId()), briefcaseId->GetValue());
+        idString.Sprintf("%d-%s-%u", (int) lock.GetType(), FormatBeInt64Id(lock.GetId()).c_str(), briefcaseId->GetValue());
 
     return ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Lock, idString);
     }
