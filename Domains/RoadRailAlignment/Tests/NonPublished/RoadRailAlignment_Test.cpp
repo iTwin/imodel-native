@@ -53,6 +53,9 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_DOUBLE_EQ(-10.0, point.y);
     ASSERT_DOUBLE_EQ(5.0, point.z);
 
+    ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->GenerateAprox3dGeom());
+    ASSERT_TRUE(alignmentPtr->Update().IsValid());
+
     DistanceExpression distanceExp = alignmentPtr->ToDistanceExpression(point);
     ASSERT_DOUBLE_EQ(75.0, distanceExp.GetDistanceAlongFromStart());
     ASSERT_DOUBLE_EQ(10.0, distanceExp.GetLateralOffsetFromILinearElement().Value());
