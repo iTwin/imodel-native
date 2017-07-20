@@ -1,7 +1,7 @@
 #include "../BackDoor/PublicApi/BackDoor/RoadRailAlignment/BackDoor.h"
 #include <DgnPlatform/DgnPlatformLib.h>
 
-#include <DgnPlatform\DgnGeoCoord.h>
+#include <DgnPlatform/DgnGeoCoord.h>
 
 BEGIN_BENTLEY_ROADRAILALIGNMENT_UNITTESTS_NAMESPACE
 
@@ -68,7 +68,7 @@ struct RoadRailAlignmentProjectHostImpl : DgnPlatformLib::Host
 
     //virtual HandlerAdmin& _SupplyHandlerAdmin() override { return *new TestHandlerAdmin; }
     virtual void _SupplyProductName(Utf8StringR name) override { name.assign("RoadRailAlignmentProjectHost"); }
-    virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() { return BeSQLite::L10N::SqlangFiles(BeFileName()); } // no translatable strings
+    virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override { return BeSQLite::L10N::SqlangFiles(BeFileName()); } // no translatable strings
     };
 
 END_BENTLEY_ROADRAILALIGNMENT_UNITTESTS_NAMESPACE

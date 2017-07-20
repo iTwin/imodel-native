@@ -98,10 +98,37 @@
         <SubProduct ProductName="Gtest-RoadRailAlignment-Tests" />
         <SubPart PartName="Gtest-Tools" Repository="BeGTest" PartFile="BeGTest"/>
     </Part>
+    
+    <!-- iOS XCTest -->
+    
+    <Product Name="iOSXCTest-RoadRailAlignment-Tests">
+        <SubPart PartName="iOSXCTest" LibType="Static" />
+        <Directories DirectoryListName="iOSXCTestProduct" Repository="BeGTest" PartFile="BeGTest" />
+    </Product>
+    
+    <Part Name="iOSXCTest-Run" OnlyPlatforms="iOSARM*" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/CheckLogfilesForFailures.mke" BentleyBuildMakeOptions="-dLogFilesDir=$(BuildContext)SubParts/XCTest/Logs" >
+        <SubPart PartName="RuniOSXCTest" LibType="Static" />
+    </Part>
+    
+    <Part Name="RuniOSXCTest" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/RunXCTestProject.mke" BentleyBuildMakeOptions="-dXCTEST_PRODUCT=iOSXCTest-RoadRailAlignment-Tests -dTEST_NAME=RoadRailAlignmentTests -dIOSXCTEST_SHOW_PROGRESS=1 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOS*" >
+        <SubProduct ProductName="iOSXCTest-RoadRailAlignment-Tests" />
+        <Bindings>
+            <Files Required="false" SubPartDirectory="XCTest/Logs">Delivery/XCTest/Logs/iOSXCTest-RoadRailAlignment-Tests.log</Files>
+        </Bindings>
+    </Part>
+    
+    <Part Name="iOSXCTest" DeferType="BuildUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/iOS/MakeXCTestProject.mke" BentleyBuildMakeOptions="-dTEST_NAME=RoadRailAlignmentTests -dTEST_COLLECTION_PRODUCT=RoadRailAlignment-Tests -dTEST_FRAMEWORK_SQLANG=RoadRailAlignment_en.sqlang.db3 -dUSE_STATIC_LIBRARIES=1" OnlyPlatforms="iOSARM*">
+        <SubProduct ProductName="RoadRailAlignment-Tests" />
+        <SubPart PartName="iOSXCTest-Tools" Repository="BeGTest" PartFile="BeGTest" />
+        <Bindings>
+            <Directory ProductDirectoryName="iOSXCTestProject" SourceName="Delivery/iOSXCTest/RoadRailAlignmentTests/Project" />
+        </Bindings>
+    </Part>
 
     <!-- This part runs RoadRailAlignmentTests on platforms that support it. -->
     <Part Name="RoadRailAlignment-Tested">
         <SubPart PartName="RunGtest" />
+        <SubPart PartName="RuniOSXCTest" LibType="Static" />
     </Part>
 
 </BuildContext>
