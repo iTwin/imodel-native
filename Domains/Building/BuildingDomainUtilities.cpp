@@ -35,8 +35,8 @@ namespace BuildingDomain
 		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( Dgn::FunctionalDomain::GetDomain() , Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 			return BentleyStatus::ERROR;
 
-		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::MechanicalFunctional::MechanicalFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-			return BentleyStatus::ERROR;
+//		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::MechanicalFunctional::MechanicalFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+			//return BentleyStatus::ERROR;
 
 		return BentleyStatus::SUCCESS;
 		}
@@ -434,7 +434,13 @@ namespace BuildingDomain
 
 	Utf8String  BuildingDomainUtilities::BuildDynamicSchemaName(Utf8StringCR modelCodeName)
 		{
-		return modelCodeName + "Dynamic";
+        Utf8String schemaName = modelCodeName;
+
+        if (schemaName.Contains("") || schemaName.Contains("-"))
+            {
+            schemaName.Sprintf("RVT%d", rand());
+            }
+		return schemaName + "Dynamic";
 		}
 
 

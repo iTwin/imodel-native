@@ -29,7 +29,7 @@
                 Delivery/$(shlibprefix)BuildingDomain$(ApiNumber)$(shlibext)
             </Files>
         </Bindings>
-    </Part>
+    </Part>   
 
 
     <Part Name="BuildingPhysicalPublicAPI" BentleyBuildMakeFile="Building.prewire.mke" ApiNumber="B02">
