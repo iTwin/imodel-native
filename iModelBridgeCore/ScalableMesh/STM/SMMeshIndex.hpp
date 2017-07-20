@@ -555,7 +555,7 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
 
     if (m_pSubNodeNoSplit != nullptr)
         {
-        assert(GetNumberOfSubNodesOnSplit() == 1);
+        assert(GetNumberOfSubNodesOnSplit() == 1 || GetNumberOfSubNodesOnSplit() == 4);
         if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(m_pSubNodeNoSplit))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS, progress)) return false;
         loadChildExtentHelper(this, this->m_pSubNodeNoSplit.GetPtr());
         //disconnectChildHelper(this->m_pSubNodeNoSplit.GetPtr());
@@ -564,15 +564,18 @@ template<class POINT, class EXTENT> bool SMMeshIndexNode<POINT, EXTENT>::Publish
     else
         {
         assert(GetNumberOfSubNodesOnSplit() > 1 || this->IsLeaf());
-        for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
+        if (!this->IsLeaf())
             {
-            assert(this->m_apSubNodes[indexNode] != nullptr); // A sub node will be skipped
-            if (this->m_apSubNodes[indexNode] != nullptr)
+            for (size_t indexNode = 0; indexNode < GetNumberOfSubNodesOnSplit(); indexNode++)
                 {
-                if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS, progress)) return false;
-                loadChildExtentHelper(this, this->m_apSubNodes[indexNode].GetPtr());
-                //disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
-                //this->m_apSubNodes[indexNode] = nullptr;
+                assert(this->m_apSubNodes[indexNode] != nullptr); // A sub node will be skipped
+                if (this->m_apSubNodes[indexNode] != nullptr)
+                    {
+                    if (!static_cast<SMMeshIndexNode<POINT, EXTENT>*>(&*(this->m_apSubNodes[indexNode]))->Publish3DTile(pi_pDataStore, sourceGCS, destinationGCS, progress)) return false;
+                    loadChildExtentHelper(this, this->m_apSubNodes[indexNode].GetPtr());
+                    //disconnectChildHelper(this->m_apSubNodes[indexNode].GetPtr());
+                    //this->m_apSubNodes[indexNode] = nullptr;
+                    }
                 }
             }
         }

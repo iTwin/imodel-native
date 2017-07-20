@@ -91,7 +91,9 @@
     <None Include="..\CloudDataSource.mke" />
   </ItemGroup>
   <ItemGroup>
-    <Xml Include="..\CloudDataSource.PartFile.xml" />
+    <Xml Include="..\CloudDataSource.PartFile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CD27F277-B4E6-4FDA-A95F-78F4AEBF7EAB}</ProjectGuid>

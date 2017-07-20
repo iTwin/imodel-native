@@ -9032,7 +9032,7 @@ size_t SMPointIndex<POINT, EXTENT>::GetDepth() const
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeaderDirty = true;
         const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_dataStore->StoreMasterHeader(&const_cast<SMPointIndex<POINT, EXTENT>*>(this)->m_indexHeader, sizeof(m_indexHeader));
         }
-    return m_indexHeader.m_depth;
+    return m_indexHeader.m_depth;    
     }
 
 

@@ -7,9 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
 #include "ScalableMeshPointsProvider.h"
+#include <DgnGeoCoord\DgnGeoCoord.h>
+
+#include "..\GeoCoords\ReprojectionUtils.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
+using namespace Bentley::GeoCoordinates;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -35,17 +39,13 @@ IPointsProviderPtr ScalableMeshPointsProvider::_Clone() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScalableMeshPointsProvider::ScalableMeshPointsProvider(IScalableMeshPtr& smesh, DRange3dCR boundingBoxInUors)
+ScalableMeshPointsProvider::ScalableMeshPointsProvider(IScalableMeshPtr& smesh, 
+                                                       DRange3dCR        boundingBoxInUors)
 :IPointsProvider(boundingBoxInUors), 
  m_smesh(smesh)
     {
     m_transform = Transform::FromIdentity();
-    //BeCriticalSectionHolder lock(s_MRMEshQueryCS);
-    /*
-    IMRMeshAttachment* pIMRMeshQuery = dynamic_cast<IMRMeshAttachment*>(&eh.GetHandler());
-    if (pIMRMeshQuery!=NULL)
-        pIMRMeshQuery->_GetAttachmentInfo(m_info, eh);
-        */
+    
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -134,21 +134,61 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
 
     DPoint3d box[8];
     size_t nPts = 0;
-    DRange3d queryRange;
-
+    DRange3d queryRange;    
+    DRange3d queryRangeInSrcGCS;
+    ClipVectorPtr queryClip;
+            
     if (clip != nullptr)
-        {        
+        {     
         clip->GetRange(queryRange, &m_transform);
 
-        if (queryRange.XLength() == 0 || queryRange.YLength() == 0)
-            return SUCCESS; 
+        if (m_smesh->IsCesium3DTiles())
+            {
+			assert(!"Deactivated for now. Need ECEF clipping capability and correct UORs to meters transfo");
+#if 0 			
+            Transform uorTransfo(Transform::FromRowValues(1 / 10000.0, 0, 0, 0,
+                                                            0, 1 / 10000.0, 0, 0,
+                                                            0, 0, 1 / 10000.0, 0));
 
-        queryRange.Get8Corners(box);
-        nPts = 8;
+            Transform smToDestTrans(m_smesh->GetReprojectionTransform());
+
+            smToDestTrans = Transform::FromProduct(uorTransfo, smToDestTrans);            
+            Transform destToSmTrans; 
+            bool resultInv = destToSmTrans.inverseOf(&smToDestTrans);
+            assert(resultInv);                                                
+
+            queryClip = ClipVector::CreateCopy(*clip);
+            queryClip->TransformInPlace(destToSmTrans);            
+#endif			
+            }
+        else
+            {                
+            if (m_destinationGcs.IsValid())
+                ReprojectRange(queryRangeInSrcGCS, queryRange, m_destinationGcs, m_sourceGcs, GeoCoordinates::GeoCoordInterpretation::Cartesian, m_geocoordInterpretation);
+            else
+                queryRangeInSrcGCS = queryRange;
+
+            if (queryRangeInSrcGCS.XLength() == 0 || queryRangeInSrcGCS.YLength() == 0)
+                return SUCCESS; 
+
+            queryRangeInSrcGCS.Get8Corners(box);
+            nPts = 8;
+            }
         }
       
     bvector<ScalableMesh::IScalableMeshNodePtr> nodes;
-    meshQueryInterface->Query(nodes, nPts> 0 ? box : nullptr, (int)nPts, params);
+
+    if (queryClip.IsValid())
+        {
+        meshQueryInterface->Query(nodes, queryClip.get(), params);
+        }
+    else
+        { 
+        meshQueryInterface->Query(nodes, nPts> 0 ? box : nullptr, (int)nPts, params);
+        }
+    
+    //meshQueryInterface->Query(nodes, ClipVectorCP                                       queryExtent3d, params);
+
 
     ScalableMesh::IScalableMeshMeshFlagsPtr flags = ScalableMesh::IScalableMeshMeshFlags::Create();
     flags->SetLoadGraph(false);
@@ -156,14 +196,22 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
     flags->SetLoadIndices(false);
 
     for (auto& node: nodes)
-        {        
+        {                
+        if (!queryRangeInSrcGCS.IntersectsWith(node->GetContentExtent()))
+            continue;
+        
         auto mesh = node->GetMesh(flags);
                 
         for (size_t ptInd = 0; ptInd <  mesh->GetNbPoints(); ptInd++)
-            {                        
-            if (queryRange.IsContainedXY(mesh->EditPoints()[ptInd]))
+            {        
+            DPoint3d pt(mesh->EditPoints()[ptInd]);
+        
+            if (m_destinationGcs.IsValid())
+                ReprojectPt(pt, pt, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
+                            
+            if (queryRange.IsContained(pt))
                 {
-                points.push_back(mesh->EditPoints()[ptInd]);
+                points.push_back(pt);
                 }
             }
                 
@@ -293,6 +341,17 @@ Transform ScalableMeshPointsProvider::GetRootToNativeTransform() const
     return rootToNative;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Mathieu St-Pierre               06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void ScalableMeshPointsProvider::SetReprojectionInfo(GeoCoordInterpretation geocoordInterpretation,
+                                                     BaseGCSPtr&            sourceGcs,
+                                                     BaseGCSPtr&            destinationGcs)
+    {
+    m_geocoordInterpretation = geocoordInterpretation;
+    m_sourceGcs = sourceGcs;
+    m_destinationGcs = destinationGcs;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Marc.Bedard                     03/2016
@@ -510,14 +569,23 @@ IPointsProvider::const_iterator ScalableMeshPointsProvider::_end() const
 /*---------------------------------------------------------------------------------**//**
 * ScalableMeshPointsProvider
 +---------------+---------------+---------------+---------------+---------------+------*/
-ScalableMeshPointsProviderCreatorPtr ScalableMeshPointsProviderCreator::Create(IScalableMeshPtr& smesh)
+ScalableMeshPointsProviderCreatorPtr ScalableMeshPointsProviderCreator::Create(IScalableMeshPtr&      smesh, 
+                                                                               BaseGCSPtr             sourceGcs,
+                                                                               BaseGCSPtr             destinationGcs,
+                                                                               GeoCoordInterpretation geocoordInterpretation)
     {
-    return new ScalableMeshPointsProviderCreator(smesh);
+    return new ScalableMeshPointsProviderCreator(smesh, sourceGcs, destinationGcs, geocoordInterpretation);
     }
 
-ScalableMeshPointsProviderCreator::ScalableMeshPointsProviderCreator(IScalableMeshPtr& smesh)
+ScalableMeshPointsProviderCreator::ScalableMeshPointsProviderCreator(IScalableMeshPtr&      smesh, 
+                                                                     BaseGCSPtr&            sourceGcs,
+                                                                     BaseGCSPtr&            destinationGcs,
+                                                                     GeoCoordInterpretation geocoordInterpretation)
     {
-    m_smesh = smesh;
+    m_smesh = smesh;    
+    m_sourceGcs = sourceGcs;
+    m_destinationGcs = destinationGcs;
+    m_geocoordInterpretation = geocoordInterpretation;
     }
 
 ScalableMeshPointsProviderCreator::~ScalableMeshPointsProviderCreator()
@@ -526,7 +594,13 @@ ScalableMeshPointsProviderCreator::~ScalableMeshPointsProviderCreator()
 
 IPointsProviderPtr ScalableMeshPointsProviderCreator::_CreatePointProvider(DRange3d const& boundingBoxInUors) 
     {
-    return ScalableMeshPointsProvider::CreateFrom(m_smesh, boundingBoxInUors);
+    IPointsProviderPtr pointProvider(ScalableMeshPointsProvider::CreateFrom(m_smesh, boundingBoxInUors));
+
+    ((ScalableMeshPointsProvider*)pointProvider.get())->SetReprojectionInfo(m_geocoordInterpretation,
+                                                                            m_sourceGcs,
+                                                                            m_destinationGcs);
+
+    return pointProvider;
     }
 
 IPointsProviderPtr ScalableMeshPointsProviderCreator::_CreatePointProvider() 
@@ -538,10 +612,20 @@ IPointsProviderPtr ScalableMeshPointsProviderCreator::_CreatePointProvider()
 
 void ScalableMeshPointsProviderCreator::_GetAvailableRange(DRange3d& availableRange) 
     {   
-    DRange3d smRange;
-    DTMStatusInt status = m_smesh->GetRange(smRange);
+    DRange3d smRange;    
 
-    assert(status == SUCCESS);           
+    if (m_destinationGcs.IsValid())
+        {
+        DRange3d smRangeLocal;
+        DTMStatusInt status = m_smesh->GetRange(smRangeLocal);
+        ReprojectRange(smRange, smRangeLocal, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
+        assert(status == SUCCESS);
+        }
+    else
+        {
+        DTMStatusInt status = m_smesh->GetRange(smRange);        
+        assert(status == SUCCESS);
+        }            
 
     if (m_extractionArea.size() > 0)
         {
@@ -560,7 +644,14 @@ void ScalableMeshPointsProviderCreator::_GetAvailableRange(DRange3d& availableRa
 
 void ScalableMeshPointsProviderCreator::SetExtractionArea(const bvector<DPoint3d>& area)
     {    
-    m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());   
+    if (m_destinationGcs.IsValid())
+        { 
+        Reproject(m_extractionArea, area, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
+        }
+    else
+        {
+        m_extractionArea.insert(m_extractionArea.end(), area.begin(), area.end());
+        }    
     }
             
 END_BENTLEY_SCALABLEMESH_NAMESPACE

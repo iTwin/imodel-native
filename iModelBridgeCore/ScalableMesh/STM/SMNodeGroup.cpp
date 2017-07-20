@@ -168,13 +168,7 @@ StatusInt SMNodeGroup::SaveTilesetToCache(Json::Value & tileset, const uint64_t&
 StatusInt SMNodeGroup::SaveTileToCacheWithNewTileIDs(Json::Value & tile, uint64_t tileID, uint64_t parentID, bool isRootNode, uint64_t level)
     {
     // Compute next tile ID
-    static std::atomic<uint32_t> s_currentNodeID = 0;
-    if (m_mustResetNodeIDGenerator)
-        {
-        s_currentNodeID = 0;
-        m_mustResetNodeIDGenerator = false;
-        }
-    tileID = isRootNode && tileID != uint64_t(-1) && parentID != uint64_t(-1) ? tileID : s_currentNodeID++;
+    tileID = isRootNode && tileID != uint64_t(-1) && parentID != uint64_t(-1) ? tileID : m_parametersPtr->GetNextNodeID();
 
     auto& smHeader = tile["SMHeader"];
     smHeader["parentID"] = parentID;
@@ -333,7 +327,10 @@ DataSource * SMNodeGroup::InitializeDataSource(std::unique_ptr<DataSource::Buffe
                                                      // Get the thread's DataSource or create a new one
     DataSource *dataSource = nullptr;
     if ((dataSource = this->GetDataSourceAccount()->getOrCreateThreadDataSource()) == nullptr)
+        {
+        assert(!"Could not initialize data source");
         return nullptr;
+        }
 
     // Make sure caching is enabled for this DataSource
     dataSource->setCachingEnabled(s_stream_enable_caching);
@@ -639,6 +636,13 @@ DataSourceURL SMNodeGroup::GetURL()
 void SMNodeGroup::SetURL(DataSourceURL url)
     {
     m_url = url;
+    }
+
+Json::Value* SMNodeGroup::GetSMMasterHeaderInfo()
+    {
+    if (m_tilesetRootNode.isMember("root") && m_tilesetRootNode["root"].isMember("SMMasterHeader"))
+        return &m_tilesetRootNode["root"]["SMMasterHeader"];
+    return nullptr;
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -1469,7 +1469,8 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
             bvector<ClipVectorPtr>                                          m_clipVectors;            
             const IScalableMesh* m_scalableMeshP;
-
+			bool m_invertClips;
+			bool m_loadTexture;
 
 
     protected:         
@@ -1544,6 +1545,16 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
             void RemoveDisplayDataFromCache();
+
+			bool HasInvertedClips()
+			{
+				return m_invertClips;
+			}
+
+			bool ShouldLoadTexture()
+			{
+				return m_loadTexture;
+			}
           
 
             SmCachedDisplayTexture* GetCachedDisplayTextureForID(uint64_t textureID)

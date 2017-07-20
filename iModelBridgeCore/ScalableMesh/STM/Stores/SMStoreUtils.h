@@ -344,6 +344,8 @@ template <class EXTENT> class SMIndexNodeHeader : public SMIndexNodeHeaderBase<E
         std::vector<BlockSize>   m_blockSizes;
 
         SMIndexNodeHeader();
+        SMIndexNodeHeader(const SMIndexNodeHeader& smNodeHeader);
+
 
         virtual ~SMIndexNodeHeader();
              
