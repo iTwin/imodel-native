@@ -98,7 +98,6 @@
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
-        <ECProperty propertyName="RestartValue" typeName="double" kindOfQuantity="LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="LinearlyReferencedLocation" modifier="Abstract">
         <BaseClass>bis:ElementMultiAspect</BaseClass>

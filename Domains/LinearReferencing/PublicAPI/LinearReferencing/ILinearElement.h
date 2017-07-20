@@ -40,7 +40,7 @@ public:
 //! Interface implemented by linear-elements that have a spatial representation.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ISpatialLinearElement : ILinearElement
+struct EXPORT_VTABLE_ATTRIBUTE ISpatialLinearElement : virtual ILinearElement
 {
 protected:
     virtual DPoint3d _ToDPoint3d(DistanceExpressionCR distanceExpression) const = 0;
@@ -172,6 +172,38 @@ protected:
 
 //=======================================================================================
 //! Helper interface to be implemented by linearly located attribution and elements
+//! only accepting and exposing one "at" linearly referenced location.
+//! Concrete subclasses are expected to explicitely add the single aspect on their
+//! constructor as follows:
+//! _AddLinearlyReferencedLocation(*_GetUnpersistedAtLocation());
+//! @ingroup GROUP_LinearReferencing
+//=======================================================================================
+struct ILinearlyLocatedSingleAt
+{
+private:
+    mutable LinearReferencing::LinearlyReferencedLocationId m_atLocationAspectId;
+    LinearReferencing::LinearlyReferencedAtLocationPtr m_unpersistedAtLocationPtr;
+
+    virtual Dgn::DgnElementCR ToElement() const { return *dynamic_cast<Dgn::DgnElementCP>(this); }
+    virtual Dgn::DgnElementR ToElementR() { return *dynamic_cast<Dgn::DgnElementP>(this); }
+    virtual LinearReferencing::ILinearlyLocatedCR ToLinearlyLocated() const { return *dynamic_cast<LinearReferencing::ILinearlyLocatedCP>(this); }
+    virtual LinearReferencing::ILinearlyLocatedR ToLinearlyLocatedR() { return *dynamic_cast<LinearReferencing::ILinearlyLocatedP>(this); }
+
+protected:
+    LINEARREFERENCING_EXPORT ILinearlyLocatedSingleAt() {}
+
+    LINEARREFERENCING_EXPORT ILinearlyLocatedSingleAt(double atDistanceAlong);
+
+    LinearReferencing::LinearlyReferencedAtLocationPtr _GetUnpersistedAtLocation() const { return m_unpersistedAtLocationPtr; }
+
+public:
+    LINEARREFERENCING_EXPORT double GetAtDistanceAlong() const;
+    LINEARREFERENCING_EXPORT void SetAtDistanceAlong(double newAt);
+}; // ILinearlyLocatedSingleAt
+
+
+//=======================================================================================
+//! Helper interface to be implemented by linearly located attribution and elements
 //! only accepting and exposing one from-to linearly referenced location.
 //! Concrete subclasses are expected to explicitely add the single aspect on their
 //! constructor as follows:
@@ -213,14 +245,14 @@ public:
 struct EXPORT_VTABLE_ATTRIBUTE IReferent
 {
 protected:
-    virtual double _GetRestartValue() const { return 0.0; }
+    virtual NullableDouble _GetRestartValue() const = 0;
     virtual Dgn::DgnElementCR _IReferentToDgnElement() const = 0;
 
 public:
     Dgn::DgnElementCR ToElement() const { return _IReferentToDgnElement(); }
     Dgn::DgnElementR ToElementR() { return *const_cast<Dgn::DgnElementP>(&_IReferentToDgnElement()); }
 
-    LINEARREFERENCING_EXPORT double GetRestartValue() const { return _GetRestartValue(); }    
+    LINEARREFERENCING_EXPORT NullableDouble GetRestartValue() const { return _GetRestartValue(); }    
 }; // IReferent
 
 //=======================================================================================
@@ -239,6 +271,7 @@ protected:
 
     virtual DPoint3d _GetSpatialLocation() const { return DPoint3d(); }
     virtual Dgn::DgnElementCR _IReferentToDgnElement() const override { return *this; }
+    virtual NullableDouble _GetRestartValue() const override { return NullableDouble(); }
 
 public:
     DECLARE_LINEARREFERENCING_QUERYCLASS_METHODS(GeometricElementAsReferent)
