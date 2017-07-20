@@ -551,7 +551,7 @@ RealityPackageStatus RealityDataSerializerV2::_Write(BeXmlDomR xmlDom, RealityDa
         return RealityPackageStatus::UnknownError;
 
     // Add version and namespace.
-    pRootNode->AddAttributeStringValue(PACKAGE_ATTRIBUTE_Version, "2.0");
+    pRootNode->AddAttributeStringValue(PACKAGE_ATTRIBUTE_Version, "2.1");
     pRootNode->AddNamespace(NULL, PACKAGE_CURRENT_NAMESPACE);
     pRootNode->AddNamespace(W3SCHEMA_PREFIX, W3SCHEMA_URI);
 
@@ -767,6 +767,11 @@ RealityPackageStatus RealityDataSerializerV2::_WritePinnedGroup(BeXmlNodeR node,
         GeoPoint2dCR location = pPinnedData->GetLocation();
         BeAssert(RealityDataSerializer::IsValidLongLat(location.longitude, location.latitude));
         RealityDataSerializer::WriteLongLat(*pDataNode, PACKAGE_ELEMENT_Position, location.longitude, location.latitude);
+
+        // Area
+        if (pPinnedData->HasArea())
+            pDataNode->AddElementStringValue(PACKAGE_ELEMENT_Area, pPinnedData->GetAreaCP()->ToString().c_str());
+
         }
 
     return RealityPackageStatus::Success;

@@ -500,7 +500,7 @@ protected:
 struct WSGRequest : public CurlConstructor
     {
 protected:
-    static WSGRequest* s_instance;
+	REALITYDATAPLATFORM_EXPORT static WSGRequest* s_instance;
     virtual void _PerformRequest(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry) const;
 public:
     REALITYDATAPLATFORM_EXPORT static WSGRequest& GetInstance();

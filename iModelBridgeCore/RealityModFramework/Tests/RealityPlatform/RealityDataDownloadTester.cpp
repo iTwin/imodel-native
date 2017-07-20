@@ -24,30 +24,18 @@ class RealityDataDownloadTestFixture : public testing::Test
     public:
         WCharCP GetDirectory()
             {
-            WChar exePath[MAX_PATH];
-            GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-            WString exeDir = exePath;
-            size_t pos = exeDir.find_last_of(L"/\\");
-            exeDir = exeDir.substr(0, pos + 1);
-
-            BeFileName testPath(exeDir);
-            testPath.AppendToPath(L"RealityDataDownloadTestDirectory");
-            return testPath;
+            BeFileName outDir;
+            BeTest::GetHost().GetTempDir (outDir);
+            outDir.AppendToPath(L"RealityDataDownloadTestDirectory");
+            return outDir;
             }
 
         BeFileName GetPemLocation()
             {
-            WChar exePath[MAX_PATH];
-            GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-            WString exeDir = exePath;
-            size_t pos = exeDir.find_last_of(L"/\\");
-            exeDir = exeDir.substr(0, pos + 1);
-
-            BeFileName caBundlePath(exeDir);
-            caBundlePath.AppendToPath(L"Assets").AppendToPath(L"http").AppendToPath(L"cabundle.pem");
-            return caBundlePath;
+            BeFileName outDir;
+            BeTest::GetHost().GetDgnPlatformAssetsDirectory (outDir);
+            outDir.AppendToPath(L"http").AppendToPath(L"cabundle.pem");
+            return outDir;
             }
 
         void InitTestDirectory(WCharCP directoryname)

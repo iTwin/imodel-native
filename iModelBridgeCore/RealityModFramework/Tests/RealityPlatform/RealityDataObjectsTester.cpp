@@ -28,15 +28,9 @@ class RealityDataObjectTestFixture : public testing::Test
     public:
         WCharCP GetDirectory()
             {
-            WChar exePath[MAX_PATH];
-            GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-            WString exeDir = exePath;
-            size_t pos = exeDir.find_last_of(L"/\\");
-            exeDir = exeDir.substr(0, pos + 1);
-
-            BeFileName testPath(exeDir);
-            return testPath;
+            BeFileName outDir;
+            BeTest::GetHost().GetTempDir (outDir);
+            return outDir;
             }
 
         static Json::Value s_SampleRealityDataFolderJSON;
@@ -302,14 +296,14 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityMetadataCreateFromFile)
     mySpatialEntityMetadata->SetDisplayStyle("MyDisplayStyle");
 
     // Create XML Files
-    WString fileName(GetDirectory());
-    fileName.append(L"xmlTestfile.xml");
+    BeFileName fileName(GetDirectory());
+    fileName.AppendToPath(L"xmlTestfile.xml");
     BeFileStatus status;
     BeTextFilePtr tempFile = BeTextFile::Open(status, fileName.c_str(), TextFileOpenType::Write, TextFileOptions::None);
     tempFile->PutLine(L"<xml><root><entitee /></root></xml>",false);
     tempFile->Close();
 
-    Utf8String fileName2(fileName);
+    Utf8String fileName2(fileName.c_str());
 
     SpatialEntityMetadataPtr secondSpatialEntityMetadata = SpatialEntityMetadata::CreateFromFile(fileName2.c_str(), *mySpatialEntityMetadata);
 
@@ -326,7 +320,6 @@ TEST_F(RealityDataObjectTestFixture, SpatialEntityMetadataCreateFromFile)
     EXPECT_STREQ(secondSpatialEntityMetadata->GetId().c_str(), "");
     EXPECT_STREQ(secondSpatialEntityMetadata->GetDisplayStyle().c_str(), "MyDisplayStyle");
 
-    BeFileName::BeDeleteFile(fileName.c_str());
     }
 
 //-------------------------------------------------------------------------------------

@@ -650,6 +650,7 @@
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="RealityMod" SubPartDirectory="UnitTests/RealityMod"> Delivery/UnitTests/ignore_list.txt</Files>
             <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="xsd">Delivery/UnitTests/RealityPackage.1.0.xsd</Files>
             <Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="xsd">Delivery/UnitTests/RealityPackage.2.0.xsd</Files>
+			<Files ProductDirectoryName="UnitTests-Assets" ProductSubDirectory="xsd">Delivery/UnitTests/RealityPackage.2.1.xsd</Files>
         </Bindings>
     </Part>
 
@@ -732,6 +733,7 @@
     <Part Name="RealityFrameworkTestsData" BentleyBuildMakeFile="Tests/prewire.mke">
         <Bindings>
             <Files SubPartDirectory="TestData/RealityPlatform" ProductDirectoryName="RealityFrameworkTestDataRealityPlatform">Delivery/TestData/RealityPlatform/*</Files>
+            <Files SubPartDirectory="TestData/RealityPackage" ProductDirectoryName="RealityFrameworkTestDataRealityPackage">Delivery/TestData/RealityPackage/*</Files>
         </Bindings>
     </Part>
     
@@ -753,6 +755,7 @@
         <ProductDirectory Name="BentleyDesktopClientApi"        Path=""/>
         <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""/>
         <ProductDirectory Name="RealityFrameworkTestDataRealityPlatform"          Path="TestData/RealityPlatform"/>
+        <ProductDirectory Name="RealityFrameworkTestDataRealityPackage"          Path="TestData/RealityPackage"/>
     </ProductDirectoryList>
 
     <Product Name="RealityModFramework-Gtest" >

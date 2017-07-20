@@ -24,15 +24,12 @@ RealityDataService* MockRealityDataServiceFixture::s_realityDataService = nullpt
 ErrorClass* MockGeoCoordinationServiceFixture::s_errorClass = nullptr;
 GeoCoordinationService* MockGeoCoordinationServiceFixture::s_geoCoordinateService = nullptr;
 
-Utf8String RealityModFrameworkTestsUtils::GetJson(WString filename)
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+Utf8String RealityModFrameworkTestsUtils::GetTestDataContent(WString filename)
     {
-    if(s_exePath.empty())
-        {
-        s_exePath = GetDirectory();
-        }
-
-    auto path = s_exePath;
-    path.append(filename);
+    auto path = GetTestDataPath(filename);
 
     BeFileStatus status;
     BeTextFilePtr jsonFile = BeTextFile::Open(status, path.GetWCharCP(), TextFileOpenType::Read, TextFileOptions::None, TextFileEncoding::Utf8);
@@ -55,6 +52,9 @@ Utf8String RealityModFrameworkTestsUtils::GetJson(WString filename)
     return Utf8String("");
     }
 
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
 WString RealityModFrameworkTestsUtils::GetDirectory()
     {
     WChar exePath[MAX_PATH];
@@ -64,4 +64,19 @@ WString RealityModFrameworkTestsUtils::GetDirectory()
     size_t pos = exeDir.find_last_of(L"/\\");
     exeDir = exeDir.substr(0, pos + 1);
     return exeDir;
+    }
+
+//=====================================================================================
+//! @bsimethod                                   Remi.Charbonneau              06/2017
+//=====================================================================================
+WString RealityModFrameworkTestsUtils::GetTestDataPath(WString filename)
+    {
+    if (s_exePath.empty())
+        {
+        s_exePath = GetDirectory();
+        }
+
+    auto path = s_exePath;
+    path.append(filename);
+    return path;
     }

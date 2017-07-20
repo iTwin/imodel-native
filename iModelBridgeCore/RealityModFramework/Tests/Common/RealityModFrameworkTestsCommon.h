@@ -23,7 +23,8 @@ struct RealityModFrameworkTestsUtils
 private:
     static WString s_exePath;
 public:
-    EXPORT_ATTRIBUTE static Utf8String GetJson(WString filename);
+    EXPORT_ATTRIBUTE static Utf8String GetTestDataContent(WString filename);
+    EXPORT_ATTRIBUTE static WString GetTestDataPath(WString filename);
     EXPORT_ATTRIBUTE static WString GetDirectory();
     };
 
@@ -56,6 +57,11 @@ struct MockWSGRequest : WSGRequest
     {
     MockWSGRequest() : WSGRequest()
     {}
+
+	~MockWSGRequest()
+    {
+		s_instance = nullptr;
+    }
 
     MOCK_CONST_METHOD1(SetCertificatePath, void(Utf8String certificate));
     MOCK_CONST_METHOD5(PerformAzureRequest, void(const WSGURL& wsgRequest, RawServerResponse& response, bool verifyPeer, BeFile* file, bool retry));

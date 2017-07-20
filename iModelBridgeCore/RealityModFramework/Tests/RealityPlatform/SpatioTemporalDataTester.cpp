@@ -60,7 +60,7 @@ TEST_F(SpatioTemporalDataFixture, InstancesNotRoot)
 
 TEST_F(SpatioTemporalDataFixture, LoadSampleJson)
     {
-    auto json = RealityModFrameworkTestsUtils::GetJson(L"TestData\\RealityPlatform\\SpatialEntities.json");
+    auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntities.json");
     auto dataset = SpatialEntityDataset::CreateFromJson(json.c_str());
     
     auto imageryGroup = dataset->GetImageryGroup();

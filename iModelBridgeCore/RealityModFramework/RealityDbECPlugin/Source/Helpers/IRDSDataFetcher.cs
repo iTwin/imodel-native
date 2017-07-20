@@ -142,15 +142,16 @@ namespace IndexECPlugin.Source.Helpers
         public JArray GetDataBySpatialQuery (string polygon, List<SingleWhereCriteriaHolder> criteriaList)
             {
             //For now, we only include the classification criteria
+            string visibilityCriteria = "&$filter=Visibility+in+['PUBLIC','ENTERPRISE']";
 
             IEnumerable<SingleWhereCriteriaHolder> classificationCriteria = criteriaList.Where(criteria => criteria.Property.Name == "Classification");
             string classificationFilter = "";
             if(classificationCriteria.Count() != 0)
                 {
                 string[] convertedCriteria = classificationCriteria.Select(criterion => ConvertWhereCriteriaToWSG(criterion, criterion.Property.Name)).ToArray();
-                classificationFilter = "&$filter=" + String.Join("+and+", convertedCriteria);
+                classificationFilter = "+and+" + String.Join("+and+", convertedCriteria);
                 }
-            string url = RdsUrlBase + IndexConstants.RdsRealityDataClass + "?polygon=" + polygon + classificationFilter;
+            string url = RdsUrlBase + IndexConstants.RdsRealityDataClass + "?polygon=" + polygon + visibilityCriteria + classificationFilter;
             JObject jsonResponse = JObject.Parse(m_httpResponseGetter.GetHttpResponse(url));
 
             return jsonResponse["instances"] as JArray;

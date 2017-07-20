@@ -113,16 +113,10 @@ public:
     //
     WCharCP GetDirectory()
     {
-        WChar exePath[MAX_PATH];
-        GetModuleFileNameW(NULL, exePath, MAX_PATH);
-
-        WString exeDir = exePath;
-        size_t pos = exeDir.find_last_of(L"/\\");
-        exeDir = exeDir.substr(0, pos + 1);
-
-        BeFileName testPath(exeDir);
-        testPath.AppendToPath(L"GeoCoordinationServiceTester");
-        return testPath;
+    BeFileName outDir;
+    BeTest::GetHost().GetTempDir(outDir);
+    outDir.AppendToPath(L"GeoCoordinationServiceTester");
+    return outDir;
     }
 
     void InitTestDirectory(WCharCP directoryname)

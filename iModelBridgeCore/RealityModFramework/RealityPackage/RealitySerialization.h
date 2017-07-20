@@ -29,7 +29,7 @@
 // Namespace change occurs only when the major version changes.  
 #define PACKAGE_PREFIX              "rdp"
 #define PACKAGE_CURRENT_MAJOR_VERSION 2
-#define PACKAGE_CURRENT_MINOR_VERSION 0
+#define PACKAGE_CURRENT_MINOR_VERSION 1
 #define PACKAGE_CURRENT_VERSION       (WIDEN(STRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)) L"." WIDEN(STRINGIFY(PACKAGE_CURRENT_MINOR_VERSION)))
 #define PACKAGE_CURRENT_NAMESPACE     "http://www.bentley.com/RealityDataServer/v" STRINGIFY(PACKAGE_CURRENT_MAJOR_VERSION)
 #define PACKAGE_V1_NAMESPACE          "http://www.bentley.com/RealityDataServer/v1"
