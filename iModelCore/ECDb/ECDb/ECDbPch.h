@@ -9,6 +9,7 @@
 #include <Bentley/CatchNonPortable.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ECObjects/ECObjectsAPI.h>
+#include <ECObjects/SchemaComparer.h>
 #include <ECDb/ECDbApi.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/BeTimeUtilities.h>
@@ -45,7 +46,6 @@
 #include "ClassMapPersistenceManager.h"
 #include "ClassMapPersistenceManager.h"
 #include "ClassMapper.h"
-#include <ECObjects/SchemaComparer.h>
 #include "LightweightCache.h"
 #include "ClassMapColumnFactory.h"
 #include "ViewGenerator.h"
