@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{E7F64887-784D-4695-BF71-88DB12CF10AC}</ProjectGuid>
+    <ProjectGuid>{4FDDDE41-8D97-40CE-88B5-941BE2B55CE6}</ProjectGuid>
     <RootNamespace>SchemaValidator</RootNamespace>
     <Keyword>MakeFileProj</Keyword>
   </PropertyGroup>
