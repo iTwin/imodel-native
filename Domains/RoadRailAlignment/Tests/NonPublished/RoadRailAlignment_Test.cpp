@@ -14,6 +14,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     // Create Alignment
     auto alignmentPtr = Alignment::Create(*alignModelPtr);
     alignmentPtr->SetCode(RoadRailAlignmentDomain::CreateCode(*alignModelPtr, "ALG-1"));
+    alignmentPtr->SetStartStation(1000);
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
 
     // Create Horizontal 
@@ -56,6 +57,32 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_DOUBLE_EQ(75.0, distanceExp.GetDistanceAlongFromStart());
     ASSERT_DOUBLE_EQ(10.0, distanceExp.GetLateralOffsetFromILinearElement().Value());
     ASSERT_DOUBLE_EQ(5.0, distanceExp.GetVerticalOffsetFromILinearElement().Value());
+
+    // AlignmentStations
+    // DistanceAlong    0       30      70      120     150
+    // Station          1000    10      10000   100     130
+
+    auto stationPtr = AlignmentStation::Create(*alignmentPtr, 30, 10);
+    auto stationCPtr = stationPtr->Insert();
+    ASSERT_TRUE(stationCPtr.IsValid());
+    ASSERT_DOUBLE_EQ(30.0, stationCPtr->GetAtDistanceAlong());
+    ASSERT_DOUBLE_EQ(10.0, stationCPtr->GetStation());
+
+    stationPtr = AlignmentStation::Create(*alignmentPtr, 70, 10000);
+    ASSERT_TRUE(stationPtr->Insert().IsValid());
+
+    stationPtr = AlignmentStation::Create(*alignmentPtr, 120, 100);
+    ASSERT_TRUE(stationPtr->Insert().IsValid());
+
+    auto stationTranslatorPtr = AlignmentStationingTranslator::Create(*alignmentPtr);
+    ASSERT_TRUE(stationTranslatorPtr->ToStation(-1).IsNull());
+    ASSERT_DOUBLE_EQ(1000.0, stationTranslatorPtr->ToStation(0).Value());
+    ASSERT_DOUBLE_EQ(1029.0, stationTranslatorPtr->ToStation(29).Value());
+    ASSERT_DOUBLE_EQ(10.0, stationTranslatorPtr->ToStation(30).Value());
+    ASSERT_DOUBLE_EQ(10001.0, stationTranslatorPtr->ToStation(71).Value());
+    ASSERT_DOUBLE_EQ(109.0, stationTranslatorPtr->ToStation(129).Value());
+    ASSERT_DOUBLE_EQ(130.0, stationTranslatorPtr->ToStation(150).Value());
+    ASSERT_TRUE(stationTranslatorPtr->ToStation(160).IsNull());
 
     // Delete-cascade
     ASSERT_EQ(DgnDbStatus::Success, alignmentPtr->Delete());
@@ -122,11 +149,12 @@ TEST_F(RoadRailAlignmentTests, AlignmentSegmationTest)
     ASSERT_TRUE(alignmentPtr->Insert().IsValid());
 
     // Create Stations
-    auto station1Ptr = AlignmentStation::Create(*alignmentPtr, DistanceExpression(50.0), 100.0);
+    auto station1Ptr = AlignmentStation::Create(*alignmentPtr, 50.0, 100.0);
     ASSERT_TRUE(station1Ptr->Insert().IsValid());
-    ASSERT_DOUBLE_EQ(50.0, station1Ptr->GetAtPosition().GetDistanceAlongFromStart());
-
-    auto station2Ptr = AlignmentStation::Create(*alignmentPtr, DistanceExpression(100.0), 200.0);
+    ASSERT_DOUBLE_EQ(50.0, station1Ptr->GetAtDistanceAlong());
+    ASSERT_DOUBLE_EQ(100.0, station1Ptr->GetStation());
+    
+    auto station2Ptr = AlignmentStation::Create(*alignmentPtr, 100.0, 200.0);
     ASSERT_TRUE(station2Ptr->Insert().IsValid());
 
     // Segmentation
