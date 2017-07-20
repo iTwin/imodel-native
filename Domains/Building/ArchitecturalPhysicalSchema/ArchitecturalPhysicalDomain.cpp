@@ -187,6 +187,29 @@ namespace ArchitecturalPhysical
 		return id;
 		}
 
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+	Dgn::DgnCategoryId ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(Dgn::DgnDbR db, Utf8CP categoryName)
+		{
+		Dgn::DgnCategoryId id = Dgn::DgnCategory::QueryCategoryId(db, Dgn::DrawingCategory::CreateCode(db.GetDictionaryModel(), categoryName));
+
+		// Create it if is does not exist.
+
+		if (!id.IsValid())
+			{
+
+			Dgn::DgnSubCategory::Appearance appearance;
+			appearance.SetColor(Dgn::ColorDef::White());
+
+			Dgn::DrawingCategory category(db.GetDictionaryModel(), categoryName, Dgn::DgnCategory::Rank::Domain);
+			category.Insert(appearance);
+			id = category.GetCategoryId();
+
+			}
+		return id;
+		}
+
 
 	} // End ArchitecturalPhysical namespace
 

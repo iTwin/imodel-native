@@ -23,3 +23,4 @@ $(targetAPIDir)BuildingDomainUtilities.h : $(_MakeFilePath)PublicApi\BuildingDom
 
 %include $(_MakeFilePath)BuildingCommonSchema/BuildingCommonSchema.prewire.mki
     
+%include $(_MakeFilePath)MechanicalFunctional/MechanicalFunctional.prewire.mki

@@ -78,6 +78,7 @@ namespace ArchitecturalPhysical
 #endif
 			//! Get the DgnSubCategoryId for a Door frame
 			ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCategoryId QueryBuildingPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName );
+			ARCHITECTURAL_PHYSICAL_EXPORT static Dgn::DgnCategoryId QueryBuildingDrawingCategoryId(Dgn::DgnDbR db, Utf8CP categoryName);
 
 		};
 

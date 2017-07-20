@@ -36,9 +36,10 @@
         <Bindings>
             <PublicAPI Domain="BuildingDomain"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
-                ECSchemas/Domain/BuildingPhysical.ecschema.xml
-                ECSchemas/Domain/BuildingCommon.ecschema.xml
+              ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
+              ECSchemas/Domain/BuildingPhysical.ecschema.xml
+              ECSchemas/Domain/BuildingCommon.ecschema.xml
+              ECSchemas/Domain/MechanicalFunctional.ecschema.xml
             </Files>
 
             <Directory SourceName="PublicApi/BuildingDomain" ProductDirectoryName="BuildingDomainIncludes" />
@@ -93,8 +94,8 @@
     <Product Name="BuildingDomainSDK-Winx64">
         <Directories DirectoryListName="BuildingDomainSDK-Winx64"/>
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
-        <SubPart PartName="StructuralMaterialsAPI" PartFile="StructuralDomains" Repository="DgnDomains-Structural"/>
-
+        <SubPart PartName="StructuralDomain"            PartFile="StructuralDomains"      Repository="DgnDomains-Structural"/>
+        <SubPart PartName="PlantPrototypeDomainHandler" PartFile="PlantPrototypeDomain"   Repository="DgnDomain-PlantPrototype"/>
     </Product>
 
     <ProductDirectoryList ListName="BuildingDomainSDK-Winx64">
@@ -107,11 +108,12 @@
         -->
 
         <!-- lib/x64 -->
-        <ProductDirectory Name="Assets"                          Path="Assets"/>
-        <ProductDirectory Name="Assemblies"       Deliver="true" Path="lib/x64"/>
-        <ProductDirectory Name="Libs"             Deliver="true" Path="lib/x64"/>
-        <ProductDirectory Name="BuildingDomainIncludes"         Deliver="true" Path="Include/BuildngDomain"/>
-        <ProductDirectory Name="StructuralMaterialsIncludes"    Deliver="true" Path="Include/StructuralMaterials"/>
+        <ProductDirectory Name="Assets"                                         Path="Assets"/>
+        <ProductDirectory Name="Assemblies"                      Deliver="true" Path="lib/x64"/>
+        <ProductDirectory Name="Libs"                            Deliver="true" Path="lib/x64"/>
+        <ProductDirectory Name="BuildingDomainIncludes"          Deliver="true" Path="Include/BuildngDomain"/>
+        <ProductDirectory Name="StructuralDomainIncludes"        Deliver="true" Path="Include/StructuralDomain"/>
+        <ProductDirectory Name="PlantDomainIncludes"             Deliver="true" Path="Include/PlantDomain"/>
 
 
     </ProductDirectoryList>

@@ -10,6 +10,7 @@
 #include "ArchPhysCreater.h"
 
 #define BUILDING_MODEL_NAME "SampleBuildingModel"
+#define USERLABEL_NAME  "UserLabel"
 
 
 //---------------------------------------------------------------------------------------
@@ -116,7 +117,7 @@ Dgn::CategorySelectorPtr ArchPhysCreator::CreateCategorySelector(Dgn::Definition
     // We have to give the selector a unique name of its own. Since we are set up up a new bim, 
     // we know that we can safely choose any name.
     auto categorySelector = new Dgn::CategorySelector(model, "Default");
-//    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorCategoryId(model.GetDgnDb()));
+    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(model.GetDgnDb(), "PidLine"));
 //    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(model.GetDgnDb()));
 //    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWallCategoryId(model.GetDgnDb()));
     return categorySelector;
@@ -125,15 +126,15 @@ Dgn::CategorySelectorPtr ArchPhysCreator::CreateCategorySelector(Dgn::Definition
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-Dgn::ModelSelectorPtr ArchPhysCreator::CreateModelSelector(Dgn::DefinitionModelR definitionModel, Dgn::PhysicalModelR modelToSelect)
+Dgn::ModelSelectorPtr ArchPhysCreator::CreateModelSelector(Dgn::DefinitionModelR definitionModel, Dgn::DgnModelR modelToSelect, Utf8CP name)
     {
     // A ModelSelector is a definition element that is normally shared by many ViewDefinitions.
     // To start off, we'll create a default selector that includes the one model that we use.
     // We have to give the selector a unique name of its own. Since we are set up up a new 
     // bim, we know that we can safely choose any name.
-    auto modelSelector = new Dgn::ModelSelector(definitionModel, "Default");
+    auto modelSelector = new Dgn::ModelSelector(definitionModel, name);
     modelSelector->AddModel(modelToSelect.GetModelId());
-    return modelSelector;
+	return modelSelector;
     }
 
 //---------------------------------------------------------------------------------------
@@ -145,6 +146,7 @@ Dgn::DisplayStyle3dPtr ArchPhysCreator::CreateDisplayStyle3d(Dgn::DefinitionMode
     // To start off, we'll create a style that can be used as a good default for 3D views.
     // We have to give the style a unique name of its own. Since we are settup up a new bim, we know that we can safely choose any name.
     auto displayStyle = new Dgn::DisplayStyle3d(model, "Default");
+//	auto d = new Dgn::DisplayStyle2d(model, "default2d");
     displayStyle->SetBackgroundColor(Dgn::ColorDef::White());
     displayStyle->SetSkyBoxEnabled(false);
     displayStyle->SetGroundPlaneEnabled(false);
@@ -153,6 +155,23 @@ Dgn::DisplayStyle3dPtr ArchPhysCreator::CreateDisplayStyle3d(Dgn::DefinitionMode
     displayStyle->SetViewFlags(viewFlags);
     return displayStyle;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+Dgn::DisplayStyle2dPtr ArchPhysCreator::CreateDisplayStyle2d(Dgn::DefinitionModelR model)
+	{
+	// DisplayStyle is a definition element that is potentially shared by many ViewDefinitions.
+	// To start off, we'll create a style that can be used as a good default for 3D views.
+	// We have to give the style a unique name of its own. Since we are settup up a new bim, we know that we can safely choose any name.
+	auto displayStyle = new Dgn::DisplayStyle2d(model, "Default2D");
+	//	auto d = new Dgn::DisplayStyle2d(model, "default2d");
+	displayStyle->SetBackgroundColor(Dgn::ColorDef::Black());
+	Dgn::Render::ViewFlags viewFlags = displayStyle->GetViewFlags();
+	viewFlags.SetRenderMode(Dgn::Render::RenderMode::Wireframe);
+	displayStyle->SetViewFlags(viewFlags);
+	return displayStyle;
+	}
 
 
 
@@ -240,6 +259,751 @@ BentleyStatus ArchPhysCreator::DoUpdateSchema(Dgn::DgnDbPtr db)
 
 	}
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel)
+    {
+
+    // Create the functional Instance
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_PipeRun, functionalModel);
+
+    Utf8String shortCode;
+
+    SetCodeFromParent1(shortCode, *functionalElement, pipeline, "PS");
+    PopulateElementProperties(functionalElement);
+
+    ECN::ECClassCP relClass;
+    ECN::ECRelationshipClassCP  relationShipClass;
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    if (pipeline.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipelineOwnsPipeRuns);
+        functionalElement->SetParentId(pipeline->GetElementId(), relClass->GetId());
+        }
+
+    Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    if (toId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunConnectsToPipingComponent);
+        relationShipClass = relClass->GetRelationshipClassCP();
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, fe->GetElementId(), toId);
+        }
+
+    if (fromId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunConnectsToPipingComponent);
+        relationShipClass = relClass->GetRelationshipClassCP();
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, fe->GetElementId(), fromId);
+        }
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+
+    return functionalElement;
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::DrawingGraphicPtr ArchPhysCreator::CreateAnnotation(Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, Utf8StringCR text, Dgn::Placement2dCR placement)
+    {
+    Dgn::DrawingGraphicPtr annotationGraphics = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+    if (!annotationGraphics.IsValid())
+        return nullptr;
+
+    annotationGraphics->SetPlacement(placement);
+
+    GeometricTools::CreateAnnotationTextGeometry(*annotationGraphics, categoryId, text);
+
+    Dgn::DgnElementCPtr ge = annotationGraphics->Insert();
+
+
+    annotationGraphics = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::DrawingGraphic>(drawingModel, ge->GetElementId());
+
+    return annotationGraphics;
+
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::DrawingGraphicPtr ArchPhysCreator::CreatePipeRunGraphics(Dgn::FunctionalComponentElementCPtr pipeRun, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count)
+    {
+
+    // Now create each of the graphical line instances.
+
+    ECN::ECClassCP              relClass          = drawingModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    ECN::ECRelationshipClassCP  relationShipClass = relClass->GetRelationshipClassCP();
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    Dgn::DgnCode code = pipeRun->GetCode();
+    ECN::ECValue value;
+    value.SetUtf8CP(code.GetValueCP());
+
+    Dgn::DgnElementCPtr ge;
+
+    Dgn::DrawingGraphicPtr pipeRunGraphic;
+
+    for (int i = 0; i < count.size(); i++)
+        {
+        pipeRunGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+        if (!pipeRunGraphic.IsValid())
+            return nullptr;
+
+        int startIndex = 0;
+        if (i > 0) startIndex = count[i-1];
+        GeometricTools::CreatePidLineGeometry(*pipeRunGraphic, drawingModel, &points[startIndex], count[i]);
+        pipeRunGraphic->SetPropertyValue(USERLABEL_NAME, value);
+        ge = pipeRunGraphic->Insert();
+        drawingModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), pipeRun->GetElementId());
+        }
+
+    pipeRunGraphic = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::DrawingGraphic>(drawingModel, ge->GetElementId());
+
+    return pipeRunGraphic;
+
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateNozzle(Dgn::DgnElementId pipeRunId, Dgn::DgnElementId equipmentId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement, bool isVirtual)
+    {
+
+    // Create Nozzle Functional Component
+
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Nozzle, functionalModel);
+
+    Utf8String shortCode;
+
+    SetCodeFromParent1(shortCode, *functionalElement, parentElement, "N");
+
+    PopulateElementProperties(functionalElement);
+
+    //Create the graphics element
+
+    Dgn::DrawingGraphicPtr nozzleGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+    if (!nozzleGraphic.IsValid())
+        return nullptr;
+
+
+    nozzleGraphic->SetPlacement(placement);
+
+    if(!isVirtual)
+        GeometricTools::CreatePidNozzleGeometry(*nozzleGraphic, categoryId);
+    else
+        GeometricTools::CreatePidVirtualNozzleGeometry(*nozzleGraphic, categoryId);
+
+
+    ECN::ECValue value;
+    value.SetUtf8CP(shortCode.c_str());
+    nozzleGraphic->SetPropertyValue(USERLABEL_NAME, value);
+
+    Dgn::DgnElementCPtr ge = nozzleGraphic->Insert();
+
+
+    ECN::ECClassCP relClass;
+    if (equipmentId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_EquipmentOwnsNozzle);
+        functionalElement->SetParentId(equipmentId, relClass->GetId());
+        }
+
+    Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    relClass                      = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
+
+    if (pipeRunId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunConnectsToPipingComponent);
+        ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+        BeSQLite::EC::ECInstanceKey rkey;
+
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, pipeRunId, fe->GetElementId());
+        }
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel,fe->GetElementId());
+
+    return functionalElement;
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateTank( Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
+    {
+
+    // Create Tank Functional Component
+
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Tank, functionalModel);
+    Utf8String shortCode;
+    SetCodeFromParent1( shortCode, *functionalElement, parentElement, "T");
+    PopulateElementProperties(functionalElement);
+    Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    Dgn::DrawingGraphicPtr tankGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+    if (!tankGraphic.IsValid())
+        return nullptr;
+
+    tankGraphic->SetPlacement(placement);
+    GeometricTools::CreatePidTankGeometry(*tankGraphic, categoryId);
+
+    ECN::ECValue value;
+    value.SetUtf8CP(shortCode.c_str());
+    tankGraphic->SetPropertyValue(USERLABEL_NAME, value);
+
+    Dgn::DgnElementCPtr ge = tankGraphic->Insert();
+
+    ECN::ECClassCP relClass;
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+
+    if (subUnitId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalComponentElements);
+        relationShipClass = relClass->GetRelationshipClassCP();
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
+        }
+
+
+    return functionalElement;
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateRoundTank(Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
+    {
+
+    // Create Tank Functional Component
+
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_RoundTank, functionalModel);
+
+    Utf8String shortCode;
+    SetCodeFromParent1(shortCode, *functionalElement, parentElement, "T");
+    PopulateElementProperties(functionalElement);
+    Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    // Create the Graphic Element
+
+    Dgn::DrawingGraphicPtr tankGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+    if (!tankGraphic.IsValid())
+        return nullptr;
+
+    tankGraphic->SetPlacement(placement);
+
+    GeometricTools::CreatePidRoundTankGeometry(*tankGraphic, categoryId);
+
+    ECN::ECValue value;
+    value.SetUtf8CP(shortCode.c_str());
+    tankGraphic->SetPropertyValue(USERLABEL_NAME, value);
+
+    Dgn::DgnElementCPtr ge = tankGraphic->Insert();
+
+
+    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+
+    if (subUnitId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalComponentElements);
+        relationShipClass = relClass->GetRelationshipClassCP();
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
+        }
+
+    return functionalElement;
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateVessel(Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
+    {
+
+    // Create Tank Functional Component
+
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Vessel, functionalModel);
+
+    Utf8String shortCode;
+
+    SetCodeFromParent1(shortCode, *functionalElement, parentElement, "V");
+    PopulateElementProperties(functionalElement);
+
+    Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    // Create the graphics for the Vessel
+
+    Dgn::DrawingGraphicPtr vesselGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+    if (!vesselGraphic.IsValid())
+        return nullptr;
+
+    vesselGraphic->SetPlacement(placement);
+
+    GeometricTools::CreatePidVesselGeometry(*vesselGraphic, categoryId);
+
+    ECN::ECValue value;
+    value.SetUtf8CP(shortCode.c_str());
+    vesselGraphic->SetPropertyValue(USERLABEL_NAME, value);
+
+    Dgn::DgnElementCPtr ge = vesselGraphic->Insert();
+
+
+    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+
+    if (subUnitId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalComponentElements);
+        relationShipClass = relClass->GetRelationshipClassCP();
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
+        }
+
+    return functionalElement;
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreatePump(Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
+    {
+
+    // Create Pump Functional Component
+
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Pump, functionalModel);
+
+    Utf8String shortCode;
+    SetCodeFromParent1(shortCode, *functionalElement, parentElement, "PMP");
+    PopulateElementProperties(functionalElement);
+
+    Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    // Create the graphics for the Pump
+
+    Dgn::DrawingGraphicPtr pumpGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+    if (!pumpGraphic.IsValid())
+        return nullptr;
+
+    pumpGraphic->SetPlacement(placement);
+    GeometricTools::CreatePidPumpGeometry(*pumpGraphic, categoryId);
+
+    ECN::ECValue value;
+    value.SetUtf8CP(shortCode.c_str());
+    pumpGraphic->SetPropertyValue(USERLABEL_NAME, value);
+
+    Dgn::DgnElementCPtr ge = pumpGraphic->Insert();
+
+
+    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+
+    if (subUnitId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalComponentElements);
+        relationShipClass = relClass->GetRelationshipClassCP();
+        functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
+        }
+
+
+    return functionalElement;
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateReducer(Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Utf8StringCR reducerLabel)
+    {
+
+    Dgn::DrawingGraphicPtr reducerGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+    if (!reducerGraphic.IsValid())
+        return nullptr;
+
+    reducerGraphic->SetPlacement(placement);
+
+    GeometricTools::CreatePidReducerGeometry(*reducerGraphic, categoryId);
+
+    ECN::ECValue value;
+    value.SetUtf8CP(reducerLabel.c_str());
+    reducerGraphic->SetPropertyValue(USERLABEL_NAME, value);
+
+    Dgn::DgnElementCPtr ge = reducerGraphic->Insert();
+
+    // Create Reducer Functional Component
+
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Reducer, functionalModel);
+
+    functionalElement->SetPropertyValue(USERLABEL_NAME, value);
+
+    PopulateElementProperties(functionalElement);
+
+    Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    ECN::ECClassCP relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+
+    return functionalElement;
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateGateValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement)
+    {
+
+    // Create the functional component for the Gate Valve
+
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Valve, functionalModel);
+
+    Utf8String shortCode;
+    SetCodeFromParent1(shortCode, *functionalElement, nullptr, "HV");
+
+    PopulateElementProperties(functionalElement);
+
+    ECN::ECClassCP relClass;
+    if (pipeRunId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunOwnsPipingComponents);
+        functionalElement->SetParentId(pipeRunId, relClass->GetId());
+        }
+
+    Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    // Create the graphics for the valve
+
+    Dgn::DrawingGraphicPtr valveGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+    if (!valveGraphic.IsValid())
+        return nullptr;
+
+    valveGraphic->SetPlacement(placement);
+
+    GeometricTools::CreatePidValveGeometry(*valveGraphic, categoryId);
+
+    ECN::ECValue value;
+    value.SetUtf8CP(shortCode.c_str());
+    valveGraphic->SetPropertyValue(USERLABEL_NAME, value);
+
+    Dgn::DgnElementCPtr ge = valveGraphic->Insert();
+
+
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+
+    return functionalElement;
+
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateThreeWayValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement)
+    {
+
+    // Create the functional component for the three way valve
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_3WayValve, functionalModel);
+
+    Utf8String shortCode;
+    SetCodeFromParent1(shortCode, *functionalElement, nullptr, "HV");
+
+    ECN::ECClassCP relClass;
+    if (pipeRunId.IsValid())
+        {
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunOwnsPipingComponents);
+        functionalElement->SetParentId(pipeRunId, relClass->GetId());
+        }
+
+    Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    Dgn::DrawingGraphicPtr valveGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
+
+    if (!valveGraphic.IsValid())
+        return nullptr;
+
+    valveGraphic->SetPlacement(placement);
+
+    GeometricTools::CreatePid3WayValveGeometry(*valveGraphic, categoryId);
+
+    ECN::ECValue value;
+    value.SetUtf8CP(shortCode.c_str());
+    valveGraphic->SetPropertyValue(USERLABEL_NAME, value);
+
+    Dgn::DgnElementCPtr ge = valveGraphic->Insert();
+
+
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass("Functional", "DrawingGraphicRepresentsFunctionalElement");
+    ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, ge->GetElementId(), fe->GetElementId());
+
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+
+    return functionalElement;
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::DrawingModelPtr ArchPhysCreator::CreatePidDrawings(Dgn::DocumentListModelR docListModel, Dgn::FunctionalModelR functionalModel, Utf8StringCR drawingCode, Dgn::DgnElementCPtr subUnit )
+	{
+
+	// Create a drawing model
+
+	Dgn::DrawingModelPtr drawingModel = BuildingDomain::BuildingDomainUtilities::CreateBuildingDrawingModel(drawingCode, docListModel.GetDgnDb(), docListModel);
+
+	Dgn::DgnDbR db = drawingModel->GetDgnDb();
+	Dgn::DgnModelId modelId = drawingModel->GetModelId();
+
+    Dgn::DgnCategoryId categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(db, "PidLine");
+
+    ECN::ECClassCP              relClass;
+    ECN::ECRelationshipClassCP  relationShipClass;
+    BeSQLite::EC::ECInstanceKey rkey;
+
+    // Add all the equipment to the PID
+
+    Dgn::Placement2d       placement;
+    Dgn::DrawingGraphicPtr annotation;
+
+    // **** Add the Tank ****
+
+    placement.GetOriginR() = DPoint2d::From(-91.256, 6.25);
+    Dgn::FunctionalComponentElementCPtr tank = CreateTank(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit);
+    placement.GetOriginR() = DPoint2d::From(-75, 19.375);
+    annotation = CreateAnnotation(categoryId, *drawingModel, tank->GetPropertyValueString(USERLABEL_NAME), placement);
+
+    // ******* Add the Tank Nozzle *****
+
+    placement.GetOriginR() = DPoint2d::From(-60.006, 19.375);
+    Dgn::DgnElementId id;
+    Dgn::FunctionalComponentElementPtr tankNozzle = CreateNozzle(id, tank->GetElementId(), categoryId, functionalModel, *drawingModel, placement, tank);
+
+    // ******* Add the Pump ********
+
+    placement.GetOriginR() = DPoint2d::From(0, 0);
+    Dgn::FunctionalComponentElementCPtr pump = CreatePump(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit);
+    placement.GetOriginR() = DPoint2d::From(0.0, -5);
+    annotation = CreateAnnotation(categoryId, *drawingModel, pump->GetPropertyValueString(USERLABEL_NAME), placement);
+
+   // placement.GetOriginR() = DPoint2d::From(10, 0);
+  //  pump = CreatePump(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit, 1);
+
+    // ****** Add Nozzle to Pump Center ******
+
+    placement.GetOriginR() = DPoint2d::From(0.0,0.0);
+    placement.GetAngleR() = AngleInDegrees::FromDegrees(0.0);
+    Dgn::FunctionalComponentElementPtr pumpNozzle1 = CreateNozzle(id, pump->GetElementId(), categoryId, functionalModel, *drawingModel, placement, pump, true);
+
+    placement.GetOriginR() = DPoint2d::From(4.637, 2.5);
+    placement.GetAngleR() = AngleInDegrees::FromDegrees(0.0);
+    Dgn::FunctionalComponentElementPtr pumpNozzle2 = CreateNozzle(id, pump->GetElementId(), categoryId, functionalModel, *drawingModel, placement, pump, true);
+
+
+    // **** Add the Round Tank ****
+
+    placement.GetOriginR() = DPoint2d::From(57.494, 26.25);
+    Dgn::FunctionalComponentElementCPtr roundTank = CreateRoundTank(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit);
+    placement.GetOriginR() = DPoint2d::From(57.494, 26.25);
+    annotation = CreateAnnotation(categoryId, *drawingModel, roundTank->GetPropertyValueString(USERLABEL_NAME), placement);
+
+    // ****** Add Nozzle to Round Tank ******
+
+    placement.GetOriginR() = DPoint2d::From(47.494, 28.75);
+    placement.GetAngleR() = AngleInDegrees::FromDegrees(180.0);
+    Dgn::FunctionalComponentElementPtr roundTankNozzle = CreateNozzle(id, roundTank->GetElementId(), categoryId, functionalModel, *drawingModel, placement, roundTank);
+
+    // **** Add the Vessel ****
+
+    placement.GetOriginR() = DPoint2d::From(51.244, -20.0);
+    placement.GetAngleR() = AngleInDegrees::FromDegrees(0);
+    Dgn::FunctionalComponentElementCPtr vessel = CreateVessel(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit);
+    placement.GetOriginR() = DPoint2d::From(58.744, -20.0);
+    annotation = CreateAnnotation(categoryId, *drawingModel, vessel->GetPropertyValueString(USERLABEL_NAME), placement);
+
+    // ****** Add Nozzle to Vessle ******
+
+    placement.GetOriginR() = DPoint2d::From(56.244, -15.0);
+    placement.GetAngleR() = AngleInDegrees::FromDegrees(90.0);
+    Dgn::FunctionalComponentElementPtr vesselNozzle = CreateNozzle(id, vessel->GetElementId(), categoryId, functionalModel, *drawingModel, placement, vessel);
+
+    // Create the pipeline breakdown element. 
+
+    Dgn::FunctionalBreakdownElementPtr pipeline = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, "Pipeline", functionalModel);
+    Utf8String shortCode;
+
+    SetCodeFromParent1(shortCode, *pipeline, subUnit, "L");
+
+    Dgn::DgnElementCPtr pl = pipeline->Insert();
+
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalBreakdownElements);
+    relationShipClass = relClass->GetRelationshipClassCP();
+    functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnit->GetElementId(), pl->GetElementId());
+
+
+    // **** Add the Reducer ****
+
+    placement.GetOriginR() = DPoint2d::From(-30.756, 0.0);
+    placement.GetAngleR() = AngleInDegrees::FromDegrees(0.0);
+    Dgn::FunctionalComponentElementPtr reducer = CreateReducer(categoryId, functionalModel, *drawingModel, placement, "4x2");
+    placement.GetOriginR() = DPoint2d::From(-30.156, -2.0);
+    annotation = CreateAnnotation(categoryId, *drawingModel, "4x2", placement);
+
+
+    // PipeRun from Tank to the reducer
+
+    Dgn::FunctionalComponentElementPtr pipeRun1 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, reducer->GetElementId(), tankNozzle->GetElementId(), functionalModel);
+
+    // PipeRun from Reducer to the Pump
+
+    Dgn::FunctionalComponentElementPtr pipeRun2 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, pumpNozzle1->GetElementId(), reducer->GetElementId(), functionalModel);
+
+    // PipeRun from Round Tank to the Vessel
+
+    Dgn::FunctionalComponentElementPtr pipeRun4 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, vesselNozzle->GetElementId(), roundTankNozzle->GetElementId(), functionalModel);
+
+    // **** Add 3 way Valve ****
+
+    placement.GetOriginR() = DPoint2d::From(28.494, 2.5);
+    Dgn::FunctionalComponentElementPtr threeWayValve = CreateThreeWayValve(pipeRun4->GetElementId(), categoryId, functionalModel, *drawingModel, placement);
+    placement.GetOriginR() = DPoint2d::From(33.5, 2.5);
+    annotation = CreateAnnotation(categoryId, *drawingModel, threeWayValve->GetCode().GetValueCP(), placement);
+
+
+    // PipeRun from Pump to the 3 way valves
+
+    Dgn::FunctionalComponentElementPtr pipeRun3 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, threeWayValve->GetElementId(), pumpNozzle2->GetElementId(), functionalModel);
+
+    // ******** Add the Gate Valve ******
+
+    placement.GetOriginR() = DPoint2d::From(-48.361, 19.375);
+    Dgn::FunctionalComponentElementPtr gateValve = CreateGateValve(pipeRun1->GetElementId(), categoryId, functionalModel, *drawingModel, placement);
+    placement.GetOriginR() = DPoint2d::From(-46.861, 17.375);
+    annotation = CreateAnnotation(categoryId, *drawingModel, gateValve->GetCode().GetValueCP(), placement);
+
+    // Add the PipeRun graphics for the fist PipeRun
+
+    DPoint2d points[7];
+    points[0] = DPoint2d::From(-59.256, 19.375);
+    points[1] = DPoint2d::From(-48.361, 19.375);
+    points[2] = DPoint2d::From(-45.361, 19.375);
+    points[3] = DPoint2d::From(-35.006, 19.375);
+    points[4] = DPoint2d::From(-35.006, 0.0);
+    points[5] = DPoint2d::From(-30.756, 0.0);
+
+    bvector<int> counts;
+    counts.push_back(2);
+    counts.push_back(4);
+
+    CreatePipeRunGraphics(pipeRun1, categoryId, *drawingModel, points, counts);
+
+    // Add the PipeRun from the Reducer to the Pump
+
+    points[0] = DPoint2d::From(-29.256, 0.0);
+    points[1] = DPoint2d::From(0.0, 0.0);
+
+    counts.clear();
+    counts.push_back(2);
+
+    CreatePipeRunGraphics(pipeRun2, categoryId, *drawingModel, points, counts);
+
+    points[0] = DPoint2d::From(30.0, 4.0);
+    points[1] = DPoint2d::From(30.0, 28.75);
+    points[2] = DPoint2d::From(46.743, 28.75);
+
+    points[3] = DPoint2d::From(30.0, 1.0);
+    points[4] = DPoint2d::From(30.0, -8.75);
+    points[5] = DPoint2d::From(56.25, -8.75);
+    points[6] = DPoint2d::From(56.25, -14.249);
+
+    counts.clear();
+    counts.push_back(3);
+    counts.push_back(4);
+
+    CreatePipeRunGraphics(pipeRun4, categoryId, *drawingModel, points, counts);
+
+    points[0] = DPoint2d::From(4.637, 2.5);
+    points[1] = DPoint2d::From(28.494, 2.5);
+    counts.clear();
+    counts.push_back(2);
+
+    CreatePipeRunGraphics(pipeRun3, categoryId, *drawingModel, points, counts);
+
+	return drawingModel;
+
+	}
+
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
@@ -260,11 +1024,54 @@ BentleyStatus ArchPhysCreator::DoCreate()
 	if (BentleyStatus::SUCCESS != status)
 		return BentleyStatus::ERROR;
 
-	BuildingPhysical::BuildingPhysicalModelPtr       physicalModel       = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel       (BUILDING_MODEL_NAME, *db);
-	BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel(BUILDING_MODEL_NAME, *db);
+	BuildingPhysical::BuildingPhysicalModelPtr       physicalModel       = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel         (BUILDING_MODEL_NAME, *db);
+	BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = BuildingDomain::BuildingDomainUtilities::GetBuildingTypeDefinitionModel  (BUILDING_MODEL_NAME, *db);
+	Dgn::DocumentListModelPtr                        docListModel        = BuildingDomain::BuildingDomainUtilities::CreateBuildingDocumentListModel (BUILDING_MODEL_NAME, *db);
+	Dgn::FunctionalModelPtr                          functionalModel     = BuildingDomain::BuildingDomainUtilities::CreateBuildingFunctionalModel   (BUILDING_MODEL_NAME, *db);
+	Dgn::DefinitionModelR                            dictionary          = db->GetDictionaryModel();
 
+	Dgn::CategorySelectorPtr categorySelector = CreateCategorySelector(dictionary);
+	Dgn::DisplayStyle2dPtr displayStyle1 = CreateDisplayStyle2d(dictionary);
 
-	DoUpdateSchema(db);
+    Utf8String shortCode;
+
+    for (int unitNum = 0; unitNum < 4; unitNum++)
+        {
+
+        Dgn::FunctionalBreakdownElementPtr unit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Unit, *functionalModel);
+
+        SetCodeFromParent1(shortCode, *unit, nullptr, "U");
+        Dgn::DgnElementCPtr un = unit->Insert();
+
+        for (int subUnitNum = 0; subUnitNum < 4; subUnitNum++)
+            {
+
+            Dgn::FunctionalBreakdownElementPtr subUnit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_SubUnit, *functionalModel);
+            SetCodeFromParent1(shortCode, *subUnit, un, "SU");
+
+            Dgn::DgnElementCPtr subUn = subUnit->Insert();
+
+            ECN::ECClassCP relClass = db->GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_UnitContainsSubUnit);
+            ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
+            BeSQLite::EC::ECInstanceKey rkey;
+            db->InsertLinkTableRelationship(rkey, *relationShipClass, un->GetElementId(), subUn->GetElementId());
+
+            static int pidNum = 1;
+            for (int j = 1; j < 5; j++)
+                {
+                Utf8String pidName;
+                pidName.Sprintf("PID-%0.3d", pidNum);
+                pidNum++;
+                Dgn::DrawingModelPtr drawingModel = CreatePidDrawings(*docListModel, *functionalModel, pidName, subUn);
+
+                Dgn::DgnViewId viewId = CreateView2d(dictionary, pidName.c_str(), *categorySelector, drawingModel->GetModelId(), *displayStyle1);
+
+                if (!viewId.IsValid())
+                    return BentleyStatus::ERROR;
+                }
+            }
+        }
+
 
     CreateBuilding( *physicalModel, *typeDefinitionModel);
 
@@ -275,15 +1082,16 @@ BentleyStatus ArchPhysCreator::DoCreate()
     db->GeoLocation().SetProjectExtents(projectExtents);
 
     // Create the initial view
-    Dgn::DefinitionModelR dictionary = db->GetDictionaryModel();
-    Dgn::CategorySelectorPtr categorySelector = CreateCategorySelector(dictionary);
-    Dgn::ModelSelectorPtr modelSelector = CreateModelSelector(dictionary, *physicalModel);
-    Dgn::DisplayStyle3dPtr displayStyle = CreateDisplayStyle3d(dictionary);
+    Dgn::ModelSelectorPtr modelSelector = CreateModelSelector(dictionary, *physicalModel, "Default3D");
+	//Dgn::ModelSelectorPtr modelSelector1 = CreateModelSelector(dictionary, *drawingModel, "Default2D");
+	Dgn::DisplayStyle3dPtr displayStyle = CreateDisplayStyle3d(dictionary);
 
-    Dgn::DgnViewId viewId = CreateView(dictionary, "Building View", *categorySelector, *modelSelector, *displayStyle);
+	Dgn::DgnViewId viewId = CreateView(dictionary, "Building View", *categorySelector, *modelSelector, *displayStyle);
 
     if (!viewId.IsValid())
         return BentleyStatus::ERROR;
+
+
 
     return BentleyStatus::SUCCESS;
     }
@@ -311,6 +1119,39 @@ Dgn::DgnViewId ArchPhysCreator::CreateView(Dgn::DefinitionModelR model, Utf8CP n
     db.SaveProperty(Dgn::DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
     return viewId;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Dgn::DgnViewId ArchPhysCreator::CreateView2d(Dgn::DefinitionModelR model, Utf8CP name, Dgn::CategorySelectorR categorySelector, Dgn::DgnModelId baseModelId, Dgn::DisplayStyle2dR displayStyle)
+	{
+	// CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
+	// That is why they are inputs to this function. 
+	//Dgn::OrthographicViewDefinition view(model, name, categorySelector, displayStyle, modelSelector);
+
+	Dgn::DrawingViewDefinition view(model, name, baseModelId, categorySelector, displayStyle);
+
+	// Define the view direction and volume.
+	Dgn::DgnDbR db = model.GetDgnDb();
+
+	DPoint3d points[3];
+
+	points[0] = DPoint3d::From(-100, -40);
+	points[1] = DPoint3d::From(100,  60);
+
+	DRange3d range = DRange3d::From(points, 2);
+	//view.SetStandardViewRotation(Dgn::StandardView::Iso); // Default to a rotated view
+	view.LookAtVolume(range); // A good default for a new view is to "fit" it to the contents of the bim.
+
+															 // Write the ViewDefinition to the bim
+	if (!view.Insert().IsValid())
+		return Dgn::DgnViewId();
+
+	// Set the DefaultView property of the bim
+	Dgn::DgnViewId viewId = view.GetViewId();
+	db.SaveProperty(Dgn::DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
+	return viewId;
+	}
 
 
 //---------------------------------------------------------------------------------------
@@ -361,14 +1202,14 @@ BentleyStatus ArchPhysCreator::PopulateInstanceProperties(ECN::IECInstancePtr in
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-BentleyStatus ArchPhysCreator::PopulateElementProperties(Dgn::PhysicalElementPtr element)
+BentleyStatus ArchPhysCreator::PopulateElementProperties(Dgn::DgnElementPtr element)
     {
     ECN::ECClassCP ecClass = element->GetElementClass();
     int i = 0;
 
     for each (ECN::ECPropertyP prop in ecClass->GetProperties())
         {
-        if (nullptr == prop || prop->GetName() == "Roll" || prop->GetName() == "Pitch" || prop->GetName() == "Yaw")
+        if (nullptr == prop || prop->GetName() == "Roll" || prop->GetName() == "Pitch" || prop->GetName() == "Yaw" || prop->GetName() == "UserLabel" || prop->GetName() == "CodeValue" || prop->GetName() == "JsonProperties")
             continue;
 
         Utf8String typeName = prop->GetTypeName();
@@ -413,7 +1254,7 @@ BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysical
 
 	int i = 0;
 
-	for (int j = 1; j < 500; j++)
+	for (int j = 1; j < 5; j++)
 		{
 		if (i > 100)
 			i = 0;
@@ -665,6 +1506,83 @@ BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysical
     return BentleyStatus::SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+//BentleyStatus ArchPhysCreator::SetCodeFromParent(Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR shortCode)
+//    {
+//
+//    Utf8String codeValue;
+//
+//    if (parentElement.IsValid())
+//        codeValue.Sprintf("%s-%s", parentElement->GetCode().GetValueCP(), shortCode.c_str());
+//    else
+//        codeValue = shortCode;
+//
+//    Dgn::DgnCode code = BuildingDomain::BuildingDomainUtilities::CreateCode (*functionalElement.GetModel(), codeValue);
+//
+//    functionalElement.SetCode(code);
+//
+//    ECN::ECValue value;
+//    value.SetUtf8CP(shortCode.c_str());
+//    functionalElement.SetPropertyValue(USERLABEL_NAME, value);
+//
+//    return BentleyStatus::SUCCESS;
+//
+//    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+
+Dgn::DgnCode ArchPhysCreator::SetCodeFromParent1(Utf8StringR shortCode, Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR deviceCode)
+    {
+
+    int number;
+
+    static bmap<Utf8String, int> s_numberMap;
+
+    Utf8String lookUp;
+
+    if (parentElement.IsValid())
+        lookUp.Sprintf("%s%s", parentElement->GetCode().GetValueCP(), deviceCode.c_str());
+    else
+        lookUp = deviceCode;
+
+    auto iterator = s_numberMap.find(lookUp);
+
+    if (iterator != s_numberMap.end())
+        {
+        number = iterator->second;
+        }
+    else
+        {
+        number = 1;
+        }
+
+    s_numberMap[lookUp] = number + 1;
+
+    Utf8String codeValue;
+
+    shortCode.Sprintf("%s%0.3d", deviceCode.c_str(), number);
+
+    if (parentElement.IsValid())
+        codeValue.Sprintf("%s-%s", parentElement->GetCode().GetValueCP(), shortCode.c_str());
+    else
+        codeValue = shortCode;
+
+    Dgn::DgnCode code = BuildingDomain::BuildingDomainUtilities::CreateCode(*functionalElement.GetModel(), codeValue);
+
+    functionalElement.SetCode(code);
+
+    ECN::ECValue value;
+    value.SetUtf8CP(shortCode.c_str());
+    functionalElement.SetPropertyValue(USERLABEL_NAME, value);
+
+    return code;
+
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems

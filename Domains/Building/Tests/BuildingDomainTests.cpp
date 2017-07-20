@@ -144,6 +144,48 @@ TEST_F(BuildingDomainTestFixture, CreatePhysicalPartion)
 //  @bsimethod                                                    06/2017
 //+---------------+---------------+---------------+---------------+---------------+-------
 
+TEST_F(BuildingDomainTestFixture, CreateFunctionalPartion)
+	{
+	DgnDbPtr db = OpenDgnDb();
+
+	ASSERT_TRUE(db.IsValid());
+
+	Dgn::FunctionalModelPtr functionModel = BuildingDomain::BuildingDomainUtilities::CreateBuildingFunctionalModel(MODEL_TEST_NAME, *db);
+	ASSERT_TRUE(functionModel.IsValid());
+
+
+	}
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
+TEST_F(BuildingDomainTestFixture, CreateDocumentListPartion)
+	{
+	DgnDbPtr db = OpenDgnDb();
+
+	ASSERT_TRUE(db.IsValid());
+
+	Dgn::DocumentListModelPtr model = BuildingDomain::BuildingDomainUtilities::CreateBuildingDocumentListModel(MODEL_TEST_NAME, *db);
+	ASSERT_TRUE(model.IsValid());
+
+	for (int i = 0; i < 100; i++)
+		{
+		Utf8String drawingName;
+		drawingName.Sprintf("PID-%d", i);
+		Dgn::DrawingModelPtr drawingModel = BuildingDomain::BuildingDomainUtilities::CreateBuildingDrawingModel(drawingName, *db, *model);
+		ASSERT_TRUE(drawingModel.IsValid());
+		}
+
+
+
+	}
+
+
+//---------------------------------------------------------------------------------------
+//  @bsimethod                                                    06/2017
+//+---------------+---------------+---------------+---------------+---------------+-------
+
 TEST_F(BuildingDomainTestFixture, GetBuildingModel)
 	{
 	DgnDbPtr db = OpenDgnDb();
