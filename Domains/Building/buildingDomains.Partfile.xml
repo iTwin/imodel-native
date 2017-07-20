@@ -5,7 +5,7 @@
     <Part Name="BuildingDomains" PrgOutputDir="BuildingDomainSDK-Winx64">
         <!--SubProduct ProductName="BuildingDomainTests"/-->
         <SubPart PartName="RunBuildingDomainTests"/>
-        <SubProduct ProductName="BuildingDomainSDK-Winx64"/>
+        <SubPart PartName="BuildingDomainSDK-Winx64-Only"/>
     </Part>
 
 
@@ -88,9 +88,13 @@
     </Part>
 
 
+    <Part Name="BuildingDomainSDK-Winx64-Only" OnlyPlatforms="x64">
+        <SubProduct ProductName="BuildingDomainSDK-Winx64"/>
+    </Part>
 
 
-    <Product Name="BuildingDomainSDK-Winx64" PrgOutputDir="BuildingDomainSDK-Winx64" SaveProduct="true">
+
+    <Product Name="BuildingDomainSDK-Winx64"  SaveProduct="true">
         <Directories DirectoryListName="BuildingDomainSDK-Winx64"/>
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
         <SubPart PartName="StructuralDomain"            PartFile="StructuralDomains"      Repository="DgnDomains-Structural"/>
