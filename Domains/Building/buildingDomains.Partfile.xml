@@ -8,14 +8,14 @@
         <SubProduct ProductName="BuildingDomainSDK-Winx64"/>
     </Part>
 
-    
+
     <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
     <Part Name="BuildingDomainsWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
         <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
         <SubPart PartName="BuildingDomains"/>
     </Part>
-    
+
 
     <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
@@ -43,7 +43,7 @@
             </Files>
 
             <Directory SourceName="PublicApi/BuildingDomain" ProductDirectoryName="BuildingDomainIncludes" />
-            
+
           <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
             <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
         </Bindings>
@@ -53,7 +53,7 @@
     <Part Name="BuildingDomainTestsExe" DeferType="BuildingDomainTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
         <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
-        <SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" />
+        <!--SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" /-->
         <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
         <SubPart PartName="BuildingDomain"/>
         <Bindings>
@@ -74,28 +74,28 @@
         <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
         <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
     </ProductDirectoryList>
-    
+
     <Product Name="BuildingDomainTests" OnlyPlatforms="x64">
         <SubPart PartName="BuildingDomainTestsExe"/>
         <Directories DirectoryListName="Tests"/>
     </Product>
 
-    
+
     <Part Name="RunBuildingDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=BuildingDomainTests\Assemblies\  -dGTEST_NAME=BuildingDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="BuildingDomainTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/BuildingDomainTests.log</Files>
         </Bindings>
     </Part>
-    
 
-    
-    
-    <Product Name="BuildingDomainSDK-Winx64">
+
+
+
+    <Product Name="BuildingDomainSDK-Winx64" PrgOutputDir="BuildingDomainSDK-Winx64" SaveProduct="true">
         <Directories DirectoryListName="BuildingDomainSDK-Winx64"/>
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
         <SubPart PartName="StructuralDomain"            PartFile="StructuralDomains"      Repository="DgnDomains-Structural"/>
-        <SubPart PartName="PlantPrototypeDomainHandler" PartFile="PlantPrototypeDomain"   Repository="DgnDomain-PlantPrototype"/>
+        <!--SubPart PartName="PlantPrototypeDomainHandler" PartFile="PlantPrototypeDomain"   Repository="DgnDomain-PlantPrototype"/-->
     </Product>
 
     <ProductDirectoryList ListName="BuildingDomainSDK-Winx64">
@@ -117,10 +117,10 @@
 
 
     </ProductDirectoryList>
-    
-    
+
+
 <!--
-    
+
     <Part Name="ArchitecturalPhysical" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.mke" ApiNumber="B02">
         <SubPart PartName="ArchPhysPublicAPI"/>
         <SubPart PartName="BuildingCommon"/>
@@ -132,7 +132,7 @@
             <Assemblies>Delivery/$(shlibprefix)ArchitecturalPhysical$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-    
+
     <Part Name="ArchPhysPublicAPI" BentleyBuildMakeFile="ArchitecturalPhysicalSchema\ArchitecturalPhysicalSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="ArchitecturalPhysical"/>
@@ -142,7 +142,7 @@
         </Bindings>
     </Part>
 
-    
+
     <Part Name="BuildingCommon" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.mke" ApiNumber="B02">
         <SubPart PartName="BuildingCommonPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
@@ -151,7 +151,7 @@
             <Assemblies>Delivery/$(shlibprefix)BuildingCommon$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-    
+
     <Part Name="BuildingCommonPublicAPI" BentleyBuildMakeFile="BuildingCommonSchema\BuildingCommonSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="BuildingCommon"/>
@@ -170,7 +170,7 @@
             <Assemblies>Delivery/$(shlibprefix)BuildingPhysical$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
-    
+
     <Part Name="BuildingPhysicalPublicAPI" BentleyBuildMakeFile="BuildingPhysicalSchema\BuildingPhysicalSchema.prewire.mke">
         <Bindings>
             <PublicAPI Domain="BuildingPhysical"/>
@@ -179,8 +179,8 @@
             </Files>
         </Bindings>
     </Part>
-    
-    
+
+
     <Part Name="ArchitecturalPhysicalTestsExe" DeferType="ArchitecturalPhysicalTests" BentleyBuildMakeFile="ArchitecturalPhysicalSchema/Tests/Tests.mke" OnlyPlatforms="x64">
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
         <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
@@ -204,26 +204,26 @@
         <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
         <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
     </ProductDirectoryList>
-    
+
     <Product Name="ArchitecturalPhysicalTests" OnlyPlatforms="x64">
         <SubPart PartName="ArchitecturalPhysicalTestsExe"/>
         <Directories DirectoryListName="Tests"/>
     </Product>
 
-    
+
     <Part Name="RunArchitecturalPhysicalTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_EXE=$(OutputRootDir)Product/ArchitecturalPhysicalTests/ArchitecturalPhysicalTests" OnlyPlatforms="x64" ExcludeLibType="Static">
         <SubProduct ProductName="ArchitecturalPhysicalTests" />
         <Bindings>
             <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/ArchitecturalPhysicalTests.log</Files>
         </Bindings>
     </Part>
-    
--->    
+
+-->
     <!-- NOT YET
-    
+
     BentleyBuildMakeFile="Building.mke" ApiNumber="B02"
         <SubPart PartName="ArchPhysPublishedApi"/>
-    
+
     <Part Name="ArchPhysPublishedApi" BentleyBuildMakeFile="${SrcRoot}bsicommon/sharedmki/PublishApi.mke" BMakeOptions="+dPUBLISHAPI_DELIVERY_DIR=Delivery/PublishedApi +dPUBLISHAPI_VENDORAPI=json  +dPUBLISHAPI_VENDORAPI2=rapidjson +dPUBLISHAPI_VENDORAPI3=libxml +dPUBLISHAPI_VENDORAPI4=folly">
     <!-    <SubPart PartName="BuildingView"/> ->
         <Bindings>
@@ -254,7 +254,7 @@
     <Part Name="BuildingDocsBuildCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/BuildSampleCode.mke" BMakeOptions="-dBUILD_SAMPLE_CODE_SOURCE_DIR=$(SrcRoot)DgnDomains/Building/docs/samplecode -dBUILD_SAMPLE_CODE_SUB_DIR=Buildingsamplecode -dPolicyFile=$(SrcRoot)DgnDomains/Building/BuildingPolicy.mki">
         <SubPart PartName="BuildingDocsExtractCodeSamples" />
     </Part>
-  
+
     <Part Name="BuildingDocsExtractCodeSamples" DeferType="BuildDocs" BentleyBuildMakeFile="${SrcRoot}bsicommon/build/Extractions.mke" BMakeOptions="-dEXTRACTIONS_SOURCE_DIR=$(SrcRoot)DgnDomains/Building/docs/samplecode -dEXTRACTIONS_OUTPUT_BUILD_SUBDIR=Building/docs/extractedsamplecode -dEXTRACTIONS_NO_PROVENANCE -dEXTRACTIONS_OUTPUT_BUILDCONTEXT_SUBDIR=Dox/Extractions/Building">
         <SubPart PartName="BuildingPublishedApi" />
         <Bindings>
@@ -263,9 +263,9 @@
     </Part>
 -->
 <!-- NOT YET
-    
-    <!- ======================================================================================================== 
-      Build Unit Tests 
+
+    <!- ========================================================================================================
+      Build Unit Tests
      ======================================================================================================== ->
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/prewire.mke">
         <Bindings>
@@ -297,7 +297,7 @@
     </Part>
 
     <!- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in DgnClientFx's Gtest-Aggregator and RunGtest-DgnClientFxTests parts ->
-    
+
     <Product Name="Building-Tests">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
         <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
