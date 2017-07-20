@@ -21,9 +21,9 @@ struct StructuralPhysicalModel : Dgn::PhysicalModel
     friend struct StructuralPhysicalModelHandler;
 
     // The DGNMODEL_DECLARE_MEMBERS macro automates some required configuration:
-    // Parameter 1) BP_CLASS_StructuralPhysicalModel - the name of the ECEntityClass in the ecschema.xml file
+    // Parameter 1) SP_CLASS_StructuralPhysicalModel - the name of the ECEntityClass in the ecschema.xml file
     // Parameter 2) Dgn::PhysicalModel - the superclass of StructuralPhysicalModel
-    DGNMODEL_DECLARE_MEMBERS(BP_CLASS_StructuralPhysicalModel, Dgn::PhysicalModel);
+    DGNMODEL_DECLARE_MEMBERS(SP_CLASS_StructuralPhysicalModel, Dgn::PhysicalModel);
 
     protected:
         //! StructuralPhysicalModel wants custom behavior when elements are inserted
@@ -44,11 +44,11 @@ struct StructuralPhysicalModel : Dgn::PhysicalModel
 struct StructuralPhysicalModelHandler : Dgn::dgn_ModelHandler::Physical
     {
     // The MODELHANDLER_DECLARE_MEMBERS macro automates some required configuration:
-    // Parameter 1) BP_CLASS_StructuralPhysicalModel - the name of the ECEntityClass in the ecschema.xml file
+    // Parameter 1) SP_CLASS_StructuralPhysicalModel - the name of the ECEntityClass in the ecschema.xml file
     // Parameter 2) StructuralPhysicalModel - the DgnModel subclass which provides the custom behavior for the ECEntityClass
     // Parameter 3) StructuralPhysicalModelHandler - the factory class that will create instances of StructuralPhysicalModel
     // Parameter 4) Dgn::dgn_ModelHandler::Physical - the superclass of StructuralPhysicalModelHandler
-    MODELHANDLER_DECLARE_MEMBERS(BP_CLASS_StructuralPhysicalModel, StructuralPhysicalModel, StructuralPhysicalModelHandler, Dgn::dgn_ModelHandler::Physical, STRUCTURAL_PHYSICAL_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(SP_CLASS_StructuralPhysicalModel, StructuralPhysicalModel, StructuralPhysicalModelHandler, Dgn::dgn_ModelHandler::Physical, STRUCTURAL_PHYSICAL_EXPORT)
     };
 
 
