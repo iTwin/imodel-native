@@ -199,7 +199,7 @@ struct DbMappingManager final : NonCopyableClass
             static BentleyStatus MapUserDefinedIndexes(SchemaImportContext&, ClassMap const&);
 
             static BentleyStatus TryDetermineRelationshipMappingType(RelationshipMappingType&, SchemaImportContext const&, ECN::ECRelationshipClassCR);
-            static BentleyStatus FailIfConstraintClassIsNotMapped(SchemaImportContext&, ECN::ECRelationshipClassCR const&);
+            static BentleyStatus FailIfConstraintClassIsNotMapped(SchemaImportContext&, ECN::ECRelationshipClassCR);
 
             //! Rules:
             //! If MapStrategy != TPH: NotInherited
