@@ -8,7 +8,6 @@
 #include "ConverterTestsBaseFixture.h"
 
 #include <DgnPlatform/WebMercator.h>
-#include <Bentley/BeTimeUtilities.h>
 #include <DgnPlatform/GenericDomain.h>
 #include <DgnPlatform/FunctionalDomain.h>
 #include <Raster/RasterDomain.h>
@@ -207,11 +206,8 @@ DgnDbPtr ConverterTestBaseFixture::OpenExistingDgnDb(BentleyApi::BeFileNameCR pr
     DbResult fileStatus;
 
     DgnDb::OpenParams openParams(mode);
-    BentleyApi::StopWatch timer("OpenExisting", true);
 
     DgnDbPtr ret = DgnDb::OpenDgnDb(&fileStatus, projectName, openParams);
-    timer.Stop();
-    printf("%s: %.4lf\n", timer.GetDescription(), timer.GetElapsedSeconds());
     return ret;
     }
 
@@ -315,7 +311,6 @@ void AddExternalDataModels (DgnDbR db)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, BentleyApi::BeFileNameCR input)
     {
-    BentleyApi::StopWatch timer("DoConvert", true);
     if (!m_noGcs)
         SetGcsDef();
 
@@ -329,26 +324,14 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
 
     if (!m_opts.m_useTiledConverter)
         {
-        BentleyApi::StopWatch timer3("TestRootModelCreator", true);
         TestRootModelCreator creator(params, this);
         creator.SetWantDebugCodes(true);
         creator.SetDgnDb(*db);
         creator.SetIsUpdating(false);
         creator.AttachSyncInfo();
-        BentleyApi::StopWatch timer4("InitRootModel", true);
         ASSERT_EQ(BentleyApi::SUCCESS, creator.InitRootModel());
-        timer4.Stop();
-        printf("%s: %.4lf\n", timer4.GetDescription(), timer4.GetElapsedSeconds());
-        BentleyApi::StopWatch timer5("InitializeJob", true);
         ASSERT_EQ(TestRootModelCreator::ImportJobCreateStatus::Success, creator.InitializeJob());
-        timer5.Stop();
-        printf("%s: %.4lf\n", timer5.GetDescription(), timer5.GetElapsedSeconds());
-        timer3.Stop();
-        printf("%s: %.4lf\n", timer3.GetDescription(), timer3.GetElapsedSeconds());
-        BentleyApi::StopWatch timer2("Process conversion", true);
         creator.Process();
-        timer2.Stop();
-        printf("%s: %.4lf\n", timer2.GetDescription(), timer2.GetElapsedSeconds());
         DgnDbR db = creator.GetDgnDb();
         AddExternalDataModels (db);
         ASSERT_FALSE(creator.WasAborted());
@@ -372,8 +355,6 @@ void ConverterTestBaseFixture::DoConvert(BentleyApi::BeFileNameCR output, Bentle
         }
 
     db->SaveChanges();
-    timer.Stop();
-    printf("%s: %.4lf\n", timer.GetDescription(), timer.GetElapsedSeconds());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -424,7 +405,6 @@ void ConverterTestBaseFixture::DoUpdate(BentleyApi::BeFileNameCR output, Bentley
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ConverterTestBaseFixture::LineUpFiles(BentleyApi::WCharCP outputDgnDbFileName, BentleyApi::WCharCP inputV8FileName, bool doConvert)
     {
-    BentleyApi::StopWatch timer("LineUpFiles", true);
     MakeWritableCopyOf(m_v8FileName, inputV8FileName);
     m_dgnDbFileName = GetOutputFileName(outputDgnDbFileName);
     DeleteExistingDgnDb(m_dgnDbFileName);
@@ -434,8 +414,6 @@ void ConverterTestBaseFixture::LineUpFiles(BentleyApi::WCharCP outputDgnDbFileNa
     MakeWritableCopyOf(outSyncFile, syncFile, SyncInfo::GetDbFileName(m_dgnDbFileName).GetFileNameAndExtension().c_str());
     if (doConvert)
         DoConvert(m_dgnDbFileName, m_v8FileName);
-    timer.Stop();
-    printf("%s: %.4lf seconds\n", timer.GetDescription(), timer.GetElapsedSeconds());
     }
 
 /*---------------------------------------------------------------------------------**//**
