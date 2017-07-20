@@ -6134,11 +6134,11 @@ TEST_F(DbMappingTestFixture, LogicalForeignKeyOnSharedColumn)
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.ModelHasElements"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
     ASSERT_EQ(2, stmt.GetValueInt64(0));
-    ASSERT_EQ(51, stmt.GetValueInt64(1));
+    ASSERT_EQ(55, stmt.GetValueInt64(1));
     ASSERT_EQ(1, stmt.GetValueInt64(2));
-    ASSERT_EQ(52, stmt.GetValueInt64(3));
+    ASSERT_EQ(56, stmt.GetValueInt64(3));
     ASSERT_EQ(2, stmt.GetValueInt64(4));
-    ASSERT_EQ(50, stmt.GetValueInt64(5));
+    ASSERT_EQ(54, stmt.GetValueInt64(5));
     
     ASSERT_FALSE(ecdb.ColumnExists("ts_DgnElement", "RelECClassId"));
     }
