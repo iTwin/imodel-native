@@ -39,7 +39,7 @@
               ECSchemas/Domain/ArchitecturalPhysical.ecschema.xml
               ECSchemas/Domain/BuildingPhysical.ecschema.xml
               ECSchemas/Domain/BuildingCommon.ecschema.xml
-              ECSchemas/Domain/MechanicalFunctional.ecschema.xml
+              <!--ECSchemas/Domain/MechanicalFunctional.ecschema.xml-->
             </Files>
 
             <Directory SourceName="PublicApi/BuildingDomain" ProductDirectoryName="BuildingDomainIncludes" />
