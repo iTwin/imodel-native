@@ -16,7 +16,8 @@ SchemaUpgradeTestFixture.UpdateECDbMapCA_DbIndexChanges
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
 #TFS 728039
-DbMappingTestFixture.NotMappedCATests
+ECRelationshipInheritanceTestFixture.InvalidCases
+RelationshipMappingTestFixture.InvalidCases
 
 #TFS 721630 
 ECSqlSelectPrepareTests.LikeOperator

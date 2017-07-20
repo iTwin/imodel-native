@@ -127,7 +127,6 @@ private:
     BentleyStatus EvaluateRootClassLinkTableStrategy(SchemaImportContext&, ClassMappingCACache const&);
     BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&);
 
-    BentleyStatus FailIfConstraintClassIsNotMapped() const;
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass)  : ClassMappingInfo(ecdb, relationshipClass) {}
     ~RelationshipMappingInfo() {}

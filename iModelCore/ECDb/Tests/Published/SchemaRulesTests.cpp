@@ -573,7 +573,7 @@ TEST_F(SchemaRulesTestFixture, PropertyOfSameTypeAsClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaRulesTestFixture, NavigationProperties)
     {
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
                        <ECProperty propertyName="Name" typeName="string" />
                      </ECEntityClass>
@@ -589,7 +589,27 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                             <Class class="Child"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "A nav prop cannot be applied for a link table rel";
+                   </ECSchema>)xml"))) << "A nav prop cannot be applied for a link table rel (implied by M:N cardinality)";
+
+     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema1" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" >
+                       <ECProperty propertyName="Code" typeName="string" />
+                       <ECNavigationProperty propertyName="MyParent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Sealed" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" roleLabel="is owned by">
+                            <Class class="Child"/>
+                        </Target>
+                       <ECProperty propertyName="Order" typeName="int" />
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "A nav prop cannot be applied for a link table rel (implied as rel has a property)";
+
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema2" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
@@ -611,7 +631,7 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                             <Class class="Child"/>
                         </Target>
                      </ECRelationshipClass>
-                   </ECSchema>)xml"))) << "A nav prop cannot be applied for a link table rel";
+                   </ECSchema>)xml"))) << "A nav prop cannot be applied for a link table rel (because of LinkTableRelationshipMap CA)";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema3" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECEntityClass typeName="Parent" >
@@ -1059,6 +1079,216 @@ TEST_F(SchemaRulesTestFixture, NavigationProperties)
                         </Target>
                      </ECRelationshipClass>
                    </ECSchema>)xml"))) << "Navigation properties on all constraint classes must have same name.";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema20" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub2" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" >
+                         <ECCustomAttributes>
+                            <ForeignKeyConstraint xlmns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        </ECNavigationProperty>
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                            <Class class="ChildSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Navigation properties where one has ForeignKeyConstraint CA and other doesn't";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema21" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" >
+                         <ECCustomAttributes>
+                            <ForeignKeyConstraint xlmns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        </ECNavigationProperty>
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub2" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" />
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                            <Class class="ChildSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Navigation properties where one has ForeignKeyConstraint CA and other doesn't";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema22" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" >
+                         <ECCustomAttributes>
+                            <ForeignKeyConstraint xlmns="ECDbMap.02.00">
+                                <OnDeleteAction>NoAction</OnDeleteAction>
+                            </ForeignKeyConstraint>
+                        </ECCustomAttributes>
+                        </ECNavigationProperty>
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub2" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" >
+                         <ECCustomAttributes>
+                            <ForeignKeyConstraint xlmns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        </ECNavigationProperty>
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                            <Class class="ChildSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Navigation properties with different ForeignKeyConstraint CAs";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema23" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" >
+                         <ECCustomAttributes>
+                            <ForeignKeyConstraint xlmns="ECDbMap.02.00"/>
+                        </ECCustomAttributes>
+                        </ECNavigationProperty>
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub2" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" >
+                         <ECCustomAttributes>
+                            <ForeignKeyConstraint xlmns="ECDbMap.02.00">
+                                <OnDeleteAction>NoAction</OnDeleteAction>
+                            </ForeignKeyConstraint>
+                        </ECCustomAttributes>
+                        </ECNavigationProperty>
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                            <Class class="ChildSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Navigation properties with different ForeignKeyConstraint CAs";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema24" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+                    <ECEntityClass typeName="Parent" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="Child" modifier="Abstract" >
+                        <ECCustomAttributes>
+                            <ClassMap xlmns="ECDbMap.02.00">
+                                <MapStrategy>TablePerHierarchy</MapStrategy>
+                            </ClassMap>
+                        </ECCustomAttributes>
+                       <ECProperty propertyName="Code" typeName="string" />
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub1" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" >
+                         <ECCustomAttributes>
+                            <ForeignKeyConstraint xlmns="ECDbMap.02.00">
+                                <OnDeleteAction>Cascade</OnDeleteAction>
+                            </ForeignKeyConstraint>
+                        </ECCustomAttributes>
+                        </ECNavigationProperty>
+                     </ECEntityClass>
+                    <ECEntityClass typeName="ChildSub2" >
+                       <BaseClass>Child</BaseClass>
+                       <ECProperty propertyName="Cost" typeName="double" />
+                       <ECNavigationProperty propertyName="Parent" relationshipName="Rel" direction="Backward" >
+                         <ECCustomAttributes>
+                            <ForeignKeyConstraint xlmns="ECDbMap.02.00">
+                                <OnDeleteAction>SetNull</OnDeleteAction>
+                            </ForeignKeyConstraint>
+                        </ECCustomAttributes>
+                        </ECNavigationProperty>
+                     </ECEntityClass>
+                     <ECRelationshipClass typeName="Rel" modifier="Abstract" strength="Referencing">
+                        <Source multiplicity="(0..1)" polymorphic="True" roleLabel="has">
+                         <Class class="Parent"/>
+                        </Source>
+                        <Target multiplicity="(0..*)" polymorphic="True" abstractConstraint="Child" roleLabel="is owned by">
+                            <Class class="ChildSub1"/>
+                            <Class class="ChildSub2"/>
+                        </Target>
+                     </ECRelationshipClass>
+                   </ECSchema>)xml"))) << "Navigation properties with different ForeignKeyConstraint CAs";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />

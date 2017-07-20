@@ -2833,18 +2833,49 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
     ASSERT_EQ(MapStrategyInfo(MapStrategy::NotMapped), GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "Sub")));
     }
 
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("notmappedcatests.ecdb",SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                              "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                              "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                              "    <ECEntityClass typeName='A' modifier='None'>"
+                                                              "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                              "    </ECEntityClass>"
+                                                              "    <ECEntityClass typeName='B' modifier='None'>"
+                                                              "        <ECCustomAttributes>"
+                                                              "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                              "                <MapStrategy>NotMapped</MapStrategy>"
+                                                              "            </ClassMap>"
+                                                              "        </ECCustomAttributes>"
+                                                              "        <ECProperty propertyName='BProp' typeName='int' />"
+                                                              "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
+                                                              "    </ECEntityClass>"
+                                                              "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                                              "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
+                                                              "           <Class class='A' />"
+                                                              "       </Source>"
+                                                              "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                                                              "           <Class class='B' />"
+                                                              "       </Target>"
+                                                              "     </ECRelationshipClass>"
+                                                              "</ECSchema>"))) << "Nav prop class has NotMapped strategy, but rel doesn't";
+
+    ASSERT_EQ(MapStrategy::OwnTable, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "A")).GetStrategy());
+    ASSERT_EQ(MapStrategy::NotMapped, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "B")).GetStrategy());
+    ASSERT_EQ(MapStrategy::ForeignKeyRelationshipInTargetTable, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "Rel")).GetStrategy());
+    }
+
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
-                                                            "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                            "<ECSchema schemaName='Test20' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
                                                             "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
                                                             "    <ECEntityClass typeName='A' modifier='None'>"
-                                                            "        <ECProperty propertyName='AProp' typeName='int' />"
-                                                            "    </ECEntityClass>"
-                                                            "    <ECEntityClass typeName='B' modifier='None'>"
                                                             "        <ECCustomAttributes>"
                                                             "            <ClassMap xmlns='ECDbMap.02.00'>"
                                                             "                <MapStrategy>NotMapped</MapStrategy>"
                                                             "            </ClassMap>"
                                                             "        </ECCustomAttributes>"
+                                                            "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                            "    </ECEntityClass>"
+                                                            "    <ECEntityClass typeName='B' modifier='None'>"
                                                             "        <ECProperty propertyName='BProp' typeName='int' />"
                                                             "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
                                                             "    </ECEntityClass>"
@@ -2856,7 +2887,7 @@ TEST_F(DbMappingTestFixture, NotMappedCATests)
                                                             "           <Class class='B' />"
                                                             "       </Target>"
                                                             "     </ECRelationshipClass>"
-                                                            "</ECSchema>"))) << "Nav prop class has NotMapped strategy";
+                                                            "</ECSchema>"))) << "Parent class has NotMapped strategy, but rel doesn't.";
 
     }
 

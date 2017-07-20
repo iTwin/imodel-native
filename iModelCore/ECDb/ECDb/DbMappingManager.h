@@ -44,13 +44,13 @@ struct FkRelationshipMappingInfo final : NonCopyableClass
                     return false;
                     }
 
-                FkRelationshipMappingInfo& Add(RelationshipClassEndTableMap const& relClassMap)
+                FkRelationshipMappingInfo& Add(ECN::ECRelationshipClassCR relClass)
                     {
-                    BeAssert(m_fkRelMappingInfos.find(relClassMap.GetClass().GetId()) == m_fkRelMappingInfos.end());
+                    BeAssert(m_fkRelMappingInfos.find(relClass.GetId()) == m_fkRelMappingInfos.end());
 
-                    std::unique_ptr<FkRelationshipMappingInfo> newFkRelMappingInfo = std::make_unique<FkRelationshipMappingInfo>(relClassMap);
+                    std::unique_ptr<FkRelationshipMappingInfo> newFkRelMappingInfo = std::make_unique<FkRelationshipMappingInfo>(relClass);
                     FkRelationshipMappingInfo& fkRelMappingInfoR = *newFkRelMappingInfo;
-                    m_fkRelMappingInfos[relClassMap.GetClass().GetId()] = std::move(newFkRelMappingInfo);
+                    m_fkRelMappingInfos[relClass.GetId()] = std::move(newFkRelMappingInfo);
 
                     m_orderedList.push_back(&fkRelMappingInfoR);
                     return fkRelMappingInfoR;
@@ -107,17 +107,19 @@ struct FkRelationshipMappingInfo final : NonCopyableClass
     private:
         static Utf8CP RELECCLASSID_COLNAME_TOKEN;
 
-        RelationshipClassEndTableMap const& m_relClassMap;
+        ECN::ECRelationshipClassCR m_relClass;
+        RelationshipClassEndTableMap const* m_relClassMap = nullptr;
         std::map<DbTableId, std::vector<PartitionInfo>> m_partitions;
         ForeignKeyConstraintCustomAttribute m_fkConstraintCA;
         bool m_fkConstraintCAIsRead = false;
 
     public:
-        explicit FkRelationshipMappingInfo(RelationshipClassEndTableMap const&);
+        explicit FkRelationshipMappingInfo(ECN::ECRelationshipClassCR relClass) : m_relClass(relClass) {}
+        void AssignClassMap(RelationshipClassEndTableMap const&);
 
-        void SetModified() { const_cast<RelationshipClassEndTableMap&>(m_relClassMap).Modified(); }
-        ECN::ECRelationshipClassCR GetRelClass() const { return m_relClassMap.GetRelationshipClass(); }
-        RelationshipClassEndTableMap const& GetRelClassMap() const { return m_relClassMap; }
+        void SetModified() { BeAssert(m_relClassMap != nullptr); const_cast<RelationshipClassEndTableMap*>(m_relClassMap)->Modified(); }
+        ECN::ECRelationshipClassCR GetRelClass() const { return m_relClass; }
+        RelationshipClassEndTableMap const& GetRelClassMap() const { BeAssert(m_relClassMap != nullptr);  return *m_relClassMap; }
         bool IsFkConstraintCARead() const { return m_fkConstraintCAIsRead; }
         ForeignKeyConstraintCustomAttribute const& GetFkConstraintCA() const { return m_fkConstraintCA; }
         void ReadFkConstraintCA(SchemaImportContext&, ECN::NavigationECPropertyCR);
@@ -131,8 +133,6 @@ struct FkRelationshipMappingInfo final : NonCopyableClass
         std::map<DbTableId, std::vector<PartitionInfo>> const& GetPartitions() const { return m_partitions; }
         const std::vector<DbColumn const*> GetPartitionColumns(PartitionInfo::ColumnId) const;
         bool TryGetPartition(ClassMapCR, std::vector<PartitionInfo const*>&) const;
-
-        bool PersistedEndHasNonVirtualForeignKeyColumn() const;
     };
 
 //======================================================================================
@@ -199,6 +199,7 @@ struct DbMappingManager final : NonCopyableClass
             static BentleyStatus MapUserDefinedIndexes(SchemaImportContext&, ClassMap const&);
 
             static BentleyStatus TryDetermineRelationshipMappingType(RelationshipMappingType&, SchemaImportContext const&, ECN::ECRelationshipClassCR);
+            static BentleyStatus FailIfConstraintClassIsNotMapped(SchemaImportContext&, ECN::ECRelationshipClassCR const&);
 
             //! Rules:
             //! If MapStrategy != TPH: NotInherited
@@ -221,10 +222,9 @@ struct DbMappingManager final : NonCopyableClass
             static DbColumn* CreateRelECClassIdColumn(SchemaImportContext&, FkRelationshipMappingInfo const&, FkRelationshipMappingInfo::ForeignKeyColumnInfo const&, DbTable& fkTable, DbColumn const& fkCol, NavigationPropertyMap const&);
             static BentleyStatus FinishMapping(SchemaImportContext&, FkRelationshipMappingInfo const&);
             static BentleyStatus ValidateForeignKeyColumn(SchemaImportContext&, FkRelationshipMappingInfo const&, DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol);
-            
-
+  
         public:
-            static BentleyStatus Initialize(SchemaImportContext&, FkRelationshipMappingInfo const&);
+            static BentleyStatus Initialize(SchemaImportContext&, FkRelationshipMappingInfo&);
 
             static BentleyStatus UpdatePersistedEnd(SchemaImportContext&, FkRelationshipMappingInfo&, NavigationPropertyMap&);
 

@@ -627,12 +627,6 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
             return ClassMappingStatus::Error;
         }
 
-    //WIP_CLEANUP this should be checked for any kind of relationship, not just root link tables.
-    //However, there is an issue with this call as it expects that the constraints class have been loaded already
-    //which is not the case for end table rels
-    if (SUCCESS != FailIfConstraintClassIsNotMapped())
-        return ClassMappingStatus::Error;
-
     return EvaluateRootClassLinkTableStrategy(ctx, *caCache) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
     }
 
@@ -643,6 +637,10 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
 BentleyStatus RelationshipMappingInfo::EvaluateRootClassLinkTableStrategy(SchemaImportContext& ctx, ClassMappingCACache const& caCache)
     {
     BeAssert(m_mappingType == RelationshipMappingType::LinkTable);
+
+    if (SUCCESS != DbMappingManager::Classes::FailIfConstraintClassIsNotMapped(ctx, *m_ecClass.GetRelationshipClassCP()))
+        return ERROR;
+
     return AssignMapStrategy(caCache);
     }
 
@@ -653,43 +651,10 @@ BentleyStatus RelationshipMappingInfo::EvaluateRootClassLinkTableStrategy(Schema
 BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportContext& ctx, ClassMappingCACache const& caCache)
     {
     BeAssert(m_mappingType != RelationshipMappingType::LinkTable);
-    if (caCache.GetClassMap().IsValid())
-        {
-        Issues().Report("Failed to map ECRelationshipClass %s. It implies the ForeignKey type mapping, but also has the ClassMap custom attribute. ForeignKey type mappings cannot have the ClassMap custom attribute.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
     const MapStrategy strategy = m_mappingType == RelationshipMappingType::ForeignKeyOnSource ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
     m_mapStrategyExtInfo = MapStrategyExtendedInfo(strategy);
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                Krischan.Eberle                    05/2017
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipMappingInfo::FailIfConstraintClassIsNotMapped() const
-    {
-    for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvPair : GetDbMap().GetLightweightCache().GetConstraintClassesForRelationshipClass(m_ecClass.GetId()))
-        {
-        ECClassCP constraintClass = m_ecdb.Schemas().GetClass(kvPair.first);
-        if (constraintClass == nullptr)
-            {
-            BeAssert(false);
-            return ERROR;
-            }
-
-        ClassMap const* constraintClassMap = GetDbMap().GetClassMap(*constraintClass);
-        //WIP_CLEANUP constraintClassMap can be null if it wasn't mapped yet. This check has to go elsewhere
-        if (constraintClassMap == nullptr || constraintClassMap->GetMapStrategy().GetStrategy() == MapStrategy::NotMapped)
-            {
-            Issues().Report("Failed to map ECRelationshipclass '%s'. The source or target constraint contains at least one ECClass which is not mapped. Mark the ECRelationshipClass with the 'NotMapped' strategy as well.",
-                            m_ecClass.GetFullName());
-            return ERROR;
-            }
-        }
-
-    return SUCCESS;
-    }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE
