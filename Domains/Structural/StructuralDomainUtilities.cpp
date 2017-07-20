@@ -45,6 +45,9 @@ BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
     if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Concrete::ConcreteDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
         return BentleyStatus::ERROR;
 
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Steel::SteelDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BentleyStatus::ERROR;
+
     if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::StructuralPhysical::StructuralPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
         return BentleyStatus::ERROR;
 
@@ -307,6 +310,14 @@ Dgn::PhysicalElementPtr StructuralDomainUtilities::CreatePhysicalElement(Utf8Str
         localCategoryName = categoryName;
 
     Dgn::DgnCategoryId categoryId = Concrete::ConcreteCategory::QueryStructuralPhysicalCategoryId(db, localCategoryName.c_str());
+    if (schemaName == BENTLEY_CONCRETE_SCHEMA_NAME)
+        {
+        //categoryId = Concrete::ConcreteCategory::QueryStructuralPhysicalCategoryId(db, localCategoryName.c_str());
+        }
+    else if (schemaName == BENTLEY_STEEL_SCHEMA_NAME)
+        {
+        categoryId = Steel::SteelCategory::QueryStructuralPhysicalCategoryId(db, localCategoryName.c_str());
+        }
 
     Dgn::GeometricElement3d::CreateParams params(db, modelId, classId, categoryId);
 

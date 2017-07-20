@@ -367,6 +367,60 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::Str
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
+BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::StructuralPhysicalModelR physicalModel, StructuralPhysical::StructuralTypeDefinitionModelR typeModel)
+    {
+    ECN::ECSchemaCP schema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_STEEL_SCHEMA_NAME);
+
+    ECN::ECClassContainerCR classes = schema->GetClasses();
+
+    BentleyStatus status;
+
+    for each (ECN::ECClassP derivedClass in classes)
+        {
+        if (ECN::ECClassModifier::Abstract == derivedClass->GetClassModifier())
+            {
+            continue;
+            }
+
+        Utf8String className = derivedClass->GetFullName();
+        if (className == "Steel:Beam")
+            {
+            status = SampleStructureCreator::CreateBeams(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        else if (className == "Steel:Column")
+            {
+            status = SampleStructureCreator::CreateColumns(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        else if (className == "Steel:Plate")
+            {
+            status = SampleStructureCreator::CreateSlabs(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+
+            status = SampleStructureCreator::CreateWalls(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
 Dgn::DgnViewId StructPhysCreator::CreateView(Dgn::DefinitionModelR model, Utf8CP name, Dgn::CategorySelectorR categorySelector, Dgn::ModelSelectorR modelSelector, Dgn::DisplayStyle3dR displayStyle)
     {
     // CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
@@ -416,7 +470,8 @@ BentleyStatus StructPhysCreator::DoCreate()
 
     DoUpdateSchema(db);
 
-    CreateConcreteStructure(*physicalModel, *typeDefinitionModel);
+    //CreateConcreteStructure(*physicalModel, *typeDefinitionModel);
+    CreateSteelStructure(*physicalModel, *typeDefinitionModel);
 
 
     // Set the project extents to include the elements in the physicalModel, plus a margin

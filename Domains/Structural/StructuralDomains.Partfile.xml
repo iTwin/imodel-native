@@ -36,6 +36,7 @@
             <PublicAPI Domain="StructuralDomain"/>
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/Concrete.ecschema.xml
+                ECSchemas/Domain/Steel.ecschema.xml
                 ECSchemas/Domain/StructuralPhysical.ecschema.xml
                 ECSchemas/Domain/StructuralMaterials.ecschema.xml
             </Files>

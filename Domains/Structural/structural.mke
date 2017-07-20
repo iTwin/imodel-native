@@ -14,6 +14,9 @@ CompileOptionsMki   = $(SrcRoot)DgnDomains/Structural/StructuralCompileOptions.m
 ConcreteSrc       = $(_MakeFilePath)ConcreteSchema/
 ConcretePublicApi = $(ConcreteSrc)PublicAPI/Concrete/
 
+SteelSrc       = $(_MakeFilePath)SteelSchema/
+SteelPublicApi = $(SteelSrc)PublicAPI/Steel/
+
 StructPhysSrc       = $(_MakeFilePath)StructuralPhysicalSchema/
 StructPhysPublicApi = $(StructPhysSrc)PublicAPI/StructuralPhysical/
 
@@ -57,6 +60,8 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 %include MultiCppCompileRule.mki
 
 $(o)ConcreteDomain$(oext) : $(ConcreteSrc)ConcreteDomain.cpp ${MultiCompileDepends} $(ConcretePublicApi)ConcreteDomain.h
+
+$(o)SteelDomain$(oext) : $(SteelSrc)SteelDomain.cpp ${MultiCompileDepends} $(SteelPublicApi)SteelDomain.h
 
 $(o)StructuralPhysicalDomain$(oext) : $(StructPhysSrc)StructuralPhysicalDomain.cpp ${MultiCompileDepends} $(StructPhysPublicApi)StructuralPhysicalDomain.h
 

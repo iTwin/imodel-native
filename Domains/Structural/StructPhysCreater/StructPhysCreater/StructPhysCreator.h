@@ -46,6 +46,7 @@ struct StructPhysCreator : Dgn::DgnPlatformLib::Host
         BentleyStatus PopulateInstanceProperties(ECN::IECInstancePtr instance);
         BentleyStatus PopulateElementProperties(Dgn::PhysicalElementPtr element);
         BentleyStatus CreateConcreteStructure(StructuralPhysical::StructuralPhysicalModelR, StructuralPhysical::StructuralTypeDefinitionModelR);
+        BentleyStatus CreateSteelStructure(StructuralPhysical::StructuralPhysicalModelR, StructuralPhysical::StructuralTypeDefinitionModelR);
 
         Dgn::DgnViewId CreateView(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR displayStyle);
 

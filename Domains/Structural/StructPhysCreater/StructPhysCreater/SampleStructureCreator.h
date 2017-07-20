@@ -42,15 +42,15 @@ struct SampleStructureCreator
         static const int COLUMN_OFFSET = COLUMN_WIDTH / 2;
         static const int WALL_OFFSET = (COLUMN_DEPTH - WALL_THICKNESS) / 2;
 
-        static BentleyStatus CreateBeam12Geometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model);
-        static BentleyStatus CreateBeam15Geometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model);
-        static BentleyStatus CreateColumnGeometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model);
-        static BentleyStatus CreateSlabGeometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model);
-        static BentleyStatus CreateWallGeometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model);
+        static BentleyStatus CreateBeam12Geometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema);
+        static BentleyStatus CreateBeam15Geometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema);
+        static BentleyStatus CreateColumnGeometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema);
+        static BentleyStatus CreateSlabGeometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema);
+        static BentleyStatus CreateWallGeometry(Dgn::PhysicalElementPtr element, StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema);
 
     public:
-        static BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::StructuralPhysicalModelR physicalModel, ECN::ECSchemaCP schemaName, ECN::ECClassP elementClass);
-        static BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::StructuralPhysicalModelR physicalModel, ECN::ECSchemaCP schemaName, ECN::ECClassP elementClass);
-        static BentleyStatus SampleStructureCreator::CreateSlabs(StructuralPhysical::StructuralPhysicalModelR physicalModel, ECN::ECSchemaCP schemaName, ECN::ECClassP elementClass);
-        static BentleyStatus SampleStructureCreator::CreateWalls(StructuralPhysical::StructuralPhysicalModelR physicalModel, ECN::ECSchemaCP schemaName, ECN::ECClassP elementClass);
+        static BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::StructuralPhysicalModelR physicalModel, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        static BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::StructuralPhysicalModelR physicalModel, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        static BentleyStatus SampleStructureCreator::CreateSlabs(StructuralPhysical::StructuralPhysicalModelR physicalModel, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        static BentleyStatus SampleStructureCreator::CreateWalls(StructuralPhysical::StructuralPhysicalModelR physicalModel, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
     };

@@ -16,11 +16,20 @@
 BentleyStatus GeometricTools::CreateStructuralMemberGeometry(
     Dgn::PhysicalElementPtr element,
     StructuralPhysical::StructuralPhysicalModelR model,
+    ECN::ECSchemaCP schema,
     StructuralMemberGeometricProperties* properties)
     {
     Dgn::DgnDbR db = model.GetDgnDb();
     Dgn::DgnModelId modelId = model.GetModelId();
     Dgn::DgnCategoryId categoryId = Concrete::ConcreteCategory::QueryStructuralPhysicalCategoryId(db, element->GetElementClass()->GetName().c_str());
+    if (schema->GetName() == BENTLEY_CONCRETE_SCHEMA_NAME)
+        {
+        //categoryId = Concrete::ConcreteCategory::QueryStructuralPhysicalCategoryId(db, element->GetElementClass()->GetName().c_str());
+        }
+    else if (schema->GetName() == BENTLEY_STEEL_SCHEMA_NAME)
+        {
+        categoryId = Steel::SteelCategory::QueryStructuralPhysicalCategoryId(db, element->GetElementClass()->GetName().c_str());
+        }
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(*element);
     if (!builder.IsValid())
