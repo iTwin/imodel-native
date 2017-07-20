@@ -14,6 +14,127 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct SchemaImportContext;
 
+//=======================================================================================
+// @bsiclass                                                Affan.Khan      07/2017
+//+===============+===============+===============+===============+===============+======
+struct FkRelationshipMappingInfo final : NonCopyableClass
+    {
+    public:
+        struct Collection final
+            {
+            private:
+                std::map<ECN::ECClassId, std::unique_ptr<FkRelationshipMappingInfo>> m_fkRelMappingInfos;
+                std::vector<FkRelationshipMappingInfo const*> m_orderedList;
+
+            public:
+                Collection() {}
+
+                std::vector<FkRelationshipMappingInfo const*> const& Get() const { return m_orderedList; }
+
+                bool TryGet(FkRelationshipMappingInfo*& fkRelMappingInfo, ECN::ECClassId relClassId) const 
+                    {
+                    auto it = m_fkRelMappingInfos.find(relClassId);
+                    if (it != m_fkRelMappingInfos.end())
+                        {
+                        fkRelMappingInfo = it->second.get();
+                        return true;
+                        }
+
+                    fkRelMappingInfo = nullptr;
+                    return false;
+                    }
+
+                FkRelationshipMappingInfo& Add(RelationshipClassEndTableMap const& relClassMap)
+                    {
+                    BeAssert(m_fkRelMappingInfos.find(relClassMap.GetClass().GetId()) == m_fkRelMappingInfos.end());
+
+                    std::unique_ptr<FkRelationshipMappingInfo> newFkRelMappingInfo = std::make_unique<FkRelationshipMappingInfo>(relClassMap);
+                    FkRelationshipMappingInfo& fkRelMappingInfoR = *newFkRelMappingInfo;
+                    m_fkRelMappingInfos[relClassMap.GetClass().GetId()] = std::move(newFkRelMappingInfo);
+
+                    m_orderedList.push_back(&fkRelMappingInfoR);
+                    return fkRelMappingInfoR;
+                    }
+            };
+
+        struct PartitionInfo final
+            {
+            enum class ColumnId
+                {
+                ECInstanceId = 0,
+                ECClassId = 1,
+                SourceECInstanceId = 2,
+                SourceEClassId = 3,
+                TargetECInstanceId = 4,
+                TargetECClassId = 5
+                };
+
+            private:
+                const DbColumn* m_cols[6];
+                bool m_isPersisted = false;
+
+            public:
+                PartitionInfo(){ Clear(); }
+                explicit PartitionInfo(RelationshipClassEndTableMap::Partition const& partition);
+
+                DbColumn const* Get(ColumnId id) const { return m_cols[Enum::ToInt(id)]; }
+                void Set(ColumnId id, DbColumn const* column);
+                void Clear();
+                bool IsValid() const;
+                bool IsPersisted() const { return m_isPersisted; }
+                static ColumnId ConstraintECInstanceId(ECN::ECRelationshipEnd end) { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnId::SourceECInstanceId : ColumnId::TargetECInstanceId; }
+                static ColumnId ConstraintECClassId(ECN::ECRelationshipEnd end) { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnId::SourceEClassId : ColumnId::TargetECClassId; }
+            };
+
+        struct ForeignKeyColumnInfo final
+            {
+            private:
+                Utf8String m_fkColName;
+                Utf8String m_relClassIdColName;
+
+                explicit ForeignKeyColumnInfo(Utf8StringCR fkColName) : m_fkColName(fkColName) {}
+
+                static Utf8String DetermineRelClassIdColumnName(Utf8StringCR fkColName);
+
+            public:
+                ForeignKeyColumnInfo() {}
+                static ForeignKeyColumnInfo FromNavigationProperty(ECN::NavigationECPropertyCR);
+
+                Utf8StringCR GetFkColumnName() const { return m_fkColName; }
+                Utf8StringCR GetRelClassIdColumnName() const { return m_relClassIdColName; }
+            };
+
+    private:
+        static Utf8CP RELECCLASSID_COLNAME_TOKEN;
+
+        RelationshipClassEndTableMap const& m_relClassMap;
+        std::map<DbTableId, std::vector<PartitionInfo>> m_partitions;
+        ForeignKeyConstraintCustomAttribute m_fkConstraintCA;
+        bool m_fkConstraintCAIsRead = false;
+
+    public:
+        explicit FkRelationshipMappingInfo(RelationshipClassEndTableMap const&);
+
+        void SetModified() { const_cast<RelationshipClassEndTableMap&>(m_relClassMap).Modified(); }
+        ECN::ECRelationshipClassCR GetRelClass() const { return m_relClassMap.GetRelationshipClass(); }
+        RelationshipClassEndTableMap const& GetRelClassMap() const { return m_relClassMap; }
+        bool IsFkConstraintCARead() const { return m_fkConstraintCAIsRead; }
+        ForeignKeyConstraintCustomAttribute const& GetFkConstraintCA() const { return m_fkConstraintCA; }
+        void ReadFkConstraintCA(SchemaImportContext&, ECN::NavigationECPropertyCR);
+
+        bool IsPhysicalForeignKey() const { return m_fkConstraintCA.IsValid(); }
+
+        ECN::ECRelationshipEnd GetFkEnd() const;
+        ECN::ECRelationshipEnd GetReferencedEnd() const;
+
+        PartitionInfo* CreatePartition(DbTableId);
+        std::map<DbTableId, std::vector<PartitionInfo>> const& GetPartitions() const { return m_partitions; }
+        const std::vector<DbColumn const*> GetPartitionColumns(PartitionInfo::ColumnId) const;
+        bool TryGetPartition(ClassMapCR, std::vector<PartitionInfo const*>&) const;
+
+        bool PersistedEndHasNonVirtualForeignKeyColumn() const;
+    };
+
 //======================================================================================
 // @bsiclass                                              Krischan.Eberle        07/2017
 //======================================================================================
@@ -50,6 +171,9 @@ struct DbMappingManager final : NonCopyableClass
                 Mode GetMode() const { return m_importCtx != nullptr ? Mode::ImportingSchema : Mode::Loading; }
                 };
 
+            Classes();
+            ~Classes();
+
             static PropertyMap* ProcessProperty(Context&, ECN::ECPropertyCR);
             static RefCountedPtr<DataPropertyMap> MapPrimitiveProperty(Context&, ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* compoundPropMap);
             static RefCountedPtr<Point2dPropertyMap> MapPoint2dProperty(Context&, ECN::PrimitiveECPropertyCR, CompoundDataPropertyMap const* parentPropMap, Utf8StringCR accessString, DbColumn::CreateParams const&);
@@ -62,6 +186,8 @@ struct DbMappingManager final : NonCopyableClass
             static RelationshipConstraintMap const& GetConstraintMap(ECN::NavigationECPropertyCR, RelationshipClassMapCR, NavigationPropertyMap::NavigationEnd);
             static BentleyStatus DetermineColumnInfoForPrimitiveProperty(DbColumn::CreateParams&, ClassMap const&, ECN::PrimitiveECPropertyCR, Utf8StringCR accessString);
 
+            static BentleyStatus MapUserDefinedIndex(SchemaImportContext&, ClassMap const&, DbIndexListCustomAttribute::DbIndex const&);
+
         public:
             static PropertyMap* MapProperty(SchemaImportContext& importCtx, ClassMap& classMap, ECN::ECPropertyCR prop) { Context ctx(importCtx, classMap); return ProcessProperty(ctx, prop); }
             //WIP_CLEANUP This should be moved out of here. It seems like it doesn't have to do with mapping. And if it has, it needs to be renamed/refactored
@@ -71,12 +197,8 @@ struct DbMappingManager final : NonCopyableClass
             static ClassMappingStatus MapNavigationProperty(SchemaImportContext&, NavigationPropertyMap&);
 
             static BentleyStatus MapUserDefinedIndexes(SchemaImportContext&, ClassMap const&);
-            static BentleyStatus MapUserDefinedIndex(SchemaImportContext&, ClassMap const&, DbIndexListCustomAttribute::DbIndex const&);
 
             static BentleyStatus TryDetermineRelationshipMappingType(RelationshipMappingType&, SchemaImportContext const&, ECN::ECRelationshipClassCR);
-            
-            static ECN::ECClassCP GetRootClass(ECN::ECClassCR);
-
 
             //! Rules:
             //! If MapStrategy != TPH: NotInherited
@@ -87,118 +209,24 @@ struct DbMappingManager final : NonCopyableClass
     //=======================================================================================
     // @bsiclass                                                Affan.Khan      07/2017
     //+===============+===============+===============+===============+===============+======
-    struct NavigationPropertyInfo : NonCopyableClass
+    struct FkRelationships final
         {
-        public:
-            struct Collection final
-                {
-                private:
-                    std::map<ECN::ECPropertyId, std::unique_ptr<NavigationPropertyInfo>> m_navPropInfos;
-
-                public:
-                    Collection() {}
-
-                    NavigationPropertyInfo const* Get(ECN::ECPropertyId navPropId) const 
-                        {
-                        auto it = m_navPropInfos.find(navPropId);
-                        if (it == m_navPropInfos.end())
-                            return nullptr;
-
-                        return it->second.get();
-                        }
-
-                    bool Contains(ECN::ECPropertyId navPropId) const { return Get(navPropId) != nullptr; }
-
-                    std::map<ECN::ECPropertyId, std::unique_ptr<NavigationPropertyInfo>> const& Get() const { return m_navPropInfos; }
-
-                    NavigationPropertyInfo& Add(SchemaImportContext& ctx, ECN::NavigationECPropertyCR navProp, RelationshipClassEndTableMap const& relClassMap) 
-                        {
-                        std::unique_ptr<NavigationPropertyInfo> navPropInfo = std::make_unique<NavigationPropertyInfo>(ctx, navProp, relClassMap);
-                        NavigationPropertyInfo& navPropInfoR = *navPropInfo;
-                        m_navPropInfos[navProp.GetId()] = std::move(navPropInfo); 
-                        return navPropInfoR;
-                        }
-                };
         private:
-            struct PartitionInfo final
-                {
-                enum class ColumnId
-                    {
-                    ECInstanceId = 0,
-                    ECClassId = 1,
-                    SourceECInstanceId = 2,
-                    SourceEClassId = 3,
-                    TargetECInstanceId = 4,
-                    TargetECClassId = 5
-                    };
+            FkRelationships();
+            ~FkRelationships();
 
-                private:
-                    const DbColumn* m_cols[6];
-                    bool m_isPersisted;
-
-                public:
-                    PartitionInfo() :m_isPersisted(false)
-                        {
-                        Clear();
-                        }
-                    PartitionInfo(RelationshipClassEndTableMap::Partition const& partition);
-                    DbColumn const* Get(ColumnId id) const { return m_cols[Enum::ToInt(id)]; }
-                    void Set(ColumnId id, DbColumn const* column);
-                    void Clear();
-                    bool IsValid() const;
-                    bool IsPersisted() const { return m_isPersisted; }
-                    static ColumnId ConstraintECInstanceId(ECN::ECRelationshipEnd end) { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnId::SourceECInstanceId : ColumnId::TargetECInstanceId; }
-                    static ColumnId ConstraintECClassId(ECN::ECRelationshipEnd end) { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? ColumnId::SourceEClassId : ColumnId::TargetECClassId; }
-                };
-
-            struct ForeignKeyColumnInfo final
-                {
-                private:
-                    Utf8String m_fkColName;
-                    Utf8String m_relClassIdColName;
-
-                    explicit ForeignKeyColumnInfo(Utf8StringCR fkColName) : m_fkColName(fkColName) {}
-
-                    static Utf8String DetermineRelClassIdColumnName(Utf8StringCR fkColName);
-
-                public:
-                    ForeignKeyColumnInfo() {}
-                    static ForeignKeyColumnInfo FromNavigationProperty(ECN::NavigationECPropertyCR);
-
-                    Utf8StringCR GetFkColumnName() const { return m_fkColName; }
-                    Utf8StringCR GetRelClassIdColumnName() const { return m_relClassIdColName; }
-                };
-
-            static Utf8CP RELECCLASSID_COLNAME_TOKEN;
-            SchemaImportContext& m_ctx;
-            ECN::NavigationECPropertyCR m_navProp;
-            RelationshipClassEndTableMap const& m_relClassMap;
-            std::map<DbTableId, std::vector<PartitionInfo>> m_partitions;
-            ForeignKeyConstraintCustomAttribute m_fkConstraintCA;
-
-
-            BentleyStatus FinishMapping();
-
-            const std::vector<DbColumn const*> GetPartitionColumns(PartitionInfo::ColumnId) const;
-            bool PersistedEndHasNonVirtualForeignKeyColumn() const;
-            bool TryGetPartition(ClassMapCR, std::vector<PartitionInfo*>&);
-            PartitionInfo* CreatePartition(DbTableId);
-            BentleyStatus AddIndexToRelationshipEnd(PartitionInfo const&);
-            BentleyStatus ValidateForeignKeyColumn(DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol);
-            DbColumn* CreateForeignKeyColumn(DbTable& fkTable, NavigationPropertyMap const&, ForeignKeyColumnInfo&);
-            BentleyStatus CreateForeignKeyConstraint(DbTable const& referencedTable);
-            DbColumn* CreateRelECClassIdColumn(DbMap const&, ECN::ECClassCR, DbTable& fkTable, ForeignKeyColumnInfo const&, DbColumn const& fkCol, NavigationPropertyMap const&);
+            static BentleyStatus AddIndexToRelationshipEnd(SchemaImportContext&, FkRelationshipMappingInfo const&, FkRelationshipMappingInfo::PartitionInfo const&);
+            static DbColumn* CreateForeignKeyColumn(FkRelationshipMappingInfo::ForeignKeyColumnInfo&, SchemaImportContext&, FkRelationshipMappingInfo const&, DbTable& fkTable, NavigationPropertyMap const&);
+            static BentleyStatus CreateForeignKeyConstraint(SchemaImportContext&, FkRelationshipMappingInfo const&, DbTable const& referencedTable);
+            static DbColumn* CreateRelECClassIdColumn(SchemaImportContext&, FkRelationshipMappingInfo const&, FkRelationshipMappingInfo::ForeignKeyColumnInfo const&, DbTable& fkTable, DbColumn const& fkCol, NavigationPropertyMap const&);
+            static BentleyStatus FinishMapping(SchemaImportContext&, FkRelationshipMappingInfo const&);
+            static BentleyStatus ValidateForeignKeyColumn(SchemaImportContext&, FkRelationshipMappingInfo const&, DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol);
             
-            ECN::ECRelationshipEnd GetForeignEnd() const;
-            ECN::ECRelationshipEnd GetReferencedEnd() const;
-
-            ECN::ECRelationshipClassCR GetRelClass() const { return *m_navProp.GetRelationshipClass(); }
-            bool IsPhysicalForeignKey() const { return m_fkConstraintCA.IsValid(); }
 
         public:
-            NavigationPropertyInfo(SchemaImportContext&, ECN::NavigationECPropertyCR, RelationshipClassEndTableMap const&);
+            static BentleyStatus Initialize(SchemaImportContext&, FkRelationshipMappingInfo const&);
 
-            BentleyStatus UpdatePersistedEnd(NavigationPropertyMap&);
+            static BentleyStatus UpdatePersistedEnd(SchemaImportContext&, FkRelationshipMappingInfo&, NavigationPropertyMap&);
 
             static BentleyStatus FinishMapping(SchemaImportContext&);
 

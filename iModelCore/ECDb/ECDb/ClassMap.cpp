@@ -81,20 +81,6 @@ DbTable* ClassMap::GetOverflowTable() const
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Affan.Khan                           07/2012
-//---------------------------------------------------------------------------------------
-bool ClassMap::IsMixin() const
-    {
-    if (auto entity = GetClass().GetEntityClassCP())
-        {
-        return entity->IsMixin();
-        }
-
-    return false;
-    }
-
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      06/2013
 //---------------------------------------------------------------------------------------
 ClassMappingStatus ClassMap::_Map(ClassMappingContext& ctx)
@@ -139,7 +125,7 @@ ClassMappingStatus ClassMap::DoMapPart2(ClassMappingContext& ctx)
         }
 
     //Add cascade delete for joinedTable;
-    bool isJoinedTable = ctx.GetClassMappingInfo().GetMapStrategy().GetTphInfo().IsValid() && ctx.GetClassMappingInfo().GetMapStrategy().GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::JoinedTable;
+    bool isJoinedTable = m_mapStrategyExtInfo.GetTphInfo().IsValid() && m_mapStrategyExtInfo.GetTphInfo().GetJoinedTableInfo() == JoinedTableInfo::JoinedTable;
     if (!isJoinedTable)
         return ClassMappingStatus::Success;
 

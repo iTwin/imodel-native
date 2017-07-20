@@ -106,7 +106,7 @@ struct ClassMap : RefCountedBase
         Type m_type;
         ECDb const& m_ecdb;
         ECN::ECClassCR m_ecClass;
-        MapStrategyExtendedInfo m_mapStrategyExtInfo;
+        const MapStrategyExtendedInfo m_mapStrategyExtInfo;
         PropertyMapContainer m_propertyMaps;
         mutable std::vector<DbTable*> m_tables;
         mutable std::unique_ptr<ClassMapColumnFactory> m_columnFactory;
@@ -129,6 +129,7 @@ struct ClassMap : RefCountedBase
         ECDb const& GetECDb() const { return m_ecdb; }
         IssueReporter const& Issues() const;
         BentleyStatus MapSystemColumns();
+
     public:
         virtual ~ClassMap() {}
         void Modified() { if (m_state == ObjectState::Persisted) m_state = ObjectState::Modified; }
@@ -147,7 +148,7 @@ struct ClassMap : RefCountedBase
         DbTable& GetPrimaryTable() const;
         DbTable& GetJoinedOrPrimaryTable() const;
         DbTable* GetOverflowTable() const;
-        bool IsMixin() const;
+        bool IsMixin() const { ECN::ECEntityClassCP entityClass = m_ecClass.GetEntityClassCP(); return entityClass != nullptr && entityClass->IsMixin(); }
         bool IsMappedTo(DbTable const& table) const { return std::find(m_tables.begin(), m_tables.end(), &table) != m_tables.end(); }
         bool IsMappedToSingleTable() const { return m_tables.size() == 1; }
 

@@ -317,6 +317,9 @@ struct ForeignKeyConstraintCustomAttribute final
     public:
         ForeignKeyConstraintCustomAttribute() {}
 
+        bool operator==(ForeignKeyConstraintCustomAttribute const& rhs) const;
+        bool operator!=(ForeignKeyConstraintCustomAttribute const& rhs) const { return !(*this == rhs); }
+
         //! @return true if the ForeignKeyConstraint CA exists on the navigation property, false if it doesn't exist on the navigation property.
         bool IsValid() const { return m_navProp != nullptr && m_ca != nullptr; }
 

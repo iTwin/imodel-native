@@ -19,13 +19,11 @@ struct RelationshipConstraintMap : NonCopyableClass
     {
     private:
         ECN::ECRelationshipConstraintCR m_constraint;
-        ConstraintECInstanceIdPropertyMap const* m_ecInstanceIdPropMap;
-        ConstraintECClassIdPropertyMap const* m_ecClassIdPropMap;
+        ConstraintECInstanceIdPropertyMap const* m_ecInstanceIdPropMap = nullptr;
+        ConstraintECClassIdPropertyMap const* m_ecClassIdPropMap = nullptr;
 
     public:
-        explicit RelationshipConstraintMap(ECN::ECRelationshipConstraintCR constraint)
-            :  m_constraint(constraint), m_ecInstanceIdPropMap(nullptr), m_ecClassIdPropMap(nullptr)
-            {}
+        explicit RelationshipConstraintMap(ECN::ECRelationshipConstraintCR constraint) :  m_constraint(constraint) {}
         ConstraintECInstanceIdPropertyMap const* GetECInstanceIdPropMap() const { return m_ecInstanceIdPropMap; }
         void SetECInstanceIdPropMap(ConstraintECInstanceIdPropertyMap const* ecinstanceIdPropMap) { m_ecInstanceIdPropMap = ecinstanceIdPropMap; }
         ConstraintECClassIdPropertyMap const* GetECClassIdPropMap() const { return m_ecClassIdPropMap; }
@@ -113,11 +111,11 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
             PartitionView(RelationshipClassEndTableMap const& relationshipMap);
             BentleyStatus AddDefaultPartition();
         public:
-            const std::vector <DbTable const*> GetTables(bool skipVirtualPartition) const;
-            const std::map <DbTable const*, std::vector<Partition const*>> GetPartitionMap() const;
+            const std::vector<DbTable const*> GetTables(bool skipVirtualPartition) const;
+            const std::map<DbTable const*, std::vector<Partition const*>> GetPartitionMap() const;
             const std::vector<Partition const*> GetPartitions(bool skipVirtualPartition) const;
             const std::vector<Partition const*> GetPartitions(DbTable const& toEnd, bool skipVirtualPartition) const;
-            static std::unique_ptr< PartitionView> Create(RelationshipClassEndTableMap const& relationMap);
+            static std::unique_ptr<PartitionView> Create(RelationshipClassEndTableMap const& relationMap);
             std::vector<Partition const*> GetPhysicalPartitions() const;
             static std::vector<DbTable const*> GetOtherEndTables(RelationshipClassEndTableMap const&);
         };
@@ -125,12 +123,12 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
     private:
         mutable std::unique_ptr<PartitionView> m_partitionCollection;
 
-    private:
         RelationshipClassEndTableMap(ECDb const& ecdb, ECN::ECClassCR relClass, MapStrategyExtendedInfo const& mapStrategy) : RelationshipClassMap(ecdb, Type::RelationshipEndTable, relClass, mapStrategy) {}
         ClassMappingStatus _Map(ClassMappingContext&) override;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
-        RelationshipClassEndTableMap const* GetBaseClassMap(SchemaImportContext * ctx = nullptr) const;
+        RelationshipClassEndTableMap const* GetBaseClassMap(SchemaImportContext* ctx = nullptr) const;
         ClassMappingStatus MapSubClass(RelationshipClassEndTableMap const& baseClassMap);
+
     public:
         ~RelationshipClassEndTableMap() {}
         ECN::ECRelationshipEnd GetForeignEnd() const;
@@ -157,18 +155,23 @@ struct RelationshipClassLinkTableMap final : RelationshipClassMap
     private:
         RelationshipClassLinkTableMap(ECDb const&, ECN::ECClassCR, MapStrategyExtendedInfo const&);
         ClassMappingStatus _Map(ClassMappingContext&) override;
-        ClassMappingStatus MapSubClass(ClassMappingContext&, RelationshipMappingInfo const&);
-        ClassMappingStatus CreateConstraintPropMaps(ClassMappingContext&, RelationshipMappingInfo const&, bool addSourceECClassIdColumnToTable, bool addTargetECClassIdColumnToTable);
-        void AddIndices(ClassMappingContext&, bool allowDuplicateRelationship);
+        ClassMappingStatus MapSubClass(ClassMappingContext&);
+        ClassMappingStatus CreateConstraintPropMaps(SchemaImportContext&, LinkTableRelationshipMapCustomAttribute const&, bool addSourceECClassIdColumnToTable, bool addTargetECClassIdColumnToTable);
+        void AddIndices(SchemaImportContext&, bool allowDuplicateRelationship);
         void AddIndex(SchemaImportContext&, RelationshipIndexSpec, bool addUniqueIndex);
         DbColumn* CreateConstraintColumn(Utf8CP columnName, PersistenceType);
         void DetermineConstraintClassIdColumnHandling(bool& addConstraintClassIdColumnNeeded, ECN::ECRelationshipConstraintCR) const;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
-        DbColumn* ConfigureForeignECClassIdKey(ClassMappingContext&, RelationshipMappingInfo const&, ECN::ECRelationshipEnd);
+        DbColumn* ConfigureForeignECClassIdKey(SchemaImportContext&, LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
         static void GenerateIndexColumnList(std::vector<DbColumn const*>&, DbColumn const* col1, DbColumn const* col2, DbColumn const* col3, DbColumn const* col4);
+        
         static Utf8String DetermineConstraintECInstanceIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
         static Utf8String DetermineConstraintECClassIdColumnName(LinkTableRelationshipMapCustomAttribute const&, ECN::ECRelationshipEnd);
+        //AllowDuplicateRelationships flag is inherited from root rel class to actual rel class
         static bool DetermineAllowDuplicateRelationshipsFlagFromRoot(ECN::ECRelationshipClassCR baseRelClass);
+
+        static bool GetAllowDuplicateRelationshipsFlag(Nullable<bool> const& allowDuplicateRelationshipFlag) { return allowDuplicateRelationshipFlag.IsNull() ? false : allowDuplicateRelationshipFlag.Value(); }
+
     public:
         ~RelationshipClassLinkTableMap() {}
     };

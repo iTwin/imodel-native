@@ -119,11 +119,7 @@ public:
 struct RelationshipMappingInfo final : public ClassMappingInfo
     {
 private:
-    bool m_isRootClass = false;
     RelationshipMappingType m_mappingType;
-    LinkTableRelationshipMapCustomAttribute m_linkTableMappingCA;
-    std::set<DbTable const*> m_sourceTables;
-    std::set<DbTable const*> m_targetTables;
 
     BentleyStatus _InitializeFromSchema(SchemaImportContext&) override;
     ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&) override;
@@ -133,14 +129,8 @@ private:
 
     BentleyStatus FailIfConstraintClassIsNotMapped() const;
 public:
-    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass)  : ClassMappingInfo(ecdb, relationshipClass), m_isRootClass(!relationshipClass.HasBaseClasses()) {}
-
+    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass)  : ClassMappingInfo(ecdb, relationshipClass) {}
     ~RelationshipMappingInfo() {}
-
-    //only available for root classes. Subclasses just inherit from their base class
-    LinkTableRelationshipMapCustomAttribute const& GetLinkTableMappingCA() const { BeAssert(m_isRootClass); return m_linkTableMappingCA; }
-    std::set<DbTable const*> const& GetSourceTables() const { BeAssert(m_isRootClass); return m_sourceTables; }
-    std::set<DbTable const*> const& GetTargetTables() const { BeAssert(m_isRootClass); return m_targetTables;}
     };
 
 

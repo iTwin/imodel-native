@@ -575,7 +575,7 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
         return ClassMappingStatus::Error;
         }
 
-    if (!m_isRootClass)
+    if (m_ecClass.HasBaseClasses())
         {
         BeAssert(m_ecClass.GetBaseClasses().size() == 1 && "Only 1 base class allowed for rels. This should have been caught before");
 
@@ -643,40 +643,6 @@ ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportCon
 BentleyStatus RelationshipMappingInfo::EvaluateRootClassLinkTableStrategy(SchemaImportContext& ctx, ClassMappingCACache const& caCache)
     {
     BeAssert(m_mappingType == RelationshipMappingType::LinkTable);
-
-    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
-
-    //*** root rel class
-    //Table retrieval is only needed for the root rel class. Subclasses will use the tables of its base class
-    //TODO: How should we handle this properly?
-    m_sourceTables = GetDbMap().GetRelationshipConstraintPrimaryTables(ctx, relClass->GetSource());
-    m_targetTables = GetDbMap().GetRelationshipConstraintPrimaryTables(ctx, relClass->GetTarget());
-
-    if (m_sourceTables.empty() || m_targetTables.empty())
-        {
-        Issues().Report("Failed to map ECRelationshipClass '%s'. Source or target constraint classes are abstract without subclasses. Consider applying the MapStrategy 'TablePerHierarchy' to the abstract constraint class.",
-                        m_ecClass.GetFullName());
-        return ERROR;
-        }
-
-    const size_t sourceTableCount = m_sourceTables.size();
-    const size_t targetTableCount = m_targetTables.size();
-    if (sourceTableCount > 1 || targetTableCount > 1)
-        {
-        Utf8CP constraintStr = nullptr;
-        if (sourceTableCount > 1 && targetTableCount > 1)
-            constraintStr = "source and target constraints are";
-        else if (sourceTableCount > 1)
-            constraintStr = "source constraint is";
-        else
-            constraintStr = "target constraint is";
-
-        Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped to a link table, but the %s mapped to more than one table, which is not supported for link tables.",
-                        m_ecClass.GetFullName(), constraintStr);
-
-        return ERROR;
-        }
-
     return AssignMapStrategy(caCache);
     }
 

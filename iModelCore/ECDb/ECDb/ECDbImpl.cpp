@@ -98,8 +98,7 @@ DbResult ECDb::Impl::CheckProfileVersion(bool& fileIsAutoUpgradable, bool openMo
 //---------------+---------------+---------------+---------------+---------------+------
 void ECDb::Impl::ClearECDbCache() const
     {
-    //Note: no mutex lock required as long as this method is not exported.
-    //BeMutexHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
 
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();

@@ -144,7 +144,7 @@ struct SchemaImportContext final
         bset<ECN::ECClassId> m_classMapsToSave;
         mutable std::map<ECN::ECClassCP, std::unique_ptr<ClassMappingCACache>> m_classMappingCACache;
         std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
-        DbMappingManager::NavigationPropertyInfo::Collection m_navPropMappingInfos;
+        FkRelationshipMappingInfo::Collection m_fkRelMappingInfos;
         SchemaPolicies m_schemaPolicies;
 
     public:
@@ -156,7 +156,7 @@ struct SchemaImportContext final
         ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
         void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
         std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }
-        DbMappingManager::NavigationPropertyInfo::Collection& GetNavigationPropertyMappingInfos() { return m_navPropMappingInfos; }
+        FkRelationshipMappingInfo::Collection& GetFkRelationshipMappingInfos() { return m_fkRelMappingInfos; }
 
         ClassMapLoadContext& GetClassMapLoadContext() { return m_loadContext; }
         void AddClassMapForSaving(ECN::ECClassId classId) { m_classMapsToSave.insert(classId); }
@@ -165,8 +165,9 @@ struct SchemaImportContext final
         SchemaPolicies const& GetSchemaPolicies() const { return m_schemaPolicies; }
         SchemaPolicies& GetSchemaPoliciesR() { return m_schemaPolicies; }
 
-        IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
+        DbMap const& GetDbMap() const { return m_ecdb.Schemas().GetDbMap(); }
         ECDbCR GetECDb() const { return m_ecdb; }
+        IssueReporter const& Issues() const { return m_ecdb.GetImpl().Issues(); }
     };
 
 //=======================================================================================
