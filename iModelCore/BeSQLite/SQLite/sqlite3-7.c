@@ -1612,12 +1612,12 @@ typedef union {
 *********** Begin parsing tables **********************************************/
 #define fts5YY_ACTTAB_COUNT (98)
 static const fts5YYACTIONTYPE fts5yy_action[] = {
- /*     0 */   105,   19,   63,    6,   26,   66,   65,   24,   24,   17,
- /*    10 */    63,    6,   26,   16,   65,   54,   24,   18,   63,    6,
- /*    20 */    26,   10,   65,   12,   24,   75,   59,   63,    6,   26,
- /*    30 */    13,   65,   75,   24,   20,   63,    6,   26,   74,   65,
- /*    40 */    56,   24,   27,   63,    6,   26,   73,   65,   21,   24,
- /*    50 */    23,   15,   30,   11,    1,   64,   22,   25,    9,   65,
+ /*     0 */   105,   19,   90,    6,   26,   93,   92,   24,   24,   17,
+ /*    10 */    90,    6,   26,   16,   92,   54,   24,   18,   90,    6,
+ /*    20 */    26,   10,   92,   12,   24,   75,   86,   90,    6,   26,
+ /*    30 */    13,   92,   75,   24,   20,   90,    6,   26,  101,   92,
+ /*    40 */    56,   24,   27,   90,    6,   26,  100,   92,   21,   24,
+ /*    50 */    23,   15,   30,   11,    1,   91,   22,   25,    9,   92,
  /*    60 */     7,   24,    3,    4,    5,    3,    4,    5,    3,   77,
  /*    70 */     4,    5,    3,   61,   23,   15,   60,   11,   80,   12,
  /*    80 */     2,   13,   68,   10,   29,   52,   55,   75,   31,   32,
@@ -1722,6 +1722,7 @@ struct fts5yyParser {
   fts5yyStackEntry fts5yystk0;          /* First stack entry */
 #else
   fts5yyStackEntry fts5yystack[fts5YYSTACKDEPTH];  /* The parser's stack */
+  fts5yyStackEntry *fts5yystackEnd;            /* Last entry in the stack */
 #endif
 };
 typedef struct fts5yyParser fts5yyParser;
@@ -1871,6 +1872,9 @@ static void sqlite3Fts5ParserInit(void *fts5yypParser){
   pParser->fts5yytos = pParser->fts5yystack;
   pParser->fts5yystack[0].stateno = 0;
   pParser->fts5yystack[0].major = 0;
+#if fts5YYSTACKDEPTH>0
+  pParser->fts5yystackEnd = &pParser->fts5yystack[fts5YYSTACKDEPTH-1];
+#endif
 }
 
 #ifndef sqlite3Fts5Parser_ENGINEALWAYSONSTACK
@@ -2169,7 +2173,7 @@ static void fts5yy_shift(
   }
 #endif
 #if fts5YYSTACKDEPTH>0 
-  if( fts5yypParser->fts5yytos>=&fts5yypParser->fts5yystack[fts5YYSTACKDEPTH] ){
+  if( fts5yypParser->fts5yytos>fts5yypParser->fts5yystackEnd ){
     fts5yypParser->fts5yytos--;
     fts5yyStackOverflow(fts5yypParser);
     return;
@@ -2197,35 +2201,35 @@ static void fts5yy_shift(
 ** is used during the reduce.
 */
 static const struct {
-  fts5YYCODETYPE lhs;         /* Symbol on the left-hand side of the rule */
-  unsigned char nrhs;     /* Number of right-hand side symbols in the rule */
+  fts5YYCODETYPE lhs;       /* Symbol on the left-hand side of the rule */
+  signed char nrhs;     /* Negative of the number of RHS symbols in the rule */
 } fts5yyRuleInfo[] = {
-  { 16, 1 },
-  { 20, 4 },
-  { 20, 3 },
-  { 20, 1 },
-  { 20, 2 },
-  { 21, 2 },
-  { 21, 1 },
-  { 17, 3 },
-  { 17, 3 },
-  { 17, 3 },
-  { 17, 5 },
-  { 17, 3 },
-  { 17, 1 },
-  { 19, 1 },
-  { 19, 2 },
-  { 18, 1 },
-  { 18, 3 },
-  { 22, 1 },
-  { 22, 5 },
-  { 23, 1 },
-  { 23, 2 },
+  { 16, -1 },
+  { 20, -4 },
+  { 20, -3 },
+  { 20, -1 },
+  { 20, -2 },
+  { 21, -2 },
+  { 21, -1 },
+  { 17, -3 },
+  { 17, -3 },
+  { 17, -3 },
+  { 17, -5 },
+  { 17, -3 },
+  { 17, -1 },
+  { 19, -1 },
+  { 19, -2 },
+  { 18, -1 },
+  { 18, -3 },
+  { 22, -1 },
+  { 22, -5 },
+  { 23, -1 },
+  { 23, -2 },
   { 25, 0 },
-  { 25, 2 },
-  { 24, 4 },
-  { 24, 2 },
-  { 26, 1 },
+  { 25, -2 },
+  { 24, -4 },
+  { 24, -2 },
+  { 26, -1 },
   { 26, 0 },
 };
 
@@ -2249,7 +2253,7 @@ static void fts5yy_reduce(
   if( fts5yyTraceFILE && fts5yyruleno<(int)(sizeof(fts5yyRuleName)/sizeof(fts5yyRuleName[0])) ){
     fts5yysize = fts5yyRuleInfo[fts5yyruleno].nrhs;
     fprintf(fts5yyTraceFILE, "%sReduce [%s], go to state %d.\n", fts5yyTracePrompt,
-      fts5yyRuleName[fts5yyruleno], fts5yymsp[-fts5yysize].stateno);
+      fts5yyRuleName[fts5yyruleno], fts5yymsp[fts5yysize].stateno);
   }
 #endif /* NDEBUG */
 
@@ -2264,7 +2268,7 @@ static void fts5yy_reduce(
     }
 #endif
 #if fts5YYSTACKDEPTH>0 
-    if( fts5yypParser->fts5yytos>=&fts5yypParser->fts5yystack[fts5YYSTACKDEPTH-1] ){
+    if( fts5yypParser->fts5yytos>=fts5yypParser->fts5yystackEnd ){
       fts5yyStackOverflow(fts5yypParser);
       return;
     }
@@ -2431,20 +2435,24 @@ static void fts5yy_reduce(
   assert( fts5yyruleno<sizeof(fts5yyRuleInfo)/sizeof(fts5yyRuleInfo[0]) );
   fts5yygoto = fts5yyRuleInfo[fts5yyruleno].lhs;
   fts5yysize = fts5yyRuleInfo[fts5yyruleno].nrhs;
-  fts5yyact = fts5yy_find_reduce_action(fts5yymsp[-fts5yysize].stateno,(fts5YYCODETYPE)fts5yygoto);
-  if( fts5yyact <= fts5YY_MAX_SHIFTREDUCE ){
-    if( fts5yyact>fts5YY_MAX_SHIFT ){
-      fts5yyact += fts5YY_MIN_REDUCE - fts5YY_MIN_SHIFTREDUCE;
-    }
-    fts5yymsp -= fts5yysize-1;
+  fts5yyact = fts5yy_find_reduce_action(fts5yymsp[fts5yysize].stateno,(fts5YYCODETYPE)fts5yygoto);
+
+  /* There are no SHIFTREDUCE actions on nonterminals because the table
+  ** generator has simplified them to pure REDUCE actions. */
+  assert( !(fts5yyact>fts5YY_MAX_SHIFT && fts5yyact<=fts5YY_MAX_SHIFTREDUCE) );
+
+  /* It is not possible for a REDUCE to be followed by an error */
+  assert( fts5yyact!=fts5YY_ERROR_ACTION );
+
+  if( fts5yyact==fts5YY_ACCEPT_ACTION ){
+    fts5yypParser->fts5yytos += fts5yysize;
+    fts5yy_accept(fts5yypParser);
+  }else{
+    fts5yymsp += fts5yysize+1;
     fts5yypParser->fts5yytos = fts5yymsp;
     fts5yymsp->stateno = (fts5YYACTIONTYPE)fts5yyact;
     fts5yymsp->major = (fts5YYCODETYPE)fts5yygoto;
     fts5yyTraceShift(fts5yypParser, fts5yyact);
-  }else{
-    assert( fts5yyact == fts5YY_ACCEPT_ACTION );
-    fts5yypParser->fts5yytos -= fts5yysize;
-    fts5yy_accept(fts5yypParser);
   }
 }
 
@@ -8836,7 +8844,8 @@ static int fts5IndexPrepareStmt(
 ){
   if( p->rc==SQLITE_OK ){
     if( zSql ){
-      p->rc = sqlite3_prepare_v2(p->pConfig->db, zSql, -1, ppStmt, 0);
+      p->rc = sqlite3_prepare_v3(p->pConfig->db, zSql, -1,
+                                 SQLITE_PREPARE_PERSISTENT, ppStmt, 0);
     }else{
       p->rc = SQLITE_NOMEM;
     }
@@ -8885,7 +8894,8 @@ static void fts5DataDelete(Fts5Index *p, i64 iFirst, i64 iLast){
     if( zSql==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &p->pDeleter, 0);
+      rc = sqlite3_prepare_v3(pConfig->db, zSql, -1,
+                              SQLITE_PREPARE_PERSISTENT, &p->pDeleter, 0);
       sqlite3_free(zSql);
     }
     if( rc!=SQLITE_OK ){
@@ -15484,7 +15494,8 @@ static int fts5PrepareStatement(
   if( zSql==0 ){
     rc = SQLITE_NOMEM; 
   }else{
-    rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pRet, 0);
+    rc = sqlite3_prepare_v3(pConfig->db, zSql, -1, 
+                            SQLITE_PREPARE_PERSISTENT, &pRet, 0);
     if( rc!=SQLITE_OK ){
       *pConfig->pzErrmsg = sqlite3_mprintf("%s", sqlite3_errmsg(pConfig->db));
     }
@@ -15620,7 +15631,8 @@ static int fts5FindRankFunction(Fts5Cursor *pCsr){
     char *zSql = sqlite3Fts5Mprintf(&rc, "SELECT %s", zRankArgs);
     if( zSql ){
       sqlite3_stmt *pStmt = 0;
-      rc = sqlite3_prepare_v2(pConfig->db, zSql, -1, &pStmt, 0);
+      rc = sqlite3_prepare_v3(pConfig->db, zSql, -1,
+                              SQLITE_PREPARE_PERSISTENT, &pStmt, 0);
       sqlite3_free(zSql);
       assert( rc==SQLITE_OK || pCsr->pRankArgStmt==0 );
       if( rc==SQLITE_OK ){
@@ -17208,15 +17220,14 @@ static void fts5ModuleDestroy(void *pCtx){
 static void fts5Fts5Func(
   sqlite3_context *pCtx,          /* Function call context */
   int nArg,                       /* Number of args */
-  sqlite3_value **apUnused        /* Function arguments */
+  sqlite3_value **apArg           /* Function arguments */
 ){
   Fts5Global *pGlobal = (Fts5Global*)sqlite3_user_data(pCtx);
-  char buf[8];
-  UNUSED_PARAM2(nArg, apUnused);
-  assert( nArg==0 );
-  assert( sizeof(buf)>=sizeof(pGlobal) );
-  memcpy(buf, (void*)&pGlobal, sizeof(pGlobal));
-  sqlite3_result_blob(pCtx, buf, sizeof(pGlobal), SQLITE_TRANSIENT);
+  fts5_api **ppApi;
+  UNUSED_PARAM(nArg);
+  assert( nArg==1 );
+  ppApi = (fts5_api**)sqlite3_value_pointer(apArg[0], "fts5_api_ptr");
+  if( ppApi ) *ppApi = &pGlobal->api;
 }
 
 /*
@@ -17229,7 +17240,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2017-06-24 19:21:48 c8186874b3fec737445ad5c4ba3eaecd922af664b387d89dc31eea60476a0294", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2017-07-19 11:52:25 c93284cd65b6471bffc38696e14dc24a2170698faf566cf91b727ba272f88c25", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
@@ -17281,7 +17292,7 @@ static int fts5Init(sqlite3 *db){
     if( rc==SQLITE_OK ) rc = sqlite3Fts5VocabInit(pGlobal, db);
     if( rc==SQLITE_OK ){
       rc = sqlite3_create_function(
-          db, "fts5", 0, SQLITE_UTF8, p, fts5Fts5Func, 0, 0
+          db, "fts5", 1, SQLITE_UTF8, p, fts5Fts5Func, 0, 0
       );
     }
     if( rc==SQLITE_OK ){
@@ -17483,7 +17494,8 @@ static int fts5StorageGetStmt(
     if( zSql==0 ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_prepare_v2(pC->db, zSql, -1, &p->aStmt[eStmt], 0);
+      rc = sqlite3_prepare_v3(pC->db, zSql, -1,
+                              SQLITE_PREPARE_PERSISTENT, &p->aStmt[eStmt], 0);
       sqlite3_free(zSql);
       if( rc!=SQLITE_OK && pzErrMsg ){
         *pzErrMsg = sqlite3_mprintf("%s", sqlite3_errmsg(pC->db));
@@ -21083,3 +21095,304 @@ static int sqlite3Fts5VocabInit(Fts5Global *pGlobal, sqlite3 *db){
 #endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS5) */
 
 /************** End of fts5.c ************************************************/
+/************** Begin file stmt.c ********************************************/
+/*
+** 2017-05-31
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+*************************************************************************
+**
+** This file demonstrates an eponymous virtual table that returns information
+** about all prepared statements for the database connection.
+**
+** Usage example:
+**
+**     .load ./stmt
+**     .mode line
+**     .header on
+**     SELECT * FROM stmt;
+*/
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTVTAB)
+#if !defined(SQLITEINT_H)
+/* #include "sqlite3ext.h" */
+#endif
+SQLITE_EXTENSION_INIT1
+/* #include <assert.h> */
+/* #include <string.h> */
+
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+
+/* stmt_vtab is a subclass of sqlite3_vtab which will
+** serve as the underlying representation of a stmt virtual table
+*/
+typedef struct stmt_vtab stmt_vtab;
+struct stmt_vtab {
+  sqlite3_vtab base;  /* Base class - must be first */
+  sqlite3 *db;        /* Database connection for this stmt vtab */
+};
+
+/* stmt_cursor is a subclass of sqlite3_vtab_cursor which will
+** serve as the underlying representation of a cursor that scans
+** over rows of the result
+*/
+typedef struct stmt_cursor stmt_cursor;
+struct stmt_cursor {
+  sqlite3_vtab_cursor base;  /* Base class - must be first */
+  sqlite3 *db;               /* Database connection for this cursor */
+  sqlite3_stmt *pStmt;       /* Statement cursor is currently pointing at */
+  sqlite3_int64 iRowid;      /* The rowid */
+};
+
+/*
+** The stmtConnect() method is invoked to create a new
+** stmt_vtab that describes the stmt virtual table.
+**
+** Think of this routine as the constructor for stmt_vtab objects.
+**
+** All this routine needs to do is:
+**
+**    (1) Allocate the stmt_vtab object and initialize all fields.
+**
+**    (2) Tell SQLite (via the sqlite3_declare_vtab() interface) what the
+**        result set of queries against stmt will look like.
+*/
+static int stmtConnect(
+  sqlite3 *db,
+  void *pAux,
+  int argc, const char *const*argv,
+  sqlite3_vtab **ppVtab,
+  char **pzErr
+){
+  stmt_vtab *pNew;
+  int rc;
+
+/* Column numbers */
+#define STMT_COLUMN_SQL     0   /* SQL for the statement */
+#define STMT_COLUMN_NCOL    1   /* Number of result columns */
+#define STMT_COLUMN_RO      2   /* True if read-only */
+#define STMT_COLUMN_BUSY    3   /* True if currently busy */
+#define STMT_COLUMN_NSCAN   4   /* SQLITE_STMTSTATUS_FULLSCAN_STEP */
+#define STMT_COLUMN_NSORT   5   /* SQLITE_STMTSTATUS_SORT */
+#define STMT_COLUMN_NAIDX   6   /* SQLITE_STMTSTATUS_AUTOINDEX */
+#define STMT_COLUMN_NSTEP   7   /* SQLITE_STMTSTATUS_VM_STEP */
+#define STMT_COLUMN_REPREP  8   /* SQLITE_STMTSTATUS_REPREPARE */
+#define STMT_COLUMN_RUN     9   /* SQLITE_STMTSTATUS_RUN */
+#define STMT_COLUMN_MEM    10   /* SQLITE_STMTSTATUS_MEMUSED */
+
+
+  rc = sqlite3_declare_vtab(db,
+     "CREATE TABLE x(sql,ncol,ro,busy,nscan,nsort,naidx,nstep,"
+                    "reprep,run,mem)");
+  if( rc==SQLITE_OK ){
+    pNew = sqlite3_malloc( sizeof(*pNew) );
+    *ppVtab = (sqlite3_vtab*)pNew;
+    if( pNew==0 ) return SQLITE_NOMEM;
+    memset(pNew, 0, sizeof(*pNew));
+    pNew->db = db;
+  }
+  return rc;
+}
+
+/*
+** This method is the destructor for stmt_cursor objects.
+*/
+static int stmtDisconnect(sqlite3_vtab *pVtab){
+  sqlite3_free(pVtab);
+  return SQLITE_OK;
+}
+
+/*
+** Constructor for a new stmt_cursor object.
+*/
+static int stmtOpen(sqlite3_vtab *p, sqlite3_vtab_cursor **ppCursor){
+  stmt_cursor *pCur;
+  pCur = sqlite3_malloc( sizeof(*pCur) );
+  if( pCur==0 ) return SQLITE_NOMEM;
+  memset(pCur, 0, sizeof(*pCur));
+  pCur->db = ((stmt_vtab*)p)->db;
+  *ppCursor = &pCur->base;
+  return SQLITE_OK;
+}
+
+/*
+** Destructor for a stmt_cursor.
+*/
+static int stmtClose(sqlite3_vtab_cursor *cur){
+  sqlite3_free(cur);
+  return SQLITE_OK;
+}
+
+
+/*
+** Advance a stmt_cursor to its next row of output.
+*/
+static int stmtNext(sqlite3_vtab_cursor *cur){
+  stmt_cursor *pCur = (stmt_cursor*)cur;
+  pCur->iRowid++;
+  pCur->pStmt = sqlite3_next_stmt(pCur->db, pCur->pStmt);
+  return SQLITE_OK;
+}
+
+/*
+** Return values of columns for the row at which the stmt_cursor
+** is currently pointing.
+*/
+static int stmtColumn(
+  sqlite3_vtab_cursor *cur,   /* The cursor */
+  sqlite3_context *ctx,       /* First argument to sqlite3_result_...() */
+  int i                       /* Which column to return */
+){
+  stmt_cursor *pCur = (stmt_cursor*)cur;
+  switch( i ){
+    case STMT_COLUMN_SQL: {
+      sqlite3_result_text(ctx, sqlite3_sql(pCur->pStmt), -1, SQLITE_TRANSIENT);
+      break;
+    }
+    case STMT_COLUMN_NCOL: {
+      sqlite3_result_int(ctx, sqlite3_column_count(pCur->pStmt));
+      break;
+    }
+    case STMT_COLUMN_RO: {
+      sqlite3_result_int(ctx, sqlite3_stmt_readonly(pCur->pStmt));
+      break;
+    }
+    case STMT_COLUMN_BUSY: {
+      sqlite3_result_int(ctx, sqlite3_stmt_busy(pCur->pStmt));
+      break;
+    }
+    case STMT_COLUMN_MEM: {
+      i = SQLITE_STMTSTATUS_MEMUSED + 
+            STMT_COLUMN_NSCAN - SQLITE_STMTSTATUS_FULLSCAN_STEP;
+      /* Fall thru */
+    }
+    case STMT_COLUMN_NSCAN:
+    case STMT_COLUMN_NSORT:
+    case STMT_COLUMN_NAIDX:
+    case STMT_COLUMN_NSTEP:
+    case STMT_COLUMN_REPREP:
+    case STMT_COLUMN_RUN: {
+      sqlite3_result_int(ctx, sqlite3_stmt_status(pCur->pStmt,
+                      i-STMT_COLUMN_NSCAN+SQLITE_STMTSTATUS_FULLSCAN_STEP, 0));
+      break;
+    }
+  }
+  return SQLITE_OK;
+}
+
+/*
+** Return the rowid for the current row.  In this implementation, the
+** rowid is the same as the output value.
+*/
+static int stmtRowid(sqlite3_vtab_cursor *cur, sqlite_int64 *pRowid){
+  stmt_cursor *pCur = (stmt_cursor*)cur;
+  *pRowid = pCur->iRowid;
+  return SQLITE_OK;
+}
+
+/*
+** Return TRUE if the cursor has been moved off of the last
+** row of output.
+*/
+static int stmtEof(sqlite3_vtab_cursor *cur){
+  stmt_cursor *pCur = (stmt_cursor*)cur;
+  return pCur->pStmt==0;
+}
+
+/*
+** This method is called to "rewind" the stmt_cursor object back
+** to the first row of output.  This method is always called at least
+** once prior to any call to stmtColumn() or stmtRowid() or 
+** stmtEof().
+*/
+static int stmtFilter(
+  sqlite3_vtab_cursor *pVtabCursor, 
+  int idxNum, const char *idxStr,
+  int argc, sqlite3_value **argv
+){
+  stmt_cursor *pCur = (stmt_cursor *)pVtabCursor;
+  pCur->pStmt = 0;
+  pCur->iRowid = 0;
+  return stmtNext(pVtabCursor);
+}
+
+/*
+** SQLite will invoke this method one or more times while planning a query
+** that uses the stmt virtual table.  This routine needs to create
+** a query plan for each invocation and compute an estimated cost for that
+** plan.
+*/
+static int stmtBestIndex(
+  sqlite3_vtab *tab,
+  sqlite3_index_info *pIdxInfo
+){
+  pIdxInfo->estimatedCost = (double)500;
+  pIdxInfo->estimatedRows = 500;
+  return SQLITE_OK;
+}
+
+/*
+** This following structure defines all the methods for the 
+** stmt virtual table.
+*/
+static sqlite3_module stmtModule = {
+  0,                         /* iVersion */
+  0,                         /* xCreate */
+  stmtConnect,               /* xConnect */
+  stmtBestIndex,             /* xBestIndex */
+  stmtDisconnect,            /* xDisconnect */
+  0,                         /* xDestroy */
+  stmtOpen,                  /* xOpen - open a cursor */
+  stmtClose,                 /* xClose - close a cursor */
+  stmtFilter,                /* xFilter - configure scan constraints */
+  stmtNext,                  /* xNext - advance a cursor */
+  stmtEof,                   /* xEof - check for end of scan */
+  stmtColumn,                /* xColumn - read data */
+  stmtRowid,                 /* xRowid - read data */
+  0,                         /* xUpdate */
+  0,                         /* xBegin */
+  0,                         /* xSync */
+  0,                         /* xCommit */
+  0,                         /* xRollback */
+  0,                         /* xFindMethod */
+  0,                         /* xRename */
+  0,                         /* xSavepoint */
+  0,                         /* xRelease */
+  0,                         /* xRollbackTo */
+};
+
+#endif /* SQLITE_OMIT_VIRTUALTABLE */
+
+SQLITE_PRIVATE int sqlite3StmtVtabInit(sqlite3 *db){
+  int rc = SQLITE_OK;
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  rc = sqlite3_create_module(db, "sqlite_stmt", &stmtModule, 0);
+#endif
+  return rc;
+}
+
+#ifndef SQLITE_CORE
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
+SQLITE_API int sqlite3_stmt_init(
+  sqlite3 *db, 
+  char **pzErrMsg, 
+  const sqlite3_api_routines *pApi
+){
+  int rc = SQLITE_OK;
+  SQLITE_EXTENSION_INIT2(pApi);
+#ifndef SQLITE_OMIT_VIRTUALTABLE
+  rc = sqlite3StmtVtabInit(db);
+#endif
+  return rc;
+}
+#endif /* SQLITE_CORE */
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_STMTVTAB) */
+
+/************** End of stmt.c ************************************************/
