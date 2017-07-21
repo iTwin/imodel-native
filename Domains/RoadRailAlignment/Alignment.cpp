@@ -32,6 +32,47 @@ double Alignment::_GetLength() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DPoint3d Alignment::_ToDPoint3d(DistanceExpressionCR distanceExpression) const
+    {
+    auto mainPairPtr = QueryMainPair();
+
+    DPoint3d retVal;
+    if (distanceExpression.GetLateralOffsetFromILinearElement().IsValid())
+        {
+        retVal = mainPairPtr->GetPointFromStationAndOffset(
+            distanceExpression.GetDistanceAlongFromStart(), 
+            distanceExpression.GetLateralOffsetFromILinearElement().Value());
+        retVal.z = mainPairPtr->GetVerticalElevationAtStation(distanceExpression.GetDistanceAlongFromStart());
+        }
+    else
+        {
+        retVal = mainPairPtr->GetPointFromStationWithZ(distanceExpression.GetDistanceAlongFromStart());
+        }
+
+    if (distanceExpression.GetVerticalOffsetFromILinearElement().IsValid())
+        retVal.z += distanceExpression.GetVerticalOffsetFromILinearElement().Value();
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DistanceExpression Alignment::_ToDistanceExpression(DPoint3dCR point) const
+    {
+    auto mainPairPtr = QueryMainPair();
+
+    double horizOffset;
+    double distanceFromStart = mainPairPtr->HorizontalDistanceFromStart(point, &horizOffset);
+    double vertElev = mainPairPtr->GetVerticalElevationAtStation(distanceFromStart);
+    double vertOffset = (point.z - vertElev);
+
+    return DistanceExpression(distanceFromStart, horizOffset, vertOffset);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Alignment::_OnDelete() const
@@ -110,6 +151,45 @@ DgnElementId Alignment::QueryMainVerticalId() const
 VerticalAlignmentCPtr Alignment::QueryMainVertical() const
     { 
     return VerticalAlignment::Get(GetDgnDb(), QueryMainVerticalId()); 
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<Alignment::DistanceAlongStationPair> Alignment::QueryOrderedStations() const
+    {
+    ECSqlStatement stmt;
+    stmt.Prepare(GetDgnDb(), "SELECT atLocation.AtPosition.DistanceAlongFromStart, station.Station FROM " 
+        BRRA_SCHEMA(BRRA_CLASS_AlignmentStation) " station, " BLR_SCHEMA(BLR_CLASS_LinearlyReferencedAtLocation) " atLocation "
+        "WHERE station.ECInstanceId = atLocation.Element.Id AND station.Parent.Id = ?");
+    BeAssert(stmt.IsPrepared());
+
+    stmt.BindId(1, GetElementId());
+
+    bvector<DistanceAlongStationPair> retVal;
+
+    double lastDistanceAlong = 0;
+    double lastStation = GetStartStation();
+    while (DbResult::BE_SQLITE_ROW == stmt.Step())
+        {
+        double distanceAlong = stmt.GetValueDouble(0);
+        if (retVal.empty() && fabs(distanceAlong) > DBL_EPSILON)
+            retVal.push_back({ 0, lastStation });
+
+        double station = stmt.GetValueDouble(1);
+        retVal.push_back({ distanceAlong, station });
+        lastDistanceAlong = distanceAlong;
+        lastStation = station;
+        }
+
+    if (retVal.empty())
+        retVal.push_back({ 0, lastStation });
+
+    double length = GetLength();
+    if (fabs(lastDistanceAlong - length) > DBL_EPSILON)
+        retVal.push_back({ length, lastStation + (length - lastDistanceAlong) });
+
+    return retVal;
     }
 
 /*---------------------------------------------------------------------------------**//**

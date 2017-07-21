@@ -17,7 +17,7 @@ BEGIN_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 //! Main Linear-Element used in Road & Rail applications.
 //! @ingroup GROUP_RoadRailAlignment
 //=======================================================================================
-struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ISegmentableLinearElement
+struct Alignment : Dgn::SpatialLocationElement, LinearReferencing::ISegmentableLinearElement, LinearReferencing::ISpatialLinearElement
 {
     DGNELEMENT_DECLARE_MEMBERS(BRRA_CLASS_Alignment, Dgn::SpatialLocationElement);
     friend struct AlignmentHandler;
@@ -26,13 +26,28 @@ protected:
     //! @private
     explicit Alignment(CreateParams const& params) : T_Super(params) {}
 
+    // ILinearElement
     virtual double _GetLength() const override;
-    virtual double _GetStartValue() const override { return 0.0; }
+    virtual double _GetStartValue() const override { return GetPropertyValueDouble("StartStation"); }
     virtual Dgn::DgnElementCR _ILinearElementToDgnElement() const override final { return *this; }
+
+    // ISpatialLinearElement
+    virtual DPoint3d _ToDPoint3d(LinearReferencing::DistanceExpressionCR distanceExpression) const override;
+    virtual LinearReferencing::DistanceExpression _ToDistanceExpression(DPoint3dCR point) const override;
 
     virtual Dgn::DgnDbStatus _OnDelete() const override;
 
 public:
+    struct DistanceAlongStationPair
+        {
+        double m_distanceAlong, m_station;
+
+        DistanceAlongStationPair(double distanceAlong, double station): m_distanceAlong(distanceAlong), m_station(station) {}
+
+        double GetDistanceAlong() const { return m_distanceAlong; }
+        double GetStation() const { return m_station; }
+        }; // DistanceAlongStationPair
+
     DECLARE_ROADRAILALIGNMENT_QUERYCLASS_METHODS(Alignment)
     DECLARE_ROADRAILALIGNMENT_ELEMENT_BASE_METHODS(Alignment)
     ROADRAILALIGNMENT_EXPORT static AlignmentPtr Create(AlignmentModelCR model);
@@ -44,9 +59,13 @@ public:
     ROADRAILALIGNMENT_EXPORT Dgn::DgnElementIdSet QueryVerticalAlignmentIds() const;
     ROADRAILALIGNMENT_EXPORT Dgn::DgnModelId QueryVerticalAlignmentSubModelId() const;
     ROADRAILALIGNMENT_EXPORT AlignmentPairPtr QueryMainPair() const;
+    ROADRAILALIGNMENT_EXPORT bvector<DistanceAlongStationPair> QueryOrderedStations() const;
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr InsertWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT AlignmentCPtr UpdateWithMainPair(AlignmentPairCR alignmentPair, Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateAprox3dGeom();
+
+    double GetStartStation() const { return GetStartValue(); }
+    void SetStartStation(double station) { SetPropertyValue("StartStation", station); }
 
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetHorizontal(AlignmentCR alignment, HorizontalAlignmentCR vertical);
     ROADRAILALIGNMENT_EXPORT static Dgn::DgnDbStatus SetMainVertical(AlignmentCR alignment, VerticalAlignmentCR vertical);
