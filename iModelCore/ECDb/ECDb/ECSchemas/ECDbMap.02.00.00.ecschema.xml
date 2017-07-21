@@ -21,7 +21,7 @@
         <ECStructArrayProperty propertyName="Indexes" typeName="DbIndex" description="List of indexes on properties of this class. It can be use to improve query performance or to add unique constraint." minOccurs="1" maxOccurs="unbounded"/>
     </ECCustomAttributeClass>
     
-    <ECStructClass typeName="DbIndex" description="Specify a database index for a ECClass based on list of properties of that class." modifier="Sealed">
+    <ECStructClass typeName="DbIndex" description="Specify a database index for an ECClass." modifier="Sealed">
         <ECProperty propertyName="Name" typeName="string" description="Name of the index. Must follow EC identifier rules. It needs to be globally unique in the database."/>
         <ECProperty propertyName="IsUnique" typeName="boolean" description="Default: false. If true, all values in the indexed properties must be unique."/>
         <ECArrayProperty propertyName="Properties" typeName="string" description="List of properties that make up the index. Only properties of primitive type are supported." minOccurs="1" maxOccurs="unbounded"/>

@@ -41,6 +41,7 @@
     <ClCompile Include="Published\BulkCrudTestFixture.cpp" />
     <ClCompile Include="Published\BulkCrudTests.cpp" />
     <ClCompile Include="Published\ChangeSummaryTests.cpp" />
+    <ClCompile Include="Published\FileFormatCompatibilityTests.cpp" />
     <ClCompile Include="Published\DateTimeTests.cpp" />
     <ClCompile Include="Published\DbMappingTests.cpp" />
     <ClCompile Include="Published\ECCrudWriteTokenTests.cpp" />

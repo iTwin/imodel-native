@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="CivilSharedDomain" alias="csd" version="01.00.00" description="Schema for Civil applications." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
+    <ECSchemaReference name="RoadRailAlignment" version="01.00.00" alias="rra"/>
+    <ECSchemaReference name="Costing" version="01.00.00" alias="cost"/>    
+    <ECSchemaReference name="RoadRailPhysical" version="01.00.00" alias="rrp"/>
+    <ECSchemaReference name="BridgePhysical" version="01.00.00" alias="bp"/>
+
+    <ECEntityClass typeName="UnitCostGroup">
+        <BaseClass>cost:UnitCostClassElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="BisCore.01.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="ConstructionComponent">
+        <BaseClass>cost:UnitCostElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+        <ECProperty propertyName="UnitCostSubGroup" typeName="string"/>
+        <ECProperty propertyName="UseInCalculations" typeName="boolean"/>
+        <ECNavigationProperty propertyName="ConstructionAllowance" relationshipName="ConstructionComponentRefersToAllowance" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ConstructionComponentRefersToAllowance" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is refered to by N construction components">
+            <Class class="ConstructionComponent"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 allowance">
+            <Class class="ConstructionAllowance"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECEntityClass typeName="ConstructionAllowance" displayLabel="Allowance">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="UnitCostGroupBasedOn" relationshipName="ConstructionAllowanceBasedOnUnitCostGroup" direction="Forward"/>
+        <ECProperty propertyName="CostRatio" typeName="double" kindOfQuantity="cost:RATIO"/>
+        <ECProperty propertyName="UseCostRatioInCalcs" typeName="boolean"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ConstructionAllowanceBasedOnUnitCostGroup" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is refered to by N construction allowances">
+            <Class class="ConstructionAllowance"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 unit-cost group">
+            <Class class="UnitCostGroup"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

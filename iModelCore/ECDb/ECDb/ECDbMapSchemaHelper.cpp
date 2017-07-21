@@ -369,6 +369,29 @@ BentleyStatus ForeignKeyConstraintCustomAttribute::TryGetOnUpdateAction(Nullable
     return CustomAttributeReader::TryGetTrimmedValue(onUpdateAction, *m_ca, "OnUpdateAction");
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                               Krischan.Eberle   07 / 2017
+//+---------------+---------------+---------------+---------------+---------------+------
+bool ForeignKeyConstraintCustomAttribute::operator==(ForeignKeyConstraintCustomAttribute const& rhs) const
+    {
+    if (IsValid() != rhs.IsValid())
+        return false;
+
+    if (!IsValid())
+        return true;
+
+    Nullable<Utf8String> onDeleteStr, rhsOnDeleteStr;
+    TryGetOnDeleteAction(onDeleteStr);
+    rhs.TryGetOnDeleteAction(rhsOnDeleteStr);
+
+    if (onDeleteStr != rhsOnDeleteStr)
+        return false;
+
+    Nullable<Utf8String> onUpdateStr, rhsOnUpdateStr;
+    TryGetOnUpdateAction(onUpdateStr);
+    rhs.TryGetOnUpdateAction(rhsOnUpdateStr);
+    return onUpdateStr == rhsOnUpdateStr;
+    }
 
 
 

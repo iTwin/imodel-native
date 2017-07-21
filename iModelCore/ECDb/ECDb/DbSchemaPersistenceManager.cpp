@@ -343,18 +343,13 @@ bool DbSchemaPersistenceManager::IsTableChanged(ECDbCR ecdb, DbTable const& tabl
 // @bsimethod                                                Krischan.Eberle 07/2017
 //---------------------------------------------------------------------------------------
 //static
-BentleyStatus DbSchemaPersistenceManager::CreateOrReplaceIndex(ECDbCR ecdb, DbIndex const& index, Utf8StringCR ddl)
+BentleyStatus DbSchemaPersistenceManager::CreateIndex(ECDbCR ecdb, DbIndex const& index, Utf8StringCR ddl)
     {
     if (index.GetTable().GetType() == DbTable::Type::Virtual)
         {
         BeAssert(false && "Must not call this method for indexes on virtual tables");
         return ERROR;
         }
-
-    //drop index first if it exists, as we always have to recreate them to make sure the class id filter is up-to-date
-    Utf8String dropIndexSql;
-    dropIndexSql.Sprintf("DROP INDEX [%s]", index.GetName().c_str());
-    ecdb.TryExecuteSql(dropIndexSql.c_str());
 
     if (BE_SQLITE_OK != ecdb.ExecuteSql(ddl.c_str()))
         {

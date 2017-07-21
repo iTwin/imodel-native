@@ -1,0 +1,361 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="ECObjects" alias="eco" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis" />
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap" />
+
+    <ECEntityClass typeName="MetadataDefinitionElement" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="INamedMetadataElement" modifier="Abstract">
+        <BaseClass>MetadataDefinitionElement</BaseClass>
+        <ECProperty propertyName="Description" typeName="string"/>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="SchemaDef" description="ECSchema" displayLabel="ECSchema" modifier="Sealed">
+        <BaseClass>INamedMetadataElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="Alias" typeName="string"/>
+        <ECProperty propertyName="VersionRead" typeName="int"/>
+        <ECProperty propertyName="VersionWrite" typeName="int"/>
+        <ECProperty propertyName="VersionMinor" typeName="int"/>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="ClassDef" description="ECClass" displayLabel="ECClass" modifier="Abstract">
+        <BaseClass>INamedMetadataElement</BaseClass>
+        <ECProperty propertyName="Type" typeName="ECClassType"/>
+        <ECProperty propertyName="Modifier" typeName="ECClassModifier"/>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="EntityClassDef" description="ECEntityClass" displayLabel="ECEntityClass">
+        <BaseClass>ClassDef</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="MixinDef" description="ECMixinClass" displayLabel="ECMixinClass" modifier="Sealed">
+        <BaseClass>ClassDef</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="AppliesTo" description="This mixin may only be applied to entity classes which derive from is class." relationshipName="MixinAppliesToEntityClass" direction="forward"/>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="RelationshipClassDef" description="ECRelationshipClass" displayLabel="ECRelationshipClass" modifier="Sealed">
+        <BaseClass>ClassDef</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>        
+        <ECProperty propertyName="RelationshipStrength" typeName="ECRelationshipStrength" description="Applies to ECClassType::Relationship only."/>
+        <ECProperty propertyName="RelationshipStrengthDirection" typeName="ECRelationshipDirection" description="Applies to ECClassType::Relationship only."/>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="CustomAttributeClassDef" description="ECCustomAttributeClass" displayLabel="ECCustomAttributeClass" modifier="Sealed">
+        <BaseClass>ClassDef</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="CustomAttributeContainerType" typeName="ECCustomAttributeContainerType" description="ECClassType::CustomAttribute: Specifies on which containers the custom attribute ECClass can be applied to."/>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="StructClassDef" description="ECStructClass" displayLabel="ECRelationshipClass" modifier="Sealed">
+        <BaseClass>ClassDef</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="EnumeratorDef" modifier="Sealed">
+        <BaseClass>MetadataDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="IntValue" typeName="int"/>
+        <ECProperty propertyName="StringValue" typeName="string"/>
+        <ECProperty propertyName="DisplayLabel" typeName="string"/>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="EnumerationDef" description="ECEnumeration" displayLabel="ECEnumeration" modifier="Sealed">
+        <BaseClass>INamedMetadataElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="PrimitiveType"/>
+        <ECProperty propertyName="IsStrict" typeName="boolean"/>
+    </ECEntityClass>
+    
+    <ECEntityClass typeName="KindOfQuantityDef" description="KindOfQuantity" displayLabel="KindOfQuantity" modifier="Sealed">
+        <BaseClass>INamedMetadataElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="PersistenceUnit" typeName="string"/>
+        <ECProperty propertyName="RelativeError" typeName="double"/>
+        <ECArrayProperty propertyName="PresentationUnits" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PropertyDef" description="ECProperty" displayLabel="ECProperty" modifier="Sealed">
+        <BaseClass>INamedMetadataElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="IsReadonly" typeName="boolean"/>
+        <ECProperty propertyName="Ordinal" typeName="int" description="Position of the ECProperty in its ECClass"/>
+        <ECProperty propertyName="Kind" typeName="ECPropertyKind"/>
+        <ECProperty propertyName="PrimitiveType" typeName="PrimitiveType" description="ECPropertyKind::Primitive: data type. ECPropertyKind::PrimitiveArray: data type of array elements."/>
+        <ECNavigationProperty propertyName="Enumeration" description="ECPropertyKind::Primitive: Id of this property's EnumerationDef." relationshipName="PropertyHasEnumeration" direction="forward"/>
+        <ECProperty propertyName="ExtendedTypeName" typeName="string" description="ECPropertyKind::Primitive or ECPropertyKind::PrimitiveArray: Extended type name further describing PrimitiveType."/>
+        <ECNavigationProperty propertyName="StructClass" description="ECPropertyKind::Struct: ECClassId of property's struct type. ECPropertyKind::StructArray: ECClassId of array element struct type." relationshipName="PropertyHasStructType" direction="forward"/>
+        <ECNavigationProperty propertyName="KindOfQuantity" description="ECPropertyKind::Primitive or ECPropertyKind::PrimitiveArray: Id of this property's KindOfQuantityDef." relationshipName="PropertyHasKindOfQuantity" direction="forward"/>
+        <ECProperty propertyName="ArrayMinOccurs" typeName="int" description="ECPropertyKind::PrimitiveArray or ECPropertyKind::StructArray"/>
+        <ECProperty propertyName="ArrayMaxOccurs" typeName="int" description="ECPropertyKind::PrimitiveArray or ECPropertyKind::StructArray"/>
+        <ECNavigationProperty propertyName="NavigationRelationshipClass" description="ECPropertyKind::Navigation: ECClassId of property's relationship class." relationshipName="PropertyHasNavigationRelationshipClassId" direction="forward"/>
+        <ECProperty propertyName="NavigationDirection" typeName="ECRelationshipDirection" description="ECPropertyKind::Navigation: Direction to follow the relationship defined in NonPrimitiveTypeClassId."/>
+    </ECEntityClass>
+    <ECEntityClass typeName="RelationshipConstraintDef" modifier="Sealed">
+        <BaseClass>MetadataDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECProperty propertyName="RelationshipEnd" typeName="ECRelationshipEnd"/>
+        <ECProperty propertyName="MultiplicityLowerLimit" typeName="int"/>
+        <ECProperty propertyName="MultiplicityUpperLimit" typeName="int"/>
+        <ECProperty propertyName="RoleLabel" typeName="string"/>
+        <ECProperty propertyName="IsPolymorphic" typeName="boolean"/>
+        <ECNavigationProperty propertyName="AbstractConstraintClass" description="ECPropertyKind::Navigation: ECClassId of abstract constraint class." relationshipName="RelationshipConstraintHasAbstractConstraintClass" direction="forward"/>        
+    </ECEntityClass>
+    <ECRelationshipClass typeName="SchemaOwnsClasses" modifier="Sealed" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="schema has classes" polymorphic="false">
+            <Class class="SchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="class is defined in schema" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaHasSchemaReferences" modifier="None" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="References" polymorphic="false">
+            <Class class="SchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Is Referenced By" polymorphic="false">
+            <Class class="SchemaDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ClassOwnsLocalProperties" modifier="Sealed" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="class has locally defined properties" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="property is defined in class" polymorphic="false">
+            <Class class="PropertyDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="EnumerationOwnsEnumerators" modifier="Sealed" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="enumeration has enumerators" polymorphic="false">
+            <Class class="EnumerationDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="enumerator is defined in enumeration" polymorphic="false">
+            <Class class="EnumeratorDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ClassHasBaseClasses" modifier="None" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <ECProperty propertyName="Ordinal" typeName="int"/>
+        <Source multiplicity="(0..*)" roleLabel="class has base classes" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="class has derived classes" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ClassHasAllBaseClasses" strength="referencing" modifier="None" description="Relates a given ECClassId (Source) to all its base classes (recursively) (Target). For optimization reasons this ECRelationshipClass also holds a row for each ECClass that points to itself. Base class id order: class itself, then base classes in breadth first manner.">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="class is class" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="class is ancestor of class" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Target>
+    </ECRelationshipClass>   
+    <ECRelationshipClass typeName="SchemaOwnsEnumerations" modifier="Sealed" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="schema has enumerations" polymorphic="false">
+            <Class class="SchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="enumeration is defined in schema" polymorphic="false">
+            <Class class="EnumerationDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="SchemaOwnsKindOfQuantities" modifier="Sealed" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="schema has kind of quantities" polymorphic="false">
+            <Class class="SchemaDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="kind of quantity is defined in schema" polymorphic="false">
+            <Class class="KindOfQuantityDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PropertyHasEnumeration" description="ECPropertyKind::Enumeration: relates the property to its ECEnumeration." modifier="Sealed" strength="referencing" strengthDirection="backward">
+        <Source multiplicity="(0..*)" roleLabel="property is of type" polymorphic="false">
+            <Class class="PropertyDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="enumeration is used as type for properties" polymorphic="false">
+            <Class class="EnumerationDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PropertyHasStructType" description="ECPropertyKind::Struct: relates the struct property to its struct ECClass. ECPropertyKind::StructArray: relates the struct array property to its array element type." modifier="Sealed" strength="referencing" strengthDirection="backward">
+        <Source multiplicity="(0..*)" roleLabel="property is of type" polymorphic="false">
+            <Class class="PropertyDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="struct is used as type for properties" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PropertyHasNavigationRelationshipClassId" description="ECPropertyKind::Navigation: relates the navigation property to its backing RelationshipECClass." modifier="Sealed" strength="referencing" strengthDirection="backward">
+        <Source multiplicity="(0..*)" roleLabel="navigation property uses relationship" polymorphic="false">
+            <Class class="PropertyDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="relationship class is used by navigation properties" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PropertyHasKindOfQuantity" description="ECPropertyKind::Primitve or ECPropertyKind::PrimitiveArray: relates the property to its KindOfQuantity." modifier="Sealed" strength="referencing" strengthDirection="backward">
+        <Source multiplicity="(0..*)" roleLabel="property is of kind of quantity" polymorphic="false">
+            <Class class="PropertyDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="kind of quantity is used by properties" polymorphic="false">
+            <Class class="KindOfQuantityDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RelationshipOwnsConstraints" modifier="Sealed" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="relationship class has constraints" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Source>
+        <Target multiplicity="(2..2)" roleLabel="constraint is for relationship" polymorphic="false">
+            <Class class="RelationshipConstraintDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RelationshipConstraintHasClasses" modifier="None" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source multiplicity="(0..*)" roleLabel="relationship endpoint is constrained to classes" polymorphic="false">
+            <Class class="RelationshipConstraintDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="class is used in relationship constraints" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RelationshipConstraintHasAbstractConstraintClass" description="ECPropertyKind::Navigation: relates the relationship constraint to its abstract constraint ECClass." modifier="Sealed" strength="referencing" strengthDirection="backward">
+        <Source multiplicity="(0..*)" roleLabel="navigation property uses relationship" polymorphic="false">
+            <Class class="RelationshipConstraintDef"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="relationship class is used by navigation properties" polymorphic="true">
+            <Class class="ClassDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="MixinAppliesToEntityClass" description="Limits the classes that a mixin may be applied to." modifier="Sealed" strength="referencing" strengthDirection="backward">
+        <Source multiplicity="(0..*)" roleLabel="applies to class" polymorphic="false">
+            <Class class="MixinDef"/>
+        </Source>
+        <Target multiplicity="(1..1)" roleLabel="has applicable mixin" polymorphic="false">
+            <Class class="EntityClassDef"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEnumeration typeName="ECCustomAttributeContainerType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="1" displayLabel="Schema"/>
+        <ECEnumerator value="2" displayLabel="EntityClass"/>
+        <ECEnumerator value="4" displayLabel="CustomAttributeClass"/>
+        <ECEnumerator value="8" displayLabel="StructClass"/>
+        <ECEnumerator value="16" displayLabel="RelationshipClass"/>
+        <ECEnumerator value="30" displayLabel="AnyClass"/>
+        <ECEnumerator value="32" displayLabel="PrimitiveProperty"/>
+        <ECEnumerator value="64" displayLabel="StructProperty"/>
+        <ECEnumerator value="128" displayLabel="PrimitiveArrayProperty"/>
+        <ECEnumerator value="256" displayLabel="StructArrayProperty"/>
+        <ECEnumerator value="512" displayLabel="NavigationProperty"/>
+        <ECEnumerator value="992" displayLabel="AnyProperty"/>
+        <ECEnumerator value="1024" displayLabel="SourceRelationshipConstraint"/>
+        <ECEnumerator value="2048" displayLabel="TargetRelationshipConstraint"/>
+        <ECEnumerator value="3072" displayLabel="AnyRelationshipConstraint"/>
+        <ECEnumerator value="4095" displayLabel="Any"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="ECClassModifier" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="None"/>
+        <ECEnumerator value="1" displayLabel="Abstract"/>
+        <ECEnumerator value="2" displayLabel="Sealed"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="ECRelationshipEnd" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Source"/>
+        <ECEnumerator value="1" displayLabel="Target"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="ECClassType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Entity"/>
+        <ECEnumerator value="1" displayLabel="Relationship"/>
+        <ECEnumerator value="2" displayLabel="Struct"/>
+        <ECEnumerator value="3" displayLabel="CustomAttribute"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="ECPropertyKind" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Primitive"/>
+        <ECEnumerator value="1" displayLabel="Struct"/>
+        <ECEnumerator value="2" displayLabel="PrimitiveArray"/>
+        <ECEnumerator value="3" displayLabel="StructArray"/>
+        <ECEnumerator value="4" displayLabel="Navigation"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="ECRelationshipDirection" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="1" displayLabel="Forward"/>
+        <ECEnumerator value="2" displayLabel="Backward"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="ECRelationshipStrength" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Referencing"/>
+        <ECEnumerator value="1" displayLabel="Holding"/>
+        <ECEnumerator value="2" displayLabel="Embedding"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="PrimitiveType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="257" displayLabel="Binary"/>
+        <ECEnumerator value="513" displayLabel="Boolean"/>
+        <ECEnumerator value="769" displayLabel="DateTime"/>
+        <ECEnumerator value="1025" displayLabel="Double"/>
+        <ECEnumerator value="1281" displayLabel="Integer"/>
+        <ECEnumerator value="1537" displayLabel="Long"/>
+        <ECEnumerator value="1793" displayLabel="Point2d"/>
+        <ECEnumerator value="2049" displayLabel="Point3d"/>
+        <ECEnumerator value="2305" displayLabel="String"/>
+        <ECEnumerator value="2561" displayLabel="IGeometry"/>
+    </ECEnumeration>
+    
+    <!-- WIP: CustomAttributes -->
+    <ECEntityClass typeName="CustomAttributeInstance" description="CustomAttributeInstance" displayLabel="CustomAttributeInstance" modifier="Sealed">
+        <BaseClass>MetadataDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Container" relationshipName="ContainerHasCustomAttributeInstances" direction="backward"/>
+        <ECProperty propertyName="ContainerType" typeName="ECCustomAttributeContainerType"/>
+        <ECProperty propertyName="Ordinal" typeName="int"/>
+        <ECProperty propertyName="Instance" typeName="string"/>
+    </ECEntityClass>
+    
+    <ECRelationshipClass typeName="CustomAttributeClassDefinesCustomAttributeInstance" modifier="Sealed" strength="embedding">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(1..1)" roleLabel="Defines" polymorphic="false">
+            <Class class="CustomAttributeClassDef"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Is Defined By" polymorphic="false">
+            <Class class="CustomAttributeInstance"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <ECRelationshipClass typeName="ContainerHasCustomAttributeInstances" modifier="Sealed" strength="referencing">
+        <Source multiplicity="(1..1)" roleLabel="Has" polymorphic="true">
+            <Class class="MetadataDefinitionElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Applies To" polymorphic="false">
+            <Class class="CustomAttributeInstance"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

@@ -15,9 +15,6 @@ SchemaUpgradeTestFixture.UpdateECDbMapCA_DbIndexChanges
 #TFS 720060 Fails due to ECObjects supplementation bug
 SchemaManagerTests.ImportMultipleSupplementalSchemas
 
-#TFS 728039
-DbMappingTestFixture.NotMappedCATests
-
 #TFS 721630 
 ECSqlSelectPrepareTests.LikeOperator
 

@@ -16,57 +16,12 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //*************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-ClassMappingCACache const* SchemaImportContext::GetClassMappingCACache(ECClassCR ecclass) const
-    {
-    auto it = m_classMappingCACache.find(&ecclass);
-    if (it != m_classMappingCACache.end())
-        return it->second.get();
-
-    std::unique_ptr<ClassMappingCACache> cache = std::unique_ptr<ClassMappingCACache>(new ClassMappingCACache());
-    if (SUCCESS != cache->Initialize(ecclass))
-        return nullptr; // error
-
-    ClassMappingCACache* cacheP = cache.get();
-    m_classMappingCACache[&ecclass] = std::move(cache);
-    return cacheP;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   08/2015
 //---------------------------------------------------------------------------------------
 void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMappingInfo>& info)
     {
-    m_classMappingInfoCache[&classMap] = std::move(info);
-
-    if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-        {
-        ECN::ECClassCP rootClass = DbMappingManager::Classes::GetRootClass(classMap.GetClass());
-        BeAssert(rootClass != nullptr);
-        ECClassId rootClassId = rootClass->GetId();
-        if (m_fkRelInfos.Contains(rootClassId))
-            return;
-
-        m_fkRelInfos.Add(*this, classMap.GetAs<RelationshipClassEndTableMap>(), rootClassId);
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   05/2017
-//---------------------------------------------------------------------------------------
-bool SchemaImportContext::CacheFkConstraintCA(ECN::NavigationECPropertyCR navProp)
-    {
-    ForeignKeyConstraintCustomAttribute ca;
-    if (!ECDbMapCustomAttributeHelper::TryGetForeignKeyConstraint(ca, navProp))
-        return false;
-
-    BeAssert(navProp.GetRelationshipClass() != nullptr);
-    ECClassId relClassId = navProp.GetRelationshipClass()->GetId();
-    BeAssert(relClassId.IsValid() && "Navigation property's relationship class is expected to have been persisted already by this time");
-    BeAssert(m_fkConstraintCACache.find(relClassId) == m_fkConstraintCACache.end());
-    m_fkConstraintCACache[relClassId] = ca;
-    return true;
+    if (classMap.GetType() != ClassMap::Type::RelationshipEndTable)
+        m_classMappingInfoCache[&classMap] = std::move(info);
     }
 
 

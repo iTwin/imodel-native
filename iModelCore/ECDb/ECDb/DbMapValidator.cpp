@@ -880,7 +880,7 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassLinkTableMap(Relationship
         }
 
 
-    const std::set<DbTable const*> sourceTables = RelationshipMappingInfo::GetTablesFromRelationshipEnd(relMap.GetDbMap(), m_schemaImportContext, relMap.GetRelationshipClass().GetSource(), true);
+    const std::set<DbTable const*> sourceTables = relMap.GetDbMap().GetRelationshipConstraintPrimaryTables(m_schemaImportContext, relMap.GetRelationshipClass().GetSource());
     if (sourceTables.size() > 1)
         {
         Utf8String tableStr;
@@ -899,7 +899,7 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassLinkTableMap(Relationship
         return ERROR;
         }
 
-    const std::set<DbTable const*> targetTables = RelationshipMappingInfo::GetTablesFromRelationshipEnd(relMap.GetDbMap(), m_schemaImportContext, relMap.GetRelationshipClass().GetTarget(), true);
+    const std::set<DbTable const*> targetTables = relMap.GetDbMap().GetRelationshipConstraintPrimaryTables(m_schemaImportContext, relMap.GetRelationshipClass().GetTarget());
     if (targetTables.size() > 1)
         {
         Utf8String tableStr;

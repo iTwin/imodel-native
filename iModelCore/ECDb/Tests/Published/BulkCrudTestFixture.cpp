@@ -9,7 +9,6 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
-#include <Bentley/PerformanceLogger.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -439,7 +438,6 @@ BentleyStatus BulkCrudTestFixture::TestDataset::Setup(ECDbCR testECDb)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-//static
 BentleyStatus BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder)
     {
     if (BE_SQLITE_OK != SetupECDb(fileName))
@@ -458,7 +456,6 @@ BentleyStatus BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, B
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-//static
 BentleyStatus BulkBisDomainCrudTestFixture::SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder)
     {
     if (SUCCESS != CreateFakeBimFile(fileName, bisSchemaFolder))
@@ -473,7 +470,6 @@ BentleyStatus BulkBisDomainCrudTestFixture::SetupDomainBimFile(Utf8CP fileName, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-//static
 BentleyStatus BulkBisDomainCrudTestFixture::ImportSchemasFromFolder(BeFileName const& schemaFolder)
     {
     ECSchemaReadContextPtr ctx = ECSchemaReadContext::CreateContext(false, true);
