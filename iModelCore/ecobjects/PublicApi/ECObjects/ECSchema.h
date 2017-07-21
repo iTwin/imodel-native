@@ -1986,6 +1986,7 @@ struct KindOfQuantity : NonCopyableClass
 
         //! Return Json array of allowable presentation units.
         ECOBJECTS_EXPORT Json::Value GetPresentationsJson(bool useAlias) const;
+        ECOBJECTS_EXPORT bool IsUnitComparable(Utf8CP unitName);
     };
 
 //struct KindOfQuantityFormatting

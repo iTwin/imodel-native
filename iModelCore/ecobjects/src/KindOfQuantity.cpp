@@ -287,6 +287,10 @@ Utf8String KindOfQuantity::GetPresentationFUSDescriptor(size_t indx, bool useAli
     return fusP->ToText(useAlias);
     };
 
+bool KindOfQuantity::IsUnitComparable(Utf8CP unitName)
+    {
+    return Utf8String::IsNullOrEmpty(unitName)? false : m_persistenceFUS.IsUnitComparable(unitName);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 @bsimethod                                David.Fox-Rabinovitz      05/2016
