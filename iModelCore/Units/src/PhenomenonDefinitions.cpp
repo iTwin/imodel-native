@@ -89,8 +89,8 @@ void UnitRegistry::AddDefaultPhenomena ()
     AddPhenomenon(FREQUENCY, "TIME(-1)");
     AddPhenomenon(LINEAR_LOAD, "FORCE*LENGTH(-1)");
     //AddPhenomenon(AREA_LOAD, );
-    AddPhenomenon(HEATING_VALUE_VOLUMETRIC, "WORK*VOLUME(-1)"); // TODO: Check
-    AddPhenomenon(HEATING_VALUE_MASS, "WORK*MASS(-1)");
+    AddPhenomenon(ENERGY_DENSITY, "WORK*VOLUME(-1)"); // TODO: Check
+    AddPhenomenon(SPECIFIC_ENERGY, "WORK*MASS(-1)");
     AddPhenomenon(HEATING_VALUE_MOLE, "WORK*MOLE(-1)");
     AddPhenomenon(SPECIFIC_HEAT_CAPACITY, "WORK*MASS(-1)*TEMPERATURE_CHANGE(-1)");
     AddPhenomenon(SPECIFIC_HEAT_CAPACITY_MOLAR, "WORK*MOLE(-1)*TEMPERATURE_CHANGE(-1)");
