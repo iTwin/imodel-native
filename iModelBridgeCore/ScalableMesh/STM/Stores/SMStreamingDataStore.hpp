@@ -1349,9 +1349,8 @@ template <class EXTENT> void SMStreamingStore<EXTENT>::ReadNodeHeaderFromJSON(SM
             }
 
         if (nodeHeader.isMember("nodeCount")) header->m_nodeCount = nodeHeader["nodeCount"].asUInt();
-        //header->m_arePoints3d = nodeHeader["arePoints3d"].asBool();
-        header->m_arePoints3d = false; // NEEDS_WORK_SM_STREAMING : Always true for Cesium original datasets?
-        //assert(header->m_arePoints3d == nodeHeader["arePoints3d"].asBool());
+
+        header->m_arePoints3d = nodeHeader.isMember("arePoints3d") ? nodeHeader["arePoints3d"].asBool() : false;
 
         //header->m_nbFaceIndexes = nodeHeader["nbFaceIndexes"].asUInt();
 
