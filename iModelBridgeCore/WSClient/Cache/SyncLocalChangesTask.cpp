@@ -935,15 +935,15 @@ ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR label, b
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncLocalChangesTask::RegisterFailedSync(IDataSourceCache& cache, ChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel)
     {
+    if (changeGroup.GetRelationshipChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
+        {
+        ObjectId objectId = cache.FindRelationship(changeGroup.GetRelationshipChange().GetInstanceKey());
+        AddFailedObject(cache, objectId, error, objectLabel);
+        }
     if (changeGroup.GetObjectChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange ||
         changeGroup.GetFileChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
         {
         ObjectId objectId = cache.FindInstance(changeGroup.GetObjectChange().GetInstanceKey());
-        AddFailedObject(cache, objectId, error, objectLabel);
-        }
-    if (changeGroup.GetRelationshipChange().GetChangeStatus() != IChangeManager::ChangeStatus::NoChange)
-        {
-        ObjectId objectId = cache.FindRelationship(changeGroup.GetRelationshipChange().GetInstanceKey());
         AddFailedObject(cache, objectId, error, objectLabel);
         }
     }
