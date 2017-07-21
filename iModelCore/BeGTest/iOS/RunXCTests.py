@@ -29,6 +29,17 @@ def RunTest(xcodeprojpath, deviceName, okToRetry, logfile):
     failedtests = ''
 
     errpat = re.compile (r"error\:\s*\-\[(\w+)\s*(\w+).*failed")
+    
+    print " "
+    print "*******************************First clean the Project*************************************"
+    print ""
+    #Clean every time
+    cmd = ["xcodebuild", "clean", "-project", xcodeprojpath, "-scheme", "BeTestiOS", "-destination", "'platform=iOS,name=" + deviceName + "'"]
+    print " ".join(cmd)
+    proc = subprocess.Popen(" ".join(cmd), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, shell = True)
+    print "\n Clean End \n"
+    #time.sleep(300)
+    
 
     cmd = ["xcodebuild", "test", "-project", xcodeprojpath, "-scheme", "BeTestiOS", "-destination", "'platform=iOS,name=" + deviceName + "'"]
     print " ".join(cmd)
