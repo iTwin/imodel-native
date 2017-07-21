@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/CachingTaskBase.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -50,7 +50,7 @@ struct CachingTaskBase : public PackagedAsyncTask<void>
         ICancellationTokenPtr GetCancellationToken() const;
         // Add results or error to task
         void AddResult(const CachingDataSource::BatchResult& result);
-        void AddFailedObject(CacheTransactionCR txn, ObjectIdCR objectId, ICachingDataSource::ErrorCR error);
+        void AddFailedObject(IDataSourceCache& cache, ObjectIdCR objectId, ICachingDataSource::ErrorCR error, Utf8String objectLabel = nullptr);
 
     public:
         CachingTaskBase

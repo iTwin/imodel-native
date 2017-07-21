@@ -262,7 +262,7 @@ void SyncCachedDataTask::RegisterError(CacheTransactionCR txn, CachedResponseKey
     if (WSError::Status::ReceivedError == error.GetWSError().GetStatus() ||
         ICachingDataSource::Status::DataNotCached == error.GetStatus())
         {
-        AddFailedObject(txn, txn.GetCache().FindInstance(responseKey.GetParent()), error);
+        AddFailedObject(txn.GetCache(), txn.GetCache().FindInstance(responseKey.GetParent()), error);
         return;
         }
     SetError(error);

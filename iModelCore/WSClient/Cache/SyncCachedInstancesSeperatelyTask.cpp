@@ -78,13 +78,13 @@ void SyncCachedInstancesSeperatelyTask::CacheNextObjects(CacheTransactionCR txn)
                 }
 
             if (CacheStatus::DataNotCached == status)
-                AddFailedObject(txn, objectId, status);
+                AddFailedObject(txn.GetCache(), objectId, status);
             }
 
         else if (result.GetError().GetId() == WSError::Id::InstanceNotFound ||
                  result.GetError().GetId() == WSError::Id::NotEnoughRights)
             {
-            AddFailedObject(txn, objectId, result.GetError());
+            AddFailedObject(txn.GetCache(), objectId, result.GetError());
             auto status = txn.GetCache().RemoveInstance(objectId);
             if (CacheStatus::OK != status &&
                 CacheStatus::DataNotCached != status)

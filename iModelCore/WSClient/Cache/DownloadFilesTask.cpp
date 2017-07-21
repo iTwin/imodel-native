@@ -129,7 +129,7 @@ void DownloadFilesTask::ContinueDownloadingFiles()
                     WSError::Id::NotEnoughRights == errorId)
                     {
                     auto txn = m_ds->StartCacheTransaction();
-                    AddFailedObject(txn, file.objectId, result.GetError());
+                    AddFailedObject(txn.GetCache(), file.objectId, result.GetError());
                     txn.Commit();
                     return;
                     }
