@@ -342,8 +342,8 @@ BentleyStatus WSError::ParseXmlAzureError(HttpResponseCR httpResponse, BeXmlDom&
     Utf8String errorCode;
     Utf8String errorMessage;
 
-    if (SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Code, errorCode) ||
-        SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Message, errorMessage))
+    if (SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Code, errorCode, true) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Message, errorMessage, true))
         {
         return ERROR;
         }

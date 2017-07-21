@@ -211,8 +211,6 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
             rapidjson::Document changesetResponse;
             result.GetValue()->AsRapidJson(changesetResponse);
 
-            auto txn = m_ds->StartCacheTransaction();
-
             auto successHandler = [&] (ObjectIdCR oldId, ObjectIdCR newId)
                 {
                 revisions->find(oldId)->second->SetRemoteId(newId.remoteId);
