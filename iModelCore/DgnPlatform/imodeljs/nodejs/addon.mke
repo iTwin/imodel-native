@@ -1,0 +1,124 @@
+#----------------------------------------------------------------------
+#
+#     $Source: imodeljs/nodejs/addon.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------
+CLANG_ALLOW_UNDEFINED=1
+%include mdl.mki
+
+appName     = imodeljs
+
+# I get the impression that node addons names should be all lower case. At least, that's what I see out there.
+
+baseDir     = $(_MakeFilePath)
+
+# This is how node-gyp on Linux compiles an addon:
+#   g++ '-DNODE_GYP_MODULE_NAME=nodeprime' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' '-DBUILDING_NODE_EXTENSION' -I/home/SamWilson/.node-gyp/7.10.0/include/node -I/home/SamWilson/.node-gyp/7.10.0/src -I/home/SamWilson/.node-gyp/7.10.0/deps/uv/include -I/home/SamWilson/.node-gyp/7.10.0/deps/v8/include -I../../prime4lib -I../node_modules/nan  -fPIC -pthread -Wall -Wextra -Wno-unused-parameter -m64 -Wall -std=c++11 -O3 -fno-omit-frame-pointer -fno-rtti -fno-exceptions -std=gnu++0x -MMD -MF ./Release/.deps/Release/obj.target/nodeprime/../prime4lib/exchange.o.d.raw   -c -o Release/obj.target/nodeprime/../prime4lib/exchange.o ../../prime4lib/exchange.cpp
+
+cIncs + -I$(BuildContext)VendorAPI/node-gyp
+cIncs + -I$(BuildContext)VendorAPI/node-nan
+
+cDefs + -DNODE_GYP_MODULE_NAME=$(appName)
+cDefs + -DUSING_UV_SHARED=1
+cDefs + -DUSING_V8_SHARED=1
+cDefs + -DV8_DEPRECATION_WARNINGS=1
+cDefs + -D_LARGEFILE_SOURCE
+cDefs + -D_FILE_OFFSET_BITS=64
+cDefs + -DBUILDING_NODE_EXTENSION
+
+o = $(OutputRootDir)Build/DgnPlatform/iModelJsNodeAddon/
+always:
+    !~@mkdir $(o)
+
+# DLM_NAME and CCompPDBName must be the same.
+DLM_NAME        =% $(appName)
+CCompPDBName    =% $(appName)
+
+MultiCompileDepends = $(_MakeFileSpec)
+%include MultiCppCompileRule.mki
+
+$(o)nodejs_addon$(oext): $(baseDir)nodejs_addon.cpp $(DgnV8Depends) ${MultiCompileDepends}
+
+%include MultiCppCompileGo.mki
+
+#----------------------------------------------------------------------
+#   Link the shared library
+#----------------------------------------------------------------------
+
+# This is how how node-gyp on Linux links an addon:
+# g++ -shared -pthread -rdynamic -m64  -Wl,-soname=nodeprime.node -o Release/obj.target/nodeprime.node   Release/obj.target/nodeprime/../prime4lib/prime_sieve.o Release/obj.target/nodeprime/../prime4lib/exchange.o Release/obj.target/nodeprime/addon.o -Wl,--end-group
+
+
+DLM_DEST            = $(o)
+DLM_OBJECT_DEST     = $(o)
+DLM_OBJECT_FILES    = $(MultiCompileObjectList)
+DLM_NOENTRY         = 1
+DLM_NO_CONTEXT_LINK = 1
+
+%ifdef __unix
+
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBaseGeoCoord.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCsmapStatic.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeCurl.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeFolly.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeHttp.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeIcu4c.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeJsonCpp.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeLibJpegTurbo.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeLibxml2.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentley.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeom.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeomSerialization.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeOpenSSL.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBePng.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSecurity.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLite.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLiteEC.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeXml.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeZlib.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libDgnPlatform.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libECObjects.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libfreetype2.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libiModelHubClient.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)liblzma.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libUnits.a
+THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libWebServicesClient.a
+
+THIN_ARCHIVE_PATH = $(DLM_DEST)iModelJsNodeAddon.inputs.a
+THIN_ARCHIVE_RSP_PATH = $(DLM_DEST)iModelJsNodeAddon.inputs.rsp
+$(THIN_ARCHIVE_PATH) : $(THIN_ARCHIVE_INPUTS)
+    $(msg)
+    > $(THIN_ARCHIVE_RSP_PATH)
+    crsT $(THIN_ARCHIVE_PATH) $(THIN_ARCHIVE_INPUTS)
+    <
+    ar @$(THIN_ARCHIVE_RSP_PATH)
+    ~time
+
+DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
+#LINKER_LIBRARIES  + $(BuildContext)SubParts/NodeJs/node
+
+# Always produce a .SO (even though this is a static build)
+%undef CREATE_STATIC_LIBRARIES
+%include dlmlink.mki
+
+%else
+
+DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
+
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)node$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
+LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
+
+%include $(sharedMki)linkLibrary.mki
+
+%endif
+
+#----------------------------------------------------------------------
+#   Deliver the shared library using the .node extension
+#----------------------------------------------------------------------
+$(BuildContext)Delivery/iModelJsNode_node_module/$(appName).node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+    $(LinkFirstDepToFirstTarget)
