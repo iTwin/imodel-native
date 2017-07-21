@@ -25,18 +25,18 @@ struct CallBookmarkFunctions
     BentleyStatus m_sstatus = BSIERROR;
     iModelBridge& m_bridge;
     BentleyStatus m_updateStatus = BSIERROR;
-    CallBookmarkFunctions(iModelBridge& bridge, DgnDbR db) : m_bridge(bridge) 
+    CallBookmarkFunctions(iModelBridge& bridge, DgnDbR db) : m_bridge(bridge)
         {
         m_bstatus = m_bridge._OnConvertToBim(db);
         if (BSISUCCESS == m_bstatus)
             m_sstatus = m_bridge._OpenSource();
         }
-    ~CallBookmarkFunctions() 
+    ~CallBookmarkFunctions()
         {
         if (BSISUCCESS == m_bstatus)
             {
             if (BSISUCCESS == m_sstatus)
-                m_bridge._CloseSource(m_updateStatus); 
+                m_bridge._CloseSource(m_updateStatus);
             m_bridge._OnConvertedToBim(m_updateStatus);
             }
         }
@@ -140,12 +140,22 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
     //  Common case: Just open the BIM
     auto db = DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     if (db.IsValid())
-        return db;          // Common case
+        {
+        bool hasDynamicSchemaChange = _UpgradeDynamicSchema(*db);
+        if (!hasDynamicSchemaChange)
+            return db;// Common case
+
+        db->SaveChanges();
+        db->CloseDb();
+        db = nullptr;
+        madeSchemaChanges = true;
+        return DgnDb::OpenDgnDb(&dbres, _GetParams().GetBriefcaseName(), DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+        }
 
     if (BeSQLite::BE_SQLITE_ERROR_SchemaUpgradeRequired != dbres)
         return nullptr;
 
-    // We must do a schema upgrade. 
+    // We must do a schema upgrade.
     // Probably, the bridge registered some required domains, and they must be imported
     DgnDb::OpenParams oparams(DgnDb::OpenMode::ReadWrite);
     oparams.GetSchemaUpgradeOptionsR().SetUpgradeFromDomains();
@@ -153,6 +163,7 @@ DgnDbPtr iModelBridge::OpenBim(BeSQLite::DbResult& dbres, bool& madeSchemaChange
     if (!db.IsValid())
         return nullptr;
 
+    _UpgradeDynamicSchema(*db);
     madeSchemaChanges = true;
 
     //  Save the schema upgrade results and ...
@@ -181,16 +192,16 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db)
     _GetParams().SetIsCreatingNewDgnDb(false);
     _GetParams().SetIsUpdating(true);
 
-    // *** 
-	// ***
-	// *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
-	// *** Talk to Sam Wilson if you need to make a change.
-	// ***
-	// ***
+    // ***
+    // ***
+    // *** DO NOT CHANGE THE ORDER OF THE STEPS BELOW
+    // *** Talk to Sam Wilson if you need to make a change.
+    // ***
+    // ***
 
-	// NB: _OnConvertBim must be called before we start "bulk insert" mode.
-	//      That is because it often does things like Db::AttachDb and create temp table,
-	//		which need to commit the txn. We cannot commit while in bulk insert mode.
+    // NB: _OnConvertBim must be called before we start "bulk insert" mode.
+    //      That is because it often does things like Db::AttachDb and create temp table,
+    //		which need to commit the txn. We cannot commit while in bulk insert mode.
 
     // Call bridge _OnConvertToBim and _OpenSource
     CallBookmarkFunctions bookMarkFunctions(*this, db);
@@ -203,7 +214,7 @@ BentleyStatus iModelBridge::DoConvertToExistingBim(DgnDbR db)
     //  go into bulk import mode. (Note that any locks and codes required by _OnBimOpen would have to have been acquired immediately, the normal way.)
     db.BriefcaseManager().StartBulkOperation();
 
-    auto jobsubj = _FindJob();
+    SubjectCPtr jobsubj = _FindJob();
     if (!jobsubj.IsValid())
         {
         _GetParams().SetIsUpdating(false);
@@ -247,10 +258,10 @@ static BentleyStatus parseGeoPointAndAzimuth(iModelBridge::GCSDefinition& gcs, U
     parser->SetAngleMode(AngleMode::DegMinSec);
 
     size_t start=0, end;
-     
+
     if ((end = u.find(',')) == Utf8String::npos)
         return BSIERROR;
-        
+
     if (BSISUCCESS != parser->ToValue(gcs.m_geoPoint.latitude, u.substr(start, end-start).c_str()))
         return BSIERROR;
 
@@ -260,7 +271,7 @@ static BentleyStatus parseGeoPointAndAzimuth(iModelBridge::GCSDefinition& gcs, U
 
     if ((end = u.find(',', start)) == Utf8String::npos)
         return BSIERROR;
-        
+
     if (BSISUCCESS != parser->ToValue(gcs.m_geoPoint.longitude, u.substr(start, end-start).c_str()))
         return BSIERROR;
 
@@ -306,7 +317,7 @@ BentleyStatus iModelBridge::Params::ParseGCSCalculationMethod(GCSCalculationMeth
         }
     return BSIERROR;
     }
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -348,7 +359,7 @@ DgnGCSPtr iModelBridge::GCSDefinition::CreateGcs(DgnDbR db)
 
     if (!m_coordSysKeyName.empty() && !m_coordSysKeyName.Equals("AZMEA"))
         return DgnGCS::CreateGCS(WString(m_coordSysKeyName.c_str(), BentleyCharEncoding::Utf8).c_str(), db);
-        
+
     auto gcs = DgnGCS::CreateGCS(db);
     if (BSISUCCESS != gcs->InitAzimuthalEqualArea(NULL, L"WGS84", L"METER", m_geoPoint.longitude, m_geoPoint.latitude, m_azimuthAngle, 1.0, m_originUors.x, m_originUors.y, 0))
         {

@@ -22,6 +22,7 @@ using Microsoft.Win32;
 using Bentley.Automation;
 using Bentley.Automation.Extensions;
 using Bentley.Automation.Messaging;
+using Bentley.Orchestration.MSProcessor;
 using Bentley.Automation.JobConfiguration;
 using BSI.Orchestration.Utility;
 using BSI.Automation;
@@ -29,7 +30,7 @@ using BSI.Automation;
 namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
 {
     /// <summary>
-    /// The extension that calls iModelBridgeFwk to do the work of calling bridges, updating the briefcase, and pushing changesets to iModelHub. 
+    /// The extension that calls iModelBridgeFwk to do the work of calling bridges, updating the briefcase, and pushing changesets to iModelHub.
     /// </summary>
     public class JobCompleteExtension : ASJobCompleteExtension
     {
@@ -78,14 +79,14 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
             /// <param name="asContext"></param>
             public void Initialize (ASContext asContext)
                 {
-                m_iModelHubProjectName = "iModelHubTest";       // TODO: Get the name of the iModel project from Connect
-                m_iModelHubRepoName = "ToyTile7";               // TODO: Get name of iModel repository from Connect
+                m_iModelHubProjectName = "RevitBridgeTest";       // TODO: Get the name of the iModel project from Connect
+                m_iModelHubRepoName = asContext.JobDefinition.Name;  // TODO: Get name of iModel repository from Connect
                 m_iModelHubUserName = "sam.wilson@bentley.com"; // TODO: Get user credentials from Connect?
                 m_iModelHubPassword = "Xm2.Xk>z";               //                  "
                 m_iModelHubEnv = "QA";
 
-                // jobWorkDir is the working directory that is specific to this job. 
-                //  Note that specific input files are staged in a subdirectory of the job's workdir. That's why we 
+                // jobWorkDir is the working directory that is specific to this job.
+                //  Note that specific input files are staged in a subdirectory of the job's workdir. That's why we
                 //  locate the job's directory in the document's parent directory.
                 var docdir = Directory.GetParent (asContext.WorkingDocumentInfo.FilePath);
                 m_jobWorkDir = Directory.GetParent (docdir.FullName).FullName;
@@ -285,18 +286,57 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
                     }
                 }
             }
+        /*------------------------------------------------------------------------------------**/
+        /// <author>Anthony.Falcone</author>                            <date>9/2014</date>
+        /*--------------+---------------+---------------+---------------+---------------+------*/
+        private MicroStationMessage AddAutomationServiceMDLApp
+        (
+        MicroStationMessage msm,
+        string mdlApp
+        )
+            {
+            string asInstallDir = "[PASInstallDir]";
+            string ma = asInstallDir + mdlApp;
+            string loadKeyin = "mdl load \"" + ma + "\"";
+            msm.AddKeyin(loadKeyin);
+            return msm;
+            }
 
         /// <summary>
         /// Run iModelBridgeFwk, either standalone or as a keyin sent to a PowerProduct engine
         /// </summary>
         /// <param name="cmdLineArgs">The command-line arguments to be passed to iModelBridgeFwk</param>
-        void RuniModelBridgeFwk (string cmdLineArgs)
+        void RuniModelBridgeFwk (string cmdLineArgs, bool isPowerPlatformBridge, string rootFile)
             {
-            // TODO - detect when we should run a PowerProduct + keyin
-            // if (??)
-            //      queue keyin request to an engine ...
-            // else
-            ExecuteiModelBridgeFwkExe (cmdLineArgs);
+            if ( isPowerPlatformBridge )
+                {
+                PowerPlatformProcessorInstruction mspi = new PowerPlatformProcessorInstruction();
+                mspi.DocumentProcessorName = DocumentProcessorName;
+                mspi.DocumentProcessorGuid = DocumentProcessorGuid.ToString();
+                mspi.Step = DgnV8MirrorICSPluginConstants.Steps.PowerPlatformExample;
+                MicroStationMessage msm = new MicroStationMessage();
+
+                msm.RequiredProcessorName = "MicroStation";
+                msm.RequiredProcessorVersionRange = "08.11.09";
+                msm.DocumentName = rootFile;
+                //TODO: How do I get the document Guid and datasource.
+                //msm.DocumentID = asContext.WorkingDocumentInfo.DocumentGuid;
+                //msm.Datasource = asContext.WorkingDocumentInfo.Datasource;
+                msm.CustomDescription = String.Format("BAS keyins for {0}", DgnV8MirrorICSPluginConstants.DocumentProcessorName);
+                msm = AddAutomationServiceMDLApp(msm, "AutomationService.ma");
+                msm.AddKeyin(String.Format("automationservice setdocumentprocessor {0} {1}",
+                           DgnV8MirrorICSPluginConstants.DocumentProcessorGuid, DgnV8MirrorICSPluginConstants.Steps.PowerPlatformExample));
+
+                msm.AddKeyin("mdl load bimbridge");
+                msm.AddKeyin("bimbridge init " + cmdLineArgs);
+                msm.AddKeyin("bimbridge sync");
+
+                mspi.MicroStationMessage = msm;
+                //Execute this in BAS somewhow
+                return;
+                }
+            string bridgerunargs = cmdLineArgs + " --fwk-input=\"" + rootFile+"\"";
+            ExecuteiModelBridgeFwkExe (bridgerunargs);
             }
 
         /// <summary>
@@ -343,13 +383,14 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
             //  Run each bridge on each root file
             foreach (string bridge in bridges)
                 {
-                string bridgeargs = "@" + rspFileName + " " + args.UserCredentialsToString ().ToString () + " --fwk-bridge-regsubkey=" + bridge;
+                string [] bridgeInfo = bridge.Split(';');
 
+                string bridgeargs = "@" + rspFileName + " " + args.UserCredentialsToString ().ToString () + " --fwk-bridge-regsubkey=" + bridgeInfo[0];
+
+                bool isPowerPlatformBridge = Convert.ToInt16 (bridgeInfo[1]) == 1;
                 foreach (string rootFile in rootFiles)
                     {
-                    string bridgerunargs = bridgeargs + " --fwk-input=" + rootFile;
-
-                    RuniModelBridgeFwk (bridgerunargs);
+                    RuniModelBridgeFwk (bridgeargs, isPowerPlatformBridge, rootFile);
                     }
                 }
             }
@@ -359,7 +400,7 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
         /// </summary>
         /// <param name="asContext">Automation Service context object</param>
         /// <returns></returns>
-        public override void OnJobComplete 
+        public override void OnJobComplete
         (
         ASContext asContext
         )

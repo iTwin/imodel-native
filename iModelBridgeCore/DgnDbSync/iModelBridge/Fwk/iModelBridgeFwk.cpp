@@ -237,16 +237,31 @@ void iModelBridgeFwk::InitLogging()
     //NativeLogging::LoggingConfig::SetSeverity(L"BeSQLite", NativeLogging::LOG_TRACE);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+static BeFileName  GetDefaultAssetsDirectory()
+    {
+    BeFileName fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir(); // this will be:    blah/iModelBridgeFwk/lib/x64
+
+    fwkAssetsDirRaw.AppendToPath(L"..");
+    fwkAssetsDirRaw.AppendToPath(L"..");
+    fwkAssetsDirRaw.AppendToPath(L"assets");                        // we want:         blah/iModelBridgeFwk/assets
+    if (fwkAssetsDirRaw.DoesPathExist())
+        return fwkAssetsDirRaw;
+
+    //Try default assets folder relative the program directory
+    fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir();
+    fwkAssetsDirRaw.AppendToPath(L"assets");
+    return fwkAssetsDirRaw;
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& bargptrs, int argc, WCharCP argv[])
     {
-    auto fwkAssetsDirRaw = Desktop::FileSystem::GetExecutableDir(); // this will be:    blah/iModelBridgeFwk/lib/x64
-    fwkAssetsDirRaw.AppendToPath(L"..");
-    fwkAssetsDirRaw.AppendToPath(L"..");
-    fwkAssetsDirRaw.AppendToPath(L"assets");                        // we want:         blah/iModelBridgeFwk/assets
-
+    BeFileName fwkAssetsDirRaw = GetDefaultAssetsDirectory();
     for (int iArg = 1; iArg < argc; ++iArg)
         {
         if (argv[iArg][0] == '@')
@@ -554,7 +569,7 @@ BeSQLite::DbResult iModelBridgeFwk::OpenOrCreateStateDb()
     if (stateFileName.DoesPathExist())
         {
         MUSTBEOK(m_stateDb.OpenBeSQLiteDb(stateFileName, Db::OpenParams(Db::OpenMode::ReadWrite)));
-        
+
         // Double-check that this really is a fwk state db
         Utf8String propStr;
         if (BE_SQLITE_ROW != m_stateDb.QueryProperty(propStr, s_schemaVerPropSpec))
@@ -564,14 +579,16 @@ BeSQLite::DbResult iModelBridgeFwk::OpenOrCreateStateDb()
             stateFileName.BeDeleteFile();
             }
         }
-        
+
     if (!stateFileName.DoesPathExist())
         {
         MUSTBEOK(m_stateDb.CreateNewDb(stateFileName));
         MUSTBEOK(m_stateDb.CreateTable("fwk_CreatedModels", "ModelId BIGINT"));
         MUSTBEOK(m_stateDb.CreateTable("fwk_InstalledBridges", "Name TEXT NOT NULL UNIQUE COLLATE NoCase, \
                                                                 BridgeLibraryPath TEXT UNIQUE COLLATE NoCase, \
-                                                                AffinityLibraryPath TEXT UNIQUE COLLATE NoCase"));
+                                                                AffinityLibraryPath TEXT UNIQUE COLLATE NoCase, \
+                                                                IsPowerPlatformBased BOOLEAN \
+                                                                "));
         MUSTBEOK(m_stateDb.CreateTable("fwk_BridgeAssignments", "SourceFile TEXT NOT NULL UNIQUE COLLATE NoCase PRIMARY KEY, \
                                                                  Bridge BIGINT"));  // Bridge --foreign key--> fwk_InstalledBridges
 
@@ -1060,7 +1077,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
 
     // Put out this info message, so that we can relate all subsequent logging messages to this bridge.
     // The log on this machine may have messages from many bridge jobs.
-    LOG.infov(L"Running bridge [%ls] staging dir [%ls] input [%ls]", m_jobEnvArgs.m_bridgeLibraryName.c_str(), 
+    LOG.infov(L"Running bridge [%ls] staging dir [%ls] input [%ls]", m_jobEnvArgs.m_bridgeLibraryName.c_str(),
               m_jobEnvArgs.m_stagingDir.c_str(), m_jobEnvArgs.m_inputFileName.c_str());
 
     // Load the bridge ... but don't initialize it.
@@ -1092,7 +1109,7 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
     if (BSISUCCESS != Briefcase_Initialize(argc, argv))
         return RETURN_STATUS_SERVER_ERROR;
 
-    //  Make sure we have a briefcase. 
+    //  Make sure we have a briefcase.
     Briefcase_MakeBriefcaseName(); // => defines m_briefcaseName
     bool createdNewRepo = false;
     if (BSISUCCESS != BootstrapBriefcase(createdNewRepo))
@@ -1234,7 +1251,7 @@ int iModelBridgeFwk::UpdateExistingBim()
     // *** TBD: briefcase should not be holding any shared locks
 
     m_briefcaseDgnDb = nullptr;
-    
+
     return RETURN_STATUS_SUCCESS;
     }
 
@@ -1451,7 +1468,7 @@ BentleyStatus iModelBridgeFwk::ComputeBridgeAffinityToDocument(iModelBridge::Bri
         LOG.errorv(L"%ls - has crashed", affinityLibraryPath.c_str());
         return BSIERROR;
         }
-    
+
     auto responseHandle = CPLSpawnAsyncGetInputFileHandle(calc);
 
     // I expect exactly two lines of text: [0]affinity (integer) [1]bridge name (string)
@@ -1513,7 +1530,7 @@ BentleyStatus iModelBridgeFwk::SearchForBridgeToAssignToDocument(BeFileNameCR so
         LOG.infov(L"%ls - no installed bridge can convert this document", sourceFilePath.c_str());
         return BSIERROR;
         }
-    
+
     uint64_t bestBridgeRowid = 0;
     QueryBridgeLibraryPathByName(&bestBridgeRowid, bestBridge.m_bridgeRegSubKey);
     BeAssert(0 != bestBridgeRowid);
@@ -1582,11 +1599,9 @@ BentleyStatus iModelBridgeFwk::WriteBridgesFile()
         LOG.fatalv(L"%ls - error writing bridges file", bridgesFileName.c_str());
         return BSIERROR;
         }
-    auto stmt = m_stateDb.GetCachedStatement("SELECT DISTINCT b.Name FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge)");
+    auto stmt = m_stateDb.GetCachedStatement("SELECT DISTINCT b.Name, b.IsPowerPlatformBased FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge)");
     while (BE_SQLITE_ROW == stmt->Step())
-        {
-        bridgesFile->PutLine(WString(stmt->GetValueText(0), true).c_str(), true);
-        }
+        bridgesFile->PrintfTo(false, L"%ls;%d\n", WString(stmt->GetValueText(0), true).c_str(), stmt->GetValueBoolean(3));
 
     bridgesFile->Close();
     bridgesFile = nullptr;
@@ -1650,11 +1665,13 @@ void iModelBridgeFwk::DiscoverInstalledBridges()
         if (ERROR_SUCCESS != RegOpenKeyExW(iModelBridgesKey, iModelBridgeName, 0, KEY_ENUMERATE_SUB_KEYS | KEY_QUERY_VALUE | KEY_SET_VALUE, &subKey))
             continue;
 
-        auto stmt = m_stateDb.GetCachedStatement("INSERT INTO fwk_InstalledBridges (Name,BridgeLibraryPath,AffinityLibraryPath) VALUES(?,?,?)");
+        auto stmt = m_stateDb.GetCachedStatement("INSERT INTO fwk_InstalledBridges (Name,BridgeLibraryPath,AffinityLibraryPath,IsPowerPlatformBased) VALUES(?,?,?,?)");
 
         BeFileName bridgeLibraryPath, affinityLibraryPath;
+        WString isPowerPlatformBased;
         GetStringRegKey(bridgeLibraryPath, subKey, L"BridgeLibraryPath", L"");
         GetStringRegKey(affinityLibraryPath, subKey, L"AffinityLibraryPath", L"");
+        GetStringRegKey(isPowerPlatformBased, subKey, L"IsPowerPlatformBased", L"");
 
         stmt->BindText(1, Utf8String(iModelBridgeName).c_str(), Statement::MakeCopy::Yes);
 
@@ -1668,14 +1685,23 @@ void iModelBridgeFwk::DiscoverInstalledBridges()
         else
             stmt->BindNull(3);
 
+        bool isPPBased = false;
+        if (!isPowerPlatformBased.empty())
+            {
+            isPPBased= 0 == isPowerPlatformBased.CompareToI(L"True");
+            stmt->BindBoolean(4, isPPBased);
+            }
+        else
+            stmt->BindNull(4);
+
         stmt->Step(); // may fail with constraint if bridge library is already registered.
 
         // Get ready for the next subkey
         iModelBridgeNameLen = _countof(iModelBridgeName); // restore iModelBridgeNameLen after it is set to key's actual length by RegEnumKeyExW
         ++index; // increment subkey index
 
-        LOG.tracev(L"%ls -> %ls %ls", iModelBridgeName, bridgeLibraryPath.c_str(), affinityLibraryPath.c_str());
-        } 
+        LOG.tracev(L"%ls -> %ls %ls %d", iModelBridgeName, bridgeLibraryPath.c_str(), affinityLibraryPath.c_str(), isPPBased);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
