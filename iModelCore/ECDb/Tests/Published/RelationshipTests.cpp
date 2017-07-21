@@ -259,58 +259,98 @@ TEST_F(RelationshipMappingTestFixture, InvalidCases)
                                                             "      <Class class='PhysicalElement' />"
                                                             "    </Target>"
                                                             "  </ECRelationshipClass>"
-                                                            "</ECSchema>"))) << "FK rels cannot have NotMapped map strategy";
+                                                            "</ECSchema>"))) << "FK rels cannot have NotMapped map strategy if constraint class is not mapped";
 
+      }
+
+
+//---------------------------------------------------------------------------------------
+// @bsiMethod                                     Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(RelationshipMappingTestFixture, NotMappedCATests)
+    {
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
                                                             "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
-                                                            "  <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
-                                                            "  <ECEntityClass typeName='Model' >"
-                                                            "    <ECProperty propertyName='Name' typeName='string' />"
-                                                            "  </ECEntityClass>"
-                                                            "  <ECEntityClass typeName='Element' >"
-                                                            "    <ECCustomAttributes>"
-                                                            "        <ClassMap xmlns='ECDbMap.02.00'>"
+                                                            "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                            "    <ECEntityClass typeName='A' modifier='None'>"
+                                                            "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                            "    </ECEntityClass>"
+                                                            "    <ECEntityClass typeName='B' modifier='None'>"
+                                                            "        <ECProperty propertyName='BProp' typeName='int' />"
+                                                            "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
+                                                            "    </ECEntityClass>"
+                                                            "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                                            "        <ECCustomAttributes>"
+                                                            "            <ClassMap xmlns='ECDbMap.02.00'>"
                                                             "                <MapStrategy>NotMapped</MapStrategy>"
-                                                            "        </ClassMap>"
-                                                            "    </ECCustomAttributes>"
-                                                            "    <ECProperty propertyName='Code' typeName='string' />"
-                                                            "    <ECNavigationProperty propertyName='Model' relationshipName='ModelHasElements' direction='Backward' />"
-                                                            "  </ECEntityClass>"
-                                                            "  <ECRelationshipClass typeName='ModelHasElements' modifier='Abstract' strength='embedding'>"
-                                                            "    <ECCustomAttributes>"
-                                                            "        <ClassMap xmlns='ECDbMap.02.00'>"
-                                                            "                <MapStrategy>NotMapped</MapStrategy>"
-                                                            "        </ClassMap>"
-                                                            "    </ECCustomAttributes>"
-                                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Elements'>"
-                                                            "      <Class class='Model' />"
-                                                            "    </Source>"
-                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Elements (Reversed)'>"
-                                                            "      <Class class='Element' />"
-                                                            "    </Target>"
-                                                            "  </ECRelationshipClass>"
-                                                            "  <ECRelationshipClass typeName='ModelHasPhysicalElements' strength='embedding' modifier='Sealed'>"
-                                                            "   <BaseClass>ModelHasElements</BaseClass>"
-                                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-                                                            "      <Class class='Model' />"
-                                                            "    </Source>"
-                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-                                                            "      <Class class='Element' />"
-                                                            "    </Target>"
-                                                            "  </ECRelationshipClass>"
-                                                            "  <ECRelationshipClass typeName='ModelHasPhysicalElements2' strength='embedding' modifier='Sealed'>"
-                                                            "   <BaseClass>ModelHasElements</BaseClass>"
-                                                            "    <Source multiplicity='(0..1)' polymorphic='True' roleLabel='Model Has Physical Elements'>"
-                                                            "      <Class class='Model' />"
-                                                            "    </Source>"
-                                                            "    <Target multiplicity='(0..*)' polymorphic='True' roleLabel='Model Has Physical Elements (Reversed)'>"
-                                                            "      <Class class='Element' />"
-                                                            "    </Target>"
-                                                            "  </ECRelationshipClass>"
-                                                            "</ECSchema>"))) << "FK rels cannot have NotMapped map strategy";
+                                                            "            </ClassMap>"
+                                                            "        </ECCustomAttributes>"
+                                                            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
+                                                            "           <Class class='A' />"
+                                                            "       </Source>"
+                                                            "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                                                            "           <Class class='B' />"
+                                                            "       </Target>"
+                                                            "     </ECRelationshipClass>"
+                                                            "</ECSchema>"))) << "ECRelationshipClass with FK mapping can have a ClassMap CA with MapStrategy NotMapped only if nav prop class has it too";
+
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("notmappedcatests.ecdb", SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                                     "<ECSchema schemaName='Test' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                                     "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                                     "    <ECEntityClass typeName='A' modifier='None'>"
+                                                                     "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                                     "    </ECEntityClass>"
+                                                                     "    <ECEntityClass typeName='B' modifier='None'>"
+                                                                     "        <ECCustomAttributes>"
+                                                                     "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                                     "                <MapStrategy>NotMapped</MapStrategy>"
+                                                                     "            </ClassMap>"
+                                                                     "        </ECCustomAttributes>"
+                                                                     "        <ECProperty propertyName='BProp' typeName='int' />"
+                                                                     "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
+                                                                     "    </ECEntityClass>"
+                                                                     "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                                                     "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
+                                                                     "           <Class class='A' />"
+                                                                     "       </Source>"
+                                                                     "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                                                                     "           <Class class='B' />"
+                                                                     "       </Target>"
+                                                                     "     </ECRelationshipClass>"
+                                                                     "</ECSchema>"))) << "Nav prop class has NotMapped strategy, but rel doesn't";
+
+    ASSERT_EQ(MapStrategy::OwnTable, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "A")).GetStrategy());
+    ASSERT_EQ(MapStrategy::NotMapped, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "B")).GetStrategy());
+    ASSERT_EQ(MapStrategy::ForeignKeyRelationshipInTargetTable, GetHelper().GetMapStrategy(m_ecdb.Schemas().GetClassId("Test", "Rel")).GetStrategy());
     }
 
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<?xml version='1.0' encoding='utf-8'?>"
+                                                            "<ECSchema schemaName='Test20' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
+                                                            "    <ECSchemaReference name='ECDbMap' version='02.00' alias='ecdbmap' />"
+                                                            "    <ECEntityClass typeName='A' modifier='None'>"
+                                                            "        <ECCustomAttributes>"
+                                                            "            <ClassMap xmlns='ECDbMap.02.00'>"
+                                                            "                <MapStrategy>NotMapped</MapStrategy>"
+                                                            "            </ClassMap>"
+                                                            "        </ECCustomAttributes>"
+                                                            "        <ECProperty propertyName='AProp' typeName='int' />"
+                                                            "    </ECEntityClass>"
+                                                            "    <ECEntityClass typeName='B' modifier='None'>"
+                                                            "        <ECProperty propertyName='BProp' typeName='int' />"
+                                                            "        <ECNavigationProperty propertyName='A' relationshipName='Rel' direction='Backward'/>"
+                                                            "    </ECEntityClass>"
+                                                            "    <ECRelationshipClass typeName='Rel' modifier='Sealed' strength='referencing'>"
+                                                            "       <Source multiplicity='(0..1)' polymorphic='True' roleLabel='references'>"
+                                                            "           <Class class='A' />"
+                                                            "       </Source>"
+                                                            "       <Target multiplicity='(0..*)' polymorphic='True' roleLabel='is referenced by'>"
+                                                            "           <Class class='B' />"
+                                                            "       </Target>"
+                                                            "     </ECRelationshipClass>"
+                                                            "</ECSchema>"))) << "Parent class has NotMapped strategy, but rel doesn't.";
 
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Maha Nasir                     10/15

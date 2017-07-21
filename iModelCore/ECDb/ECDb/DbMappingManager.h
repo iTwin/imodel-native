@@ -222,7 +222,8 @@ struct DbMappingManager final : NonCopyableClass
             static DbColumn* CreateRelECClassIdColumn(SchemaImportContext&, FkRelationshipMappingInfo const&, FkRelationshipMappingInfo::ForeignKeyColumnInfo const&, DbTable& fkTable, DbColumn const& fkCol, NavigationPropertyMap const&);
             static BentleyStatus FinishMapping(SchemaImportContext&, FkRelationshipMappingInfo const&);
             static BentleyStatus ValidateForeignKeyColumn(SchemaImportContext&, FkRelationshipMappingInfo const&, DbColumn const& fkColumn, bool cardinalityImpliesNotNullOnFkCol);
-  
+            static BentleyStatus ValidateRelClass(SchemaImportContext&, ECN::ECRelationshipClassCR);
+
         public:
             static BentleyStatus Initialize(SchemaImportContext&, FkRelationshipMappingInfo&);
 

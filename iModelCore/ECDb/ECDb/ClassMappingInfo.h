@@ -66,6 +66,10 @@ struct ClassMappingInfo : NonCopyableClass
 protected:
     ECDb const& m_ecdb;
     ECN::ECClassCR m_ecClass;
+    Nullable<MapStrategy> m_userDefinedStrategy;
+    ShareColumnsCustomAttribute m_shareColumnsCA;
+    bool m_hasJoinedTablePerDirectSubclassCA = false;
+
     MapStrategyExtendedInfo m_mapStrategyExtInfo;
 
     ClassMap const* m_tphBaseClassMap = nullptr;
@@ -85,13 +89,10 @@ protected:
     virtual BentleyStatus _InitializeFromSchema(SchemaImportContext&);
     virtual ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&);
 
-    BentleyStatus EvaluateRootClassMapStrategy(SchemaImportContext&, ClassMappingCACache const&);
-    BentleyStatus EvaluateNonRootClassMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap, ClassMappingCACache const&);
+    BentleyStatus EvaluateRootClassMapStrategy(SchemaImportContext&);
+    BentleyStatus EvaluateNonRootClassMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap);
 
-    BentleyStatus EvaluateNonRootClassTablePerHierarchyMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap, ClassMappingCACache const&);
-    bool ValidateNonRootClassTablePerHierarchyStrategy(MapStrategyExtendedInfo const& baseStrategy, ClassMappingCACache const&) const;
-    
-    BentleyStatus AssignMapStrategy(ClassMappingCACache const&);
+    BentleyStatus EvaluateNonRootClassTablePerHierarchyMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap);
 
     IssueReporter const& Issues() const;
 
@@ -124,8 +125,8 @@ private:
     BentleyStatus _InitializeFromSchema(SchemaImportContext&) override;
     ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&) override;
 
-    BentleyStatus EvaluateRootClassLinkTableStrategy(SchemaImportContext&, ClassMappingCACache const&);
-    BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&, ClassMappingCACache const&);
+    BentleyStatus EvaluateRootClassLinkTableStrategy(SchemaImportContext&);
+    BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&);
 
 public:
     RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass)  : ClassMappingInfo(ecdb, relationshipClass) {}

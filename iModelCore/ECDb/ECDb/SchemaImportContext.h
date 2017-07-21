@@ -142,7 +142,6 @@ struct SchemaImportContext final
 
         ClassMapLoadContext m_loadContext;
         bset<ECN::ECClassId> m_classMapsToSave;
-        mutable std::map<ECN::ECClassCP, std::unique_ptr<ClassMappingCACache>> m_classMappingCACache;
         std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> m_classMappingInfoCache;
         FkRelationshipMappingInfo::Collection m_fkRelMappingInfos;
         SchemaPolicies m_schemaPolicies;
@@ -153,7 +152,6 @@ struct SchemaImportContext final
         Phase GetPhase() const { return m_phase; }
         void SetPhase(Phase phase) { BeAssert(Enum::ToInt(m_phase) < Enum::ToInt(phase)); m_phase = phase; }
 
-        ClassMappingCACache const* GetClassMappingCACache(ECN::ECClassCR) const;
         void CacheClassMapInfo(ClassMap const&, std::unique_ptr<ClassMappingInfo>&);
         std::map<ClassMap const*, std::unique_ptr<ClassMappingInfo>> const& GetClassMappingInfoCache() const { return m_classMappingInfoCache; }
         FkRelationshipMappingInfo::Collection& GetFkRelationshipMappingInfos() { return m_fkRelMappingInfos; }

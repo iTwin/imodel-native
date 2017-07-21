@@ -497,53 +497,53 @@ BentleyStatus ClassMap::LoadPropertyMaps(ClassMapLoadContext& ctx, DbClassMapLoa
 //---------------------------------------------------------------------------------------
 BentleyStatus ClassMap::Update(SchemaImportContext& ctx)
     {
-    if (!m_failedToLoadProperties.empty())
+    if (m_failedToLoadProperties.empty())
+        return SUCCESS;
+
+    BeAssert(m_state == ObjectState::Persisted);
+    m_state = ObjectState::Modified;
+
+    UpdateColumnResolutionScope columnResolutionScope(*this);
+    for (ECPropertyCP property : m_failedToLoadProperties)
         {
-        BeAssert(m_state == ObjectState::Persisted);
-        m_state = ObjectState::Modified;
+        PropertyMap const* propMap = DbMappingManager::Classes::MapProperty(ctx, *this, *property);
+        if (propMap == nullptr)
+            return ERROR;
 
-        UpdateColumnResolutionScope columnResolutionScope(*this);
-        for (ECPropertyCP property : m_failedToLoadProperties)
+        if (!propMap->IsData())
             {
-            PropertyMap const* propMap = DbMappingManager::Classes::MapProperty(ctx, *this, *property);
-            if (propMap == nullptr)
-                return ERROR;
-
-            if (!propMap->IsData())
-                {
-                BeAssert(false);
-                return ERROR;
-                }
-
-            //Nav property maps cannot be saved here as they are not yet mapped.
-            if (propMap->GetType() == PropertyMap::Type::Navigation)
-                {
-                NavigationPropertyMap& navPropMap = const_cast<NavigationPropertyMap&>(propMap->GetAs<NavigationPropertyMap>());
-                if (ClassMappingStatus::Success != DbMappingManager::Classes::MapNavigationProperty(ctx, navPropMap))
-                    return ERROR;
-                }
-
-            //! ECSchema update added new property for which we need to save property map
-            DbMapSaveContext ctx(m_ecdb);
-            //First make sure table is updated on disk. The table must already exist for this operation to work.
-            if (GetDbMap().GetDbSchema().UpdateTableInDb(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
-                {
-                BeAssert(false && "Failed to save table");
-                return ERROR;
-                }
-
-            ctx.BeginSaving(*this);
-            DbClassMapSaveContext classMapContext(ctx);
-            SavePropertyMapVisitor saveVisitor(classMapContext);
-            propMap->AcceptVisitor(saveVisitor);
-            ctx.EndSaving(*this);
+            BeAssert(false);
+            return ERROR;
             }
 
-        m_failedToLoadProperties.clear();
+        //Nav property maps cannot be saved here as they are not yet mapped.
+        if (propMap->GetType() == PropertyMap::Type::Navigation)
+            {
+            NavigationPropertyMap& navPropMap = const_cast<NavigationPropertyMap&>(propMap->GetAs<NavigationPropertyMap>());
+            if (ClassMappingStatus::Success != DbMappingManager::Classes::MapNavigationProperty(ctx, navPropMap))
+                return ERROR;
+            }
+
+        //! ECSchema update added new property for which we need to save property map
+        DbMapSaveContext ctx(m_ecdb);
+        //First make sure table is updated on disk. The table must already exist for this operation to work.
+        if (GetDbMap().GetDbSchema().UpdateTableInDb(propMap->GetAs<DataPropertyMap>().GetTable()) != SUCCESS)
+            {
+            BeAssert(false && "Failed to save table");
+            return ERROR;
+            }
+
+        ctx.BeginSaving(*this);
+        DbClassMapSaveContext classMapContext(ctx);
+        SavePropertyMapVisitor saveVisitor(classMapContext);
+        propMap->AcceptVisitor(saveVisitor);
+        ctx.EndSaving(*this);
         }
 
+    m_failedToLoadProperties.clear();
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                  Krischan.Eberle  06/2013
 //---------------------------------------------------------------------------------------

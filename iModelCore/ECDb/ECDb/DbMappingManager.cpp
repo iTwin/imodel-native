@@ -826,19 +826,10 @@ Utf8String DbMappingManager::Classes::ComputeAccessString(ECN::ECPropertyCR ecPr
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus DbMappingManager::FkRelationships::Initialize(SchemaImportContext& ctx, FkRelationshipMappingInfo& mappingInfo)
     {
-    DbIndexListCustomAttribute ca;
-    if (ECDbMapCustomAttributeHelper::TryGetDbIndexList(ca, mappingInfo.GetRelClass()) && ca.IsValid())
-        {
-        bvector<DbIndexListCustomAttribute::DbIndex> indexes;
-        if (SUCCESS != ca.GetIndexes(indexes))
-            return ERROR;
+    BeAssert(!mappingInfo.GetRelClass().HasBaseClasses() && "Expected to only be called for root rel class");
 
-        if (!indexes.empty())
-            {
-            ctx.Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped as foreign key relationship which cannot have user-defined indexes.", mappingInfo.GetRelClass().GetFullName());
-            return ERROR;
-            }
-        }
+    if (SUCCESS != ValidateRelClass(ctx, mappingInfo.GetRelClass()))
+        return ERROR;
 
     ClassMapCP relMap = ctx.GetDbMap().GetClassMap(mappingInfo.GetRelClass());
     if (relMap == nullptr)
@@ -1319,6 +1310,48 @@ BentleyStatus DbMappingManager::FkRelationships::CreateForeignKeyConstraint(Sche
     return SUCCESS;
     }
 
+
+//--------------------------------------------------------------------------------------
+//@bsimethod                                 Krischan.Eberle                   07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus DbMappingManager::FkRelationships::ValidateRelClass(SchemaImportContext& ctx, ECN::ECRelationshipClassCR relClass)
+    {
+    ClassMapCustomAttribute classMapCA;
+    if (ECDbMapCustomAttributeHelper::TryGetClassMap(classMapCA, relClass) && classMapCA.IsValid())
+        {
+        ctx.Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped as foreign key relationship which cannot have the ClassMap custom attribute. If you tried to apply the 'NotMapped' strategy to it, apply it to the navigation property constraint classes instead.", relClass.GetFullName());
+        return ERROR;
+        }
+
+    DbIndexListCustomAttribute indexesCA;
+    if (ECDbMapCustomAttributeHelper::TryGetDbIndexList(indexesCA, relClass) && indexesCA.IsValid())
+        {
+        bvector<DbIndexListCustomAttribute::DbIndex> indexes;
+        if (SUCCESS != indexesCA.GetIndexes(indexes))
+            return ERROR;
+
+        if (!indexes.empty())
+            {
+            ctx.Issues().Report("Failed to map ECRelationshipClass '%s'. It is mapped as foreign key relationship which cannot have user-defined indexes.", relClass.GetFullName());
+            return ERROR;
+            }
+        }
+
+    for (ECClassCP subclass : ctx.GetECDb().Schemas().GetDerivedClasses(relClass))
+        {
+        ECRelationshipClassCP subRelClass = subclass->GetRelationshipClassCP();
+        if (subRelClass == nullptr)
+            {
+            BeAssert(false);
+            return ERROR;
+            }
+
+        if (SUCCESS != ValidateRelClass(ctx, *subRelClass))
+            return ERROR;
+        }
+
+    return SUCCESS;
+    }
 
 //--------------------------------------------------------------------------------------
 //@bsimethod                                 Krischan.Eberle                   04/2016

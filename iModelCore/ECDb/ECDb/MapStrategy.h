@@ -55,7 +55,7 @@ struct TablePerHierarchyInfo final
         Nullable<uint32_t> m_maxSharedColumnsBeforeOverflow;
         JoinedTableInfo m_joinedTableInfo = JoinedTableInfo::None;
 
-        BentleyStatus DetermineSharedColumnsInfo(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumnsCustomAttribute const* baseClassShareColumnsCA, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus DetermineSharedColumnsInfo(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ECClassCR, IssueReporter const&);
         BentleyStatus DetermineJoinedTableInfo(bool hasJoinedTablePerDirectSubclassOption, MapStrategyExtendedInfo const* baseMapStrategy, ECN::ECClassCR, IssueReporter const&);
 
     public:
@@ -65,7 +65,7 @@ struct TablePerHierarchyInfo final
             : m_isValid(true), m_shareColumnsMode(shareColumnsMode), m_maxSharedColumnsBeforeOverflow(maxSharedColumnsBeforeOverflow), m_joinedTableInfo(joinedTableInfo)
             {}
 
-        BentleyStatus Initialize(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumnsCustomAttribute const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
+        BentleyStatus Initialize(ShareColumnsCustomAttribute const&, MapStrategyExtendedInfo const* baseMapStrategy, bool hasJoinedTablePerDirectSubclassOption, ECN::ECClassCR, IssueReporter const&);
 
         //!@return true if the respective MapStrategy is TablePerHierarchy. false if MapStrategy is not TablePerHierarchy
         bool IsValid() const { return m_isValid; }
@@ -100,34 +100,23 @@ public:
     bool IsValid() const { return m_isValid; }
     static bool IsForeignKeyMapping(MapStrategyExtendedInfo const& strat) { return strat.GetStrategy() == MapStrategy::ForeignKeyRelationshipInSourceTable || strat.GetStrategy() == MapStrategy::ForeignKeyRelationshipInTargetTable; }
     static Utf8CP ToString(MapStrategy);
+
+    static BentleyStatus ParseMapStrategy(MapStrategy& strategy, Utf8StringCR str)
+        {
+        if (str.EqualsIAscii("OwnTable"))
+            strategy = MapStrategy::OwnTable;
+        else if (str.EqualsIAscii("NotMapped"))
+            strategy = MapStrategy::NotMapped;
+        else if (str.EqualsIAscii("TablePerHierarchy"))
+            strategy = MapStrategy::TablePerHierarchy;
+        else if (str.EqualsIAscii("ExistingTable"))
+            strategy = MapStrategy::ExistingTable;
+        else
+            return ERROR;
+
+        return SUCCESS;
+        }
+
     };
-
-
-//======================================================================================
-// @bsiclass                                 Krischan.Eberle               08/2016
-//+===============+===============+===============+===============+===============+=====
-struct ClassMappingCACache final
-    {
-private:
-    ClassMapCustomAttribute m_classMapCA;
-    Nullable<MapStrategy> m_mapStrategy;
-    ShareColumnsCustomAttribute m_shareColumnsCA;
-    bool m_hasJoinedTablePerDirectSubclassOption = false;
-
-    static BentleyStatus TryParse(MapStrategy&, Utf8CP str, ECN::ECClassCR);
-
-public:
-    ClassMappingCACache() {}
-    BentleyStatus Initialize(ECN::ECClassCR);
-
-    ~ClassMappingCACache() {}
-
-    ClassMapCustomAttribute const& GetClassMap() const { return m_classMapCA; }
-    Nullable<MapStrategy> const& GetStrategy() const { return m_mapStrategy; }
-    ShareColumnsCustomAttribute const& GetShareColumnsCA() const { return m_shareColumnsCA; }
-    bool HasJoinedTablePerDirectSubclassOption() const { return m_hasJoinedTablePerDirectSubclassOption; }
-    };
-
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

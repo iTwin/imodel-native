@@ -16,24 +16,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //*************************************************************************************
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   07/2015
-//---------------------------------------------------------------------------------------
-ClassMappingCACache const* SchemaImportContext::GetClassMappingCACache(ECClassCR ecclass) const
-    {
-    auto it = m_classMappingCACache.find(&ecclass);
-    if (it != m_classMappingCACache.end())
-        return it->second.get();
-
-    std::unique_ptr<ClassMappingCACache> cache = std::unique_ptr<ClassMappingCACache>(new ClassMappingCACache());
-    if (SUCCESS != cache->Initialize(ecclass))
-        return nullptr; // error
-
-    ClassMappingCACache* cacheP = cache.get();
-    m_classMappingCACache[&ecclass] = std::move(cache);
-    return cacheP;
-    }
-
-//---------------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle   08/2015
 //---------------------------------------------------------------------------------------
 void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMappingInfo>& info)
