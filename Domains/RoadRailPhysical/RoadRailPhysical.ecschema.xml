@@ -100,7 +100,7 @@
         <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
             <Class class="RegularTravelwaySegment"/>
         </Source>
-        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 definition">
             <Class class="TravelwayDefinitionElement"/>
         </Target>
     </ECRelationshipClass>
