@@ -3777,8 +3777,8 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_V21WithChangesetEnabledAndFirstR
     EXPECT_EQ(txn.GetCache().FindInstance(parent), failures[0].GetObjectId());
     EXPECT_EQ(txn.GetCache().FindRelationship(rel1), failures[1].GetObjectId());
     EXPECT_EQ(txn.GetCache().FindInstance(child1), failures[2].GetObjectId());
-    EXPECT_EQ(txn.GetCache().FindInstance(child2), failures[3].GetObjectId());
-    EXPECT_EQ(txn.GetCache().FindRelationship(rel2), failures[4].GetObjectId());
+    EXPECT_EQ(txn.GetCache().FindRelationship(rel2), failures[3].GetObjectId());
+    EXPECT_EQ(txn.GetCache().FindInstance(child2), failures[4].GetObjectId());
 
     EXPECT_EQ(CachingDataSource::Status::NetworkErrorsOccured, failures[0].GetError().GetStatus());
     EXPECT_EQ(CachingDataSource::Status::NetworkErrorsOccured, failures[1].GetError().GetStatus());
@@ -4031,10 +4031,10 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedTwoRelatedInstancesAndFir
     EXPECT_TRUE(result.IsSuccess());
 
     ASSERT_THAT(result.GetValue(), SizeIs(4));
-    EXPECT_THAT(result.GetValue()[0].GetObjectId(), Eq(ds->StartCacheTransaction().GetCache().FindInstance(instanceB)));
-    EXPECT_THAT(result.GetValue()[0].GetError().GetStatus(), ICachingDataSource::Status::NetworkErrorsOccured);
-    EXPECT_THAT(result.GetValue()[2].GetObjectId(), Eq(ds->StartCacheTransaction().GetCache().FindInstance(instanceC)));
-    EXPECT_THAT(result.GetValue()[2].GetError().GetStatus(), ICachingDataSource::Status::DependencyNotSynced);
+    EXPECT_THAT(result.GetValue()[1].GetObjectId(), Eq(ds->StartCacheTransaction().GetCache().FindInstance(instanceB)));
+    EXPECT_THAT(result.GetValue()[1].GetError().GetStatus(), ICachingDataSource::Status::NetworkErrorsOccured);
+    EXPECT_THAT(result.GetValue()[3].GetObjectId(), Eq(ds->StartCacheTransaction().GetCache().FindInstance(instanceC)));
+    EXPECT_THAT(result.GetValue()[3].GetError().GetStatus(), ICachingDataSource::Status::DependencyNotSynced);
     }
 
 TEST_F(CachingDataSourceTests, SyncLocalChanges_CreatedObjectWithTwoRelationships_SecondRelationshipCreationSentSeperately)
