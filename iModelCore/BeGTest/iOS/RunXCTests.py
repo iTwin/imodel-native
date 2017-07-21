@@ -2,12 +2,13 @@
 #
 #     $Source: iOS/RunXCTests.py $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #--------------------------------------------------------------------------------------
 import os, glob, sys, string, stat, re, subprocess
 
 import sys
+import time
 sys.path.append(os.path.join (os.getenv("SrcRoot"), "bsicommon", "build"))
 from bentleybuild.utils import *
 
