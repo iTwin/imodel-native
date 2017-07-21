@@ -65,11 +65,13 @@ BETEST_SCHEME='BeTestiOS'
 always:
     !~@mkdir ${XCTEST_OUTPUT_DIR}
     echo $(XCODEPROJ)>$(logfile)
+    -xcodebuild clean -project $(XCODEPROJ) -scheme $(BETEST_SCHEME) -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
     -xcodebuild test -project $(XCODEPROJ) -scheme $(BETEST_SCHEME) -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
     python $(baseDir)CheckForRetry.py $(logfile) > ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt
     %if " " != $[@findstring "retry", $[@readfile ${XCTEST_OUTPUT_DIR}/CheckForRetry.txt]]
         |Test launch failed. Retrying...
         echo $(XCODEPROJ)>$(logfile)
+        -xcodebuild clean -project $(XCODEPROJ) -scheme $(BETEST_SCHEME) -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
         -xcodebuild test -project $(XCODEPROJ) -scheme $(BETEST_SCHEME) -destination 'platform=iOS,name=$(BENTLEY_RUN_XCTEST_DEVICE_NAME)' >> $(logfile) 2>&1
     %endif
 
