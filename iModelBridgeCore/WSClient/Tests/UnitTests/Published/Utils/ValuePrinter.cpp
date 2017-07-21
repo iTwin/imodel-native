@@ -53,6 +53,16 @@ std::ostream& operator << (std::ostream &o, ICachingDataSource::Progress::State 
     return o;
     }
 
+std::ostream& operator << (std::ostream &o, ICachingDataSource::Progress progress)
+    {
+    o << Utf8PrintfString("Bytes: %.0f/%.0f, Instances: %.0f/%.0f, Synced: %f, Label: %s", 
+                          progress.GetBytes().current, progress.GetBytes().total, 
+                          progress.GetInstances().current, progress.GetInstances().total, 
+                          progress.GetSynced(), 
+                          progress.GetLabel().c_str());
+    return o;
+    }
+
 std::ostream& operator << (std::ostream &o, CacheStatus status)
     {
     static std::map<CacheStatus, Utf8String> names

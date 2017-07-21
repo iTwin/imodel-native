@@ -46,21 +46,21 @@ m_onProgress(onProgress ? onProgress : [] (CachingDataSource::ProgressCR) {})
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
     {
-    size_t total = m_initialInstances.size() + m_instancesToRedownload.size() + m_totalQueries;
-    size_t synced = m_syncedInitialInstances + m_syncedRejectedInstances + m_syncedQueries;
+    size_t total = m_initialInstances.size() + m_totalQueries;
+    size_t synced = m_syncedInitialInstances + m_syncedQueries;
     double progress = 0 == total ? 1 : (double) synced / (double) total;
 
-    size_t syncedInstances = m_syncedRejectedInstances + m_syncedInstances;
-    size_t totalInstances = m_instancesToRedownload.size() + m_instancesWithQueriesProvided.size();
+    size_t syncedInstances = m_syncedInstances;
+    size_t totalInstances = m_instancesWithQueriesProvided.size();
 
     if (totalInstances == 0)
         totalInstances = m_initialInstances.size();
 
-    m_onProgress({
-        m_downloadBytesProgress,
-        label,
+    m_onProgress({        
         progress,
-        {(double) syncedInstances, (double) totalInstances}
+        {(double) syncedInstances, (double) totalInstances},
+        m_downloadBytesProgress,
+        label
         });
     }
 
@@ -70,7 +70,6 @@ void SyncCachedDataTask::ReportProgress(Utf8StringCPtr label)
 void SyncCachedDataTask::_OnExecute()
     {
     m_ds->GetCacheAccessThread()->ExecuteAsync(std::bind(&SyncCachedDataTask::StartCaching, this))
-        ->Then(m_ds->GetCacheAccessThread(), std::bind(&SyncCachedDataTask::CacheRejectedInstances, this))
         ->Then(m_ds->GetCacheAccessThread(), std::bind(&SyncCachedDataTask::CacheFiles, this));
     }
 
@@ -106,9 +105,13 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
     for (auto& instance : instanceKeys)
         objectIds.insert(txn.GetCache().FindInstance(instance.key));
 
-    auto onProgress = [=] (size_t synced)
+    auto onProgress = [=] (size_t synced, CacheTransactionCR txn, const bset<ECInstanceKey>& handled)
         {
         m_syncedInitialInstances = synced;
+
+        for (auto instance : instanceKeys)            
+            PrepareCachingQueries(txn, instance.key, true);
+
         if (0 != synced)
             ReportProgress();
         };
@@ -122,33 +125,8 @@ void SyncCachedDataTask::CacheInitialInstances(CacheTransactionCR txn, const bse
             return;
 
         auto txn = m_ds->StartCacheTransaction();
-        for (auto instance : instanceKeys)
-            PrepareCachingQueries(txn, instance.key, true);
-
         ContinueCachingQueries(txn);
         txn.Commit();
-        });
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod                                                    Vincas.Razma    02/2015
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SyncCachedDataTask::CacheRejectedInstances()
-    {
-    if (IsTaskCanceled() || m_instancesToRedownload.empty())
-        return;
-
-    auto onProgress = [=] (size_t synced)
-        {
-        m_syncedRejectedInstances = synced;
-        if (0 != synced)
-            ReportProgress();
-        };
-
-    SyncCachedInstancesTask::Run(m_ds, m_instancesToRedownload, onProgress, GetCancellationToken())
-        ->Then(m_ds->GetCacheAccessThread(), [=] (ICachingDataSource::BatchResult result)
-        {
-        AddResult(result);
         });
     }
 
@@ -210,7 +188,7 @@ void SyncCachedDataTask::ContinueCachingQueries(CacheTransactionCR txn)
 
     auto ct = GetCancellationToken();
 
-    m_ds->CacheObjects(responseKey, *query, CachingDataSource::DataOrigin::RemoteData, IWSRepositoryClient::InitialSkipToken, 0, ct)
+    m_ds->CacheObjects(responseKey, *query, CachingDataSource::DataOrigin::RemoteData, m_ds->GetInitialSkipToken(), 0, ct)
         ->Then(m_ds->GetCacheAccessThread(), [=] (CachingDataSource::DataOriginResult result)
         {
         if (IsTaskCanceled())

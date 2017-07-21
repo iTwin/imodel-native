@@ -2,7 +2,7 @@
 |
 |     $Source: Tests/UnitTests/Published/WebServices/Cache/BaseCachingDataSourceTest.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -32,6 +32,11 @@ CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV2()
 CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV24()
     {
     return GetTestDataSource({2, 4});
+    }
+
+CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSourceV25()
+    {
+    return GetTestDataSource({2, 5});
     }
 
 CachingDataSourcePtr BaseCachingDataSourceTest::GetTestDataSource(BeVersion webApiVersion)

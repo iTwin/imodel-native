@@ -148,6 +148,38 @@ TEST_F(WSErrorTests, Ctor_XmlErrorFormatCorrectWithNullDescription_ParsesXmlAndS
     EXPECT_EQ("Foo", error.GetDisplayDescription());
     }
 
+TEST_F(WSErrorTests, Ctor_XmlAzureBlobNotFoundError_ParsesXmlAndSetsError)
+    {
+    auto body = R"(<?xml version="1.0" encoding="utf-8"?>
+        <Error>
+            <Code>BlobNotFound</Code>
+            <Message>TestMessage</Message>
+        </Error>)";
+
+    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}}));
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::FileNotFound, error.GetId());
+    EXPECT_NE("", error.GetDisplayMessage());
+    EXPECT_EQ("TestMessage", error.GetDisplayDescription());
+    }
+
+TEST_F(WSErrorTests, Ctor_XmlAzureOtherError_ParsesXmlAndSetsError)
+    {
+    auto body = R"(<?xml version="1.0" encoding="utf-8"?>
+        <Error>
+            <Code>Foo</Code>
+            <Message>TestMessage</Message>
+        </Error>)";
+
+    WSError error(StubHttpResponse(HttpStatus::NotFound, body, {{"Content-Type", "application/xml"}}));
+
+    EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+    EXPECT_EQ(WSError::Id::Unknown, error.GetId());
+    EXPECT_NE("", error.GetDisplayMessage());
+    EXPECT_EQ("TestMessage", error.GetDisplayDescription());
+    }
+
 TEST_F(WSErrorTests, Ctor_JsonErrorFormatWithNullFields_FallbacksToDefaultIdAndLocalizedMessageFromHttpError)
     {
     auto body = R"({"errorId":null, "errorMessage":null, "errorDescription":null})";

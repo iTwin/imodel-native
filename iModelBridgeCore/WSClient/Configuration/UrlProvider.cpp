@@ -40,7 +40,7 @@ bset<UrlProvider::UrlDescriptor*> s_urlRegistry;
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
     "Mobile.ConnectEula",
     "https://dev-agreement-eus.cloudapp.net/rest",
-    "https://qa-agreement-eus.cloudapp.net/rest",
+    "https://qa-connect-agreement.bentley.com/rest",
     "https://connect-agreement.bentley.com/rest",
     &s_urlRegistry
     );
@@ -48,7 +48,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectEula(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
     "Mobile.ConnectProjectUrl",
     "https://dev-webportal-eus.cloudapp.net/project/index?projectId=",
-    "https://qa-webportal-eus.cloudapp.net/project/index?projectId=",
+    "https://qa-connect-webportal.bentley.com/project/index?projectId=",
     "https://connect.bentley.com/project/index?projectId=",
     &s_urlRegistry
     );
@@ -56,7 +56,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectProjectUrl(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
     "Mobile.ConnectWsgGlobal",
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
     &s_urlRegistry
     );
@@ -64,7 +64,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgGlobal(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPersonalPublishing(
     "Mobile.ConnectWsgPersonalPublishing",
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
     &s_urlRegistry
     );
@@ -72,7 +72,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPersonalPublishing
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
     "Mobile.ConnectWsgProjectContent",
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
     &s_urlRegistry
     );
@@ -80,7 +80,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectContent(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
     "Mobile.ConnectWsgProjectShare",
     "https://dev-projectsharestorage-eus.cloudapp.net",
-    "https://qa-projectsharestorage-eus.cloudapp.net",
+    "https://qa-connect-projectsharestorage.bentley.com",
     "https://connect-projectsharestorage.bentley.com",
     &s_urlRegistry
     );
@@ -88,7 +88,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectShare(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
     "Mobile.PunchListWsg",
     "https://dev-punchlist-eus.cloudapp.net",
-    "https://qa-punchlist-eus.cloudapp.net",
+    "https://qa-connect-punchlist.bentley.com",
     "https://connect-punchlist.bentley.com",
     &s_urlRegistry
     );
@@ -96,7 +96,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgPunchList(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgClashIssues(
     "Mobile.ClashIssuesWsg",
     "https://dev-punchlist-eus.cloudapp.net",
-    "https://qa-punchlist-eus.cloudapp.net",
+    "https://qa-connect-punchlist.bentley.com",
     "https://connect-punchlist.bentley.com",
     &s_urlRegistry
     );
@@ -104,15 +104,23 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgClashIssues(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgSharedContent(
     "Mobile.ConnectWsgSharedContent",
     "https://dev-wsg20-eus.cloudapp.net",
-    "https://qa-wsg20-eus.cloudapp.net",
+    "https://qa-connect-wsg20.bentley.com",
     "https://connect-wsg20.bentley.com",
+    &s_urlRegistry
+    );
+
+const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectWsgProjectGateway(
+    "Mobile.ConnectWsgProjectGateway",
+    "https://dev-bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://qa-bcsf.bentley.com/ProjectGateway/Wsg",
+    "https://bcsf.bentley.com/ProjectGateway/Wsg",
     &s_urlRegistry
     );
 
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectForms(
     "Mobile.ConnectForms",
     "https://dev-formswsg-eus.cloudapp.net",
-    "https://qa-formswsg-eus.cloudapp.net",
+    "https://qa-connect-formswsg.bentley.com",
     "https://connect-formswsg.bentley.com",
     &s_urlRegistry
     );
@@ -160,7 +168,7 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageTracking(
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     "BeXMPP",
     "dev-xmppcollab-eus.cloudapp.net",
-    "qa-xmppcollab-eus.cloudapp.net",
+    "qa-connect-xmppcollab.bentley.com",
     "xmppcollab-eus.cloudapp.net",
     &s_urlRegistry
     );

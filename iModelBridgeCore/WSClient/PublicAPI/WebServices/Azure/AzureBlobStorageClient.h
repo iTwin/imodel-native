@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include "../Client/WebServicesClient.h"
-#include <MobileDgn/Utils/Http/HttpError.h>
 #include <MobileDgn/Utils/Http/HttpResponse.h>
 #include <MobileDgn/Utils/Threading/AsyncResult.h>
 
@@ -22,7 +21,8 @@ USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 //--------------------------------------------------------------------------------------+
 typedef std::shared_ptr<struct IAzureBlobStorageClient> IAzureBlobStorageClientPtr;
 typedef std::shared_ptr<struct AzureBlobStorageClient> AzureBlobStorageClientPtr;
-typedef AsyncResult<struct AzureFileResponse, HttpError> AzureResult;
+// Return success values or error HttpResponse. Convert HttpResponse to HttpError if simple information is needed.
+typedef AsyncResult<struct AzureFileResponse, HttpResponse> AzureResult;
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass

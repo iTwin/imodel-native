@@ -45,7 +45,7 @@ struct WebApiV2 : public WebApi
         WSCreateObjectResult ResolveCreateObjectResponse(HttpResponse& response) const;
         WSUpdateObjectResult ResolveUpdateObjectResponse(HttpResponse& response) const;
         WSUploadResponse ResolveUploadResponse(HttpResponse& response) const;
-        WSObjectsResult ResolveObjectsResponse(HttpResponse& response, const ObjectId* objectId = nullptr) const;
+        WSObjectsResult ResolveObjectsResponse(HttpResponse& response, bool requestHadSkipToken = false, const ObjectId* objectId = nullptr) const;
 
         HttpRequest CreateFileDownloadRequest
             (
@@ -117,6 +117,15 @@ struct WebApiV2 : public WebApi
 
         virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,

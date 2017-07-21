@@ -97,6 +97,13 @@ struct EXPORT_VTABLE_ATTRIBUTE ICachingDataSource
 
         virtual AsyncTaskPtr<void> CancelAllTasks() = 0;
 
+        //! Enable experimental skip token support while doing queries and caching data. Disabled by default.
+        //! If server-side supported, will do queries in pages.
+        //! WARNING: unfinished and non-tested functionality:
+        //!     * Data changes, page size changes, additions or removal of instances while pulling might corrupt/distort data or break caching. 
+        //!     * Connection loss while pulling data will leave response in state "NotCached" with partially new and old data in cache.
+        virtual void EnableSkipTokens(bool enable) = 0;
+
         //! Check server for schema changes and update if needed.
         virtual AsyncTaskPtr<Result> UpdateSchemas(ICancellationTokenPtr ct = nullptr) = 0;
 
@@ -458,45 +465,76 @@ struct ICachingDataSource::FailedObjects : public bvector<FailedObject>
 +---------------+---------------+---------------+---------------+---------------+------*/
 struct ICachingDataSource::Progress
     {
-	public:
-    	struct State
-        	{
-    		double current = 0;
-        	double total = 0;
+    public:
+        struct State
+            {
+            double current = 0;
+            double total = 0;
 
-        	State() {};
-        	State(double current, double total) : current(current), total(total) {};
-        	bool operator==(const State& other) const { return current == other.current && total == other.total; };
+            State() {};
+            State(double current, double total) : current(current), total(total) {};
+            bool operator==(const State& other) const { return current == other.current && total == other.total; };
+            bool operator!=(const State& other) const { return !this->operator==(other); }
             bool IsFinished() const { return total != 0 && current == total; };
             bool IsUndefined() const { return current == 0 && total == 0; };
-        	};
-		
+            };
+        
         typedef State& StateR;
         typedef const State& StateCR;
-		
+        
     private:        
         double m_synced = 0;
         State m_bytes;
         State m_instances;
         Utf8StringCPtr m_label;
+        State m_currentFileBytes;
+        ECInstanceKey m_currentFileKey;
     
     public:
         Progress() {};
-        Progress(State bytes, Utf8StringCPtr label = nullptr, double synced = 0, State instances = State()) :
-            m_synced(synced), m_bytes(bytes), m_label(label), m_instances(instances) {};
+            
+        // Create prgress for file transfers
+        Progress(State bytes, Utf8StringCPtr label = nullptr, double synced = 0, ECInstanceKeyCR currentFileECInstanceKey = ECInstanceKey(), State currentBytes = {0, 0}) :
+            m_bytes(bytes), m_label(label), m_synced(synced), m_currentFileKey(currentFileECInstanceKey), m_currentFileBytes(currentBytes)
+            {};
+        // Create progress for sync and file transfers
+        Progress(double synced, State instances = State(), State bytes = State(), Utf8StringCPtr label = nullptr) :
+            m_synced(synced), m_instances(instances), m_bytes(bytes), m_label(label)
+            {};
 
         //! GetBytes().current - file bytes already synced
         //! GetBytes().total - total file bytes to sync. 0 if no files are being synced.
         StateCR GetBytes() const { return m_bytes; };
-		//! GetInstances().current - already synced instances
-		//! GetInstances().toal - total instances to sync
+        //! GetInstances().current - already synced instances
+        //! GetInstances().toal - total instances to sync
         StateCR GetInstances() const { return m_instances; };
-        //! Get percentage (0.0 -> 1.0) of total sync done based on instances count
+        //! Get percentage (0.0 -> 1.0) of total sync done based on instances and queries count
         double GetSynced() const { return m_synced; };
+        //! Get ECInstanceKey of current file being synchronized/uploaded
+        ECInstanceKeyCR GetCurrentFileKey() const { return m_currentFileKey; };
+        //! Get progress state of single (current) file which is in progress of syncing/uploading
+        StateCR GetCurrentFileBytes() const { return m_currentFileBytes; };
+        
         //! Get label of instance being synced
         WSCACHE_EXPORT Utf8StringCR GetLabel() const;
         //! Get label of instance being synced
         Utf8StringCPtr GetLabelPtr() const { return m_label; };
+
+        bool operator==(const Progress& other) const 
+            {
+            return
+                m_bytes == other.m_bytes &&
+                m_instances == other.m_instances &&
+                m_synced == other.m_synced &&
+                GetLabel() == other.GetLabel() &&
+                m_currentFileKey == other.m_currentFileKey &&
+                m_currentFileBytes == other.m_currentFileBytes;
+            };
+
+        bool operator!=(const Progress& other) const
+            {
+            return !operator==(other);
+            };
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

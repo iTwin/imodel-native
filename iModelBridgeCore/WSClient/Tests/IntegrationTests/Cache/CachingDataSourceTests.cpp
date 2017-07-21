@@ -206,12 +206,12 @@ TEST_F(CachingDataSourceTests, SyncLocalChanges_BentleyConnectPersonalShareNewFi
     EXPECT_EQ(fileName, Utf8String(path.GetFileNameAndExtension()));
     }
 
-TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectContent_Success)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
     Utf8String serverUrl = "https://qa-wsg20-eus.cloudapp.net";
-    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--c4d60664-1226-4d4f-8beb-7d0e372ccc06";
+    Utf8String repositoryId = "BentleyCONNECT.ProjectContent--238f67b9-b6db-4b37-810e-bfdc0ab5e0b0";
     Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
     BeFileName cachePath = GetTestCachePath();
 
@@ -224,7 +224,26 @@ TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShare_Succeeds)
     auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
     ASSERT_FALSE(nullptr == result.GetValue());
     }
+    
+TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectProjectShareV2_Succeeds)
+    {
+    auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 
+    Utf8String serverUrl = "https://qa-projectsharestorage-eus.cloudapp.net";
+    Utf8String repositoryId = "BentleyCONNECT.ProjectShareV2--238f67b9-b6db-4b37-810e-bfdc0ab5e0b0";
+    Credentials credentials("bentleyvilnius@gmail.com", "Q!w2e3r4t5");
+    BeFileName cachePath = GetTestCachePath();
+
+    auto manager = ConnectSignInManager::Create(StubValidClientInfo(), proxy, &m_localState);
+    ASSERT_TRUE(manager->SignInWithCredentials(credentials)->GetResult().IsSuccess());
+    auto authHandler = manager->GetAuthenticationHandler(serverUrl, proxy);
+
+    auto client = WSRepositoryClient::Create(serverUrl, repositoryId, StubValidClientInfo(), nullptr, authHandler);
+
+    auto result = CachingDataSource::OpenOrCreate(client, cachePath, StubCacheEnvironemnt())->GetResult();
+    ASSERT_FALSE(nullptr == result.GetValue());
+    }
+    
 TEST_F(CachingDataSourceTests, OpenOrCreate_BentleyConnectPunchlist_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
@@ -598,7 +617,7 @@ TEST_F(CachingDataSourceTests, GetObjects_WSG25ProjectWiseSpatialQuery_Succeeds)
     ASSERT_NE(0, result.GetValue().GetJson().size());
     }
 
-TEST_F(CachingDataSourceTests, GetObjects_PunchlistQueries_Succeeds)
+TEST_F(CachingDataSourceTests, GetObjects_PunchlistV1Queries_Succeeds)
     {
     auto proxy = ProxyHttpHandler::GetFiddlerProxyIfReachable();
 

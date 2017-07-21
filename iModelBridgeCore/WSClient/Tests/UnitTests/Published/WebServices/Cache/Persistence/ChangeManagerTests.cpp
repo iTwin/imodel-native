@@ -13,30 +13,32 @@ using std::shared_ptr;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #ifdef USE_GTEST
-TEST_F(ChangeManagerTests, IsSyncActive_SyncSetActiveToTrue_True)
+TEST_F(ChangeManagerTests, IsUploadActive_SyncSetActiveToTrue_True)
     {
     auto cache = GetTestCache();
-    cache->GetChangeManager().SetSyncActive(true);
-    EXPECT_TRUE(cache->GetChangeManager().IsSyncActive());
+    auto instance = StubECInstanceKey();
+    cache->GetChangeManager().SetUploadActive(instance, true);
+    EXPECT_TRUE(cache->GetChangeManager().IsUploadActive(instance));
     }
 
-TEST_F(ChangeManagerTests, IsSyncActive_SyncNotActive_False)
+TEST_F(ChangeManagerTests, IsUploadActive_SyncNotActive_False)
     {
     auto cache = GetTestCache();
-    EXPECT_FALSE(cache->GetChangeManager().IsSyncActive());
+    EXPECT_FALSE(cache->GetChangeManager().IsUploadActive(StubECInstanceKey()));
     }
 
-TEST_F(ChangeManagerTests, SetSyncActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActiveFlag)
+TEST_F(ChangeManagerTests, SetUploadActive_SchemaUpdatedAndCacheStateReset_KeepsSyncActiveFlag)
     {
     // Arrange
     auto cache = GetTestCache();
     // Act
-    cache->GetChangeManager().SetSyncActive(true);
-    EXPECT_TRUE(cache->GetChangeManager().IsSyncActive());
+    auto instance = StubECInstanceKey();
+    cache->GetChangeManager().SetUploadActive(instance, true);
+    EXPECT_TRUE(cache->GetChangeManager().IsUploadActive(instance));
     auto status = cache->UpdateSchemas({GetTestSchema()});
     // Assert
     EXPECT_EQ(SUCCESS, status);
-    EXPECT_TRUE(cache->GetChangeManager().IsSyncActive());
+    EXPECT_TRUE(cache->GetChangeManager().IsUploadActive(instance));
     }
 
 TEST_F(ChangeManagerTests, CreateObject_SyncSetToActive_Success)
@@ -44,10 +46,11 @@ TEST_F(ChangeManagerTests, CreateObject_SyncSetToActive_Success)
     // Arrange
     auto cache = GetTestCache();
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
+    auto syncInstance = StubECInstanceKey();
     // Act
-    cache->GetChangeManager().SetSyncActive(true);
+    cache->GetChangeManager().SetUploadActive(syncInstance, true);
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
-    cache->GetChangeManager().SetSyncActive(false);
+    cache->GetChangeManager().SetUploadActive(syncInstance, false);
     // Assert
     EXPECT_TRUE(instance.IsValid());
     }
@@ -60,9 +63,9 @@ TEST_F(ChangeManagerTests, ModifyObject_SyncSetToActiveAndModifyingModifiedObjec
     // Act
     Json::Value properties;
     properties["TestProperty"] = "NewValue";
-    cache->GetChangeManager().SetSyncActive(true);
+    cache->GetChangeManager().SetUploadActive(instance, true);
     auto status = cache->GetChangeManager().ModifyObject(instance, properties);
-    cache->GetChangeManager().SetSyncActive(false);
+    cache->GetChangeManager().SetUploadActive(instance, false);
     // Assert
     ASSERT_EQ(SUCCESS, status);
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
@@ -78,13 +81,50 @@ TEST_F(ChangeManagerTests, DeleteObject_SyncSetToActiveAndDeletingCreatedObject_
     auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
     auto instance = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
     // Act
-    cache->GetChangeManager().SetSyncActive(true);
+    cache->GetChangeManager().SetUploadActive(instance, true);
     BeTest::SetFailOnAssert(false);
     auto status = cache->GetChangeManager().DeleteObject(instance);
     BeTest::SetFailOnAssert(true);
-    cache->GetChangeManager().SetSyncActive(false);
+    cache->GetChangeManager().SetUploadActive(instance, false);
     // Assert
     EXPECT_EQ(ERROR, status);
+    }
+
+TEST_F(ChangeManagerTests, IsUploadActive_SetUploadActiveOneObjectIsUploadActiveOtherObject_False)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance1 = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    auto instance2 = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    // Act
+    cache->GetChangeManager().SetUploadActive(instance1, true);
+    // Assert
+    EXPECT_FALSE(cache->GetChangeManager().IsUploadActive(instance2));
+    }
+
+TEST_F(ChangeManagerTests, IsUploadActive_SetUploadActiveOneObjectIsUploadActive_True)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance1 = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    // Act & Assert
+    cache->GetChangeManager().SetUploadActive(instance1, true);
+    EXPECT_TRUE(cache->GetChangeManager().IsUploadActive(instance1));
+    }
+
+TEST_F(ChangeManagerTests, IsUploadActive_SetUploadActiveAndUnsetUploadActive_False)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance1 = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    // Act & Assert
+    cache->GetChangeManager().SetUploadActive(instance1, true);
+    EXPECT_TRUE(cache->GetChangeManager().IsUploadActive(instance1));
+    cache->GetChangeManager().SetUploadActive(instance1, false);
+    EXPECT_FALSE(cache->GetChangeManager().IsUploadActive(instance1));
     }
 
 TEST_F(ChangeManagerTests, CreateRelationship_SyncSetToActive_Success)
@@ -95,11 +135,54 @@ TEST_F(ChangeManagerTests, CreateRelationship_SyncSetToActive_Success)
     auto target = StubInstanceInCache(*cache, {"TestSchema.TestClass", "B"});
     auto testRelClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
     // Act
-    cache->GetChangeManager().SetSyncActive(true);
+    cache->GetChangeManager().SetUploadActive(source, true);
     auto relationship = cache->GetChangeManager().CreateRelationship(*testRelClass, source, target);
-    cache->GetChangeManager().SetSyncActive(false);
+    cache->GetChangeManager().SetUploadActive(source, false);
     // Assert
     EXPECT_TRUE(relationship.IsValid());
+    }
+
+
+TEST_F(ChangeManagerTests, IsAnySyncActive_SetUploadActiveForInstance_True)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto testClass = cache->GetAdapter().GetECClass("TestSchema.TestClass");
+    auto instance1 = cache->GetChangeManager().CreateObject(*testClass, Json::objectValue);
+    // Act & Assert
+    cache->GetChangeManager().SetUploadActive(instance1, true);
+    EXPECT_TRUE(cache->GetChangeManager().GetUploadingInstances().size() > 0);
+    }
+
+TEST_F(ChangeManagerTests, IsAnySyncActive_NoSyncSet_False)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    // Act & Assert
+    EXPECT_FALSE(cache->GetChangeManager().GetUploadingInstances().size() > 0);
+    }
+
+TEST_F(ChangeManagerTests, GetSyncingInstances_SetUploadActiveForInstance_SetWithInstances)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    auto instance1 = StubECInstanceKey();
+    // Act & Assert
+    cache->GetChangeManager().SetUploadActive(instance1, true);
+    const ECInstanceKeyMultiMap &map = cache->GetChangeManager().GetUploadingInstances();
+    ECInstanceKeyMultiMapPair pair(instance1.GetECClassId(), instance1.GetECInstanceId());
+    
+    EXPECT_EQ(1, map.size());
+    EXPECT_THAT(map, Contains<ECInstanceKeyMultiMapPair>(pair));
+    }
+
+TEST_F(ChangeManagerTests, GetSyncingInstances_NoSyncSet_UnchangedSetReturned)
+    {
+    // Arrange
+    auto cache = GetTestCache();
+    // Act & Assert
+    const ECInstanceKeyMultiMap &map = cache->GetChangeManager().GetUploadingInstances();
+    EXPECT_EQ(0, map.size());
     }
 
 TEST_F(ChangeManagerTests, DeleteRelationship_SyncSetToActiveAndDeletingCreatedRelationship_Error)
@@ -111,11 +194,11 @@ TEST_F(ChangeManagerTests, DeleteRelationship_SyncSetToActiveAndDeletingCreatedR
     auto testRelClass = cache->GetAdapter().GetECRelationshipClass("TestSchema.TestRelationshipClass");
     auto relationship = cache->GetChangeManager().CreateRelationship(*testRelClass, source, target);
     // Act
-    cache->GetChangeManager().SetSyncActive(true);
+    cache->GetChangeManager().SetUploadActive(relationship, true);
     BeTest::SetFailOnAssert(false);
     auto status = cache->GetChangeManager().DeleteRelationship(relationship);
     BeTest::SetFailOnAssert(true);
-    cache->GetChangeManager().SetSyncActive(false);
+    cache->GetChangeManager().SetUploadActive(relationship, false);
     // Assert
     EXPECT_EQ(ERROR, status);
     }
@@ -127,11 +210,11 @@ TEST_F(ChangeManagerTests, ModifyFile_SyncSetToActiveAndModifyingModifiedFile_Er
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyFile(instance, StubFile(), false));
     // Act
-    cache->GetChangeManager().SetSyncActive(true);
+    cache->GetChangeManager().SetUploadActive(instance, true);
     BeTest::SetFailOnAssert(false);
     auto status = cache->GetChangeManager().ModifyFile(instance, StubFile(), false);
     BeTest::SetFailOnAssert(true);
-    cache->GetChangeManager().SetSyncActive(false);
+    cache->GetChangeManager().SetUploadActive(instance, false);
     // Assert
     EXPECT_EQ(ERROR, status);
     }
@@ -2877,11 +2960,11 @@ TEST_F(ChangeManagerTests, RevertModifiedObject_ModifiedInstanceAndSyncActive_Er
     auto instance = StubInstanceInCache(*cache, {"TestSchema.TestClass", "Foo"}, {{"TestProperty", "A"}, {"TestProperty2", "B"}});
     ASSERT_EQ(SUCCESS, cache->GetChangeManager().ModifyObject(instance, ToJson(R"({"TestProperty":"A1", "TestProperty2":"B1"})")));
 
-    cache->GetChangeManager().SetSyncActive(true);
+    cache->GetChangeManager().SetUploadActive(instance, true);
     BeTest::SetFailOnAssert(false);
     ASSERT_EQ(ERROR, cache->GetChangeManager().RevertModifiedObject(instance));
     BeTest::SetFailOnAssert(true);
-    cache->GetChangeManager().SetSyncActive(false);
+    cache->GetChangeManager().SetUploadActive(instance, false);
 
     EXPECT_EQ(IChangeManager::ChangeStatus::Modified, cache->GetChangeManager().GetObjectChange(instance).GetChangeStatus());
     Json::Value properties;

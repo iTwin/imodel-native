@@ -79,6 +79,24 @@ AsyncTaskPtr<void> CachingDataSource::CancelAllTasks()
     }
 
 /*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void CachingDataSource::EnableSkipTokens(bool enable)
+    {
+    m_enableSkipTokens = enable;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String CachingDataSource::GetInitialSkipToken() const
+    {
+    if (!m_enableSkipTokens)
+        return "";
+    return WSRepositoryClient::InitialSkipToken;
+    }
+
+/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    10/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
 ICancellationTokenPtr CachingDataSource::CreateCancellationToken(ICancellationTokenPtr ct)
@@ -867,7 +885,7 @@ ICancellationTokenPtr ct
         }
     ct = CreateCancellationToken(ct);
 
-    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, ct)
+    return CacheObjects(responseKey, query, origin, GetInitialSkipToken(), 0, ct)
         ->Then<ObjectsResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -899,7 +917,7 @@ ICancellationTokenPtr ct
     {
     ct = CreateCancellationToken(ct);
 
-    return CacheObjects(responseKey, query, origin, IWSRepositoryClient::InitialSkipToken, 0, ct)
+    return CacheObjects(responseKey, query, origin, GetInitialSkipToken(), 0, ct)
         ->Then<KeysResult>(m_cacheAccessThread, [=] (DataOriginResult& result)
         {
         if (!result.IsSuccess())
@@ -958,7 +976,7 @@ ICancellationTokenPtr ct
             return;
             }
 
-        CacheObjects(responseKey, *query, origin, IWSRepositoryClient::InitialSkipToken, 0, ct)
+        CacheObjects(responseKey, *query, origin, GetInitialSkipToken(), 0, ct)
             ->Then([=] (DataOriginResult result)
             {
             *finalResult = result;
@@ -1178,14 +1196,7 @@ ICancellationTokenPtr ct
 )
     {
     ct = CreateCancellationToken(ct);
-
-    // TODO: Support RemoteOrCachedData
-    if (origin == DataOrigin::RemoteOrCachedData)
-        {
-        BeAssert(false && "DataOrigin::RemoteOrCachedData is not supported yet");
-        }
-
-    auto finalResult = std::make_shared <FileResult>();
+    auto finalResult = std::make_shared<FileResult>();
 
     return m_cacheAccessThread->ExecuteAsync([=]
         {
@@ -1223,22 +1234,28 @@ ICancellationTokenPtr ct
         filesToDownload.insert(objectId);
 
         DownloadAndCacheFiles(filesToDownload, FileCache::Auto, onProgress, ct)
-            ->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult& result)
+            ->Then(m_cacheAccessThread, [=] (ICachingDataSource::BatchResult result)
             {
-            if (!result.IsSuccess())
-                {
-                finalResult->SetError(result.GetError());
-                }
-            else if (!result.GetValue().empty())
-                {
-                finalResult->SetError(result.GetValue().front().GetError());
-                }
-            else
+            if (!result.GetValue().empty())
+                result.SetError(result.GetValue().front().GetError());
+
+            if (result.IsSuccess())
                 {
                 auto txn = StartCacheTransaction();
                 BeFileName cachedFilePath = txn.GetCache().ReadFilePath(objectId);
                 finalResult->SetSuccess(FileData(cachedFilePath, DataOrigin::RemoteData));
                 }
+            else if (CachingDataSource::DataOrigin::RemoteOrCachedData == origin &&
+                WSError::Status::ConnectionError == result.GetError().GetWSError().GetStatus())
+                {
+                auto txn = StartCacheTransaction();
+                BeFileName cachedFilePath = txn.GetCache().ReadFilePath(objectId);
+                if (!cachedFilePath.empty())
+                    finalResult->SetSuccess(FileData(cachedFilePath, DataOrigin::CachedData));
+                }
+
+            if (!finalResult->IsSuccess())
+                finalResult->SetError(result.GetError());
             });
         })
             ->Then<FileResult>([=]
@@ -1404,10 +1421,6 @@ SyncOptions options
     // Ensure that only single SyncLocalChangesTask is running at the time
     m_cacheAccessThread->ExecuteAsync([=]
         {
-        auto txn = StartCacheTransaction();
-        txn.GetCache().GetChangeManager().SetSyncActive(true);
-        txn.Commit();
-
         m_syncLocalChangesQueue.push_back(syncTask);
         if (m_syncLocalChangesQueue.size() == 1)
             {
@@ -1422,14 +1435,6 @@ SyncOptions options
             {
             m_cacheAccessThread->Push(m_syncLocalChangesQueue.front());
             }
-
-        if (m_syncLocalChangesQueue.empty())
-            {
-            auto txn = StartCacheTransaction();
-            txn.GetCache().GetChangeManager().SetSyncActive(false);
-            txn.Commit();
-            }
-
         return syncTask->GetResult();
         });
     }

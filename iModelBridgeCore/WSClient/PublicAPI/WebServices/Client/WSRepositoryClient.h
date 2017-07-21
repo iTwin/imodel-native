@@ -56,7 +56,6 @@ struct IWSRepositoryClient
             };
 
     public:
-        // WIP: SkipTokens disabled due to issues.
         WSCLIENT_EXPORT static const Utf8String InitialSkipToken;
 
     public:
@@ -156,6 +155,22 @@ struct IWSRepositoryClient
             ICancellationTokenPtr ct = nullptr
             ) const = 0;
 
+        //! Create an object with a relation. With optional file attachment
+        //! @param relatedObjectId - relation target object (e. g. document for checkin)
+        //! @param objectCreationJson - Parameter objectCreationJson must follow WSG 2.0 format for creating objects.
+        //! @param filePath - file path to upload
+        //! @param uploadProgressCallback - file upload progress
+        //! @param ct
+        //! @return JSON representing created object and new file ETag if available
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const = 0;
+
         //! Update specified object and optionally a file with one operation
         //! @param objectId - object identifier
         //! @param propertiesJson - object properties that need to be updated
@@ -219,6 +234,9 @@ struct WSRepositoryClient : public IWSRepositoryClient
 
     private:
         WSRepositoryClient(std::shared_ptr<struct ClientConnection> connection);
+        
+        // Taken from WebServices team .NET implementation
+        static Utf8String UrlDecode(Utf8String url);
 
     public:
         struct Timeout
@@ -251,6 +269,12 @@ struct WSRepositoryClient : public IWSRepositoryClient
             IWSSchemaProviderPtr schemaProvider = nullptr,
             IHttpHandlerPtr customHandler = nullptr
             );
+
+        //! Parses repository URL to WSRepository. Includes server URL, repository ID, location and plugin ID.
+        //! @param[in] url - URL to repository
+        //! @param[out] remainingPathOut - remaining URL path and/or query after repository identifier
+        //! @return parsed WSRepository or invalid if there was an error
+        WSCLIENT_EXPORT static WSRepository ParseRepositoryUrl(Utf8StringCR url, Utf8StringP remainingPathOut = nullptr);
 
         //! Set limit for paralel file downloads. Default is 0 - no limit. Useful for older servers that could not cope with multiple
         //! file downloads at once.
@@ -318,6 +342,15 @@ struct WSRepositoryClient : public IWSRepositoryClient
 
         WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
             (
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override;
+
+        WSCLIENT_EXPORT AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
             JsonValueCR objectCreationJson,
             BeFileNameCR filePath = BeFileName(),
             HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,

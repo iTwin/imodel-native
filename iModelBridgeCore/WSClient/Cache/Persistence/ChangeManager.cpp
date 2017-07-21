@@ -41,7 +41,8 @@ RelationshipInfoManager& relationshipInfoManager,
 FileInfoManager& fileInfoManager,
 ChangeInfoManager& changeInfoManager,
 FileStorage& fileStorage,
-RootManager& rootManager
+RootManager& rootManager,
+ECInstanceKeyMultiMap& activeUploadKeys
 ) :
 m_dbAdapter(&dbAdapter),
 m_instanceHelper(&instanceHelper),
@@ -53,7 +54,7 @@ m_fileInfoManager(&fileInfoManager),
 m_changeInfoManager(&changeInfoManager),
 m_fileStorage(&fileStorage),
 m_rootManager(&rootManager),
-m_isSyncActive(false)
+m_activeUploadKeys(&activeUploadKeys)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -67,17 +68,47 @@ Utf8String ChangeManager::CreateRemoteId()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-bool ChangeManager::IsSyncActive() const
+bool ChangeManager::IsUploadActive(ECInstanceKeyCR instanceKey) const
     {
-    return m_isSyncActive;
+    if (!instanceKey.IsValid())
+        return false;
+    for (auto it = m_activeUploadKeys->find(instanceKey.GetECClassId()); it != m_activeUploadKeys->end(); it++)
+        if (it->second == instanceKey.GetECInstanceId())
+            return true;
+    return false;
     }
-
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-void ChangeManager::SetSyncActive(bool active)
+
+const ECInstanceKeyMultiMap& ChangeManager::GetUploadingInstances() const
     {
-    m_isSyncActive = active;
+    return *m_activeUploadKeys;
+    }
+
+/*----------------`----------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+void ChangeManager::SetUploadActive(ECInstanceKeyCR instanceKey, bool active)
+    {
+    if (!instanceKey.IsValid())
+        return;
+
+    if (active)
+        {
+        if (!IsUploadActive(instanceKey))
+            m_activeUploadKeys->Insert(instanceKey.GetECClassId(), instanceKey.GetECInstanceId());
+        }
+    else
+        {
+        for (auto it = m_activeUploadKeys->find(instanceKey.GetECClassId()); it != m_activeUploadKeys->end();)
+            {
+            if (it->second == instanceKey.GetECInstanceId())
+                it = m_activeUploadKeys->erase(it);
+            else
+                it++;
+            }
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -220,7 +251,7 @@ BentleyStatus ChangeManager::RevertModifiedObject(ECInstanceKeyCR instance)
         return ERROR;
         }
 
-    if (IsSyncActive())
+    if (IsUploadActive(instance))
         {
         BeAssert(false && "Change reverting while syncing is not implemented");
         return ERROR;
@@ -250,7 +281,7 @@ BentleyStatus ChangeManager::DeleteObject(ECInstanceKeyCR instanceKey, SyncStatu
         return ERROR;
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
+    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsUploadActive(instanceKey))
         {
         BeAssert(false && "Cannot delete changed object while syncing");
         return ERROR;
@@ -334,7 +365,7 @@ BentleyStatus ChangeManager::ModifyFile(ECInstanceKeyCR instanceKey, BeFileNameC
         return ERROR;
 
     FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
-    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
+    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsUploadActive(instanceKey))
         {
         BeAssert(false && "Cannot change modified file while syncing");
         return ERROR;
@@ -364,7 +395,7 @@ BentleyStatus ChangeManager::ModifyFileName(ECInstanceKeyCR instanceKey, Utf8Str
     {
     FileInfo info = m_fileInfoManager->ReadInfo(instanceKey);
 
-    if (IsSyncActive())
+    if (IsUploadActive(instanceKey))
         {
         BeAssert(false && "Cannot rename file while syncing");
         return ERROR;
@@ -472,7 +503,7 @@ SyncStatus syncStatus
         return ERROR;
         }
 
-    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsSyncActive())
+    if (info.GetChangeStatus() != ChangeStatus::NoChange && IsUploadActive(relationshipKey))
         {
         BeAssert(false && "Cannot delete relationship while syncing");
         return ERROR;

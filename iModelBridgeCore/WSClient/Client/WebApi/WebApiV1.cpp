@@ -171,7 +171,7 @@ Utf8String WebApiV1::GetMaxWebApi() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut)
+BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository& repositoryOut, Utf8StringCR serverUrl)
     {
     Utf8String dataSourceId = dataSourceJson["id"].asString();
     Utf8String dataSourceType = dataSourceJson["type"].asString();
@@ -200,6 +200,7 @@ BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository
     repositoryOut.SetId(std::move(dataSourceId));
     repositoryOut.SetLabel(dataSourceJson["label"].asString());
     repositoryOut.SetDescription(dataSourceJson["description"].asString());
+    repositoryOut.SetServerUrl(serverUrl);
 
     return SUCCESS;
     }
@@ -207,7 +208,7 @@ BentleyStatus WebApiV1::ParseRepository(JsonValueCR dataSourceJson, WSRepository
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    06/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(HttpResponse& response)
+WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(HttpResponse& response, Utf8StringCR serverUrl)
     {
     if (!response.IsSuccess() || !IsJsonResponse(response))
         {
@@ -222,7 +223,7 @@ WSRepositoriesResult WebApiV1::ResolveGetRepositoriesResponse(HttpResponse& resp
     for (JsonValueCR dataSourceJson : responseJson)
         {
         WSRepository repository;
-        if (SUCCESS != ParseRepository(dataSourceJson, repository))
+        if (SUCCESS != ParseRepository(dataSourceJson, repository, serverUrl))
             {
             return WSRepositoriesResult::Error(WSError::CreateServerNotSupportedError());
             }
@@ -421,9 +422,10 @@ ICancellationTokenPtr ct
     {
     HttpRequest request = CreateGetRepositoriesRequest(types, providerIds);
     request.SetCancellationToken(ct);
-    return request.PerformAsync()->Then<WSRepositoriesResult>([] (HttpResponse& httpResponse)
+    auto serverUrl = m_configuration->GetServerUrl();
+    return request.PerformAsync()->Then<WSRepositoriesResult>([serverUrl] (HttpResponse& httpResponse)
         {
-        return ResolveGetRepositoriesResponse(httpResponse);
+        return ResolveGetRepositoriesResponse(httpResponse, serverUrl);
         });
     }
 
@@ -941,6 +943,20 @@ ICancellationTokenPtr ct
 ) const
     {
     return CreateCompletedAsyncTask(WSChangesetResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+    }
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Petras.Sukys    05/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+AsyncTaskPtr<WSCreateObjectResult> WebApiV1::SendCreateObjectRequest
+(
+ObjectIdCR relatedObjectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
     }
 
 /*--------------------------------------------------------------------------------------+

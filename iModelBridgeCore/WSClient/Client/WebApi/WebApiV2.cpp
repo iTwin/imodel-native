@@ -223,6 +223,7 @@ WSRepositoriesResult WebApiV2::ResolveGetRepositoriesResponse(HttpResponse& resp
         repository.SetPluginId(GetNullableString(instance.GetProperties()["ECPluginID"]));
         repository.SetLabel(GetNullableString(instance.GetProperties()["DisplayLabel"]));
         repository.SetDescription(GetNullableString(instance.GetProperties()["Description"]));
+        repository.SetServerUrl(m_configuration->GetServerUrl().c_str());
 
         repositories.push_back(repository);
         }
@@ -263,7 +264,7 @@ WSUploadResponse WebApiV2::ResolveUploadResponse(HttpResponse& response) const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, const ObjectId* objectId) const
+WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, bool requestHadSkipToken, const ObjectId* objectId) const
     {
     HttpStatus status = response.GetHttpStatus();
     if (HttpStatus::OK == status ||
@@ -273,7 +274,10 @@ WSObjectsResult WebApiV2::ResolveObjectsResponse(HttpResponse& response, const O
 
         auto body = response.GetContent()->GetBody();
         auto eTag = response.GetHeaders().GetETag();
-        auto skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
+
+        Utf8String skipToken;
+        if (requestHadSkipToken)
+             skipToken = response.GetHeaders().GetValue(HEADER_SkipToken);
 
         return WSObjectsResult::Success(WSObjectsResponse(reader, body, status, eTag, skipToken));
         }
@@ -321,7 +325,7 @@ ICancellationTokenPtr ct
 
     return request.PerformAsync()->Then<WSObjectsResult>([this, objectId] (HttpResponse& httpResponse)
         {
-        return ResolveObjectsResponse(httpResponse, &objectId);
+        return ResolveObjectsResponse(httpResponse, false, &objectId);
         });
     }
 
@@ -470,15 +474,21 @@ ICancellationTokenPtr ct
     Utf8String url = GetUrl(CreateClassSubPath(query.GetSchemaName(), classes), query.ToQueryString());
     HttpRequest request = m_configuration->GetHttpClient().CreateGetJsonRequest(url);
 
+    bool requestHasSkipToken = false;
+    if (GetMaxWebApiVersion() >= BeVersion(2, 5) && !skipToken.empty())
+        {
+        request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
+        requestHasSkipToken = true;
+        }
+
     request.GetHeaders().SetIfNoneMatch(eTag);
-    request.GetHeaders().SetValue(HEADER_SkipToken, skipToken);
     request.SetConnectionTimeoutSeconds(WSRepositoryClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(WSRepositoryClient::Timeout::Transfer::GetObjects);
     request.SetCancellationToken(ct);
 
-    return request.PerformAsync()->Then<WSObjectsResult>([this] (HttpResponse& httpResponse)
+    return request.PerformAsync()->Then<WSObjectsResult>([this, requestHasSkipToken] (HttpResponse& httpResponse)
         {
-        return ResolveObjectsResponse(httpResponse);
+        return ResolveObjectsResponse(httpResponse, requestHasSkipToken);
         });
     }
 
@@ -527,16 +537,59 @@ HttpRequest::ProgressCallbackCR uploadProgressCallback,
 ICancellationTokenPtr ct
 ) const
     {
-    Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
-    Utf8String className = objectCreationJson["instance"]["className"].asString();
-    Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
+    return SendCreateObjectRequest(ObjectId(), objectCreationJson, filePath, uploadProgressCallback, ct);
+    }
 
-    Utf8String url = GetUrl(CreateClassSubPath(schemaName, className));
-    if (!instanceId.empty())
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++--------------------------------------------------------------------------------------*/
+AsyncTaskPtr<WSCreateObjectResult> WebApiV2::SendCreateObjectRequest
+(
+ObjectIdCR relatedObjectId,
+JsonValueCR objectCreationJson,
+BeFileNameCR filePath,
+HttpRequest::ProgressCallbackCR uploadProgressCallback,
+ICancellationTokenPtr ct
+) const
+    {
+    Utf8String url;
+    if (relatedObjectId.IsValid())
         {
-        url += "/" + instanceId;
-        }
+        Utf8String schemaName = relatedObjectId.schemaName;
+        Utf8String className = relatedObjectId.className;
+        Utf8String instanceId = relatedObjectId.remoteId;
 
+        url = GetUrl(CreateClassSubPath(schemaName, className));
+        if (!instanceId.empty())
+            url += "/" + instanceId;
+
+        auto createdClassName = objectCreationJson["instance"]["className"];
+
+        auto createdClassSchema = objectCreationJson["instance"]["schemaName"];
+
+        if (createdClassName.empty() || createdClassSchema.empty())
+            {
+            BeAssert(false && "Invalid object creation JSON: no class name or schema name defined");
+            return CreateCompletedAsyncTask(WSCreateObjectResult::Error(WSError::CreateFunctionalityNotSupportedError()));
+            }
+
+        url += "/";
+
+        if (schemaName.compare(createdClassSchema.asCString()) != 0 )
+            url += createdClassSchema.asString() + ".";
+
+        url += createdClassName.asString();
+        }
+    else
+        {
+        Utf8String schemaName = objectCreationJson["instance"]["schemaName"].asString();
+        Utf8String className = objectCreationJson["instance"]["className"].asString();
+        Utf8String instanceId = objectCreationJson["instance"]["instanceId"].asString();
+
+        url = GetUrl(CreateClassSubPath(schemaName, className));
+        if (!instanceId.empty())
+            url += "/" + instanceId;
+        }
     ChunkedUploadRequest request("POST", url, m_configuration->GetHttpClient());
 
     request.SetHandshakeRequestBody(HttpStringBody::Create(Json::FastWriter().write(objectCreationJson)), "application/json");

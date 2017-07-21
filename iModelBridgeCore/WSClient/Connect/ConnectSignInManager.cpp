@@ -336,7 +336,7 @@ AuthenticationHandlerPtr ConnectSignInManager::GetAuthenticationHandler(Utf8Stri
     Utf8String rpUri = "https://connect-wsg20.bentley.com";
 
     auto handler = UrlProvider::GetSecurityConfigurator(httpHandler);
-    return std::make_shared<ConnectAuthenticationHandler>(serverUrl, GetTokenProvider(rpUri), handler);
+    return std::make_shared<ConnectAuthenticationHandler>(serverUrl, GetTokenProvider(rpUri), handler, false);
     }
 
 /*--------------------------------------------------------------------------------------+

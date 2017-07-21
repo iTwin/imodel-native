@@ -82,6 +82,7 @@ struct WSError : public AsyncError
         static bool DoesStringFieldExist(RapidJsonValueCR json, Utf8CP name);
         static Utf8CP GetOptionalString(RapidJsonValueCR json);
         static Id ErrorIdFromString(Utf8StringCR errorIdString);
+        static Id GetErrorIdFromString(Utf8StringCR errorIdString);
         static Utf8String FormatDescription(Utf8StringCR errorMessage, Utf8StringCR errorDescription);
 
         BentleyStatus ParseBody(HttpResponseCR httpResponse);
@@ -89,6 +90,7 @@ struct WSError : public AsyncError
         BentleyStatus ParseJsonError(JsonValueCR jsonError, HttpStatus status);
         BentleyStatus ParseJsonError(RapidJsonValueCR jsonError, HttpStatus status);
         BentleyStatus ParseXmlError(HttpResponseCR httpResponse);
+        BentleyStatus ParseXmlAzureError(HttpResponseCR httpResponse, struct BeXmlDom& xmlDom);
 
         void SetStatusServerNotSupported();
         void SetStatusReceivedError(HttpErrorCR httpError, Id errorId, Utf8StringCR errorMessage, Utf8StringCR errorDescription);

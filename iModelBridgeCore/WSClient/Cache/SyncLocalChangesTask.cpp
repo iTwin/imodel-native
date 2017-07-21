@@ -51,9 +51,23 @@ void SyncLocalChangesTask::_OnExecute()
         }
 
     m_serverInfo = m_ds->GetServerInfo(txn);
+
+    m_instancesStillInSync.clear();
+
+    for (auto changeGroup : m_changeGroups)
+        SetUploadActiveForChangeGroup(txn, *changeGroup, true);
+
     txn.Commit();
 
-    SyncNext();
+    SyncNext()->Then(m_ds->GetCacheAccessThread(), [=]
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        for (auto instance : m_instancesStillInSync)
+            txn.GetCache().GetChangeManager().SetUploadActive(instance, false);
+        m_instancesStillInSync.clear();
+
+        txn.Commit();
+        });
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -130,31 +144,29 @@ void SyncLocalChangesTask::OnSyncDone()
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::SyncNext()
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncNext()
     {
-    if (IsTaskCanceled()) return;
+    if (IsTaskCanceled()) return CreateCompletedAsyncTask();
 
     if (m_changeGroupIndexToSyncNext >= m_changeGroups.size())
         {
         ReportFinalProgress();
         OnSyncDone();
-        return;
+        return CreateCompletedAsyncTask();
         }
 
-    ChangeGroupPtr changeGroup = m_changeGroups[m_changeGroupIndexToSyncNext];
-
+    m_currentChangeGroup = m_changeGroups[m_changeGroupIndexToSyncNext];
     AsyncTaskPtr<void> task;
-    if (CanSyncChangeset(*changeGroup))
+    if (CanSyncChangeset(*m_currentChangeGroup))
         {
         task = SyncNextChangeset();
         }
     else
         {
-        m_changeGroupIndexToSyncNext++;
-        task = SyncChangeGroup(changeGroup);
+        task = SyncNextChangeGroup();
         }
 
-    task->Then(m_ds->GetCacheAccessThread(), [=]
+    return task->Then(m_ds->GetCacheAccessThread(), [=]
         {
         SyncNext();
         });
@@ -181,10 +193,15 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeset()
 
         auto body = HttpStringBody::Create(std::make_shared<Utf8String>(changeset->ToRequestString()));
         ResponseGuardPtr guard = CreateResponseGuard(nullptr, false); // TODO: label
+        txn.Commit();
 
         m_ds->GetClient()->SendChangesetRequest(body, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSChangesetResult result)
             {
+            auto txn = m_ds->StartCacheTransaction();
+            for (auto changeGroup : *changesetChangeGroups)
+                SetUploadActiveForChangeGroup(txn, *changeGroup, false);
+
             if (!result.IsSuccess())
                 {
                 SetError(result.GetError());
@@ -297,6 +314,41 @@ AsyncTaskPtr<bool> SyncLocalChangesTask::ShouldSyncObjectAndFileCreationSeperate
         m_ds->m_sessionInfo->repositorySupportsFileAccessUrl.reset(new bool(supportsFileAccessUrl));
         return supportsFileAccessUrl;
         });
+    }
+
+AsyncTaskPtr<void> SyncLocalChangesTask::SyncNextChangeGroup()
+    {
+
+    m_changeGroupIndexToSyncNext++;
+    return SyncChangeGroup(m_currentChangeGroup)->Then(m_ds->GetCacheAccessThread(), [=]
+        {
+        auto txn = m_ds->StartCacheTransaction();
+        SetUploadActiveForChangeGroup(txn, *m_currentChangeGroup, false);
+        txn.Commit();
+        });
+    }
+
+void SyncLocalChangesTask::SetUploadActiveForChangeGroup(CacheTransactionCR txn, ChangeGroupCR changeGroup, bool active)
+    {
+    auto objectKey = changeGroup.GetObjectChange().GetInstanceKey();
+    auto relationshipKey = changeGroup.GetRelationshipChange().GetInstanceKey();
+    auto fileKey = changeGroup.GetFileChange().GetInstanceKey();
+
+    if (objectKey.IsValid())
+        {
+        m_instancesStillInSync.erase(objectKey);
+        txn.GetCache().GetChangeManager().SetUploadActive(objectKey, active);
+        }
+    if (relationshipKey.IsValid())
+        {
+        m_instancesStillInSync.erase(relationshipKey);
+        txn.GetCache().GetChangeManager().SetUploadActive(relationshipKey, active);
+        }
+    if (fileKey.IsValid())
+        {
+        m_instancesStillInSync.erase(fileKey);
+        txn.GetCache().GetChangeManager().SetUploadActive(fileKey, active);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -413,7 +465,7 @@ AsyncTaskPtr<void> SyncLocalChangesTask::SyncObjectWithFileCreation(ChangeGroupP
         Json::Value creationJson;
         changeset->ToRequestJson(creationJson);
 
-        ResponseGuardPtr guard = CreateResponseGuard(objectLabel, 0 != currentFileSize);
+        ResponseGuardPtr guard = CreateResponseGuard(objectLabel, 0 != currentFileSize, (double)currentFileSize);
 
         m_ds->GetClient()->SendCreateObjectRequest(creationJson, filePath, guard->GetProgressCallback(), guard)
             ->Then(m_ds->GetCacheAccessThread(), [=] (WSCreateObjectResult& creationResult)
@@ -889,7 +941,7 @@ WSChangeset::ChangeState SyncLocalChangesTask::ToWSChangesetChangeState(IChangeM
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8StringCPtr label) const
+void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8StringCPtr label, double currentFileTotalBytes) const
     {
     if (!m_onProgressCallback)
         return;
@@ -897,10 +949,14 @@ void SyncLocalChangesTask::ReportProgress(double currentFileBytesUploaded, Utf8S
     double synced = (double) (m_changeGroupIndexToSyncNext - 1) / m_changeGroups.size();
     synced = trunc(synced * 100) / 100;
 
+    ECInstanceKey currentFileKey;
+    if (nullptr != m_currentChangeGroup)
+        currentFileKey = m_currentChangeGroup->GetFileChange().GetInstanceKey();
+
     m_onProgressCallback({
         {m_uploadBytesProgress.current + currentFileBytesUploaded, m_uploadBytesProgress.total},
-        label, 
-        synced});
+        label,
+        synced, currentFileKey, {currentFileBytesUploaded, currentFileTotalBytes}});
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -917,15 +973,15 @@ void SyncLocalChangesTask::ReportFinalProgress() const
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    12/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR label, bool isFileBeingUploaded) const
+ResponseGuardPtr SyncLocalChangesTask::CreateResponseGuard(Utf8StringCR label, bool isFileBeingUploaded, double currentFileTotalBytes) const
     {
     auto labelPtr = std::make_shared<const Utf8String>(label);
-    ReportProgress(0, labelPtr);
+    ReportProgress(0, labelPtr, 0);
 
     HttpRequest::ProgressCallback onProgress;
 
     if (isFileBeingUploaded)
-        onProgress = std::bind(&SyncLocalChangesTask::ReportProgress, this, std::placeholders::_1, labelPtr);
+        onProgress = std::bind(&SyncLocalChangesTask::ReportProgress, this, std::placeholders::_1, labelPtr, currentFileTotalBytes);
 
     return ResponseGuard::Create(GetCancellationToken(), onProgress);
     }
