@@ -524,10 +524,6 @@ BentleyStatus DbMap::CreateOrUpdateIndexesInDb(SchemaImportContext& ctx) const
             //indexes on virtual tables are ignored
             if (index.GetTable().GetType() != DbTable::Type::Virtual)
                 {
-                if (index.GetName().EqualsIAscii("ix_func_DrawingGraphicRepresentsFunctionalElement_source") ||
-                    index.GetName().EqualsIAscii("ix_bis_ElementRefersToElements_source"))
-                    printf("hello");
-
                 Utf8String ddl, comparableIndexDef;
                 if (SUCCESS != DbSchemaPersistenceManager::BuildCreateIndexDdl(ddl, comparableIndexDef, m_ecdb, index))
                     return ERROR;
