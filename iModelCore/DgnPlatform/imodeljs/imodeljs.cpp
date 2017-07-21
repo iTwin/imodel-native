@@ -270,13 +270,8 @@ void imodeljs::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesColle
         JsonValueR pvalue = json[prop.GetValueAccessor().GetAccessString(prop.GetValueAccessor().GetDepth()-1)];
 
         if (prop.HasChildValues())
-            {
-            DgnDbStatus status;
             GetECValuesCollectionAsJson(pvalue, *prop.GetChildValues());
-            }
         else 
-            {
             ECUtils::ConvertECValueToJson(pvalue, prop.GetValue());
-            }
         }
     }
