@@ -306,9 +306,6 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
     ctx.SetPhase(SchemaImportContext::Phase::MappingRelationships);
     for (ECRelationshipClassCP rootRelationshipClass : rootRelationshipList)
         {
-
-
-
         if (ClassMappingStatus::Error == MapClass(ctx, *rootRelationshipClass))
             return ERROR;
         }

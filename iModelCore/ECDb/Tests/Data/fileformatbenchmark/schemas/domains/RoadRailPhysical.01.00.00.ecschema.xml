@@ -1,0 +1,827 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="RoadRailPhysical" alias="rrphys" version="01.00.00" description="Base schema for the Road and Rail domains." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="Costing" version="01.00.00" alias="cost"/>
+    <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
+    <ECSchemaReference name="RoadRailAlignment" version="01.00.00" alias="rralign"/>
+    
+    <KindOfQuantity typeName="CURRENCY" displayLabel="CURRENCY" persistenceUnit="ONE" relativeError="1e-2" />
+    <KindOfQuantity typeName="DIAMETER" displayLabel="DIAMETER" persistenceUnit="M" relativeError="1e-2" />    
+    <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />    
+    <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="LENGTH_SHORT" persistenceUnit="M" relativeError="1e-2" />
+    <KindOfQuantity typeName="PLANE_ANGLE" displayLabel="PLANE_ANGLE" persistenceUnit="RADIAN" relativeError="1e-2" />
+    <KindOfQuantity typeName="PERCENT" displayLabel="PERCENT" persistenceUnit="PERCENT" relativeError="1e-2" />
+
+    <ECEntityClass typeName="RoadRailCategoryModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <!-- BEGIN CustomAttributes and Enums -->    
+    <ECCustomAttributeClass typeName="PropertyPaneHint" appliesTo="Any">
+        <ECProperty propertyName="UserDefinedOrDerived" typeName="boolean"/>
+    </ECCustomAttributeClass>
+    <ECEnumeration typeName="PhysicalElement_Status" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Existing"/>
+        <ECEnumerator value="1" displayLabel="Proposed"/>
+        <ECEnumerator value="2" displayLabel="Construction"/>
+    </ECEnumeration>
+    <!-- END CustomAttributes and Enums -->
+
+    <!-- BEGIN Boundary element classes -->
+    <ECEntityClass typeName="BoundaryElement" modifier="Abstract">
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ConstraintBoundary" modifier="Sealed" displayLabel="Constraint Zone">
+        <BaseClass>BoundaryElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ParcelBoundary" modifier="Sealed" displayLabel="Parcel">
+        <BaseClass>BoundaryElement</BaseClass>
+        <ECProperty propertyName="OwnerName" typeName="string" displayLabel="Owner Name" />
+        <ECProperty propertyName="Address" typeName="string" displayLabel="Address" />
+        <ECProperty propertyName="Descr" typeName="string" displayLabel="Description" />
+        <ECProperty propertyName="AssessedValue" typeName="double" displayLabel="Assessed Value" kindOfQuantity="CURRENCY" />
+    </ECEntityClass>
+    <!-- END Boundary element classes -->
+
+    <!-- BEGIN PathwayElement Class Hierarchy -->
+    <ECEntityClass typeName="PathwayElement" modifier="Abstract" description="A long, narrow physical stretch specially constructed for a particular travel type." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearElementSource</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="MainAlignment" relationshipName="PathwayRefersToMainAlignment" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PathwayRefersToMainAlignment" strength="referencing" strengthDirection="Forward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="may be refered to by N Pathways">
+            <Class class="PathwayElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refer to 1 Alignment">
+            <Class class="rralign:Alignment"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Roadway" modifier="Sealed" description="A Pathway with a smoothed or paved surface, made for traveling by motor vehicle, carriage, etc." >
+        <BaseClass>PathwayElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="Railway" modifier="Sealed" description="A Pathway with a track or set of tracks along which passenger and freight trains run." >
+        <BaseClass>PathwayElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <!-- END PathwayElement Class Hierarchy -->
+    
+    <!-- BEGIN TravelwaySegment Element Class Hierarchy -->
+    <ECEntityClass typeName="TravelwaySegmentElement" modifier="Abstract" description="Base class for segments of a Travelway, which is the section of the Pathway in direct contact with the moving objects (e.g. motor vehicles, trains, etc)." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TravelwayIndex" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="RegularTravelwaySegment" modifier="Sealed" description="Physical segment of a Travelway, with a constant definition." >
+        <BaseClass>TravelwaySegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="TravelwayDefinition" relationshipName="RegularSegmentRefersToTravelwayDefinition" direction="Forward"/>
+        <ECProperty propertyName="TravelwayDropInterval" typeName="double" kindOfQuantity="lr:LENGTH" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RegularSegmentRefersToTravelwayDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
+            <Class class="RegularTravelwaySegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 cross-section">
+            <Class class="TravelwayDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="TravelwayTransition" modifier="Sealed" description="Physical segment of a Travelway, with a variable Travelway definition.">
+        <BaseClass>TravelwaySegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="PathFoundationElement" modifier="Abstract" description="Base class for Road/Rail foundation elements." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PathwayAssemblesElements" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is assembled by 1 pathway">
+            <Class class="PathwayElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N elements">
+            <Class class="bis:PhysicalElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END TravelwaySegmentElement Class Hierarchy -->
+
+    <!-- BEGIN RoadIntersectionLeg Element Class Hierarchy -->
+    <ECEntityClass typeName="TravelwayIntersectionSegmentElement" modifier="Abstract" description="Physical segment of a Travelway connected to an intersection between alignments." >
+        <BaseClass>TravelwaySegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="Intersection" relationshipName="IntersectionSegmentRefersToIntersection" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="IntersectionSegmentRefersToIntersection" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 intersection">
+            <Class class="TravelwayIntersectionSegmentElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by zero or more intersection legs">
+            <Class class="AlignmentIntersectionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RoadIntersectionLegElement" modifier="Abstract" description="Physical segment of the Travelway of a road connected to an intersection." >
+        <BaseClass>TravelwayIntersectionSegmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="IntersectionLegDefinition" relationshipName="RoadIntersectionLegRefersToDefinition" direction="Forward"/>
+    </ECEntityClass>    
+    <ECRelationshipClass typeName="RoadIntersectionLegRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
+            <Class class="RoadIntersectionLegElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 travelway definition">
+            <Class class="TravelwayDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END RoadSegmentElement Class Hierarchy -->
+
+    <!-- BEGIN PathFoundationSegment Class Hierarchy -->
+    <ECEnumeration typeName="TravelwaySide" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Left"/>
+        <ECEnumerator value="1" displayLabel="Right"/>
+    </ECEnumeration>
+    <ECEntityClass typeName="PathFoundationSegment" modifier="None" description="Generic class for Road/Rail foundation segment elements." >
+        <BaseClass>PathFoundationElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="PathFoundationIntersectionSegment" modifier="None" description="Generic class for Road/Rail foundation intersection elements." >
+        <BaseClass>PathFoundationElement</BaseClass>
+    </ECEntityClass>    
+    <ECEntityClass typeName="EndConditionSegment" modifier="None" description="Generic class for Road/Rail end-condition elements." >
+        <BaseClass>PathFoundationElement</BaseClass>
+        <ECNavigationProperty propertyName="EndConditionDefinition" relationshipName="EndConditionSegmentRefersToDefinition" direction="Forward"/>
+        <ECProperty propertyName="TravelwaySide" typeName="TravelwaySide"/>
+        <ECProperty propertyName="TravelwayIndex" typeName="int"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="EndConditionSegmentRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
+            <Class class="EndConditionSegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
+            <Class class="EndConditionDefinition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="BufferSegment" modifier="None" description="Generic class for Road/Rail buffer elements." >
+        <BaseClass>PathFoundationElement</BaseClass>
+        <ECNavigationProperty propertyName="BufferDefinition" relationshipName="BufferSegmentRefersToDefinition" direction="Forward"/>
+        <ECProperty propertyName="TravelwaySide" typeName="TravelwaySide"/>
+        <ECProperty propertyName="TravelwayIndex" typeName="int"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BufferSegmentRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N segments">
+            <Class class="BufferSegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
+            <Class class="BufferDefinition"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END PathFoundationSegment Class Hierarchy -->
+
+    <!-- BEGIN AlignmentIntersectionElement Class Hierarchy -->
+    <ECEntityClass typeName="AlignmentIntersectionElement" modifier="Abstract" description="Base class for Physical intersections driven by alignments.">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadIntersectionElement" modifier="Abstract" description="Base class for Physical road intersections.">
+        <BaseClass>AlignmentIntersectionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadCrossing" modifier="Sealed" description="Physical road crossing-intersection.">
+        <BaseClass>RoadIntersectionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="BranchIntersection" modifier="Sealed" description="Physical road branching-intersection.">
+        <BaseClass>RoadIntersectionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Roundabout" modifier="Sealed" description="Physical road roundabout.">
+        <BaseClass>RoadIntersectionElement</BaseClass>
+    </ECEntityClass>
+    <!-- END AlignmentIntersectionElement Class Hierarchy -->
+
+    <!-- BEGIN Tunnel-related Classes -->
+    <ECEntityClass typeName="Tunnel" modifier="Sealed" description="Physical tunnel which a segment of a road or rail go through." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearElement</BaseClass>
+    </ECEntityClass>
+    <!-- END Tunnel-related Classes -->
+    
+    <!-- BEGIN FurnitureElement Class Hierarchy -->
+    <ECEntityClass typeName="FurnitureElement" modifier="Abstract" description="Physical element supplementing Road and Rail models.">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECNavigationProperty propertyName="FurnitureDefinition" relationshipName="FurnitureRefersToDefinition" direction="Forward"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="DiscreteFurnitureElement" modifier="Abstract" description="Base class for Furniture Elements with a single placement-point.">
+        <BaseClass>FurnitureElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GenericDiscreteFurniture" modifier="Sealed" description="Generic Furniture Element with a single placement-point.">
+        <BaseClass>DiscreteFurnitureElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="LinearlyLocatedFurnitureElement" modifier="Abstract" description="Base class for Furniture Elements linearly located.">
+        <BaseClass>FurnitureElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+    </ECEntityClass>    
+    <ECEntityClass typeName="LinearlyLocatedDiscreteFurnitureElement" modifier="Abstract" description="Base class for Furniture Elements with a single linearly located point.">
+        <BaseClass>LinearlyLocatedFurnitureElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GenericLinearlyLocatedDiscreteFurniture" modifier="Sealed" description="Generic Furniture Element with a single linearly located point.">
+        <BaseClass>LinearlyLocatedDiscreteFurnitureElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="LinearFurnitureElement" modifier="Abstract" description="Base class for Linear Furniture Elements placed along a Linear-Element.">
+        <BaseClass>LinearlyLocatedFurnitureElement</BaseClass>        
+        <ECProperty propertyName="ForceLastGeometry" typeName="boolean"/>
+        <ECProperty propertyName="Spacing" typeName="double" kindOfQuantity="lr:LENGTH"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="GenericLinearFurniture" modifier="Sealed" description="Generic Linear Furniture element.">
+        <BaseClass>LinearFurnitureElement</BaseClass>
+    </ECEntityClass>
+    <!-- END FurnitureElement Class Hierarchy -->
+
+    <!-- BEGIN FurnitureDefinitionElement Class Hierarchy -->
+    <ECEntityClass typeName="FurnitureDefinitionElement" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECProperty propertyName="Thumbnail" typeName="binary" />
+        <ECProperty propertyName="LightsJson" typeName="string" />
+        <ECNavigationProperty propertyName="ElementGeometryDefinition" relationshipName="FurnitureDefinitionRefersToGeometryDefinition" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="FurnitureRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Abstract">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="is referred by N furniture elements">
+            <Class class="FurnitureElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 furniture definition">
+            <Class class="FurnitureDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="GenericFurnitureDefinition" modifier="Sealed">
+        <BaseClass>FurnitureDefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GuardRailFurnitureDefinitionElement" modifier="Sealed">
+        <BaseClass>FurnitureDefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="FurnitureDefinitionRefersToGeometryDefinition" strength="referencing" modifier="Abstract">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to 1 Geometry definition">
+            <Class class="FurnitureDefinitionElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="is referred by zero or more furniture definitions">
+            <Class class="GeometryDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="FurnitureAssemblyElement" modifier="Abstract" description="Top-level element, assemblying other furniture elements." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GenericFurnitureAssembly" modifier="Sealed" description="Generic top-level element, assemblying other furniture elements." >
+        <BaseClass>FurnitureAssemblyElement</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="FurnitureAssemblyOwnsParts" strength="embedding" modifier="None">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is assembled by 1 furniture assembly">
+            <Class class="FurnitureAssemblyElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N furniture elements">
+            <Class class="FurnitureElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END FurnitureDefinitionElement Class Hierarchy -->
+
+    <!-- BEGIN GeometryDefinition Class Hierarchy -->
+    <ECEntityClass typeName="GeometryDefinitionElement" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="TemplateGeometryDefinitionElement" modifier="Abstract">
+        <BaseClass>GeometryDefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="GenericTemplateGeometryDefinition" modifier="Sealed">
+        <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="RepetitiveTemplateGeometryDefinitionElement" modifier="Abstract">
+        <BaseClass>TemplateGeometryDefinitionElement</BaseClass>
+        <ECProperty propertyName="DefaultSpacing" typeName="double" kindOfQuantity="LENGTH"/>
+        <ECNavigationProperty propertyName="StartGeometryPart" relationshipName="PartEncapsulatedAsStartGeometry" direction="Backward" />
+        <ECNavigationProperty propertyName="EndGeometryPart" relationshipName="PartEncapsulatedAsEndGeometry" direction="Backward" />
+        <ECNavigationProperty propertyName="RepeatedGeometryPart" relationshipName="PartEncapsulatedAsRepeatedGeometry" direction="Backward" />
+        <ECNavigationProperty propertyName="ExtrudedGeometryPart" relationshipName="PartEncapsulatedAsExtrudedGeometry" direction="Backward" />
+    </ECEntityClass>
+    <ECEntityClass typeName="GenericRepetitiveTemplateGeometryDefinition" modifier="Sealed">
+        <BaseClass>RepetitiveTemplateGeometryDefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="PartEncapsulatedAsStartGeometry" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
+            <Class class="bis:GeometryPart"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
+            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PartEncapsulatedAsEndGeometry" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
+            <Class class="bis:GeometryPart"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
+            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PartEncapsulatedAsRepeatedGeometry" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
+            <Class class="bis:GeometryPart"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
+            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PartEncapsulatedAsExtrudedGeometry" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="encapsulates 1 part">
+            <Class class="bis:GeometryPart"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="encapsulated by 1 definition">
+            <Class class="RepetitiveTemplateGeometryDefinitionElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="TemplateGeometryDefinitionEncapsulatesParts" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementEncapsulatesElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is encapsulated by a definition">
+            <Class class="TemplateGeometryDefinitionElement"/>
+        </Source>
+        <Target multiplicity="(0..N)" polymorphic="false" roleLabel="encapsulates N parts">
+            <Class class="bis:GeometryPart"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="GeneratedGeometryDefinitionElement" modifier="Abstract">
+        <BaseClass>GeometryDefinitionElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="LinearlyDroppedGeometryDefinitionElement" modifier="Abstract">
+        <BaseClass>GeneratedGeometryDefinitionElement</BaseClass>
+        <ECProperty propertyName="DropInterval" typeName="double" kindOfQuantity="LENGTH" />
+    </ECEntityClass>
+    <ECEntityClass typeName="GeneratedSurfaceDefinitionElement" modifier="Abstract">
+        <BaseClass>GeneratedGeometryDefinitionElement</BaseClass>
+    </ECEntityClass>
+    <!-- END GeometryDefinitionElement Class Hierarchy -->
+    
+    <!-- BEGIN General Aspects classes -->
+    <ECEntityClass typeName="StatusAspect" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements whose status needs to be tracked.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Status" typeName="PhysicalElement_Status" displayLabel="Status" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsStatusAspect" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 element">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="owns 1 status-aspect">
+            <Class class="StatusAspect"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PhysicalElementDataCache" modifier="Sealed" description="UniqueAspect to be applied to Physical Elements to hold general cached-data.">
+        <BaseClass>bis:ElementUniqueAspect</BaseClass>
+        <ECProperty propertyName="TerrainClippingMask" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="LENGTH" />
+        <ECProperty propertyName="DerivedPropertiesCache" typeName="string" description="Json string containing derived properties, typically computed by an EGA"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ElementOwnsDataCache" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsUniqueAspect</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 element">
+            <Class class="bis:Element"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="owns 1 data-cache aspect">
+            <Class class="PhysicalElementDataCache"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END General Aspects classes -->
+
+    <!-- BEGIN Road Design-Speed classes -->
+    <ECEntityClass typeName="RoadwayStandardsModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadDesignSpeedStandards">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadDesignSpeedDefinitionTableModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadDesignSpeedDefinitionTable">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="UnitSystem" typeName="int" />
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadDesignSpeedDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadDesignSpeedDefinition">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="SideSlopeFrictionFactor" typeName="double" />
+        <ECProperty propertyName="DesignSpeed" typeName="double" />
+        <ECProperty propertyName="MaxTransitionRadius" typeName="double" />
+        <ECProperty propertyName="DesirableSpiralLength" typeName="double" />
+        <ECProperty propertyName="Type1CrestVertical" typeName="double" />
+        <ECProperty propertyName="Type3SagVertical" typeName="double" />
+        <ECProperty propertyName="CrestVerticalPsd" typeName="double" />
+        <ECProperty propertyName="AverageRunningSpeed" typeName="double" />
+        <ECProperty propertyName="MaximumRelativeGradient" typeName="double" />
+        <ECProperty propertyName="CrestK_SSD" typeName="double" />
+        <ECProperty propertyName="SagK_SSD" typeName="double" />
+        <ECProperty propertyName="IgnoreLength" typeName="double" />        
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RoadDesignSpeedRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N design-speeds">
+            <Class class="RoadDesignSpeed"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
+            <Class class="RoadDesignSpeedDefinition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RoadDesignSpeed" modifier="Sealed"  displayLabel="Design Speed" description="Linearly located property of a Roadway specifying design-speeds along it." >
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="RoadDesignSpeedDefinition" relationshipName="RoadDesignSpeedRefersToDefinition" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RoadwayOwnsDesignSpeeds" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 Roadway">
+            <Class class="Roadway"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N design speeds">
+            <Class class="RoadDesignSpeed"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END Road Design-Speed classes -->
+
+    <!-- BEGIN RoadClass classes -->
+    <ECEntityClass typeName="RoadClassStandards">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClassDefinitionTableModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClassDefinitionTable">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClassDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClassDefinition">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadClass" modifier="Sealed"  displayLabel="Classification" description="Linearly located property of a Roadway specifying road-class along it." >
+        <BaseClass>bis:InformationRecordElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedAttribution</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="RoadClassDefinition" relationshipName="RoadClassRefersToDefinition" direction="Forward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RoadClassRefersToDefinition" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="false" roleLabel="is referred to by N road-classes">
+            <Class class="RoadClass"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 definition">
+            <Class class="RoadClassDefinition"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RoadwayOwnsRoadClasses" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:ElementOwnsChildElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is owned by 1 Roadway">
+            <Class class="Roadway"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N RoadClasses">
+            <Class class="RoadClass"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END RoadClass classes -->
+
+    <!-- BEGIN CrossSectionComponentDefinition classes -->
+    <!--ECEnumeration typeName="CrossSectionComponent_SubType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Undefined"/>
+        <ECEnumerator value="1" displayLabel="Dual-face barrier 1"/>
+        <ECEnumerator value="2" displayLabel="Dual-face barrier 2"/>
+        <ECEnumerator value="3" displayLabel="Single-face barrier 1"/>
+        <ECEnumerator value="4" displayLabel="Single-face barrier 2"/>
+        <ECEnumerator value="5" displayLabel="Barrier curb type 1"/>
+        <ECEnumerator value="6" displayLabel="Barrier curb type 2"/>
+        <ECEnumerator value="7" displayLabel="Barrier curb type 3"/>
+        <ECEnumerator value="8" displayLabel="Barrier curb type 4"/>
+        <ECEnumerator value="9" displayLabel="Curb and gutter type 1"/>
+        <ECEnumerator value="10" displayLabel="Curb and gutter type 2"/>
+        <ECEnumerator value="11" displayLabel="Driveway gutter"/>
+        <ECEnumerator value="12" displayLabel="Shoulder gutter"/>
+        <ECEnumerator value="13" displayLabel="Mountable concrete curb"/>
+        <ECEnumerator value="14" displayLabel="Bridge curb"/>
+        <ECEnumerator value="15" displayLabel="Monolithic sidewalk"/>
+        <ECEnumerator value="16" displayLabel="Curb sidewalk"/>
+        <ECEnumerator value="17" displayLabel="Slab sidewalk"/>
+        <ECEnumerator value="18" displayLabel="Wall"/>
+        <ECEnumerator value="19" displayLabel="Berm"/>
+        <ECEnumerator value="20" displayLabel="Ditch"/>
+        <ECEnumerator value="21" displayLabel="Bridge curb top origin"/>
+        <ECEnumerator value="22" displayLabel="Barrier curb type 1 top origin"/>
+        <ECEnumerator value="23" displayLabel="Single-face barrier 1 top origin"/>
+        <ECEnumerator value="24" displayLabel="Wall Fill"/>
+        <ECEnumerator value="25" displayLabel="Wall Cut"/>
+        <ECEnumerator value="26" displayLabel="Wall MSE Fill"/>
+        <ECEnumerator value="27" displayLabel="Wall MSE Cut"/>
+        <ECEnumerator value="1024" displayLabel="Buffer Segment"/>
+        <ECEnumerator value="1025" displayLabel="Buffer Shoulder"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="TravelwayComponent_Type" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Undefined"/>
+        <ECEnumerator value="1" displayLabel="User-defined"/>
+        <ECEnumerator value="10" displayLabel="Paving"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="BufferComponent_Type" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Undefined"/>
+        <ECEnumerator value="1" displayLabel="User-defined"/>
+        <ECEnumerator value="3" displayLabel="Barrier"/>
+        <ECEnumerator value="4" displayLabel="Curb"/>
+        <ECEnumerator value="5" displayLabel="Gutter"/>
+        <ECEnumerator value="6" displayLabel="Bridge girder"/>
+        <ECEnumerator value="7" displayLabel="Buffer"/>
+        <ECEnumerator value="8" displayLabel="Guardrail"/>
+        <ECEnumerator value="9" displayLabel="Paved-and-gravel shoulder"/>
+        <ECEnumerator value="11" displayLabel="Median"/>
+        <ECEnumerator value="12" displayLabel="Sidewalk"/>
+        <ECEnumerator value="14" displayLabel="Wall"/>
+        <ECEnumerator value="15" displayLabel="Ditch"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="PathFoundationComponent_Type" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="Undefined"/>
+        <ECEnumerator value="1" displayLabel="User-defined"/>
+        <ECEnumerator value="13" displayLabel="Sublayer"/>
+        <ECEnumerator value="17" displayLabel="Bridge deck"/>
+        <ECEnumerator value="18" displayLabel="Ballast"/>
+    </ECEnumeration-->
+    <ECEntityClass typeName="CrossSectionDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionPortionDefinitionElement" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionPortionDefinition" modifier="Sealed">
+        <BaseClass>CrossSectionPortionDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwayDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwayDefinitionElement" displayLabel="Travelway Template" modifier="Abstract">
+        <BaseClass>CrossSectionPortionDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadTravelwayDefinition" displayLabel="Travelway Template" modifier="Sealed">
+        <BaseClass>TravelwayDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionPortionBreakDownModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="EndConditionDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="EndConditionDefinition" displayLabel="End-condition Definition">
+        <BaseClass>CrossSectionPortionDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <!--<ECEntityClass typeName="PathFoundationDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="PathFoundationDefinition" displayLabel="Path Foundation Definition">
+        <BaseClass>CrossSectionPortionDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="BufferDefinitionModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass-->
+    <ECEntityClass typeName="BufferDefinition" displayLabel="Buffer Definition">
+        <BaseClass>CrossSectionPortionDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <!--ClassHasHandler xmlns="dgn.02.00"/-->
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <!--<ECEntityClass typeName="CrossSectionComponentElement" displayLabel="Component">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="SubType" typeName="CrossSectionComponent_SubType"/>
+        <ECProperty propertyName="Material" typeName="int"/>
+        <ECProperty propertyName="IsClosed" typeName="boolean"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="EndConditionComponent" displayLabel="End-condition Component">
+        <BaseClass>CrossSectionComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="IsInfiniteLength" typeName="boolean"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TravelwayComponent" displayLabel="Travelway Component">
+        <BaseClass>CrossSectionComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="TravelwayComponent_Type"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="BufferComponent" displayLabel="Buffer Component">
+        <BaseClass>CrossSectionComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="BufferComponent_Type"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PathFoundationComponent" displayLabel="Path Foundation Component">
+        <BaseClass>CrossSectionComponentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="PathFoundationComponent_Type"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionPoint" displayLabel="Point">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Coordinates" typeName="point2d"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CrossSectionParameter" displayLabel="Parameter">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="MinValue" typeName="double"/>
+        <ECProperty propertyName="MaxValue" typeName="double"/>
+        <ECProperty propertyName="BiasValue" typeName="double"/>
+        <ECProperty propertyName="Type" typeName="int"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CrossSectionParameterDependsOnPoints" strength="referencing" strengthDirection="backward" modifier="Sealed">
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N points">
+            <Class class="CrossSectionParameter"/>
+        </Source>
+        <Target multiplicity="(1..*)" polymorphic="true" roleLabel="refers to N parameters">
+            <Class class="CrossSectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CrossSectionParameterTargetsPointPairs" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <ECProperty propertyName="PairNumber" typeName="int"/>
+        <Source multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N parameters">
+            <Class class="CrossSectionParameter"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="refers to N points">
+            <Class class="CrossSectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CrossSectionConstraint" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementDrivesElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+            <LinkTableRelationshipMap xmlns="ECDbMap.01.00">
+                <AllowDuplicateRelationships>True</AllowDuplicateRelationships>
+            </LinkTableRelationshipMap>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Value" typeName="double"/>
+        <ECProperty propertyName="Type" typeName="int"/>
+        <Source multiplicity="(1..*)" polymorphic="true" roleLabel="drives by N points">
+            <Class class="CrossSectionPoint"/>
+        </Source>
+        <Target multiplicity="(1..*)" polymorphic="true" roleLabel="is driven by N points">
+            <Class class="CrossSectionPoint"/>
+        </Target>
+    </ECRelationshipClass-->
+    <!-- END CrossSectionDefinition classes -->
+    
+    <!-- BEGIN CrossSectionTemplate Element classes -->
+    <!--ECEntityClass typeName="CrossSectionTemplateElement" modifier="Abstract">
+        <BaseClass>bis:DefinitionElement</BaseClass>
+        <BaseClass>bis:ISubModeledElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Guid" typeName="string"/>
+        <ECProperty propertyName="Origin" typeName="point2d"/>
+        <ECProperty propertyName="Author" typeName="string"/>
+        <ECProperty propertyName="Description" typeName="string"/>
+        <ECProperty propertyName="LastUsed" typeName="dateTime"/>
+        <ECProperty propertyName="Thumbnail" typeName="binary"/>
+        <ECProperty propertyName="IsFavorite" typeName="boolean"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="RoadCrossSectionTemplate" displayLabel="Road Template">
+        <BaseClass>CrossSectionTemplateElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElevatedRoadCrossSectionTemplate" displayLabel="Deck Template">
+        <BaseClass>CrossSectionTemplateElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TrackCrossSectionTemplate" displayLabel="Road Template">
+        <BaseClass>CrossSectionTemplateElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElevatedTrackCrossSectionTemplate" displayLabel="Deck Template">
+        <BaseClass>CrossSectionTemplateElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="dgn.02.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass-->
+    <!-- END CrossSectionTemplate Element classes -->
+</ECSchema>

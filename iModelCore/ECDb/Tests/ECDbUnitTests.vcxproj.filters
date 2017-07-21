@@ -187,6 +187,9 @@
     <ClCompile Include="Performance\PerformanceECDbTests.cpp">
       <Filter>Performance</Filter>
     </ClCompile>
+    <ClCompile Include="Published\FileFormatCompatibilityTests.cpp">
+      <Filter>Published</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BackDoor\PublicAPI\BackDoor\ECDb\ECDbTests.h">

@@ -1,0 +1,511 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="BridgePhysical" alias="bphys" version="01.00.00" description="Base schema for Physical Bridges." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECDbMap" version="02.00" alias="ecdbmap"/>
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis"/>
+    <ECSchemaReference name="LinearReferencing" version="01.00.00" alias="lr"/>
+    <ECSchemaReference name="RoadRailPhysical" version="01.00.00" alias="rrp"/>
+    
+    <KindOfQuantity typeName="LENGTH" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />
+    <KindOfQuantity typeName="LENGTH_SHORT" displayLabel="LENGTH" persistenceUnit="M" relativeError="1e-2" />
+    <KindOfQuantity typeName="DIAMETER" displayLabel="DIAMETER" persistenceUnit="M" relativeError="1e-2" />
+    <KindOfQuantity typeName="PLANE_ANGLE" displayLabel="PLANE_ANGLE" persistenceUnit="RADIAN" relativeError="1e-2" />
+
+    <ECEntityClass typeName="BridgeCategoryModel">
+        <BaseClass>bis:DefinitionModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <!-- BEGIN CustomAttributes and Enums -->
+    <ECCustomAttributeClass typeName="BridgePiersForSuperstructure" appliesTo="Any">
+        <ECArrayProperty propertyName="BridgePierClassNames" typeName="string" minOccurs="1" maxOccurs="1"/>
+    </ECCustomAttributeClass>
+    <ECCustomAttributeClass typeName="BridgeColumnsForPier" appliesTo="Any">
+        <ECArrayProperty propertyName="BridgePierColumnClassNames" typeName="string" minOccurs="1" maxOccurs="1"/>
+    </ECCustomAttributeClass>
+    <ECCustomAttributeClass typeName="ThumbnailItem" appliesTo="Any">
+        <ECProperty propertyName="FileName" typeName="string"/>
+    </ECCustomAttributeClass>
+    <!-- END CustomAttributes and Enums -->
+
+    <!-- BEGIN Elements -->
+    <ECEntityClass typeName="Bridge" modifier="Sealed" description="Physical bridge supporting a segment of a road or rail." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+            <ILinearlyLocatedSegmentationHints xmlns="LinearReferencing.01.00.00">
+                <SupportedLinearlyReferencedLocationTypes>2</SupportedLinearlyReferencedLocationTypes>
+            </ILinearlyLocatedSegmentationHints>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <!--ECRelationshipClass typeName="IPhysicalElementOnBridgeRefersToBridge" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyRelationshipMap xmlns="ECDbMap.02.00">
+                <OnDeleteAction>SetNull</OnDeleteAction>
+            </ForeignKeyRelationshipMap>
+        </ECCustomAttributes>
+        <Source multiplicity="(0..*)" polymorphic="true">
+            <Class class="IPhysicalElementOnBridge"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="false">
+            <Class class="Bridge"/>
+        </Target>
+    </ECRelationshipClass-->
+    <ECEntityClass typeName="BridgeSupport" modifier="Sealed" description="Physical element head of an assembly, linearly-located, supporting a bridge." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Skew" typeName="double" kindOfQuantity="PLANE_ANGLE" displayLabel="Skew" description="Skew angle of support relative to deck perpendicular (0 is perpendicular to deck direction)" />
+    </ECEntityClass>
+    <ECEntityClass typeName="BridgeSubstructureElement" modifier="Abstract" description="Base class for physical elements describing substructures of a bridge." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Skew" typeName="double" kindOfQuantity="PLANE_ANGLE" displayLabel="Skew" description="Skew angle of support relative to deck perpendicular (0 is perpendicular to deck direction)" />
+    </ECEntityClass>
+    <ECEntityClass typeName="BridgeAbutmentElement" modifier="Abstract" description="Base class for Physical abutments." >
+        <BaseClass>BridgeSubstructureElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="BridgePierElement" modifier="Abstract" description="Base class for physical piers." >
+        <BaseClass>BridgeSubstructureElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CapLengthExtensionRightSide" typeName="double" displayLabel="Cap extension (right)" kindOfQuantity="LENGTH" />
+        <ECProperty propertyName="CapLengthExtensionLeftSide" typeName="double" displayLabel="Cap extension (left)" kindOfQuantity="LENGTH" />
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BridgeAssemblesSupports" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is assembled by 1 bridge">
+            <Class class="Bridge"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="assembles N supports">
+            <Class class="BridgeSupport"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BridgeSupportAssemblesSubstructureElements" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="is assembled by a support">
+            <Class class="BridgeSupport"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N substructure elements">
+            <Class class="BridgeSubstructureElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END Elements -->
+
+    <!-- BEGIN Superstructure Elements -->
+    <ECEntityClass typeName="BridgeSuperstructureElement" modifier="Abstract" description="Base class for the element describing a Bridge superstructure Cross-Section." >
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="FromSupport" relationshipName="BridgeSupportConnectsAtBeginOfSuperstructure" direction="Backward"/>
+        <ECNavigationProperty propertyName="ToSupport" relationshipName="BridgeSupportConnectsAtEndOfSuperstructure" direction="Backward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BridgeSupportConnectsAtBeginOfSuperstructure" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="connects to a support">
+            <Class class="BridgeSupport"/>
+        </Source>
+        <Target multiplicity="(0..N)" polymorphic="true" roleLabel="connects to N superstructures">
+            <Class class="BridgeSuperstructureElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BridgeSupportConnectsAtEndOfSuperstructure" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="connects to a support">
+            <Class class="BridgeSupport"/>
+        </Source>
+        <Target multiplicity="(0..N)" polymorphic="true" roleLabel="connects to N superstructures">
+            <Class class="BridgeSuperstructureElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="SimpleBeamSuperstructureElement" modifier="Abstract" description="Base class for the element describing a Simple beam Bridge superstructure Cross-Section." >
+        <BaseClass>BridgeSuperstructureElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="PrestressedGirdersSuperstructure" modifier="Sealed" displayLabel="Prestressed Girders" description="Aspect describing a Prestressed girders superstructure Cross-Section." >
+        <BaseClass>SimpleBeamSuperstructureElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_PrestressedGirderBridgeType</LabelKey> TODO: Use displayLabel instead -->
+                <FileName>BridgePrestressGirder.png</FileName>
+            </ThumbnailItem>
+            <BridgePiersForSuperstructure>
+                <BridgePierClassNames>
+                    <string>DropCapPier</string>
+                    <string>HammerHeadPier</string>
+                    <string>InvertedTCapPier</string>
+                    <string>PileBentPier</string>
+                    <string>TaperedCapPier</string>
+                    <string>WallPier</string>
+                </BridgePierClassNames>
+            </BridgePiersForSuperstructure>
+        </ECCustomAttributes>
+        <ECProperty propertyName="CrossSectionGirderCount" typeName="int" description="Number of beams/girders per span" displayLabel="Number of Girders"/>
+        <ECProperty propertyName="GirderType" typeName="int" displayLabel="Girder Type"/>
+        <ECProperty propertyName="GirderId" typeName="string" displayLabel="Girder ID"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="PostTensionedCIPBoxSuperstructure" modifier="Sealed" displayLabel="Post-Tensioned Box" description="Aspect describing a Post-Tensioned Box superstructure Cross-Section." >
+        <BaseClass>SimpleBeamSuperstructureElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_PostTensionedBoxBridgeType</LabelKey> TODO: Use displayLabel instead -->
+                <FileName>BridgeSegmental.png</FileName>
+            </ThumbnailItem>
+            <BridgePiersForSuperstructure>
+                <BridgePierClassNames>
+                    <string>DropCapPier</string>
+                    <string>HammerHeadPier</string>
+                    <string>IntegralPier</string>
+                    <string>PileBentPier</string>
+                    <string>TaperedCapPier</string>
+                    <string>WallPier</string>
+                </BridgePierClassNames>
+            </BridgePiersForSuperstructure>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CastInPlaceSlabSuperstructure" modifier="Sealed" displayLabel="Cast-In Place" description="Aspect describing a Cast-in Place Slab superstructure Cross-Section." >
+        <BaseClass>SimpleBeamSuperstructureElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_CastInPlaceSlabBridgeType</LabelKey> TODO: Use displayLabel instead -->
+                <FileName>BridgeConcreteSlab.png</FileName>
+            </ThumbnailItem>
+            <BridgePiersForSuperstructure>
+                <BridgePierClassNames>
+                    <string>DropCapPier</string>
+                    <string>HammerHeadPier</string>
+                    <string>IntegralPier</string>
+                    <string>PileBentPier</string>
+                    <string>TaperedCapPier</string>
+                    <string>WallPier</string>
+                </BridgePierClassNames>
+            </BridgePiersForSuperstructure>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BridgeAssemblesSuperstructures" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="false" roleLabel="is owned by 1 bridge">
+            <Class class="Bridge"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="owns N superstructures">
+            <Class class="BridgeSuperstructureElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END Superstructure Elements -->
+
+    <!-- BEGIN BridgeSubstructure Elements -->
+    <ECEntityClass typeName="VirtualBridgeSubstructure" modifier="Sealed">
+        <BaseClass>BridgeSubstructureElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECNavigationProperty propertyName="TargetBridgeSupport" relationshipName="BridgeSupportReferencedByVirtual" direction="backward"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BridgeSupportReferencedByVirtual" strength="referencing" modifier="Sealed">
+        <Source multiplicity="(0..1)" polymorphic="false" roleLabel="refers to 1 support">
+            <Class class="BridgeSupport"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="is refered by N virtual substructures">
+            <Class class="VirtualBridgeSubstructure"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="PileCapAbutment" modifier="Sealed" displayLabel="Pile-Cap">
+        <BaseClass>BridgeAbutmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_PileCapAbutmentType</LabelKey> TODO: Use displayLabel instead -->
+                <FileName>PileCap.png</FileName>
+            </ThumbnailItem>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="StemWallAbutment" displayLabel="Stem-Wall">
+        <BaseClass>BridgeAbutmentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_StemWallAbutmentType</LabelKey> TODO: Use displayLabel instead -->
+                <FileName>StemWall.png</FileName>
+            </ThumbnailItem>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <!-- END BridgeSubstructure Elements -->
+
+    <!-- BEGIN WingWall Element -->
+    <ECEntityClass typeName="WingWallElement" modifier="Abstract">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Depth" typeName="double" displayLabel="Depth" kindOfQuantity="LENGTH" />
+        <ECProperty propertyName="LongSideWidth" typeName="double" displayLabel="Long-side Width" kindOfQuantity="LENGTH">
+            <ECCustomAttributes>
+                <!--PropertyPaneHint xmlns="RoadRailPhysical.01.00.00">
+                    <UserDefinedOrDerived>True</UserDefinedOrDerived>
+                </PropertyPaneHint-->
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ShortSideWidth" typeName="double" displayLabel="Short-side Width" kindOfQuantity="LENGTH">
+            <ECCustomAttributes>
+                <!--PropertyPaneHint xmlns="RoadRailPhysical.01.00.00">
+                    <UserDefinedOrDerived>True</UserDefinedOrDerived>
+                </PropertyPaneHint-->
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="LongSideHeight" typeName="double" displayLabel="Long-side Height" kindOfQuantity="LENGTH_SHORT">
+            <ECCustomAttributes>
+                <!--PropertyPaneHint xmlns="RoadRailPhysical.01.00.00">
+                    <UserDefinedOrDerived>True</UserDefinedOrDerived>
+                </PropertyPaneHint-->
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="ShortSideHeight" typeName="double" displayLabel="Short-side Height" kindOfQuantity="LENGTH_SHORT">
+            <ECCustomAttributes>
+                <!--PropertyPaneHint xmlns="RoadRailPhysical.01.00.00">
+                    <UserDefinedOrDerived>True</UserDefinedOrDerived>
+                </PropertyPaneHint-->
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="Skew" typeName="double" displayLabel="Skew" kindOfQuantity="PLANE_ANGLE" />
+        <ECProperty propertyName="LongitudinalOffset" typeName="double" displayLabel="Offset - Longitudinal" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="TransversalOffset" typeName="double" displayLabel="Offset - Transversal" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="VerticalOffset" typeName="double" displayLabel="Offset - Vertical" kindOfQuantity="LENGTH_SHORT"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="RegularWingWall" modifier="Sealed" displayLabel="Regular">
+        <BaseClass>WingWallElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CantileveredWingWall" modifier="Sealed" displayLabel="Cantilevered">
+        <BaseClass>WingWallElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="BridgeAbutmentAssemblesLeftWingWall" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is assembled by 1 abutment">
+            <Class class="BridgeAbutmentElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="assembles 1 wingWall on its left-side">
+            <Class class="WingWallElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="BridgeAbutmentAssemblesRightWingWall" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is assembled by 1 abutment">
+            <Class class="BridgeAbutmentElement"/>
+        </Source>
+        <Target multiplicity="(0..1)" polymorphic="true" roleLabel="assembles 1 wingWall on its right-side">
+            <Class class="WingWallElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END WingWall Element -->
+
+    <!-- BEGIN BridgePierColumn Elements -->
+    <ECEntityClass typeName="BridgePierColumnElement" modifier="Abstract">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECArrayProperty propertyName="ColumnsSpacing" typeName="double" description="List of column spacings with respect to the left side of the pier, from spacing between col_1-2 to col_(n-2)-(n-1)." displayLabel="Columns spacing" minOccurs="0" maxOccurs="unbounded" kindOfQuantity="LENGTH" />
+    </ECEntityClass>
+    <ECEntityClass typeName="RegularPierColumnElement" modifier="Abstract">
+        <BaseClass>BridgePierColumnElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="PilePierColumnElement" modifier="Abstract">
+        <BaseClass>BridgePierColumnElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="CircularPierColumn" displayLabel="Circular">
+        <BaseClass>RegularPierColumnElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Diameter" typeName="double" description="Diameter of column support" displayLabel="Diameter" kindOfQuantity="DIAMETER"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="RectangularPierColumn" modifier="Sealed" displayLabel="Rectangular">
+        <BaseClass>RegularPierColumnElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Width" typeName="double" description="Width of column support" displayLabel="Width" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="Depth" typeName="double" description="Depth of column support" displayLabel="Depth" kindOfQuantity="LENGTH_SHORT"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="HPilePierColumn" modifier="Sealed" displayLabel="H-Pile">
+        <BaseClass>PilePierColumnElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Width" typeName="double" description="Width of column support" displayLabel="Width" kindOfQuantity="LENGTH_SHORT"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CircularPilePierColumn" modifier="Sealed" displayLabel="Circular Pile">
+        <BaseClass>PilePierColumnElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Diameter" typeName="double" description="Diameter of column support" displayLabel="Diameter" kindOfQuantity="DIAMETER" />
+    </ECEntityClass>
+    <ECEntityClass typeName="SquarePilePierColumn" modifier="Sealed" displayLabel="Square Pile">
+        <BaseClass>PilePierColumnElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Width" typeName="double" description="Width of column support" displayLabel="Width" kindOfQuantity="LENGTH_SHORT"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RegularMultiColumnPierAssemblesColumns" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is assembled by 1 pier">
+            <Class class="RegularMultiColumnPierElement"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N pier columns">
+            <Class class="RegularPierColumnElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="PileBentPierAssemblesColumns" strength="embedding" modifier="Sealed">
+        <BaseClass>bis:PhysicalElementAssemblesElements</BaseClass>
+        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is assembled by 1 PileBent pier">
+            <Class class="PileBentPier"/>
+        </Source>
+        <Target multiplicity="(0..*)" polymorphic="true" roleLabel="assembles N Pile pier columns">
+            <Class class="PilePierColumnElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- END BridgePierColumn Elements -->
+
+    <!-- BEGIN BridgePier Elements -->
+    <ECEntityClass typeName="RegularMultiColumnPierElement" modifier="Abstract" description="Base class for the element describing a Bridge pier with multiple columns." >
+        <BaseClass>BridgePierElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="InvertedTCapPier" modifier="Sealed" displayLabel="Inverted T-Cap">
+        <BaseClass>RegularMultiColumnPierElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_InvertedTCapPier</LabelKey> TODO: use display Label -->
+                <FileName>InvertedCapPier.png</FileName>
+            </ThumbnailItem>
+            <BridgeColumnsForPier>
+                <BridgePierColumnClassNames>
+                    <string>CircularPierColumn</string>
+                    <string>RectangularPierColumn</string>
+                </BridgePierColumnClassNames>
+            </BridgeColumnsForPier>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="PileBentPier" displayLabel="Pile Bent">
+        <BaseClass>BridgePierElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_PileBentPier</LabelKey> TODO: use display Label -->
+                <FileName>PileBent.png</FileName>
+            </ThumbnailItem>
+            <BridgeColumnsForPier>
+                <BridgePierColumnClassNames>
+                    <string>CircularPilePierColumn</string>
+                    <string>SquarePilePierColumn</string>
+                    <string>HPilePierColumn</string>
+                </BridgePierColumnClassNames>
+            </BridgeColumnsForPier>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="HammerHeadPier" displayLabel="Hammer Head">
+        <BaseClass>BridgePierElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_HammerHeadPier</LabelKey> TODO: use display Label -->
+                <FileName>HammerHeadPier.png</FileName>
+            </ThumbnailItem>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TopWidth" typeName="double" description="Top Width of column support" displayLabel="Top Width" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="BottomWidth" typeName="double" description="Bottom Width of column support" displayLabel="Bottom Width" kindOfQuantity="LENGTH_SHORT"/>
+        <ECProperty propertyName="Depth" typeName="double" description="Depth of column support" displayLabel="Depth" kindOfQuantity="LENGTH_SHORT"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="IntegralPier" displayLabel="Integral">
+        <BaseClass>RegularMultiColumnPierElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_IntegralPier</LabelKey> TODO: use display Label -->
+                <FileName>IntegralPier.png</FileName>
+            </ThumbnailItem>
+            <BridgeColumnsForPier>
+                <BridgePierColumnClassNames>
+                    <string>CircularPierColumn</string>
+                    <string>RectangularPierColumn</string>
+                </BridgePierColumnClassNames>
+            </BridgeColumnsForPier>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="DropCapPier" displayLabel="Drop-Cap">
+        <BaseClass>RegularMultiColumnPierElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_DropCapPier</LabelKey> TODO: use display Label -->
+                <FileName>DropCapPier.png</FileName>
+            </ThumbnailItem>
+            <BridgeColumnsForPier>
+                <BridgePierColumnClassNames>
+                    <string>CircularPierColumn</string>
+                    <string>RectangularPierColumn</string>
+                </BridgePierColumnClassNames>
+            </BridgeColumnsForPier>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="TaperedCapPier" displayLabel="Tapered-Cap">
+        <BaseClass>RegularMultiColumnPierElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem>
+                <!--LabelKey>SCHEMA_TaperedCapPier</LabelKey> TODO: use display Label -->
+                <FileName>TaperedCapPier.png</FileName>
+            </ThumbnailItem>
+            <BridgeColumnsForPier>
+                <BridgePierColumnClassNames>
+                    <string>CircularPierColumn</string>
+                    <string>RectangularPierColumn</string>
+                </BridgePierColumnClassNames>
+            </BridgeColumnsForPier>
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass typeName="WallPier" displayLabel="Wall">
+        <BaseClass>BridgePierElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+            <ThumbnailItem xmlns="ConceptCivil.02.00">
+                <!--LabelKey>SCHEMA_WallPier</LabelKey> TODO: use display Label -->
+                <FileName>WallPier.png</FileName>
+            </ThumbnailItem>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Depth" typeName="double" displayLabel="Wall depth" kindOfQuantity="LENGTH_SHORT" />
+    </ECEntityClass>
+    <!-- END BridgePier Aspect -->
+</ECSchema>
