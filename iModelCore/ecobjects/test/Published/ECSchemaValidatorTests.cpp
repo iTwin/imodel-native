@@ -1540,7 +1540,7 @@ TEST_F(SchemaValidatorTests, KindOfQuantityShouldUseSIPersistenceUnits)
     ECSchemaReadContextPtr context5 = ECSchemaReadContext::CreateContext();
     ECSchema::ReadFromXmlString(schema5, goodSchemaXml2, *context5);
     ASSERT_TRUE(schema5.IsValid());
-    ASSERT_TRUE(ECSchemaValidator::Validate(*schema5)) << "Should succeed validation as persistence unit is an SI unit, 'CM'";
+    ASSERT_FALSE(ECSchemaValidator::Validate(*schema5)) << "Should fail validation as persistence unit is an METRIC unit, 'CM'";
     }
 
 TEST_F(SchemaConverterTests, RelationshipClassMustLocallyDefineRoleLabelConversion)
