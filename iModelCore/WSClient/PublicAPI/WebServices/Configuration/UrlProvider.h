@@ -19,6 +19,10 @@ BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Brad.Hadden    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+//! UrlProvider is a class that allows getting remotely configured service URLs based on 
+//! initialized environment (DEV, QA or PROD/RELEASE). Environment is set of services working
+//! in isolated system. Switching between environments is only needed for testing.
+//! All released software should point to PROD/RELEASE environment services by default.
 struct UrlProvider
     {
     public:
@@ -104,6 +108,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPunchList;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgClashIssues;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgSharedContent;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectGateway;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectForms;
             WSCLIENT_EXPORT static const UrlDescriptor ImsStsAuth;
             WSCLIENT_EXPORT static const UrlDescriptor ImsActiveStsDelegationService;

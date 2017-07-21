@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "ClientInternal.h"
 #include <map>
+#include <mutex>
 #include <WebServices/Connect/ImsClient.h>
 #include <MobileDgn/Utils/Http/HttpStatusHelper.h>
 #include <BeXml/BeXml.h>
@@ -26,10 +27,28 @@
 #define XML_ErrorMessage            "error:errorMessage"
 #define XML_ErrorDescription        "error:errorDescription"
 
+#define XML_Azure_Error         "Error"
+#define XML_Azure_Code          "Code"
+#define XML_Azure_Message       "Message"
+#define XML_Azure_BlobNotFound  "BlobNotFound"
+
+std::once_flag s_initErrorIdmap;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    05/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 WSError::Id WSError::ErrorIdFromString(Utf8StringCR errorIdString)
+    {
+    //static local variables are not thread safe in VS2013 version of c++11 compiler
+    //TODO: change this to old way after we move to VS2015
+    std::call_once(s_initErrorIdmap, []() {GetErrorIdFromString(""); });
+    return GetErrorIdFromString(errorIdString);
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Basanta.Kharel    07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WSError::Id WSError::GetErrorIdFromString(Utf8StringCR errorIdString)
     {
     static std::map<Utf8String, Id> map =
         {
@@ -104,13 +123,9 @@ WSError::WSError(HttpResponseCR httpResponse) : WSError()
         m_message = HttpError(httpResponse).GetMessage();
         
         if (ConnectionStatus::CertificateError == httpResponse.GetConnectionStatus())
-            {
             m_status = Status::CertificateError;
-            }
         else
-            {
             m_status = Status::ConnectionError;
-            }
 
         m_id = WSError::Id::Unknown;
         return;
@@ -288,8 +303,15 @@ BentleyStatus WSError::ParseXmlError(HttpResponseCR httpResponse)
     xmlDom->RegisterNamespace(XML_NAMESPACE_PREFIX, XML_NAMESPACE);
 
     BeXmlNodeP rootNode = xmlDom->GetRootElement();
-    if (nullptr == rootNode || Utf8String(XML_ROOTNODE_NAME) != rootNode->GetName())
+    if (nullptr == rootNode)
         return ERROR;
+
+    if (nullptr == rootNode || Utf8String(XML_ROOTNODE_NAME) != rootNode->GetName())
+        {
+        if (Utf8String(XML_Azure_Error) == rootNode->GetName())
+            return ParseXmlAzureError(httpResponse, *xmlDom);
+        return ERROR;
+        }
 
     Utf8String errorIdStr;
     Utf8String errorMessage;
@@ -305,6 +327,32 @@ BentleyStatus WSError::ParseXmlError(HttpResponseCR httpResponse)
     WSError::Id errorId = ErrorIdFromString(errorIdStr);
 
     SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, errorDescription);
+    return SUCCESS;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    09/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus WSError::ParseXmlAzureError(HttpResponseCR httpResponse, BeXmlDom& xmlDom)
+    {
+    BeXmlNodeP rootNode = xmlDom.GetRootElement();
+    if (nullptr == rootNode)
+        return ERROR;
+
+    Utf8String errorCode;
+    Utf8String errorMessage;
+
+    if (SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Code, errorCode) ||
+        SUCCESS != GetChildNodeContents(rootNode, XML_Azure_Message, errorMessage))
+        {
+        return ERROR;
+        }
+
+    auto errorId = WSError::Id::Unknown;
+    if (XML_Azure_BlobNotFound == errorCode)
+        errorId = WSError::Id::FileNotFound;
+
+    SetStatusReceivedError(HttpError(httpResponse), errorId, errorMessage, nullptr);
     return SUCCESS;
     }
 

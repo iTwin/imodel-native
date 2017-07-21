@@ -206,4 +206,16 @@ struct DiskRepositoryClient : public IWSRepositoryClient
             {
             FBC_NOT_IMPLEMENTED(WSUpdateFileResult);
             }
+
+        virtual AsyncTaskPtr<WSCreateObjectResult> SendCreateObjectRequest
+            (
+            ObjectIdCR relatedObjectId,
+            JsonValueCR objectCreationJson,
+            BeFileNameCR filePath = BeFileName(),
+            HttpRequest::ProgressCallbackCR uploadProgressCallback = nullptr,
+            ICancellationTokenPtr ct = nullptr
+            ) const override
+            {
+            FBC_NOT_IMPLEMENTED(WSCreateObjectResult);
+            }
     };

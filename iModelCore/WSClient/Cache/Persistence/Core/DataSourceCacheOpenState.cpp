@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/Persistence/Core/DataSourceCacheOpenState.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -20,7 +20,7 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +--------------------------------------------------------------------------------------*/
-DataSourceCacheOpenState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment) :
+DataSourceCacheOpenState::Core::Core(ObservableECDb& db, CacheEnvironmentCR environment, ECInstanceKeyMultiMap& syncKeys) :
 m_dbAdapter(db),
 m_statementCache(db),
 
@@ -34,9 +34,8 @@ m_cachedQueryManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_relati
 m_navigationBaseManager(m_dbAdapter, m_statementCache),
 m_changeInfoManager(m_dbAdapter, m_statementCache, m_hierarchyManager, m_objectInfoManager, m_relationshipInfoManager, m_fileInfoManager),
 m_changeManager(m_dbAdapter, m_instanceHelper, m_hierarchyManager, m_cachedQueryManager, m_objectInfoManager, m_relationshipInfoManager,
-m_fileInfoManager, m_changeInfoManager, m_fileStorage, m_rootManager),
+m_fileInfoManager, m_changeInfoManager, m_fileStorage, m_rootManager, syncKeys),
 m_fileStorage(m_dbAdapter, m_statementCache, environment),
-
 m_cacheSchema(nullptr),
 m_extendedDataAdapter(db)
     {}
@@ -46,8 +45,7 @@ m_extendedDataAdapter(db)
 +--------------------------------------------------------------------------------------*/
 DataSourceCacheOpenState::DataSourceCacheOpenState(ObservableECDb& db, CacheEnvironmentCR environment) :
 m_db(db),
-m_environment(environment),
-m_isSyncActive(false)
+m_environment(environment)
     {
     m_db.RegisterSchemaChangeListener(this);
     }
@@ -73,7 +71,6 @@ void DataSourceCacheOpenState::OnSchemaChanged()
 +--------------------------------------------------------------------------------------*/
 void DataSourceCacheOpenState::ClearRuntimeCaches()
     {
-    m_isSyncActive = m_core ? m_core->m_changeManager.IsSyncActive() : m_isSyncActive;
     m_core = nullptr;
     }
 
@@ -94,14 +91,7 @@ DataSourceCacheOpenState::Core& DataSourceCacheOpenState::GetCore()
 +--------------------------------------------------------------------------------------*/
 void DataSourceCacheOpenState::ResetCore()
     {
-    if (m_core)
-        {
-        m_isSyncActive = m_core->m_changeManager.IsSyncActive();
-        }
-
-    m_core = std::make_shared<Core>(m_db, m_environment);
-
-    m_core->m_changeManager.SetSyncActive(m_isSyncActive);
+    m_core = std::make_shared<Core>(m_db, m_environment, m_activeSyncKeys);
     }
 
 /*--------------------------------------------------------------------------------------+

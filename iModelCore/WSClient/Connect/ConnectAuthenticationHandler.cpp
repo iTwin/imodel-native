@@ -22,12 +22,14 @@ ConnectAuthenticationHandler::ConnectAuthenticationHandler
 (
 Utf8String urlBaseToAuth,
 std::shared_ptr<IConnectTokenProvider> customTokenProvider,
-IHttpHandlerPtr customHttpHandler
+IHttpHandlerPtr customHttpHandler,
+bool legacyMode
 ) :
 AuthenticationHandler(customHttpHandler),
 m_urlBaseToAuth(urlBaseToAuth),
 m_tokenProvider(customTokenProvider ? customTokenProvider : std::make_shared<ConnectTokenProvider>(ImsClient::GetShared())),
-m_thread(WorkerThread::Create("ConnectAuthenticationHandler"))
+m_thread(WorkerThread::Create("ConnectAuthenticationHandler")),
+m_legacyMode(legacyMode)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -106,10 +108,12 @@ bool ConnectAuthenticationHandler::ShouldStopSendingToken(AttemptCR previousAtte
         return true;
         }
 
+    unsigned int expiredTokenRetryCount = m_legacyMode ? 1 : 0;
+
     if (IsTokenAuthorization(previousAttempt.GetAuthorization()) &&
-        previousAttempt.GetAttemptNumber() > 0)
+        previousAttempt.GetAttemptNumber() > expiredTokenRetryCount)
         {
-        // Used token and it did not work
+        // Used token and it did not work, try updating token
         return true;
         }
 

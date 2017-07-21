@@ -405,8 +405,8 @@ ICachingDataSource::ErrorCR ICachingDataSource::FailedObject::GetError() const
 Utf8StringCR ICachingDataSource::Progress::GetLabel() const
     {
     if (m_label)
-		return *m_label;
-		
+        return *m_label;
+        
     static const Utf8String empty;
     return empty;
     };

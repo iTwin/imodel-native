@@ -12,6 +12,21 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_MOBILEDGN_UTILS
 
+TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ServerReturnsError_ReturnsErrorResponse)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForFirstRequest([=] (HttpRequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::BadRequest, "TestError");
+        });
+
+    auto result = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", StubFilePath())->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
+    }
+
 TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSuccess)
     {
     auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
@@ -32,6 +47,21 @@ TEST_F(AzureBlobStorageClientTests, SendGetFileRequest_ResponseIsOK_ReturnsSucce
     auto result = client->SendGetFileRequest("https://myaccount.blob.core.windows.net/sascontainer/sasblob.txt?SAS", filePath)->GetResult();
     ASSERT_TRUE(result.IsSuccess());
     EXPECT_EQ("FooBoo", result.GetValue().GetETag());
+    }
+
+TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ServerReturnsError_ReturnsErrorResponse)
+    {
+    auto client = AzureBlobStorageClient::Create(GetHandlerPtr());
+
+    GetHandler().ExpectRequests(1);
+    GetHandler().ForRequest(1, [=] (HttpRequestCR request)
+        {
+        return StubHttpResponse(HttpStatus::BadRequest, "TestError");
+        });
+
+    auto result = client->SendUpdateFileRequest("SASUrl", StubFile())->GetResult();
+    ASSERT_FALSE(result.IsSuccess());
+    EXPECT_EQ("TestError", result.GetError().GetBody().AsString());
     }
 
 TEST_F(AzureBlobStorageClientTests, SendUpdateFileRequest_ResponseIsOK_ReturnsSuccess)

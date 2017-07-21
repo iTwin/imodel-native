@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/WebServices/Cache/Persistence/ChangeManager.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -43,7 +43,7 @@ struct ChangeManager : public IChangeManager
         ChangeInfoManager*          m_changeInfoManager;
         FileStorage*                m_fileStorage;
         RootManager*                m_rootManager;
-        bool                        m_isSyncActive;
+        ECInstanceKeyMultiMap*      m_activeUploadKeys;
 
         static Utf8CP LocalInstanceIdPrefix;
 
@@ -89,13 +89,15 @@ struct ChangeManager : public IChangeManager
             FileInfoManager& fileInfoManager,
             ChangeInfoManager& changeInfoManager,
             FileStorage& fileStorage,
-            RootManager& rootManager
+            RootManager& rootManager,
+            ECInstanceKeyMultiMap& activeSyncKeys
             );
 
         // -- Making local changes to existing data --
 
-        WSCACHE_EXPORT bool IsSyncActive() const override;
-        WSCACHE_EXPORT void SetSyncActive(bool active) override;
+        WSCACHE_EXPORT bool IsUploadActive(ECInstanceKeyCR instance) const override;
+        WSCACHE_EXPORT void SetUploadActive(ECInstanceKeyCR instance, bool active) override;
+        WSCACHE_EXPORT const ECInstanceKeyMultiMap& GetUploadingInstances() const override;
 
         WSCACHE_EXPORT ECInstanceKey LegacyCreateObject(ECClassCR ecClass, JsonValueCR properties, ECInstanceKeyCR parentKey, SyncStatus syncStatus = SyncStatus::Ready) override;
         WSCACHE_EXPORT ECRelationshipClassCP GetLegacyParentRelationshipClass() override;
@@ -143,8 +145,8 @@ struct ChangeManager : public IChangeManager
         WSCACHE_EXPORT RelationshipChange GetRelationshipChange(ECInstanceKeyCR relationshipKey) override;
         WSCACHE_EXPORT FileChange GetFileChange(ECInstanceKeyCR instanceKey) override;
 
-        WSCACHE_EXPORT IChangeManager::ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instanceKey) override;
-        WSCACHE_EXPORT ChangeManager::SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT ChangeStatus GetObjectChangeStatus(ECInstanceKeyCR instanceKey) override;
+        WSCACHE_EXPORT SyncStatus GetObjectSyncStatus(ECInstanceKeyCR instanceKey) override;
 
         WSCACHE_EXPORT InstanceRevisionPtr ReadInstanceRevision(ECInstanceKeyCR instanceKey) override;
         WSCACHE_EXPORT FileRevisionPtr ReadFileRevision(ECInstanceKeyCR instanceKey) override;
