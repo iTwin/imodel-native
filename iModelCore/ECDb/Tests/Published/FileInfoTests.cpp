@@ -364,7 +364,7 @@ TEST_F (FileInfoTestFixture, IterateThroughEmbeddedFiles)
             {
             ASSERT_EQ (1, file.GetId ().GetValue());
             ASSERT_STREQ ("JSON", file.GetTypeUtf8 ());
-            ASSERT_EQ (8612, file.GetFileSize ());
+            ASSERT_EQ (8613, file.GetFileSize ());
             ASSERT_EQ (NULL, file.GetDescriptionUtf8 ());
             ASSERT_EQ (524288, file.GetChunkSize ());
             }

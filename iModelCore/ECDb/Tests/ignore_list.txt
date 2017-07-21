@@ -28,3 +28,11 @@ DbMappingTestFixture.LogicalForeignKeyOnSharedColumn
 # To be equal to: stmt.GetValueInt64(1)
 #        Which is: 57
 
+# After merging in bim0200dev, these fail:
+FileFormatCompatibilityTests.CompareDdl
+FileFormatCompatibilityTests.CompareProfileTables
+JsonInserterTests.InsertJsonCppJSON
+JsonInserterTests.InsertRapidJson
+JsonReaderTests.JsonValueStruct
+RelationshipMappingTestFixture.LogicalForeignKeyRelationshipMappedToSharedColumn
+

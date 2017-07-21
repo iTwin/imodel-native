@@ -15,6 +15,7 @@
 #include <Bentley/Nullable.h>
 #include <BeSQLite/BeSQLite.h>
 #include <ECObjects/ECObjectsAPI.h>
+#include <ECObjects/SchemaComparer.h>
 #include <ECDb/ECDbApi.h>
 #include <algorithm>
 #include <memory>
@@ -48,7 +49,6 @@
 #include "ClassMappingInfo.h"
 #include "ClassMapPersistenceManager.h"
 #include "ClassMapPersistenceManager.h"
-#include <ECObjects/SchemaComparer.h>
 #include "LightweightCache.h"
 #include "ClassMapColumnFactory.h"
 #include "ViewGenerator.h"
