@@ -2,7 +2,7 @@
  |
  |     $Source: Cache/ChangesGraph.h $
  |
- |  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 
@@ -73,9 +73,12 @@ struct ChangeGroup
         WSCACHE_EXPORT ChangeManager::FileChangeR GetFileChange();
         WSCACHE_EXPORT void SetFileChange(ChangeManager::FileChangeCR change);
 
+        WSCACHE_EXPORT bool DoesContain(ECInstanceKeyCR instanceKey) const;
+        
         WSCACHE_EXPORT bool DoesDependOn(ChangeGroupPtr other) const;
         WSCACHE_EXPORT void AddDependency(ChangeGroupPtr other);
         WSCACHE_EXPORT bool AreAllDependenciesSynced() const;
+        WSCACHE_EXPORT bool AreAllUnsyncedDependenciesInSet(const bset<ChangeGroup*>& set);
 
         WSCACHE_EXPORT void SetSynced(bool isSynced);
         WSCACHE_EXPORT bool IsSynced() const;

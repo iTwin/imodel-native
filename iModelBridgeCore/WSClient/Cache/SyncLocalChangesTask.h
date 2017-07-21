@@ -74,7 +74,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
             (
             IDataSourceCache& cache,
             RevisionMap& revisionsOut,
-            bvector<ChangeGroup*>& changesetChangeGroupsOut
+            bset<ChangeGroup*>& changesetChangeGroupsOut
             );
         WSChangesetPtr BuildSingleInstanceChangeset
             (
@@ -96,7 +96,7 @@ struct SyncLocalChangesTask : public CachingTaskBase
         Utf8String GetChangeStateStr(IChangeManager::ChangeStatus changeStatus) const;
         WSChangeset::ChangeState ToWSChangesetChangeState(IChangeManager::ChangeStatus status) const;
 
-        void RegisterFailedSync(IDataSourceCache& cache, ChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel);
+        void RegisterFailedSync(IDataSourceCache& cache, ChangeGroupCR changeGroup, CachingDataSource::ErrorCR error, Utf8StringCR objectLabel = nullptr);
         void SetUpdatedInstanceKeyInChangeGroups(ECInstanceKey oldKey, ECInstanceKey newKey);
 
     public:

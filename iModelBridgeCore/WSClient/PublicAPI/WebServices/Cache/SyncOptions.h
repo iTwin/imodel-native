@@ -2,13 +2,14 @@
  |
  |     $Source: PublicAPI/WebServices/Cache/SyncOptions.h $
  |
- |  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+ |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
  |
  +--------------------------------------------------------------------------------------*/
 #pragma once
 //__PUBLISH_SECTION_START__
 
 #include <WebServices/Cache/WebServicesCache.h>
+#include <WebServices/Client/RequestOptions.h>
 
 BEGIN_BENTLEY_WEBSERVICES_NAMESPACE
 
@@ -21,7 +22,8 @@ struct SyncOptions
         bool m_useChangesets;
         size_t m_maxChangesetSizeBytes;
         size_t m_maxChangesetInstances;
-
+        RequestOptions::FailureStrategy m_failureStrategy = RequestOptions::FailureStrategy::Default;
+        
     public:
         WSCACHE_EXPORT SyncOptions();
 
@@ -44,6 +46,10 @@ struct SyncOptions
         //! Default - 0 (unlimited).
         WSCACHE_EXPORT void SetMaxChangesetInstanceCount(size_t count);
         WSCACHE_EXPORT size_t GetMaxChangesetInstanceCount() const;
+        
+        //! Set failure strategy when using $changeset support (if available).
+        void SetFailureStrategy(RequestOptions::FailureStrategy strategy) { m_failureStrategy = strategy; };
+        RequestOptions::FailureStrategy GetFailureStrategy() const { return m_failureStrategy; };
     };
 
 END_BENTLEY_WEBSERVICES_NAMESPACE

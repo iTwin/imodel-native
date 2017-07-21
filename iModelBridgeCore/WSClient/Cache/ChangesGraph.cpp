@@ -2,7 +2,7 @@
 |
 |     $Source: Cache/ChangesGraph.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -318,6 +318,20 @@ void ChangeGroup::SetFileChange(ChangeManager::FileChangeCR change)
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
+bool ChangeGroup::DoesContain(ECInstanceKeyCR instanceKey) const
+    {
+    if (m_objectChange.GetInstanceKey() == instanceKey)
+        return true;
+    if (m_relationshipChange.GetInstanceKey() == instanceKey)
+        return true;
+    if (m_fileChange.GetInstanceKey() == instanceKey)
+        return true;
+    return false;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
 void ChangeGroup::AddDependency(ChangeGroupPtr other)
     {
     m_dependsOn.insert(other);
@@ -351,6 +365,21 @@ bool ChangeGroup::AreAllDependenciesSynced() const
             {
             return false;
             }
+        }
+    return true;
+    }
+
+/*--------------------------------------------------------------------------------------+
+* @bsimethod                                                    Vincas.Razma    08/2014
++---------------+---------------+---------------+---------------+---------------+------*/
+bool ChangeGroup::AreAllUnsyncedDependenciesInSet(const bset<ChangeGroup*>& set)
+    {
+    for (ChangeGroupPtr& dependency : m_dependsOn)
+        {
+        if (dependency->IsSynced())
+            continue;
+        if (!set.count(dependency.get()))
+            return false;
         }
     return true;
     }
