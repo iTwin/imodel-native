@@ -15,7 +15,6 @@ DOMAIN_DEFINE_MEMBERS(LinearReferencingDomain)
 LinearReferencingDomain::LinearReferencingDomain() : DgnDomain(BLR_SCHEMA_NAME, "Bentley LinearReferencing Domain", 1)
     {
     RegisterHandler(GeometricElementAsReferentHandler::GetHandler());
-    RegisterHandler(LinearlyLocatedReferentHandler::GetHandler());
     RegisterHandler(LinearlyReferencedAtLocationHandler::GetHandler());
     RegisterHandler(LinearlyReferencedFromToLocationHandler::GetHandler());
     }

@@ -77,7 +77,7 @@ public:
 //! operation and output.
 //! @ingroup GROUP_LinearReferencing
 //=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE ISegmentableLinearElement : ILinearElement
+struct EXPORT_VTABLE_ATTRIBUTE ISegmentableLinearElement : virtual ILinearElement
 {
 protected:
     LINEARREFERENCING_EXPORT virtual bvector<LinearLocation> _QueryLinearLocations(bset<Dgn::DgnClassId> const& iLinearlyLocatedClassIds, NullableDouble fromDistanceAlong, NullableDouble toDistanceAlong) const;

@@ -8,7 +8,6 @@
 #include <LinearReferencingInternal.h>
 
 HANDLER_DEFINE_MEMBERS(GeometricElementAsReferentHandler)
-HANDLER_DEFINE_MEMBERS(LinearlyLocatedReferentHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
@@ -199,6 +198,61 @@ ILinearlyLocatedAttribution::ILinearlyLocatedAttribution()
 +---------------+---------------+---------------+---------------+---------------+------*/
 ILinearlyLocatedElement::ILinearlyLocatedElement()
     {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+ILinearlyLocatedSingleAt::ILinearlyLocatedSingleAt(double atDistanceAlong)
+    {
+    m_unpersistedAtLocationPtr = LinearlyReferencedAtLocation::Create(DistanceExpression(atDistanceAlong));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+double ILinearlyLocatedSingleAt::GetAtDistanceAlong() const
+    {
+    if (!ToElement().GetElementId().IsValid())
+        return m_unpersistedAtLocationPtr->GetAtPosition().GetDistanceAlongFromStart();
+
+    if (!m_atLocationAspectId.IsValid())
+        {
+        auto aspectIds = ToLinearlyLocated().QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
+
+        m_atLocationAspectId = aspectIds.front();
+        }
+
+    auto locationCP = ToLinearlyLocated().GetLinearlyReferencedAtLocation(m_atLocationAspectId);
+    BeAssert(locationCP);
+
+    return locationCP->GetAtPosition().GetDistanceAlongFromStart();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void ILinearlyLocatedSingleAt::SetAtDistanceAlong(double newAt)
+    {
+    if (!ToElement().GetElementId().IsValid())
+        {
+        m_unpersistedAtLocationPtr->GetAtPositionR().SetDistanceAlongFromStart(newAt);
+        return;
+        }
+
+    if (!m_atLocationAspectId.IsValid())
+        {
+        auto aspectIds = ToLinearlyLocated().QueryLinearlyReferencedLocationIds();
+        BeAssert(1 == aspectIds.size());
+
+        m_atLocationAspectId = aspectIds.front();
+        }
+
+    auto locationP = ToLinearlyLocatedR().GetLinearlyReferencedAtLocationP(m_atLocationAspectId);
+    BeAssert(locationP);
+
+    return locationP->GetAtPositionR().SetDistanceAlongFromStart(newAt);
     }
 
 /*---------------------------------------------------------------------------------**//**
