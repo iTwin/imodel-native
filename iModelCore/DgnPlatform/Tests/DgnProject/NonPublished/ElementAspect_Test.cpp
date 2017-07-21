@@ -780,4 +780,84 @@ TEST_F(ElementAspectTests, PresentationRuleScenarios)
     AssertMultiAspectPropertyValue("Aspect4-Updated", *element, *aspectClassMultiNoHandler, aspectInstanceId4, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
     AssertMultiAspectPropertyValue("Aspect5-Updated", *element, *aspectClassMulti, aspectInstanceId5, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
     AssertMultiAspectPropertyValue("Aspect6-Updated", *element, *aspectClassMulti, aspectInstanceId6, DPTEST_TEST_MULTI_ASPECT_TestMultiAspectProperty);
+
+    // Test iteration of DgnPlatformTest.TestUniqueAspectNoHandler
+        {
+        int aspectCount = 0;
+        ElementAspectIterator aspectIterator = m_db->Elements().MakeAspectIterator(DPTEST_SCHEMA(DPTEST_CLASS_TestUniqueAspectNoHandler));
+        for (ElementAspectIteratorEntryCR aspectEntry : aspectIterator)
+            {
+            ASSERT_EQ(aspectEntry.GetClassId(), aspectClassUniqueNoHandler->GetId());
+            ASSERT_EQ(aspectEntry.GetElementId(), element->GetElementId());
+            ++aspectCount;
+            }
+        ASSERT_EQ(1, aspectCount);
+        }
+
+    // Test iteration of DgnPlatformTest.TestUniqueAspect
+        {
+        int aspectCount = 0;
+        ElementAspectIterator aspectIterator = m_db->Elements().MakeAspectIterator(DPTEST_SCHEMA(DPTEST_TEST_UNIQUE_ASPECT_CLASS_NAME));
+        for (ElementAspectIteratorEntryCR aspectEntry : aspectIterator)
+            {
+            ASSERT_EQ(aspectEntry.GetClassId(), aspectClassUnique->GetId());
+            ASSERT_EQ(aspectEntry.GetElementId(), element->GetElementId());
+            ++aspectCount;
+            }
+        ASSERT_EQ(1, aspectCount);
+        }
+
+    // Test iteration of DgnPlatformTest.TestMultiAspectNoHandler
+        {
+        int aspectCount = 0;
+        ElementAspectIterator aspectIterator = m_db->Elements().MakeAspectIterator(DPTEST_SCHEMA(DPTEST_CLASS_TestMultiAspectNoHandler));
+        for (ElementAspectIteratorEntryCR aspectEntry : aspectIterator)
+            {
+            ECInstanceId aspectInstanceId = aspectEntry.GetECInstanceId();
+            ASSERT_TRUE((aspectInstanceId == aspectInstanceId3) || (aspectInstanceId == aspectInstanceId4));
+            ASSERT_EQ(aspectEntry.GetClassId(), aspectClassMultiNoHandler->GetId());
+            ASSERT_EQ(aspectEntry.GetElementId(), element->GetElementId());
+            ++aspectCount;
+            }
+        ASSERT_EQ(2, aspectCount);
+        }
+
+    // Test iteration of DgnPlatformTest.TestMultiAspect
+        {
+        int aspectCount = 0;
+        ElementAspectIterator aspectIterator = m_db->Elements().MakeAspectIterator(DPTEST_SCHEMA(DPTEST_TEST_MULTI_ASPECT_CLASS_NAME));
+        for (ElementAspectIteratorEntryCR aspectEntry : aspectIterator)
+            {
+            ECInstanceId aspectInstanceId = aspectEntry.GetECInstanceId();
+            ASSERT_TRUE((aspectInstanceId == aspectInstanceId5) || (aspectInstanceId == aspectInstanceId6));
+            ASSERT_EQ(aspectEntry.GetClassId(), aspectClassMulti->GetId());
+            ASSERT_EQ(aspectEntry.GetElementId(), element->GetElementId());
+            ++aspectCount;
+            }
+        ASSERT_EQ(2, aspectCount);
+        }
+
+    // Test iteration of all aspects owned by element
+        {
+        int aspectCount = 0;
+        ElementAspectIterator aspectIterator = element->MakeAspectIterator();
+        for (ElementAspectIteratorEntryCR aspectEntry : aspectIterator)
+            {
+            ECInstanceId aspectInstanceId = aspectEntry.GetECInstanceId();
+            DgnClassId classId = aspectEntry.GetClassId();
+
+            if (aspectClassMultiNoHandler->GetId() == classId)
+                {
+                ASSERT_TRUE((aspectInstanceId == aspectInstanceId3) || (aspectInstanceId == aspectInstanceId4));
+                }
+            else if (aspectClassMultiNoHandler->GetId() == classId)
+                {
+                ASSERT_TRUE((aspectInstanceId == aspectInstanceId5) || (aspectInstanceId == aspectInstanceId6));
+                }
+
+            ASSERT_EQ(aspectEntry.GetElementId(), element->GetElementId());
+            ++aspectCount;
+            }
+        ASSERT_EQ(6, aspectCount);
+        }
     }

@@ -2190,6 +2190,7 @@ TEST_F(DgnElementTests, ElementIterator)
     SetupSeedProject();
     DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "TestCategory");
     PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "TestPhysicalModel");
+    CodeSpecId codeSpecId = DgnDbTestUtils::InsertCodeSpec(*m_db, "TestCodeSpec");
     const int numPhysicalObjects=5;
 
     for (int i=0; i<numPhysicalObjects; i++)
@@ -2198,6 +2199,8 @@ TEST_F(DgnElementTests, ElementIterator)
         ASSERT_TRUE(element.IsValid());
         Utf8PrintfString userLabel("UserLabel%d", i);
         element->SetUserLabel(userLabel.c_str());
+        Utf8PrintfString codeValue("CodeValue%d", i);
+        element->SetCode(CodeSpec::CreateCode(*m_db, "TestCodeSpec", codeValue));
         ASSERT_TRUE(element->Insert().IsValid());
         }
 
@@ -2220,6 +2223,10 @@ TEST_F(DgnElementTests, ElementIterator)
         ASSERT_EQ(entry.GetModelId(), model->GetModelId());
         Utf8PrintfString userLabel("UserLabel%d", count);
         ASSERT_STREQ(entry.GetUserLabel(), userLabel.c_str());
+        Utf8PrintfString codeValue("CodeValue%d", count);
+        ASSERT_STREQ(entry.GetCodeValue(), codeValue.c_str());
+        ASSERT_STREQ(entry.GetCode().GetValueCP(), codeValue.c_str());
+        ASSERT_EQ(entry.GetCode().GetCodeSpecId(), codeSpecId);
         count++;
         }
     ASSERT_EQ(numPhysicalObjects, count);

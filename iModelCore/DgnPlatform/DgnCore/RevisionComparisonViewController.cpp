@@ -64,6 +64,14 @@ TransientState ComparisonData::GetTransientState(DgnElementId id) const
     return m_transient.end() != iter ? *iter : TransientState();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool    ComparisonData::ContainsElement(DgnElementCP element) const
+    {
+    auto iter = std::find_if(m_persistent.begin(), m_persistent.end(), [=](PersistentState const& arg) { return arg.m_elementId == element->GetElementId(); });
+    return (m_persistent.end() != iter);
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    04/17
@@ -89,6 +97,18 @@ void ComparisonSymbologyOverrides::GetTargetRevisionOverrides(DbOpcode const& op
 void ComparisonSymbologyOverrides::GetUntouchedOverrides(Render::OvrGraphicParamsR overrides)
     {
     overrides = m_untouchedOverride;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::GraphicPtr  RevisionComparisonViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
+    {
+    // Avoid letting user pick elements that are not being compared
+    if (nullptr != context.GetIPickGeom() && !m_comparisonData->ContainsElement(source.ToElement()))
+        return nullptr;
+
+    return source.Stroke(context, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**

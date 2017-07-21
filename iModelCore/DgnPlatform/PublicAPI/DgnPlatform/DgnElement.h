@@ -248,15 +248,16 @@ struct ElementIteratorEntry : ECSqlStatementEntry
 private:
     ElementIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
 public:
-    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of this ElementIteratorEntry
-    template <class T_ElementId> T_ElementId GetId() const {return T_ElementId(GetElementId().GetValue());} //!< Get the DgnElementId of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT DgnModelId GetModelId() const; //!< Get the DgnModelId of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT DgnElementId GetParentId() const; //!< Get the DgnElementId of the parent of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const; //!< Get the user label of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT DateTime GetLastModifyTime() const; //!< Get the last modify time of this ElementIteratorEntry
+    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the current element
+    template <class T_ElementId> T_ElementId GetId() const {return T_ElementId(GetElementId().GetValue());} //!< Get the DgnElementId of the current element
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current element
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of the current element
+    DGNPLATFORM_EXPORT DgnCode GetCode() const; //!< Get the DgnCode of the current element
+    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of the current element
+    DGNPLATFORM_EXPORT DgnModelId GetModelId() const; //!< Get the DgnModelId of the current element
+    DGNPLATFORM_EXPORT DgnElementId GetParentId() const; //!< Get the DgnElementId of the parent of the current element
+    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const; //!< Get the user label of the current element
+    DGNPLATFORM_EXPORT DateTime GetLastModifyTime() const; //!< Get the last modify time of the current element
 };
 
 //=======================================================================================
@@ -291,6 +292,29 @@ struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
         for (ElementIteratorEntry entry : *this)
             idList.push_back(entry.GetId<T_ElementId>());
         }
+};
+
+//=======================================================================================
+//! The "current entry" of an ElementAspectIterator
+// @bsiclass                                                     Shaun.Sewall      11/16
+//=======================================================================================
+struct ElementAspectIteratorEntry : ECSqlStatementEntry
+{
+    friend struct ECSqlStatementIterator<ElementAspectIteratorEntry>;
+private:
+    ElementAspectIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+public:
+    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId GetECInstanceId() const; //!< Get ECInstanceId (unique instance identifier) of the current aspect
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current aspect
+    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the element that owns the current aspect
+};
+
+//=======================================================================================
+//! An iterator over a set of ElementAspects, defined by a query.
+// @bsiclass                                                     Shaun.Sewall      07/17
+//=======================================================================================
+struct ElementAspectIterator : ECSqlStatementIterator<ElementAspectIteratorEntry>
+{
 };
 
 //=======================================================================================
@@ -1910,6 +1934,9 @@ public:
     DGNPLATFORM_EXPORT void GetCustomHandledPropertiesAsJson(Json::Value& json) const;
 
     //! @}
+
+    //! Make an iterator over all ElementAspects owned by this element
+    DGNPLATFORM_EXPORT ElementAspectIterator MakeAspectIterator() const;
 };
 
 //=======================================================================================
@@ -3465,11 +3492,18 @@ public:
     enum class PolymorphicQuery : bool {No = false, Yes = true};
 
     //! Make an iterator over elements of the specified ECClass in this DgnDb.
-    //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
+    //! @param[in] className The <i>full</i> ECClass name of the element class.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
     //! @param[in] whereClause The optional where clause starting with WHERE
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     //! @param[in] polymorphic If false only specified class is returned. The default is true which also returns all derived classes.
     DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr, PolymorphicQuery polymorphic=PolymorphicQuery::Yes) const;
+
+    //! Make an iterator over ElementAspects of the specified ECClass in this DgnDb.
+    //! @param[in] className The <i>full</i> ECClass name of the aspect class.  For example: BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    //! @see DgnElement::MakeAspectIterator
+    DGNPLATFORM_EXPORT ElementAspectIterator MakeAspectIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}
