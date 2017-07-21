@@ -2,7 +2,7 @@
 |
 |     $Source: src/StandardNames.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -17,7 +17,7 @@ static double const E = 2.7182818284590452353602874713527;
 
 static Utf8CP const SI = "SI";
 static Utf8CP const CGS = "CGS";
-//static Utf8CP const METRIC = "METRIC";
+static Utf8CP const METRIC = "METRIC";
 static Utf8CP const IMPERIAL = "IMPERIAL";
 //static Utf8CP const PHYSICS = "PHYSICS";
 static Utf8CP const CHEMISTRY = "CHEMISTRY";
@@ -113,8 +113,8 @@ static Utf8CP const POPULATION_DENSITY = "POPULATION_DENSITY";
 static Utf8CP const FREQUENCY = "FREQUENCY";
 static Utf8CP const LINEAR_LOAD = "LINEAR_LOAD";
 static Utf8CP const AREA_LOAD = "AREA_LOAD";
-static Utf8CP const HEATING_VALUE_VOLUMETRIC = "HEATING_VALUE_VOLUMETRIC";
-static Utf8CP const HEATING_VALUE_MASS = "HEATING_VALUE_MASS";
+static Utf8CP const ENERGY_DENSITY = "ENERGY_DENSITY";
+static Utf8CP const SPECIFIC_ENERGY = "SPECIFIC_ENERGY";
 static Utf8CP const HEATING_VALUE_MOLE = "HEATING_VALUE_MOLE";
 static Utf8CP const SPECIFIC_HEAT_CAPACITY = "SPECIFIC_HEAT_CAPACITY";
 static Utf8CP const SPECIFIC_HEAT_CAPACITY_MOLAR = "SPECIFIC_HEAT_CAPACITY_MOLAR";

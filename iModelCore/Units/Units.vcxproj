@@ -13,6 +13,7 @@
     <ClCompile Include=".\src\UnitDefinitions.cpp" />
     <ClCompile Include=".\src\UnitRegistry.cpp" />
     <ClCompile Include=".\src\UnitTypes.cpp" />
+    <ClCompile Include="src\Formatting\FormatParsing.cpp" />
     <ClCompile Include="src\Formatting\FormatQuantity.cpp" />
     <ClCompile Include="src\Formatting\Formatting.cpp" />
     <ClCompile Include="src\Formatting\FormatUtils.cpp" />
@@ -31,8 +32,10 @@
     <ClInclude Include=".\PublicAPI\Units\UnitTypes.h" />
     <ClInclude Include=".\src\StandardNames.h" />
     <ClInclude Include=".\src\UnitsNativeLogging.h" />
-    <ClInclude Include="PublicAPI\Formatting\Formatting.h" />
+    <ClInclude Include="PublicAPI\Formatting\FormattingApi.h" />
     <ClInclude Include="PublicAPI\Formatting\FormattingDefinitions.h" />
+    <ClInclude Include="PublicAPI\Formatting\FormattingEnum.h" />
+    <ClInclude Include="PublicAPI\Formatting\FormattingParsing.h" />
     <ClInclude Include="src\SymbolicExpression.h" />
     <ClInclude Include="src\UnitsPCH.h" />
   </ItemGroup>

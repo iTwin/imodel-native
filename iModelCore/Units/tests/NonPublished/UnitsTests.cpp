@@ -219,6 +219,16 @@ TEST_F (UnitsTests, UnitsMapping)
         }
 
     EXPECT_EQ (101, notMapped.size() ) << guess;
+
+    //Test that all mappings do not use synonmyms
+    for(const auto& i : unitNameMap)
+        {
+        if (i.second.Equals("NULL"))
+            continue;
+        UnitCP unit = UnitRegistry::Instance().LookupUnit(i.second.c_str());
+        ASSERT_NE(nullptr, unit) << "Couldn't find unit with name " << i.second.c_str();
+        EXPECT_STREQ(i.second.c_str(), unit->GetName()) << "Mapping for old unit '" << i.first.c_str() << "' uses a synonmym";
+        }
     }
 
 // TODO: Make this test pass when conversions fail and add more conversions to test a wide spectrum of dimenions.
@@ -246,12 +256,12 @@ TEST_F(UnitsTests, TestTemperatureConversions)
     TestUnitConversion(32, "FAHRENHEIT", 0, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(20, "FAHRENHEIT", -6.666666666666666666666666666, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(122, "FAHRENHEIT", 50, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(60, "FAHRENHEIT", 288.70555555555555555555555555556, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(60, "FAHRENHEIT", 288.70555555555555555555555555556, "K", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(60, "FAHRENHEIT", 519.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(61.1, "FAHRENHEIT", 15.9875, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "FAHRENHEIT", -17.777777777777777777777777777778, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
                                           //12345678901234567|234567890123
-    TestUnitConversion(0, "FAHRENHEIT", 255.37222222222222222222222222222, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "FAHRENHEIT", 255.37222222222222222222222222222, "K", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "FAHRENHEIT", 459.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(0, "FAHRENHEIT", -1.8333333333333333333333333333333, "ROMER", 10, loadErrors, conversionErrors, handledUnits);
 
@@ -271,22 +281,22 @@ TEST_F(UnitsTests, TestTemperatureConversions)
     TestUnitConversion(-15, "CELSIUS", 5, "FAHRENHEIT", 10, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(-25, "CELSIUS", -13, "FAHRENHEIT", 10, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(60, "CELSIUS", 140, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(60, "CELSIUS", 333.15, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(60, "CELSIUS", 333.15, "K", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(60, "CELSIUS", 599.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(-14.3, "CELSIUS", -0.0075, "ROMER", 100, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "CELSIUS", 32, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "CELSIUS", 273.15, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "CELSIUS", 273.15, "K", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "CELSIUS", 491.67, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(0, "CELSIUS", 7.5, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
 
-    TestUnitConversion(42, "KELVIN", -231.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "KELVIN", -384.07, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "KELVIN", 75.6, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
-    //TestUnitConversion(571.2, "KELVIN", 163.97625, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "KELVIN", -273.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "KELVIN", -459.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "KELVIN", 0, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
-    //TestUnitConversion(0, "KELVIN", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "K", -231.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "K", -384.07, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "K", 75.6, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(571.2, "K", 163.97625, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "K", -273.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "K", -459.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "K", 0, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "K", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
 
 
     // Expected values generated using the following equations and windows calculator
@@ -296,11 +306,11 @@ TEST_F(UnitsTests, TestTemperatureConversions)
     // Rømer = (Rankine–491.67)×7/24+7.5
     TestUnitConversion(42, "RANKINE", -249.81666666666666666666666666667, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(42, "RANKINE", -417.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(42, "RANKINE", 23.333333333333333, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(42, "RANKINE", 23.333333333333333, "K", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(630, "RANKINE", 47.84625, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "RANKINE", -273.15, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(0, "RANKINE", -459.67, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    TestUnitConversion(0, "RANKINE", 0, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    TestUnitConversion(0, "RANKINE", 0, "K", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(0, "RANKINE", -135.90375, "ROMER", 1, loadErrors, conversionErrors, handledUnits);
     
     // Expected values generated using the following equations and windows calculator
@@ -310,11 +320,11 @@ TEST_F(UnitsTests, TestTemperatureConversions)
     // Rankine = (Rømer–7.5)×24/7+491.67
     //TestUnitConversion(42, "ROMER", 65.714285714285714285714285714286, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(42, "ROMER", 150.28571428571428571428571428571, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    //TestUnitConversion(42, "ROMER", 338.86428571428571428571428571429, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(42, "ROMER", 338.86428571428571428571428571429, "K", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(42, "ROMER", 609.95571428571428571428571428571, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(0, "ROMER", -14.285714285714285714285714285714, "CELSIUS", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(0, "ROMER", 6.285714285714285714, "FAHRENHEIT", 1, loadErrors, conversionErrors, handledUnits);
-    //TestUnitConversion(0, "ROMER", 258.8642857142857142, "KELVIN", 1, loadErrors, conversionErrors, handledUnits);
+    //TestUnitConversion(0, "ROMER", 258.8642857142857142, "K", 1, loadErrors, conversionErrors, handledUnits);
     //TestUnitConversion(0, "ROMER", 465.9557142857142857, "RANKINE", 1, loadErrors, conversionErrors, handledUnits);
 
 
@@ -600,6 +610,9 @@ TEST_F(UnitsTests, TestMiscConversions)
     TestUnitConversion(1.0, "W/SQ.M", 1.0, "W/SQ.M", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "CD", 1.0, "CD", 1, loadErrors, conversionErrors, handledUnits);
     TestUnitConversion(1.0, "STERAD", 1.0, "STERAD", 1, loadErrors, conversionErrors, handledUnits);
+
+    // Specific heat capacity molar
+    TestUnitConversion(1.0, "J/(MOL*K)", 1000.0, "J/(KMOL*K)", 1, loadErrors, conversionErrors, handledUnits);
 
     ASSERT_EQ(0, loadErrors.size()) << BeStringUtilities::Join(loadErrors, ", ");
     ASSERT_EQ(0, conversionErrors.size()) << BeStringUtilities::Join(conversionErrors, ", ");
