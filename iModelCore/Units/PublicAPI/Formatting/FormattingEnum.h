@@ -323,12 +323,14 @@ enum class CursorSectionType
 enum class FormatSpecialCodes
     {
     SignatureNull = 0,
-    SignatureNU = 1,
-    SignatureNFU = 2,
-    SignatureNUNU = 3,
-    SignatureNUNFU = 4,
-    SignatureNUNUNU= 5,
-    SignatureNUNUNFU = 6,
+    SignatureN = 1,
+    SignatureNF = 2,
+    SignatureNU =3,
+    SignatureNFU = 4,
+    SignatureNUNU = 5,
+    SignatureNUNFU = 6,
+    SignatureNUNUNU= 7,
+    SignatureNUNUNFU = 8,
     SignatureInvalid = 100
     };
 

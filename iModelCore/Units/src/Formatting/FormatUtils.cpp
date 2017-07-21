@@ -132,7 +132,9 @@ const FormatSpecialCodes FormatConstant::SpecialtyMap(Utf8CP name)
 const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     {
     if(Utf8String::IsNullOrEmpty(name)) return FormatSpecialCodes::SignatureNull;
-    if(strcmp("NU", name) == 0) return FormatSpecialCodes::SignatureNU;
+    if (strcmp("N", name) == 0) return FormatSpecialCodes::SignatureN;
+    if (strcmp("NF", name) == 0) return FormatSpecialCodes::SignatureNF;
+    if (strcmp("NU", name) == 0) return FormatSpecialCodes::SignatureNU;
     if (strcmp("FU", name) == 0) return FormatSpecialCodes::SignatureNU;
     if (strcmp("NFU", name) == 0) return FormatSpecialCodes::SignatureNFU;
     if (strcmp("NUNU", name) == 0) return FormatSpecialCodes::SignatureNUNU;

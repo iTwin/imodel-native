@@ -124,6 +124,7 @@ TEST(FormattingTest, Preliminary)
 
     FormattingTestFixture::ParseToQuantity("-23.45E-03_M", 0, "MM");
     FormattingTestFixture::ParseToQuantity("30 1/2 IN", 0, "FT");
+    FormattingTestFixture::ParseToQuantity("30 1/2", 0, "IN");
     FormattingTestFixture::ParseToQuantity("3 FT 6 IN", 0, "FT");
     FormattingTestFixture::ParseToQuantity("3 FT 6 IN", 0, "IN");
     FormattingTestFixture::ParseToQuantity("3 FT 6 IN", 0, "CM");

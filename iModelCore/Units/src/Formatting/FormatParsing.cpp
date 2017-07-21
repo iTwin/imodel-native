@@ -2025,6 +2025,12 @@ BEU::Quantity  FormatParsingSet::GetQuantity()
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
     switch (cod)
         {
+        case Formatting::FormatSpecialCodes::SignatureN:
+            qty = BEU::Quantity(m_segs[0].GetReal(), *m_unit);
+            break;
+        case Formatting::FormatSpecialCodes::SignatureNF:
+            qty = BEU::Quantity(m_segs[0].GetReal() + m_segs[1].GetReal(), *m_unit);
+            break;
         case Formatting::FormatSpecialCodes::SignatureNU:
             majP = m_segs[1].GetUnit();
             qty = BEU::Quantity(m_segs[0].GetReal(), *majP);
