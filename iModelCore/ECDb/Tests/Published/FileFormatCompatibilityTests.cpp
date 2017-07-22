@@ -41,13 +41,34 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl)
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
 
+    BeFileName artefactOutDir;
+    BeTest::GetHost().GetOutputRoot(artefactOutDir);
+
+    BeFileStatus stat = BeFileStatus::Success;
+
+
     int benchmarkMasterTableRowCount = 0;
     {
+    BeFileName benchmarkDdlDumpFilePath(artefactOutDir);
+    benchmarkDdlDumpFilePath.AppendToPath(L"benchmarkddl.txt");
+
+    BeTextFilePtr benchmarkDdlDumpFile = BeTextFile::Open(stat, benchmarkDdlDumpFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
+    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << benchmarkDdlDumpFilePath;
+
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(benchmarkFile, "SELECT count(*) FROM sqlite_master"));
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    benchmarkMasterTableRowCount = stmt.GetValueInt(0);
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master ORDER BY name"));
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        benchmarkMasterTableRowCount++;
+        benchmarkDdlDumpFile->PutLine(WString(stmt.GetValueText(0), BentleyCharEncoding::Utf8).c_str(), true);
+        }
     }
+
+
+    BeFileName actualDdlDumpFilePath(artefactOutDir);
+    actualDdlDumpFilePath.AppendToPath(L"actualddl.txt");
+    BeTextFilePtr actualDdlDumpFile = BeTextFile::Open(stat, actualDdlDumpFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
+    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << actualDdlDumpFilePath;
 
     Statement benchmarkDdlLookupStmt;
     ASSERT_EQ(BE_SQLITE_OK, benchmarkDdlLookupStmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master WHERE name=?"));
@@ -62,10 +83,17 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl)
         Utf8CP actualName = actualDdlStmt.GetValueText(0);
         Utf8CP actualDdl = actualDdlStmt.GetValueText(1);
 
-        ASSERT_EQ(BE_SQLITE_OK, benchmarkDdlLookupStmt.BindText(1, actualName, Statement::MakeCopy::No)) << actualName;
-        ASSERT_EQ(BE_SQLITE_ROW, benchmarkDdlLookupStmt.Step()) << "DB object in actual file not found: " << actualName;
-        Utf8CP benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(0);
-        EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in actual file has different DDL than in benchmark file: " << actualName;
+        actualDdlDumpFile->PutLine(WString(actualDdl, BentleyCharEncoding::Utf8).c_str(), true);
+
+        benchmarkDdlLookupStmt.BindText(1, actualName, Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW == benchmarkDdlLookupStmt.Step())
+            {
+            Utf8CP benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(0);
+            EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in actual file has different DDL than in benchmark file: " << actualName;
+            }
+        else
+            EXPECT_TRUE(false) << "DB object in actual file not found: " << actualName;
+
         benchmarkDdlLookupStmt.Reset();
         benchmarkDdlLookupStmt.ClearBindings();
         }
@@ -87,7 +115,7 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables)
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
 
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, "SELECT name FROM sqlite_master WHERE name LIKE 'ec_%%' ORDER BY name"));
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(SELECT name FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
     while (BE_SQLITE_ROW == stmt.Step())
         {
         Utf8CP tableName = stmt.GetValueText(0);
