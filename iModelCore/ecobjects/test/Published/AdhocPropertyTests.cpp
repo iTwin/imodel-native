@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/NonPublished/AdhocPropertyTests.cpp $
+|     $Source: test/Published/AdhocPropertyTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/NonPublished/ECExpressionTests.cpp $
+|     $Source: test/Published/ECExpressionTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
