@@ -30,7 +30,7 @@ struct  Struct2
 
 struct InstanceTests;
 struct CompressInstanceTests;
-struct PropertyTests : InstanceTests {};
+struct PropertyTests;
 struct StringEncodingTests;
 
 Utf8Char s_schemaXml[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
@@ -99,6 +99,8 @@ struct InstanceTests : ECTestFixture
         return prop;
         }
     };
+
+struct PropertyTests : InstanceTests {};
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   11/12
