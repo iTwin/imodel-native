@@ -129,7 +129,11 @@ DgnDbPtr imodeljs::GetDbByName(DbResult& dbres, Utf8String& errmsg, BeFileNameCR
         // *** NEEDS WORK: To save the user the trouble of typing in a full path name, we'll let him
         //                  define an envvar that defines the directory.
         BeFileName dbDir;
+#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
         Utf8CP dbdirenv = getenv("NODE_DGNDB_DIR");
+#else
+        Utf8CP dbdirenv = nullptr;
+#endif
         if (nullptr != dbdirenv)
             dbDir.SetNameUtf8(dbdirenv);
         else
