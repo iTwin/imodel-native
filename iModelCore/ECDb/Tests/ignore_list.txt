@@ -18,21 +18,5 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 #TFS 721630 
 ECSqlSelectPrepareTests.LikeOperator
 
-# After bim0200holdouts merge this fails:
-DbMappingTestFixture.LogicalForeignKeyOnSharedColumn
-# [==========] Running 1 test from 1 test case.
-# [----------] Global test environment set-up.
-# [----------] 1 test from DbMappingTestFixture
-# [ RUN      ] DbMappingTestFixture.LogicalForeignKeyOnSharedColumn
-# f:\merge\bim0200\src\ECDb\Tests\Published\DbMappingTests.cpp(7078): error:       Expected: 51
-# To be equal to: stmt.GetValueInt64(1)
-#        Which is: 57
-
-# After merging in bim0200dev, these fail:
 FileFormatCompatibilityTests.CompareDdl
 FileFormatCompatibilityTests.CompareProfileTables
-JsonInserterTests.InsertJsonCppJSON
-JsonInserterTests.InsertRapidJson
-JsonReaderTests.JsonValueStruct
-RelationshipMappingTestFixture.LogicalForeignKeyRelationshipMappedToSharedColumn
-
