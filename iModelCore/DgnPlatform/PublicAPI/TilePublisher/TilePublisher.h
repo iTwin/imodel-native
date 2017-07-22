@@ -191,7 +191,7 @@ struct MeshMaterial : TileMaterial
     static constexpr double GetSpecularFinish() { return 0.9; }
     static constexpr double GetSpecularExponentMult() { return 48.0; }
 private:
-    DgnMaterialCPtr         m_material;
+    RenderMaterialCPtr      m_material;
     RgbFactor               m_specularColor = { 1.0, 1.0, 1.0 };
     double                  m_specularExponent = GetSpecularFinish() * GetSpecularExponentMult();
     bool                    m_ignoreLighting;
@@ -203,7 +203,7 @@ public:
     bool HasTransparency() const { return m_hasAlpha; }
     bool IgnoresLighting() const { return m_ignoreLighting; }
     ColorIndex::Dimension GetColorIndexDimension() const { return m_colorDimension; }
-    DgnMaterialCP GetDgnMaterial() const { return m_material.get(); }
+    RenderMaterialCP GetDgnMaterial() const { return m_material.get(); }
     double GetSpecularExponent() const { return m_specularExponent; }
     RgbFactor const& GetSpecularColor() const { return m_specularColor; }
 
@@ -296,7 +296,7 @@ protected:
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
 
-    BeFileName GetTilesetFileName(DgnModelId modelId);
+    BeFileName GetTilesetFileName(DgnModelId modelId);
     Utf8String GetTilesetName(DgnModelId modelId, bool asClassifier);
     void WriteModelTileset(TileNodeCR tile);
     void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId);

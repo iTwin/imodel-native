@@ -2,9 +2,18 @@
 <ECSchema schemaName="BisCore" alias="bis" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1" displayLabel="BIS Core" description="The BIS core classes that all other domain schemas extend.">
 
     <ECSchemaReference name="CoreCustomAttributes" version="1.0" alias="CoreCA"/>
-    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="1.12" alias="bsca"/>
-    <ECSchemaReference name="EditorCustomAttributes" version="1.3" alias="beca" />
     <ECSchemaReference name="ECDbMap" version="2.0" alias="ecdbmap"/>
+    <ECSchemaReference name="ECDbSchemaPolicies" version="1.0" alias="ecdbpol"/>
+
+    <ECCustomAttributes>
+        <NoAdditionalRootEntityClasses xmlns="ECDbSchemaPolicies.1.0"/>
+        <NoAdditionalForeignKeyConstraints xmlns="ECDbSchemaPolicies.1.0">
+            <Exceptions>
+                <string>Functional:FunctionalElement.TypeDefinition</string>
+            </Exceptions>
+        </NoAdditionalForeignKeyConstraints>
+        <NoAdditionalLinkTables xmlns="ECDbSchemaPolicies.1.0"/>
+    </ECCustomAttributes>
 
     <!-- Applied to an ECClass to indicate that a subclass of DgnDomain::Handler will be supplied for it at run-time.
          It must be applied to any ECClass if the application/domain registers a Handler for that ECClass.
@@ -62,12 +71,6 @@
 
     <ECRelationshipClass typeName="CodeSpecSpecifiesCode" strength="referencing" modifier="Sealed">
         <!-- @see Element.CodeSpec ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the CodeSpecId foreign key column in the bis_Element table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="specified code for" polymorphic="true">
             <Class class="CodeSpec"/>
         </Source>
@@ -78,12 +81,6 @@
 
     <ECRelationshipClass typeName="ElementScopesCode" strength="referencing" modifier="Sealed">
         <!-- @see Element.CodeScope ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the CodeScopeId foreign key column in the bis_Element table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="scopes code for" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -106,32 +103,46 @@
                 <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
                 <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
             </ShareColumns>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="ParentModel" relationshipName="ModelOwnsSubModel" direction="Backward" readOnly="True" displayLabel="Parent Model" description="The Parent Model (which contains the Modeled Element) is above this model in the information hierarchy.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the ParentModelId foreign key column in the bis_Model table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="ModeledElement" relationshipName="ModelModelsElement" direction="Forward" readOnly="True" displayLabel="Modeled Element" description="This Model is modeling (describing or breaking down) this element which is at a higher level of the information hierarchy.">
+            <ECCustomAttributes>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the ModeledElementId foreign key column in the bis_Model table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
+            </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="IsPrivate" typeName="boolean" displayLabel="Is Private" description="If IsPrivate is true then this model should not appear in lists shown to the user.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="IsTemplate" typeName="boolean" displayLabel="Is Template" description="IsTemplate will be true if this Model is used as a template for creating new instances.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel" modifier="Abstract" displayLabel="Geometric Model" description="A container for persisting geometric elements.">
         <BaseClass>Model</BaseClass>
+        <ECCustomAttributes>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
+        </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricModel3d" modifier="Abstract" displayLabel="3D Geometric Model" description="A container for persisting 3D geometric elements.">
         <BaseClass>GeometricModel</BaseClass>
@@ -245,12 +256,6 @@
 
     <ECRelationshipClass typeName="ModelOwnsSubModel" strength="embedding" modifier="Sealed">
         <!-- @see Model.ParentModel ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the ParentModelId foreign key column in the bis_Model table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="owns sub" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -261,12 +266,6 @@
 
     <ECRelationshipClass typeName="ModelContainsElements" strength="embedding" modifier="Sealed" description="Associates Elements with a Model">
         <!-- @see Element.Model ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the ModelId foreign key column in the bis_Element table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="contains" polymorphic="true">
             <Class class="Model"/>
         </Source>
@@ -285,26 +284,20 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="ModelModelsElement" strength="embedding" strengthDirection="Backward" modifier="None">
         <!-- @see Model.ModeledElement ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the ModeledElementId foreign key column in the bis_Model table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="models" polymorphic="true">
             <Class class="Model"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is modeled by" polymorphic="true">
-            <Class class="Element" />
+            <Class class="ISubModeledElement" />
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="PhysicalModelBreaksDownPhysicalElement" strength="embedding" strengthDirection="Backward" modifier="None">
+    <ECRelationshipClass typeName="PhysicalModelBreaksDownPhysicalPortion" strength="embedding" strengthDirection="Backward" modifier="None">
         <BaseClass>ModelModelsElement</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="breaks down" polymorphic="true">
             <Class class="PhysicalModel"/>
         </Source>
         <Target multiplicity="(0..1)" roleLabel="is broken down by" polymorphic="true">
-            <Class class="PhysicalElement" />
+            <Class class="PhysicalPortion" />
         </Target>
     </ECRelationshipClass>
     <ECRelationshipClass typeName="DrawingModelBreaksDownDrawing" strength="embedding" strengthDirection="Backward" modifier="None">
@@ -333,6 +326,7 @@
             <ClassMap xmlns="ECDbMap.2.0">
                 <MapStrategy>TablePerHierarchy</MapStrategy>
             </ClassMap>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
             <DbIndexList xmlns="ECDbMap.2.0">
                 <Indexes>
                     <DbIndex>
@@ -369,10 +363,14 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Model" relationshipName="ModelContainsElements" direction="Backward" readOnly="True" description="The Model that contains this element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>2</StatementTypes>
                 </CustomHandledProperty>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the ModelId foreign key column in the bis_Element table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="LastMod" typeName="dateTime" readOnly="True" displayLabel="Last Modified" description="The last modified time of the element. This is maintained by the core framework and should not be set directly by applications.">
@@ -383,23 +381,31 @@
                 <CustomHandledProperty>
                     <StatementTypes>0</StatementTypes>
                 </CustomHandledProperty>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="CodeSpec" displayLabel="Code Specification" relationshipName="CodeSpecSpecifiesCode" direction="Backward" description="The Code Specification used to generate and validate the code for the element. The combination of Code Specification, Code Scope Element, and the Code value must be unique.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the CodeSpecId foreign key column in the bis_Element table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECNavigationProperty propertyName="CodeScope" displayLabel="Code Scope" relationshipName="ElementScopesCode" direction="Backward"  description="Code Scope identifies the element that provides the uniqueness scope for the code value. The combination of Code Specification, Code Scope, and the Code value must be unique.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the CodeScopeId foreign key column in the bis_Element table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="CodeValue" typeName="string" displayLabel="Code" description="Code is the formal name (business key) for an element. The combination of Code Specification, Code Scope, and the Code value must be unique.">
@@ -427,10 +433,15 @@
         </ECProperty>
         <ECNavigationProperty propertyName="Parent" relationshipName="ElementOwnsChildElements" direction="Backward" description="The parent element that owns this element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the ParentId foreign key column in the bis_Element table -->
+                    <!-- The Element API will handle cascading the delete -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="FederationGuid" typeName="binary" extendedTypeName="BeGuid" displayLabel="Federation GUID" description="The GUID used to federate this element across repositories.">
@@ -442,12 +453,12 @@
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="JsonProperties" typeName="string" extendedTypeName="Json" displayLabel="JSON Properties" description="A string property that users and/or applications can use to persist JSON values.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty>
                     <StatementTypes>6</StatementTypes>
                 </CustomHandledProperty>
@@ -460,6 +471,22 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0">
+                <Exceptions>
+                    <string>Planning:PlanningElement</string>
+                </Exceptions>
+            </NotSubclassableInReferencingSchemas>
+        </ECCustomAttributes>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="DriverBundleElement" modifier="Abstract" displayLabel="Driver Bundle Element" description="Element used in conjunction with bis:ElementDrivesElement relationships to bundle multiple inputs before driving the output element.">
+        <BaseClass>InformationContentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+            <ShareColumns xmlns="ECDbMap.2.0">
+                <MaxSharedColumnsBeforeOverflow>32</MaxSharedColumnsBeforeOverflow>
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -545,10 +572,6 @@
 
     <ECRelationshipClass typeName="GeometricElement2dHasTypeDefinition" strength="referencing" modifier="Abstract">
         <!-- @see GeometricElement2d.TypeDefinition ECNavigationProperty -->
-        <ECCustomAttributes>
-            <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement2d table -->
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="GeometricElement2d" />
         </Source>
@@ -568,10 +591,6 @@
     
     <ECRelationshipClass typeName="GeometricElement3dHasTypeDefinition" strength="referencing" modifier="Abstract">
         <!-- @see GeometricElement3d.TypeDefinition ECNavigationProperty -->
-        <ECCustomAttributes>
-            <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement3d table -->
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="has" polymorphic="true">
             <Class class="GeometricElement3d" />
         </Source>
@@ -633,7 +652,7 @@
             <Class class="InformationPartitionElement"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="SubjectOwnsChildSubjects" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="SubjectOwnsSubjects" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
             <Class class="Subject"/>
@@ -754,7 +773,7 @@
         <ECProperty propertyName="RepositoryGuid" typeName="binary" extendedTypeName="BeGuid" displayLabel="Repository GUID">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -893,6 +912,7 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -910,6 +930,7 @@
         <BaseClass>Element</BaseClass>
         <ECCustomAttributes>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
     <ECEntityClass typeName="GeometricElement3d" modifier="Abstract" displayLabel="3D Geometric Element" description="3D Geometric Element is an abstract base class used to model real world entities that intrinsicly have 3D geometry.">
@@ -925,63 +946,69 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Category" relationshipName="GeometricElement3dIsInCategory" direction="Forward" description="The Spatial Category used to categorize the 3D Geometric Element">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the CategoryId foreign key column in the bis_GeometricElement3d table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="InSpatialIndex" typeName="boolean" displayLabel="In Spatial Index" description="If true, this element will have an entry in the Spatial Index.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Origin" typeName="point3d" description="The placement origin of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Yaw" typeName="double" description="The Yaw angle (in degrees) of the orientation of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Pitch" typeName="double" description="The Pitch angle (in degrees) of the orientation of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Roll" typeName="double" description="The Roll angle (in degrees) of the orientation of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d" displayLabel="Bounding Box Low" description="The 'low' point of the element-aligned bounding box of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxHigh" typeName="point3d" displayLabel="Bounding Box High" description="The 'high' point of the element-aligned bounding box of the Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream" displayLabel="Geometry Stream" description="Binary stream used to persist the geometry of this Element.">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="TypeDefinition" relationshipName="GeometricElement3dHasTypeDefinition" direction="Forward" displayLabel="Type Definition">
             <!-- NOTE: Has same propertyName as other element subclasses in case the concept of "TypeDefinition" needs to move down to bis:Element. -->
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
+                <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement3d table -->
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
@@ -1034,6 +1061,10 @@
         <ECNavigationProperty propertyName="Category" relationshipName="GeometricElement2dIsInCategory" direction="Forward" description="The Drawing Category used to categorize the 2D Geometric Element">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0">
+                    <!-- Creates the CategoryId foreign key column in the bis_GeometricElement2d table -->
+                    <OnDeleteAction>NoAction</OnDeleteAction>
+                </ForeignKeyConstraint>
             </ECCustomAttributes>
         </ECNavigationProperty>
         <ECProperty propertyName="Origin" typeName="point2d" description="The placement origin of the Element.">
@@ -1059,14 +1090,16 @@
         <ECProperty propertyName="GeometryStream" typeName="binary" extendedTypeName="GeometryStream" displayLabel="Geometry Stream" description="Binary stream used to persist the geometry of this Element.">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECNavigationProperty propertyName="TypeDefinition" relationshipName="GeometricElement2dHasTypeDefinition" direction="Forward" displayLabel="Type Definition">
             <!-- NOTE: Has same propertyName as other element subclasses in case the concept of "TypeDefinition" needs to move down to bis:Element. -->
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
+                <!-- Creates the TypeDefinitionId foreign key column in the bis_GeometricElement2d table -->
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
@@ -1086,14 +1119,14 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="TextAnnotationData" displayLabel="Text Annotation Data" description="The aspect used to store text annotation data for 2D and 3D text annotation elements.">
+    <ECEntityClass typeName="TextAnnotationData" modifier="Sealed" displayLabel="Text Annotation Data" description="The aspect used to store text annotation data for 2D and 3D text annotation elements.">
+        <BaseClass>ElementUniqueAspect</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
-        <BaseClass>ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="TextAnnotation" typeName="binary" displayLabel="Text Annotation">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1130,234 +1163,6 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECEntityClass typeName="AnnotationTable" displayLabel="Annotation Table" description="An Annotation Table is a 2D annotation element that displays a grid containing text and/or graphics.">
-        <BaseClass>AnnotationElement2d</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="AnnotationTableHeader" displayLabel="Annotation Table Header">
-        <!-- The aspect that holds the header properties for an AnnotationTable -->
-        <BaseClass>ElementUniqueAspect</BaseClass>
-        <ECProperty propertyName="RowCount" typeName="int"/>
-        <ECProperty propertyName="ColumnCount" typeName="int"/>
-        <ECProperty propertyName="TextStyleId" typeName="long"/>
-        <ECProperty propertyName="TitleRowCount" typeName="int"/>
-        <ECProperty propertyName="HeaderRowCount" typeName="int"/>
-        <ECProperty propertyName="FooterRowCount" typeName="int"/>
-        <ECProperty propertyName="HeaderColumnCount" typeName="int"/>
-        <ECProperty propertyName="FooterColumnCount" typeName="int"/>
-        <ECProperty propertyName="BreakType" typeName="int"/>
-        <ECProperty propertyName="BreakPosition" typeName="int"/>
-        <ECProperty propertyName="BreakLength" typeName="double"/>
-        <ECProperty propertyName="BreakGap" typeName="double"/>
-        <ECProperty propertyName="RepeatHeaders" typeName="boolean"/>
-        <ECProperty propertyName="RepeatFooters" typeName="boolean"/>
-        <ECProperty propertyName="DefaultColumnWidth" typeName="double"/>
-        <ECProperty propertyName="DefaultRowHeight" typeName="double"/>
-        <ECProperty propertyName="DefaultMarginTop" typeName="double"/>
-        <ECProperty propertyName="DefaultMarginBottom" typeName="double"/>
-        <ECProperty propertyName="DefaultMarginLeft" typeName="double"/>
-        <ECProperty propertyName="DefaultMarginRight" typeName="double"/>
-        <ECProperty propertyName="DefaultCellAlignment" typeName="int"/>
-        <ECProperty propertyName="DefaultCellOrientation" typeName="int"/>
-        <ECProperty propertyName="FillSymbologyKeyOddRow" typeName="int"/>
-        <ECProperty propertyName="FillSymbologyKeyEvenRow" typeName="int"/>
-        <ECProperty propertyName="TitleRowTextStyle" typeName="long"/>
-        <ECProperty propertyName="HeaderRowTextStyle" typeName="long"/>
-        <ECProperty propertyName="FooterRowTextStyle" typeName="long"/>
-        <ECProperty propertyName="HeaderColumnTextStyle" typeName="long"/>
-        <ECProperty propertyName="FooterColumnTextStyle" typeName="long"/>
-        <ECProperty propertyName="BackupTextHeight" typeName="double"/>
-        <ECProperty propertyName="DataSourceProviderId" typeName="long"/>
-        <ECProperty propertyName="BodyTextHeight" typeName="double"/>
-        <ECProperty propertyName="TitleRowTextHeight" typeName="double"/>
-        <ECProperty propertyName="HeaderRowTextHeight" typeName="double"/>
-        <ECProperty propertyName="FooterRowTextHeight" typeName="double"/>
-        <ECProperty propertyName="HeaderColumnTextHeight" typeName="double"/>
-        <ECProperty propertyName="FooterColumnTextHeight" typeName="double"/>
-        <ECProperty propertyName="TextSymbKey" typeName="int"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsHeader" strength="embedding" modifier="None">
-        <BaseClass>ElementOwnsUniqueAspect</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="false">
-            <Class class="AnnotationTableHeader"/>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECEntityClass typeName="AnnotationTableRow" displayLabel="Annotation Table Row">
-        <!-- The aspect that holds properties of a row of an AnnotationTable -->
-        <BaseClass>ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="RowIndex" typeName="int"/>
-        <ECProperty propertyName="HeightLock" typeName="boolean"/>
-        <ECProperty propertyName="Height" typeName="double"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsRows" strength="embedding" modifier="None">
-        <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
-            <Class class="AnnotationTableRow"/>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECEntityClass typeName="AnnotationTableColumn" displayLabel="Annotation Table Column">
-        <!-- The aspect that holds properties of a column of an AnnotationTable -->
-        <BaseClass>ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="ColumnIndex" typeName="int"/>
-        <ECProperty propertyName="WidthLock" typeName="boolean"/>
-        <ECProperty propertyName="Width" typeName="double"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsColumns" strength="embedding" modifier="None">
-        <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
-            <Class class="AnnotationTableColumn"/>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECStructClass typeName="AnnotationTableCellIndex" displayLabel="Annotation Table Cell Index">
-        <ECProperty propertyName="RowIndex" typeName="int"/>
-        <ECProperty propertyName="ColumnIndex" typeName="int"/>
-    </ECStructClass>
-
-    <ECEntityClass typeName="AnnotationTableCell" displayLabel="Annotation Table Cell">
-        <!-- The aspect that holds properties of a cell of an AnnotationTable -->
-        <BaseClass>ElementMultiAspect</BaseClass>
-        <ECStructProperty propertyName="CellIndex" typeName="AnnotationTableCellIndex"/>
-        <ECProperty propertyName="TextBlock" typeName="binary">
-            <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
-            </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="FillKey" typeName="int"/>
-        <ECProperty propertyName="Alignment" typeName="int"/>
-        <ECProperty propertyName="Orientation" typeName="int"/>
-        <ECProperty propertyName="MarginTop" typeName="double"/>
-        <ECProperty propertyName="MarginBottom" typeName="double"/>
-        <ECProperty propertyName="MarginLeft" typeName="double"/>
-        <ECProperty propertyName="MarginRight" typeName="double"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsCells" strength="embedding" modifier="None">
-        <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
-            <Class class="AnnotationTableCell"/>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECEntityClass typeName="AnnotationTableMerge" displayLabel="Annotation Table Merge">
-        <!-- The aspect that holds properties describing merging of cells in an AnnotationTable -->
-        <BaseClass>ElementMultiAspect</BaseClass>
-        <ECStructProperty propertyName="RootCell" typeName="AnnotationTableCellIndex"/>
-        <ECProperty propertyName="RowSpan" typeName="int"/>
-        <ECProperty propertyName="ColumnSpan" typeName="int"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsMerges" strength="embedding" modifier="None">
-        <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
-            <Class class="AnnotationTableMerge"/>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECEntityClass typeName="AnnotationTableSymbology" displayLabel="Annotation Table Symbology">
-        <!-- The aspect that holds properties describing symbology in an AnnotationTable -->
-        <BaseClass>ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="SymbologyKey" typeName="int"/>
-        <ECProperty propertyName="Visible" typeName="boolean"/>
-        <ECProperty propertyName="Color" typeName="int"/>
-        <ECProperty propertyName="Weight" typeName="int"/>
-        <ECProperty propertyName="LineStyleId" typeName="long"/>
-        <ECProperty propertyName="LineStyleScale" typeName="double"/>
-        <ECProperty propertyName="FillColor" typeName="int"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsSymbologies" strength="embedding" modifier="None">
-        <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
-            <Class class="AnnotationTableSymbology"/>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECEntityClass typeName="AnnotationTableEdgeRun" displayLabel="Annotation Table Edge Run">
-        <!-- The aspect that holds properties describing edges in an AnnotationTable -->
-        <BaseClass>ElementMultiAspect</BaseClass>
-        <ECProperty propertyName="HostType" typeName="int"/>
-        <ECProperty propertyName="Host" typeName="int"/>
-        <ECProperty propertyName="Start" typeName="int"/>
-        <ECProperty propertyName="Span" typeName="int"/>
-        <ECProperty propertyName="SymbologyKey" typeName="int"/>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="AnnotationTableOwnsEdgeRuns" strength="embedding" modifier="None">
-        <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="false">
-            <Class class="AnnotationTable"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="false">
-            <Class class="AnnotationTableEdgeRun"/>
-        </Target>
-    </ECRelationshipClass>
-
-    <!--
-    <ECEntityClass typeName="DimensionStyle" displayLabel="Dimension Style">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="TextStyleId" typeName="long">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
-        </ECProperty>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="LinearDimension" displayLabel="Linear Dimension">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <ECProperty propertyName="StyleId" typeName="long">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
-        </ECProperty>
-        <ECProperty propertyName="Points" typeName="binary" description="Location of dimension points">
-          <ECCustomAttributes>
-            <CustomHandledProperty/>
-          </ECCustomAttributes>
-        </ECProperty>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="LinearDimension2d" displayLabel="2D Linear Dimension">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <BaseClass>AnnotationElement2d</BaseClass>
-        <BaseClass>LinearDimension</BaseClass>
-    </ECEntityClass>
-
-    <ECEntityClass typeName="LinearDimension3d" displayLabel="3D Linear Dimension">
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.1.0"/>
-        </ECCustomAttributes>
-        <BaseClass>GraphicalElement3d</BaseClass>
-        <BaseClass>LinearDimension</BaseClass>
-    </ECEntityClass>
-    -->
-
     <ECEntityClass typeName="ViewAttachment" displayLabel="View Attachment">
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
@@ -1386,13 +1191,6 @@
     <ECRelationshipClass typeName="ElementOwnsChildElements" strength="embedding" modifier="None">
         <!-- @see Element.Parent ECNavigationProperty -->
         <!-- WIP: Should be abstract? -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the ParentId foreign key column in the bis_Element table -->
-                <!-- The Element API will handle cascading the delete -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -1425,6 +1223,7 @@
         <!-- BIS Guideline: Subclass ElementUniqueAspect or ElementMultiAspect rather than subclassing ElementAspect directly. -->
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -1442,16 +1241,14 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsUniqueAspect" direction="Backward" description="The owning Element">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+                <!-- Creates the ElementId foreign key column in the bis_ElementUniqueAspect table -->
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsUniqueAspect" strength="embedding" modifier="None">
         <!-- @see ElementUniqueAspect.Element ECNavigationProperty -->
-        <ECCustomAttributes>
-            <!-- Creates the ElementId foreign key column in the bis_ElementUniqueAspect table -->
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
@@ -1475,67 +1272,19 @@
         </ECCustomAttributes>
         <ECNavigationProperty propertyName="Element" relationshipName="ElementOwnsMultiAspects" direction="Backward" description="The owning Element">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
+                <!-- Creates the ElementId foreign key column in the bis_ElementMultiAspect table -->
+                <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
             </ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
     <ECRelationshipClass typeName="ElementOwnsMultiAspects" strength="embedding" modifier="None">
         <!-- @see ElementMultiAspect.Element ECNavigationProperty -->
-        <ECCustomAttributes>
-            <!-- Creates the ElementId foreign key column in the bis_ElementMultiAspect table -->
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0"/>
-        </ECCustomAttributes>
         <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
             <Class class="Element"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
             <Class class="ElementMultiAspect"/>
-        </Target>
-    </ECRelationshipClass>
-
-    <ECEntityClass typeName="ElementExternalKey" displayLabel="Element External Key">
-        <!-- The aspect that holds an identifier from an external system -->
-        <BaseClass>ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <DbIndexList xmlns="ECDbMap.2.0">
-                <Indexes>
-                    <DbIndex>
-                        <Name>ix_bis_ElementExternalKey_ElementId_CodeSpecId</Name>
-                        <IsUnique>True</IsUnique>
-                        <Properties>
-                            <!-- Only one ExternalKey per CodeSpec per Element -->
-                            <string>Element.Id</string>
-                            <string>CodeSpecId</string>
-                        </Properties>
-                    </DbIndex>
-                    <DbIndex>
-                        <!-- Index for looking up Element by ExternalKey -->
-                        <!-- IsUnique=False to support ExternalKeys for types (multiple Elements have same ExternalKey) -->
-                        <Name>ix_bis_ElementExternalKey_CodeSpecId_ExternalKey</Name>
-                        <IsUnique>False</IsUnique>
-                        <Properties>
-                            <string>CodeSpecId</string>
-                            <string>ExternalKey</string>
-                        </Properties>
-                    </DbIndex>
-                </Indexes>
-            </DbIndexList>
-        </ECCustomAttributes>
-        <ECProperty propertyName="CodeSpecId" typeName="long">
-            <!-- WIP: Foreign key relationship to CodeSpec that controls the ExternalKey -->
-            <!-- IsNullable = False -->
-        </ECProperty>
-        <ECProperty propertyName="ExternalKey" typeName="string">
-            <!-- IsNullable = False -->
-        </ECProperty>
-    </ECEntityClass>
-    <ECRelationshipClass typeName="ElementOwnsExternalKeys" strength="embedding" modifier="None">
-        <BaseClass>ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" roleLabel="owns" polymorphic="true">
-            <Class class="Element"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="is owned by" polymorphic="true">
-            <Class class="ElementExternalKey"/>
         </Target>
     </ECRelationshipClass>
 
@@ -1609,16 +1358,17 @@
         <BaseClass>IParentElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
         </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string" DisplayLabel="Description">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Rank" typeName="int">
             <ECCustomAttributes>
-                <HideProperty xmlns="EditorCustomAttributes.1.3"/>
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
                 <CustomHandledProperty/>
             </ECCustomAttributes>
         </ECProperty>
@@ -1665,12 +1415,6 @@
 
     <ECRelationshipClass typeName="GeometricElement2dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
         <!-- @see GeometricElement2d.Category ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the CategoryId foreign key column in the bis_GeometricElement2d table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="true">
             <Class class="GeometricElement2d" />
         </Source>
@@ -1680,12 +1424,6 @@
     </ECRelationshipClass>
     <ECRelationshipClass typeName="GeometricElement3dIsInCategory" strength="referencing" strengthDirection="Backward" modifier="Sealed" description="Element is in Category">
         <!-- @see GeometricElement3d.Category ECNavigationProperty -->
-        <ECCustomAttributes>
-            <ForeignKeyConstraint xmlns="ECDbMap.2.0">
-                <!-- Creates the CategoryId foreign key column in the bis_GeometricElement3d table -->
-                <OnDeleteAction>NoAction</OnDeleteAction>
-            </ForeignKeyConstraint>
-        </ECCustomAttributes>
         <Source multiplicity="(0..*)" roleLabel="is in" polymorphic="true">
             <Class class="GeometricElement3d" />
         </Source>
@@ -1703,7 +1441,8 @@
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
     
-    <ECEntityClass typeName="MaterialElement" modifier="Sealed" displayLabel="Material">
+    <ECEntityClass typeName="RenderMaterial" modifier="Sealed" displayLabel="Render Material">
+        <!-- Marked as "Sealed" because JsonProperties will be used to persist data. This allows a single instance to "morph" between a DgnV8 render material and a future PBR material. -->
         <BaseClass>DefinitionElement</BaseClass>
         <BaseClass>IParentElement</BaseClass>
         <ECCustomAttributes>
@@ -1712,15 +1451,22 @@
         <ECProperty propertyName="PaletteName" typeName="string"/>
         <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
-    <ECRelationshipClass typeName="MaterialOwnsChildMaterials" strength="embedding" modifier="None">
+    <ECRelationshipClass typeName="RenderMaterialOwnsRenderMaterials" strength="embedding" modifier="None">
         <BaseClass>ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" roleLabel="owns child" polymorphic="false">
-            <Class class="MaterialElement"/>
+            <Class class="RenderMaterial"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is owned by parent" polymorphic="false">
-            <Class class="MaterialElement"/>
+            <Class class="RenderMaterial"/>
         </Target>
     </ECRelationshipClass>
+
+    <ECEntityClass typeName="PhysicalMaterial" modifier="Abstract" displayLabel="Physical Material">
+        <BaseClass>DefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+        </ECCustomAttributes>
+    </ECEntityClass>
 
     <ECEntityClass typeName="AnnotationTextStyle" modifier="Sealed" displayLabel="Annotation Text Style">
         <ECCustomAttributes>
@@ -1735,7 +1481,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1753,7 +1499,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1771,7 +1517,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1789,7 +1535,7 @@
         <ECProperty propertyName="Data" typeName="binary" description="Encoded style properties">
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
     </ECEntityClass>
@@ -1817,7 +1563,7 @@
             <ECCustomAttributes>
                 <!-- IsNullable=False -->
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="Format" typeName="int" description="Format of the encoded texture data">
@@ -1864,10 +1610,10 @@
         </Target>
     </ECRelationshipClass>
 
-    <ECRelationshipClass typeName="ViewDefinition3dUsesModelSelector" strength="referencing" modifier="Sealed">
-        <!-- @see ViewDefinition3d.ModelSelector ECNavigationProperty -->
+    <ECRelationshipClass typeName="SpatialViewDefinitionUsesModelSelector" strength="referencing" modifier="Sealed">
+        <!-- @see SpatialViewDefinition.ModelSelector ECNavigationProperty -->
         <Source multiplicity="(0..*)" roleLabel="uses" polymorphic="true">
-            <Class class="ViewDefinition3d"/>
+            <Class class="SpatialViewDefinition"/>
         </Source>
         <Target multiplicity="(1..1)" roleLabel="is used by" polymorphic="true">
             <Class class="ModelSelector"/>
@@ -1943,7 +1689,10 @@
 
     <ECEntityClass typeName="DisplayStyle" modifier="Abstract" displayLabel="Display Style">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
+        </ECCustomAttributes>
     </ECEntityClass>
 
     <ECEntityClass typeName="DisplayStyle2d" displayLabel="2D Display Style">
@@ -1958,7 +1707,10 @@
 
     <ECEntityClass typeName="ViewDefinition" modifier="Abstract" displayLabel="View Definition">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.1.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
+        </ECCustomAttributes>
         <ECProperty propertyName="Description" typeName="string"/>
         <ECNavigationProperty propertyName="CategorySelector" relationshipName="ViewDefinitionUsesCategorySelector" direction="Forward" displayLabel="Category Selector">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
@@ -2003,7 +1755,7 @@
     <ECEntityClass typeName="SpatialViewDefinition" displayLabel="Spatial View Definition" description="A view of a spatially located volume.">
         <BaseClass>ViewDefinition3d</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
-        <ECNavigationProperty propertyName="ModelSelector" relationshipName="ViewDefinition3dUsesModelSelector" direction="Forward" displayLabel="Model Selector">
+        <ECNavigationProperty propertyName="ModelSelector" relationshipName="SpatialViewDefinitionUsesModelSelector" direction="Forward" displayLabel="Model Selector">
             <ECCustomAttributes><CustomHandledProperty/></ECCustomAttributes>
         </ECNavigationProperty>
     </ECEntityClass>
@@ -2071,6 +1823,11 @@
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
             <JoinedTablePerDirectSubclass xmlns="ECDbMap.2.0"/>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0">
+                <Exceptions>
+                    <string>Functional:FunctionalElement</string>
+                </Exceptions>
+            </NotSubclassableInReferencingSchemas>
         </ECCustomAttributes>
     </ECEntityClass>
 
@@ -2097,7 +1854,7 @@
             <!-- IsNullable = False -->
             <ECCustomAttributes>
                 <CustomHandledProperty/>
-                <HideProperty xmlns="EditorCustomAttributes.1.3" />
+                <HiddenProperty xmlns="CoreCustomAttributes.1.0"/>
             </ECCustomAttributes>
         </ECProperty>
         <ECProperty propertyName="BBoxLow" typeName="point3d" displayLabel="Bounding Box Low">
@@ -2126,22 +1883,25 @@
 
     <ECEntityClass typeName="AuxCoordSystem" modifier="Abstract" displayLabel="Auxiliary Coordinate System">
         <BaseClass>DefinitionElement</BaseClass>
-        <ECProperty propertyName="Type" typeName="int"></ECProperty>
-        <ECProperty propertyName="Description" typeName="string"></ECProperty>
+        <ECCustomAttributes>
+            <NotSubclassableInReferencingSchemas xmlns="CoreCustomAttributes.1.0"/>
+        </ECCustomAttributes>
+        <ECProperty propertyName="Type" typeName="int"/>
+        <ECProperty propertyName="Description" typeName="string"/>
     </ECEntityClass>
     <ECEntityClass typeName="AuxCoordSystem2d" displayLabel="2D Auxiliary Coordinate System" description="A 2D coordinate system.">
         <BaseClass>AuxCoordSystem</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
-        <ECProperty propertyName="Origin" typeName="Point2d"></ECProperty>
-        <ECProperty propertyName="Angle" typeName="double"></ECProperty>
+        <ECProperty propertyName="Origin" typeName="Point2d"/>
+        <ECProperty propertyName="Angle" typeName="double"/>
     </ECEntityClass>
     <ECEntityClass typeName="AuxCoordSystem3d" displayLabel="3D Auxiliary Coordinate System" description="A 3D coordinate system.">
         <BaseClass>AuxCoordSystem</BaseClass>
         <ECCustomAttributes><ClassHasHandler xmlns="BisCore.1.0"/></ECCustomAttributes>
-        <ECProperty propertyName="Origin" typeName="Point3d"></ECProperty>
-        <ECProperty propertyName="Yaw" typeName="double"></ECProperty>
-        <ECProperty propertyName="Pitch" typeName="double"></ECProperty>
-        <ECProperty propertyName="Roll" typeName="double"></ECProperty>
+        <ECProperty propertyName="Origin" typeName="Point3d"/>
+        <ECProperty propertyName="Yaw" typeName="double"/>
+        <ECProperty propertyName="Pitch" typeName="double"/>
+        <ECProperty propertyName="Roll" typeName="double"/>
     </ECEntityClass>
     <ECEntityClass typeName="AuxCoordSystemSpatial" displayLabel="Spatial Auxiliary Coordinate System" description="A spatial coordinate system.">
         <BaseClass>AuxCoordSystem3d</BaseClass>

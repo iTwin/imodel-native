@@ -39,7 +39,6 @@ DGNPLATFORM_REF_COUNTED_PTR(GenericViewAttachmentLabel)
 #define GENERIC_CLASS_SpatialLocation       "SpatialLocation"
 #define GENERIC_CLASS_Group                 "Group"
 #define GENERIC_CLASS_GroupModel            "GroupModel"
-#define GENERIC_CLASS_MultiAspect           "MultiAspect"
 #define GENERIC_CLASS_Callout               "Callout"
 #define GENERIC_CLASS_SectionCallout        "SectionCallout"
 #define GENERIC_CLASS_ElevationCallout      "ElevationCallout"

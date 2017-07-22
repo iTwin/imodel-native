@@ -77,55 +77,10 @@ public:
             virtual bool _GetACSContextLock() const {return false;}     //!< If ACS Plane Lock is on, standard view rotations are relative to the ACS instead of global.
             };
 
-        //! Provides access to scripting services.
-        //! This is a complete implementation of the Admin needed to establish a scripting environment and to set up and use the DgnScript.
-        //! You may subclass ScriptAdmin if you want to add more thread-specific contexts to it.
+        //! Provides access to a BeJsContext on threads other than the UI thread.
         struct ScriptAdmin : IHostObject
             {
-            enum class LoggingSeverity : uint32_t
-                {
-                // *** NB: These values must be the same as NativeLogging::SEVERITY, except that they are positive instead of negative
-                Fatal   = 0, 
-                Error   = 1, 
-                Warning = 2, 
-                Info    = 3, 
-                Debug   = 4, 
-                Trace   = 5
-                };
-
             DGNPLATFORM_EXPORT void CheckCleanup();
-
-            static NativeLogging::SEVERITY ToNativeLoggingSeverity(LoggingSeverity severity)
-                {
-                // *** NB: ScriptAdmin::LoggingSeverity must be the same as NativeLogging::SEVERITY, except that they are positive instead of negative
-                return (NativeLogging::SEVERITY)(-(int32_t)severity); 
-                }
-
-            struct INativePointerMarshaller
-                {
-                virtual void _MarshallNativePointerToJs(BeJsNativePointerR, BeJsContextR, void*native) = 0;
-                virtual void _MarshallNativePointerFromJs(void*native, BeJsNativePointerCR) { ; } // rarely needed
-                };
-
-            //! Interface to be implemented by helpers that can import optional script libraries into the DgnScriptContext
-            struct ScriptLibraryImporter
-                {
-                //! Import the specified script
-                virtual void _ImportScriptLibrary(BeJsContextR, Utf8CP libName) = 0;
-
-                //! Return the marshaller to use for the specified type. Return nullptr if the type is unrecognized.
-                //! @param typeScriptTypeName The name of the type in the TypeScript API
-                virtual INativePointerMarshaller* _GetMarshallerForType(Utf8StringCR typeScriptTypeName) = 0;
-                };
-
-            //! Interface for handling errors reported by scripts or that prevent scripts from running. This should be a singleton. It will not be freed.
-            struct ScriptNotificationHandler
-                {
-                //! Handle a script error
-                enum class Category {ReportedByScript, ParseError, Exception, Other};
-                DGNPLATFORM_EXPORT virtual void _HandleScriptError(BeJsContextR, Category category, Utf8CP description, Utf8CP details);
-                DGNPLATFORM_EXPORT virtual void _HandleLogMessage(Utf8CP category, LoggingSeverity sev, Utf8CP msg);
-                };
 
             DGNPLATFORM_EXPORT ScriptAdmin();
             DGNPLATFORM_EXPORT ~ScriptAdmin();
@@ -133,6 +88,7 @@ public:
             //! Prepare to execute scripts on the current thread. Call only once per thread!
             //! @see DgnScriptThreadEnabler
             DGNPLATFORM_EXPORT void InitializeOnThread();
+
             //! Indicate that the current thread is finished executing scripts. A thread that has called InitializeOnThread must call TerminateOnThread before exiting!
             //! @see DgnScriptThreadEnabler
             DGNPLATFORM_EXPORT void TerminateOnThread();
@@ -144,47 +100,6 @@ public:
             //! Get the BeJsContext to use when executing script that needs to use the Dgn script object model on the current thread.
             //! All scripts to be evaluated on this thread must use this BeJsContext.
             DGNPLATFORM_EXPORT BeJsContextR GetDgnScriptContext();
-
-            //! Obtain the text of the specified script program.
-            //! This base class implementation looks for the program by name in the specified DgnDb.
-            //! @param[out] sText           The text of the script that was found in the library
-            //! @param[out] stypeFound      The type of script actually found in the library
-            //! @param[out] lastModifiedTime The last-modified-time of the script that was found.
-            //! @param[in] db               The current DgnDb file
-            //! @param[in] sName            Identifies the script in the library
-            //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
-            //! @return non-zero if the JS program is not available from the library.
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _FetchScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, DgnDbR db, Utf8CP sName, DgnScriptType stypePreferred);
-
-            //! Generate an exception in JavaScript
-            //! @param exname   The name of the exception to throw
-            //! @param details  Information about the exception
-            DGNPLATFORM_EXPORT virtual void _ThrowException(Utf8CP exname, Utf8CP details);
-
-            //! Register the script error handler for the current thread
-            DGNPLATFORM_EXPORT ScriptNotificationHandler* RegisterScriptNotificationHandler(ScriptNotificationHandler& h);
-
-            //! Get the script error handler for the current thread
-            DGNPLATFORM_EXPORT ScriptNotificationHandler* GetScriptNotificationHandler();
-
-            //! Handle a reported script error. Invokes the registered error handler.
-            DGNPLATFORM_EXPORT void HandleScriptError (ScriptNotificationHandler::Category category, Utf8CP description, Utf8CP details);
-
-            //! Handle a notification sent from the script. Invokes the registered handler.
-            DGNPLATFORM_EXPORT void HandleLogMessage (Utf8CP category, LoggingSeverity sev, Utf8CP msg);
-
-            //! Register to import a set of projections or other script classes into the DgnScript JsContext. @note Will be used for all threads. Must be thread-safe.
-            //! @param libName  the library's unique ID that will be requested by script client programs
-            //! @param importer the importer that can install the specified library
-            DGNPLATFORM_EXPORT void RegisterScriptLibraryImporter(Utf8CP libName, ScriptLibraryImporter& importer);
-
-            //! Make sure that the specified script library is loaded
-            //! @param libName  the library's unique ID that will be requested by script client programs
-            DGNPLATFORM_EXPORT BentleyStatus ImportScriptLibrary(Utf8CP libName); 
-
-            DGNPLATFORM_EXPORT void/*Json::Value*/ EvaluateScript(Utf8CP script);
-
-            INativePointerMarshaller* GetINativePointerMarshaller(Utf8StringCR typeScriptTypeName);
 
             //! Clean up
             DGNPLATFORM_EXPORT void _OnHostTermination(bool px) override;
@@ -528,41 +443,6 @@ public:
             virtual void _OnResponse(IBriefcaseManager::Response const& response, Utf8CP operation) { }
             };
 
-        //! Supervises the creation and management of element codes.
-        struct CodeAdmin : IHostObject
-        {
-        public:
-            //! Register the default CodeSpec for the specified ECClass
-            //! @see _GetDefaultCodeSpecId
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _RegisterDefaultCodeSpec(Utf8CP className, Utf8CP codeSpecName);
-
-            //! Get the default CodeSpec associated with the specified ECClass
-            //! @note Called by DgnElement::GenerateCode
-            //! @see _RegisterDefaultCodeSpec
-            DGNPLATFORM_EXPORT virtual CodeSpecId _GetDefaultCodeSpecId(DgnDbR, ECN::ECClassCR) const;
-
-            //! Generate a DgnCode for the specified element using the specified CodeSpec
-            DGNPLATFORM_EXPORT virtual DgnCode _GenerateCode(DgnElementCR, CodeSpecCR) const;
-            
-            //! Reserve the next DgnCode given an element, a CodeSpec, and a sequenceMask
-            //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnCode _ReserveNextCodeInSequence(DgnElementCR, CodeSpecCR, Utf8StringCR) const;
-
-            //! Attempt to reserve the specified DgnCode for the specified element
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _ReserveCode(DgnElementCR, DgnCodeCR) const;
-            
-            //! Validate a code against the specified CodeSpec
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _ValidateCode(DgnCodeCR, CodeSpecCR) const;
-
-            //! Get the class type code for the specified element
-            //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetElementTypeCode(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
-
-            //! Get the value of a property as specified by the CodeFragmentSpec
-            //! @note Called by _GenerateCode
-            DGNPLATFORM_EXPORT virtual DgnDbStatus _GetPropertyValue(Utf8StringR, DgnElementCR, CodeFragmentSpecCR) const;
-        };
-
         typedef bvector<DgnDomain*> T_RegisteredDomains;
 
     protected:
@@ -580,7 +460,6 @@ public:
         FormatterAdmin*         m_formatterAdmin;
         ScriptAdmin*            m_scriptingAdmin;
         RepositoryAdmin*        m_repositoryAdmin;
-        CodeAdmin*              m_codeAdmin;
         Utf8String              m_productName;
         DevelopmentPhase        m_developmentPhase;
         T_RegisteredDomains     m_registeredDomains;
@@ -624,9 +503,6 @@ public:
         //! Supply the RepositoryAdmin
         DGNPLATFORM_EXPORT virtual RepositoryAdmin& _SupplyRepositoryAdmin();
 
-        //! Supply the CodeAdmin.
-        DGNPLATFORM_EXPORT virtual CodeAdmin& _SupplyCodeAdmin();
-
         //! Supply the SessionSettingsAdmin.
         DGNPLATFORM_EXPORT virtual SessionSettingsAdmin& _SupplySessionSettingsAdmin();
 
@@ -656,7 +532,6 @@ public:
             m_formatterAdmin = nullptr;
             m_scriptingAdmin = nullptr;
             m_repositoryAdmin = nullptr;
-            m_codeAdmin = nullptr;
             };
 
         virtual ~Host() {}
@@ -674,7 +549,6 @@ public:
         FormatterAdmin&         GetFormatterAdmin()        {return *m_formatterAdmin;}
         ScriptAdmin&            GetScriptAdmin()           {return *m_scriptingAdmin;}
         RepositoryAdmin&        GetRepositoryAdmin()       {return *m_repositoryAdmin;}
-        CodeAdmin&              GetCodeAdmin()             {return *m_codeAdmin;} 
         Utf8CP                  GetProductName()           {return m_productName.c_str();}
         DevelopmentPhase        GetDevelopmentPhase()      {return m_developmentPhase;}
 

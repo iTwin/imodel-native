@@ -134,6 +134,12 @@ DgnDbStatus DgnCodeSpecs::Insert(CodeSpecR codeSpec)
     if (QueryCodeSpecId(codeSpec.GetName().c_str()).IsValid())
         return DgnDbStatus::DuplicateName;
 
+    if (RepositoryStatus::Success != m_dgndb.BriefcaseManager().LockCodeSpecs().Result())
+        {
+        BeAssert(false && "CodeSpecs lock not held");
+        return DgnDbStatus::LockNotHeld;
+        }
+
     CodeSpecId newId;
     auto status = m_dgndb.GetServerIssuedId(newId, BIS_TABLE(BIS_CLASS_CodeSpec), "Id");
     if (BE_SQLITE_OK != status)
@@ -365,9 +371,10 @@ DbResult DgnDb::CreateCodeSpecs()
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_GraphicalType2d, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LineStyle, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_LinkElement, CodeScopeSpec::CreateModelScope())) ||
-        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_MaterialElement, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_ModelSelector, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_PhysicalMaterial, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_PhysicalType, CodeScopeSpec::CreateModelScope())) ||
+        (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_RenderMaterial, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_Sheet, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SpatialCategory, CodeScopeSpec::CreateModelScope())) ||
         (DgnDbStatus::Success != insertCodeSpec(*this, BIS_CODESPEC_SpatialLocationType, CodeScopeSpec::CreateModelScope())) ||
@@ -432,8 +439,9 @@ DgnCode CodeSpec::CreateCode(Utf8CP codeSpecName, DgnElementCR scopeElement, Utf
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const
     {
-    BeAssert(scopeModel.GetModelId().IsValid() && IsModelScope());
-    return scopeModel.GetModelId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), scopeModel.GetModeledElementId(), value) : DgnCode();
+    DgnElementCPtr scopeElement = scopeModel.GetModeledElement();
+    BeAssert(scopeElement.IsValid() && IsModelScope());
+    return scopeElement.IsValid() && !value.empty() ? CreateCode(*scopeElement, value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -441,8 +449,32 @@ DgnCode CodeSpec::CreateCode(DgnModelCR scopeModel, Utf8StringCR value) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode CodeSpec::CreateCode(DgnElementCR scopeElement, Utf8StringCR value) const
     {
-    BeAssert(scopeElement.GetElementId().IsValid());
-    return scopeElement.GetElementId().IsValid() && !value.empty() ? DgnCode(GetCodeSpecId(), scopeElement.GetElementId(), value) : DgnCode();
+    if (value.empty())
+        return DgnCode();
+
+    if (GetScopeRequirement() == CodeScopeSpec::ScopeRequirement::FederationGuid)
+        return scopeElement.GetFederationGuid().IsValid() ? DgnCode(GetCodeSpecId(), scopeElement.GetFederationGuid(), value) : DgnCode();
+        
+    return scopeElement.GetElementId().IsValid() ? DgnCode(GetCodeSpecId(), scopeElement.GetElementId(), value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(DgnDbR db, Utf8CP codeSpecName, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value)
+    {
+    CodeSpecCPtr codeSpec = db.CodeSpecs().GetCodeSpec(codeSpecName);
+    BeAssert(codeSpec.IsValid());
+    return codeSpec.IsValid() ? codeSpec->CreateCode(scopeFederationGuid, value) : DgnCode();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode CodeSpec::CreateCode(BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) const
+    {
+    BeAssert(scopeFederationGuid.IsValid());
+    return scopeFederationGuid.IsValid() ? DgnCode(GetCodeSpecId(), scopeFederationGuid, value) : DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -454,27 +486,70 @@ DgnCode DgnCode::CreateEmpty()
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/15
+* @bsimethod                                                    Shaun.Sewall    07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCode::From(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value)
+DgnElementId DgnCode::GetScopeElementId(DgnDbR db) const
     {
-    m_specId = specId;
-    m_scopeElementId = scopeElementId;
-    m_value = value;
+    uint64_t scopeElementId;
+    if (BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(scopeElementId, m_scope.c_str()))
+        return DgnElementId(scopeElementId);
+
+    BeGuid scopeFederationGuid;
+    if (BentleyStatus::SUCCESS == scopeFederationGuid.FromString(m_scope.c_str()))
+        {
+        DgnElementCPtr scopeElement = db.Elements().QueryElementByFederationGuid(scopeFederationGuid);
+        if (scopeElement.IsValid())
+            return scopeElement->GetElementId();
+        }
+
+    return DgnElementId();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      08/15
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
+    {
+    m_specId = importer.RemapCodeSpecId(m_specId);
+
+    uint64_t scopeElementId;
+    if (BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(scopeElementId, m_scope.c_str()))
+        m_scope = importer.FindElementId(DgnElementId(scopeElementId)).ToString(BeInt64Id::UseHex::Yes);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode DgnCode::From(CodeSpecId specId, Utf8StringCR scope, Utf8StringCR value)
+    {
+    if (specId.IsValid() && !scope.empty() && !value.empty())
+        {
+        uint64_t scopeElementId;
+        if (BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(scopeElementId, scope.c_str()))
+            return DgnCode(specId, DgnElementId(scopeElementId), value);
+
+        BeGuid scopeFederationGuid;
+        if (BentleyStatus::SUCCESS == scopeFederationGuid.FromString(scope.c_str()))
+            return DgnCode(specId, scopeFederationGuid, value);
+        }
+
+    BeAssert(false);
+    return DgnCode();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool DgnCode::operator<(DgnCode const& rhs) const
+bool DgnCode::operator<(DgnCodeCR rhs) const
     {
     if (GetCodeSpecId().GetValueUnchecked() != rhs.GetCodeSpecId().GetValueUnchecked())
         return GetCodeSpecId().GetValueUnchecked() < rhs.GetCodeSpecId().GetValueUnchecked();
 
-    if (GetScopeElementId().GetValueUnchecked() != rhs.GetScopeElementId().GetValueUnchecked())
-        return GetScopeElementId().GetValueUnchecked() < rhs.GetScopeElementId().GetValueUnchecked();
+    int cmp = GetValue().CompareTo(rhs.GetValue());
+    if (0 != cmp)
+        return cmp < 0;
 
-    return GetValue().CompareTo(rhs.GetValue()) < 0;
+    return GetScopeString().CompareTo(rhs.GetScopeString()) < 0;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -503,7 +578,7 @@ Json::Value DgnCode::ToJson2() const
     {
     Json::Value val;
     val[json_spec()] = m_specId.ToString(BeInt64Id::UseHex::Yes);
-    val[json_scope()] = m_scopeElementId.ToString(BeInt64Id::UseHex::Yes);
+	val[json_scope()] = m_scope;
     val[json_value()] = m_value;
     return val;
     }
@@ -515,7 +590,7 @@ DgnCode DgnCode::FromJson2(JsonValueCR value)
     {
     DgnCode val;
     val.m_specId = CodeSpecId(value[json_spec()].asUInt64());
-    val.m_scopeElementId = DgnElementId(value[json_scope()].asUInt64());
+    val.m_scope = value[json_value()].asString();
     val.m_value = value[json_value()].asString();
     return val;
     }

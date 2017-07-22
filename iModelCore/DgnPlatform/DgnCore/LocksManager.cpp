@@ -16,7 +16,6 @@ static const BeInt64Id s_dbId((uint64_t)1);
 LockableId::LockableId(DgnDbCR db)
     : m_id(s_dbId), m_type(LockableType::Db)
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -25,7 +24,13 @@ LockableId::LockableId(DgnDbCR db)
 LockableId::LockableId(SchemaManagerCR schemas)
     : m_id(s_dbId), m_type(LockableType::Schemas)
     {
-    //
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+LockableId::LockableId(DgnCodeSpecs const& codeSpecs) : m_id(s_dbId), m_type(LockableType::CodeSpecs)
+    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -33,7 +38,6 @@ LockableId::LockableId(SchemaManagerCR schemas)
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockableId::LockableId(DgnModelCR model) : m_id(model.GetModelId()), m_type(LockableType::Model)
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -41,7 +45,6 @@ LockableId::LockableId(DgnModelCR model) : m_id(model.GetModelId()), m_type(Lock
 +---------------+---------------+---------------+---------------+---------------+------*/
 LockableId::LockableId(DgnElementCR el) : m_id(el.GetElementId()), m_type(LockableType::Element)
     {
-    //
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -103,6 +106,15 @@ void LockRequest::Insert(DgnDbCR db, LockLevel level)
 void LockRequest::InsertSchemasLock(DgnDbCR db)
     {
     InsertLock(LockableId(db.Schemas()), LockLevel::Exclusive);
+    Insert(db, LockLevel::Shared); // Insert shared lock on the DgnDb to prevent it's deletion.
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Shaun.Sewall    06/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void LockRequest::InsertCodeSpecsLock(DgnDbCR db)
+    {
+    InsertLock(LockableId(db.CodeSpecs()), LockLevel::Exclusive);
     Insert(db, LockLevel::Shared); // Insert shared lock on the DgnDb to prevent it's deletion.
     }
 

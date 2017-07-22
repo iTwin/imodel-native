@@ -320,7 +320,6 @@ void DgnPlatformLib::Host::TerminateDgnCore(bool onProgramExit)
     BeAssert(NULL == m_exceptionHandler);
     BeAssert(NULL == m_knownLocationsAdmin);
     BeAssert(NULL == m_repositoryAdmin);
-    BeAssert(NULL == m_codeAdmin);
     BeAssert(NULL == m_sessionSettingsAdmin);
     }
 
@@ -366,7 +365,6 @@ DgnPlatformLib::Host::TxnAdmin&             DgnPlatformLib::Host::_SupplyTxnAdmi
 DgnPlatformLib::Host::FormatterAdmin&       DgnPlatformLib::Host::_SupplyFormatterAdmin()       {return *new FormatterAdmin();}
 DgnPlatformLib::Host::ScriptAdmin&          DgnPlatformLib::Host::_SupplyScriptingAdmin()       {return *new ScriptAdmin();}
 DgnPlatformLib::Host::RepositoryAdmin&      DgnPlatformLib::Host::_SupplyRepositoryAdmin()      {return *new RepositoryAdmin();}
-DgnPlatformLib::Host::CodeAdmin&            DgnPlatformLib::Host::_SupplyCodeAdmin()            {return *new CodeAdmin();}
 DgnPlatformLib::Host::SessionSettingsAdmin& DgnPlatformLib::Host::_SupplySessionSettingsAdmin() {return *new SessionSettingsAdmin();}
 
 //---------------------------------------------------------------------------------------
