@@ -1803,7 +1803,7 @@ BentleyStatus SchemaWriter::UpdateClass(ClassChange& classChange, ECClassCR oldC
 
     if (classChange.GetClassModifier().IsValid())
         {
-        BentleyApi::Nullable<ECClassModifier> oldValue = classChange.GetClassModifier().GetOld();
+        Nullable<ECClassModifier> oldValue = classChange.GetClassModifier().GetOld();
         ECClassModifier newValue = classChange.GetClassModifier().GetNew().Value();
         if (oldValue == ECClassModifier::Abstract)
             {
