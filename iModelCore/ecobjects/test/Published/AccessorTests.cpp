@@ -18,7 +18,7 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 struct ValueAccessorTests : ECTestFixture
     {
     ECSchemaPtr          m_schema;
-    ECEntityClassP             m_ecClass;
+    ECEntityClassP       m_ecClass;
     IECInstancePtr       m_instance;
     uint32_t             propIndex;
 
@@ -211,6 +211,47 @@ TEST_F (ValueAccessorTests, MatchAccessors)
     EXPECT_FALSE (accessor_1 == accessor_3);
     EXPECT_FALSE (accessor_1 != accessor_2);
     EXPECT_TRUE (accessor_1 != accessor_3);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/    
+TEST_F (ValueAccessorTests, CreateFromInstanceIndexConstructAndClone)
+    {
+    CreateSchema();
+    CreateProperty("Property_1");
+    CreateInstance();
+    
+    ECValueAccessor m_accessor1 = ECValueAccessor(*m_instance, propIndex);
+    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor1, ECValue("Some value 1")), ECObjectsStatus::Success);
+    
+    ECValue value1;
+    m_instance->GetValueUsingAccessor (value1, m_accessor1);
+    EXPECT_STREQ (value1.GetUtf8CP(), "Some value 1");
+    
+    ECValueAccessor m_accessor2;
+    m_accessor2.Clone(m_accessor1);
+    
+    ECValue value2;
+    m_instance->GetValueUsingAccessor (value2, m_accessor2);
+    EXPECT_STREQ (value2.GetUtf8CP(), "Some value 1");
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                 Raimondas.Rimkus 02/2013
++---------------+---------------+---------------+---------------+---------------+------*/    
+TEST_F (ValueAccessorTests, CreateFromEnabledIndexConstruct)
+    {
+    CreateSchema();
+    CreateProperty("Property_1");
+    CreateInstance();
+    
+    ECValueAccessor m_accessor = ECValueAccessor(*m_ecClass->GetDefaultStandaloneEnabler(), propIndex);
+    EXPECT_EQ (m_instance->SetValueUsingAccessor (m_accessor, ECValue("Some value 1")), ECObjectsStatus::Success);
+    
+    ECValue value1;
+    m_instance->GetValueUsingAccessor (value1, m_accessor);
+    EXPECT_STREQ (value1.GetUtf8CP(), "Some value 1");
     }
     
 END_BENTLEY_ECN_TEST_NAMESPACE

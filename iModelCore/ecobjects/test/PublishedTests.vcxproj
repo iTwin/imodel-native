@@ -57,11 +57,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Published\AccessorTests.cpp" />
+    <ClCompile Include="Published\AdhocPropertyTests.cpp" />
     <ClCompile Include="Published\BuildInstanceAndSerializeToXML.cpp" />
+    <ClCompile Include="Published\CalculatedPropertyTests.cpp" />
     <ClCompile Include="Published\CustomAttributeUnitsConversionTests.cpp" />
     <ClCompile Include="Published\CustomAttributeConversionsTest.cpp" />
     <ClCompile Include="Published\CustomAttributeTests.cpp" />
     <ClCompile Include="Published\ECClassTests.cpp" />
+    <ClCompile Include="Published\ECDBufferTests.cpp" />
+    <ClCompile Include="Published\ECExpressionTests.cpp" />
     <ClCompile Include="Published\ECSchemaValidatorTests.cpp" />
     <ClCompile Include="Published\ECEnumerationTests.cpp" />
     <ClCompile Include="Published\ExtendedTypeTests.cpp" />
@@ -79,6 +83,7 @@
     <ClCompile Include="Published\SchemaDeserializationConversionTests.cpp" />
     <ClCompile Include="Published\SchemaDeserializationTests.cpp" />
     <ClCompile Include="Published\SchemaElementIdTests.cpp" />
+    <ClCompile Include="Published\SchemaLocalizationTests.cpp" />
     <ClCompile Include="Published\SchemaValidationTests.cpp" />
     <ClCompile Include="Published\SchemaVersionConversionTests.cpp" />
     <ClCompile Include="Published\StrictSchemaTests.cpp" />
