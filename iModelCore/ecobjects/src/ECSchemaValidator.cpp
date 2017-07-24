@@ -192,7 +192,7 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
         LOG.errorv("Failed to validate '%s' since its original ECXML version is not ECVersion, %s", schema.GetFullSchemaName().c_str(), ECSchema::GetECVersionString(ECVersion::Latest));
         status = ECObjectsStatus::Error;
         }
-    
+
     for (bpair <SchemaKey, ECSchemaPtr> ref : schema.GetReferencedSchemas())
         {
         ECSchemaPtr refSchema = ref.second;
@@ -218,7 +218,7 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
             status = ECObjectsStatus::Error;
             }
         }
-       
+
     return status;
     }
 
@@ -226,7 +226,7 @@ ECObjectsStatus BaseECValidator::Validate(ECSchemaR schema) const
 // @bsimethod                                    Dan.Perlman                  04/2017
 //+---------------+---------------+---------------+---------------+---------------+------
 ECObjectsStatus MixinValidator::Validate(ECClassCR mixin) const
-    { 
+    {
     for (ECPropertyP prop : mixin.GetProperties(false)) // Check local properties
         {
         if (prop->GetBaseProperty() != nullptr)
@@ -235,7 +235,7 @@ ECObjectsStatus MixinValidator::Validate(ECClassCR mixin) const
             return ECObjectsStatus::Error;
             }
         }
-    
+
     return ECObjectsStatus::Success;
     }
 
@@ -253,8 +253,8 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
         if (nullptr == relClass)
             continue;
 
-        if (ECClass::ClassesAreEqualByName(&entity, relClass->GetTarget().GetConstraintClasses()[0]) && !relClass->GetTarget().GetIsPolymorphic() &&
-            !relClass->GetName().Equals(derivedRelationshipClassName) && relClass->Is("BisCore", derivedRelationshipClassName))
+        if (!relClass->GetName().Equals(derivedRelationshipClassName) && relClass->Is("BisCore", derivedRelationshipClassName) &&
+            (relClass->GetTarget().SupportsClass(entity)) && !relClass->GetTarget().GetConstraintClasses()[0]->GetName().Equals(derivedClassName))
             {
             foundValidRelationshipConstraint = true;
             break;
@@ -264,7 +264,7 @@ ECObjectsStatus CheckBisAspects(ECClassCR entity, Utf8CP derivedClassName, Utf8C
     entityDerivesFromSpecifiedClass = true;
     if (!foundValidRelationshipConstraint)
         {
-        LOG.errorv("Entity class '%s' derives from '%s' so it must be a non-polymorphic target constraint in a relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
+        LOG.errorv("Entity class '%s' derives from '%s' so it must be a supported target constraint in a relationship that derives from '%s'", entity.GetFullName(), derivedClassName, derivedRelationshipClassName);
         return ECObjectsStatus::Error;
         }
 
@@ -433,7 +433,7 @@ ECObjectsStatus RelationshipValidator::CheckLocalDefinitions(ECRelationshipConst
     {
     ECObjectsStatus status = ECObjectsStatus::Success;
     Utf8String className = constraint.GetRelationshipClass().GetFullName();
-    
+
     if (constraint.IsAbstractConstraintDefined() && constraint.GetConstraintClasses().size() == 1)
         {
         LOG.errorv("Relationship class '%s' has an abstract constraint, '%s', and only one concrete constraint set in '%s'",
@@ -456,5 +456,4 @@ ECObjectsStatus KindOfQuantityValidator::Validate(KindOfQuantityCP koq) const
     LOG.errorv("KindOfQuantity %s has persistence unit of unit system '%s' but must have an SI unit system", koq->GetFullName().c_str(), koq->GetPersistenceUnit().GetUnit()->GetUnitSystem());
     return ECObjectsStatus::Error;
     }
-
 END_BENTLEY_ECOBJECT_NAMESPACE
