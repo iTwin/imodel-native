@@ -110,6 +110,16 @@ void ECDbTestFixture::CloseECDb()
         m_ecdb.CloseDb();
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Affan.Khan     02/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+DbResult ECDbTestFixture::OpenECDb(BeFileNameCR filePath, ECDb::OpenParams params)
+    {
+    if (m_ecdb.IsDbOpen())
+        return BE_SQLITE_ERROR;
+
+    return m_ecdb.OpenBeSQLiteDb(filePath, params);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                     Affan.Khan     02/2017
@@ -122,8 +132,7 @@ DbResult ECDbTestFixture::ReopenECDb()
     BeFileName ecdbFileName(m_ecdb.GetDbFileName());
     const bool isReadonly = m_ecdb.IsReadonly();
     CloseECDb();
-
-    return m_ecdb.OpenBeSQLiteDb(ecdbFileName, Db::OpenParams(isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
+    return OpenECDb(ecdbFileName, Db::OpenParams(isReadonly ? Db::OpenMode::Readonly : Db::OpenMode::ReadWrite));
     }
 
 //---------------------------------------------------------------------------------------
