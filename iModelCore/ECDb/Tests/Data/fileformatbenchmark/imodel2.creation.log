@@ -1,37 +1,5 @@
-DEBUG ECDb - Skipped ECClass 'ECDbMap:ClassMap' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbMap:DbIndex' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbMap:DbIndexList' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbMap:ForeignKeyConstraint' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbMap:JoinedTablePerDirectSubclass' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbMap:LinkTableRelationshipMap' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbMap:PropertyMap' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbMap:SchemaMap' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbMap:ShareColumns' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbSystem:NavigationECSqlSystemProperties' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbSystem:PointECSqlSystemProperties' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbMeta:ECEnumeratorDef' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:ClassHasCurrentTimeStampProperty' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:DateTimeInfo' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:DynamicSchema' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:HiddenClass' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:HiddenProperty' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:HiddenSchema' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:IsMixin' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:Localizable' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:NotSubclassableInReferencingSchemas' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:PartialSchema' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:SchemaNameAndPurpose' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:SchemaReference' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:SupplementalProvenance' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'CoreCustomAttributes:SupplementalSchema' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Created 2 tables, updated 0 tables, and 0 tables were up-to-date.
-DEBUG ECDb - Skipped ECClass 'ECDbSchemaPolicies:NoAdditionalForeignKeyConstraints' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbSchemaPolicies:NoAdditionalLinkTables' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ECDbSchemaPolicies:NoAdditionalRootEntityClasses' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'BisCore:AutoHandledProperty' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'BisCore:ClassHasHandler' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'BisCore:CustomHandledProperty' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Created 17 tables, updated 0 tables, and 2 tables were up-to-date.
+DEBUG ECDb - Schema Import>CreateOrUpdateRequiredTables> Created 2 tables, updated 0 tables, and 0 tables were up-to-date.
+DEBUG ECDb - Schema Import>CreateOrUpdateRequiredTables> Created 17 tables, updated 0 tables, and 2 tables were up-to-date.
 DEBUG ECDb - Index 'ix_bis_CategorySelectorRefersToCategories_source' [Created for ECClass BisCore:CategorySelectorRefersToCategories] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_source' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
 DEBUG ECDb - Index 'ix_bis_CategorySelectorRefersToCategories_target' [Created for ECClass BisCore:CategorySelectorRefersToCategories] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_target' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
 DEBUG ECDb - Index 'ix_bis_DrawingGraphicRepresentsElement_source' [Created for ECClass BisCore:DrawingGraphicRepresentsElement] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_source' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
@@ -42,22 +10,8 @@ DEBUG ECDb - Index 'ix_bis_ElementHasLinks_source' [Created for ECClass BisCore:
 DEBUG ECDb - Index 'ix_bis_ElementHasLinks_target' [Created for ECClass BisCore:ElementHasLinks] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_target' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
 DEBUG ECDb - Index 'ix_bis_PartitionOriginatesFromRepository_source' [Created for ECClass BisCore:PartitionOriginatesFromRepository] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_source' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
 DEBUG ECDb - Index 'ix_bis_PartitionOriginatesFromRepository_target' [Created for ECClass BisCore:PartitionOriginatesFromRepository] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_target' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
-WARN  ECDb - Index 'ix_bis_EmbeddedFileLink_Name' [Created for ECClass BisCore:EmbeddedFileLink] on table 'bis_InformationReferenceElement' has the same definition as the already existing index 'ix_bis_UrlLink_Url' [Created for ECClass BisCore:UrlLink]. ECDb does not create this index.
-DEBUG ECDb - Skipped ECClass 'LinearReferencing:DistanceExpression' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'LinearReferencing:ILinearlyLocatedSegmentationHints' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'RoadRailPhysical:PropertyPaneHint' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'BridgePhysical:BridgeColumnsForPier' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'BridgePhysical:BridgePiersForSuperstructure' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'BridgePhysical:ThumbnailItem' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'Planning:Duration' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'PlantCustomAttributes:BisCorePropertyMappingsCustomAttribute' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'PlantCustomAttributes:MappingOriginCustomAttribute' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ProcessPidGraphical:ComponentReferencePoint' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ProcessPidGraphical:ComponentConnectPoint' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ProcessPidGraphical:RunDataStructure' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ProcessPidGraphical:RunSegment' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Skipped ECClass 'ProcessPidGraphical:RunBreak' during mapping: ECClass is a custom attribute or ECStruct which is never mapped to a table in ECDb.
-DEBUG ECDb - Created 2 tables, updated 6 tables, and 12 tables were up-to-date.
+WARN  ECDb - Index 'ix_bis_UrlLink_Url' [Created for ECClass BisCore:UrlLink] on table 'bis_InformationReferenceElement' has the same definition as the already existing index 'ix_bis_EmbeddedFileLink_Name' [Created for ECClass BisCore:EmbeddedFileLink]. ECDb does not create this index.
+DEBUG ECDb - Schema Import>CreateOrUpdateRequiredTables> Created 2 tables, updated 6 tables, and 12 tables were up-to-date.
 DEBUG ECDb - Index 'ix_lr_GeometricElementDrivesReferent_source' [Created for ECClass LinearReferencing:GeometricElementDrivesReferent] on table 'bis_ElementDrivesElement' has the same definition as the already existing index 'ix_bis_ElementDrivesElement_source' [Created for ECClass BisCore:ElementDrivesElement]. ECDb does not create this index.
 DEBUG ECDb - Index 'ix_lr_GeometricElementDrivesReferent_target' [Created for ECClass LinearReferencing:GeometricElementDrivesReferent] on table 'bis_ElementDrivesElement' has the same definition as the already existing index 'ix_bis_ElementDrivesElement_target' [Created for ECClass BisCore:ElementDrivesElement]. ECDb does not create this index.
 DEBUG ECDb - Index 'ix_func_DrawingGraphicRepresentsFunctionalElement_source' [Created for ECClass Functional:DrawingGraphicRepresentsFunctionalElement] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_source' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
@@ -79,4 +33,4 @@ DEBUG ECDb - Index 'ix_eco_SchemaHasSchemaReferences_target' [Created for ECClas
 DEBUG ECDb - Index 'ix_ppidg_CloudCoversPidGraphics_source' [Created for ECClass ProcessPidGraphical:CloudCoversPidGraphics] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_source' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
 DEBUG ECDb - Index 'ix_ppidg_CloudCoversPidGraphics_target' [Created for ECClass ProcessPidGraphical:CloudCoversPidGraphics] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_target' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
 DEBUG ECDb - Index 'ix_ppidg_PidGraphicsConnectsToPidGraphics_source' [Created for ECClass ProcessPidGraphical:PidGraphicsConnectsToPidGraphics] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_source' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
-DEBUG ECDb - Index 'ix_ppidg_PidGraphicsConnectsToPidGraphics_target' [Created for ECClass ProcessPidGraphical:PidGraphicsConnectsToPidGraphics] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_target' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
+DEBUG ECDb - Index 'ix_ppidg_PidGraphicsConnectsToPidGraphics_target' [Created for ECClass ProcessPidGraphical:PidGraphicsConnectsToPidGraphics] on table 'bis_ElementRefersToElements' has the same definition as the already existing index 'ix_bis_ElementRefersToElements_target' [Created for ECClass BisCore:ElementRefersToElements]. ECDb does not create this index.
