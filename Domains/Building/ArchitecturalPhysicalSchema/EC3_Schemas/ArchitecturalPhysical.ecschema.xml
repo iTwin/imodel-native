@@ -144,10 +144,10 @@
     </ECEntityClass>
     <ECRelationshipClass typeName="WallOwnsWallLeafs" displayLabel="Wall Owns Wall Leafs" modifier="None" strength="embedding">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
-        <Source multiplicity="(0..1)" polymorphic="true">
+        <Source multiplicity="(0..1)" roleLabel ="Wall leaf related to" polymorphic="true">
             <Class class="Wall"/>
         </Source>
-        <Target multiplicity="(0..*)" polymorphic="true">
+        <Target multiplicity="(0..*)" roleLabel ="Wall leaf owned by" polymorphic="true">
             <Class class="WallLeaf"/>
         </Target>
     </ECRelationshipClass>
