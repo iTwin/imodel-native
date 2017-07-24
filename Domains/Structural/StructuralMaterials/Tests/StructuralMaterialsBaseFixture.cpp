@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include "StructuralMaterialsBaseFixture.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
 
 using namespace BeSQLite;
