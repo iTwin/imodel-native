@@ -1326,7 +1326,7 @@ void PondAnalysis::GetType()
     double testZ = pointAddrP(dtmP, m_lowPnt)->z;
     long clc = nodeAddrP(dtmP, m_lowPnt)->cPtr;
     long sp = -1;
-    long np;
+    long np=0;
     bool hasZSlope = false;
     while (clc != dtmP->nullPtr)
         {
@@ -4099,7 +4099,7 @@ void TracePondExit::GetExitFlows(bvector<TraceFeaturePtr>& newFeatures, long pri
     double previousSlope = -1;
     long useP1 = dtmP->nullPnt;
     long useP2 = 0;
-    double useAngle;
+    double useAngle = 0;
     double angleSpPnt = bcdtmMath_getPointAngleDtmObject(dtmP, m_exitPnt, sp);
     bool rememberSteepest = false;
     size_t currentChildrenNum = m_children.size();
