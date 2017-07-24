@@ -314,14 +314,6 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
         return ERROR;
 
     PERFLOG_FINISH("ECDb", "Schema import> Map relationships");
-
-    ctx.SetPhase(SchemaImportContext::Phase::CreatingUserDefinedIndexes);
-    for (auto& kvpair : ctx.GetClassMappingInfoCache())
-        {
-        if (SUCCESS != DbMappingManager::Classes::MapUserDefinedIndexes(ctx, *kvpair.first))
-            return ERROR;
-        }
-
     return SUCCESS;
     }
 
@@ -367,16 +359,18 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
 
          ctx.AddClassMapForSaving(ecClass.GetId());
          status = classMap->Map(ctx, *classMapInfo);
-         ctx.CacheClassMapInfo(*classMap, classMapInfo);         
          if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
              return status;
-          
+
+         if (SUCCESS != DbMappingManager::Classes::MapUserDefinedIndexes(ctx, *classMap))
+             return ClassMappingStatus::Error;
          }
      else
          {
          if (existingClassMap->Update(ctx) == ERROR)
              return ClassMappingStatus::Error;
          }
+
 
      const bool isCurrentIsMixin = ecClass.IsEntityClass() && ecClass.GetEntityClassCP()->IsMixin();
      for (ECClassCP childClass : ecClass.GetDerivedClasses())

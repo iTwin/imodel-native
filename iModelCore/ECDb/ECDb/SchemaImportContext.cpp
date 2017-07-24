@@ -11,20 +11,6 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-//*************************************************************************************
-// SchemaImportContext
-//*************************************************************************************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Krischan.Eberle   08/2015
-//---------------------------------------------------------------------------------------
-void SchemaImportContext::CacheClassMapInfo(ClassMap const& classMap, std::unique_ptr<ClassMappingInfo>& info)
-    {
-    if (classMap.GetType() != ClassMap::Type::RelationshipEndTable)
-        m_classMappingInfoCache[&classMap] = std::move(info);
-    }
-
-
 //****************************************************************************************** 
 //ECSchemaCompareContext
 //****************************************************************************************** 
