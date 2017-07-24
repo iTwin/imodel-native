@@ -141,7 +141,9 @@ enum class PresentationType
     Decimal = 1,
     Fractional = 2,
     Scientific = 3,      // scientific with 1 digit before the decimal point
-    ScientificNorm = 4   // normalized scientific when Mantissa is < 1
+    ScientificNorm = 4,   // normalized scientific when Mantissa is < 1
+    Stop100 = 5,       // special format for stations 100 feet
+    Stop1000 = 6       // special format for stations 1000 meters
     };
 
 enum class FormatTraits : int
@@ -324,13 +326,14 @@ enum class FormatSpecialCodes
     {
     SignatureNull = 0,
     SignatureN = 1,
-    SignatureNF = 2,
-    SignatureNU =3,
-    SignatureNFU = 4,
-    SignatureNUNU = 5,
-    SignatureNUNFU = 6,
-    SignatureNUNUNU= 7,
-    SignatureNUNUNFU = 8,
+    SignatureF = 2,
+    SignatureNF = 3,
+    SignatureNU =4,
+    SignatureNFU = 5,
+    SignatureNUNU = 6,
+    SignatureNUNFU = 7,
+    SignatureNUNUNU= 8,
+    SignatureNUNUNFU = 9,
     SignatureInvalid = 100
     };
 

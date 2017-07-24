@@ -2026,6 +2026,7 @@ BEU::Quantity  FormatParsingSet::GetQuantity()
     switch (cod)
         {
         case Formatting::FormatSpecialCodes::SignatureN:
+        case Formatting::FormatSpecialCodes::SignatureF:
             qty = BEU::Quantity(m_segs[0].GetReal(), *m_unit);
             break;
         case Formatting::FormatSpecialCodes::SignatureNF:

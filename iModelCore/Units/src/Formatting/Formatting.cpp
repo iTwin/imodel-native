@@ -563,6 +563,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
     bool sci = (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm);
     bool decimal = (sci || m_presentationType == PresentationType::Decimal);
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
+   // bool stops = (m_presentationType == PresentationType::Stop100 || m_presentationType == PresentationType::Stop1000);
 
     if (IsApplyRounding() || !FormatConstant::IsIgnored(round))
         dval = RoundDouble(dval, EffectiveRoundFactor(round));
@@ -686,6 +687,42 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         memcpy(buf, locBuf, ind);
         POP_MSVC_IGNORE
         }
+    //else if (stops)
+    //    {
+    //    double denom = (m_presentationType == PresentationType::Stop100) ? 100.0 : 1000.0;
+    //    double hiPart;
+    //    double fract = modf(dval / denom, &hiPart);
+    //    double lowPart = dval - hiPart * denom;
+
+
+    //    FractionalNumeric fn = FractionalNumeric(dval, m_fractPrecision);
+    //    fn.FormTextParts(true);
+    //    size_t locBufL = sizeof(locBuf);
+    //    if (!fn.IsZero())
+    //        {
+    //        if (m_signOption == ShowSignOption::SignAlways ||
+    //            ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
+    //            locBuf[ind++] = sign;
+    //        }
+    //    ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetIntegralText());
+    //    if (fn.HasFractionPart())
+    //        {
+    //        if (ind < locBufL)
+    //            ind = Utils::AppendText(locBuf, locBufL, ind, " ");
+    //        if (ind < locBufL)
+    //            ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorText());
+    //        if (ind < locBufL)
+    //            ind = Utils::AppendText(locBuf, locBufL, ind, "/");
+    //        if (ind < locBufL)
+    //            ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorText());
+    //        }
+    //    ind++;
+    //    if (ind > bufLen)
+    //        ind = bufLen;
+    //    PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
+    //        memcpy(buf, locBuf, ind);
+    //    POP_MSVC_IGNORE
+    //    }
 
     return ind;
     }
@@ -1313,6 +1350,9 @@ void StdFormatSet::StdInit()
     AddFormat("Real3U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 3), "real3u");
     AddFormat("Real4U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), "real4u");
     AddFormat("Real6U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 6), "real6u");
+
+    //AddFormat("RoadStatF", new NumericFormatSpec(PresentationType::Station100, ShowSignOption::OnlyNegative, traits, 2), "rsf2");
+    //AddFormat("RoadStatM", new NumericFormatSpec(PresentationType::Station1000, ShowSignOption::OnlyNegative, traits, 2), "rsm2");
 
     AddFormat("SignedReal",  new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"realSign");
     AddFormat("ParenthsReal", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::NegativeParentheses, traits, FormatConstant::DefaultDecimalPrecisionIndex()),"realPth");
