@@ -6,12 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "WSClientBaseTest.h"
-#include <DgnClientFx/DgnClientFxCommon.h>
-#include <DgnClientFx/DgnClientFxL10N.h>
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_EC
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 
 std::shared_ptr<TestAppPathProvider>  WSClientBaseTest::s_pathProvider;
@@ -31,13 +28,11 @@ void WSClientBaseTest::SetUpTestCase()
     {
     s_pathProvider = std::make_shared<TestAppPathProvider>();
     InitLogging();
-    DgnClientFxCommon::SetApplicationPathsProvider(s_pathProvider.get());
     InitLibraries();
     }
 
 void WSClientBaseTest::TearDownTestCase()
     {
-    DgnClientFxCommon::SetApplicationPathsProvider(nullptr);
     s_pathProvider = nullptr;
     }
 
@@ -69,7 +64,6 @@ void WSClientBaseTest::InitLibraries()
     BeSQLite::EC::ECDb::Initialize(s_pathProvider->GetTemporaryDirectory(), &s_pathProvider->GetAssetsRootDirectory());
 
     L10N::SqlangFiles sqlangFiles(getDgnClientFxSqlangFile());
-    DgnClientFxL10N::ReInitialize(sqlangFiles, sqlangFiles);
 
     HttpClient::Initialize(s_pathProvider->GetAssetsRootDirectory());
     }

@@ -170,6 +170,7 @@
     </Part>
 
     <Part Name="iModelHubClient">
+        <SubPart PartName="WebServicesClient" />
         <SubPart PartName="iModelHubClient-PublicAPI" />
         <SubPart PartName="iModelHubClient-Library" />
         <SubPart PartName="iModelHubClient-Library-Android-Shim"/>
@@ -185,7 +186,7 @@
     </Part>
 
     <Part Name="iModelHubClient-Library" BentleyBuildMakeFile="iModelHubClientLib.mke"  ApiNumber="B02" ExcludePlatforms="Android*">
-        <SubPart PartName="WebServicesClient" />
+        <SubPart PartName="WSClient-PublishedAPI" />
         <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>
@@ -219,17 +220,17 @@
     </Part>
 
     <Part Name="iModelHubBackdoorForIntegrationTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Backdoor">
+        <SubPart PartName="iModelHubClient-Library"/>
         <SubPart PartName="iModelHubPrewireForIntegrationTests" />
-        <SubPart PartName="DgnClientFxLibrary" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHub/Backdoor" SourceName="Delivery/iModelHubNativeTests/Objects/Backdoor"/>
         </Bindings>
     </Part>
 
     <Part Name="iModelHubIntegrationTests" BentleyBuildMakeFile="Tests/iModelHubClient/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Integration -dUsePublishedApi">
-	    <SubPart PartName="iModelHubBackdoorForIntegrationTests"/>
-        <SubPart PartName="IMHSClientExe"/>
         <SubPart PartName="iModelHubClient-Library"/>
+        <SubPart PartName="iModelHubBackdoorForIntegrationTests"/>
+        <SubPart PartName="IMHSClientExe"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="iModelHubNativeTests/Integration" SourceName="Delivery/iModelHubNativeTests/Objects/Integration"/>
             <Files ProductDirectoryName="UnitTests-Assets" SubPartDirectory="iModelHubNativeTests/Integration">Delivery/iModelHubNativeTests/IntegrationTests.json</Files>
@@ -240,7 +241,7 @@
 
     <Product Name="iModelHubNativeTestsCollection">
         <SubPart PartName="Base" Repository="BeGTest" PartFile="BeGTest"/>
-<!--        <SubPart PartName="iModelHubIntegrationTests"/> -->
+        <SubPart PartName="iModelHubIntegrationTests"/>
         <Directories DirectoryListName="CollectionProduct" Repository="BeGTest" PartFile="BeGTest"/>
         <Directories DirectoryListName="iModelHubNativeTests"/>
     </Product>
@@ -255,9 +256,7 @@
     </Part>
 
     <Product Name="iModelHubNativeTests" SaveProduct="true">
-      <!--
         <SubPart PartName="iModelHubGtest"/>
-        -->
         <Directories DirectoryListName="iModelHubNativeTests"/>
     </Product>
 

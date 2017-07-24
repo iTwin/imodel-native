@@ -7,10 +7,8 @@
 +--------------------------------------------------------------------------------------*/
 #include "IntegrationTestsHelper.h"
 #include "IntegrationTestsBase.h"
-#include <DgnClientFx/DgnClientFxCommon.h>
 #include <WebServices/iModelHub/Client/Client.h>
 #include <WebServices/iModelHub/Client/Configuration.h>
-#include <DgnClientFx/DgnClientFxL10N.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
 #include <Bentley/bmap.h>
@@ -19,7 +17,6 @@
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_SQLITE
-USING_NAMESPACE_BENTLEY_DGNCLIENTFX
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
 #define DEFAULT_LANGUAGE_CODE "en"
 #define EXPECT_STATUS(STAT, EXPR) EXPECT_EQ(RepositoryStatus:: STAT, (EXPR))
@@ -44,7 +41,6 @@ void Initialize(ScopediModelHubHost* host)
         BeFileName assets = host->GetDgnPlatformAssetsDirectory();
         BeSQLiteLib::Initialize(temp);
         BeSQLite::EC::ECDb::Initialize(temp, &assets);
-        DgnClientFxL10N::Initialize(GetSqlangFiles(assets), GetSqlangFiles(assets));
         Http::HttpClient::Initialize(assets);
         initialized = true;
         }
