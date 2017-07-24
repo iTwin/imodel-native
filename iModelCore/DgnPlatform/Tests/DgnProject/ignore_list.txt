@@ -613,6 +613,3 @@ DgnProjectPackageTest.EnforceLinkTableFor11Relationship
 
 # Fails after the merge from bim0200holdouts
 CategoryTests.ValidateCategoryClass
-
-# Crashes after the merge from bim0200holdouts
-MissingHandlerTest.HandlerRestrictions
