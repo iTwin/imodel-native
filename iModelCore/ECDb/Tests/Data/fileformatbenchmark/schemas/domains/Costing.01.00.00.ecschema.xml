@@ -18,7 +18,7 @@
         <ECProperty propertyName="UnitCostStorageUnit" typeName="string"/>
         <ECProperty propertyName="UnitCostKindOfQuantity" typeName="string"/>        
     </ECEntityClass>
-    <ECRelationshipClass typeName="UnitCostClassOwnsUnitCosts" strength="embedding" modifier="Sealed">
+    <ECRelationshipClass typeName="UnitCostClassElementHasUnitCostElements" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
         <Source multiplicity="(0..1)" polymorphic="true" roleLabel="is owned by 1 UnitCostClass">
             <Class class="UnitCostClassElement"/>
@@ -41,15 +41,6 @@
         </Source>
         <Target multiplicity="(0..1)" polymorphic="true" roleLabel="refers to 1 UnitCost">
             <Class class="UnitCostElement"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="ElementOwnsUnitCostQuantityAspects" modifier="None" strength="embedding">
-        <BaseClass>bis:ElementOwnsMultiAspects</BaseClass>
-        <Source multiplicity="(1..1)" polymorphic="true" roleLabel="is owned by 1 element">
-            <Class class="bis:Element"/>
-        </Source>
-        <Target multiplicity="(0..*)" polymorphic="false" roleLabel="owns N quantity-aspect">
-            <Class class="UnitCostQuantityAspect"/>
         </Target>
     </ECRelationshipClass>
 </ECSchema>

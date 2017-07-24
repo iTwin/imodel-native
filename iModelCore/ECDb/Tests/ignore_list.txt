@@ -17,3 +17,5 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 
 #TFS 721630 
 ECSqlSelectPrepareTests.LikeOperator
+
+FileFormatCompatibilityTests.CompareProfileTables_NewFile
