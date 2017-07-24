@@ -8,13 +8,12 @@
 #pragma once
 
 #include "../BackDoor/PublicAPI/BackDoor/WebServices/iModelHub/BackDoor.h"
-#include <DgnClientFx/DgnClientFxCommon.h>
 
 BEGIN_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE
 /*--------------------------------------------------------------------------------------+
 * @bsiclass                                                     Vincas.Razma    04/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
+struct TestAppPathProvider
     {
     private:
         BeFileName m_documentsDirectory;
@@ -38,23 +37,23 @@ struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
             }
 
     protected:
-        virtual BeFileNameCR _GetDocumentsDirectory() const  override
+        virtual BeFileNameCR _GetDocumentsDirectory() const
             {
             return m_documentsDirectory;
             }
-        virtual BeFileNameCR _GetTemporaryDirectory() const override
+        virtual BeFileNameCR _GetTemporaryDirectory() const
             {
             return m_temporaryDirectory;
             }
-        virtual BeFileNameCR _GetCachesDirectory() const override
+        virtual BeFileNameCR _GetCachesDirectory() const
             {
             return m_temporaryDirectory;
             }
-        virtual BeFileNameCR _GetLocalStateDirectory() const override
+        virtual BeFileNameCR _GetLocalStateDirectory() const
             {
             return m_localStateDirectory;
             }
-        virtual BeFileNameCR _GetAssetsRootDirectory() const override
+        virtual BeFileNameCR _GetAssetsRootDirectory() const
             {
             return m_platformAssetsDirectory;
             }
@@ -73,6 +72,27 @@ struct TestAppPathProvider : DgnClientFx::IApplicationPathsProvider
         TestAppPathProvider(BeFileNameCR programDir, BeFileNameCR outputDir)
             {
             InitPaths(programDir, outputDir);
+            }
+
+        BeFileNameCR GetDocumentsDirectory()
+            {
+            return m_documentsDirectory;
+            }
+        BeFileNameCR GetTemporaryDirectory()
+            {
+            return m_temporaryDirectory;
+            }
+        BeFileNameCR GetCachesDirectory()
+            {
+            return m_temporaryDirectory;
+            }
+        BeFileNameCR GetLocalStateDirectory()
+            {
+            return m_localStateDirectory;
+            }
+        BeFileNameCR GetAssetsRootDirectory()
+            {
+            return m_platformAssetsDirectory;
             }
     };
 

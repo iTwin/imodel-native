@@ -50,6 +50,10 @@ private:
         return DgnDbStatus::Success;
     }
 
+protected:
+    DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, const PropertyArrayIndex &) const { return DgnDbStatus::Success; }
+    DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, const PropertyArrayIndex &) {return DgnDbStatus::Success;}
+
 public:
     static RefCountedPtr<TestMultiAspect> Create(Utf8CP prop) { return new TestMultiAspect(prop); }
 
