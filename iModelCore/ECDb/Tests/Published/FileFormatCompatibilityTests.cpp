@@ -14,6 +14,53 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
+#define PROFILETABLE_SELECT_Schema "SELECT Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3 FROM ec_Schema ORDER BY Name"
+#define PROFILETABLE_SELECT_SchemaReference "SELECT s.Name,ref.Name FROM ec_SchemaReference sr JOIN ec_Schema s ON sr.SchemaId=s.Id JOIN ec_Schema ref ON sr.ReferencedSchemaId=ref.Id ORDER BY s.Name,ref.Name"
+#define PROFILETABLE_SELECT_Class "SELECT s.Name,c.Name,c.DisplayLabel,c.Description,c.Type,c.Modifier,c.RelationshipStrength,c.RelationshipStrengthDirection,c.CustomAttributeContainertype FROM ec_Class c JOIN ec_Schema s ON s.Id=c.SchemaId ORDER BY s.Name, c.Name"
+#define PROFILETABLE_SELECT_ClassHasBaseClasses "SELECT s.Name, c.Name, baseS.Name, baseC.Name FROM ec_ClassHasBaseClasses bc JOIN ec_Class c ON bc.ClassId=c.Id JOIN ec_Schema s ON s.Id=c.SchemaId " \
+                                                "JOIN ec_Class baseC ON bc.BaseClassId=baseC.Id JOIN ec_Schema baseS ON baseS.Id=baseC.SchemaId " \
+                                                "ORDER BY s.Name, c.Name, baseS.Name, baseC.Name, bc.Ordinal"
+#define PROFILETABLE_SELECT_Enumeration "SELECT s.Name, e.Name, e.DisplayLabel,e.Description,e.UnderlyingPrimitiveType,e.IsStrict,e.EnumValues FROM ec_Enumeration e JOIN ec_Schema s ON s.Id=e.SchemaId ORDER BY s.Name,e.Name"
+#define PROFILETABLE_SELECT_KindOfQunatity "SELECT s.Name, koq.Name, koq.DisplayLabel,koq.Description,koq.PersistenceUnit,koq.RelativeError,koq.PresentationUnits FROM ec_KindOfQuantity koq JOIN ec_Schema s ON s.Id=koq.SchemaId ORDER BY s.Name,koq.Name"
+#define PROFILETABLE_SELECT_PropertyCategory "SELECT s.Name, pc.Name, pc.DisplayLabel,pc.Description,pc.Priority FROM ec_PropertyCategory pc JOIN ec_Schema s ON s.Id=pc.SchemaId ORDER BY s.Name,pc.Name"
+#define PROFILETABLE_SELECT_Property "SELECT s.Name, p.Name, p.DisplayLabel,p.Description,p.IsReadonly,p.Priority,p.Ordinal,p.Kind,p.PrimitiveType,p.PrimitiveTypeMinLength,p.PrimitiveTypeMaxLength,p.PrimitiveTypeMinValue,p.PrimitiveTypeMaxValue, " \
+                                    "enumS.Name, enum.Name, structS.Name,struct.Name, p.ExtendedTypeName, koqS.Name,koq.Name,catS.Name,cat.Name,p.ArrayMinOccurs,p.ArrayMaxOccurs, " \
+                                    "navRelS.Name,navRel.Name, p.NavigationDirection FROM ec_Property p " \
+                                    "JOIN ec_Class c ON p.ClassId=c.Id JOIN ec_Schema s ON s.Id=c.SchemaId " \
+                                    "JOIN ec_Enumeration enum ON enum.Id=p.EnumerationId JOIN ec_Schema enumS ON enumS.Id=enum.SchemaId " \
+                                    "JOIN ec_Class struct ON struct.Id=p.StructClassId JOIN ec_Schema structS ON structS.Id=struct.SchemaId " \
+                                    "JOIN ec_KindOfQuantity koq ON koq.Id=p.KindOfQuantityId JOIN ec_Schema koqS ON koqS.Id=koq.SchemaId " \
+                                    "JOIN ec_PropertyCategory cat ON cat.Id=p.CategoryId JOIN ec_Schema catS ON catS.Id=cat.SchemaId " \
+                                    "JOIN ec_Class navRel ON navRel.Id=p.NavigationRelationshipClassId JOIN ec_Schema navRelS ON navRelS.Id=navRel.SchemaId " \
+                                    "ORDER BY s.Name,c.Name,p.Name"
+#define PROFILETABLE_SELECT_RelationshipConstraint "SELECT relS.Name, rel.Name, rc.RelationshipEnd,rc.MultiplicityLowerLimit,rc.MultiplicityUpperLimit,rc.IsPolymorphic,rc.RoleLabel,abstractConstraintS.Name, abstractConstraint.Name FROM ec_RelationshipConstraint rc " \
+                                    "JOIN ec_Class rel ON rel.Id=rc.RelationshipClassId JOIN ec_Schema relS ON relS.Id=rel.SchemaId " \
+                                    "JOIN ec_Class abstractConstraint ON rc.AbstractConstraintClassId=abstractConstraint.Id JOIN ec_Schema abstractConstraintS ON abstractConstraintS.Id=abstractConstraint.SchemaId " \
+                                    "ORDER BY relS.Name, rel.Name, rc.RelationshipEnd"
+#define PROFILETABLE_SELECT_RelationshipConstraintClass "SELECT relS.Name,rel.Name,rc.RelationshipEnd,constraintS.Name,constraintC.Name FROM ec_RelationshipConstraintClass rcc " \
+                                    "JOIN ec_RelationshipConstraint rc ON rc.Id=rcc.ConstraintId JOIN ec_Class rel ON rel.Id=rc.RelationshipClassId JOIN ec_Schema relS ON relS.Id=rel.SchemaId " \
+                                    "JOIN ec_Class constraintC ON rcc.ClassId=constraintC.Id JOIN ec_Schema constraintS ON constraintS.Id=constraintC.SchemaId " \
+                                    "ORDER BY relS.Name,rel.Name,rc.RelationshipEnd,constraintS.Name,constraintC.Name"
+#define PROFILETABLE_SELECT_CustomAttribute "SELECT Instance,Ordinal,ContainerType FROM ec_CustomAttribute ORDER BY ClassId,ContainerId,ContainerType,Ordinal"
+#define PROFILETABLE_SELECT_ClassMap "SELECT s.Name, c.Name, cm.MapStrategy,cm.ShareColumnsMode,cm.MaxSharedColumnsBeforeOverflow,cm.JoinedTableInfo FROM ec_ClassMap cm JOIN ec_Class c ON cm.ClassId=c.Id JOIN ec_Schema s ON s.Id=c.SchemaId ORDER BY s.Name,c.Name"
+#define PROFILETABLE_SELECT_PropertyPath "SELECT rootPropS.Name, rootPropC.Name, rootProp.Name, pp.AccessString FROM ec_PropertyPath pp " \
+                                    "JOIN ec_Property rootProp ON rootProp.Id=pp.RootPropertyId JOIN ec_Class rootPropC ON rootPropC.Id=rootProp.ClassId JOIN ec_Schema rootPropS ON rootPropS.Id=rootPropC.SchemaId " \
+                                    "ORDER BY rootPropS.Name,rootPropC.Name, rootProp.Name,pp.AccessString"
+#define PROFILETABLE_SELECT_PropertyMap "SELECT s.Name, c.Name, rootPropS.Name,rootPropC.Name,rootProp.Name,t.Name,col.Name FROM ec_PropertyMap pm " \
+                                    "JOIN ec_Class c ON c.Id=pm.ClassId JOIN ec_Schema s ON s.Id=c.SchemaId " \
+                                    "JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId JOIN ec_Property rootProp ON rootProp.Id=pp.RootPropertyId JOIN ec_Class rootPropC ON rootPropC.Id=rootProp.ClassId JOIN ec_Schema rootPropS ON rootPropS.Id=rootPropC.SchemaId " \
+                                    "JOIN ec_Column col ON col.Id=pm.ColumnId JOIN ec_Table t ON t.Id=col.TableId " \
+                                    "ORDER BY s.Name,c.Name,rootPropS.Name,rootPropC.Name,rootProp.Name,t.Name,col.Name"
+#define PROFILETABLE_SELECT_Table "SELECT parentT.Name, t.Name, t.Type, exclusiveRootClassS.Name, exclusiveRootClass.Name, t.UpdatableViewName FROM ec_table t " \
+                                    "JOIN ec_Table parentT ON parentT.Id=t.ParentTableId JOIN ec_Class exclusiveRootClass ON exclusiveRootClass.Id=t.ExclusiveRootClassId JOIN ec_Schema exclusiveRootClassS ON exclusiveRootClassS.Id=exclusiveRootClass.SchemaId " \
+                                    "ORDER BY t.Name"
+#define PROFILETABLE_SELECT_Column "SELECT t.Name, c.Name,c.Type,c.IsVirtual,c.Ordinal,c.NotNullConstraint,c.UniqueConstraint,c.CheckConstraint,c.DefaultConstraint,c.CollationConstraint,c.OrdinalInPrimaryKey,c.ColumnKind FROM ec_Column c " \
+                                    "JOIN ec_Table t ON t.Id=c.TableId ORDER BY t.Name, c.Name"
+#define PROFILETABLE_SELECT_Index "SELECT i.Name, t.Name, i.IsUnique,i.AddNotNullWhereExp,i.IsAutoGenerated,s.Name,c.Name,i.AppliesToSubclassesIfPartial FROM ec_Index i " \
+                                    "JOIN ec_Table t ON t.Id=i.TableId JOIN ec_Class c ON c.Id=i.ClassId JOIN ec_Schema s ON s.Id=c.SchemaId ORDER BY i.Name"
+#define PROFILETABLE_SELECT_IndexColumn "SELECT i.Name, c.Name, t.Name, ic.Ordinal FROM ec_IndexColumn ic " \
+                                    "JOIN ec_Index i ON i.Id=ic.IndexId JOIN ec_Column c ON c.Id=ic.ColumnId JOIN ec_Table t ON t.Id=c.TableId ORDER BY i.Name, ic.Ordinal"
+
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/17
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -22,7 +69,6 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
     private:
         BentleyStatus CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder);
         BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
-
 
     protected:
         BentleyStatus SetupTestFile(Utf8CP fileName, BeFileNameCR benchmarkFolder);
@@ -34,7 +80,7 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileFormatCompatibilityTests, CompareDdl)
+TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     {
     BeFileName benchmarkFolder = GetBenchmarkFolder();
     ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder));
@@ -107,7 +153,87 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl)
 //---------------------------------------------------------------------------------------
 // @bsiclass                                     Krischan.Eberle                  07/17
 //+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(FileFormatCompatibilityTests, CompareProfileTables)
+TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
+    {
+    BeFileName benchmarkFolder = GetBenchmarkFolder();
+
+    BeFileName benchmarkFilePath(benchmarkFolder);
+    benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
+    Db benchmarkFile;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
+
+    BeFileName artefactOutDir;
+    BeTest::GetHost().GetOutputRoot(artefactOutDir);
+    if (!artefactOutDir.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(artefactOutDir));
+
+    BeFileName upgradedFilePath(artefactOutDir);
+    upgradedFilePath.AppendToPath(L"upgradedimodel2.ecdb");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
+    ECDb upgradedFile;
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
+    
+    
+    BeFileStatus stat = BeFileStatus::Success;
+    
+    int benchmarkMasterTableRowCount = 0;
+    {
+    BeFileName benchmarkDdlDumpFilePath(artefactOutDir);
+    benchmarkDdlDumpFilePath.AppendToPath(L"benchmarkddl.txt");
+
+    BeTextFilePtr benchmarkDdlDumpFile = BeTextFile::Open(stat, benchmarkDdlDumpFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
+    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << benchmarkDdlDumpFilePath;
+
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master ORDER BY name"));
+    while (BE_SQLITE_ROW == stmt.Step())
+        {
+        benchmarkMasterTableRowCount++;
+        benchmarkDdlDumpFile->PutLine(WString(stmt.GetValueText(0), BentleyCharEncoding::Utf8).c_str(), true);
+        }
+    }
+
+
+    BeFileName actualDdlDumpFilePath(artefactOutDir);
+    actualDdlDumpFilePath.AppendToPath(L"upgradedfileddl.txt");
+    BeTextFilePtr actualDdlDumpFile = BeTextFile::Open(stat, actualDdlDumpFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
+    ASSERT_EQ(BeFileStatus::Success, stat) << "Creating file " << actualDdlDumpFilePath;
+
+    Statement benchmarkDdlLookupStmt;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkDdlLookupStmt.Prepare(benchmarkFile, "SELECT sql FROM sqlite_master WHERE name=?"));
+
+
+    Statement actualDdlStmt;
+    ASSERT_EQ(BE_SQLITE_OK, actualDdlStmt.Prepare(upgradedFile, "SELECT name, sql FROM sqlite_master ORDER BY name"));
+    int actualMasterTableRowCount = 0;
+    while (BE_SQLITE_ROW == actualDdlStmt.Step())
+        {
+        actualMasterTableRowCount++;
+        Utf8CP actualName = actualDdlStmt.GetValueText(0);
+        Utf8CP actualDdl = actualDdlStmt.GetValueText(1);
+
+        actualDdlDumpFile->PutLine(WString(actualDdl, BentleyCharEncoding::Utf8).c_str(), true);
+
+        benchmarkDdlLookupStmt.BindText(1, actualName, Statement::MakeCopy::No);
+        if (BE_SQLITE_ROW == benchmarkDdlLookupStmt.Step())
+            {
+            Utf8CP benchmarkDdl = benchmarkDdlLookupStmt.GetValueText(0);
+            EXPECT_STREQ(benchmarkDdl, actualDdl) << "DB object in upgraded file has different DDL than in benchmark file: " << actualName;
+            }
+        else
+            EXPECT_TRUE(false) << "DB object in upgraded file not found: " << actualName;
+
+        benchmarkDdlLookupStmt.Reset();
+        benchmarkDdlLookupStmt.ClearBindings();
+        }
+
+    ASSERT_EQ(benchmarkMasterTableRowCount, actualMasterTableRowCount) << benchmarkFilePath;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     {
     BeFileName benchmarkFolder = GetBenchmarkFolder();
     ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder));
@@ -126,64 +252,80 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables)
     }
 
     //schema profile tables
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Schema", "SELECT Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3 FROM ec_Schema ORDER BY Name"));
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_SchemaReference",
-                             "SELECT s.Name,ref.Name FROM ec_SchemaReference sr JOIN ec_Schema s ON sr.SchemaId=s.Id JOIN ec_Schema ref ON sr.ReferencedSchemaId=ref.Id ORDER BY s.Name,ref.Name"));
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Class", "SELECT s.Name,c.Name,c.DisplayLabel,c.Description,c.Type,c.Modifier,c.RelationshipStrength,c.RelationshipStrengthDirection,c.CustomAttributeContainertype FROM ec_Class c JOIN ec_Schema s ON s.Id=c.SchemaId ORDER BY s.Name, c.Name"));
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_ClassHasBaseClasses", "SELECT s.Name, c.Name, baseS.Name, baseC.Name FROM ec_ClassHasBaseClasses bc JOIN ec_Class c ON bc.ClassId=c.Id JOIN ec_Schema s ON s.Id=c.SchemaId "
-                             "JOIN ec_Class baseC ON bc.BaseClassId=baseC.Id JOIN ec_Schema baseS ON baseS.Id=baseC.SchemaId "
-                             "ORDER BY s.Name, c.Name, baseS.Name, baseC.Name, bc.Ordinal"));
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Enumeration", "SELECT s.Name, e.Name, e.DisplayLabel,e.Description,e.UnderlyingPrimitiveType,e.IsStrict,e.EnumValues FROM ec_Enumeration e JOIN ec_Schema s ON s.Id=e.SchemaId ORDER BY s.Name,e.Name"));
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_KindOfQuantity", "SELECT s.Name, koq.Name, koq.DisplayLabel,koq.Description,koq.PersistenceUnit,koq.RelativeError,koq.PresentationUnits FROM ec_KindOfQuantity koq JOIN ec_Schema s ON s.Id=koq.SchemaId ORDER BY s.Name,koq.Name"));
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyCategory", "SELECT s.Name, pc.Name, pc.DisplayLabel,pc.Description,pc.Priority FROM ec_PropertyCategory pc JOIN ec_Schema s ON s.Id=pc.SchemaId ORDER BY s.Name,pc.Name"));
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Property", "SELECT s.Name, p.Name, p.DisplayLabel,p.Description,p.IsReadonly,p.Priority,p.Ordinal,p.Kind,p.PrimitiveType,p.PrimitiveTypeMinLength,p.PrimitiveTypeMaxLength,p.PrimitiveTypeMinValue,p.PrimitiveTypeMaxValue, "
-                             "enumS.Name, enum.Name, structS.Name,struct.Name, p.ExtendedTypeName, koqS.Name,koq.Name,catS.Name,cat.Name,p.ArrayMinOccurs,p.ArrayMaxOccurs, "
-                             "navRelS.Name,navRel.Name, p.NavigationDirection FROM ec_Property p "
-                             "JOIN ec_Class c ON p.ClassId=c.Id JOIN ec_Schema s ON s.Id=c.SchemaId "
-                             "JOIN ec_Enumeration enum ON enum.Id=p.EnumerationId JOIN ec_Schema enumS ON enumS.Id=enum.SchemaId "
-                             "JOIN ec_Class struct ON struct.Id=p.StructClassId JOIN ec_Schema structS ON structS.Id=struct.SchemaId "
-                             "JOIN ec_KindOfQuantity koq ON koq.Id=p.KindOfQuantityId JOIN ec_Schema koqS ON koqS.Id=koq.SchemaId "
-                             "JOIN ec_PropertyCategory cat ON cat.Id=p.CategoryId JOIN ec_Schema catS ON catS.Id=cat.SchemaId "
-                             "JOIN ec_Class navRel ON navRel.Id=p.NavigationRelationshipClassId JOIN ec_Schema navRelS ON navRelS.Id=navRel.SchemaId "
-                             "ORDER BY s.Name,c.Name,p.Name"));
-
-
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_RelationshipConstraint", "SELECT relS.Name, rel.Name, rc.RelationshipEnd,rc.MultiplicityLowerLimit,rc.MultiplicityUpperLimit,rc.IsPolymorphic,rc.RoleLabel,abstractConstraintS.Name, abstractConstraint.Name FROM ec_RelationshipConstraint rc "
-                             "JOIN ec_Class rel ON rel.Id=rc.RelationshipClassId JOIN ec_Schema relS ON relS.Id=rel.SchemaId "
-                             "JOIN ec_Class abstractConstraint ON rc.AbstractConstraintClassId=abstractConstraint.Id JOIN ec_Schema abstractConstraintS ON abstractConstraintS.Id=abstractConstraint.SchemaId "
-                             "ORDER BY relS.Name, rel.Name, rc.RelationshipEnd"));
-
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_RelationshipConstraintClass", "SELECT relS.Name,rel.Name,rc.RelationshipEnd,constraintS.Name,constraintC.Name FROM ec_RelationshipConstraintClass rcc "
-                             "JOIN ec_RelationshipConstraint rc ON rc.Id=rcc.ConstraintId JOIN ec_Class rel ON rel.Id=rc.RelationshipClassId JOIN ec_Schema relS ON relS.Id=rel.SchemaId "
-                             "JOIN ec_Class constraintC ON rcc.ClassId=constraintC.Id JOIN ec_Schema constraintS ON constraintS.Id=constraintC.SchemaId "
-                             "ORDER BY relS.Name,rel.Name,rc.RelationshipEnd,constraintS.Name,constraintC.Name"));
-
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_CustomAttribute", "SELECT Instance,Ordinal,ContainerType FROM ec_CustomAttribute ORDER BY ClassId,ContainerId,ContainerType,Ordinal"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Schema", PROFILETABLE_SELECT_Schema));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_SchemaReference", PROFILETABLE_SELECT_SchemaReference));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Class", PROFILETABLE_SELECT_Class));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_ClassHasBaseClasses", PROFILETABLE_SELECT_ClassHasBaseClasses));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Enumeration", PROFILETABLE_SELECT_Enumeration));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_KindOfQuantity", PROFILETABLE_SELECT_KindOfQunatity));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyCategory", PROFILETABLE_SELECT_PropertyCategory));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Property", PROFILETABLE_SELECT_Property));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_RelationshipConstraint", PROFILETABLE_SELECT_RelationshipConstraint));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_RelationshipConstraintClass", PROFILETABLE_SELECT_RelationshipConstraintClass));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_CustomAttribute", PROFILETABLE_SELECT_CustomAttribute));
 
     //mapping profile tables
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_ClassMap", "SELECT s.Name, c.Name, cm.MapStrategy,cm.ShareColumnsMode,cm.MaxSharedColumnsBeforeOverflow,cm.JoinedTableInfo FROM ec_ClassMap cm JOIN ec_Class c ON cm.ClassId=c.Id JOIN ec_Schema s ON s.Id=c.SchemaId ORDER BY s.Name,c.Name"));
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyPath", "SELECT rootPropS.Name, rootPropC.Name, rootProp.Name, pp.AccessString FROM ec_PropertyPath pp "
-                             "JOIN ec_Property rootProp ON rootProp.Id=pp.RootPropertyId JOIN ec_Class rootPropC ON rootPropC.Id=rootProp.ClassId JOIN ec_Schema rootPropS ON rootPropS.Id=rootPropC.SchemaId "
-                             "ORDER BY rootPropS.Name,rootPropC.Name, rootProp.Name,pp.AccessString"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_ClassMap", PROFILETABLE_SELECT_ClassMap));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyPath", PROFILETABLE_SELECT_PropertyPath));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyMap", PROFILETABLE_SELECT_PropertyMap));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Table", PROFILETABLE_SELECT_Table));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Column", PROFILETABLE_SELECT_Column));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Index", PROFILETABLE_SELECT_Index));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_IndexColumn", PROFILETABLE_SELECT_IndexColumn));
+    }
 
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyMap", "SELECT s.Name, c.Name, rootPropS.Name,rootPropC.Name,rootProp.Name,t.Name,col.Name FROM ec_PropertyMap pm "
-                             "JOIN ec_Class c ON c.Id=pm.ClassId JOIN ec_Schema s ON s.Id=c.SchemaId "
-                             "JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId JOIN ec_Property rootProp ON rootProp.Id=pp.RootPropertyId JOIN ec_Class rootPropC ON rootPropC.Id=rootProp.ClassId JOIN ec_Schema rootPropS ON rootPropS.Id=rootPropC.SchemaId "
-                             "JOIN ec_Column col ON col.Id=pm.ColumnId JOIN ec_Table t ON t.Id=col.TableId "
-                             "ORDER BY s.Name,c.Name,rootPropS.Name,rootPropC.Name,rootProp.Name,t.Name,col.Name"));
+//---------------------------------------------------------------------------------------
+// @bsiclass                                     Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(FileFormatCompatibilityTests, CompareProfileTables_UpgradedFile)
+    {
+    BeFileName benchmarkFolder = GetBenchmarkFolder();
 
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Table", "SELECT parentT.Name, t.Name, t.Type, exclusiveRootClassS.Name, exclusiveRootClass.Name, t.UpdatableViewName FROM ec_table t "
-                             "JOIN ec_Table parentT ON parentT.Id=t.ParentTableId JOIN ec_Class exclusiveRootClass ON exclusiveRootClass.Id=t.ExclusiveRootClassId JOIN ec_Schema exclusiveRootClassS ON exclusiveRootClassS.Id=exclusiveRootClass.SchemaId "
-                             "ORDER BY t.Name"));
+    BeFileName benchmarkFilePath(benchmarkFolder);
+    benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
+    Db benchmarkFile;
+    ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
 
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Column", "SELECT t.Name, c.Name,c.Type,c.IsVirtual,c.Ordinal,c.NotNullConstraint,c.UniqueConstraint,c.CheckConstraint,c.DefaultConstraint,c.CollationConstraint,c.OrdinalInPrimaryKey,c.ColumnKind FROM ec_Column c "
-                             "JOIN ec_Table t ON t.Id=c.TableId ORDER BY t.Name, c.Name"));
+    BeFileName artefactOutDir;
+    BeTest::GetHost().GetOutputRoot(artefactOutDir);
+    if (!artefactOutDir.DoesPathExist())
+        ASSERT_EQ(BeFileNameStatus::Success, BeFileName::CreateNewDirectory(artefactOutDir));
 
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Index", "SELECT i.Name, t.Name, i.IsUnique,i.AddNotNullWhereExp,i.IsAutoGenerated,s.Name,c.Name,i.AppliesToSubclassesIfPartial FROM ec_Index i "
-                             "JOIN ec_Table t ON t.Id=i.TableId JOIN ec_Class c ON c.Id=i.ClassId JOIN ec_Schema s ON s.Id=c.SchemaId ORDER BY i.Name"));
+    BeFileName upgradedFilePath(artefactOutDir);
+    upgradedFilePath.AppendToPath(L"upgradedimodel2.ecdb");
+    ASSERT_EQ(BeFileNameStatus::Success, BeFileName::BeCopyFile(benchmarkFilePath, upgradedFilePath));
+    ECDb upgradedFile;
+    ASSERT_EQ(BE_SQLITE_OK, upgradedFile.OpenBeSQLiteDb(upgradedFilePath, ECDb::OpenParams(ECDb::OpenMode::Readonly)));
 
-    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_IndexColumn", "SELECT i.Name, c.Name, t.Name, ic.Ordinal FROM ec_IndexColumn ic "
-                             "JOIN ec_Index i ON i.Id=ic.IndexId JOIN ec_Column c ON c.Id=ic.ColumnId JOIN ec_Table t ON t.Id=c.TableId ORDER BY i.Name, ic.Ordinal"));
+    //profile table count check
+    {
+    Statement stmt;
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(upgradedFile, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
+    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
+    }
+
+    //schema profile tables
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Schema", PROFILETABLE_SELECT_Schema));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_SchemaReference", PROFILETABLE_SELECT_SchemaReference));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Class", PROFILETABLE_SELECT_Class));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_ClassHasBaseClasses", PROFILETABLE_SELECT_ClassHasBaseClasses));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Enumeration", PROFILETABLE_SELECT_Enumeration));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_KindOfQuantity", PROFILETABLE_SELECT_KindOfQunatity));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyCategory", PROFILETABLE_SELECT_PropertyCategory));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Property", PROFILETABLE_SELECT_Property));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_RelationshipConstraint", PROFILETABLE_SELECT_RelationshipConstraint));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_RelationshipConstraintClass", PROFILETABLE_SELECT_RelationshipConstraintClass));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_CustomAttribute", PROFILETABLE_SELECT_CustomAttribute));
+
+    //mapping profile tables
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_ClassMap", PROFILETABLE_SELECT_ClassMap));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyPath", PROFILETABLE_SELECT_PropertyPath));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_PropertyMap", PROFILETABLE_SELECT_PropertyMap));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Table", PROFILETABLE_SELECT_Table));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Column", PROFILETABLE_SELECT_Column));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_Index", PROFILETABLE_SELECT_Index));
+    EXPECT_TRUE(CompareTable(benchmarkFile, upgradedFile, "ec_IndexColumn", PROFILETABLE_SELECT_IndexColumn));
     }
 
 //*****************************************************************************************
