@@ -90,7 +90,6 @@
                 <AppliesToEntityClass>bis:Element</AppliesToEntityClass>
             </IsMixin>
         </ECCustomAttributes>
-        <ECProperty propertyName="RestartValue" typeName="double" kindOfQuantity="LENGTH"/>
     </ECEntityClass>
     <ECEntityClass typeName="LinearlyReferencedLocation" modifier="Abstract">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
@@ -161,14 +160,6 @@
             <Class class="IReferent"/>
         </Target>
     </ECRelationshipClass>
-    <ECEntityClass typeName="LinearlyLocatedReferent" modifier="Abstract">
-        <BaseClass>bis:SpatialLocationElement</BaseClass>
-        <BaseClass>IReferent</BaseClass>
-        <BaseClass>ILinearlyLocatedElement</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
     <ECEntityClass typeName="GeometricElementAsReferent" modifier="Abstract">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <BaseClass>IReferent</BaseClass>

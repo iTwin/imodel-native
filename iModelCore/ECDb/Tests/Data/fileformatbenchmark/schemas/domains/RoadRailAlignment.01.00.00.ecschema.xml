@@ -8,23 +8,22 @@
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="Alignment" modifier="Sealed">
+    <ECEntityClass typeName="Alignment" modifier="Sealed" description="Reference system to position elements mainly for linear construction works.">
         <BaseClass>bis:SpatialLocationElement</BaseClass>
         <BaseClass>bis:ISubModeledElement</BaseClass>
         <BaseClass>lr:ILinearElement</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
-        <ECNavigationProperty propertyName="Horizontal" relationshipName="AlignmentRefersToHorizontal" direction="Forward"/>
-        <ECNavigationProperty propertyName="MainVertical" relationshipName="AlignmentRefersToMainVertical" direction="Forward"/>
+        <ECProperty propertyName="StartStation" typeName="double" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
-    <ECEntityClass typeName="HorizontalAlignmentsPortion">
+    <ECEntityClass typeName="HorizontalAlignmentsPortion" description="Horizontal/Top portions of Alignments in an AlignmentModel that will be broken down in more detail in a separate HorizontalAlignmentModel.">
         <BaseClass>bis:SpatialLocationPortion</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="HorizontalAlignment">
+    <ECEntityClass typeName="HorizontalAlignment" description="Detailing of an Alignment horizontally.">
         <BaseClass>bis:GeometricElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -32,26 +31,26 @@
         <ECProperty propertyName="HorizontalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
         <ECProperty propertyName="Length" typeName="double" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
-    <ECEntityClass typeName="VerticalAlignment">
+    <ECEntityClass typeName="VerticalAlignment" description="Detailing of a Alignment or a portion of it, vertically along its path.">
         <BaseClass>bis:GeometricElement2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
         <ECProperty propertyName="VerticalGeometry" typeName="Bentley.Geometry.Common.IGeometry" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
-    <ECEntityClass typeName="AlignmentModel">
+    <ECEntityClass typeName="AlignmentModel" description="Container for related Alignments">
         <BaseClass>bis:SpatialLocationModel</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="HorizontalAlignmentModel">
+    <ECEntityClass typeName="HorizontalAlignmentModel" description="Container for Horizontal Alignments for all Alignments in a particular AlignmentModel.">
         <BaseClass>bis:GeometricModel2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
     </ECEntityClass>
-    <ECEntityClass typeName="VerticalAlignmentModel">
+    <ECEntityClass typeName="VerticalAlignmentModel" description="Container for all Vertical Alignments breaking down an Alignment.">
         <BaseClass>bis:GeometricModel2d</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
@@ -66,7 +65,8 @@
             <Class class="Alignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AlignmentRefersToHorizontal" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+    <ECRelationshipClass typeName="AlignmentRefersToHorizontal" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="is main horizontal for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
@@ -74,7 +74,8 @@
             <Class class="HorizontalAlignment"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing" strengthDirection="Backward" modifier="Sealed">
+    <ECRelationshipClass typeName="AlignmentRefersToMainVertical" strength="referencing" modifier="Sealed">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
         <Source multiplicity="(1..1)" roleLabel="is main vertical for 1 alignment" polymorphic="false">
             <Class class="Alignment"/>
         </Source>
@@ -92,7 +93,9 @@
         </Target>
     </ECRelationshipClass>
     <ECEntityClass typeName="AlignmentReferentElement" modifier="Abstract">
-        <BaseClass>lr:LinearlyLocatedReferent</BaseClass>
+        <BaseClass>bis:SpatialLocationElement</BaseClass>
+        <BaseClass>lr:ILinearlyLocatedElement</BaseClass>
+        <BaseClass>lr:IReferent</BaseClass>
         <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.01.00.00"/>
         </ECCustomAttributes>
@@ -105,6 +108,7 @@
                 <SupportedLinearlyReferencedLocationTypes>1</SupportedLinearlyReferencedLocationTypes>
             </ILinearlyLocatedSegmentationHints>
         </ECCustomAttributes>
+        <ECProperty propertyName="Station" typeName="double" kindOfQuantity="lr:LENGTH"/>
     </ECEntityClass>
     <ECRelationshipClass typeName="AlignmentOwnsStations" strength="embedding" modifier="Sealed">
         <BaseClass>bis:ElementOwnsChildElements</BaseClass>
