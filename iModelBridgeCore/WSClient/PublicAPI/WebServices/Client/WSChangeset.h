@@ -98,8 +98,8 @@ struct WSChangeset
         WSCLIENT_EXPORT BentleyStatus ExtractNewIdsFromResponse
             (
             RapidJsonValueCR response,
-            const SuccessHandler& successHandler = [&] (ObjectIdCR oldId, ObjectIdCR newId) { return SUCCESS; },
-            const ErrorHandler& errorHandler = [&] (ObjectIdCR oldId, WSErrorCR error) { return SUCCESS; }
+            const SuccessHandler& successHandler = [] (ObjectIdCR oldId, ObjectIdCR newId) { return SUCCESS; },
+            const ErrorHandler& errorHandler = [] (ObjectIdCR oldId, WSErrorCR error) { return SUCCESS; }
             ) const;
     };
 
