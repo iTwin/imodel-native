@@ -540,6 +540,27 @@ struct FacetFractionDetail
 size_t readIndex;
 double fraction;
 };
+
+//=======================================================================================
+//! 
+//! Data for describing a polyface edge.
+//! @ingroup BentleyGeom_MeshMarkup
+//!
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     05/2017
+//=======================================================================================
+struct  PolyfaceEdge
+    {
+    int32_t                m_indices[2];
+
+    PolyfaceEdge() { }
+    GEOMDLLIMPEXP PolyfaceEdge(uint32_t index0, uint32_t index1);
+
+    GEOMDLLIMPEXP bool operator < (PolyfaceEdge const& rhs) const;
+    };                 
+
+
 //=======================================================================================
 //! 
 //! Data for describing a set of connected edges of a polyface and their source.
@@ -548,9 +569,10 @@ double fraction;
 struct PolyfaceEdgeChain
 {
 private:
-    CurveTopologyId             m_id;
-    bvector<int32_t>              m_vertexIndices;
+    CurveTopologyId                 m_id;
+    bvector<int32_t>                m_vertexIndices;
     
+    void Build(bvector<PolyfaceEdge>&& edges);
 public:
 //! Construct an empty chain with default CurveTopologyId.
 GEOMDLLIMPEXP                   PolyfaceEdgeChain ();
@@ -558,7 +580,13 @@ GEOMDLLIMPEXP                   PolyfaceEdgeChain ();
 GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id);
 //! construct a chain with two initial indices.
 GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id, int32_t index0, int32_t index1);
-//! add an index, caller responsible for 1-based shift
+//! constra a chain with indices;
+GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id, bvector<int32_t>&& indices);
+//! construct a chain with potentially connected set of edges.;
+GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id, bvector<PolyfaceEdge>&& edges);
+//! construct a chain containing all polyface edges (connected at random).
+GEOMDLLIMPEXP                   PolyfaceEdgeChain (CurveTopologyIdCR id, PolyfaceQueryCR polyface);
+//! add an index.
 GEOMDLLIMPEXP void              AddIndex (int32_t index);
 //! add an index.
 GEOMDLLIMPEXP void              AddZeroBasedIndex (uint32_t index);
@@ -567,7 +595,7 @@ GEOMDLLIMPEXP void              AddZeroBasedIndices (bvector<size_t> const &indi
 //! query the CurveTopologyId
 GEOMDLLIMPEXP CurveTopologyIdCR GetId () const;
 //! Get pointer to the contiguous indices.
-GEOMDLLIMPEXP int32_t const*      GetIndexCP() const;
+GEOMDLLIMPEXP int32_t const*    GetIndexCP() const;
 //! Query the number of indices.
 GEOMDLLIMPEXP size_t            GetIndexCount () const;
 //! extract coordinates from points.
