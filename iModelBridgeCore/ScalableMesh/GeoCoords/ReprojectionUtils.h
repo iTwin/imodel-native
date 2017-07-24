@@ -12,9 +12,13 @@
 
 #pragma once
 
+#ifdef VANCOUVER
 #include <DgnGeoCoord\DgnGeoCoord.h>
+#else
+#include <DgnPlatform\DgnGeoCoord.h>
+#endif
 
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 

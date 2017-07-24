@@ -8,7 +8,11 @@
 #pragma once
 
 #include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
+#ifdef VANCOUVER
 #include <DgnGeoCoord\DgnGeoCoord.h>
+#else
+#include <DgnPlatform\DgnGeoCoord.h>
+#endif
 #include <Geom/Polyface.h>
 #include <ScalableMesh\IScalableMesh.h>
 
@@ -19,9 +23,27 @@ DCPOINTCLOUDCORE_REF_COUNTED_PTR(ScalableMeshPointsProvider)
 */
 
 USING_NAMESPACE_GROUND_DETECTION
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
+
+
+#ifndef VANCOUVER
+
+namespace BENTLEY_NAMESPACE_NAME
+    {
+    namespace GeoCoordinates 
+        {
+        // TODO : implement GeoCoordInterpretation in ####GeoCoord.h
+        enum GeoCoordInterpretation
+            {
+            Cartesian = 0,
+            XYZ = 1
+            };
+        }
+    }
+#endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
+
 
 /*=================================================================================**//**
 * @bsiclass                                             Marc.Bedard     12/2015
@@ -37,6 +59,7 @@ public:
     Transform GetRootToNativeTransform() const;
     
     BentleyStatus GetPoints(bvector<DPoint3d>& points, double* resolution, ClipVectorCP clip) const;
+
 
     void SetReprojectionInfo(GeoCoordInterpretation geocoordInterpretation,
                              BaseGCSPtr&            sourceGcs,

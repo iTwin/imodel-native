@@ -514,7 +514,7 @@ Transform                          ScalableMeshGroup::_GetReprojectionTransform(
     return m_members.front()->GetReprojectionTransform();
     }
 
-BentleyStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSPtr& destinationGcs, bool limitResolution)
+BentleyStatus                      ScalableMeshGroup::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
     {
     for (auto& member : m_members)
         {
