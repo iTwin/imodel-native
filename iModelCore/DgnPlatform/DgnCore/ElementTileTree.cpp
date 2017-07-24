@@ -27,6 +27,9 @@ BEGIN_UNNAMED_NAMESPACE
 
 struct TileContext;
 
+// For debugging tile generation code - disables use of cached tiles.
+// #define DISABLE_TILE_CACHE
+
 #define TILECACHE_DEBUG
 
 #ifdef TILECACHE_DEBUG
@@ -976,12 +979,17 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Loader::IsCacheable() const
     {
+#if defined(DISABLE_TILE_CACHE)
+    // Tile cache is really annoying when debugging tile generation code...
+    return false;
+#else
     // Don't cache tiles refined for zoom...
     auto const& tile = GetElementTile();
     if (tile.HasZoomFactor() && tile.GetZoomFactor() > 1.0)
         return false;
 
     return true;
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
