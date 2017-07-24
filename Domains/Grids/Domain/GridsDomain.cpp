@@ -94,7 +94,7 @@ bool* pIsLocatabled,
 uint32_t* pWeight,
 Dgn::DgnStyleId* pStyleId,
 int32_t* pDisplayPriority,
-Dgn::DgnMaterialId* pMaterialId,
+Dgn::RenderMaterialId* pMaterialId,
 double* pTransparency
 )
     {
@@ -120,7 +120,7 @@ double* pTransparency
     if (pDisplayPriority)
         levelAppearance.SetDisplayPriority (*pDisplayPriority);
     if (pMaterialId)
-        levelAppearance.SetMaterial (*pMaterialId);
+        levelAppearance.SetRenderMaterial (*pMaterialId);
     if (pTransparency)
         levelAppearance.SetTransparency (*pTransparency);
 

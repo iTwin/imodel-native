@@ -37,7 +37,7 @@ private:
                                      uint32_t* pWeight = NULL,
                                      Dgn::DgnStyleId* pStyleId = NULL,
                                      int32_t* pDisplayPriority = NULL,
-                                     Dgn::DgnMaterialId* pMaterialId = NULL,
+                                     Dgn::RenderMaterialId* pMaterialId = NULL,
                                      double* pTransparency = NULL);
 
     void InsertDomainAuthorities (Dgn::DgnDbR) const;
