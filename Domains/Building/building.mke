@@ -20,6 +20,9 @@ BldgPhysPublicApi = $(BldgPhysSrc)PublicAPI/BuildingPhysical/
 BldgCmnSrc        = $(_MakeFilePath)BuildingCommonschema/
 BldgCmnPublicApi  = $(BldgCmnSrc)PublicAPI/BuildingCommon/
 
+MechFuncSrc        = $(_MakeFilePath)MechanicalFunctional/
+MechFuncPublicApi  = $(MechFuncSrc)PublicAPI/MechanicalFunctional/
+
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -63,6 +66,8 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 $(o)ArchitecturalPhysicalDomain$(oext) : $(ArchPhysSrc)ArchitecturalPhysicalDomain.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)ArchitecturalPhysicalDomain.h
 
 $(o)BuildingCommonDomain$(oext) : $(BldgCmnSrc)BuildingCommonDomain.cpp ${MultiCompileDepends} $(BldgCmnPublicApi)BuildingCommonDomain.h
+
+#$(o)MechanicalFunctionalDomain$(oext) : $(MechFuncSrc)MechanicalFunctionalDomain.cpp ${MultiCompileDepends} $(MechFuncPublicApi)MechanicalFunctionalDomain.h
 
 $(o)BuildingPhysicalDomain$(oext) : $(BldgPhysSrc)BuildingPhysicalDomain.cpp ${MultiCompileDepends} $(BldgPhysPublicApi)BuildingPhysicalDomain.h
 

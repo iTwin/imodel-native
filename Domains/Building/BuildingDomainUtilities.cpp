@@ -32,6 +32,12 @@ namespace BuildingDomain
 		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingPhysical::BuildingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 			return BentleyStatus::ERROR;
 
+		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( Dgn::FunctionalDomain::GetDomain() , Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+			return BentleyStatus::ERROR;
+
+//		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::MechanicalFunctional::MechanicalFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+			//return BentleyStatus::ERROR;
+
 		return BentleyStatus::SUCCESS;
 		}
 
@@ -59,6 +65,99 @@ namespace BuildingDomain
 		BuildingPhysical::BuildingPhysicalModelPtr physicalModel = BuildingPhysical::BuildingPhysicalModel::Create(*partition);
 
 		return physicalModel;
+
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	Dgn::FunctionalModelPtr BuildingDomainUtilities::CreateBuildingFunctionalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+		{
+
+		if (!parentSubject.IsValid())
+			{
+			parentSubject = db.Elements().GetRootSubject();
+			}
+
+		// Create the partition and the BuildingPhysicalModel.
+
+		Utf8String phyModelCode = BuildFucntionalModelCode(modelCodeName);
+
+		Dgn::FunctionalPartitionCPtr partition = Dgn::FunctionalPartition::CreateAndInsert(*parentSubject, phyModelCode);
+
+		if (!partition.IsValid())
+			return nullptr;
+
+		Dgn::FunctionalModelPtr model = Dgn::FunctionalModel::Create(*partition);
+
+		if (Dgn::DgnDbStatus::Success != model->Insert())
+			return nullptr;
+
+		return model;
+
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	Dgn::DocumentListModelPtr BuildingDomainUtilities::CreateBuildingDocumentListModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+		{
+
+		if (!parentSubject.IsValid())
+			{
+			parentSubject = db.Elements().GetRootSubject();
+			}
+
+		// Create the partition and the DocumentListModel
+
+		Utf8String documentListModelCode = BuildDocumentListModelCode(modelCodeName);
+
+		Dgn::DocumentPartitionCPtr partition = Dgn::DocumentPartition::CreateAndInsert(*parentSubject, documentListModelCode);
+
+		if (!partition.IsValid())
+			return nullptr;
+
+		Dgn::DocumentListModelPtr model = Dgn::DocumentListModel::Create (*partition);
+
+		if (Dgn::DgnDbStatus::Success != model->Insert())
+			return nullptr;
+
+		return model;
+
+		}
+
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	Dgn::DrawingModelPtr BuildingDomainUtilities::CreateBuildingDrawingModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::DocumentListModelCR docListModel)
+		{
+
+		// Create the partition and the DocumentListModel
+
+		Dgn::DrawingPtr drawing = Dgn::Drawing::Create(docListModel, modelCodeName);
+
+		if (!drawing.IsValid())
+			return nullptr;
+
+		Dgn::DgnDbStatus status;
+
+		Dgn::DgnElementCPtr element = drawing->Insert(&status);
+
+		if (Dgn::DgnDbStatus::Success != status)
+			return nullptr;
+
+		drawing = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::Drawing>(docListModel, element->GetElementId());
+
+		Dgn::DrawingModelPtr model = Dgn::DrawingModel::Create (*drawing);
+
+		if (Dgn::DgnDbStatus::Success != model->Insert())
+			return nullptr;
+
+		return model;
 
 		}
 
@@ -297,6 +396,33 @@ namespace BuildingDomain
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
 
+	Utf8String  BuildingDomainUtilities::BuildFucntionalModelCode(Utf8StringCR modelCodeName)
+		{
+		return modelCodeName + ":Functional";
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	Utf8String  BuildingDomainUtilities::BuildDocumentListModelCode(Utf8StringCR modelCodeName)
+		{
+		return modelCodeName + ":DocList";
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+	Utf8String  BuildingDomainUtilities::BuildDrawingModelCode(Utf8StringCR modelCodeName)
+		{
+		return modelCodeName + ":Drawing";
+		}
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
 	Utf8String  BuildingDomainUtilities::BuildTypeDefinitionModelCode(Utf8StringCR modelCodeName)
 		{
 		return modelCodeName + ":TypeDefinition";
@@ -308,7 +434,13 @@ namespace BuildingDomain
 
 	Utf8String  BuildingDomainUtilities::BuildDynamicSchemaName(Utf8StringCR modelCodeName)
 		{
-		return modelCodeName + "Dynamic";
+        Utf8String schemaName = modelCodeName;
+
+        if (schemaName.Contains("") || schemaName.Contains("-"))
+            {
+            schemaName.Sprintf("RVT%d", rand());
+            }
+		return schemaName + "Dynamic";
 		}
 
 
@@ -559,6 +691,113 @@ namespace BuildingDomain
 
 		}
 
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+    Dgn::DrawingGraphicPtr  BuildingDomainUtilities::CreateDrawingGraphic(Utf8StringCR schemaName, Utf8StringCR className, Dgn::DrawingModelCR model, Dgn::DgnCategoryId categoryId)
+        {
+
+        Dgn::DgnDbR db = model.GetDgnDb();
+        Dgn::DgnModelId modelId = model.GetModelId();
+
+        ECN::ECClassCP drawingGraphicClass = db.GetClassLocater().LocateClass(schemaName.c_str(), className.c_str());
+
+        if (nullptr == drawingGraphicClass)
+            return nullptr;
+
+        ECN::ECClassId classId = drawingGraphicClass->GetId();
+
+        Dgn::ElementHandlerP elmHandler = Dgn::dgn_ElementHandler::Element::FindHandler(db, classId);
+        if (NULL == elmHandler)
+            return nullptr;
+
+        Dgn::GeometricElement2d::CreateParams params(db, modelId, classId, categoryId);
+
+        Dgn::DgnElementPtr element = elmHandler->Create(params);
+
+        Dgn::DrawingGraphicPtr drawingGraphicElement = dynamic_pointer_cast<Dgn::DrawingGraphic>(element);
+
+        auto geomSource = drawingGraphicElement->ToGeometrySourceP();
+
+        if (nullptr == geomSource)
+            return nullptr;
+
+        geomSource->SetCategoryId(categoryId);
+
+        return drawingGraphicElement;
+
+        }
+
+	//---------------------------------------------------------------------------------------
+	// @bsimethod                                   Bentley.Systems
+	//---------------------------------------------------------------------------------------
+
+
+	Dgn::FunctionalComponentElementPtr  BuildingDomainUtilities::CreateFunctionalComponentElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::FunctionalModelCR model)
+		{
+
+		Dgn::DgnDbR db = model.GetDgnDb();
+		Dgn::DgnModelId modelId = model.GetModelId();
+
+		// Find the class
+
+		ECN::ECClassCP buildingClass = db.GetClassLocater().LocateClass(schemaName.c_str(), className.c_str());
+
+		if (nullptr == buildingClass)
+			return nullptr;
+
+		ECN::ECClassId classId = buildingClass->GetId();
+
+		Dgn::ElementHandlerP elmHandler = Dgn::dgn_ElementHandler::Element::FindHandler(db, classId);
+		if (NULL == elmHandler)
+			return nullptr;
+
+		Dgn::FunctionalComponentElement::CreateParams params (db, modelId, classId);
+
+		Dgn::DgnElementPtr element = elmHandler->Create(params);
+
+		Dgn::FunctionalComponentElementPtr buildingElement = dynamic_pointer_cast<Dgn::FunctionalComponentElement>(element);
+
+		return buildingElement;
+
+		}
+
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+
+    Dgn::FunctionalBreakdownElementPtr  BuildingDomainUtilities::CreateFunctionalBreakdownElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::FunctionalModelCR model)
+        {
+
+        Dgn::DgnDbR db = model.GetDgnDb();
+        Dgn::DgnModelId modelId = model.GetModelId();
+
+        // Find the class
+
+        ECN::ECClassCP buildingClass = db.GetClassLocater().LocateClass(schemaName.c_str(), className.c_str());
+
+        if (nullptr == buildingClass)
+            return nullptr;
+
+        ECN::ECClassId classId = buildingClass->GetId();
+
+        Dgn::ElementHandlerP elmHandler = Dgn::dgn_ElementHandler::Element::FindHandler(db, classId);
+        if (NULL == elmHandler)
+            return nullptr;
+
+        Dgn::FunctionalBreakdownElement::CreateParams params(db, modelId, classId);
+
+        Dgn::DgnElementPtr element = elmHandler->Create(params);
+
+        Dgn::FunctionalBreakdownElementPtr buildingElement = dynamic_pointer_cast<Dgn::FunctionalBreakdownElement>(element);
+
+        return buildingElement;
+
+        }
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems

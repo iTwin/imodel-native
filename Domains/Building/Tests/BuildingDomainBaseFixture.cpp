@@ -220,9 +220,8 @@ void BuildingDomainTestFixture::TearDown()
  +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbPtr BuildingDomainTestFixture::CreateDgnDb()
 	{
-	Dgn::DgnDomains::RegisterDomain(BentleyApi::ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
-	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
-	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingPhysical::BuildingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+
+	BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers();
 
 	BeFileName tmpDir;
 	BeTest::GetHost().GetTempDir(tmpDir);
@@ -248,9 +247,7 @@ DgnDbPtr BuildingDomainTestFixture::CreateDgnDb()
 
 DgnDbPtr BuildingDomainTestFixture::OpenDgnDb()
 	{
-	Dgn::DgnDomains::RegisterDomain(BentleyApi::ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
-	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
-	Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingPhysical::BuildingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+	BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers();
 
 	BeFileName tmpDir;
 	BeTest::GetHost().GetTempDir(tmpDir);

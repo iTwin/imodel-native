@@ -8,6 +8,11 @@
 
 #include <BuildingDomain\BuildingDomainApi.h>
 #include <Json\Json.h>
+#include "dgnplatform\FunctionalDomain.h"
+
+
+DGNPLATFORM_REF_COUNTED_PTR(FunctionalComponentElement)
+DGNPLATFORM_REF_COUNTED_PTR(FunctionalBreakdownElement)
 
 
 #ifdef __BUILDING_DOMAIN_BUILD__
@@ -35,6 +40,9 @@ namespace BuildingDomain
 	struct  BuildingDomainUtilities
 		{
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildPhysicalModelCode            (Utf8StringCR modelCodeName);
+		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildFucntionalModelCode          (Utf8StringCR modelCodeName);
+		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildDrawingModelCode             (Utf8StringCR modelCodeName);
+		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildDocumentListModelCode        (Utf8StringCR modelCodeName);
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildTypeDefinitionModelCode      (Utf8StringCR modelCodeName);
 		BUILDING_DOMAIN_EXPORT static Utf8String                                       BuildDynamicSchemaName            (Utf8StringCR modelCodeName);
 		BUILDING_DOMAIN_EXPORT static BentleyStatus                                    RegisterDomainHandlers            ();
@@ -42,6 +50,9 @@ namespace BuildingDomain
 		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr       GetBuildingPhyicalModel           (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
         BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingTypeDefinitionModelPtr GetBuildingTypeDefinitionModel    (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
 		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingPhysicalModelPtr       CreateBuildingPhyicalModel        (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+		BUILDING_DOMAIN_EXPORT static Dgn::DrawingModelPtr                             CreateBuildingDrawingModel        (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::DocumentListModelCR docListModel);
+		BUILDING_DOMAIN_EXPORT static Dgn::FunctionalModelPtr                          CreateBuildingFunctionalModel     (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+		BUILDING_DOMAIN_EXPORT static Dgn::DocumentListModelPtr                        CreateBuildingDocumentListModel   (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
 		BUILDING_DOMAIN_EXPORT static BuildingPhysical::BuildingTypeDefinitionModelPtr CreateBuildingTypeDefinitionModel (Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaCP                                  CreateBuildingDynamicSchema       (Utf8StringCR modelCodeName, BuildingPhysical::BuildingPhysicalModelPtr model);
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaCP                                  GetBuildingDynamicSchema          (BuildingPhysical::BuildingPhysicalModelCPtr model);
@@ -59,8 +70,12 @@ namespace BuildingDomain
 		BUILDING_DOMAIN_EXPORT static ECN::ECClassCP                                   GetExistingECClass                (Dgn::DgnDbPtr db, Utf8StringCR schemaName, Utf8StringCR  className);
 
 
+        BUILDING_DOMAIN_EXPORT static Dgn::FunctionalBreakdownElementPtr               CreateFunctionalBreakdownElement  (Utf8StringCR schemaName, Utf8StringCR className, Dgn::FunctionalModelCR model);
+        BUILDING_DOMAIN_EXPORT static Dgn::FunctionalComponentElementPtr               CreateFunctionalComponentElement  (Utf8StringCR schemaName, Utf8StringCR className, Dgn::FunctionalModelCR model);
 		BUILDING_DOMAIN_EXPORT static Dgn::PhysicalElementPtr                          CreatePhysicalElement             (Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model, Utf8CP categoryName = nullptr );
 		BUILDING_DOMAIN_EXPORT static Dgn::PhysicalTypePtr                             CreatePhysicalTypeElement         (Utf8StringCR schemaName, Utf8StringCR className, Dgn::DefinitionModelCR model);
+        BUILDING_DOMAIN_EXPORT static Dgn::DrawingGraphicPtr                           CreateDrawingGraphic              (Utf8StringCR schemaName, Utf8StringCR className, Dgn::DrawingModelCR model, Dgn::DgnCategoryId categoryId);
+
 
 		BUILDING_DOMAIN_EXPORT static ECN::ECSchemaCP                                  InsertSuppliedSchema              (ECN::ECSchemaPtr suppliedDynamicSchema, BuildingPhysical::BuildingPhysicalModelPtr model);
 

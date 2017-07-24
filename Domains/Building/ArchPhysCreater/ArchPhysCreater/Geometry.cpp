@@ -6,6 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "stdafx.h"
+#include "dgnplatform\TextString.h"
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
@@ -315,3 +317,577 @@ BentleyStatus GeometricTools::CreateGeometry(Dgn::PhysicalElementPtr element, Bu
     return BentleyStatus::SUCCESS;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePidLineGeometry(Dgn::DrawingGraphicR element, Dgn::DrawingModelR drawingModel, DPoint2dCP points, int count)
+	{
+	Dgn::DgnDbR db = drawingModel.GetDgnDb();
+	Dgn::DgnModelId modelId = drawingModel.GetModelId();
+	Dgn::DgnCategoryId    categoryId = ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(db, "PidLine");
+
+
+	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+	if (!builder.IsValid())
+		return BentleyStatus::BSIERROR;
+
+	// Append geometry/params for tile casing
+
+	builder->Append(categoryId);
+
+	Dgn::Render::GeometryParams params;
+	params.SetCategoryId(categoryId);
+	//params.SetSubCategoryId(windowFraneCategoryId);
+	// params.SetMaterialId(ToyTileMaterial::QueryColoredPlasticMaterialId(db));
+	params.SetLineColor(Dgn::ColorDef::Yellow());
+	params.SetWeight(2);
+	builder->Append(params);
+
+	CurveVectorPtr line = CurveVector::CreateLinear(points, count, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	//DMatrix3d matrix;
+
+	//matrix.multiply()  .TransformPoints(points, count);
+
+	//DPoint3d arcPoints[3];
+	//arcPoints[0] = DPoint3d::From( 5.0, 10.0, 0.0);
+	//arcPoints[1] = DPoint3d::From( 0.0, 10.0, 0.0);
+	//arcPoints[2] = DPoint3d::From(10.0, 10.0, 0.0);
+
+	//DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY(arcPoints[0], 5.0);// FromArcCenterStartEnd(arcPoints[0], arcPoints[1], arcPoints[2]);
+	//ellipse.SetSweep(0, PI);
+	//ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc(ellipse);
+
+ //   builder->Append(*arc);
+
+	//Dgn::TextStringStylePtr style = Dgn::TextStringStyle::Create();
+	//style->SetFont(Dgn::DgnFontManager::GetLastResortTrueTypeFont());
+	//style->SetSize(DPoint2d::From(0.5, 0.5));
+
+
+	//Dgn::TextStringPtr text = Dgn::TextString::Create();
+
+	//text->SetText("Test");
+	//text->SetStyle(*style);
+
+	//builder->Append(*text);
+
+	if (BentleyStatus::SUCCESS != builder->Finish(element))
+		return  BentleyStatus::BSIERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePidValveGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+	{
+	
+	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+	if (!builder.IsValid())
+		return BentleyStatus::BSIERROR;
+
+	// Append geometry/params for tile casing
+
+	builder->Append(categoryId);
+
+	Dgn::Render::GeometryParams params;
+	params.SetCategoryId(categoryId);
+	params.SetLineColor(Dgn::ColorDef::Yellow());
+	params.SetWeight(2);
+	builder->Append(params);
+
+	DPoint2d points[5];
+	points[0] = DPoint2d::From( 0.0, -0.75);
+	points[1] = DPoint2d::From( 0.0,  0.75);
+	points[2] = DPoint2d::From( 3.0, -0.75);
+	points[3] = DPoint2d::From( 3.0,  0.75);
+	points[4] = DPoint2d::From( 0.0, -0.75);
+
+	CurveVectorPtr line = CurveVector::CreateLinear(points, 5, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	if (BentleyStatus::SUCCESS != builder->Finish(element))
+		return  BentleyStatus::BSIERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePidPumpGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+	{
+
+	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+	if (!builder.IsValid())
+		return BentleyStatus::BSIERROR;
+
+	// Append geometry/params for tile casing
+
+	builder->Append(categoryId);
+
+	Dgn::Render::GeometryParams params;
+	params.SetCategoryId(categoryId);
+	params.SetLineColor(Dgn::ColorDef::Red());
+	params.SetWeight(2);
+	builder->Append(params);
+
+	DPoint3d points[5];
+	points[0] = DPoint3d::From(0.0, 0.0);
+
+	DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY(points[0], 3.125);// FromArcCenterStartEnd(arcPoints[0], arcPoints[1], arcPoints[2]);
+	ellipse.SetSweep(36.87 * PI/ 180, -306.87 * PI/180);
+	ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc(ellipse);
+
+	builder->Append(*arc);
+
+	ellipse = DEllipse3d::FromCenterRadiusXY(points[0], .773);// FromArcCenterStartEnd(arcPoints[0], arcPoints[1], arcPoints[2]);
+	ellipse.SetSweep(0, 2.0*PI);
+	arc = ICurvePrimitive::CreateArc(ellipse);
+
+	builder->Append(*arc);
+
+	points[0] = DPoint3d::From(  0.0,    3.125);
+	points[1] = DPoint3d::From(  4.637,  3.125);
+	points[2] = DPoint3d::From(  4.637,  1.875);
+	points[3] = DPoint3d::From(  2.5,    1.875);
+
+	CurveVectorPtr line = CurveVector::CreateLinear(points, 4, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	points[0] = DPoint3d::From( -3.090, -3.517);
+	points[1] = DPoint3d::From(  3.090, -3.517);
+	points[2] = DPoint3d::From(  3.090, -3.903);
+	points[3] = DPoint3d::From( -3.090, -3.903);
+	points[4] = DPoint3d::From( -3.090, -3.517);
+
+	line = CurveVector::CreateLinear(points, 5, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	points[0] = DPoint3d::From( -2.317, -3.517);
+	points[1] = DPoint3d::From( -1.681, -2.632);
+
+	line = CurveVector::CreateLinear(points, 2, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	points[0] = DPoint3d::From( 2.317, -3.517);
+	points[1] = DPoint3d::From( 1.681, -2.632);
+
+	line = CurveVector::CreateLinear(points, 2, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	if (BentleyStatus::SUCCESS != builder->Finish(element))
+		return  BentleyStatus::BSIERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePidRoundTankGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+	{
+
+	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+	if (!builder.IsValid())
+		return BentleyStatus::BSIERROR;
+
+	// Append geometry/params for tile casing
+
+	builder->Append(categoryId);
+
+	Dgn::Render::GeometryParams params;
+	params.SetCategoryId(categoryId);
+	params.SetLineColor(Dgn::ColorDef::Red());
+	params.SetWeight(2);
+	builder->Append(params);
+
+	DPoint3d points[2];
+	points[0] = DPoint3d::From(0.0, 0.0);
+
+	DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY(points[0], 10.0);// FromArcCenterStartEnd(arcPoints[0], arcPoints[1], arcPoints[2]);
+	ellipse.SetSweep(0, 2.0*PI);
+	ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc(ellipse);
+
+	if (!arc.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*arc);
+
+	points[0] = DPoint3d::From(-10.0, 0.0);
+	points[1] = DPoint3d::From(-10.0, -12.5);
+
+	CurveVectorPtr line = CurveVector::CreateLinear(points, 2, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	points[0] = DPoint3d::From(10.0, 0.0);
+	points[1] = DPoint3d::From(10.0, -12.5);
+
+	line = CurveVector::CreateLinear(points, 2, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	if (BentleyStatus::SUCCESS != builder->Finish(element))
+		return  BentleyStatus::BSIERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePidTankGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+	{
+
+	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+	if (!builder.IsValid())
+		return BentleyStatus::BSIERROR;
+
+	// Append geometry/params for tile casing
+
+	builder->Append(categoryId);
+
+	Dgn::Render::GeometryParams params;
+	params.SetCategoryId(categoryId);
+	params.SetLineColor(Dgn::ColorDef::Red());
+	params.SetWeight(2);
+	builder->Append(params);
+
+	DPoint3d points[7];
+	points[0] = DPoint3d::From(  0.0,   26.25);
+	points[1] = DPoint3d::From(  0.0,    0.0);
+	points[2] = DPoint3d::From( 31.25,   0.0);
+	points[3] = DPoint3d::From( 31.25,  26.25);
+	points[4] = DPoint3d::From(  0.0,   26.25);
+	points[5] = DPoint3d::From( 15.625, 34.063);
+	points[6] = DPoint3d::From( 31.25,  26.25);
+
+	CurveVectorPtr line = CurveVector::CreateLinear(points, 7, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	if (BentleyStatus::SUCCESS != builder->Finish(element))
+		return  BentleyStatus::BSIERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePidNozzleGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+	{
+
+	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+	if (!builder.IsValid())
+		return BentleyStatus::BSIERROR;
+
+	// Append geometry/params for tile casing
+
+	builder->Append(categoryId);
+
+	Dgn::Render::GeometryParams params;
+	params.SetCategoryId(categoryId);
+	params.SetLineColor(Dgn::ColorDef::Red());
+	params.SetWeight(2);
+	builder->Append(params);
+
+	DPoint3d points[6];
+	points[0] = DPoint3d::From(0.0,    0.252);
+	points[1] = DPoint3d::From(0.752,  0.252);
+	points[2] = DPoint3d::From(0.752,  0.5);
+	points[3] = DPoint3d::From(0.752, -0.5);
+	points[4] = DPoint3d::From(0.752, -0.252);
+	points[5] = DPoint3d::From(0.0, -0.252);
+
+	CurveVectorPtr line = CurveVector::CreateLinear(points, 6, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	if (BentleyStatus::SUCCESS != builder->Finish(element))
+		return  BentleyStatus::BSIERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePidVirtualNozzleGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+    {
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+    if (!builder.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    // Append geometry/params for tile casing
+
+    builder->Append(categoryId);
+
+    Dgn::Render::GeometryParams params;
+    params.SetCategoryId(categoryId);
+    params.SetLineColor(Dgn::ColorDef::Red());
+    params.SetFillColor(Dgn::ColorDef::Red());
+    params.SetFillDisplay(BENTLEY_NAMESPACE_NAME::Dgn::Render::FillDisplay::Always);
+    params.SetWeight(2);
+    builder->Append(params);
+
+    DPoint3d point;
+    point = DPoint3d::From(0.0, 0.0);
+
+    DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY(point, 0.2);
+    ellipse.SetSweep(0, 2.0*PI);
+    //ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc(ellipse);
+    CurveVectorPtr arc = CurveVector::CreateDisk(ellipse, CurveVector::BOUNDARY_TYPE_Outer);
+
+    if (!arc.IsValid())
+        return  BentleyStatus::BSIERROR;
+
+    builder->Append(*arc);
+
+    if (BentleyStatus::SUCCESS != builder->Finish(element))
+        return  BentleyStatus::BSIERROR;
+
+    return BentleyStatus::SUCCESS;
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePidReducerGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+	{
+
+	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+	if (!builder.IsValid())
+		return BentleyStatus::BSIERROR;
+
+	// Append geometry/params for tile casing
+
+	builder->Append(categoryId);
+
+	Dgn::Render::GeometryParams params;
+	params.SetCategoryId(categoryId);
+	params.SetLineColor(Dgn::ColorDef::Yellow());
+	params.SetWeight(2);
+	builder->Append(params);
+
+	DPoint3d points[6];
+	points[0] = DPoint3d::From(0.0,  0.750);
+	points[1] = DPoint3d::From(1.5,  0.375);
+	points[2] = DPoint3d::From(1.5, -0.375);
+	points[3] = DPoint3d::From(0.0, -0.750);
+	points[4] = DPoint3d::From(0.0,  0.750);
+	points[5] = DPoint3d::From(0.0, -0.252);
+
+	CurveVectorPtr line = CurveVector::CreateLinear(points, 6, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	if (BentleyStatus::SUCCESS != builder->Finish(element))
+		return  BentleyStatus::BSIERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePid3WayValveGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+	{
+
+	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+	if (!builder.IsValid())
+		return BentleyStatus::BSIERROR;
+
+	// Append geometry/params for tile casing
+
+	builder->Append(categoryId);
+
+	Dgn::Render::GeometryParams params;
+	params.SetCategoryId(categoryId);
+	params.SetLineColor(Dgn::ColorDef::Yellow());
+	params.SetWeight(2);
+	builder->Append(params);
+
+	DPoint2d points[9];
+	points[0] = DPoint2d::From(0.0, -0.75);
+	points[1] = DPoint2d::From(0.0,  0.75);
+	points[2] = DPoint2d::From(1.5,  0.0);
+	points[3] = DPoint2d::From(0.75, 1.5);
+	points[4] = DPoint2d::From(2.25, 1.5);
+	points[5] = DPoint2d::From(0.75, -1.5);
+	points[6] = DPoint2d::From(2.25, -1.5);
+	points[7] = DPoint2d::From(1.5, 0.0);
+	points[8] = DPoint2d::From(0.0, -0.75);
+
+	CurveVectorPtr line = CurveVector::CreateLinear(points, 9, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+	if (BentleyStatus::SUCCESS != builder->Finish(element))
+		return  BentleyStatus::BSIERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreatePidVesselGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId)
+	{
+
+	Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+	if (!builder.IsValid())
+		return BentleyStatus::BSIERROR;
+
+	// Append geometry/params for tile casing
+
+	builder->Append(categoryId);
+
+	Dgn::Render::GeometryParams params;
+	params.SetCategoryId(categoryId);
+	params.SetLineColor(Dgn::ColorDef::Red());
+	params.SetWeight(2);
+	builder->Append(params);
+
+	DPoint3d points[5];
+	points[0] = DPoint3d::From(0.0, 0.0);
+	points[1] = DPoint3d::From(0.0, 5.0);
+	points[2] = DPoint3d::From(2.5, 0.0);
+
+	DEllipse3d ellipse = DEllipse3d::FromPoints(points[0], points[1], points[2], 0, -PI);
+	ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc(ellipse);
+
+	if (!arc.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*arc);
+
+	points[0] = DPoint3d::From(15.0, 0.0);
+	points[1] = DPoint3d::From(15.0, 5.0);
+	points[2] = DPoint3d::From(17.5, 0.0);
+
+	ellipse = DEllipse3d::FromPoints(points[0], points[1], points[2], 0, PI);
+	arc = ICurvePrimitive::CreateArc(ellipse);
+
+	if (!arc.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*arc);
+
+
+	points[0] = DPoint3d::From(0.0, -5.0);
+	points[1] = DPoint3d::From(0.0,  5.0);
+	points[2] = DPoint3d::From(15.0, 5.0);
+	points[3] = DPoint3d::From(15.0,-5.0);
+	points[4] = DPoint3d::From(0.0, -5.0);
+
+	CurveVectorPtr line = CurveVector::CreateLinear(points, 5, CurveVector::BOUNDARY_TYPE_None, true);
+	if (!line.IsValid())
+		return  BentleyStatus::BSIERROR;
+
+	builder->Append(*line);
+
+
+
+	if (BentleyStatus::SUCCESS != builder->Finish(element))
+		return  BentleyStatus::BSIERROR;
+
+	return BentleyStatus::SUCCESS;
+
+	}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus GeometricTools::CreateAnnotationTextGeometry(Dgn::DrawingGraphicR element, Dgn::DgnCategoryId categoryId, Utf8StringCR textValue)
+    {
+
+
+    Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create(element);
+    if (!builder.IsValid())
+        return BentleyStatus::BSIERROR;
+
+    // Append geometry/params for tile casing
+
+    builder->Append(categoryId);
+
+    Dgn::Render::GeometryParams params;
+    params.SetCategoryId(categoryId);
+    params.SetLineColor(Dgn::ColorDef::White());
+    params.SetWeight(2);
+    builder->Append(params);
+
+
+    Dgn::TextStringStylePtr style = Dgn::TextStringStyle::Create();
+    style->SetFont(Dgn::DgnFontManager::GetLastResortTrueTypeFont());
+    style->SetSize(DPoint2d::From(0.7, 0.7));
+    style->SetIsBold(true);
+    style->SetIsUnderlined(true);
+
+    Dgn::TextStringPtr text = Dgn::TextString::Create();
+
+    text->SetText(textValue.c_str());
+    text->SetStyle(*style);
+
+    DPoint3d pt = DPoint3d::From(0, 0, 0);
+    text->SetOriginFromJustificationOrigin(pt, Dgn::TextString::HorizontalJustification::Center, Dgn::TextString::VerticalJustification::Middle);
+    
+
+    builder->Append(*text);
+
+    if (BentleyStatus::SUCCESS != builder->Finish(element))
+        return  BentleyStatus::BSIERROR;
+
+    return BentleyStatus::SUCCESS;
+
+    }
+
+
+    
