@@ -8,6 +8,7 @@
 #include "ECDbPublishedTests.h"
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
+#include <Bentley/BeNumerical.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -22,8 +23,10 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
         BentleyStatus CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder);
         BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
 
+
     protected:
-        BentleyStatus SetupDomainBimFile(Utf8CP fileName, BeFileNameCR benchmarkFolder);
+        BentleyStatus SetupTestFile(Utf8CP fileName, BeFileNameCR benchmarkFolder);
+        static bool CompareTable(DbCR benchmark, DbCR actual, Utf8CP tableName, Utf8CP selectSql);
 
         static BeFileName GetBenchmarkFolder();
     };
@@ -34,7 +37,7 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
 TEST_F(FileFormatCompatibilityTests, CompareDdl)
     {
     BeFileName benchmarkFolder = GetBenchmarkFolder();
-    ASSERT_EQ(SUCCESS, SetupDomainBimFile("bim02fileformatcompatibilitytest.ecdb", benchmarkFolder));
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder));
 
     Db benchmarkFile;
     BeFileName benchmarkFilePath(benchmarkFolder);
@@ -107,135 +110,80 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl)
 TEST_F(FileFormatCompatibilityTests, CompareProfileTables)
     {
     BeFileName benchmarkFolder = GetBenchmarkFolder();
-    ASSERT_EQ(SUCCESS, SetupDomainBimFile("bim02fileformatcompatibilitytest.ecdb", benchmarkFolder));
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder));
 
     Db benchmarkFile;
     BeFileName benchmarkFilePath(benchmarkFolder);
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
 
+    //profile table count check
+    {
     Statement stmt;
-    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(SELECT name FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        Utf8CP tableName = stmt.GetValueText(0);
+    ASSERT_EQ(BE_SQLITE_OK, stmt.Prepare(m_ecdb, R"sql(SELECT count(*) FROM sqlite_master WHERE name LIKE 'ec\_%' ESCAPE '\' ORDER BY name COLLATE NOCASE)sql"));
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step()) << stmt.GetSql();
+    ASSERT_EQ(20, stmt.GetValueInt(0)) << "ECDb profile table count";
+    }
 
-        //compare row count
-        {
-        Utf8String sql;
-        sql.Sprintf("SELECT count(*) from %s", tableName);
+    //schema profile tables
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Schema", "SELECT Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3 FROM ec_Schema ORDER BY Name"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_SchemaReference",
+                             "SELECT s.Name,ref.Name FROM ec_SchemaReference sr JOIN ec_Schema s ON sr.SchemaId=s.Id JOIN ec_Schema ref ON sr.ReferencedSchemaId=ref.Id ORDER BY s.Name,ref.Name"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Class", "SELECT s.Name,c.Name,c.DisplayLabel,c.Description,c.Type,c.Modifier,c.RelationshipStrength,c.RelationshipStrengthDirection,c.CustomAttributeContainertype FROM ec_Class c JOIN ec_Schema s ON s.Id=c.SchemaId ORDER BY s.Name, c.Name"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_ClassHasBaseClasses", "SELECT s.Name, c.Name, baseS.Name, baseC.Name FROM ec_ClassHasBaseClasses bc JOIN ec_Class c ON bc.ClassId=c.Id JOIN ec_Schema s ON s.Id=c.SchemaId "
+                             "JOIN ec_Class baseC ON bc.BaseClassId=baseC.Id JOIN ec_Schema baseS ON baseS.Id=baseC.SchemaId "
+                             "ORDER BY s.Name, c.Name, baseS.Name, baseC.Name, bc.Ordinal"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Enumeration", "SELECT s.Name, e.Name, e.DisplayLabel,e.Description,e.UnderlyingPrimitiveType,e.IsStrict,e.EnumValues FROM ec_Enumeration e JOIN ec_Schema s ON s.Id=e.SchemaId ORDER BY s.Name,e.Name"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_KindOfQuantity", "SELECT s.Name, koq.Name, koq.DisplayLabel,koq.Description,koq.PersistenceUnit,koq.RelativeError,koq.PresentationUnits FROM ec_KindOfQuantity koq JOIN ec_Schema s ON s.Id=koq.SchemaId ORDER BY s.Name,koq.Name"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyCategory", "SELECT s.Name, pc.Name, pc.DisplayLabel,pc.Description,pc.Priority FROM ec_PropertyCategory pc JOIN ec_Schema s ON s.Id=pc.SchemaId ORDER BY s.Name,pc.Name"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Property", "SELECT s.Name, p.Name, p.DisplayLabel,p.Description,p.IsReadonly,p.Priority,p.Ordinal,p.Kind,p.PrimitiveType,p.PrimitiveTypeMinLength,p.PrimitiveTypeMaxLength,p.PrimitiveTypeMinValue,p.PrimitiveTypeMaxValue, "
+                             "enumS.Name, enum.Name, structS.Name,struct.Name, p.ExtendedTypeName, koqS.Name,koq.Name,catS.Name,cat.Name,p.ArrayMinOccurs,p.ArrayMaxOccurs, "
+                             "navRelS.Name,navRel.Name, p.NavigationDirection FROM ec_Property p "
+                             "JOIN ec_Class c ON p.ClassId=c.Id JOIN ec_Schema s ON s.Id=c.SchemaId "
+                             "JOIN ec_Enumeration enum ON enum.Id=p.EnumerationId JOIN ec_Schema enumS ON enumS.Id=enum.SchemaId "
+                             "JOIN ec_Class struct ON struct.Id=p.StructClassId JOIN ec_Schema structS ON structS.Id=struct.SchemaId "
+                             "JOIN ec_KindOfQuantity koq ON koq.Id=p.KindOfQuantityId JOIN ec_Schema koqS ON koqS.Id=koq.SchemaId "
+                             "JOIN ec_PropertyCategory cat ON cat.Id=p.CategoryId JOIN ec_Schema catS ON catS.Id=cat.SchemaId "
+                             "JOIN ec_Class navRel ON navRel.Id=p.NavigationRelationshipClassId JOIN ec_Schema navRelS ON navRelS.Id=navRel.SchemaId "
+                             "ORDER BY s.Name,c.Name,p.Name"));
 
-        Statement benchmarkStmt, actualStmt;
-        ASSERT_EQ(BE_SQLITE_OK, benchmarkStmt.Prepare(benchmarkFile, sql.c_str())) << sql;
-        ASSERT_EQ(BE_SQLITE_ROW, benchmarkStmt.Step()) << sql;
-        ASSERT_EQ(BE_SQLITE_OK, actualStmt.Prepare(m_ecdb, sql.c_str())) << sql;
-        ASSERT_EQ(BE_SQLITE_ROW, actualStmt.Step()) << sql;
 
-        const int benchmarkRowCount = benchmarkStmt.GetValueInt(0);
-        const int actualRowCount = actualStmt.GetValueInt(0);
-        ASSERT_EQ(benchmarkRowCount, actualRowCount) << tableName;
-        }
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_RelationshipConstraint", "SELECT relS.Name, rel.Name, rc.RelationshipEnd,rc.MultiplicityLowerLimit,rc.MultiplicityUpperLimit,rc.IsPolymorphic,rc.RoleLabel,abstractConstraintS.Name, abstractConstraint.Name FROM ec_RelationshipConstraint rc "
+                             "JOIN ec_Class rel ON rel.Id=rc.RelationshipClassId JOIN ec_Schema relS ON relS.Id=rel.SchemaId "
+                             "JOIN ec_Class abstractConstraint ON rc.AbstractConstraintClassId=abstractConstraint.Id JOIN ec_Schema abstractConstraintS ON abstractConstraintS.Id=abstractConstraint.SchemaId "
+                             "ORDER BY relS.Name, rel.Name, rc.RelationshipEnd"));
 
-        Utf8String sql("SELECT ");
-        int colCount = 0;
-        {
-        Statement colInfosStmt;
-        Utf8String pragma;
-        pragma.Sprintf("pragma table_info('%s')", tableName);
-        ASSERT_EQ(BE_SQLITE_OK, colInfosStmt.Prepare(m_ecdb, pragma.c_str())) << pragma;
-        bool isFirstCol = true;
-        while (BE_SQLITE_ROW == colInfosStmt.Step())
-            {
-            colCount++;
-            if (!isFirstCol)
-                sql.append(",");
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_RelationshipConstraintClass", "SELECT relS.Name,rel.Name,rc.RelationshipEnd,constraintS.Name,constraintC.Name FROM ec_RelationshipConstraintClass rcc "
+                             "JOIN ec_RelationshipConstraint rc ON rc.Id=rcc.ConstraintId JOIN ec_Class rel ON rel.Id=rc.RelationshipClassId JOIN ec_Schema relS ON relS.Id=rel.SchemaId "
+                             "JOIN ec_Class constraintC ON rcc.ClassId=constraintC.Id JOIN ec_Schema constraintS ON constraintS.Id=constraintC.SchemaId "
+                             "ORDER BY relS.Name,rel.Name,rc.RelationshipEnd,constraintS.Name,constraintC.Name"));
 
-            sql.append(colInfosStmt.GetValueText(1));
-            isFirstCol = false;
-            }
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_CustomAttribute", "SELECT Instance,Ordinal,ContainerType FROM ec_CustomAttribute ORDER BY ClassId,ContainerId,ContainerType,Ordinal"));
 
-        sql.append(" FROM ").append(tableName);
-        }
-        ASSERT_NE(0, colCount) << "table_info returned no columns for table " << tableName;
+    //mapping profile tables
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_ClassMap", "SELECT s.Name, c.Name, cm.MapStrategy,cm.ShareColumnsMode,cm.MaxSharedColumnsBeforeOverflow,cm.JoinedTableInfo FROM ec_ClassMap cm JOIN ec_Class c ON cm.ClassId=c.Id JOIN ec_Schema s ON s.Id=c.SchemaId ORDER BY s.Name,c.Name"));
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyPath", "SELECT rootPropS.Name, rootPropC.Name, rootProp.Name, pp.AccessString FROM ec_PropertyPath pp "
+                             "JOIN ec_Property rootProp ON rootProp.Id=pp.RootPropertyId JOIN ec_Class rootPropC ON rootPropC.Id=rootProp.ClassId JOIN ec_Schema rootPropS ON rootPropS.Id=rootPropC.SchemaId "
+                             "ORDER BY rootPropS.Name,rootPropC.Name, rootProp.Name,pp.AccessString"));
 
-        if (0 == BeStringUtilities::StricmpAscii(tableName, "ec_index") || 
-            0 == BeStringUtilities::StricmpAscii(tableName, "ec_indexcolumn"))
-            continue;
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_PropertyMap", "SELECT s.Name, c.Name, rootPropS.Name,rootPropC.Name,rootProp.Name,t.Name,col.Name FROM ec_PropertyMap pm "
+                             "JOIN ec_Class c ON c.Id=pm.ClassId JOIN ec_Schema s ON s.Id=c.SchemaId "
+                             "JOIN ec_PropertyPath pp ON pp.Id=pm.PropertyPathId JOIN ec_Property rootProp ON rootProp.Id=pp.RootPropertyId JOIN ec_Class rootPropC ON rootPropC.Id=rootProp.ClassId JOIN ec_Schema rootPropS ON rootPropS.Id=rootPropC.SchemaId "
+                             "JOIN ec_Column col ON col.Id=pm.ColumnId JOIN ec_Table t ON t.Id=col.TableId "
+                             "ORDER BY s.Name,c.Name,rootPropS.Name,rootPropC.Name,rootProp.Name,t.Name,col.Name"));
 
-        Statement benchmarkTableStmt;
-        ASSERT_EQ(BE_SQLITE_OK, benchmarkTableStmt.Prepare(benchmarkFile, sql.c_str())) << sql;
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Table", "SELECT parentT.Name, t.Name, t.Type, exclusiveRootClassS.Name, exclusiveRootClass.Name, t.UpdatableViewName FROM ec_table t "
+                             "JOIN ec_Table parentT ON parentT.Id=t.ParentTableId JOIN ec_Class exclusiveRootClass ON exclusiveRootClass.Id=t.ExclusiveRootClassId JOIN ec_Schema exclusiveRootClassS ON exclusiveRootClassS.Id=exclusiveRootClass.SchemaId "
+                             "ORDER BY t.Name"));
 
-        Statement actualTableStmt;
-        ASSERT_EQ(BE_SQLITE_OK, actualTableStmt.Prepare(m_ecdb, sql.c_str())) << sql;
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Column", "SELECT t.Name, c.Name,c.Type,c.IsVirtual,c.Ordinal,c.NotNullConstraint,c.UniqueConstraint,c.CheckConstraint,c.DefaultConstraint,c.CollationConstraint,c.OrdinalInPrimaryKey,c.ColumnKind FROM ec_Column c "
+                             "JOIN ec_Table t ON t.Id=c.TableId ORDER BY t.Name, c.Name"));
 
-        int rowCount = 0;
-        while (BE_SQLITE_ROW == benchmarkTableStmt.Step())
-            {
-            ASSERT_EQ(BE_SQLITE_ROW, actualTableStmt.Step()) << "Differing number of rows in table " << tableName;
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_Index", "SELECT i.Name, t.Name, i.IsUnique,i.AddNotNullWhereExp,i.IsAutoGenerated,s.Name,c.Name,i.AppliesToSubclassesIfPartial FROM ec_Index i "
+                             "JOIN ec_Table t ON t.Id=i.TableId JOIN ec_Class c ON c.Id=i.ClassId JOIN ec_Schema s ON s.Id=c.SchemaId ORDER BY i.Name"));
 
-            rowCount++;
-
-            for (int i = 0; i < colCount; i++)
-                {
-                Utf8CP colName = benchmarkTableStmt.GetColumnName(i);
-
-                const DbValueType benchmarkColType = benchmarkTableStmt.GetColumnType(i);
-                const DbValueType actualColType = actualTableStmt.GetColumnType(i);
-                ASSERT_EQ(benchmarkColType, actualColType) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
-
-                switch (benchmarkColType)
-                    {
-                        case DbValueType::NullVal:
-                        {
-                        EXPECT_EQ(benchmarkTableStmt.IsColumnNull(i), actualTableStmt.IsColumnNull(i)) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
-                        break;
-                        }
-
-                        case DbValueType::BlobVal:
-                        {
-                        const int benchmarkBlobSize = benchmarkTableStmt.GetColumnBytes(i);
-                        const int actualBlobSize = actualTableStmt.GetColumnBytes(i);
-                        ASSERT_EQ(benchmarkBlobSize, actualBlobSize) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
-                        void const* benchmarkValue = benchmarkTableStmt.GetValueBlob(i);
-                        void const* actualValue = actualTableStmt.GetValueBlob(i);
-                        ASSERT_EQ(0, memcmp(benchmarkValue, actualValue, (size_t) benchmarkBlobSize)) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
-                        break;
-                        }
-
-                        case DbValueType::FloatVal:
-                        {
-                        double benchmarkValue = benchmarkTableStmt.GetValueDouble(i);
-                        double actualValue = actualTableStmt.GetValueDouble(i);
-
-                        EXPECT_DOUBLE_EQ(benchmarkValue, actualValue) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
-                        break;
-                        }
-
-                        case DbValueType::IntegerVal:
-                        {
-                        int64_t benchmarkValue = benchmarkTableStmt.GetValueInt64(i);
-                        int64_t actualValue = actualTableStmt.GetValueInt64(i);
-
-                        EXPECT_EQ(benchmarkValue, actualValue) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
-                        break;
-                        }
-
-                        case DbValueType::TextVal:
-                        {
-                        Utf8CP benchmarkValue = benchmarkTableStmt.GetValueText(i);
-                        Utf8CP actualValue = actualTableStmt.GetValueText(i);
-
-                        EXPECT_STREQ(benchmarkValue, actualValue) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
-                        break;
-                        }
-
-                        default:
-                            FAIL() << "Unknown DbValueType";
-                            break;
-                    }
-                }
-            }
-        }
+    EXPECT_TRUE(CompareTable(benchmarkFile, m_ecdb, "ec_IndexColumn", "SELECT i.Name, c.Name, t.Name, ic.Ordinal FROM ec_IndexColumn ic "
+                             "JOIN ec_Index i ON i.Id=ic.IndexId JOIN ec_Column c ON c.Id=ic.ColumnId JOIN ec_Table t ON t.Id=c.TableId ORDER BY i.Name, ic.Ordinal"));
     }
 
 //*****************************************************************************************
@@ -245,7 +193,145 @@ TEST_F(FileFormatCompatibilityTests, CompareProfileTables)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus FileFormatCompatibilityTests::SetupDomainBimFile(Utf8CP fileName, BeFileNameCR benchmarkFolder)
+//static
+bool FileFormatCompatibilityTests::CompareTable(DbCR benchmarkFile, DbCR actualFile, Utf8CP tableName, Utf8CP selectSql)
+    {
+    //compare row count
+            {
+            Utf8String sql;
+            sql.Sprintf("SELECT count(*) from %s", tableName);
+
+            Statement benchmarkStmt;
+            if (BE_SQLITE_OK != benchmarkStmt.Prepare(benchmarkFile, sql.c_str()) ||
+                BE_SQLITE_ROW != benchmarkStmt.Step())
+                {
+                return false;
+                }
+
+            const int benchmarkRowCount = benchmarkStmt.GetValueInt(0);
+
+            Statement actualStmt;
+            if (BE_SQLITE_OK != actualStmt.Prepare(actualFile, sql.c_str()) ||
+                BE_SQLITE_ROW != actualStmt.Step())
+                {
+                return false;
+                }
+
+            const int actualRowCount = actualStmt.GetValueInt(0);
+            EXPECT_EQ(benchmarkRowCount, actualRowCount) << tableName;
+            }
+
+    Statement benchmarkTableStmt, actualTableStmt;
+    if (BE_SQLITE_OK != benchmarkTableStmt.Prepare(benchmarkFile, selectSql) ||
+        BE_SQLITE_OK != actualTableStmt.Prepare(actualFile, selectSql))
+        return false;
+
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == benchmarkTableStmt.Step())
+        {
+        if (BE_SQLITE_ROW != actualTableStmt.Step())
+            return false;
+
+        rowCount++;
+
+        const int colCount = benchmarkTableStmt.GetColumnCount();
+        if (colCount != actualTableStmt.GetColumnCount())
+            return false;
+
+        for (int i = 0; i < colCount; i++)
+            {
+            Utf8CP colName = benchmarkTableStmt.GetColumnName(i);
+
+            const DbValueType benchmarkColType = benchmarkTableStmt.GetColumnType(i);
+            const DbValueType actualColType = actualTableStmt.GetColumnType(i);
+            EXPECT_EQ(benchmarkColType, actualColType) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+
+            switch (benchmarkColType)
+                {
+                    case DbValueType::NullVal:
+                    {
+                    if (benchmarkTableStmt.IsColumnNull(i) != actualTableStmt.IsColumnNull(i))
+                        {
+                        EXPECT_EQ(benchmarkTableStmt.IsColumnNull(i), actualTableStmt.IsColumnNull(i)) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+                        return false;
+                        }
+
+                    break;
+                    }
+
+                    case DbValueType::BlobVal:
+                    {
+                    const int benchmarkBlobSize = benchmarkTableStmt.GetColumnBytes(i);
+                    const int actualBlobSize = actualTableStmt.GetColumnBytes(i);
+                    if (benchmarkBlobSize != actualBlobSize)
+                        {
+                        EXPECT_EQ(benchmarkBlobSize, actualBlobSize) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+                        return false;
+                        }
+
+                    void const* benchmarkValue = benchmarkTableStmt.GetValueBlob(i);
+                    void const* actualValue = actualTableStmt.GetValueBlob(i);
+                    if (0 != memcmp(benchmarkValue, actualValue, (size_t) benchmarkBlobSize))
+                        {
+                        EXPECT_EQ(0, memcmp(benchmarkValue, actualValue, (size_t) benchmarkBlobSize)) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+                        return false;
+                        }
+                    break;
+                    }
+
+                    case DbValueType::FloatVal:
+                    {
+                    double benchmarkValue = benchmarkTableStmt.GetValueDouble(i);
+                    double actualValue = actualTableStmt.GetValueDouble(i);
+
+                    if (fabs(benchmarkValue - actualValue) > BeNumerical::ComputeComparisonTolerance(benchmarkValue, actualValue))
+                        {
+                        EXPECT_DOUBLE_EQ(benchmarkValue, actualValue) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+                        return false;
+                        }
+                    break;
+                    }
+
+                    case DbValueType::IntegerVal:
+                    {
+                    int64_t benchmarkValue = benchmarkTableStmt.GetValueInt64(i);
+                    int64_t actualValue = actualTableStmt.GetValueInt64(i);
+
+                    if (benchmarkValue != actualValue)
+                        {
+                        EXPECT_EQ(benchmarkValue, actualValue) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+                        return false;
+                        }
+                    break;
+                    }
+
+                    case DbValueType::TextVal:
+                    {
+                    Utf8CP benchmarkValue = benchmarkTableStmt.GetValueText(i);
+                    Utf8CP actualValue = actualTableStmt.GetValueText(i);
+
+                    if (0 != strcmp(benchmarkValue, actualValue))
+                        {
+                        EXPECT_STREQ(benchmarkValue, actualValue) << "Table: " << tableName << " Col: " << colName << " Row: " << rowCount;
+                        return false;
+                        }
+
+                    break;
+                    }
+
+                    default:
+                        return false;
+                }
+            }
+        }
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                Krischan.Eberle      05/2017
+//---------------------------------------------------------------------------------------
+BentleyStatus FileFormatCompatibilityTests::SetupTestFile(Utf8CP fileName, BeFileNameCR benchmarkFolder)
     {
     BeFileName bisSchemaFolder(benchmarkFolder);
     bisSchemaFolder.AppendToPath(L"schemas").AppendToPath(L"dgndb");
