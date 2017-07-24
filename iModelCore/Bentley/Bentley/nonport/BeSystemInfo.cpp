@@ -42,6 +42,12 @@
     #include <sys/sysinfo.h>
 #endif
 
+#if defined (__linux)
+    #include <Bentley/Base64Utilities.h>
+    #include <Bentley/BeFileName.h>
+    #include <Bentley/BeFile.h>
+#endif
+
 #if defined (ANDROID)
     #include <sys/system_properties.h>
 #endif
@@ -422,6 +428,30 @@ Utf8String BeSystemInfo::GetDeviceId ()
 
     BeAssert (false && "For android \"BeSystemInfo::CacheAndroidDeviceId (Utf8StringCR deviceId)\" must be called before requesting for DeviceId.");
     return "";
+#elif defined (__linux)
+    BeFile file;
+    Utf8String fname = "/var/lib/dbus/machine-id";
+    BeFileStatus status = file.Open (fname, BeFileAccess::Read);
+    if (BeFileStatus::Success != status)
+        {
+        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv ("Opening '%ls' failed with error code %d", fname.c_str (), file.GetLastError ());
+        return "";
+        }
+    
+    ByteStream rawUUID;
+    status = file.ReadEntireFile(rawUUID);
+    if (BeFileStatus::Success != status)
+        {
+        BentleyApi::NativeLogging::LoggingManager::GetLogger (L"BeAssert")->errorv ("Reading '%ls' failed with error code %d", fname.c_str (), file.GetLastError ());
+        file.Close();
+        return "";
+        }
+    
+    Utf8String id = "";
+    Base64Utilities::Encode(id, rawUUID.data(), rawUUID.size());
+    file.Close();
+    
+    return id;
 #else
     BeAssert (false);
     return "";
