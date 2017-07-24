@@ -513,6 +513,18 @@ PolyfaceHeaderPtr SMGeometry::GetPolyface() const
     }
 
 
+//SMLoader
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.Marchand  11/2016
+//----------------------------------------------------------------------------------------
+SMNode::SMLoader::SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
+: TileLoader("", tile, loads, tile._GetTileCacheKey(), renderSys) 
+    { 
+    //assert(renderSys != nullptr); 
+
+    if (renderSys == nullptr)
+        m_renderSys = m_tile->GetRoot().GetRenderSystem();
+    }
 
 
 //SMNode
@@ -542,7 +554,7 @@ void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
         args.m_graphics.m_graphics.Add(*graphic);
         }
 
-    static bool s_debugTexture = true;
+    static bool s_debugTexture = false;
 
     if (!s_debugTexture)
         _GetGraphics(args.m_graphics, depth);
@@ -611,7 +623,7 @@ void SMNode::_PickGraphics(PickArgsR args, int depth) const
             geom->Pick(args);
         }
     }
-    
+       
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
@@ -689,7 +701,7 @@ bool SMNode::ReadHeader(DPoint3d& centroid)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-static bool s_applyTexture = true;
+static bool s_applyTexture = false;
 
 BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
     {    
@@ -698,6 +710,15 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     m_loadStatus.store(LoadStatus::Loading);
 
     BeAssert(m_children.empty());
+
+    DRange3d range3D(scene.m_smPtr->GetRootNode()->GetContentExtent());
+    //DRange3d range3D(m_scalableMeshNodePtr->GetContentExtent());
+
+    DPoint3d centroid;
+    centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
+
+    if (!ReadHeader(centroid))
+        return ERROR;
 
 #if 0 
     bmap<Utf8String, int> textureIds, nodeIds;
@@ -855,23 +876,17 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         }
     }
 #endif
-
-
-    DRange3d range3D(scene.m_smPtr->GetRootNode()->GetContentExtent());
-    //DRange3d range3D(m_scalableMeshNodePtr->GetContentExtent());
-
-    DPoint3d centroid;
-    centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
-
-
+    
     bvector<IScalableMeshNodePtr> childrenNodes(m_scalableMeshNodePtr->GetChildrenNodes());
 
     for (auto& childNode : childrenNodes)
         {
         SMNodePtr nodeptr = new SMNode(GetRootR(), this, childNode);
 
+/*
         if (!nodeptr->ReadHeader(centroid))
             return ERROR;
+*/
 
         if (loadChildren)
             {            
@@ -914,16 +929,19 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     int* vertIndex = new int[trimesh.m_numIndices];
 
     _fPoint2d* textureUv;
-    textureUv = new _fPoint2d[trimesh.m_numIndices];
-            
+    
+    textureUv = new _fPoint2d[polyfaceQuery->GetParamCount()];
+
     for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
         {
         vertIndex[faceVerticeInd] = polyfaceQuery->GetPointIndexCP()[faceVerticeInd] - 1;
-                
-        const DPoint2d* uv = &polyfaceQuery->GetParamCP()[polyfaceQuery->GetParamIndexCP()[faceVerticeInd]];
-
-        textureUv[faceVerticeInd].x = uv->x;
-        textureUv[faceVerticeInd].y = uv->y;
+        }
+            
+    for (size_t paramInd = 0; paramInd < polyfaceQuery->GetParamCount(); paramInd++)
+        {
+        const DPoint2d* uv = &polyfaceQuery->GetParamCP()[paramInd];
+        textureUv[paramInd].x = uv->x;
+        textureUv[paramInd].y = uv->y;
         }
 
     trimesh.m_vertIndex = vertIndex;
@@ -1075,7 +1093,7 @@ BentleyStatus SMScene::LoadScene()
     //root->m_childPath = m_sceneInfo.m_rootNodePath;
     m_rootTile = root;
 
-    auto result = _RequestTile(*root, nullptr);
+    auto result = _RequestTile(*root, nullptr, GetRenderSystem());
     result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
 }

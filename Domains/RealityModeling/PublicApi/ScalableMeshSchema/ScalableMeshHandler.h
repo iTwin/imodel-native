@@ -134,7 +134,8 @@ struct SMNode : Dgn::TileTree::Tile
     //=======================================================================================
     struct SMLoader : Dgn::TileTree::TileLoader
     {        
-        SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys) : TileLoader("", tile, loads, tile._GetTileCacheKey(), renderSys) {}
+        SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
+
         BentleyStatus _LoadTile() override 
             { 
             return static_cast<SMNodeR>(*m_tile).Read3SMTile(m_tileBytes, (SMSceneR)m_tile->GetRootR(), GetRenderSystem(), true);
