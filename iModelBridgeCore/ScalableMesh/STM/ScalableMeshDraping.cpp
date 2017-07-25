@@ -734,7 +734,7 @@ bool ScalableMeshDraping::_IntersectRay(bvector<DTMRayIntersection>& pointsOnDTM
         if (!node->ArePoints3d() && (newDirection.x == 0 && newDirection.y == 0))
             {
             BcDTMPtr dtmP = node->GetBcDTM();
-            DPoint3d interP;
+            DPoint3d interP = DPoint3d::From(0,0,0);
             if (dtmP != nullptr && dtmP->GetDTMDraping()->IntersectRay(interP, newDirection, transformedPt))
                 {
                 DTMRayIntersection RayInter;

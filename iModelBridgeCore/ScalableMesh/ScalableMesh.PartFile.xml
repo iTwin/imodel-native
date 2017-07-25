@@ -24,9 +24,9 @@
         <SubPart PartName="GeomDlls"        PartFile="geomlibs"                             Repository="GeomLibs"/>
         <SubPart PartName="ImagePP"         PartFile="ImagePP"                              Repository="ImagePP" />
         <!--<SubPart PartName="GdalLib"         PartFile="ImagePP"                                  Repository="ImagePP"/>-->
-        <SubPart PartName="Core"            PartFile="TerrainModel"                         Repository="TerrainModel"/>
-        <SubPart PartName="Formats"         PartFile="TerrainModel"                         Repository="TerrainModel"/>
-        <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModel"                         Repository="TerrainModel"/>
+        <SubPart PartName="Core"            PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
+        <SubPart PartName="Formats"         PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
+        <SubPart PartName="AutomaticGroundDetection" PartFile="TerrainModelDgnDb"                         Repository="TerrainModel"/>
         <!--<SubPart PartName="PointCloud"      PartFile="DgnDisplay"                           Repository="DgnDisplay"/>-->
         <SubPart PartName="CloudDataSource" PartFile="CloudDataSource" Repository="ScalableMesh" />
        <SubPart PartName="CGALHeaders" PartFile="CGAL" Repository="Libsrc-CGAL" />
@@ -50,7 +50,7 @@
     
     <Part Name="ScalableMeshSDKexe" BentleyBuildMakeFile="SDK/ScalableMeshSDKexe.mke" OnlyPlatforms="x64,x86" ExcludeLibType="Static">
         <SubPart PartName="ScalableMesh" PartFile="ScalableMeshCore" Repository="ScalableMesh" />   
-        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModel" Repository="TerrainModel" />     
+        <SubPart PartName="ScalableTerrainModel" PartFile="TerrainModelDgnDb" Repository="TerrainModel" />     
         <SubPart PartName="ScalableMeshElement" PartFile="DgnDisplay" Repository="DgnDisplay"/>		
         <Bindings>
             <Files ProductDirectoryName="ScalableMeshAssemblies">Delivery\ScalableMeshSDKexe.exe

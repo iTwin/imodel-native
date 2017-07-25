@@ -69,10 +69,12 @@ SSLCertificateAdmin& ScalableMeshLib::Host::_SupplySSLCertificateAdmin()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                Elenie.Godzaridis                     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
+#ifdef VANCOUVER_API
 STMAdmin& ScalableMeshLib::Host::_SupplySTMAdmin()
     {
     return *new STMAdmin();
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Mathieu.St-Pierre  05/2015
@@ -87,7 +89,9 @@ void ScalableMeshLib::Host::Initialize()
     m_wsgTokenAdmin = &_SupplyWsgTokenAdmin();
     m_sasTokenAdmin = &_SupplySASTokenAdmin();
     m_sslCertificateAdmin = &_SupplySSLCertificateAdmin();
+#ifdef VANCOUVER_API
 	m_stmAdmin = &_SupplySTMAdmin();
+#endif
     m_smPaths = new bmap<WString, IScalableMesh*>();
     InitializeProgressiveQueries();
     RegisterPODImportPlugin();
