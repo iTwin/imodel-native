@@ -175,7 +175,14 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
     // add the new ThreeMxModel to the list of viewed models.
     //DgnModelId modelId = ThreeMx::ModelHandler::CreateModel(*repositoryLink, rootUrl.c_str(), &location, clipVector.get());
     Utf8String modelName;
-    IMeshSpatialModelP spatialModel(ScalableMeshModelHandler::AttachTerrainModel(db, modelName, BeFileName(rootUrl), *repositoryLink));
+    BeFileName smFileName; 
+
+    WString rootUrlW(rootUrl.c_str(), true);
+  
+  	//Avoid slash in URL being converted to backslash  
+    smFileName.AppendString(rootUrlW.c_str());
+
+    IMeshSpatialModelP spatialModel(ScalableMeshModelHandler::AttachTerrainModel(db, modelName, smFileName, *repositoryLink));
     DgnModelId modelId = spatialModel->GetModelId();
 
     DgnCategoryId category = converter.GetSyncInfo().GetCategory(v8el, v8mm);

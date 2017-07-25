@@ -471,33 +471,41 @@ struct  SMHost : ScalableMesh::ScalableMeshLib::Host
         return *new CsScalableMeshAdmin;
         };
 
-#if 0 
+
     ScalableMesh::WsgTokenAdmin& _SupplyWsgTokenAdmin()
         {
+
         auto getTokenFunction = []() -> Utf8String
-        {
-            SamlTokenPtr tokenPtr = ConnectAuthenticationPersistence::GetShared()->GetToken();
-            assert(tokenPtr != nullptr && !tokenPtr->IsEmpty());
-            //bool isValidInHalfHour = tokenPtr->IsValidNow(30);
-            //assert(isValidInHalfHour);
-            return tokenPtr->AsString();
-        };
+            {
+            Utf8String emptyToken;
+            return emptyToken;
+            };
         return *new ScalableMesh::WsgTokenAdmin(getTokenFunction);
         }
 
-    ScalableMesh::SSLCertificateAdmin& _SupplySSLCertificateAdmin()
-    {
-        auto getSSLCertificatePath = []() -> Utf8String
+    ScalableMesh::SASTokenAdmin& _SupplySASTokenAdmin()
         {
-            //Getting the cacert.pem file from the current working directory
-            BeFileName certificatePath = BentleyApi::DgnClientFx::DgnClientFxCommon::GetApplicationPaths().GetAssetsRootDirectory();
-            certificatePath.AppendToPath(L"cacert.pem");
-            return certificatePath.GetNameUtf8();
-        };
+        auto getTokenFunction = [this](const Utf8String& realityDataGuid) -> Utf8String
+            {
+            Utf8String emptyToken;
+            return emptyToken;
+            };
+        return *new ScalableMesh::SASTokenAdmin(getTokenFunction);
+        }
+
+
+    ScalableMesh::SSLCertificateAdmin& _SupplySSLCertificateAdmin()
+        {
+        auto getSSLCertificatePath = []() -> Utf8String
+            {
+            Utf8String certificatePath;
+            return certificatePath;
+            };
+
         return *new ScalableMesh::SSLCertificateAdmin(getSSLCertificatePath);
-    }
-#endif
-};
+        }
+
+    };
 
 void Converter::Initialize(BentleyApi::BeFileNameCR bridgeLibraryDir, BentleyApi::BeFileNameCR bridgeAssetsDir, BentleyApi::BeFileNameCR v8DllsRelativeDir, 
                            BentleyApi::BeFileNameCP realdwgAbsoluteDir, bool isPowerPlatformBased, int argc, WCharCP argv[])
