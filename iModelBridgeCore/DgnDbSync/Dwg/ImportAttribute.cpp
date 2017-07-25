@@ -554,7 +554,7 @@ ECObjectsStatus DwgImporter::AddAttrdefECClassFromBlock (ECSchemaPtr& attrdefSch
         attrdefClass->SetDescription (description);
 
         // add GenericMultiAspect as a base ECClass:
-        ECClassCP   multiAspect = this->GetDgnDb().Schemas().GetClass (GENERIC_DOMAIN_NAME, GENERIC_CLASS_MultiAspect);
+        ECClassCP   multiAspect = this->GetDgnDb().Schemas().GetClass (BIS_ECSCHEMA_NAME, BIS_CLASS_ElementMultiAspect);
         if (nullptr != multiAspect)
             {
             attrdefClass->AddBaseClass (*multiAspect);
