@@ -81,7 +81,6 @@ private:
     static bool s_isInitialized;
     static SeedECDbManager* s_seedECDbManager;
 
-    void CloseECDb();
     static SeedECDbManager& SeedECDbs();
 
 protected:
@@ -89,6 +88,8 @@ protected:
     FixtureECDb m_ecdb;
     DbResult SetupECDb(Utf8CP ecdbFileName);
     BentleyStatus SetupECDb(Utf8CP ecdbFileName, SchemaItem const&, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    DbResult OpenECDb(BeFileNameCR filePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));
+    void CloseECDb();
     DbResult ReopenECDb();
     DbResult CloneECDb(Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite)) { return CloneECDb(m_ecdb, cloneFileName, seedFilePath, openParams); }
     static DbResult CloneECDb(ECDbR clone, Utf8CP cloneFileName, BeFileNameCR seedFilePath, ECDb::OpenParams openParams = ECDb::OpenParams(ECDb::OpenMode::ReadWrite));

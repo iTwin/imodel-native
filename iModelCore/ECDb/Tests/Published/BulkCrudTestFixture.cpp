@@ -8,6 +8,7 @@
 #include "BulkCrudTestFixture.h"
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
+#include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 #include "../BackDoor/PublicAPI/BackDoor/ECDb/BackDoor.h"
 
 USING_NAMESPACE_BENTLEY_EC
@@ -443,6 +444,29 @@ BentleyStatus BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, B
     if (BE_SQLITE_OK != SetupECDb(fileName))
         return ERROR;
 
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    {
+    Db db;
+    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)))
+        return ERROR;
+
+    uint64_t initialId = UINT64_C(500);
+    if (BE_SQLITE_DONE != db.SaveBriefcaseLocalValue("ec_classidsequence", initialId))
+        return ERROR;
+
+    //save initial id for fileformat compatibility test
+    if (BE_SQLITE_OK != db.SaveProperty(PropertySpec("InitialClassId_BisCore", "ECDb_FileFormatCompatiblity_Test"), &initialId, sizeof(initialId)))
+        return ERROR;
+
+    if (BE_SQLITE_OK != db.SaveChanges())
+        return ERROR;
+    }
+
+    if (BE_SQLITE_OK != OpenECDb(filePath))
+        return ERROR;
+
     //BIS ECSchema needs this table to pre-exist
     if (BE_SQLITE_OK != m_ecdb.ExecuteSql("CREATE VIRTUAL TABLE dgn_SpatialIndex USING rtree(ElementId,MinX,MaxX,MinY,MaxY,MinZ,MaxZ)"))
         return ERROR;
@@ -459,6 +483,29 @@ BentleyStatus BulkBisDomainCrudTestFixture::CreateFakeBimFile(Utf8CP fileName, B
 BentleyStatus BulkBisDomainCrudTestFixture::SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder)
     {
     if (SUCCESS != CreateFakeBimFile(fileName, bisSchemaFolder))
+        return ERROR;
+
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    {
+    Db db;
+    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)))
+        return ERROR;
+
+    uint64_t initialId = UINT64_C(1000);
+    if (BE_SQLITE_DONE != db.SaveBriefcaseLocalValue("ec_classidsequence", initialId))
+        return ERROR;
+
+    //save initial id for fileformat compatibility test
+    if (BE_SQLITE_OK != db.SaveProperty(PropertySpec("InitialClassId_BisDomains", "ECDb_FileFormatCompatiblity_Test"), &initialId, sizeof(initialId)))
+        return ERROR;
+
+    if (BE_SQLITE_OK != db.SaveChanges())
+        return ERROR;
+    }
+
+    if (BE_SQLITE_OK != OpenECDb(filePath))
         return ERROR;
 
     PERFLOG_START("ECDb ATP", "BIS domain schema import");

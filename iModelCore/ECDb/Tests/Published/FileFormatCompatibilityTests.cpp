@@ -9,6 +9,7 @@
 #include <Bentley/BeDirectoryIterator.h>
 #include <Bentley/BeTextFile.h>
 #include <Bentley/BeNumerical.h>
+#include <BeSQLite/BeBriefcaseBasedIdSequence.h>
 
 USING_NAMESPACE_BENTLEY_EC
 
@@ -67,11 +68,11 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 struct FileFormatCompatibilityTests : ECDbTestFixture
     {
     private:
-        BentleyStatus CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder);
+        BentleyStatus CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder, DbCR benchmarkFile);
         BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
 
     protected:
-        BentleyStatus SetupTestFile(Utf8CP fileName, BeFileNameCR benchmarkFolder);
+        BentleyStatus SetupTestFile(Utf8CP fileName, BeFileNameCR benchmarkFolder, DbCR benchmarkFile);
         static bool CompareTable(DbCR benchmark, DbCR actual, Utf8CP tableName, Utf8CP selectSql);
 
         static BeFileName GetBenchmarkFolder();
@@ -83,12 +84,13 @@ struct FileFormatCompatibilityTests : ECDbTestFixture
 TEST_F(FileFormatCompatibilityTests, CompareDdl_NewFile)
     {
     BeFileName benchmarkFolder = GetBenchmarkFolder();
-    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder));
 
     Db benchmarkFile;
     BeFileName benchmarkFilePath(benchmarkFolder);
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
+
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder, benchmarkFile));
 
     BeFileName artefactOutDir;
     BeTest::GetHost().GetOutputRoot(artefactOutDir);
@@ -236,13 +238,14 @@ TEST_F(FileFormatCompatibilityTests, CompareDdl_UpgradedFile)
 TEST_F(FileFormatCompatibilityTests, CompareProfileTables_NewFile)
     {
     BeFileName benchmarkFolder = GetBenchmarkFolder();
-    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder));
 
     Db benchmarkFile;
     BeFileName benchmarkFilePath(benchmarkFolder);
     benchmarkFilePath.AppendToPath(L"imodel2.ecdb");
     ASSERT_EQ(BE_SQLITE_OK, benchmarkFile.OpenBeSQLiteDb(benchmarkFilePath, Db::OpenParams(Db::OpenMode::Readonly))) << benchmarkFilePath;
 
+    ASSERT_EQ(SUCCESS, SetupTestFile("imodel2fileformatcompatibilitytest.ecdb", benchmarkFolder, benchmarkFile));
+    
     //profile table count check
     {
     Statement stmt;
@@ -473,7 +476,7 @@ bool FileFormatCompatibilityTests::CompareTable(DbCR benchmarkFile, DbCR actualF
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus FileFormatCompatibilityTests::SetupTestFile(Utf8CP fileName, BeFileNameCR benchmarkFolder)
+BentleyStatus FileFormatCompatibilityTests::SetupTestFile(Utf8CP fileName, BeFileNameCR benchmarkFolder, DbCR benchmarkFile)
     {
     BeFileName bisSchemaFolder(benchmarkFolder);
     bisSchemaFolder.AppendToPath(L"schemas").AppendToPath(L"dgndb");
@@ -481,10 +484,32 @@ BentleyStatus FileFormatCompatibilityTests::SetupTestFile(Utf8CP fileName, BeFil
     BeFileName domainSchemaFolder(benchmarkFolder);
     domainSchemaFolder.AppendToPath(L"schemas").AppendToPath(L"domains");
 
-    if (SUCCESS != CreateFakeBimFile(fileName, bisSchemaFolder))
+    if (SUCCESS != CreateFakeBimFile(fileName, bisSchemaFolder, benchmarkFile))
         return ERROR;
 
-    if (BE_SQLITE_OK != ReopenECDb())
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    {
+    Db db;
+    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)))
+        return ERROR;
+
+    uint64_t initialId;
+    if (BE_SQLITE_ROW != benchmarkFile.QueryProperty(&initialId, sizeof(uint64_t), PropertySpec("InitialClassId_BisDomains", "ECDb_FileFormatCompatiblity_Test")))
+        {
+        EXPECT_TRUE(false) << "Benchmark file " << benchmarkFile.GetDbFileName() << " must contain BeProp 'ECDb_FileFormatCompatiblity_Test:InitialClassId_BisDomains";
+        return ERROR;
+        }
+
+    if (BE_SQLITE_DONE != db.SaveBriefcaseLocalValue("ec_classidsequence", initialId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != db.SaveChanges())
+        return ERROR;
+    }
+
+    if (BE_SQLITE_OK != OpenECDb(filePath))
         return ERROR;
 
     PERFLOG_START("ECDb ATP", "BIS domain schema import");
@@ -503,9 +528,34 @@ BentleyStatus FileFormatCompatibilityTests::SetupTestFile(Utf8CP fileName, BeFil
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                Krischan.Eberle      05/2017
 //---------------------------------------------------------------------------------------
-BentleyStatus FileFormatCompatibilityTests::CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder)
+BentleyStatus FileFormatCompatibilityTests::CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder, DbCR benchmarkFile)
     {
     if (BE_SQLITE_OK != SetupECDb(fileName))
+        return ERROR;
+
+    BeFileName filePath(m_ecdb.GetDbFileName());
+    CloseECDb();
+
+    {
+    Db db;
+    if (BE_SQLITE_OK != db.OpenBeSQLiteDb(filePath, Db::OpenParams(Db::OpenMode::ReadWrite)))
+        return ERROR;
+
+    uint64_t initialId;
+    if (BE_SQLITE_ROW != benchmarkFile.QueryProperty(&initialId, sizeof(uint64_t), PropertySpec("InitialClassId_BisCore", "ECDb_FileFormatCompatiblity_Test")))
+        {
+        EXPECT_TRUE(false) << "Benchmark file " << benchmarkFile.GetDbFileName() << " must contain BeProp 'ECDb_FileFormatCompatiblity_Test:InitialClassId_BisCore";
+        return ERROR;
+        }
+
+    if (BE_SQLITE_DONE != db.SaveBriefcaseLocalValue("ec_classidsequence", initialId))
+        return ERROR;
+
+    if (BE_SQLITE_OK != db.SaveChanges())
+        return ERROR;
+    }
+
+    if (BE_SQLITE_OK != OpenECDb(filePath))
         return ERROR;
 
     //BIS ECSchema needs this table to pre-exist
