@@ -35,7 +35,7 @@ BentleyStatus DbMapValidator::Initialize() const
 
     if (m_mode == Mode::All)
         {
-        CachedStatementPtr stmt = GetECDb().GetCachedStatement("SELECT Id FROM ec_Table");
+        CachedStatementPtr stmt = GetECDb().GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Table");
         if (stmt == nullptr)
             return ERROR;
 
@@ -49,7 +49,7 @@ BentleyStatus DbMapValidator::Initialize() const
                 }
             }
 
-        stmt = GetECDb().GetCachedStatement("SELECT Id FROM ec_Class");
+        stmt = GetECDb().GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Class");
         if (stmt == nullptr)
             {
             BeAssert(false);

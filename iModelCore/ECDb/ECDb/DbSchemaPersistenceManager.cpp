@@ -567,8 +567,8 @@ BentleyStatus DbSchemaPersistenceManager::CreateTriggers(ECDbCR ecdb, DbTable co
 //static
 bool DbSchemaPersistenceManager::TriggerExistsInDb(ECDbCR ecdb, DbTrigger const& trigger)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != ecdb.GetCachedStatement(stmt, "select NULL from sqlite_master WHERE type='trigger' and name=?"))
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("select NULL from sqlite_master WHERE type='trigger' and name=?");
+    if (stmt == nullptr)
         {
         BeAssert(false);
         return false;
@@ -761,12 +761,12 @@ bmap<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetTa
 
     CachedStatementPtr stmt = nullptr;
     if (whereClause == nullptr)
-        stmt = ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Table");
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, Id FROM ec_Table");
     else
         {
         Utf8String sql("SELECT Name, Id FROM ec_Table");
         sql.append(" WHERE ").append(whereClause);
-        stmt = ecdb.GetCachedStatement(sql.c_str());
+        stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
         }
 
     if (stmt == nullptr)
@@ -790,7 +790,7 @@ bmap<Utf8String, DbTableId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetTa
 bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> DbSchemaPersistenceManager::GetColumnNamesAndIds(ECDbCR ecdb, DbTableId tableId)
     {
     bmap<Utf8String, DbColumnId, CompareIUtf8Ascii> map;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, Id FROM ec_Column WHERE TableId=?");
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, Id FROM ec_Column WHERE TableId=?");
     if (stmt == nullptr)
         {
         BeAssert(false);

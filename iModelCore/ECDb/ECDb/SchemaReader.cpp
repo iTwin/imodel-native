@@ -254,8 +254,8 @@ BentleyStatus SchemaReader::EnsureDerivedClassesExist(ECClassId ecClassId) const
 //---------------------------------------------------------------------------------------
 BentleyStatus SchemaReader::EnsureDerivedClassesExist(Context& ctx, ECClassId ecClassId) const
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT ClassId FROM ec_ClassHasBaseClasses WHERE BaseClassId=?"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT ClassId FROM ec_ClassHasBaseClasses WHERE BaseClassId=?");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
@@ -310,7 +310,7 @@ ECClassP SchemaReader::GetClass(Context& ctx, ECClassId ecClassId) const
     const int relStrengthDirColIx = 7;
     const int caContainerTypeIx = 8;
 
-    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType FROM ec_Class WHERE Id=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType FROM ec_Class WHERE Id=?");
     if (stmt == nullptr)
         return nullptr;
 
@@ -470,7 +470,7 @@ BentleyStatus SchemaReader::ReadEnumeration(ECEnumerationP& ecEnum, Context& ctx
     const int isStrictColIx = 5;
     const int valuesColIx = 6;
 
-    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM ec_Enumeration WHERE Id=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT SchemaId,Name,DisplayLabel,Description,UnderlyingPrimitiveType,IsStrict,EnumValues FROM ec_Enumeration WHERE Id=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -541,7 +541,7 @@ BentleyStatus SchemaReader::ReadKindOfQuantity(KindOfQuantityP& koq, Context& ct
     const int relErrorColIx = 5;
     const int presUnitColIx = 6;
 
-    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM ec_KindOfQuantity WHERE Id=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits FROM ec_KindOfQuantity WHERE Id=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -611,7 +611,7 @@ BentleyStatus SchemaReader::ReadPropertyCategory(PropertyCategoryP& cat, Context
     const int descriptionColIx = 3;
     const int priorityColIx = 4;
 
-    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT SchemaId,Name,DisplayLabel,Description,Priority FROM ec_PropertyCategory WHERE Id=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT SchemaId,Name,DisplayLabel,Description,Priority FROM ec_PropertyCategory WHERE Id=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -673,8 +673,8 @@ BentleyStatus SchemaReader::LoadSchemaDefinition(SchemaDbEntry*& schemaEntry, bv
     if (SUCCESS != LoadSchemaFromDb(schemaEntry, ecSchemaId))
         return ERROR;
 
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT ReferencedSchemaId FROM ec_SchemaReference WHERE SchemaId=?"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT ReferencedSchemaId FROM ec_SchemaReference WHERE SchemaId=?");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchemaId))
@@ -765,7 +765,7 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
     if (ecSchemaKey->IsFullyLoaded())
         return SUCCESS;
 
-    BeSQLite::CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Class WHERE SchemaId=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Class WHERE SchemaId=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -786,7 +786,7 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
         }
 
     stmt = nullptr;
-    stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Enumeration WHERE SchemaId=?");
+    stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Enumeration WHERE SchemaId=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -804,7 +804,7 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
         }
 
     stmt = nullptr;
-    stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_KindOfQuantity WHERE SchemaId=?");
+    stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_KindOfQuantity WHERE SchemaId=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -822,7 +822,7 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
         }
 
     stmt = nullptr;
-    stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyCategory WHERE SchemaId=?");
+    stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_PropertyCategory WHERE SchemaId=?");
     if (stmt == nullptr)
         return ERROR;
 
@@ -847,7 +847,7 @@ BentleyStatus SchemaReader::LoadSchemaEntitiesFromDb(SchemaDbEntry* ecSchemaKey,
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaReader::LoadSchemaFromDb(SchemaDbEntry*& schemaEntry, ECSchemaId ecSchemaId) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT S.Name, S.DisplayLabel,S.Description,S.Alias,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT S.Name, S.DisplayLabel,S.Description,S.Alias,S.VersionDigit1,S.VersionDigit2,S.VersionDigit3, "
                                                         "(SELECT COUNT(*) FROM ec_Class C WHERE S.Id = C.SchemaId) + "
                                                         "(SELECT COUNT(*) FROM ec_Enumeration e WHERE S.Id = e.SchemaId) + "
                                                         "(SELECT COUNT(*) FROM ec_KindOfQuantity koq WHERE S.Id = koq.SchemaId) + "
@@ -1000,7 +1000,7 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
             const int navRelationshipClassId = 19;
             const int navPropDirectionIx = 20;
 
-            CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
+            CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id,Kind,Name,DisplayLabel,Description,IsReadonly,Priority,"
                                                               "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
                                                               "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,"
                                                               "ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection "
@@ -1413,8 +1413,8 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context& ctx, ECClassId ecClassId) const
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT BaseClassId FROM ec_ClassHasBaseClasses WHERE ClassId=? ORDER BY Ordinal"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT BaseClassId FROM ec_ClassHasBaseClasses WHERE ClassId=? ORDER BY Ordinal");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
@@ -1452,8 +1452,8 @@ BentleyStatus SchemaReader::LoadBaseClassesFromDb(ECClassP& ecClass, Context& ct
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caConstainer, Context& ctx, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType) const
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT ClassId,Instance FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=? ORDER BY Ordinal");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, containerId))
@@ -1486,8 +1486,8 @@ BentleyStatus SchemaReader::LoadCAFromDb(ECN::IECCustomAttributeContainerR caCon
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClassP& ecRelationship, Context& ctx, ECClassId relationshipClassId, ECRelationshipEnd relationshipEnd) const
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId FROM ec_RelationshipConstraint WHERE RelationshipClassId=? AND RelationshipEnd=?");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, relationshipClassId))
@@ -1573,8 +1573,8 @@ BentleyStatus SchemaReader::LoadRelationshipConstraintFromDb(ECRelationshipClass
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaReader::LoadRelationshipConstraintClassesFromDb(ECRelationshipConstraintR constraint, Context& ctx, ECRelationshipConstraintId constraintId) const
     {
-    CachedStatementPtr statement = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(statement, "SELECT ClassId FROM ec_RelationshipConstraintClass WHERE ConstraintId=?"))
+    CachedStatementPtr statement = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT ClassId FROM ec_RelationshipConstraintClass WHERE ConstraintId=?");
+    if (statement == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != statement->BindId(1, constraintId))

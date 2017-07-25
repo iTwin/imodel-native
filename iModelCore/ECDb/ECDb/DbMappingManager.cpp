@@ -663,7 +663,7 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
     const ECRelatedInstanceDirection navPropDir = fkEnd == ECRelationshipEnd::ECRelationshipEnd_Target ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward;
 
     //finally check whether the relationship requires a nav prop. If it does but doesn't have one, we also fall back to a link table
-    CachedStatementPtr stmt = ctx.GetECDb().GetCachedStatement("SELECT ClassId, Name FROM ec_Property WHERE NavigationRelationshipClassId=? AND NavigationDirection=? ORDER BY ClassId");
+    CachedStatementPtr stmt = ctx.GetECDb().GetImpl().GetCachedSqliteStatement("SELECT ClassId, Name FROM ec_Property WHERE NavigationRelationshipClassId=? AND NavigationDirection=? ORDER BY ClassId");
     if (stmt == nullptr)
         return ERROR;
 

@@ -228,7 +228,7 @@ BentleyStatus ViewGenerator::CreateUpdatableViewIfRequired(ECDbCR ecdb, ClassMap
             }
         }
 
-    CachedStatementPtr stmt = ctx.GetECDb().GetCachedStatement("UPDATE ec_Table SET UpdatableViewName=? WHERE Id=?");
+    CachedStatementPtr stmt = ctx.GetECDb().GetImpl().GetCachedSqliteStatement("UPDATE ec_Table SET UpdatableViewName=? WHERE Id=?");
     if (stmt == nullptr ||
         BE_SQLITE_OK != stmt->BindText(1, updatableViewName, Statement::MakeCopy::No) ||
         BE_SQLITE_OK != stmt->BindId(2, rootTable.GetId()) ||

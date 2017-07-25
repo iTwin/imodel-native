@@ -101,7 +101,7 @@ void TableMap::InitSystemColumnMaps()
 //---------------------------------------------------------------------------------------
 ECClassId TableMap::QueryClassId() const
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
         "SELECT DISTINCT ec_Class.Id FROM ec_Class "
         "JOIN ec_ClassMap ON ec_Class.Id = ec_ClassMap.ClassId "
         "JOIN ec_PropertyMap ON ec_ClassMap.ClassId = ec_PropertyMap.ClassId "
@@ -147,8 +147,8 @@ ECN::ECClassId TableMap::GetClassId() const
 //---------------------------------------------------------------------------------------
 DbDupValue TableMap::QueryValueFromDb(Utf8StringCR physicalColumnName, ECInstanceId instanceId) const
     {
-    Utf8PrintfString ecSql("SELECT %s FROM %s WHERE %s=?", physicalColumnName.c_str(), m_tableName.c_str(), GetIdColumn().GetName().c_str());
-    CachedStatementPtr statement = m_ecdb.GetCachedStatement(ecSql.c_str());
+    Utf8PrintfString sql("SELECT %s FROM %s WHERE %s=?", physicalColumnName.c_str(), m_tableName.c_str(), GetIdColumn().GetName().c_str());
+    CachedStatementPtr statement = m_ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
     BeAssert(statement.IsValid());
 
     statement->BindId(1, instanceId);
@@ -620,7 +620,7 @@ ECClassId InstancesTable::QueryClassId(Utf8StringCR tableName, ECInstanceId inst
     Utf8String instancesTableName = GetName();
 
     Utf8PrintfString sql("SELECT ClassId FROM %s WHERE TableName=?1 AND InstanceId=?2", instancesTableName.c_str());
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(sql.c_str());
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(sql.c_str());
     BeAssert(stmt.IsValid());
 
     stmt->BindText(1, tableName, Statement::MakeCopy::No);
@@ -1521,7 +1521,7 @@ void ChangeSummary::Instance::SetupValuesTableSelectStatement(Utf8CP accessStrin
         {
         Utf8String tableName = m_changeSummary->GetValuesTableName();
         Utf8PrintfString sql("SELECT OldValue, NewValue FROM %s WHERE ClassId=? AND InstanceId=? AND AccessString=?", tableName.c_str());
-        m_valuesTableSelect = m_changeSummary->GetDb().GetCachedStatement(sql.c_str());
+        m_valuesTableSelect = m_changeSummary->GetDb().GetImpl().GetCachedSqliteStatement(sql.c_str());
         BeAssert(m_valuesTableSelect.IsValid());
 
         m_valuesTableSelect->BindId(1, m_classId);

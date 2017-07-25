@@ -250,9 +250,8 @@ BentleyStatus SchemaWriter::ImportClass(ECN::ECClassCR ecClass)
     const_cast<ECClassR>(ecClass).SetId(ecClassId);
 
     //now import actual ECClass
-    BeSQLite::CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Class(Id,SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType) "
-                                                  "VALUES(?,?,?,?,?,?,?,?,?,?)"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_Class(Id,SchemaId,Name,DisplayLabel,Description,Type,Modifier,RelationshipStrength,RelationshipStrengthDirection,CustomAttributeContainerType) VALUES(?,?,?,?,?,?,?,?,?,?)");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecClassId))
@@ -351,7 +350,7 @@ BentleyStatus SchemaWriter::ImportEnumeration(ECEnumerationCR ecEnum)
         return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Enumeration(Id, SchemaId, Name, DisplayLabel, Description, UnderlyingPrimitiveType, IsStrict, EnumValues) VALUES(?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_Enumeration(Id, SchemaId, Name, DisplayLabel, Description, UnderlyingPrimitiveType, IsStrict, EnumValues) VALUES(?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -415,7 +414,7 @@ BentleyStatus SchemaWriter::ImportKindOfQuantity(KindOfQuantityCR koq)
         return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_KindOfQuantity(Id,SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits) VALUES(?,?,?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_KindOfQuantity(Id,SchemaId,Name,DisplayLabel,Description,PersistenceUnit,RelativeError,PresentationUnits) VALUES(?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -491,7 +490,7 @@ BentleyStatus SchemaWriter::ImportPropertyCategory(PropertyCategoryCR cat)
         return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_PropertyCategory(Id,SchemaId,Name,DisplayLabel,Description,Priority) VALUES(?,?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_PropertyCategory(Id,SchemaId,Name,DisplayLabel,Description,Priority) VALUES(?,?,?,?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -555,7 +554,7 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(ECClassId relClassId, E
         return ERROR;
 
     BeAssert(constraintId.IsValid());
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_RelationshipConstraintClass(Id,ConstraintId,ClassId) VALUES(?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_RelationshipConstraintClass(Id,ConstraintId,ClassId) VALUES(?,?,?)");
     if (stmt == nullptr)
         return ERROR;
 
@@ -596,8 +595,8 @@ BentleyStatus SchemaWriter::ImportRelationshipConstraint(ECClassId relClassId, E
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::InsertRelationshipConstraintEntry(ECRelationshipConstraintId& constraintId, ECClassId relationshipClassId, ECN::ECRelationshipConstraintR relationshipConstraint, ECRelationshipEnd endpoint)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_RelationshipConstraint(Id,RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId) VALUES(?,?,?,?,?,?,?,?)"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_RelationshipConstraint(Id,RelationshipClassId,RelationshipEnd,MultiplicityLowerLimit,MultiplicityUpperLimit,IsPolymorphic,RoleLabel,AbstractConstraintClassId) VALUES(?,?,?,?,?,?,?,?)");
+    if (stmt == nullptr)
         return ERROR;
 
     if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::RelationshipConstraintId).GetNextValue(constraintId))
@@ -682,7 +681,7 @@ BentleyStatus SchemaWriter::ImportProperty(ECN::ECPropertyCR ecProperty, int ord
         }
 
     //now insert the actual property
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Priority,Ordinal,Kind,"
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_Property(Id,ClassId,Name,DisplayLabel,Description,IsReadonly,Priority,Ordinal,Kind,"
                                                         "PrimitiveType,PrimitiveTypeMinLength,PrimitiveTypeMaxLength,PrimitiveTypeMinValue,PrimitiveTypeMaxValue,"
                                                         "EnumerationId,StructClassId,ExtendedTypeName,KindOfQuantityId,CategoryId,ArrayMinOccurs,ArrayMaxOccurs,NavigationRelationshipClassId,NavigationDirection) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
     if (stmt == nullptr)
@@ -891,8 +890,8 @@ BentleyStatus SchemaWriter::ImportCustomAttributes(IECCustomAttributeContainerCR
 BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR ecSchema)
     {
 
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_Schema(Id,Name,DisplayLabel,Description,Alias,VersionDigit1,VersionDigit2,VersionDigit3) VALUES(?,?,?,?,?,?,?,?)");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, ecSchema.GetId()))
@@ -936,8 +935,8 @@ BentleyStatus SchemaWriter::InsertSchemaEntry(ECSchemaCR ecSchema)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaWriter::InsertBaseClassEntry(ECClassId ecClassId, ECClassCR baseClass, int ordinal)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_ClassHasBaseClasses(Id,ClassId,BaseClassId,Ordinal) VALUES(?,?,?,?)"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_ClassHasBaseClasses(Id,ClassId,BaseClassId,Ordinal) VALUES(?,?,?,?)");
+    if (stmt == nullptr)
         return ERROR;
 
     BeInt64Id id;
@@ -1148,8 +1147,8 @@ BentleyStatus SchemaWriter::BindPropertyCategory(Statement& stmt, int paramIndex
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::InsertCAEntry(IECInstanceR customAttribute, ECClassId ecClassId, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType, int ordinal)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "INSERT INTO ec_CustomAttribute(Id,ContainerId,ContainerType,ClassId,Ordinal,Instance) VALUES(?,?,?,?,?,?)"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_CustomAttribute(Id,ContainerId,ContainerType,ClassId,Ordinal,Instance) VALUES(?,?,?,?,?,?)");
+    if (stmt == nullptr)
         return ERROR;
 
     BeInt64Id id;
@@ -1187,8 +1186,8 @@ BentleyStatus SchemaWriter::InsertCAEntry(IECInstanceR customAttribute, ECClassI
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteCAEntry(int& ordinal, ECClassId ecClassId, ECContainerId containerId, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType containerType)
     {
-    CachedStatementPtr stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "SELECT Ordinal FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?"))
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Ordinal FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, containerId))
@@ -1205,8 +1204,8 @@ BentleyStatus SchemaWriter::DeleteCAEntry(int& ordinal, ECClassId ecClassId, ECC
 
     ordinal = stmt->GetValueInt(0);
 
-    stmt = nullptr;
-    if (BE_SQLITE_OK != m_ecdb.GetCachedStatement(stmt, "DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?"))
+    stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM ec_CustomAttribute WHERE ContainerId = ? AND ContainerType = ? AND ClassId = ?");
+    if (stmt == nullptr)
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, containerId))
@@ -2104,7 +2103,7 @@ BentleyStatus SchemaWriter::UpdateSchemaReferences(ReferenceChanges& referenceCh
 //+---------------+---------------+---------------+---------------+---------------+------
 bool SchemaWriter::IsSpecifiedInRelationshipConstraint(ECClassCR deletedClass) const
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT NULL FROM ec_RelationshipConstraintClass WHERE ClassId=? LIMIT 1");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT NULL FROM ec_RelationshipConstraintClass WHERE ClassId=? LIMIT 1");
     if (stmt == nullptr)
         {
         BeAssert(false && "SQL_SCHEMA_CHANGED");
@@ -2177,7 +2176,7 @@ BentleyStatus SchemaWriter::DeleteClass(ClassChange& classChange, ECClassCR dele
             return ERROR;
         }
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Class WHERE Id=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM ec_Class WHERE Id=?");
     stmt->BindId(1, deletedClass.GetId());
     if (stmt->Step() != BE_SQLITE_DONE)
         {
@@ -2241,7 +2240,7 @@ BentleyStatus SchemaWriter::DeleteInstances(ECClassCR deletedClass)
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus SchemaWriter::DeleteCustomAttributes(ECContainerId id, SchemaPersistenceHelper::GeneralizedCustomAttributeContainerType type)
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM ec_CustomAttribute WHERE ContainerId=? AND ContainerType=?");
     if (stmt == nullptr ||
         BE_SQLITE_OK != stmt->BindId(1, id) ||
         BE_SQLITE_OK != stmt->BindInt(2, Enum::ToInt(type)) ||
@@ -2332,7 +2331,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
             //For virtual column delete column from ec_Column.
             if (column->GetPersistenceType() == PersistenceType::Virtual || column->GetTable().GetType() == DbTable::Type::Virtual)
                 {
-                CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Column WHERE Id=?");
+                CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM ec_Column WHERE Id=?");
                 if (stmt == nullptr ||
                     BE_SQLITE_OK != stmt->BindId(1, column->GetId()) ||
                     BE_SQLITE_DONE != stmt->Step())
@@ -2365,7 +2364,7 @@ BentleyStatus SchemaWriter::DeleteProperty(ECPropertyChange& propertyChange, ECP
         }
 
     //Delete ECProperty entry make sure ec_Column is already deleted or set to null
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("DELETE FROM ec_Property WHERE Id=?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("DELETE FROM ec_Property WHERE Id=?");
     if (stmt == nullptr ||
         BE_SQLITE_OK != stmt->BindId(1, deletedProperty.GetId()) ||
         BE_SQLITE_DONE != stmt->Step())

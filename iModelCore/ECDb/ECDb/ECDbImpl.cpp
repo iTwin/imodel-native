@@ -92,6 +92,23 @@ DbResult ECDb::Impl::CheckProfileVersion(bool& fileIsAutoUpgradable, bool openMo
     return ProfileManager::CheckProfileVersion(fileIsAutoUpgradable, unused, m_ecdb, openModeIsReadonly);
     }
 
+//--------------------------------------------------------------------------------------
+// @bsimethod                                Krischan.Eberle                07/2017
+//---------------+---------------+---------------+---------------+---------------+------
+CachedStatementPtr ECDb::Impl::GetCachedSqliteStatement(Utf8CP sql) const
+    {
+    if (!m_ecdb.IsDbOpen())
+        return nullptr;
+
+    BeAssert(m_ecdb.GetDbFile() != nullptr);
+
+    CachedStatementPtr stmt = nullptr;
+    if (BE_SQLITE_OK != m_sqliteStatementCache.GetPreparedStatement(stmt, *m_ecdb.GetDbFile(), sql))
+        return nullptr;
+
+    return stmt;
+    }
+
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                Krischan.Eberle                12/2014
@@ -102,6 +119,8 @@ void ECDb::Impl::ClearECDbCache() const
 
     if (m_schemaManager != nullptr)
         m_schemaManager->ClearCache();
+
+    const_cast<StatementCache&>(m_sqliteStatementCache).Empty();
 
     for (AppData::Key const* appDataKey : m_appDataToDeleteOnClearCache)
         {

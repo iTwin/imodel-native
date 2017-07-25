@@ -127,7 +127,7 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
     std::vector<DbTable const*> nvlist;
     if (otherEndConstraint.GetIsPolymorphic())
         {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement(
+        CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(
             "SELECT DISTINCT [CHT].[TableId] "
             "FROM   [ec_RelationshipConstraintClass] [RCC] "
             "       INNER JOIN [ec_RelationshipConstraint] [RC] ON [RC].[Id] = [RCC].[ConstraintId] "
@@ -157,7 +157,7 @@ std::vector<DbTable const*> RelationshipClassEndTableMap::PartitionView::GetOthe
         }
     else
         {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement(
+        CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(
             "SELECT DISTINCT [CHT].[TableId] "
             "FROM   [ec_RelationshipConstraintClass] [RCC] "
             "       INNER JOIN [ec_RelationshipConstraint] [RC] ON [RC].[Id] = [RCC].[ConstraintId] "
@@ -284,7 +284,7 @@ BentleyStatus RelationshipClassEndTableMap::PartitionView::Load()
     ECDbCR ecdb = m_relationshipMap.GetECDb();
     DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
     const std::vector<DbTable const*> primaryTables = GetOtherEndTables(m_relationshipMap);
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
     PRECONDITION(stmt != nullptr, ERROR);
 
     stmt->BindId(1, m_relationshipMap.GetClass().GetId());

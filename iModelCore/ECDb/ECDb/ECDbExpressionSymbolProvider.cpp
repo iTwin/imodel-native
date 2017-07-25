@@ -481,14 +481,13 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
         return SUCCESS;
     
     Utf8String sql("SELECT Id FROM ec_Class WHERE Name=?");
-    ECDb* ecdb = const_cast<ECDb*>(&db);
-    CachedStatementPtr statement = ecdb->GetCachedStatement(sql.c_str());
+    CachedStatementPtr statement = db.GetImpl().GetCachedSqliteStatement(sql.c_str());
     BeAssert(statement.IsValid());
     if (nullptr == relationship)
         {
         statement->BindText(1, relationshipName, BeSQLite::Statement::MakeCopy::No);
 
-        if (DbResult::BE_SQLITE_ROW != statement->Step())
+        if (BE_SQLITE_ROW != statement->Step())
             return ERROR;
 
         ECClassCP candidateRelationshipClass = db.Schemas().GetClass(statement->GetValueId<ECClassId>(0));
@@ -502,7 +501,7 @@ BentleyStatus ECDbExpressionSymbolProvider::FindRelationshipAndClassInfo(ECDbCR 
         statement->ClearBindings();
         statement->Reset();
         statement->BindText(1, className, BeSQLite::Statement::MakeCopy::No);
-        if (DbResult::BE_SQLITE_ROW != statement->Step())
+        if (BE_SQLITE_ROW != statement->Step())
             return ERROR;
 
         ECClassCP candidateEntityClass = db.Schemas().GetClass(statement->GetValueId<ECClassId>(0));

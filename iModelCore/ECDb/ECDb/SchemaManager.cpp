@@ -43,7 +43,7 @@ bvector<ECSchemaCP> SchemaManager::GetSchemas(bool loadSchemaEntities) const
     {
     BeMutexHolder lock(m_mutex);
 
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_Schema");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Schema");
     if (stmt == nullptr)
         return bvector<ECSchemaCP>();
 

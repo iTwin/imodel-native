@@ -142,6 +142,7 @@ private:
 
     SettingsHolder m_settings;
 
+    StatementCache m_sqliteStatementCache;
     IdSequences m_idSequences;
     mutable bmap<DbFunctionKey, DbFunction*, DbFunctionKey::Comparer> m_sqlFunctions;
     mutable bset<AppData::Key const*, std::less<AppData::Key const*>> m_appDataToDeleteOnClearCache;
@@ -149,7 +150,7 @@ private:
     IssueReporter m_issueReporter;
 
     //Mirrored ECDb methods are only called by ECDb (friend), therefore private
-    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_idSequences(ecdb) { m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex); }
+    explicit Impl(ECDbR ecdb) : m_ecdb(ecdb), m_sqliteStatementCache(50), m_idSequences(ecdb) { m_schemaManager = std::make_unique<SchemaManager>(ecdb, m_mutex); }
 
     DbResult CheckProfileVersion(bool& fileIsAutoUpgradable, bool openModeIsReadonly) const;
 
@@ -184,11 +185,12 @@ private:
     static DbResult InitializeLib(BeFileNameCR ecdbTempDir, BeFileNameCP hostAssetsDir, BeSQLiteLib::LogErrors logSqliteErrors);
 
 public:
-    ~Impl() {}
+    ~Impl() { m_sqliteStatementCache.Empty(); }
 
     bool TryGetSqlFunction(DbFunction*& function, Utf8CP name, int argCount) const;
     ECDb::Settings const& GetSettings() const { return m_settings.GetSettings(); }
 
+    CachedStatementPtr GetCachedSqliteStatement(Utf8CP sql) const;
     BeBriefcaseBasedIdSequence const& GetSequence(IdSequences::Key sequenceKey) const { return m_idSequences.GetSequence(sequenceKey); }
 
     //! The clear cache counter is incremented with every call to ClearECDbCache. This is used

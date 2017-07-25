@@ -34,7 +34,7 @@ ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, Utf8CP schemaNameOrAl
                 break;
         }
 
-    CachedStatementPtr stmt = db.GetCachedStatement(sql);
+    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement(sql);
     if (stmt == nullptr)
         return ECSchemaId();
 
@@ -51,7 +51,7 @@ ECSchemaId SchemaPersistenceHelper::GetSchemaId(ECDbCR db, Utf8CP schemaNameOrAl
 //---------------------------------------------------------------------------------------
 std::vector<ECSchemaId> SchemaPersistenceHelper::GetSchemaIds(ECDbCR ecdb, Utf8StringVirtualSet const& schemaNames)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Id FROM ec_Schema WHERE InVirtualSet(?,Name)");
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Schema WHERE InVirtualSet(?,Name)");
     if (stmt == nullptr)
         return std::vector<ECSchemaId>();
 
@@ -72,7 +72,7 @@ std::vector<ECSchemaId> SchemaPersistenceHelper::GetSchemaIds(ECDbCR ecdb, Utf8S
 //---------------------------------------------------------------------------------------
 Utf8String SchemaPersistenceHelper::GetSchemaName(ECDbCR ecdb, ECN::ECSchemaId schemaId)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name FROM ec_Schema WHERE Id=?");
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name FROM ec_Schema WHERE Id=?");
     if (stmt == nullptr)
         return Utf8String();
 
@@ -89,7 +89,7 @@ Utf8String SchemaPersistenceHelper::GetSchemaName(ECDbCR ecdb, ECN::ECSchemaId s
 //---------------------------------------------------------------------------------------
 bool SchemaPersistenceHelper::TryGetSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8CP schemaName)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=?");
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3 FROM ec_Schema WHERE Name=?");
     if (stmt == nullptr)
         return false;
 
@@ -108,7 +108,7 @@ bool SchemaPersistenceHelper::TryGetSchemaKey(SchemaKey& key, ECDbCR ecdb, Utf8C
 //---------------------------------------------------------------------------------------
 bool SchemaPersistenceHelper::TryGetSchemaKeyAndId(SchemaKey& key, ECSchemaId& id, ECDbCR ecdb, Utf8CP schemaName)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3, Id FROM ec_Schema WHERE Name=?");
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT Name, VersionDigit1, VersionDigit2, VersionDigit3, Id FROM ec_Schema WHERE Name=?");
     if (stmt == nullptr)
         return false;
 
@@ -129,7 +129,7 @@ bool SchemaPersistenceHelper::TryGetSchemaKeyAndId(SchemaKey& key, ECSchemaId& i
 //static
 ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, ECSchemaId schemaId, Utf8CP className)
     {
-    CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Class WHERE SchemaId=? AND Name=?");
+    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Class WHERE SchemaId=? AND Name=?");
     if (stmt == nullptr)
         return ECClassId();
 
@@ -167,7 +167,7 @@ ECClassId SchemaPersistenceHelper::GetClassId(ECDbCR db, Utf8CP schemaNameOrAlia
                 break;
         }
 
-    CachedStatementPtr stmt = db.GetCachedStatement(sql);
+    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement(sql);
     if (stmt == nullptr)
         return ECClassId();
 
@@ -199,7 +199,7 @@ ECEnumerationId SchemaPersistenceHelper::GetEnumerationId(ECDbCR ecdb, Utf8CP sc
                 sql = "SELECT e.Id FROM ec_Enumeration e, ec_Schema s WHERE e.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND e.Name=?2";
                 break;
         }
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
     if (stmt == nullptr)
         return ECEnumerationId();
 
@@ -234,7 +234,7 @@ KindOfQuantityId SchemaPersistenceHelper::GetKindOfQuantityId(ECDbCR ecdb, Utf8C
                 break;
         }
 
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
     if (stmt == nullptr)
         return KindOfQuantityId();
 
@@ -268,7 +268,7 @@ PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, U
                 sql = "SELECT cat.Id FROM ec_PropertyCategory cat, ec_Schema s WHERE cat.SchemaId=s.Id AND (s.Name=?1 OR s.Alias=?1) AND cat.Name=?2";
                 break;
         }
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
     if (stmt == nullptr)
         return PropertyCategoryId();
 
@@ -286,7 +286,7 @@ PropertyCategoryId SchemaPersistenceHelper::GetPropertyCategoryId(ECDbCR ecdb, U
 //---------------------------------------------------------------------------------------
 ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, ECClassId ecClassId, Utf8CP propertyName)
     {
-    CachedStatementPtr stmt = db.GetCachedStatement("SELECT Id FROM ec_Property WHERE ClassId=? AND Name=?");
+    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_Property WHERE ClassId=? AND Name=?");
     if (stmt == nullptr)
         return ECPropertyId();
 
@@ -324,7 +324,7 @@ ECPropertyId SchemaPersistenceHelper::GetPropertyId(ECDbCR db, Utf8CP schemaName
                 break;
         }
 
-    CachedStatementPtr stmt = db.GetCachedStatement(sql);
+    CachedStatementPtr stmt = db.GetImpl().GetCachedSqliteStatement(sql);
     if (stmt == nullptr)
         return ECPropertyId();
 

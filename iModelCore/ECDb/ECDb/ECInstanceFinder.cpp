@@ -182,9 +182,7 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
     {
     queryableRelationships.clear();
 
-    CachedStatementPtr stmt = nullptr;
-    DbResult result = ecDb.GetCachedStatement(stmt,
-        " WITH RECURSIVE"
+    CachedStatementPtr stmt = ecDb.GetImpl().GetCachedSqliteStatement(" WITH RECURSIVE"
         "    BaseClassesOfEndClass(ClassId) AS  ("
         "    VALUES (:endClassId)"
         "    UNION "
@@ -197,10 +195,10 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
         " JOIN BaseClassesOfEndClass"
         " WHERE ForeignEndConstraintClass.ClassId = :endClassId "
                                               "   OR (ForeignEndConstraint.IsPolymorphic = " SQLVAL_True " AND ForeignEndConstraintClass.ClassId = BaseClassesOfEndClass.ClassId)");
-    if (BE_SQLITE_OK != result)
+    if (stmt == nullptr)
         {
         BeAssert(false);
-        return result;
+        return BE_SQLITE_ERROR;
         }
 
     SchemaManager const& schemaManager = ecDb.Schemas();
@@ -209,7 +207,7 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
     int endClassIdx = stmt->GetParameterIndex(":endClassId");
     stmt->BindId(endClassIdx, foreignEndClass->GetId());
 
-    while (BE_SQLITE_ROW == (result = stmt->Step()))
+    while (BE_SQLITE_ROW == stmt->Step())
         {
         ECClassId ecRelationshipClassId = stmt->GetValueId<ECClassId>(0);
         ECClassCP ecClass = schemaManager.GetClass(ecRelationshipClassId);
@@ -218,12 +216,6 @@ DbResult ECInstanceFinder::FindRelationshipsOnEnd(QueryableRelationshipVector& q
 
         ECRelationshipEnd thisRelationshipEnd = (ECRelationshipEnd) stmt->GetValueInt(1);
         queryableRelationships.push_back(QueryableRelationship(*ecRelationshipClass, *foreignEndClass, thisRelationshipEnd));
-        }
-
-    if (BE_SQLITE_DONE != result)
-        {
-        BeAssert(false);
-        return result;
         }
 
     return BE_SQLITE_OK;
