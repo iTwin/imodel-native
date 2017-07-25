@@ -599,7 +599,7 @@ public:
         // persistent imported display params:
         DgnCategoryId               m_categoryId;
         DgnSubCategoryId            m_subCategoryId;
-        DgnMaterialId               m_materialId;
+        RenderMaterialId            m_materialId;
         uint32_t                    m_weight;
         ColorDef                    m_lineColor;
         ColorDef                    m_fillColor;
@@ -632,8 +632,8 @@ public:
     typedef bmap<DwgDbObjectId, DgnElementId>           T_TextStyleIdMap;
     typedef bpair<DwgDbObjectId, DgnStyleId>            T_DwgDgnLineStyleId;
     typedef bmap<DwgDbObjectId, DgnStyleId>             T_LineStyleIdMap;
-    typedef bpair<DwgDbObjectId, DgnMaterialId>         T_DwgDgnMaterialId;
-    typedef bmap<DwgDbObjectId, DgnMaterialId>          T_MaterialIdMap;
+    typedef bpair<DwgDbObjectId, RenderMaterialId>      T_DwgRenderMaterialId;
+    typedef bmap<DwgDbObjectId, RenderMaterialId>       T_MaterialIdMap;
     typedef bmap<Utf8String, DgnTextureId>              T_MaterialTextureIdMap;
 
     struct ECSqlCache : BeSQLite::Db::AppData
@@ -1110,7 +1110,7 @@ public:
     StandardUnit                        GetModelSpaceUnits () const { return m_modelspaceUnits; }
     DgnStyleId                          GetDgnLineStyleFor (DwgDbObjectIdCR ltypeId);
     DgnElementId                        GetDgnTextStyleFor (DwgDbObjectIdCR tstyleId);
-    DgnMaterialId                       GetDgnMaterialFor (DwgDbObjectIdCR materialId);
+    RenderMaterialId                    GetDgnMaterialFor (DwgDbObjectIdCR materialId);
     DgnTextureId                        GetDgnMaterialTextureFor (Utf8StringCR fileName);
     T_MaterialIdMap&                    GetImportedDgnMaterials () { return m_importedMaterials; }
     void                                AddDgnMaterialTexture (Utf8StringCR fileName, DgnTextureId texture);

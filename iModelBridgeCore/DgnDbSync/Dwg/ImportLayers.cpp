@@ -98,9 +98,9 @@ BentleyStatus   DwgImporter::GetLayerAppearance (DgnSubCategory::Appearance& app
     if (styleId.IsValid())
         appearance.SetStyle (styleId);
 
-    DgnMaterialId   material = this->GetDgnMaterialFor (layer.GetMaterialId());
+    RenderMaterialId   material = this->GetDgnMaterialFor (layer.GetMaterialId());
     if (material.IsValid())
-        appearance.SetMaterial(material);
+        appearance.SetRenderMaterial(material);
 
     return  BSISUCCESS;
     }

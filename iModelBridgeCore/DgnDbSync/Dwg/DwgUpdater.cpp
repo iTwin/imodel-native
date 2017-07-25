@@ -118,7 +118,7 @@ BentleyStatus   DwgImporter::_OnUpdateLayer (DgnCategoryId& id, DwgDbLayerTableR
 
         if (!name.EqualsI(categoryCode.GetValue()))
             {
-            categoryCode = DgnCode (categoryCode.GetCodeSpecId(), categoryCode.GetScopeElementId(), name);
+            categoryCode = DgnCode (categoryCode.GetCodeSpecId(), categoryCode.GetScopeElementId(this->GetDgnDb()), name);
             writeEl->SetCode (categoryCode);
             changed = true;
             }
@@ -576,12 +576,12 @@ void UpdaterChangeDetector::_DeleteDeletedMaterials (DwgImporter& importer)
     DwgImporter::T_MaterialIdMap& importedMaterials = importer.GetImportedDgnMaterials ();
 
     // collect the delete list from the sync info list which are not seen in the db list.
-    bset<DgnMaterialId>  deleteList;
+    bset<RenderMaterialId>  deleteList;
     for (auto entry : syncMaterials)
         {
-        DgnMaterialId   id = entry.GetDgnMaterialId ();
+        RenderMaterialId   id = entry.GetRenderMaterialId ();
 
-        auto found = std::find_if (importedMaterials.begin(), importedMaterials.end(), [&](DwgImporter::T_DwgDgnMaterialId map){return map.second == id;});
+        auto found = std::find_if (importedMaterials.begin(), importedMaterials.end(), [&](DwgImporter::T_DwgRenderMaterialId map){return map.second == id;});
         if (importedMaterials.end() == found)
             deleteList.insert (id);
         }
