@@ -546,7 +546,7 @@ static double s_heightPercentile = 60;
 static double s_anglePercentile = 65;
 static double s_heightPercentile = 65;
 
-static bool   s_useMultiThread = true;
+static bool   s_useMultiThread = false;
 
 static double s_time;
 static size_t s_nbPoints;

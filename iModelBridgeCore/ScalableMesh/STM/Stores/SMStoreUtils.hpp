@@ -47,6 +47,52 @@ template <class EXTENT> SMIndexNodeHeader<EXTENT>::SMIndexNodeHeader()
     {    
     }
 
+template <class EXTENT> SMIndexNodeHeader<EXTENT>::SMIndexNodeHeader(const SMIndexNodeHeader<EXTENT>& smNodeHeader)
+    {
+    m_id = smNodeHeader.m_id;
+    m_arePoints3d = smNodeHeader.m_arePoints3d;
+    m_isTextured = smNodeHeader.m_isTextured;
+    m_contentExtentDefined = smNodeHeader.m_contentExtentDefined;
+    m_contentExtent = ExtentOp<EXTENT>::Create(smNodeHeader.m_contentExtent.low.x, smNodeHeader.m_contentExtent.low.y, smNodeHeader.m_contentExtent.low.z,
+        smNodeHeader.m_contentExtent.high.x, smNodeHeader.m_contentExtent.high.y, smNodeHeader.m_contentExtent.high.z);
+    m_nodeExtent = ExtentOp<EXTENT>::Create(smNodeHeader.m_nodeExtent.low.x, smNodeHeader.m_nodeExtent.low.y, smNodeHeader.m_nodeExtent.low.z,
+        smNodeHeader.m_nodeExtent.high.x, smNodeHeader.m_nodeExtent.high.y, smNodeHeader.m_nodeExtent.high.z);
+    m_graphID = smNodeHeader.m_graphID;
+    m_filtered = smNodeHeader.m_filtered;
+    m_level = smNodeHeader.m_level;
+    m_nbFaceIndexes = smNodeHeader.m_nbFaceIndexes;
+    m_nbTextures = smNodeHeader.m_nbTextures;
+    m_nbUvIndexes = smNodeHeader.m_nbUvIndexes;
+    m_numberOfMeshComponents = smNodeHeader.m_numberOfMeshComponents;
+
+    m_meshComponents = new int[m_numberOfMeshComponents];
+    memcpy(m_meshComponents, smNodeHeader.m_meshComponents, m_numberOfMeshComponents * sizeof(int));
+    m_numberOfSubNodesOnSplit = smNodeHeader.m_numberOfSubNodesOnSplit;
+    m_parentNodeID = smNodeHeader.m_parentNodeID;
+    m_SubNodeNoSplitID = smNodeHeader.m_SubNodeNoSplitID;
+    m_uvID = smNodeHeader.m_uvID;
+    m_totalCountDefined = smNodeHeader.m_totalCountDefined;
+    m_totalCount = smNodeHeader.m_totalCount;
+    m_nodeCount = smNodeHeader.m_nodeCount;
+    m_SplitTreshold = smNodeHeader.m_SplitTreshold;
+    m_clipSetsID.resize(smNodeHeader.m_clipSetsID.size());
+    for (auto& id : m_clipSetsID) id = smNodeHeader.m_clipSetsID[&id - &m_clipSetsID.front()];
+    m_textureID = smNodeHeader.m_textureID;
+    m_ptsIndiceID.resize(smNodeHeader.m_ptsIndiceID.size());
+    for (auto& id : m_ptsIndiceID) id = smNodeHeader.m_ptsIndiceID[&id - &m_ptsIndiceID.front()];
+    m_uvsIndicesID.resize(smNodeHeader.m_uvsIndicesID.size());
+    for (auto& id : m_uvsIndicesID) id = smNodeHeader.m_uvsIndicesID[&id - &m_uvsIndicesID.front()];
+    m_apSubNodeID.resize(smNodeHeader.m_apSubNodeID.size());
+    for (auto& id : m_apSubNodeID) id = smNodeHeader.m_apSubNodeID[&id - &m_apSubNodeID.front()];
+    for (size_t i = 0; i < 26; ++i)
+        {
+        for (auto& id : smNodeHeader.m_apNeighborNodeID[i])
+                m_apNeighborNodeID[i].push_back(id);
+        }
+    m_geometricResolution = smNodeHeader.m_geometricResolution;
+    m_textureResolution = smNodeHeader.m_textureResolution;
+    }
+
 template <class EXTENT> SMIndexNodeHeader<EXTENT>::~SMIndexNodeHeader()
     {
     if (nullptr != m_meshComponents) delete[] m_meshComponents;
