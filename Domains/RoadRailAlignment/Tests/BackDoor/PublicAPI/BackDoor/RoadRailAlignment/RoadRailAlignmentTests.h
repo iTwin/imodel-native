@@ -56,6 +56,17 @@ protected:
     //! Called after each test
     void TearDown() {}
 
+    Dgn::CategorySelectorPtr CreateSpatialCategorySelector(Dgn::DefinitionModelR model);
+    Dgn::CategorySelectorPtr CreateDrawingCategorySelector(Dgn::DefinitionModelR model);
+    Dgn::ModelSelectorPtr CreateModelSelector(Dgn::DefinitionModelR definitionModel, Utf8StringCR name);
+    Dgn::DisplayStyle2dPtr CreateDisplayStyle2d(Dgn::DefinitionModelR model);
+    Dgn::DisplayStyle3dPtr CreateDisplayStyle3d(Dgn::DefinitionModelR model);
+
+    BentleyStatus Create2dView(Dgn::DefinitionModelR model, Utf8CP viewName,
+        Dgn::CategorySelectorR categorySelector, Dgn::DgnModelId modelToDisplay, Dgn::DisplayStyle2dR displayStyle);
+    BentleyStatus Create3dView(Dgn::DefinitionModelR model, Utf8CP viewName,
+        Dgn::CategorySelectorR categorySelector, Dgn::ModelSelectorR modelSelector, Dgn::DisplayStyle3dR displayStyle);
+
 public:
     static RoadRailAlignmentProjectHost& GetHost() { return *m_host; }
 

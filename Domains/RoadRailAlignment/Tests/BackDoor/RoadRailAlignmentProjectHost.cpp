@@ -320,3 +320,141 @@ Dgn::DgnDbPtr RoadRailAlignmentTestsFixture::OpenProject(WCharCP baseName, bool 
 
     return s_currentProject;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+CategorySelectorPtr RoadRailAlignmentTestsFixture::CreateSpatialCategorySelector(DefinitionModelR model)
+    {
+    // A CategorySelector is a definition element that is potentially shared by many ViewDefinitions.
+    // To start off, we'll create a default selector that includes the one category that we use.
+    // We have to give the selector a unique name of its own. Since we are settup up a new bim, we know that we can safely choose any name.
+    auto categorySelector = new CategorySelector(model, "Default Spatial Categories");
+    categorySelector->AddCategory(AlignmentCategory::Get(model.GetDgnDb()));
+    return categorySelector;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+CategorySelectorPtr RoadRailAlignmentTestsFixture::CreateDrawingCategorySelector(DefinitionModelR model)
+    {
+    // A CategorySelector is a definition element that is potentially shared by many ViewDefinitions.
+    // To start off, we'll create a default selector that includes the one category that we use.
+    // We have to give the selector a unique name of its own. Since we are settup up a new bim, we know that we can safely choose any name.
+    auto categorySelector = new CategorySelector(model, "Default Drawing Categories");
+    categorySelector->AddCategory(AlignmentCategory::GetHorizontal(model.GetDgnDb()));
+    categorySelector->AddCategory(AlignmentCategory::GetVertical(model.GetDgnDb()));
+    return categorySelector;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+ModelSelectorPtr RoadRailAlignmentTestsFixture::CreateModelSelector(DefinitionModelR definitionModel, Utf8StringCR name)
+    {
+    // A ModelSelector is a definition element that is potentially shared by many ViewDefinitions.
+    // To start off, we'll create a default selector that includes the one model that we use.
+    // We have to give the selector a unique name of its own. Since we are settup up a new bim, we know that we can safely choose any name.
+    return new ModelSelector(definitionModel, name);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DisplayStyle2dPtr RoadRailAlignmentTestsFixture::CreateDisplayStyle2d(DefinitionModelR model)
+    {
+    auto displayStyle = new DisplayStyle2d(model, "Default-2d");
+    displayStyle->SetBackgroundColor(ColorDef::White());
+    return displayStyle;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DisplayStyle3dPtr RoadRailAlignmentTestsFixture::CreateDisplayStyle3d(DefinitionModelR model)
+    {
+    // DisplayStyle is a definition element that is potentially shared by many ViewDefinitions.
+    // To start off, we'll create a style that can be used as a good default for 3D views.
+    // We have to give the style a unique name of its own. Since we are settup up a new bim, we know that we can safely choose any name.
+    auto displayStyle = new DisplayStyle3d(model, "Default-3d");
+    displayStyle->SetBackgroundColor(ColorDef::White());
+    Render::ViewFlags viewFlags = displayStyle->GetViewFlags();
+    viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
+    displayStyle->SetViewFlags(viewFlags);
+    return displayStyle;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus RoadRailAlignmentTestsFixture::Create3dView(DefinitionModelR model, Utf8CP viewName,
+    CategorySelectorR categorySelector, ModelSelectorR modelSelector, DisplayStyle3dR displayStyle)
+    {
+    DgnDbR db = model.GetDgnDb();
+
+    // CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
+    // That is why they are inputs to this function. 
+    OrthographicViewDefinition view(model, viewName, categorySelector, displayStyle, modelSelector);
+
+    DgnViewId viewId;
+    DgnViewId existingViewId = ViewDefinition::QueryViewId(db, view.GetCode());
+    if (existingViewId.IsValid())
+        viewId = existingViewId;
+    else
+        {
+        // Define the view direction and volume.
+        view.SetStandardViewRotation(Dgn::StandardView::Top); // Default to a top view
+        view.LookAtVolume(db.GeoLocation().GetProjectExtents()); // A good default for a new view is to "fit" it to the contents of the bim.
+
+                                                                 // Write the ViewDefinition to the bim
+        if (!view.Insert().IsValid())
+            return BentleyStatus::ERROR;
+
+        viewId = view.GetViewId();
+        }
+
+    if (!viewId.IsValid())
+        return BentleyStatus::ERROR;
+
+    DgnViewId defaultViewId;
+    if (db.QueryProperty(&defaultViewId, sizeof(defaultViewId), DgnViewProperty::DefaultView()) != BeSQLite::DbResult::BE_SQLITE_ROW)
+        db.SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus RoadRailAlignmentTestsFixture::Create2dView(DefinitionModelR model, Utf8CP viewName, 
+    CategorySelectorR categorySelector, DgnModelId modelToDisplay, DisplayStyle2dR displayStyle)
+    {
+    DgnDbR db = model.GetDgnDb();
+
+    // CategorySelector and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
+    // That is why they are inputs to this function. 
+    DrawingViewDefinition view(model, viewName, modelToDisplay, categorySelector, displayStyle);
+
+    DgnViewId viewId;
+    DgnViewId existingViewId = ViewDefinition::QueryViewId(db, view.GetCode());
+    if (existingViewId.IsValid())
+        viewId = existingViewId;
+    else
+        {
+        // Define the view direction and volume.
+        view.SetStandardViewRotation(Dgn::StandardView::Top); // Default to a top view
+        view.LookAtVolume(db.GeoLocation().GetProjectExtents()); // A good default for a new view is to "fit" it to the contents of the bim.
+
+                                                                 // Write the ViewDefinition to the bim
+        if (!view.Insert().IsValid())
+            return BentleyStatus::ERROR;
+
+        viewId = view.GetViewId();
+        }
+
+    if (!viewId.IsValid())
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
