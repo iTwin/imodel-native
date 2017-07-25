@@ -159,7 +159,7 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
 
             smToDestTrans = Transform::FromProduct(uorTransfo, smToDestTrans);            
             Transform destToSmTrans; 
-            bool resultInv = destToSmTrans.inverseOf(&smToDestTrans);
+            bool resultInv = destToSmTrans.InverseOf(smToDestTrans);
             assert(resultInv);                                                
 
             queryClip = ClipVector::CreateCopy(*clip);
