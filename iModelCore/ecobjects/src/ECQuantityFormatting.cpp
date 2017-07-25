@@ -82,17 +82,23 @@ BEU::Quantity ECQuantityFormatting::CreateQuantity(Utf8CP input, size_t start, d
     Formatting::FormatUnitSetCR persistFUS = koq->GetPersistenceUnit();
     BEU::UnitCP persUnit = persistFUS.GetUnit();
     Formatting::FormatUnitSetCP fusP = (nullptr == koq) ? nullptr : koq->GetPresentationFUS(indx);
-    BEU::UnitCP unit = (nullptr == fusP)? persUnit : fusP->GetUnit();
+    BEU::UnitCP unit = (nullptr == fusP) ? persUnit : fusP->GetUnit();
     Formatting::FormatParsingSet fps = Formatting::FormatParsingSet(input, start, unit);
     Formatting::FormatProblemCode locCode;
     if (nullptr == probCode) probCode = &locCode;
     *probCode = Formatting::FormatProblemCode::NoProblems;
     BEU::Quantity qty = fps.GetQuantity(probCode);
-    if (nullptr != persist)
+    if (*probCode == Formatting::FormatProblemCode::NoProblems)
         {
-        BEU::Quantity persQty = qty.ConvertTo(persUnit);
-        *persist = persQty.GetMagnitude();
+        if (nullptr != persist)
+            {
+            BEU::Quantity persQty = qty.ConvertTo(persUnit);
+            *persist = persQty.GetMagnitude();
+            }
         }
+    else if (nullptr != persist)
+        *persist = 0.0;
+
     return qty;
     }
 
