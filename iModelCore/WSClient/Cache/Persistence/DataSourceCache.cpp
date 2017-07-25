@@ -46,7 +46,9 @@ std::shared_ptr<ECDbDebugInfoHolder> CreateLoggerHolder(DataSourceCacheOpenState
     }
 
 // Add this macro to start of a method to print out cache state before and after method is done
-#define LogCacheDataForMethod() auto _ecdb_debug_info_holder_ = CreateLoggerHolder (*m_state, __FUNCTION__)
+//#define LogCacheDataForMethod() auto _ecdb_debug_info_holder_ = CreateLoggerHolder (*m_state, __FUNCTION__)
+// DEPRECATED: not very useful, disable for now
+#define LogCacheDataForMethod()
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    01/2013
