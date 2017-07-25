@@ -24,7 +24,7 @@
     @b %ECDb is the API to access %EC data in an @ref ECDbFile "ECDb file".
 
     @section ECDbECIntro EC - Bentley's Information Modeling System
-    %EC is Bentley's information modeling system. It is the self-describing business data as it can be found in i-models, DgnDb or
+    %EC is Bentley's information modeling system. It is the self-describing business data as it can be found in iModels or
     @ref ECDbFile "ECDb files" (though it is not limited to those).
     It provides standard metadata that allows <em>%EC aware</em> apps (like Navigator Mobile) to understand the business data,
     including appropriate display labels, engineering units, UI hints, etc.

@@ -522,49 +522,86 @@ TEST_F(SchemaRulesTestFixture, KindOfQuantities)
 TEST_F(SchemaRulesTestFixture, PropertyOfSameTypeAsClass)
     {
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
-                                                           "  <ECStructClass typeName=\"TestClass\" >"
-                                                           "    <ECStructProperty propertyName=\"Prop1\" typeName=\"TestClass\" />"
-                                                           "  </ECStructClass>"
-                                                           "</ECSchema>"))) << "Property is of same type as class.";
+                                                            "  <ECStructClass typeName=\"TestClass\" >"
+                                                            "    <ECStructProperty propertyName=\"Prop1\" typeName=\"TestClass\" />"
+                                                            "  </ECStructClass>"
+                                                            "</ECSchema>"))) << "Property is of same type as class.";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
-                                                          "  <ECStructClass typeName=\"Base\" >"
-                                                          "    <ECStructProperty propertyName=\"Prop1\" typeName=\"Sub\" />"
-                                                          "  </ECStructClass>"
-                                                          "  <ECStructClass typeName=\"Sub\" >"
-                                                          "     <BaseClass>Base</BaseClass>"
-                                                          "    <ECProperty propertyName=\"Prop2\" typeName=\"string\" />"
-                                                          "  </ECStructClass>"
-                                                          "</ECSchema>"))) << "Property is of subtype of class.";
+                                                            "  <ECStructClass typeName=\"Base\" >"
+                                                            "    <ECStructProperty propertyName=\"Prop1\" typeName=\"Sub\" />"
+                                                            "  </ECStructClass>"
+                                                            "  <ECStructClass typeName=\"Sub\" >"
+                                                            "     <BaseClass>Base</BaseClass>"
+                                                            "    <ECProperty propertyName=\"Prop2\" typeName=\"string\" />"
+                                                            "  </ECStructClass>"
+                                                            "</ECSchema>"))) << "Property is of subtype of class.";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
-                                                          "  <ECStructClass typeName=\"TestClass\" >"
-                                                          "    <ECStructArrayProperty propertyName=\"Prop1\" typeName=\"TestClass\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
-                                                          "  </ECStructClass>"
-                                                          "</ECSchema>"))) << "Property is array of class.";
+                                                            "  <ECStructClass typeName=\"TestClass\" >"
+                                                            "    <ECStructArrayProperty propertyName=\"Prop1\" typeName=\"TestClass\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
+                                                            "  </ECStructClass>"
+                                                            "</ECSchema>"))) << "Property is array of class.";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
-                                                          "  <ECStructClass typeName=\"Base\" >"
-                                                          "    <ECStructArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
-                                                          "  </ECStructClass>"
-                                                          "  <ECStructClass typeName=\"Sub\" >"
-                                                          "     <BaseClass>Base</BaseClass>"
-                                                          "    <ECProperty propertyName=\"Prop2\" typeName=\"string\" />"
-                                                          "  </ECStructClass>"
-                                                          "</ECSchema>"))) << "Property is of array of subclass of class.";
+                                                            "  <ECStructClass typeName=\"Base\" >"
+                                                            "    <ECStructArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
+                                                            "  </ECStructClass>"
+                                                            "  <ECStructClass typeName=\"Sub\" >"
+                                                            "     <BaseClass>Base</BaseClass>"
+                                                            "    <ECProperty propertyName=\"Prop2\" typeName=\"string\" />"
+                                                            "  </ECStructClass>"
+                                                            "</ECSchema>"))) << "Property is of array of subclass of class.";
 
-    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem("<ECSchema schemaName=\"InvalidSchema\" alias=\"is\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.3.1\">"
-                                                          "  <ECStructClass typeName=\"Base\" >"
-                                                          "    <ECArrayProperty propertyName=\"Prop1\" typeName=\"Sub\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>"
-                                                          "  </ECStructClass>"
-                                                          "  <ECStructClass typeName=\"Sub\" >"
-                                                          "     <BaseClass>Base</BaseClass>"
-                                                          "    <ECProperty propertyName=\"PROP1\" typeName=\"string\" />"
-                                                          "  </ECStructClass>"
-                                                          "  <ECEntityClass typeName=\"SUB\" >"
-                                                          "    <ECProperty propertyName=\"PROP1\" typeName=\"string\" />"
-                                                          "  </ECEntityClass>"
-                                                          "</ECSchema>"))) << "Case-sensitive class and prop names and property is of array of subclass of class.";
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="InvalidSchema" alias="is" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                                                            <ECStructClass typeName="Base" >
+                                                              <ECStructArrayProperty propertyName="Prop1" typeName="Sub" minOccurs="0" maxOccurs="unbounded"/>
+                                                            </ECStructClass>
+                                                            <ECStructClass typeName="Sub" >
+                                                               <BaseClass>Base</BaseClass>
+                                                              <ECProperty propertyName="PROP1" typeName="string" />
+                                                            </ECStructClass>
+                                                            <ECEntityClass typeName="SUB" >
+                                                              <ECProperty propertyName="PROP1" typeName="string" />
+                                                            </ECEntityClass>
+                                                          </ECSchema>)xml"))) << "Case-sensitive class and prop names and property is of array of subclass of class.";
+
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                  07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaRulesTestFixture, CircularStructReferences)
+    {
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECStructClass typeName="StructA" >
+                       <ECStructProperty propertyName="B" typeName="StructB" />
+                     </ECStructClass>
+                    <ECStructClass typeName="StructB" >
+                       <ECStructProperty propertyName="A" typeName="StructA" />
+                     </ECStructClass>
+                    <ECEntityClass typeName="Foo" >
+                       <ECStructProperty propertyName="A" typeName="StructA" />
+                       <ECStructProperty propertyName="B" typeName="StructB" />
+                     </ECEntityClass>
+                    </ECSchema>)xml"))) << "Circular references of two structs.";
+
+    EXPECT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECStructClass typeName="StructA" >
+                       <ECStructProperty propertyName="B" typeName="StructB" />
+                     </ECStructClass>
+                    <ECStructClass typeName="StructB" >
+                       <ECProperty propertyName="Name" typeName="string" />
+                   </ECStructClass>
+                    <ECStructClass typeName="SubStructB" >
+                        <BaseClass>StructB</BaseClass>
+                       <ECStructProperty propertyName="A" typeName="StructA" />
+                   </ECStructClass>
+                    <ECEntityClass typeName="Foo" >
+                       <ECStructProperty propertyName="A" typeName="StructA" />
+                       <ECStructProperty propertyName="B" typeName="SubStructB" />
+                     </ECEntityClass>
+                    </ECSchema>)xml"))) << "Circular references of two structs (via class hierarchy).";
     }
 
 
