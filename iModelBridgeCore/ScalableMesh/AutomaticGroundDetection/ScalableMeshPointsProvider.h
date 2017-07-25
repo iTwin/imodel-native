@@ -8,7 +8,7 @@
 #pragma once
 
 #include <TerrainModel\AutomaticGroundDetection\IPointsProvider.h>
-#ifdef VANCOUVER
+#ifdef VANCOUVER_API
 #include <DgnGeoCoord\DgnGeoCoord.h>
 #else
 #include <DgnPlatform\DgnGeoCoord.h>
@@ -26,7 +26,7 @@ USING_NAMESPACE_GROUND_DETECTION
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 
-#ifndef VANCOUVER
+#ifndef VANCOUVER_API
 
 namespace BENTLEY_NAMESPACE_NAME
     {

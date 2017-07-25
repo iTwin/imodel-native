@@ -8,7 +8,7 @@
 #include <ScalableMeshPCH.h>
 #undef static_assert
 #include "ScalableMeshPointsProvider.h"
-#ifdef VANCOUVER
+#ifdef VANCOUVER_API
 #include <DgnGeoCoord\DgnGeoCoord.h>
 #else
 #include <DgnPlatform\DgnGeoCoord.h>
@@ -601,7 +601,7 @@ IPointsProviderPtr ScalableMeshPointsProviderCreator::_CreatePointProvider(DRang
     {
     IPointsProviderPtr pointProvider(ScalableMeshPointsProvider::CreateFrom(m_smesh, boundingBoxInUors));
 
-#ifdef VANCOUVER
+#ifdef VANCOUVER_API
     ((ScalableMeshPointsProvider*)pointProvider.get())->SetReprojectionInfo(m_geocoordInterpretation,
                                                                             m_sourceGcs,
                                                                             m_destinationGcs);
@@ -624,7 +624,7 @@ void ScalableMeshPointsProviderCreator::_GetAvailableRange(DRange3d& availableRa
         {
         DRange3d smRangeLocal;
         DTMStatusInt status = m_smesh->GetRange(smRangeLocal);
-#ifdef VANCOUVER
+#ifdef VANCOUVER_API
         ReprojectRange(smRange, smRangeLocal, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
 #endif
         assert(status == SUCCESS);
@@ -654,7 +654,7 @@ void ScalableMeshPointsProviderCreator::SetExtractionArea(const bvector<DPoint3d
     {    
     if (m_destinationGcs.IsValid())
         { 
-#ifdef VANCOUVER
+#ifdef VANCOUVER_API
         Reproject(m_extractionArea, area, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
 #endif 
         }

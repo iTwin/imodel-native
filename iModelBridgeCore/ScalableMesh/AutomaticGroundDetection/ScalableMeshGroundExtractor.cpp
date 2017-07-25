@@ -34,7 +34,7 @@
 #include <Bentley\BeDirectoryIterator.h>
 #include <Bentley\BeConsole.h>
 
-#ifdef VANCOUVER
+#ifdef VANCOUVER_API
 #include <DgnGeoCoord\DgnGeoCoord.h>
 #else
 #include <DgnPlatform\DgnGeoCoord.h>
