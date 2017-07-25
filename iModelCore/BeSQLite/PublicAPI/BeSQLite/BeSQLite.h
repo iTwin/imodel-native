@@ -2317,6 +2317,7 @@ private:
     DbResult ClearBriefcaseLocalValues();
     void SetupBlvSaveStmt(Statement& stmt, Utf8CP name);
     DbResult ExecBlvQueryStmt(Statement& stmt, Utf8CP name) const;
+    DbResult AssignBriefcaseId(BeBriefcaseId);
 
 public:
     BE_SQLITE_EXPORT Db();
@@ -2732,9 +2733,16 @@ public:
 
     BE_SQLITE_EXPORT void ChangeDbGuid(BeGuid);
 
-    //!< @private
-    //! Assign the BeBriefcaseId of this Db.
-    BE_SQLITE_EXPORT DbResult AssignBriefcaseId(BeBriefcaseId);
+    //! Sets up this Db as a new master copy
+    //! @param[in] guid The guid for the new database. The guid will be saved persistently in the new database.
+    //! If the guid is invalid (e.g. by passing "BeGuid()" for dbGuid), a new guid is created by this method.
+    //! @remarks Errors out if the Db is already a master copy. 
+    BE_SQLITE_EXPORT DbResult SetAsMaster(BeGuid guid = BeGuid());
+
+    // Sets up this Db as a briefcase with the supplied Id.
+    //! @param[in] briefcaseId Id of the briefcase
+    //! @remarks Errors out if the Db is already a briefcase. @see SetAsMaster()
+    BE_SQLITE_EXPORT DbResult SetAsBriefcase(BeBriefcaseId briefcaseId);
 
     //! Set or replace the ChangeTracker for this Db.
     //! @param[in] tracker The new ChangeTracker for this Db.
