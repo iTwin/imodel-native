@@ -11,11 +11,482 @@
 USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+//******************************************************************************************************
+// ForeignKeyPartitions::Partition
+//******************************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+void ForeignKeyPartitions::Partition::SetFromECClassIdColumn(DbColumn const* column)
+    {
+    SetColumn(m_fkInfo.GetPersistedEnd() == PersistedEnd::TargetTable ? ColumnId::SourceECClassId : ColumnId::TargetECClassId, column);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+bool ForeignKeyPartitions::Partition::IsConcrete() const
+    {
+    for (DbColumn const* col : m_cols)
+        if (!col)
+            return false;
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+bool ForeignKeyPartitions::Partition::IsPhysical() const
+    {
+    for (DbColumn const* col : m_cols)
+        if (col && col->GetTable().GetType() == DbTable::Type::Virtual)
+            return false;
+
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+uint64_t ForeignKeyPartitions::Partition::QuickHash64(Utf8CP str, uint64_t mix)
+    {
+    const uint64_t mulp = 2654435789;
+    mix ^= 104395301;
+    while (*str)
+        mix += (*str++ * mulp) ^ (mix >> 23);
+
+    return mix ^ (mix << 37);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+DbColumn const* ForeignKeyPartitions::Partition::GetColumn(ColumnId columnId) const
+    {
+    return m_cols[(int) columnId];
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+BentleyStatus ForeignKeyPartitions::Partition::SetColumn(ColumnId columnId, DbColumn const* column)
+    {
+    m_cols[(int) columnId] = column;
+    UpdateHash();
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+void ForeignKeyPartitions::Partition::UpdateHash()
+    {
+    m_hashCode = 0;
+    for (DbColumn const* col : m_cols)
+        if (col)
+            m_hashCode = QuickHash64(col->GetName().c_str(), m_hashCode);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+ForeignKeyPartitions::Partition::Partition(ForeignKeyPartitions const& fkInfo)
+    :m_fkInfo(fkInfo), m_hashCode(0), m_cols(), m_persisted(false)
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ForeignKeyPartitions::Partition> ForeignKeyPartitions::Partition::Create(ForeignKeyPartitions const& info, DbColumn const& navId, DbColumn const& navRelECClassId)
+    {
+    DbTable const& table = navId.GetTable();
+    if (table.GetId() != navRelECClassId.GetId())
+        return nullptr;
+
+    std::unique_ptr<Partition> partition = std::unique_ptr<Partition>(new Partition(info));
+    DbColumn const* instanceId = table.FindFirst(DbColumn::Kind::ECInstanceId);
+    DbColumn const* classId = table.FindFirst(DbColumn::Kind::ECClassId);
+    if (instanceId == nullptr || classId == nullptr)
+        return nullptr;
+
+    if (partition->SetColumn(ColumnId::ECInstanceId, instanceId) == ERROR)
+        return nullptr;
+
+    const bool persistedInSource = info.GetPersistedEnd() == PersistedEnd::SourceTable;
+    //ToECInstanceId
+    if (partition->SetColumn((persistedInSource ? ColumnId::SourceECInstanceId : ColumnId::TargetECInstanceId), instanceId) == ERROR)
+        return nullptr;
+
+    //ToECClassId
+    if (partition->SetColumn(persistedInSource ? ColumnId::SourceECClassId : ColumnId::TargetECClassId, classId) == ERROR)
+        return nullptr;
+
+    if (partition->SetColumn(ColumnId::ECClassId, &navRelECClassId) == ERROR)
+        return nullptr;
+
+    //FromECInstanceId
+    if (partition->SetColumn(persistedInSource ? ColumnId::TargetECInstanceId : ColumnId::SourceECInstanceId, &navId) == ERROR)
+        return nullptr;
+
+    return partition;
+    }
+
+
+//******************************************************************************************************
+// ForeignKeyPartitions
+//******************************************************************************************************
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+ForeignKeyPartitions::PersistedEnd ForeignKeyPartitions::GetPersistedEnd() const
+    {
+    return m_mapStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable ? PersistedEnd::SourceTable : PersistedEnd::TargetTable;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+const std::vector<ForeignKeyPartitions::Partition const*> ForeignKeyPartitions::GetPartitions(bool onlyPhysical, bool onlyConcrete) const
+    {
+    std::vector<Partition const*> result;
+    for (std::unique_ptr<Partition> const& partition : m_partitions)
+        {
+        if (onlyPhysical && !partition->IsPhysical())
+            continue;
+
+        if (onlyConcrete && !partition->IsConcrete())
+            continue;
+
+        result.push_back(partition.get());
+        }
+
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+const std::vector<ForeignKeyPartitions::Partition const*> ForeignKeyPartitions::GetPartitions(DbTable const& table, bool onlyPhysical, bool onlyConcrete) const
+    {
+    std::vector<Partition const*> result;
+    for (Partition const* partition : GetPartitions(onlyPhysical, onlyConcrete))
+        {
+        if (partition->GetECInstanceIdColumn().GetTable().GetId() == table.GetId())
+            result.push_back(partition);
+        }
+
+    return result;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+BentleyStatus ForeignKeyPartitions::UpdateFromECClassIdColumn()
+    {
+    BeAssert(Readonly() == false);
+    if (Readonly())
+        return ERROR;
+
+    DbColumn const* fromECClassIdColumn;
+    if (TryGetFromECClassIdColumn(fromECClassIdColumn) != SUCCESS)
+        return ERROR;
+
+    for (std::unique_ptr<Partition> const& partition : m_partitions)
+        partition->SetFromECClassIdColumn(fromECClassIdColumn);
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+bool ForeignKeyPartitions::Contains(ForeignKeyPartitions::Partition const& partition) const
+    {
+    for (std::unique_ptr<Partition> const& existingPartition : m_partitions)
+        if (partition.GetHashCode() == existingPartition->GetHashCode())
+            return true;
+
+    return false;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+ForeignKeyPartitions::Partition const* ForeignKeyPartitions::FindCompatiblePartiton(NavigationPropertyMap const& navigationPropertyMap) const
+    {
+    for (std::unique_ptr<Partition> const& partition : m_partitions)
+        {
+        if (!navigationPropertyMap.GetClassMap().IsMappedTo(partition->GetECInstanceIdColumn().GetTable()))
+            continue;
+
+        NavigationInfo navColumns = partition->GetNavigationColumns();
+        if (navigationPropertyMap.GetClassMap().GetColumnFactory().IsColumnInUse(navColumns.GetIdColumn()))
+            continue;
+
+        if (navigationPropertyMap.GetClassMap().GetColumnFactory().IsColumnInUse(navColumns.GetRelECClassIdColumn()))
+            continue;
+
+        return partition.get();
+        }
+
+    return nullptr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+BentleyStatus ForeignKeyPartitions::Insert(std::unique_ptr<Partition> partition)
+    {
+    BeAssert(Readonly() == false);
+    if (Readonly())
+        return ERROR;
+
+    BeAssert(partition != nullptr);
+    if (partition == nullptr)
+        return ERROR;
+
+    const bool contains = Contains(*partition);
+    BeAssert(contains == false);
+    if (contains)
+        return ERROR;
+
+    m_partitions.push_back(std::move(partition));
+    if(m_updateFromECClassIdColumnOnInsert)
+        return UpdateFromECClassIdColumn();
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+ForeignKeyPartitions::ForeignKeyPartitions(ECDbCR ecdb, ECN::ECRelationshipClassCR relationship, MapStrategy mapStrategy)
+    :m_ecdb(ecdb), m_relationshipClass(relationship), m_mapStrategy(mapStrategy), m_readonly(false), m_updateFromECClassIdColumnOnInsert(true)
+    {
+    BeAssert(m_mapStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable ||
+             m_mapStrategy == MapStrategy::ForeignKeyRelationshipInTargetTable);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+BentleyStatus ForeignKeyPartitions::GetMapStrategy(MapStrategy &mapStrategy, ECDbCR ecdb, ECN::ECRelationshipClassCR rel)
+    {
+    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT [MapStrategy] FROM [ec_ClassMap] WHERE [ClassId]=?");
+    stmt->BindId(1, rel.GetId());
+    if (stmt->Step() == BE_SQLITE_DONE)
+        return ERROR;
+
+    mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ForeignKeyPartitions> ForeignKeyPartitions::CreateReadonly(ECDbCR ecdb, ECN::ECRelationshipClassCR relationship)
+    {
+    MapStrategy mapStrategy;
+    if (GetMapStrategy(mapStrategy, ecdb, relationship) != SUCCESS)
+        return nullptr;
+
+    BeAssert(mapStrategy == MapStrategy::ForeignKeyRelationshipInSourceTable ||
+             mapStrategy == MapStrategy::ForeignKeyRelationshipInTargetTable);
+
+    return Create(ecdb, relationship, mapStrategy);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ForeignKeyPartitions> ForeignKeyPartitions::Create(ECDbCR ecdb, ECN::ECRelationshipClassCR relationship, MapStrategy mapStrategy)
+    {
+    MapStrategy persistedMapStrategy;
+    if (GetMapStrategy(persistedMapStrategy, ecdb, relationship) == SUCCESS)
+        {
+        BeAssert(mapStrategy == persistedMapStrategy);
+        if (mapStrategy != persistedMapStrategy)
+            return nullptr;
+        }
+
+    return Create(ecdb, relationship, mapStrategy);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+std::unique_ptr<ForeignKeyPartitions> ForeignKeyPartitions::Create(ECDbCR ecdb, ECN::ECRelationshipClassCR relationship, MapStrategy mapStrategy, bool readonly)
+    {
+    std::unique_ptr<ForeignKeyPartitions> info = std::unique_ptr<ForeignKeyPartitions>(
+        new ForeignKeyPartitions(ecdb, relationship, mapStrategy));
+
+    enum class PropertyMapKind
+        {
+        Id = 1,
+        RelEClassId = 2,
+        Unknown = 3,
+        };
+
+    Utf8CP sql =
+        "SELECT DISTINCT "
+        "       CASE (SUBSTR ([PP].[AccessString], INSTR([PP].[AccessString], '.') + 1)) WHEN 'Id'  THEN 1 WHEN 'RelECClassId'THEN 2 ELSE 3 END PropertyMapKind, "
+        "       [T].[Id] [TableId], "
+        "       [C].[Name] [Column] "
+        "FROM   [ec_Property] [P] "
+        "       INNER JOIN [ec_PropertyPath] [PP] ON [PP].[RootPropertyId] = [P].[Id] "
+        "       INNER JOIN [ec_PropertyMap] [PM] ON [PM].[PropertyPathId] = [PP].[Id] "
+        "       INNER JOIN [ec_Column] [C] ON [C].[Id] = [PM].[ColumnId] "
+        "       INNER JOIN [ec_Table] [T] ON [T].[Id] = [C].[TableId] "
+        "WHERE  [P].[NavigationRelationshipClassId] = ? ORDER BY [T].[Id], [PM].[ClassId], [PropertyMapKind]; ";
+
+    DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
+    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
+    PRECONDITION(stmt != nullptr, nullptr);
+
+    stmt->BindId(1, relationship.GetId());
+    while (stmt->Step() == BE_SQLITE_ROW)
+        {
+        PropertyMapKind idPropertyMapKind = Enum::FromInt<PropertyMapKind>(stmt->GetValueInt(0));
+        DbTableId idTableId = stmt->GetValueId<DbTableId>(1);
+        if (idPropertyMapKind != PropertyMapKind::Id)
+            return nullptr;
+
+        DbTable const* table = dbSchema.FindTable(idTableId);
+        if (table == nullptr)
+            return nullptr;
+
+        DbColumn const* refId = table->FindColumn(stmt->GetValueText(2));
+        if (refId == nullptr)
+            return nullptr;
+
+        if (stmt->Step() != BE_SQLITE_ROW)
+            return nullptr;
+
+        PropertyMapKind relECClassIdPropertyMapKind = Enum::FromInt<PropertyMapKind>(stmt->GetValueInt(0));
+        DbTableId relECClassIdTableId = stmt->GetValueId<DbTableId>(1);
+        if (relECClassIdPropertyMapKind != PropertyMapKind::RelEClassId)
+            return nullptr;
+
+        if (idTableId != relECClassIdTableId)
+            return nullptr;
+
+        DbColumn const* refRelECClassId = table->FindColumn(stmt->GetValueText(2));
+        if (refRelECClassId == nullptr)
+            return nullptr;
+
+        std::unique_ptr<Partition> partition = Partition::Create(*info, *refId, *refRelECClassId);
+        if (partition == nullptr)
+            return nullptr;
+
+        partition->MarkPersisted();
+        if (info->Insert(std::move(partition)) != SUCCESS)
+            return nullptr;
+        }
+
+    if (info->UpdateFromECClassIdColumn() != SUCCESS)
+        return nullptr;
+
+    info->m_readonly = readonly;
+    return info;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+BentleyStatus ForeignKeyPartitions::TryGetFromECClassIdColumn(DbColumn const*& column) const
+    {
+    const std::vector<DbTable const*> tables = GetOtherEndTables(m_ecdb, m_relationshipClass, m_mapStrategy);
+    if (tables.size() >1)
+        return ERROR;
+
+    column = tables.size() == 1 ? tables.front()->FindFirst(DbColumn::Kind::ECClassId) : nullptr;
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+std::vector<DbTable const*> ForeignKeyPartitions::GetOtherEndTables(ECDbCR ecdb,  ECRelationshipClassCR relationshipClass, MapStrategy strategy)
+    {
+    BeAssert(strategy == MapStrategy::ForeignKeyRelationshipInSourceTable ||
+             strategy == MapStrategy::ForeignKeyRelationshipInTargetTable);
+
+    ECRelationshipEnd otherEnd = strategy == MapStrategy::ForeignKeyRelationshipInSourceTable ? ECRelationshipEnd::ECRelationshipEnd_Target : ECRelationshipEnd::ECRelationshipEnd_Source;
+    ECRelationshipConstraintCR otherEndConstraint = ECRelationshipEnd::ECRelationshipEnd_Source ? relationshipClass.GetSource() : relationshipClass.GetTarget();
+    DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
+    std::vector<DbTable const*> list;
+    std::vector<DbTable const*> nvlist;
+    if (otherEndConstraint.GetIsPolymorphic())
+        {
+        CachedStatementPtr stmt = ecdb.GetCachedStatement(
+            "SELECT DISTINCT [CHT].[TableId] "
+            "FROM   [ec_RelationshipConstraintClass] [RCC] "
+            "       INNER JOIN [ec_RelationshipConstraint] [RC] ON [RC].[Id] = [RCC].[ConstraintId] "
+            "       INNER JOIN [ec_Table] [T] ON [T].[Id] = [CHT].[TableId] "
+            "       INNER JOIN [ec_cache_ClassHierarchy] [CH] ON [CH].[BaseClassId] = [RCC].[ClassId] "
+            "       INNER JOIN [ec_cache_ClassHasTables] [CHT] ON [CHT].[ClassId] = [CH].[ClassId] "
+            "WHERE  [RC].[RelationshipClassId] = ? "
+            "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined " AND [T].[Type] != " SQLVAL_DbTable_Type_Overflow);
+
+        PRECONDITION(stmt != nullptr, list);
+        stmt->BindId(1, relationshipClass.GetId());
+        stmt->BindInt(2, Enum::ToInt(otherEnd));
+        while (stmt->Step() == BE_SQLITE_ROW)
+            {
+            if (DbTable const* table = dbSchema.FindTable(stmt->GetValueId<DbTableId>(0)))
+                {
+                list.push_back(table);
+                if (table->GetType() != DbTable::Type::Virtual)
+                    nvlist.push_back(table);
+                }
+            else
+                {
+                list.clear();
+                PRECONDITION(false, list);
+                }
+            }
+        }
+    else
+        {
+        CachedStatementPtr stmt = ecdb.GetCachedStatement(
+            "SELECT DISTINCT [CHT].[TableId] "
+            "FROM   [ec_RelationshipConstraintClass] [RCC] "
+            "       INNER JOIN [ec_RelationshipConstraint] [RC] ON [RC].[Id] = [RCC].[ConstraintId] "
+            "       INNER JOIN [ec_Table] [T] ON [T].[Id] = [CHT].[TableId] "
+            "       INNER JOIN [ec_cache_ClassHasTables] [CHT] ON [CHT].[ClassId] = [RCC].[ClassId] "
+            "WHERE  [RC].[RelationshipClassId] = ? "
+            "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined " AND [T].[Type] != " SQLVAL_DbTable_Type_Overflow);
+
+        PRECONDITION(stmt != nullptr, list);
+        stmt->BindId(1, relationshipClass.GetId());
+        stmt->BindInt(2, Enum::ToInt(otherEnd));
+        while (stmt->Step() == BE_SQLITE_ROW)
+            {
+            if (DbTable const* table = dbSchema.FindTable(stmt->GetValueId<DbTableId>(0)))
+                {
+                list.push_back(table);
+                if (table->GetType() != DbTable::Type::Virtual)
+                    nvlist.push_back(table);
+                }
+            else
+                {
+                list.clear();
+                PRECONDITION(false, list);
+                }
+            }
+        }
+
+    if (!nvlist.empty())
+        return nvlist;
+
+    return list;
+    }
+
 
 //******************************************************************************************************
 // DbMappingManager::Classes
 //******************************************************************************************************
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
