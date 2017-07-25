@@ -14,15 +14,7 @@
 
 
     <ECRelationshipClass typeName="GridPortionIntersectsGridSurface" strength="referencing">
-      <ECCustomAttributes>
-        <ClassMap xmlns="ECDbMap.02.00">
-          <ECInstanceIdColumn>Id</ECInstanceIdColumn>
-        </ClassMap>
-        <LinkTableRelationshipMap xmlns="ECDbMap.02.00">
-          <SourceECInstanceIdColumn>GridPortion</SourceECInstanceIdColumn>
-          <TargetECInstanceIdColumn>GridSurface</TargetECInstanceIdColumn>
-        </LinkTableRelationshipMap>
-      </ECCustomAttributes>
+      <BaseClass>bis:ElementRefersToElements</BaseClass>
       <Source cardinality="(1,1)" polymorphic="true">
         <Class class="GridPortion"/>
       </Source>
