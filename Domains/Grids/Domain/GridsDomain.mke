@@ -7,7 +7,7 @@
 #----------------------------------------------------------------------
 
 %include mdl.mki
-%include $(SrcRoot)Building/ConceptBuilding/privmki/ConceptBuilding.mki
+%include $(SrcRoot)DgnDomains/Grids/publicmki/Grids.mki
 
 # The same value must be used across several variables; set AppName and reference it.
 AppName = GridsDomain
@@ -22,9 +22,6 @@ dirToSearch = $(GridElementsPublicApi)
 %include cincapnd.mki
 
 dirToSearch = $(GridHandlersPublicApi)
-%include cincapnd.mki
-
-dirToSearch = $(BuildingSpacePlanningPublicApi)
 %include cincapnd.mki
 
 dirToSearch = $(ConstraintModelPublicApi)
