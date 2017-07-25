@@ -189,7 +189,7 @@ struct FormatParsingSet
         void AddSegment(FormatParsingSegmentCR seg) { m_segs.push_back(seg); }
         bvector<FormatParsingSegment> GetSegments() { return m_segs; }
         UNITS_EXPORT Utf8String GetSignature(bool distinct = true);
-        UNITS_EXPORT BEU::Quantity GetQuantity();
+        UNITS_EXPORT BEU::Quantity GetQuantity(FormatProblemCode* probCode = nullptr);
     };
 
 struct NumericAccumulator

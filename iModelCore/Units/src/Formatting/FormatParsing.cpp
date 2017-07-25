@@ -2011,7 +2011,7 @@ Utf8String FormatParsingSet::GetSignature(bool distinct)
     return Utf8String(buf);
     }
 
-BEU::Quantity  FormatParsingSet::GetQuantity()
+BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode)
     {
     BEU::Quantity qty = BEU::Quantity();
     BEU::Quantity tmp = BEU::Quantity();
@@ -2021,6 +2021,7 @@ BEU::Quantity  FormatParsingSet::GetQuantity()
     //   3 FT - NU
     //  1/3 FT  FU
     BEU::UnitCP majP, midP;
+    if (nullptr != probCode) *probCode = FormatProblemCode::NoProblems;
     //double mu, su;
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
     switch (cod)
@@ -2076,6 +2077,7 @@ BEU::Quantity  FormatParsingSet::GetQuantity()
             break;
 
         default:
+            if (nullptr != probCode) *probCode = FormatProblemCode::QT_InvalidSyntax;
             break;
         }
 
