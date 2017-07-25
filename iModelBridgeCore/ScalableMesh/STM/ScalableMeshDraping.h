@@ -111,7 +111,8 @@ struct MeshTraversalQueue
         // 0 = right, 1 = left, 2 = bottom, 3 = top 
         unsigned char m_intersectionWithNextNode = 255;
         DPoint3d    m_endOfLineInNode; //intersection between polyline and the first of the node's boundaries it hits
-
+		Transform m_reproTransform;
+		bool m_isReprojected;
 
 
         void ComputeDirectionOfNextNode(MeshTraversalStep& start);
@@ -120,8 +121,12 @@ struct MeshTraversalQueue
 
         std::map<int64_t, std::future<DTMStatusInt>> m_nodesToLoad;
 
-        MeshTraversalQueue(const DPoint3d* line, int nPts, size_t levelForDrapeLinear) :m_polylineToDrape(line), m_numPointsOnPolyline((size_t)nPts), m_levelForDrapeLinear(levelForDrapeLinear)
-            {};
+        MeshTraversalQueue(const DPoint3d* line, int nPts, size_t levelForDrapeLinear, Transform reprojectionTransform=Transform::FromIdentity()) :m_polylineToDrape(line), m_numPointsOnPolyline((size_t)nPts), m_levelForDrapeLinear(levelForDrapeLinear)
+            {
+			m_isReprojected = reprojectionTransform.IsIdentity();
+			if (m_isReprojected)
+				m_reproTransform = reprojectionTransform;
+		};
         void UseScalableMesh(IScalableMesh* ptr)
             {
             m_scm = ptr;

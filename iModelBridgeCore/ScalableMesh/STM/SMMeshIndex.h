@@ -321,7 +321,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void                RefreshMergedClipsRecursive();
 
     //Checks whether clip should apply to node and update lists accordingly
-    void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent, bool setToggledWhenIdIsOn = true);
+    void                ClipActionRecursive(ClipAction action,uint64_t clipId, DRange3d& extent, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
 
     ClipRegistry* GetClipRegistry() const
         {
@@ -343,17 +343,17 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     bool IsClippingUpToDate();
 
     //If necessary, update clips so as to merge them with other clips on the node.
-    void  ComputeMergedClips();
+    void  ComputeMergedClips(Transform tr = Transform::FromIdentity());
     //Adds a new set of differences matching the desired clip (synchronously).
     //The base mesh is retained and the clip is a non-destructive modification.
     //Caller provides desired ID for the new clip. Returns true if clip was added, false if clip is out of bounds.
-    bool  AddClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn = true);
+    bool  AddClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
 
     //Deletes an existing clip or returns false if there is no clip with this ID.
     bool  DeleteClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn=true);
 
     //Modifies an existing clip or returns false if there is no clip with this ID.
-    bool ModifyClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn = true);
+    bool ModifyClip(uint64_t clipId, bool isVisible, bool setToggledWhenIdIsOn = true, Transform tr = Transform::FromIdentity());
 
     //Requests adding a clip asynchronously. ID is set but diffset is filled later.
     bool  AddClipAsync(uint64_t clipId, bool isVisible);
@@ -881,7 +881,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     mutable SMMemoryPoolItemId m_smMeshPoolItemId;
     private:
 
-        bool ClipIntersectsBox(uint64_t clipId, EXTENT ext);
+		bool ClipIntersectsBox(uint64_t clipId, EXTENT ext, Transform tr = Transform::FromIdentity());
 
         mutable std::mutex m_graphInflateMutex;
         mutable std::mutex m_graphMutex;
@@ -978,7 +978,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
 
         void                AddClipDefinition(bvector<DPoint3d>& points, DRange3d& extent);
-        void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true);
+        void                PerformClipAction(ClipAction action, uint64_t clipId, DRange3d& extent, bool setToggledWhenIDIsOn=true, Transform tr = Transform::FromIdentity());
         void                RefreshMergedClips();
 
         size_t GetNextTextureId();

@@ -143,8 +143,8 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
 
         if (m_smesh->IsCesium3DTiles())
             {
-			assert(!"Deactivated for now. Need ECEF clipping capability and correct UORs to meters transfo");
-#if 0 			
+			//assert(!"Deactivated for now. Need ECEF clipping capability and correct UORs to meters transfo");
+//#if 0 			
             Transform uorTransfo(Transform::FromRowValues(1 / 10000.0, 0, 0, 0,
                                                             0, 1 / 10000.0, 0, 0,
                                                             0, 0, 1 / 10000.0, 0));
@@ -158,7 +158,7 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
 
             queryClip = ClipVector::CreateCopy(*clip);
             queryClip->TransformInPlace(destToSmTrans);            
-#endif			
+//#endif			
             }
         else
             {    
