@@ -4307,7 +4307,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_NonFileInstance_SuccessAndEmptyV
     EXPECT_EQ(0, fileSize);
     }
 
-TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturnsLabel)
+TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturnsEmptyNameAsLabelMightBeNotSuitable)
     {
     auto cache = GetTestCache();
 
@@ -4318,7 +4318,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_LabeledInstance_SuccessAndReturn
 
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
-    EXPECT_EQ("TestName", fileName);
+    EXPECT_EQ("", fileName);
     EXPECT_EQ(0, fileSize);
     }
 
@@ -4367,7 +4367,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithOnlyFile
     EXPECT_EQ(42, fileSize);
     }
 
-TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentPropertiesButNoNameOrSize_SuccessAndReturnsLabel)
+TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDependentPropertiesButNoNameOrSize_SuccessAndReturnsEmptyNameAsLabelMightBeNotSuitable)
     {
     auto cache = GetTestCache();
 
@@ -4378,7 +4378,7 @@ TEST_F(DataSourceCacheTests, ReadFileProperties_InstanceOfClassClassWithFileDepe
 
     ASSERT_EQ(SUCCESS, cache->ReadFileProperties(instanceKey, &fileName, &fileSize));
 
-    EXPECT_EQ("TestName", fileName);
+    EXPECT_EQ("", fileName);
     EXPECT_EQ(0, fileSize);
     }
 

@@ -1784,15 +1784,6 @@ BentleyStatus DataSourceCache::ReadFileProperties(ECInstanceKeyCR instanceKey, U
         if (nullptr != fileSizeP)
             fileSizePropertyName = ECCustomAttributeHelper::GetPropertyName(ecClass, L"FileDependentProperties", L"FileSize");
 
-        if (fileNamePropertyName.empty())
-            {
-            ECPropertyCP labelProperty = ecClass->GetInstanceLabelProperty();
-            if (nullptr != labelProperty)
-                {
-                fileNamePropertyName = Utf8String(labelProperty->GetName());
-                }
-            }
-
         Utf8PrintfString ecSql
             (
             "SELECT %s n, %s s FROM ONLY %s WHERE ECInstanceId = ? LIMIT 1",
