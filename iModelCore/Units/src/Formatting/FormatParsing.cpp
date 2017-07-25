@@ -2021,7 +2021,12 @@ BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode)
     //   3 FT - NU
     //  1/3 FT  FU
     BEU::UnitCP majP, midP;
-    if (nullptr != probCode) *probCode = FormatProblemCode::NoProblems;
+    FormatProblemCode locCode;
+
+    if (nullptr == probCode)
+        probCode = &locCode;
+
+    *probCode = FormatProblemCode::NoProblems;
     //double mu, su;
     Formatting::FormatSpecialCodes cod = Formatting::FormatConstant::ParsingPatternCode(sig.c_str());
     switch (cod)
@@ -2077,11 +2082,11 @@ BEU::Quantity  FormatParsingSet::GetQuantity(FormatProblemCode* probCode)
             break;
 
         default:
-            if (nullptr != probCode) *probCode = FormatProblemCode::QT_InvalidSyntax;
+            *probCode = FormatProblemCode::QT_InvalidSyntax;
             break;
         }
 
-    if (nullptr != m_unit)
+    if ((*probCode == FormatProblemCode::NoProblems) && nullptr != m_unit)
         qty = qty.ConvertTo(m_unit);
     return qty;
     }
