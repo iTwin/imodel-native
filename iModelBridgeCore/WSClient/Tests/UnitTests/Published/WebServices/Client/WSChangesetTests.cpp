@@ -1108,6 +1108,104 @@ TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_OneFailedAndOneSuccessInstanc
     EXPECT_EQ(1, errorCount);
     }
 
+TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_OneFailedModifiedInstance_CallsErrorHandler)
+    {
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchemaA.TestClassA", "A"}, WSChangeset::Modified, ToJsonPtr(R"({"TestProperty" : "TestValue"})"));
+
+    auto response = ToRapidJson(R"({
+        "changedInstances" :
+            [{
+            "instanceAfterChange" :
+                {
+                "instanceId" : "NewIdA",
+                "className" : "NewClassA",
+                "schemaName" : "NewSchemaA",
+                "error":
+                    {
+                    "httpStatusCode": 404,
+                    "errorId": "InstanceNotFound",
+                    "errorMessage": "MESSAGE",
+                    "errorDescription": "DESCRIPTION"
+                    }
+                }
+            }]
+        })");
+
+    int successCount = 0;
+    auto successHandler =
+        [&] (ObjectIdCR oldId, ObjectIdCR newId)
+        {
+        successCount++;
+        return SUCCESS;
+        };
+
+    int errorCount = 0;
+    auto errorHandler = [&] (ObjectIdCR oldId, WSErrorCR error)
+        {
+        EXPECT_EQ(ObjectId("TestSchemaA.TestClassA", "A"), oldId);
+        EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+        EXPECT_EQ(WSError::Id::InstanceNotFound, error.GetId());
+        EXPECT_NE("", error.GetDisplayMessage());
+        EXPECT_EQ("MESSAGE\nDESCRIPTION", error.GetDisplayDescription());
+        errorCount++;
+        return SUCCESS;
+        };
+
+    EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(*response, successHandler, errorHandler));
+    EXPECT_EQ(0, successCount);
+    EXPECT_EQ(1, errorCount);
+    }
+
+TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_OneFailedDeletedInstance_CallsErrorHandler)
+    {
+    WSChangeset changeset;
+    changeset.AddInstance({"TestSchemaA.TestClassA", "A"}, WSChangeset::Deleted, nullptr);
+
+    auto response = ToRapidJson(R"({
+        "changedInstances" :
+            [{
+            "instanceAfterChange" :
+                {
+                "instanceId" : "NewIdA",
+                "className" : "NewClassA",
+                "schemaName" : "NewSchemaA",
+                "error":
+                    {
+                    "httpStatusCode": 404,
+                    "errorId": "InstanceNotFound",
+                    "errorMessage": "MESSAGE",
+                    "errorDescription": "DESCRIPTION"
+                    }
+                }
+            }]
+        })");
+
+    int successCount = 0;
+    auto successHandler =
+        [&] (ObjectIdCR oldId, ObjectIdCR newId)
+        {
+        successCount++;
+        return SUCCESS;
+        };
+
+    int errorCount = 0;
+    auto errorHandler = [&] (ObjectIdCR oldId, WSErrorCR error)
+        {
+        EXPECT_EQ(ObjectId("TestSchemaA.TestClassA", "A"), oldId);
+        EXPECT_EQ(WSError::Status::ReceivedError, error.GetStatus());
+        EXPECT_EQ(WSError::Id::InstanceNotFound, error.GetId());
+        EXPECT_NE("", error.GetDisplayMessage());
+        EXPECT_EQ("MESSAGE\nDESCRIPTION", error.GetDisplayDescription());
+        errorCount++;
+        return SUCCESS;
+        };
+
+    EXPECT_EQ(SUCCESS, changeset.ExtractNewIdsFromResponse(*response, successHandler, errorHandler));
+    EXPECT_EQ(0, successCount);
+    EXPECT_EQ(1, errorCount);
+    }
+
 TEST_F(WSChangesetTests, ExtractNewIdsFromResponse_OneFailedInstanceAndDefaultErrorHandler_ReturnsError)
     {
     WSChangeset changeset;
