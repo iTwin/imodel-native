@@ -15,7 +15,10 @@
 #endif
 
 // Define this if you want to generate a root tile containing geometry.
-// By default the root tile is empty.
+// By default the root tile is empty unless it would contain relatively few elements, which enables us to:
+//  - reduce the number of elements per top-most tile; and
+//  - parallelize the generation of 8 top-most tiles
+// thereby improving tile generation speed significantly.
 // #define POPULATE_ROOT_TILE
 
 USING_NAMESPACE_ELEMENT_TILETREE
