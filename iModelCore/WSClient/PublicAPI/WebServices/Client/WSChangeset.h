@@ -99,7 +99,7 @@ struct WSChangeset
             (
             RapidJsonValueCR response,
             const SuccessHandler& successHandler = [] (ObjectIdCR oldId, ObjectIdCR newId) { return SUCCESS; },
-            const ErrorHandler& errorHandler = [] (ObjectIdCR oldId, WSErrorCR error) { return SUCCESS; }
+            const ErrorHandler& errorHandler = [] (ObjectIdCR oldId, WSErrorCR error) { return ERROR; }
             ) const;
     };
 
