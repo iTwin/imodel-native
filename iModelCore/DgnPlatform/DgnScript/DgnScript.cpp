@@ -8,8 +8,7 @@
 #include <DgnPlatformInternal.h>
 #include <BeJavaScript/BeJavaScript.h>
 
-static intptr_t s_homeThreadId;
-static size_t s_nonHomeThreadCount;
+static size_t s_initThreadCount;
 static thread_local BeJsEnvironmentP t_jsenv;
 static thread_local BeJsContextP t_jscontext;
 
@@ -28,7 +27,6 @@ USING_NAMESPACE_BENTLEY_DGN
 //---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
-    s_homeThreadId = BeThreadUtilities::GetCurrentThreadId();
     }
 
 //---------------------------------------------------------------------------------------
@@ -39,13 +37,12 @@ void DgnPlatformLib::Host::ScriptAdmin::CheckCleanup()
     bool anyLeft = false;
         {
         BeSystemMutexHolder _thread_safe_;
-        anyLeft = (s_nonHomeThreadCount != 0);
+        anyLeft = (s_initThreadCount != 0);
         }
 
     if (!anyLeft)
         return;
-    LOG.error("Some thread initialized script support on a thread and then forgot to call TerminateOnThread");
-    BeAssert(false && "Some thread initialized script support on a thread and then forgot to call TerminateOnThread");
+    BeAssert(false && "s_initThreadCount != 0");
     }
 
 //---------------------------------------------------------------------------------------
@@ -64,36 +61,14 @@ void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
     //  Already initialized?
     if (nullptr != t_jsenv)
         {
-        if (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId)      // To make this a little more foolproof, tolerate redundant calls to InitializeOnThread on home thread
-/*<=*/      return;
-
         BeAssert(false && "Call ScriptAdmin::InitializeOnThread only once on a given thread");
         return;
         }
 
-    //  Try to detect missing calls to Terminate
-    bool tooMany = false;
-        {
-        BeSystemMutexHolder _thread_safe_;
-        if (BeThreadUtilities::GetCurrentThreadId() != s_homeThreadId)
-            {
-            ++s_nonHomeThreadCount;
-            tooMany = (s_nonHomeThreadCount > 20);
-            }
-        }
+    ++s_initThreadCount;
 
-    if (tooMany)
-        {
-        LOG.warningv("ScriptAdmin::InitializeOnThread called %lld times. Did you forget to call TerminateOnThread?", s_nonHomeThreadCount);
-        BeDataAssert(false && "ScriptAdmin::InitializeOnThread called many times. Did you forget to call TerminateOnThread?");
-        }
-
-    //  *********************************************
-    //  Initialize the BeJsEnvironment
     t_jsenv = new BeJsEnvironment;
 
-    //  *********************************************
-    //  Initialize the DgnScriptContext
     auto dgnScriptContext = new DgnScriptContext(*t_jsenv);
     t_jscontext = dgnScriptContext;
     }
@@ -104,18 +79,10 @@ void DgnPlatformLib::Host::ScriptAdmin::InitializeOnThread()
 void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
     {
     if (nullptr == t_jsenv)
-        {
-        BeAssert(false && "Call ScriptAdmin::TerminateOnThread only once on a given thread");
         return;
-        }
 
-    if (BeThreadUtilities::GetCurrentThreadId() != s_homeThreadId)
-        {
-        BeSystemMutexHolder _thread_safe_;
-        --s_nonHomeThreadCount;
-        }
+    --s_initThreadCount;
 
-    // Free the BeJsEnvironment and BeJsContext that were set up on this thread
     if (nullptr != t_jscontext)
         {
         delete t_jscontext;
@@ -131,9 +98,6 @@ void DgnPlatformLib::Host::ScriptAdmin::TerminateOnThread()
 //---------------------------------------------------------------------------------------
 BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
     {
-    if ((nullptr == t_jsenv) && (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId))        // only the home thread auto-initializes
-        InitializeOnThread();
-
     if (nullptr == t_jsenv)
         throw "InitializeOnThread was not called";
 
@@ -145,9 +109,6 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
 //---------------------------------------------------------------------------------------
 BeJsContextR DgnPlatformLib::Host::ScriptAdmin::GetDgnScriptContext()
     {
-    if ((nullptr == t_jsenv) && (BeThreadUtilities::GetCurrentThreadId() == s_homeThreadId))        // only the home thread auto-initializes
-        InitializeOnThread();
-
     if (nullptr == t_jscontext)
         throw "InitializeOnThread was not called";
 
