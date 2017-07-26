@@ -247,19 +247,21 @@ namespace IndexECPlugin.Source.QueryProviders
                 // If we're here, that's because there was a polygon parameter in the extended data
                 // We verify that this is true
 
-                if(Query.ExtendedData.ContainsKey("polygon"))
+                if ( !Query.ExtendedData.ContainsKey("polygon") )
                     {
-                    //We verify that the polygon has a valid format
-                    string polygonString = Query.ExtendedData["polygon"].ToString();
-                    try
-                        {
-                        JsonConvert.DeserializeObject<PolygonModel>(polygonString);
-                        }
-                    catch ( JsonException )
-                        {
-                        throw new UserFriendlyException("The polygon format is not valid.");
-                        }
+                    throw new UserFriendlyException("Queries to this source should only be made using a spatial criterion or an Id criterion.");
                     }
+                //We verify that the polygon has a valid format
+                string polygonString = Query.ExtendedData["polygon"].ToString();
+                try
+                    {
+                    JsonConvert.DeserializeObject<PolygonModel>(polygonString);
+                    }
+                catch ( JsonException )
+                    {
+                    throw new UserFriendlyException("The polygon format is not valid.");
+                    }
+
 
                 switch ( ecClass.Name )
                     {
