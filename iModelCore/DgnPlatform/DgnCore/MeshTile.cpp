@@ -371,7 +371,7 @@ TileGeneratorStatus TileGenerationCache::Populate(DgnDbR db, DgnModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
     {
-    DgnMaterialCPtr material = DgnMaterial::Get(db, m_materialId);
+    RenderMaterialCPtr material = RenderMaterial::Get(db, m_materialId);
     if (!material.IsValid())
         return nullptr;
 
@@ -886,12 +886,12 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileMeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb)
+bool TileMeshBuilder::GetMaterial(RenderMaterialId materialId, DgnDbR dgnDb)
     {
     if (!materialId.IsValid())
         return false;
 
-    m_materialEl = DgnMaterial::Get(dgnDb, materialId);
+    m_materialEl = RenderMaterial::Get(dgnDb, materialId);
     BeAssert(m_materialEl.IsValid());
     m_material = &m_materialEl->GetRenderingAsset();
     return true;
@@ -900,7 +900,7 @@ bool TileMeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
     auto const&         points = visitor.Point();
     size_t              nTriangles = points.size() - 2;
@@ -969,7 +969,7 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttrib
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool includeParams, uint32_t fillColor)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
         AddTriangle(*visitor, materialId, dgnDb, attributes, false, includeParams, fillColor);
@@ -3089,7 +3089,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     {
                     if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
                         {
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor());
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetRenderMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor());
                         }
                     }
                 }

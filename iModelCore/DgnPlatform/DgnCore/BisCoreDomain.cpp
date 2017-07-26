@@ -9,7 +9,6 @@
 #include <DgnPlatform/DgnMarkupProject.h>
 #include <DgnPlatform/LinkElement.h>
 #include <DgnPlatform/Annotations/TextAnnotationElement.h>
-#include <DgnPlatform/AnnotationTable.h>
 #if defined (NEEDSWORK_DIMENSION)
 #include <DgnPlatform/Dimension/Dimension.h>
 #endif
@@ -67,11 +66,13 @@ HANDLER_DEFINE_MEMBERS(InformationCarrier)
 HANDLER_DEFINE_MEMBERS(Document)
 HANDLER_DEFINE_MEMBERS(Drawing)
 HANDLER_DEFINE_MEMBERS(SectionDrawing)
+HANDLER_DEFINE_MEMBERS(DriverBundle)
 HANDLER_DEFINE_MEMBERS(Definition)
 HANDLER_DEFINE_MEMBERS(Category);
 HANDLER_DEFINE_MEMBERS(DrawingCategory);
 HANDLER_DEFINE_MEMBERS(SpatialCategory);
 HANDLER_DEFINE_MEMBERS(SubCategory);
+HANDLER_DEFINE_MEMBERS(PhysicalMaterial)
 HANDLER_DEFINE_MEMBERS(PhysicalType)
 HANDLER_DEFINE_MEMBERS(TemplateRecipe3d)
 HANDLER_DEFINE_MEMBERS(GraphicalType2d)
@@ -142,6 +143,7 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::Drawing::GetHandler());
     RegisterHandler(dgn_ElementHandler::SectionDrawing::GetHandler());
     RegisterHandler(Sheet::Handlers::Element::GetHandler());
+    RegisterHandler(dgn_ElementHandler::DriverBundle::GetHandler());
     RegisterHandler(dgn_ElementHandler::Definition::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::Geometric3d::GetHandler());
@@ -156,13 +158,13 @@ BisCoreDomain::BisCoreDomain() : DgnDomain(BIS_ECSCHEMA_NAME, "BIS Core Domain",
     RegisterHandler(dgn_ElementHandler::VolumeElementHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation2dHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::TextAnnotation3dHandler::GetHandler());
-    RegisterHandler(dgn_ElementHandler::AnnotationTableHandler::GetHandler());
     RegisterHandler(dgn_ElementHandler::PhysicalType::GetHandler());
     RegisterHandler(dgn_ElementHandler::TemplateRecipe3d::GetHandler());
     RegisterHandler(dgn_ElementHandler::GraphicalType2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::TemplateRecipe2d::GetHandler());
     RegisterHandler(dgn_ElementHandler::SpatialLocationType::GetHandler());
-    RegisterHandler(dgn_ElementHandler::Material::GetHandler());
+    RegisterHandler(dgn_ElementHandler::PhysicalMaterial::GetHandler());
+    RegisterHandler(dgn_ElementHandler::RenderMaterial::GetHandler());
     RegisterHandler(dgn_ElementHandler::Texture::GetHandler());
     RegisterHandler(Lighting::Handlers::LightLoc::GetHandler());
     RegisterHandler(dgn_ElementHandler::LineStyleHandler::GetHandler());

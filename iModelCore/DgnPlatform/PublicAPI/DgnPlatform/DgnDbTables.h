@@ -46,9 +46,9 @@
 #define BIS_CLASS_DrawingCategory           "DrawingCategory"
 #define BIS_CLASS_DrawingGraphic            "DrawingGraphic"
 #define BIS_CLASS_DrawingModel              "DrawingModel"
+#define BIS_CLASS_DriverBundleElement       "DriverBundleElement"
 #define BIS_CLASS_Element                   "Element"
 #define BIS_CLASS_ElementAspect             "ElementAspect"
-#define BIS_CLASS_ElementExternalKey        "ElementExternalKey"
 #define BIS_CLASS_ElementMultiAspect        "ElementMultiAspect"
 #define BIS_CLASS_ElementUniqueAspect       "ElementUniqueAspect"
 #define BIS_CLASS_GeometricElement          "GeometricElement"
@@ -76,13 +76,14 @@
 #define BIS_CLASS_ISubModeledElement        "ISubModeledElement"
 #define BIS_CLASS_LightLocation             "LightLocation"
 #define BIS_CLASS_LineStyle                 "LineStyle"
-#define BIS_CLASS_MaterialElement           "MaterialElement"
 #define BIS_CLASS_Model                     "Model"
 #define BIS_CLASS_ModelSelector             "ModelSelector"
 #define BIS_CLASS_PhysicalElement           "PhysicalElement"
+#define BIS_CLASS_PhysicalMaterial          "PhysicalMaterial"
 #define BIS_CLASS_PhysicalModel             "PhysicalModel"
 #define BIS_CLASS_PhysicalPartition         "PhysicalPartition"
 #define BIS_CLASS_PhysicalType              "PhysicalType"
+#define BIS_CLASS_RenderMaterial            "RenderMaterial"
 #define BIS_CLASS_RepositoryModel           "RepositoryModel"
 #define BIS_CLASS_RoleElement               "RoleElement"
 #define BIS_CLASS_RoleModel                 "RoleModel"
@@ -121,13 +122,11 @@
 #define BIS_REL_ElementDrivesElement                "ElementDrivesElement"
 #define BIS_REL_ElementGroupsMembers                "ElementGroupsMembers"
 #define BIS_REL_ElementOwnsChildElements            "ElementOwnsChildElements"
-#define BIS_REL_ElementOwnsExternalKeys             "ElementOwnsExternalKeys"
 #define BIS_REL_ElementOwnsMultiAspects             "ElementOwnsMultiAspects"
 #define BIS_REL_ElementOwnsUniqueAspect             "ElementOwnsUniqueAspect"
 #define BIS_REL_ElementRefersToElements             "ElementRefersToElements"
 #define BIS_REL_GraphicalElement2dIsOfType          "GraphicalElement2dIsOfType"
 #define BIS_REL_GraphicalType2dHasTemplateRecipe    "GraphicalType2dHasTemplateRecipe"
-#define BIS_REL_MaterialOwnsChildMaterials          "MaterialOwnsChildMaterials"
 #define BIS_REL_ModelContainsElements               "ModelContainsElements"
 #define BIS_REL_ModelModelsElement                  "ModelModelsElement"
 #define BIS_REL_ModelSelectorRefersToModels         "ModelSelectorRefersToModels"
@@ -135,7 +134,8 @@
 #define BIS_REL_PhysicalElementAssemblesElements    "PhysicalElementAssemblesElements"
 #define BIS_REL_PhysicalElementIsOfType             "PhysicalElementIsOfType"
 #define BIS_REL_PhysicalTypeHasTemplateRecipe       "PhysicalTypeHasTemplateRecipe"
-#define BIS_REL_SubjectOwnsChildSubjects            "SubjectOwnsChildSubjects"
+#define BIS_REL_RenderMaterialOwnsRenderMaterials   "RenderMaterialOwnsRenderMaterials"
+#define BIS_REL_SubjectOwnsSubjects                 "SubjectOwnsSubjects"
 #define BIS_REL_SubjectOwnsPartitionElements        "SubjectOwnsPartitionElements"
 
 //-----------------------------------------------------------------------------------------
@@ -179,41 +179,57 @@ struct ModelIterator;
 struct DgnCode
 {
 private:
-    CodeSpecId m_specId;
-    DgnElementId m_scopeElementId;
-    Utf8String m_value;
+    CodeSpecId m_specId; //!< @see CodeSpec
+    Utf8String m_scope; //!< Note: stored as a string, but must be a valid/serialized FederationGuid or ElementId
+    Utf8String m_value; //!< Note: can be "empty" (persisted as null)
 
 public:
     //! Constructs an invalid DgnCode
     DgnCode() {}
 
-    //! Construct a DgnCode from the specified parameters
-    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scopeElementId(scopeElementId), m_value(value) {};
+    //! Construct a DgnCode scoped to an existing element.
+    //! @note The best practice is to call CodeSpec::CreateCode rather than this constructor
+    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scope(scopeElementId.ToString(BeInt64Id::UseHex::Yes)), m_value(value) {}
+    //! Construct a DgnCode scoped to an element that does not yet exist, but when it does exist it will have the specified FederationGuid. Typically used for reserving codes.
+    DgnCode(CodeSpecId specId, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) : m_specId(specId), m_scope(scopeFederationGuid.ToString()), m_value(value) {}
+
+    //! Invalidate this DgnCode
+    void Invalidate() 
+        {
+        m_specId.Invalidate();
+        m_scope.clear();
+        m_value.clear();
+        }
 
     //! Determine whether this DgnCode is valid.
     bool IsValid() const {return m_specId.IsValid();}
     //! Determine if this code is valid but not otherwise meaningful (and therefore not necessarily unique)
     bool IsEmpty() const {return m_specId.IsValid() && m_value.empty();}
     //! Determine if two DgnCodes are equivalent
-    bool operator==(DgnCode const& other) const {return m_specId==other.m_specId && m_value==other.m_value && m_scopeElementId==other.m_scopeElementId;}
+    bool operator==(DgnCodeCR other) const {return m_specId==other.m_specId && m_value==other.m_value && m_scope==other.m_scope;}
     //! Determine if two DgnCodes are not equivalent
-    bool operator!=(DgnCode const& other) const {return !(*this == other);}
+    bool operator!=(DgnCodeCR other) const {return !(*this == other);}
     //! Perform ordered comparison, e.g. for inclusion in associative containers
-    DGNPLATFORM_EXPORT bool operator<(DgnCode const& rhs) const;
+    DGNPLATFORM_EXPORT bool operator<(DgnCodeCR rhs) const;
 
     //! Get the value for this DgnCode
     Utf8StringCR GetValue() const {return m_value;}
     //! Get the value for this DgnCode
     Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
-    //! Get the scope for this DgnCode
-    DgnElementId GetScopeElementId() const {return m_scopeElementId;}
+
+    //! Get the DgnElementId of the element providing the uniqueness scope for the code value.
+    DGNPLATFORM_EXPORT DgnElementId GetScopeElementId(DgnDbR db) const;
+    //! Return the scope serialized to a string whose format is dependent on ScopeRequirement
+    Utf8StringCR GetScopeString() const {return m_scope;}
+
     //! Get the CodeSpecId of the CodeSpec that issued this DgnCode.
     CodeSpecId GetCodeSpecId() const {return m_specId;}
+
     void RelocateToDestinationDb(DgnImportContext&);
 
-    //! Re-initialize to the specified values.
+    //! Constructs a DgnCode from its common server-side storage format where scope is persisted as a string
     //! @private
-    void From(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value);
+    DGNPLATFORM_EXPORT static DgnCode From(CodeSpecId specId, Utf8StringCR scopeString, Utf8StringCR value);
 
     //! Create an empty, non-unique code with no special meaning.
     DGNPLATFORM_EXPORT static DgnCode CreateEmpty();
@@ -609,38 +625,6 @@ public:
     //! @return The result of the insert operation.
     //! @remarks If successful, this method will assign a valid CodeSpecId to the supplied CodeSpec
     DGNPLATFORM_EXPORT DgnDbStatus Insert(CodeSpecR codeSpec);
-};
-
-//=======================================================================================
-//! @private
-//=======================================================================================
-struct DgnScriptLibrary : DgnDbTable
-{
-public:
-    DgnScriptLibrary(DgnDbR db) : DgnDbTable(db) {}
-
-    //! Register the specified script in the DgnDb's script library.
-    //! @param sName    The name to assign to the script in the library
-    //! @param sText    The content of the script program
-    //! @param lastModifiedTime The last modified time to record. This will be used to track versions.
-    //! @param updateExisting If true, programs already registered are updated from soruce found in \a jsDir
-    //! @see QueryScript
-    DGNPLATFORM_EXPORT DgnDbStatus RegisterScript(Utf8CP sName, Utf8CP sText, DgnScriptType stype, DateTime const& lastModifiedTime, bool updateExisting);
-
-    //! Look up an imported script program by the specified name.
-    //! @param[out] sText           The text of the script that was found in the library
-    //! @param[out] stypeFound      The type of script actually found in the library
-    //! @param[out] lastModifiedTime The last modified time recorded.
-    //! @param[in] sName            Identifies the script in the library
-    //! @param[in] stypePreferred   The type of script that the caller prefers, if there are multiple kinds stored for the specified name.
-    //! @see RegisterScript
-    DGNPLATFORM_EXPORT DgnDbStatus QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, Utf8CP sName, DgnScriptType stypePreferred);
-
-    //! Utility function to read the text of the specified file
-    //! @param contents[out]    The content of the file
-    //! @param fileName[in]     The name of the file to read
-    //! @return non-zero error status if the file could not be found
-    DGNPLATFORM_EXPORT static DgnDbStatus ReadText(Utf8StringR contents, BeFileNameCR fileName);
 };
 
 //=======================================================================================

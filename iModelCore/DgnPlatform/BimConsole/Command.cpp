@@ -54,7 +54,7 @@ BentleyStatus Command::TokenizeString(std::vector<Utf8String>& tokens, WStringCR
 //---------------------------------------------------------------------------------------
 void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     {
-    BeAssert(m_commandMap.size() == 24 && "Command was added or removed, please update the HelpCommand accordingly.");
+    BeAssert(m_commandMap.size() == 23 && "Command was added or removed, please update the HelpCommand accordingly.");
     BimConsole::WriteLine(m_commandMap.at(".help")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".open")->GetUsage().c_str());
@@ -79,7 +79,6 @@ void HelpCommand::_Run(Session& session, Utf8StringCR args) const
     BimConsole::WriteLine(m_commandMap.at(".sqlite")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".schemastats")->GetUsage().c_str());
-    BimConsole::WriteLine(m_commandMap.at(".validate")->GetUsage().c_str());
     BimConsole::WriteLine();
     BimConsole::WriteLine(m_commandMap.at(".exit")->GetUsage().c_str());
     }
@@ -1555,125 +1554,6 @@ void DbSchemaCommand::Search(Db const& db, Utf8CP searchTerm) const
         BimConsole::WriteLine(" %s [%s]", stmt.GetValueText(0), stmt.GetValueText(1));
         } while (BE_SQLITE_ROW == stmt.Step());
     }
-
-
-//******************************* ValidateCommand ******************
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     04/2016
-//---------------------------------------------------------------------------------------
-Utf8String ValidateCommand::_GetUsage() const
-    {
-    return " .validate dbmapping <output csv filepath>\r\n"
-        COMMAND_USAGE_IDENT "Checks the current file for data corrupting mapping issues\r\n"
-        COMMAND_USAGE_IDENT "They might be introduced by invalid legacy class inheritance.\r\n"
-        COMMAND_USAGE_IDENT "Issues are written as CSV file to the specified location.\r\n";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     02/2017
-//---------------------------------------------------------------------------------------
-void ValidateCommand::_Run(Session& session, Utf8StringCR argsUnparsed) const
-    {
-    if (!session.IsFileLoaded(true))
-        return;
-
-    std::vector<Utf8String> args = TokenizeArgs(argsUnparsed);
-    if (args.empty())
-        {
-        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-    Utf8StringCR switchArg = args[0];
-
-    if (switchArg.EqualsIAscii("dbmapping"))
-        {
-        ValidateDbMappings(session, args);
-        return;
-        }
-
-    BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-    return;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                  Krischan.Eberle     02/2017
-//---------------------------------------------------------------------------------------
-void ValidateCommand::ValidateDbMappings(Session& session, std::vector<Utf8String> const& args) const
-    {
-    if (!session.IsECDbFileLoaded(true))
-        return;
-
-    if (args.size() != 2)
-        {
-        BimConsole::WriteErrorLine("Usage: %s", GetUsage().c_str());
-        return;
-        }
-
-    BeFileName csvFilePath(args[1]);
-    if (csvFilePath.DoesPathExist())
-        {
-        BeFileNameStatus stat = csvFilePath.BeDeleteFile();
-        if (BeFileNameStatus::Success != stat)
-            {
-            BimConsole::WriteErrorLine("Output file '%s' already exists and could not be deleted.", csvFilePath.GetNameUtf8().c_str());
-            return;
-            }
-        }
-
-    BeFileStatus stat = BeFileStatus::Success;
-    BeTextFilePtr csvFile = BeTextFile::Open(stat, csvFilePath, TextFileOpenType::Write, TextFileOptions::KeepNewLine, TextFileEncoding::Utf8);
-    if (BeFileStatus::Success != stat)
-        {
-        BimConsole::WriteErrorLine("Failed to create output CSV file %s", csvFilePath.GetNameUtf8().c_str());
-        return;
-        }
-
-    BeAssert(csvFile != nullptr);
-
-    Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(session.GetFile().GetHandle(), SchemaManager::GetValidateDbMappingSql()))
-        {
-        BimConsole::WriteErrorLine("Failed to prepare validation SQL: %s", session.GetFile().GetHandle().GetLastError().c_str());
-        return;
-        }
-
-    int issueCount = 0;
-    while (BE_SQLITE_ROW == stmt.Step())
-        {
-        issueCount++;
-
-        if (issueCount == 1)
-            {
-            //write header line
-            if (TextFileWriteStatus::Success != csvFile->PutLine(L"ECSchema, ECSchema alias, ECClass, Table, Issue Type, Issue Type Description, Issue", true))
-                {
-                BimConsole::WriteErrorLine("Failed to write header line to output CSV file %s", csvFilePath.GetNameUtf8().c_str());
-                return;
-                }
-            }
-
-        Utf8String csvLine;
-        csvLine.Sprintf("%s,%s,%s,%s,%d,%s,\"%s\"", stmt.GetValueText(0), stmt.GetValueText(1), stmt.GetValueText(2), stmt.GetValueText(3),
-                        stmt.GetValueInt(4), stmt.GetValueText(5), stmt.GetValueText(6));
-        if (TextFileWriteStatus::Success != csvFile->PutLine(WString(csvLine.c_str(), BentleyCharEncoding::Utf8).c_str(), true))
-            {
-            BimConsole::WriteErrorLine("Failed to write line to output CSV file %s", csvFilePath.GetNameUtf8().c_str());
-            return;
-            }
-        }
-
-    if (issueCount == 0)
-        {
-        csvFile->Close();
-        csvFilePath.BeDeleteFile();
-        BimConsole::WriteLine("No DB mapping issues found in the current file.");
-        }
-    else
-        BimConsole::WriteLine("%d DB mapping issues found and saved to %s.", issueCount, csvFilePath.GetNameUtf8().c_str());
-    }
-
 
 //******************************* SchemaStatsCommand ******************
 

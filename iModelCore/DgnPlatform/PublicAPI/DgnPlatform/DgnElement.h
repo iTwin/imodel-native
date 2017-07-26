@@ -41,6 +41,7 @@ namespace dgn_ElementHandler
     struct InformationCarrier; 
     struct InformationContent; struct InformationRecord; struct GroupInformation; struct Subject;
     struct Document; struct Drawing; struct SectionDrawing;  
+    struct DriverBundle;
     struct Definition; struct PhysicalType; struct GraphicalType2d; struct SpatialLocationType; struct TemplateRecipe2d; struct TemplateRecipe3d;
     struct InformationPartition; struct DefinitionPartition; struct DocumentPartition; struct GroupInformationPartition; struct InformationRecordPartition; struct PhysicalPartition; struct SpatialLocationPartition;
     struct Geometric2d; struct Annotation2d; struct DrawingGraphic; 
@@ -81,12 +82,12 @@ public:
     DgnGeometryPartId Add(DgnGeometryPartId sourceId, DgnGeometryPartId targetId) {return m_geomPartId[sourceId] = targetId;}
     DgnCategoryId Find(DgnCategoryId sourceId) const {return FindElement<DgnCategoryId>(sourceId);}
     DgnCategoryId Add(DgnCategoryId sourceId, DgnCategoryId targetId) {return DgnCategoryId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
-    DgnMaterialId Find(DgnMaterialId sourceId) const {return FindElement<DgnMaterialId>(sourceId);}
-    DgnMaterialId Add(DgnMaterialId sourceId, DgnMaterialId targetId) {return DgnMaterialId((m_elementId [sourceId] = targetId).GetValueUnchecked());}
+    RenderMaterialId Find(RenderMaterialId sourceId) const {return FindElement<RenderMaterialId>(sourceId);}
+    RenderMaterialId Add(RenderMaterialId sourceId, RenderMaterialId targetId) {return RenderMaterialId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnTextureId Find(DgnTextureId sourceId) const {return FindElement<DgnTextureId>(sourceId);}
-    DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId [sourceId] = targetId).GetValueUnchecked());}
+    DgnTextureId Add(DgnTextureId sourceId, DgnTextureId targetId) {return DgnTextureId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnStyleId Find(DgnStyleId sourceId) const {return FindElement<DgnStyleId>(sourceId);}
-    DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId [sourceId] = targetId).GetValueUnchecked());}
+    DgnStyleId Add(DgnStyleId sourceId, DgnStyleId targetId) {return DgnStyleId((m_elementId[sourceId] = targetId).GetValueUnchecked());}
     DgnFontId Find(DgnFontId sourceId) const {return Find<DgnFontId>(m_fontId, sourceId);}
     DgnFontId Add(DgnFontId sourceId, DgnFontId targetId) {return m_fontId[sourceId] = targetId;}
     DgnSubCategoryId Find(DgnSubCategoryId sourceId) const {return FindElement<DgnSubCategoryId>(sourceId);}
@@ -152,7 +153,7 @@ protected:
     DGNPLATFORM_EXPORT virtual DgnCategoryId _RemapCategory(DgnCategoryId sourceId);
     DGNPLATFORM_EXPORT virtual DgnSubCategoryId _RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId);
     DGNPLATFORM_EXPORT virtual DgnClassId _RemapClassId(DgnClassId sourceId);
-    DGNPLATFORM_EXPORT virtual DgnMaterialId _RemapMaterialId(DgnMaterialId sourceId);
+    DGNPLATFORM_EXPORT virtual RenderMaterialId _RemapRenderMaterialId(RenderMaterialId sourceId);
     DGNPLATFORM_EXPORT virtual DgnTextureId _RemapTextureId(DgnTextureId sourceId);
     DGNPLATFORM_EXPORT virtual DgnDbStatus _RemapGeometryStreamIds(GeometryStreamR geom);
     DGNPLATFORM_EXPORT virtual DgnFontId _RemapFont(DgnFontId);
@@ -197,13 +198,13 @@ public:
     DgnSubCategoryId RemapSubCategory(DgnCategoryId destCategoryId, DgnSubCategoryId sourceId) {return _RemapSubCategory(destCategoryId, sourceId);}
     //! Make sure that an ECClass has been imported
     DgnClassId RemapClassId(DgnClassId sourceId) {return _RemapClassId(sourceId);}
-    //! Look up a copy of a Material
-    DgnMaterialId FindMaterialId(DgnMaterialId sourceId) const {return m_remap.Find(sourceId);}
-    //! Register a copy of a Material
-    DgnMaterialId AddMaterialId(DgnMaterialId sourceId, DgnMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
-    //! Make sure that a Material has been imported
-    DgnMaterialId RemapMaterialId(DgnMaterialId sourceId) {return _RemapMaterialId(sourceId);}
-    //! Look up a copy of a Material
+    //! Look up a copy of a RenderMaterial
+    RenderMaterialId FindRenderMaterialId(RenderMaterialId sourceId) const {return m_remap.Find(sourceId);}
+    //! Register a copy of a RenderMaterial
+    RenderMaterialId AddMaterialId(RenderMaterialId sourceId, RenderMaterialId targetId) {return m_remap.Add(sourceId, targetId);}
+    //! Make sure that a RenderMaterial has been imported
+    RenderMaterialId RemapRenderMaterialId(RenderMaterialId sourceId) {return _RemapRenderMaterialId(sourceId);}
+    //! Look up a copy of a Texture
     DgnTextureId FindTextureId(DgnTextureId sourceId) const {return m_remap.Find(sourceId);}
     //! Register a copy of a Texture
     DgnTextureId AddTextureId(DgnTextureId sourceId, DgnTextureId targetId) {return m_remap.Add(sourceId, targetId);}
@@ -247,15 +248,16 @@ struct ElementIteratorEntry : ECSqlStatementEntry
 private:
     ElementIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
 public:
-    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of this ElementIteratorEntry
-    template <class T_ElementId> T_ElementId GetId() const {return T_ElementId(GetElementId().GetValue());} //!< Get the DgnElementId of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT DgnModelId GetModelId() const; //!< Get the DgnModelId of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT DgnElementId GetParentId() const; //!< Get the DgnElementId of the parent of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const; //!< Get the user label of this ElementIteratorEntry
-    DGNPLATFORM_EXPORT DateTime GetLastModifyTime() const; //!< Get the last modify time of this ElementIteratorEntry
+    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the current element
+    template <class T_ElementId> T_ElementId GetId() const {return T_ElementId(GetElementId().GetValue());} //!< Get the DgnElementId of the current element
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current element
+    DGNPLATFORM_EXPORT BeSQLite::BeGuid GetFederationGuid() const; //!< Get the FederationGuid of the current element
+    DGNPLATFORM_EXPORT DgnCode GetCode() const; //!< Get the DgnCode of the current element
+    DGNPLATFORM_EXPORT Utf8CP GetCodeValue() const; //!< Get the CodeValue of the current element
+    DGNPLATFORM_EXPORT DgnModelId GetModelId() const; //!< Get the DgnModelId of the current element
+    DGNPLATFORM_EXPORT DgnElementId GetParentId() const; //!< Get the DgnElementId of the parent of the current element
+    DGNPLATFORM_EXPORT Utf8CP GetUserLabel() const; //!< Get the user label of the current element
+    DGNPLATFORM_EXPORT DateTime GetLastModifyTime() const; //!< Get the last modify time of the current element
 };
 
 //=======================================================================================
@@ -290,6 +292,29 @@ struct ElementIterator : ECSqlStatementIterator<ElementIteratorEntry>
         for (ElementIteratorEntry entry : *this)
             idList.push_back(entry.GetId<T_ElementId>());
         }
+};
+
+//=======================================================================================
+//! The "current entry" of an ElementAspectIterator
+// @bsiclass                                                     Shaun.Sewall      11/16
+//=======================================================================================
+struct ElementAspectIteratorEntry : ECSqlStatementEntry
+{
+    friend struct ECSqlStatementIterator<ElementAspectIteratorEntry>;
+private:
+    ElementAspectIteratorEntry(BeSQLite::EC::ECSqlStatement* statement = nullptr) : ECSqlStatementEntry(statement) {}
+public:
+    DGNPLATFORM_EXPORT BeSQLite::EC::ECInstanceId GetECInstanceId() const; //!< Get ECInstanceId (unique instance identifier) of the current aspect
+    DGNPLATFORM_EXPORT DgnClassId GetClassId() const; //!< Get the DgnClassId of the current aspect
+    DGNPLATFORM_EXPORT DgnElementId GetElementId() const; //!< Get the DgnElementId of the element that owns the current aspect
+};
+
+//=======================================================================================
+//! An iterator over a set of ElementAspects, defined by a query.
+// @bsiclass                                                     Shaun.Sewall      07/17
+//=======================================================================================
+struct ElementAspectIterator : ECSqlStatementIterator<ElementAspectIteratorEntry>
+{
 };
 
 //=======================================================================================
@@ -1065,33 +1090,6 @@ public:
         DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
         };
 
-    //! Allows a business key (unique identifier string) from an external system (identified by CodeSpecId) to be associated with a DgnElement via a persistent ElementAspect
-    struct EXPORT_VTABLE_ATTRIBUTE ExternalKeyAspect : AppData
-    {
-    private:
-        CodeSpecId m_codeSpecId;
-        Utf8String m_externalKey;
-
-        ExternalKeyAspect(CodeSpecId codeSpecId, Utf8CP externalKey)
-            {
-            m_codeSpecId = codeSpecId;
-            m_externalKey = externalKey;
-            }
-
-    protected:
-        DGNPLATFORM_EXPORT DropMe _OnInserted(DgnElementCR) override;
-
-    public:
-        DGNPLATFORM_EXPORT static Key const& GetAppDataKey();
-        DGNPLATFORM_EXPORT static RefCountedPtr<ExternalKeyAspect> Create(CodeSpecId codeSpecId, Utf8CP externalKey);
-        DGNPLATFORM_EXPORT static DgnDbStatus Query(Utf8StringR, DgnElementCR, CodeSpecId);
-        DGNPLATFORM_EXPORT static DgnDbStatus Delete(DgnElementCR, CodeSpecId);
-        CodeSpecId GetCodeSpecId() const {return m_codeSpecId;}
-        Utf8CP GetExternalKey() const {return m_externalKey.c_str();}
-    };
-
-    typedef RefCountedPtr<ExternalKeyAspect> ExternalKeyAspectPtr;
-
 private:
     template<class T> void CallAppData(T const& caller) const;
     Utf8String ToJsonPropString() const;
@@ -1670,7 +1668,7 @@ public:
     DGNPLATFORM_EXPORT ECN::ECClassCP GetElementClass() const;
 
     //! Get the FederationGuid of this DgnElement.
-    BeSQLite::BeGuid GetFederationGuid() const {return m_federationGuid;}
+    BeSQLite::BeGuidCR GetFederationGuid() const {return m_federationGuid;}
 
     //! Set the FederationGuid for this DgnElement.
     //! @note To clear the FederationGuid, pass BeGuid() since an invalid BeGuid indicates a null value is desired
@@ -1700,9 +1698,7 @@ public:
     //! Generate a default code for this DgnElement
     DgnCode GenerateDefaultCode() const {return _GenerateDefaultCode();}
 
-    DGNPLATFORM_EXPORT DgnDbStatus GenerateCode(bool replaceExistingCode=false);
     DGNPLATFORM_EXPORT DgnDbStatus SetCode(DgnCodeCR newCode);
-    DGNPLATFORM_EXPORT DgnDbStatus ValidateCode() const;
     DGNPLATFORM_EXPORT CodeSpecCPtr GetCodeSpec() const;
     bool SupportsCodeSpec(CodeSpecCR codeSpec) const {return _SupportsCodeSpec(codeSpec);}
 
@@ -1938,6 +1934,9 @@ public:
     DGNPLATFORM_EXPORT void GetCustomHandledPropertiesAsJson(Json::Value& json) const;
 
     //! @}
+
+    //! Make an iterator over all ElementAspects owned by this element
+    DGNPLATFORM_EXPORT ElementAspectIterator MakeAspectIterator() const;
 };
 
 //=======================================================================================
@@ -2800,6 +2799,19 @@ protected:
 };
 
 //=======================================================================================
+//! Element used in conjunction with bis:ElementDrivesElement relationships to bundle multiple inputs before driving the output element.
+//! @ingroup GROUP_DgnElement
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE DriverBundleElement : InformationContentElement
+{
+    DGNELEMENT_DECLARE_MEMBERS(BIS_CLASS_DriverBundleElement, InformationContentElement);
+    friend struct dgn_ElementHandler::DriverBundle;
+
+protected:
+    explicit DriverBundleElement(CreateParams const& params) : T_Super(params) {}
+};
+
+//=======================================================================================
 //! A DefinitionElement resides in (and only in) a DefinitionModel.
 //! @ingroup GROUP_DgnElement
 //=======================================================================================
@@ -3480,11 +3492,18 @@ public:
     enum class PolymorphicQuery : bool {No = false, Yes = true};
 
     //! Make an iterator over elements of the specified ECClass in this DgnDb.
-    //! @param[in] className The <i>full</i> ECClass name.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
+    //! @param[in] className The <i>full</i> ECClass name of the element class.  For example: BIS_SCHEMA(BIS_CLASS_PhysicalElement)
     //! @param[in] whereClause The optional where clause starting with WHERE
     //! @param[in] orderByClause The optional order by clause starting with ORDER BY
     //! @param[in] polymorphic If false only specified class is returned. The default is true which also returns all derived classes.
     DGNPLATFORM_EXPORT ElementIterator MakeIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr, PolymorphicQuery polymorphic=PolymorphicQuery::Yes) const;
+
+    //! Make an iterator over ElementAspects of the specified ECClass in this DgnDb.
+    //! @param[in] className The <i>full</i> ECClass name of the aspect class.  For example: BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)
+    //! @param[in] whereClause The optional where clause starting with WHERE
+    //! @param[in] orderByClause The optional order by clause starting with ORDER BY
+    //! @see DgnElement::MakeAspectIterator
+    DGNPLATFORM_EXPORT ElementAspectIterator MakeAspectIterator(Utf8CP className, Utf8CP whereClause=nullptr, Utf8CP orderByClause=nullptr) const;
 
     //! Return the DgnElementId for the root Subject
     DgnElementId GetRootSubjectId() const {return DgnElementId((uint64_t)1LL);}

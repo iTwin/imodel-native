@@ -86,7 +86,7 @@ struct CodesPerformanceTest : BriefcasePerformanceTest
         DgnCode GetNextCode()
             {
             Utf8PrintfString name("%i-%i", m_codeValueBatch, m_codeValueIndex++);
-            return DgnMaterial::CreateCode(m_db->GetDictionaryModel(), name);
+            return RenderMaterial::CreateCode(m_db->GetDictionaryModel(), name);
             }
 
         DgnCodeSet PopulateCodeSet(uint32_t numCodes);
@@ -167,7 +167,7 @@ DgnDbPtr BriefcasePerformanceTest::SetupDb(WCharCP testFile, BeBriefcaseId bcId)
     if (bcId.GetValue() != m_db->GetBriefcaseId().GetValue())
         {
         TestDataManager::MustBeBriefcase(m_db, Db::OpenMode::ReadWrite);
-        m_db->AssignBriefcaseId(bcId);
+        m_db->SetAsBriefcase(bcId);
         }
 
     return m_db;

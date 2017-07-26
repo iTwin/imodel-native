@@ -35,14 +35,13 @@ privmki                         = $(SrcDgnPlatform)privmki/
 DgnGeoCoordDir                  = $(SrcDgnPlatform)DgnGeoCoord/
 ToolsDir                        = $(SrcDgnPlatform)Tools/ToolSubs/
 ConfigToolsDir                  = $(SrcDgnPlatform)Tools/ToolSubs/macro/
+imodeljsDir                     = $(SrcDgnPlatform)imodeljs/
 
 DgnPlatformInternalDir          = $(PrivateApiSrc)DgnPlatformInternal/
 lineStyleDir                    = $(DgnCoreDir)linestyle/
 dimensionDir                    = $(DgnHandlersDir)Dimension/
 
 dgnScriptDir                    = $(SrcDgnPlatform)DgnScript/
-dgnJsApiDir                     = $(dgnScriptDir)DgnJsApi/
-geomJsApiDir                    = $(dgnScriptDir)GeomJsApi/
 
 AnnotationsSrc                  = $(DgnCoreDir)Annotations/
 AnnotationsPrivateApi           = $(DgnPlatformInternalDir)DgnCore/Annotations/
@@ -128,19 +127,6 @@ always:
 
 # Need to change o around because that's what multicompile uses
 o = $(CoreObjs)
-
-#----------------------------------------------------------------------
-# Generate the TypeScript portion of the DgnScript.
-# This also generates $(dgnScriptGen)DgnJsApiBootstrap.cpp, which we compile below.
-#----------------------------------------------------------------------
-%include $(geomJsApiDir)GenerateTypeScript.mki
-
-%include $(dgnJsApiDir)GenerateTypeScript.mki
-
-%ifdef dgnScriptGen
-cIncs + -I$(dgnScriptGen)
-%endif
-
 
 #----------------------------------------------------------------------
 #   Make sure that DgnPlatformInternal.pch is up-to-date.
@@ -275,8 +261,6 @@ $(CoreObjs)ValueParse$(oext) :                      $(DgnCoreDir)ValueParse.cpp 
 
 $(CoreObjs)ACSManager$(oext) :                      $(DgnCoreDir)ACSManager.cpp $(DgnPlatformAPISrc)IAuxCoordSys.h ${MultiCompileDepends}
 
-$(CoreObjs)CodeAdmin$(oext) :                       $(DgnCoreDir)CodeAdmin.cpp $(DgnPlatformAPISrc)DgnPlatformLib.h ${MultiCompileDepends}
-
 $(CoreObjs)DgnFont$(oext) :                         $(DgnCoreDir)DgnFont.cpp $(DgnPlatformAPISrc)DgnFont.h $(contextDepends) ${MultiCompileDepends}
 
 $(CoreObjs)DgnRscFont$(oext) :                      $(DgnCoreDir)DgnRscFont.cpp $(DgnPlatformAPISrc)DgnFont.h ${MultiCompileDepends}
@@ -333,6 +317,8 @@ $(CoreObjs)GenericDomain$(oext) :                   $(DgnCoreDir)GenericDomain.c
 
 $(CoreObjs)FunctionalDomain$(oext) :                $(DgnCoreDir)FunctionalDomain.cpp $(DgnPlatformAPISrc)FunctionalDomain.h ${MultiCompileDepends}
 
+$(CoreObjs)PhysicalMaterialDomain$(oext) :          $(DgnCoreDir)PhysicalMaterialDomain.cpp $(DgnPlatformAPISrc)PhysicalMaterialDomain.h ${MultiCompileDepends}
+
 $(CoreObjs)SpatialViewController$(oext) :           $(DgnCoreDir)SpatialViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)SkyBox$(oext) :                          $(DgnCoreDir)SkyBox.cpp $(ViewControllerDepends) ${MultiCompileDepends}
@@ -355,10 +341,6 @@ $(CoreObjs)RegionUtil$(oext) :                      $(DgnHandlersDir)RegionUtil.
 
 $(CoreObjs)ScopedDgnHost$(oext) :                   $(DgnHandlersDir)ScopedDgnHost.cpp  ${MultiCompileDepends}
 
-$(CoreObjs)AnnotationTable$(oext) :                 $(DgnCoreDir)AnnotationTable.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
-
-$(CoreObjs)AnnotationTableStroker$(oext) :          $(DgnCoreDir)AnnotationTableStroker.cpp $(DgnPlatformAPISrc)AnnotationTable.h ${MultiCompileDepends}
-
 $(CoreObjs)ExternalReference$(oext) :               $(DgnCoreDir)ExternalReference.cpp $(HandlerDepends) ${MultiCompileDepends}
 
 $(CoreObjs)RevisionComparisonViewController$(oext): $(DgnCoreDir)RevisionComparisonViewController.cpp $(ViewControllerDepends) ${MultiCompileDepends}
@@ -379,6 +361,15 @@ $(o)RenderMaterial$(oext) :                         $(DgnCoreDir)RenderMaterial.
 
 $(o)DgnProvenance$(oext) :                          $(DgnCoreDir)DgnProvenance.cpp $(DgnPlatformAPISrc)DgnProvenance.h ${MultiCompileDepends}
 
+#----------------------------------------------------------------------
+#   imodeljs
+#----------------------------------------------------------------------
+
+$(CoreObjs)imodeljs$(oext) :                        $(imodeljsDir)imodeljs.cpp $(imodeljsDir)imodeljs.h ${MultiCompileDepends} 
+
+$(CoreObjs)imodeljs_dgndb$(oext) :                  $(imodeljsDir)imodeljs_dgndb.cpp $(imodeljsDir)imodeljs.h ${MultiCompileDepends} 
+
+$(CoreObjs)imodeljs_statement$(oext) :              $(imodeljsDir)imodeljs_statement.cpp $(imodeljsDir)imodeljs.h ${MultiCompileDepends} 
 
 #----------------------------------------------------------------------
 #   DgnBRep
@@ -446,25 +437,11 @@ $(o)evalcnst$(oext) :                               $(ConfigToolsDir)evalcnst.cp
 
 %if !defined (BENTLEYCONFIG_NO_JAVASCRIPT)
 
-$(o)DgnScript$(oext) :                              $(dgnScriptDir)DgnScript.cpp $(DgnPlatformAPISrc)DgnScript.h ${MultiCompileDepends}
-
-#   Core Dgn JS Api
-$(o)DgnJsApi$(oext) :                               $(dgnJsApiDir)DgnJsApi.cpp $(DgnPlatformAPISrc)DgnJsApi.h ${MultiCompileDepends}
-
-$(o)DgnJsApiBootstrap$(oext) :                      $(dgnScriptGen)DgnJsApiBootstrap.cpp ${MultiCompileDepends}
-
-$(o)DgnJsApiCallbacks$(oext) :                      $(dgnScriptGen)DgnJsApiCallbacks.cpp $(dgnScriptGen)DgnPlatform/DgnJsApiProjection.h ${MultiCompileDepends}
-
-#   Geom JS Api
-$(o)GeomJsApi$(oext) :                              $(geomJsApiDir)GeomJsApi.cpp $(DgnPlatformAPISrc)GeomJsApi.h ${MultiCompileDepends}
-
-$(o)GeomJsApiBootstrap$(oext) :                     $(dgnScriptGen)GeomJsApiBootstrap.cpp ${MultiCompileDepends}
-
-$(o)GeomJsApiCallbacks$(oext) :                     $(dgnScriptGen)GeomJsApiCallbacks.cpp $(dgnScriptGen)DgnPlatform/GeomJsApiProjection.h ${MultiCompileDepends}
+$(o)DgnScript$(oext) :                              $(dgnScriptDir)DgnScript.cpp ${MultiCompileDepends}
 
 %else
 
-$(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStubbedOut.cpp $(DgnPlatformAPISrc)DgnScript.h ${MultiCompileDepends}
+$(o)DgnScriptStubbedOut$(oext) :                    $(dgnScriptDir)DgnScriptStubbedOut.cpp ${MultiCompileDepends}
 
 %endif
 

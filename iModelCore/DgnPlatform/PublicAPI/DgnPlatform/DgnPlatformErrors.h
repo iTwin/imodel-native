@@ -10,7 +10,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <Bentley/Bentley.h>
-#include <BeJavaScriptTools/BeJavaScriptTools.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -55,6 +54,7 @@ enum class DgnDbStatus : int
     IdExists,
     InDynamicTransaction,
     InvalidCategory,
+    InvalidCode,
     InvalidCodeSpec,
     InvalidId,
     InvalidName,
@@ -122,7 +122,6 @@ enum class ViewportStatus : int
 };
 
 //! Return codes for methods which perform repository management operations
-BEJAVASCRIPT_EXPORT_CLASS (Bentley.Dgn)
 enum class RepositoryStatus : int
 {
     Success = 0,

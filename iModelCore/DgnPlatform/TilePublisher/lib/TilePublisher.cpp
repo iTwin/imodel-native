@@ -16,7 +16,6 @@ USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 USING_NAMESPACE_BENTLEY_SQLITE
 
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1825,9 +1824,9 @@ MeshMaterial::MeshMaterial(TileMeshCR mesh, bool is3d, Utf8CP suffix, DgnDbR db)
     uint32_t rgbInt = params.GetColor();
     double alpha = 1.0 - ((uint8_t*)&rgbInt)[3] / 255.0;
 
-    if (params.GetMaterialId().IsValid())
+    if (params.GetRenderMaterialId().IsValid())
         {
-        m_material = DgnMaterial::Get(db, params.GetMaterialId());
+        m_material = RenderMaterial::Get(db, params.GetRenderMaterialId());
         if (m_material.IsValid())
             {
             auto jsonMat = &m_material->GetRenderingAsset();
@@ -2055,7 +2054,7 @@ MeshMaterial TilePublisher::AddMeshMaterial(PublishTileData& tileData, TileMeshC
 
     Json::Value& matJson = tileData.m_json["materials"][mat.GetName().c_str()];
 
-    auto matId = mesh.GetDisplayParams().GetMaterialId();
+    auto matId = mesh.GetDisplayParams().GetRenderMaterialId();
     if (matId.IsValid())
         matJson["materialId"] = matId.ToString(); // Do we actually use this?
 

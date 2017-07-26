@@ -112,6 +112,7 @@ public:
     void Clear() { m_persistent.clear(); m_transient.clear(); }
     void Add(DgnElementCPtr el, DbOpcode opcode) { m_transient.insert(TransientState(el, opcode)); }
     void Add(DgnElementId id, DbOpcode opcode) { m_persistent.insert(PersistentState(id, opcode)); }
+    bool ContainsElement(DgnElementCP element) const;
 };
 
 //=======================================================================================
@@ -148,7 +149,8 @@ public:
     bool WantShowTarget() const { return 0 != (m_flags & SHOW_TARGET); }
     bool WantShowBoth() const { return WantShowCurrent() && WantShowTarget(); }
 
-    void    _CreateTerrain(TerrainContextR context) override;
+    void                _CreateTerrain(TerrainContextR context) override;
+    Render::GraphicPtr  _StrokeGeometry(ViewContextR, GeometrySourceCR, double pixelSize) override;
 
     //! Set flags for what's shown in the comparison
     DGNPLATFORM_EXPORT void SetFlags(unsigned int flags) { m_flags = flags; }

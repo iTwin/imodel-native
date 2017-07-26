@@ -26,7 +26,7 @@ struct GeometryBuilderTests : public DgnDbTestFixture
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode)
+static RenderMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, WCharCP pngFileName, RenderingAsset::TextureMap::Units unitMode)
     {
     RgbFactor red = { 1.0, 0.0, 0.0};
     uint32_t width, height;
@@ -76,11 +76,11 @@ static DgnMaterialId createTexturedMaterial(DgnDbR dgnDb, Utf8CP materialName, W
     mapsMap[RENDER_MATERIAL_MAP_Pattern] = patternMap;
     renderMaterialAsset.GetValueR(RENDER_MATERIAL_Map) = mapsMap;
 
-    DgnMaterial material(dictionary, "Test Palette", materialName);
+    RenderMaterial material(dictionary, "Test Palette", materialName);
     material.SetRenderingAsset(renderMaterialAsset);
     auto createdMaterial = material.Insert();
     EXPECT_TRUE(createdMaterial.IsValid());
-    return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : DgnMaterialId();
+    return createdMaterial.IsValid() ? createdMaterial->GetMaterialId() : RenderMaterialId();
     }
 
 /*---------------------------------------------------------------------------------**//**

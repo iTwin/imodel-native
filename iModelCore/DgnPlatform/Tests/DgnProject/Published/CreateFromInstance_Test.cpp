@@ -337,3 +337,140 @@ TEST_F(CreateFromInstanceTests, FullyCreateBim)
     newDb->Schemas().CreateClassViewsInDb();
     newDb->SaveChanges();
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Shaun.Sewall                    06/2017
+//---------------------------------------------------------------------------------------
+TEST_F(CreateFromInstanceTests, SampleForHopen)
+    {
+    USING_NAMESPACE_BENTLEY_EC;
+    SetupSeedProject();
+    m_db->Schemas().CreateClassViewsInDb();
+    PhysicalModelPtr model = DgnDbTestUtils::InsertPhysicalModel(*m_db, "MyModel");
+    DgnCategoryId categoryId = DgnDbTestUtils::InsertSpatialCategory(*m_db, "MyCategory");
+    DgnCode emptyCode = DgnCode::CreateEmpty();
+
+    Utf8CP str_Zero = "Zero";
+    Utf8CP str_One = "One";
+    Utf8CP str_Two = "Two";
+    Utf8CP str_Three = "Three";
+    Utf8CP str_StocktonDrive = "Stockton Drive";
+    Utf8CP str_PottstownPike = "Pottstown Pike";
+    Utf8CP str_Exton = "Exton";
+    Utf8CP str_Pennsylvania = "Pennsylvania";
+    Utf8CP str_USA = "USA";
+    const int32_t zipCode = 19341;
+
+    ECClassCP testElementClass = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_ELEMENT_CLASS_NAME);
+    ECClassCP locationStruct = m_db->Schemas().GetClass(DPTEST_SCHEMA_NAME, DPTEST_TEST_LOCATION_STRUCT_CLASS_NAME);
+    ASSERT_NE(testElementClass, nullptr);
+    ASSERT_NE(locationStruct, nullptr);
+
+    StandaloneECEnablerPtr locationEnabler = locationStruct->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(locationEnabler.IsValid());
+
+    StandaloneECInstancePtr locationInstance0 = locationEnabler->CreateInstance();
+    locationInstance0->SetValue("Street", ECValue(str_StocktonDrive));
+    locationInstance0->SetValue("City.Name", ECN::ECValue(str_Exton));
+    locationInstance0->SetValue("City.State", ECN::ECValue(str_Pennsylvania));
+    locationInstance0->SetValue("City.Country", ECN::ECValue(str_USA));
+    locationInstance0->SetValue("City.Zip", ECN::ECValue(zipCode));
+    ECValue locationValue0;
+    locationValue0.SetStruct(locationInstance0.get());
+
+    StandaloneECInstancePtr locationInstance1 = locationEnabler->CreateInstance();
+    locationInstance1->SetValue("Street", ECValue(str_PottstownPike));
+    locationInstance1->SetValue("City.Name", ECN::ECValue(str_Exton));
+    locationInstance1->SetValue("City.State", ECN::ECValue(str_Pennsylvania));
+    locationInstance1->SetValue("City.Country", ECN::ECValue(str_USA));
+    locationInstance1->SetValue("City.Zip", ECN::ECValue(zipCode));
+    ECValue locationValue1;
+    locationValue1.SetStruct(locationInstance1.get());
+
+    ECPropertyP locationProperty = testElementClass->GetPropertyP("Location");
+    ASSERT_NE(locationProperty, nullptr);
+    ASSERT_EQ(locationProperty->GetAsPrimitiveProperty(), nullptr);
+    ASSERT_NE(locationProperty->GetAsStructProperty(), nullptr);
+
+    ECPropertyP arrayOfStringProperty = testElementClass->GetPropertyP("ArrayOfString");
+    ASSERT_NE(arrayOfStringProperty, nullptr);
+    ASSERT_EQ(arrayOfStringProperty->GetAsPrimitiveProperty(), nullptr);
+    ASSERT_NE(arrayOfStringProperty->GetAsArrayProperty(), nullptr);
+
+    ECPropertyP arrayOfStructsProperty = testElementClass->GetPropertyP("ArrayOfStructs");
+    ASSERT_NE(arrayOfStructsProperty, nullptr);
+    ASSERT_EQ(arrayOfStructsProperty->GetAsPrimitiveProperty(), nullptr);
+    ASSERT_NE(arrayOfStructsProperty->GetAsArrayProperty(), nullptr);
+
+    StandaloneECEnablerPtr testElementEnabler = testElementClass->GetDefaultStandaloneEnabler();
+    ASSERT_TRUE(testElementEnabler.IsValid());
+
+    StandaloneECInstancePtr testElementInstance = testElementEnabler->CreateInstance();
+    ASSERT_TRUE(testElementInstance.IsValid());
+
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Model", ECValue(model->GetModelId())));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Category", ECValue(categoryId)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("CodeSpec", ECValue(emptyCode.GetCodeSpecId())));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("CodeScope", ECValue(emptyCode.GetScopeElementId(*m_db))));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.Street", ECValue(str_StocktonDrive)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.Name", ECValue(str_Exton)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.State", ECValue(str_Pennsylvania)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.Country", ECValue(str_USA)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("Location.City.Zip", ECValue(zipCode)));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->AddArrayElements("ArrayOfString", 4));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("ArrayOfString", ECValue(str_Zero), 0));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("ArrayOfString", ECValue(str_One), 1));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("ArrayOfString", ECValue(str_Two), 2));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("ArrayOfString", ECValue(str_Three), 3));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->AddArrayElements("ArrayOfStructs", 2));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("ArrayOfStructs", locationValue0, 0));
+    ASSERT_EQ(ECObjectsStatus::Success, testElementInstance->SetValue("ArrayOfStructs", locationValue1, 1));
+
+    DgnElementId testElementId;
+
+    // Create and Insert element from ECInstance
+        {
+        DgnElementPtr testElement = m_db->Elements().CreateElement(*testElementInstance);
+        ASSERT_TRUE(testElement.IsValid());
+        ASSERT_TRUE(testElement->Insert().IsValid());
+        testElementId = testElement->GetElementId();
+        }
+
+    // Re-load element to make sure it was inserted properly
+        {
+        m_db->Memory().PurgeUntil(0);
+        PhysicalElementCPtr testElement = m_db->Elements().Get<PhysicalElement>(testElementId);
+        ASSERT_TRUE(testElement.IsValid());
+        ASSERT_EQ(testElement->GetModelId(), model->GetModelId());
+        ASSERT_EQ(testElement->GetCategoryId(), categoryId);
+        ASSERT_EQ(testElement->GetCode().GetCodeSpecId(), emptyCode.GetCodeSpecId());
+        ASSERT_EQ(testElement->GetCode().GetScopeElementId(*m_db), emptyCode.GetScopeElementId(*m_db));
+        ASSERT_TRUE(testElement->GetCode().GetValue().empty());
+        ASSERT_STREQ(testElement->GetPropertyValueString("Location.Street").c_str(), str_StocktonDrive);
+        ASSERT_STREQ(testElement->GetPropertyValueString("Location.City.Name").c_str(), str_Exton);
+        ASSERT_STREQ(testElement->GetPropertyValueString("Location.City.State").c_str(), str_Pennsylvania);
+        ASSERT_STREQ(testElement->GetPropertyValueString("Location.City.Country").c_str(), str_USA);
+        ASSERT_EQ(testElement->GetPropertyValueInt32("Location.City.Zip"), zipCode);
+        ASSERT_STREQ(testElement->GetPropertyValueString("ArrayOfString", 0).c_str(), str_Zero);
+        ASSERT_STREQ(testElement->GetPropertyValueString("ArrayOfString", 1).c_str(), str_One);
+        ASSERT_STREQ(testElement->GetPropertyValueString("ArrayOfString", 2).c_str(), str_Two);
+        ASSERT_STREQ(testElement->GetPropertyValueString("ArrayOfString", 3).c_str(), str_Three);
+        ECValue structValue;
+        ASSERT_EQ(DgnDbStatus::Success, testElement->GetPropertyValue(structValue, "ArrayOfStructs", 1));
+        ASSERT_FALSE(structValue.IsNull());
+        ASSERT_TRUE(structValue.IsStruct());
+        IECInstancePtr structInstance = structValue.GetStruct();
+        ASSERT_TRUE(structInstance.IsValid());
+        ECValue structMemberValue;
+        ASSERT_EQ(ECObjectsStatus::Success, structInstance->GetValue(structMemberValue, "Street"));
+        ASSERT_STREQ(structMemberValue.GetUtf8CP(), str_PottstownPike);
+        ASSERT_EQ(ECObjectsStatus::Success, structInstance->GetValue(structMemberValue, "City.Name"));
+        ASSERT_STREQ(structMemberValue.GetUtf8CP(), str_Exton);
+        ASSERT_EQ(ECObjectsStatus::Success, structInstance->GetValue(structMemberValue, "City.State"));
+        ASSERT_STREQ(structMemberValue.GetUtf8CP(), str_Pennsylvania);
+        ASSERT_EQ(ECObjectsStatus::Success, structInstance->GetValue(structMemberValue, "City.Country"));
+        ASSERT_STREQ(structMemberValue.GetUtf8CP(), str_USA);
+        ASSERT_EQ(ECObjectsStatus::Success, structInstance->GetValue(structMemberValue, "City.Zip"));
+        ASSERT_EQ(structMemberValue.GetInteger(), zipCode);
+        }
+    }
