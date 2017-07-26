@@ -378,12 +378,21 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
         m_gcsDirty(false),     
         m_compressionType(SCM_COMPRESSION_DEFLATE),
         m_workingLayer(DEFAULT_WORKING_LAYER),
-        m_isCanceled(false)
+        m_isCanceled(false),
+	m_progress(new ScalableMeshProgress())
     {
   
 
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
+	s_useThreadsInMeshing = true;
+	s_useThreadsInStitching = true;
+	s_useThreadsInFiltering = true;
+	m_progress->ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
+	m_progress->ProgressStepIndex() = 0;
+	m_progress->Progress() = 0;
+	m_progress->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
+	m_progress->SetTotalNumberOfSteps(0);
 
 
     }

@@ -2541,6 +2541,12 @@ void SMMeshIndexNode<POINT, EXTENT>::SplitMeshForChildNodes()
         if (childIndices.size() == 0) continue;
         
         DRange3d childContentRange;
+		if (contentRange.low.z == contentRange.high.z)
+		{
+			contentRange.low.z = nodeRange.low.z;
+			contentRange.high.z = nodeRange.high.z;
+		}
+
         childContentRange.IntersectionOf(contentRange, nodeRange);
         nodeP->m_nodeHeader.m_contentExtent = ExtentOp<EXTENT>::Create(childContentRange.low.x, childContentRange.low.y, childContentRange.low.z, childContentRange.high.x, childContentRange.high.y, childContentRange.high.z);
         nodeP->m_nodeHeader.m_contentExtentDefined = true;
@@ -5172,6 +5178,7 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
+#ifdef VANCOUVER_API
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType::CESIUM, static_cast<SMStreamingStore<EXTENT>*>(pDataStore.get())->GetDataSourceAccount());
     SMGroupCache::Ptr groupCache = nullptr;
     SMNodeGroupPtr group = SMNodeGroup::Create(groupParameters, groupCache, path, 0, nullptr);
@@ -5199,6 +5206,9 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
         }
 
     saveGroupsThread.join();
+#else
+	assert(!"Not yet available on dgndb, missing SMNodeGroup::Create overload");
+#endif
 
     if (m_progress != nullptr && m_progress->IsCanceled()) return SUCCESS;
 

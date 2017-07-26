@@ -7873,6 +7873,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     // Force multi file, in case the originating dataset is single file (result is intended for multi file anyway)
     oldMasterHeader.m_singleFile = false;
 
+#ifdef VANCOUVER_API
     SMGroupGlobalParameters::Ptr groupParameters = SMGroupGlobalParameters::Create(SMGroupGlobalParameters::StrategyType(pi_pGroupMode), dataSourceAccount);
     SMGroupCache::Ptr groupCache = nullptr;
     SMNodeGroupPtr group = SMNodeGroup::Create(groupParameters, groupCache, pi_pOutputDirPath, 0, nullptr);
@@ -7894,7 +7895,9 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     masterHeaderPath.PopDir();
 
     strategy->SaveMasterHeader(masterHeaderPath);
-
+#else
+	assert(!"Not yet on dgndb, missing SMNodeGroup::Create overload");
+#endif
     return SUCCESS;
     }
 /**----------------------------------------------------------------------------

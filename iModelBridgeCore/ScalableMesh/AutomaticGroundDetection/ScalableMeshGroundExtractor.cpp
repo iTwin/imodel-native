@@ -34,7 +34,11 @@
 #include <Bentley\BeDirectoryIterator.h>
 #include <Bentley\BeConsole.h>
 
+#ifdef VANCOUVER_API
 #include <DgnGeoCoord\DgnGeoCoord.h>
+#else
+#include <DgnPlatform\DgnGeoCoord.h>
+#endif
 
 USING_NAMESPACE_GROUND_DETECTION
 
@@ -138,6 +142,7 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
         Transform                       m_previewTransform;
 
         GeoCoordInterpretation m_geocoordInterpretation;
+
         BaseGCSPtr             m_sourceGcs;
         BaseGCSPtr             m_destinationGcs;
 
@@ -148,7 +153,7 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
                 assert(m_sourceGcs.IsValid());
                 GeoPoint srcLatLong;
                 GeoPoint dstLatLong;                
-                
+
                 if (m_geocoordInterpretation == GeoCoordInterpretation::Cartesian)
                     {
                     m_sourceGcs->LatLongFromCartesian(srcLatLong, ptIn);
