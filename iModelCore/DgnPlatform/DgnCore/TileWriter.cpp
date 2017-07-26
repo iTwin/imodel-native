@@ -747,6 +747,9 @@ public:
         }
 };
 
+// So dumb that this is required by linker...
+constexpr Utf8CP BatchTableBuilder::s_classNames[];
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
