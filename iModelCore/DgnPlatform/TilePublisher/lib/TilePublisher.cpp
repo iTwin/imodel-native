@@ -1138,6 +1138,26 @@ void addVectorPosition(ByteStream& positionsX, ByteStream& positionsY, DPoint3dC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void addVectorPolygons (Json::Value& json, ByteStream& positionsX, ByteStream& positionsY, ByteStream& indices, ByteStream& featureBinary, TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR tileRange)
     {
+    uint32_t            polygonCount =0;
+    ByteStream          polygonIndexCountBuffer;
+    VectorPosition      lastPosition;
+
+    // Merging polygons seems like a good idea but the createTileFromVertices workers asssumes the vertices are ordered around the perimeter of polygons.
+#ifndef MERGE_TRIANGLES
+    for (auto& triangle : triangles)
+        {
+        for (size_t i=0; i<3; i++)
+            {
+            indices.Append((uint32_t) (positionsX.size()/sizeof(uint16_t)));
+            addVectorPosition(positionsX, positionsY, mesh.Points().at(triangle.m_indices[i]), lastPosition, tileRange);
+            }
+        json["POLYGON_BATCH_IDS"][polygonCount] = mesh.Attributes().at(triangle.m_indices[0]);
+        featureBinary.Append(3);
+        polygonIndexCountBuffer.Append(3);
+        polygonCount++;
+        }
+    
+#else
     // Need to process all triangles that have the same attribute value as a single "polygon".
     bmap <uint16_t, bvector<TileTriangle const*>> triangleMap;
     
@@ -1151,13 +1171,10 @@ void addVectorPolygons (Json::Value& json, ByteStream& positionsX, ByteStream& p
             insertPair.first->second.push_back(&triangle);
         }
 
-    uint32_t            polygonCount =0;
-    ByteStream          polygonIndexCountBuffer;
     for (auto& curr : triangleMap)
         {
         bmap    <uint32_t, uint32_t>    indexMap;
         uint32_t                        thisPolygonPointCount = 0, thisPolygonIndexCount = 0;
-        VectorPosition                  lastPosition;
 
         for (auto& triangle : curr.second)
             {
@@ -1185,6 +1202,7 @@ void addVectorPolygons (Json::Value& json, ByteStream& positionsX, ByteStream& p
         polygonIndexCountBuffer.Append(thisPolygonIndexCount);
         polygonCount++;
         }
+#endif
     json["POLYGONS_LENGTH"] = polygonCount;
     json["POLYGON_COUNT"]["byteOffset"] = 0;
     json["POLYGON_INDEX_COUNT"]["byteOffset"] = featureBinary.size();
@@ -1619,10 +1637,14 @@ Utf8String TilePublisher::AddMeshShaderTechnique(PublishTileData& data, MeshMate
         }
 
     if (doBatchIds)
-        AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+        AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "_BATCHID");
 
     if (!mat.IsTextured())
         AddTechniqueParameter(technique, "colorIndex", GLTF_FLOAT, "_COLORINDEX");
+
+#ifdef COLORBLENDMODE_TEST
+    AddTechniqueParameter(technique, "diffuse", GLTF_FLOAT_VEC4, "_3DTILESDIFFUSE");
+#endif
 
     Utf8String         programName               = prefix + "Program";
     Utf8String         vertexShader              = prefix + "VertexShader";
@@ -2152,7 +2174,7 @@ Utf8String TilePublisher::AddPolylineTechnique(PublishTileData& tileData, Polyli
     AddTechniqueParameter(technique, "proj", GLTF_FLOAT_MAT4, "PROJECTION");
     AddTechniqueParameter(technique, "pos", GLTF_FLOAT_VEC3, "POSITION");
     if (doBatchIds)
-        AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "BATCHID");
+        AddTechniqueParameter(technique, "batch", GLTF_FLOAT, "_BATCHID");
 
     auto& enableStates = technique["states"]["enable"] = Json::arrayValue;
     enableStates.append(GLTF_DEPTH_TEST);
@@ -2428,7 +2450,7 @@ void TilePublisher::AddMeshUInt16Attributes(PublishTileData& tileData, Json::Val
 +---------------+---------------+---------------+---------------+---------------+------*/
 void TilePublisher::AddMeshBatchIds (PublishTileData& tileData, Json::Value& primitive, bvector<uint16_t> const& batchIds, Utf8StringCR idStr)
     {
-    AddMeshUInt16Attributes(tileData, primitive, batchIds, idStr, "Batch_", "BATCHID");
+    AddMeshUInt16Attributes(tileData, primitive, batchIds, idStr, "Batch_", "_BATCHID");
     }
 
 /*---------------------------------------------------------------------------------**//**
