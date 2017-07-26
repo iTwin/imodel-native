@@ -7573,7 +7573,7 @@ template<class POINT, class EXTENT> void SMPointIndexNode<POINT, EXTENT>::Filter
             }        
         }
         if (m_nodeHeader.m_level == 0 && s_useThreadsInFiltering)
-            WaitForThreadStop();
+            WaitForThreadStop(m_SMIndex->m_progress.get());
     // Now filtering can be performed using the sub-nodes filtered data. This data
     // accessed using the HPMPooledVector interface the Node is a descendant of.
     // Do not hesitate to increase the HPMPooledVector interface if required.

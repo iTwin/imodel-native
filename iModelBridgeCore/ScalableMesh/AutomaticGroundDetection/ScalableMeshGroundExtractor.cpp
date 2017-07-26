@@ -75,7 +75,7 @@ StatusInt IScalableMeshGroundPreviewer::UpdatePreview(PolyfaceQueryCR currentGro
 
 bool IScalableMeshGroundPreviewer::UpdateProgress(IScalableMeshProgress* progress)
     {
-    return _UpdateProgress(progress);
+		return _UpdateProgress(progress);
     }
 /*----------------------------------------------------------------------------+
 |IScalableMeshGroundPreviewer - End
