@@ -14,7 +14,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="Core" BMakeFile="core\coreDgnDb.mke" ApiNumber="G">
+    <Part Name="Core" BMakeFile="core\coreDgnDb.mke" ApiNumber="B02">
         <SubPart PartName="HeaderFiles"/>
         <SubPart PartName="GeomDlls" PartFile="geomlibs" Repository="GeomLibs" />
         <Bindings>
@@ -23,7 +23,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="Formats" BMakeFile="formats\formatsDgnDb.mke" ApiNumber="G">
+    <Part Name="Formats" BMakeFile="formats\formatsDgnDb.mke" ApiNumber="B02">
         <!--<SubPart PartName="InRoadsTM" LibType="Static" />-->
         <SubPart PartName="Core" />
 		<SubPart PartName="BeSQLite" PartFile="BeSQLite" Repository="BeSQLite" />
@@ -36,7 +36,7 @@
         </Bindings>
     </Part>
 
-    <Part Name="AutomaticGroundDetection" BMakeFile="AutomaticGroundDetection\AutomaticGroundDetectionDgnDb.mke" ApiNumber="G">      
+    <Part Name="AutomaticGroundDetection" BMakeFile="AutomaticGroundDetection\AutomaticGroundDetectionDgnDb.mke" ApiNumber="B02">      
       <SubPart PartName="Core" />
       <SubPart PartName="Formats" />      
       <SubPart PartName="GeoCoord"   PartFile="GeoCoord"   Repository="GeoCoord" />
