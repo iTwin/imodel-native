@@ -39,11 +39,7 @@ bool ForeignKeyPartitionView::Partition::IsConcrete() const
 //---------------------------------------------------------------------------------------
 bool ForeignKeyPartitionView::Partition::IsPhysical() const
     {
-    for (DbColumn const* col : m_cols)
-        if (col && col->GetTable().GetType() == DbTable::Type::Virtual)
-            return false;
-
-    return true;
+    return GetECInstanceIdColumn().GetTable().GetType() != DbTable::Type::Virtual;
     }
 
 //---------------------------------------------------------------------------------------
@@ -319,6 +315,50 @@ std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(ECDbCR 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16
 //---------------------------------------------------------------------------------------
+ECN::ECRelationshipClassCR ForeignKeyPartitionView::GetRootClass(ECN::ECRelationshipClassCR ecRelationshipClass)
+    {
+    if (!ecRelationshipClass.HasBaseClasses())
+        return ecRelationshipClass;
+
+    BeAssert(ecRelationshipClass.GetBaseClasses().size() == 1 && ecRelationshipClass.GetBaseClasses().front()->GetRelationshipClassCP() != nullptr);
+    return GetRootClass(*ecRelationshipClass.GetBaseClasses().front()->GetRelationshipClassCP());
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
+Utf8String ForeignKeyPartitionView::ToString() const
+    {
+    const int tabSize = 2;
+    NativeSqlBuilder builder;
+    builder.Append("Relationship: ").AppendLine(m_relationshipClass.GetFullName());
+    builder.AppendSpace(tabSize).AppendLine("Partitions:");
+    int i = 1;
+    for (Partition const* partition : GetPartitions(false))
+        {
+        builder.AppendSpace(tabSize * 2).Append("#").AppendFormatted("%d [%s]", i++, partition->GetECInstanceIdColumn().GetTable().GetType() != DbTable::Type::Virtual ? "Physical" : "Virtual").AppendEol();
+        builder.AppendSpace(tabSize * 2).Append("ECInstanceId       : ").Append(partition->GetECInstanceIdColumn()).AppendEol();
+        builder.AppendSpace(tabSize * 2).Append("ECClassId          : ").Append(partition->GetECClassIdColumn()).AppendEol();
+        builder.AppendSpace(tabSize * 2).Append("SourceECInstanceId : ").Append(partition->GetSourceECInstanceIdColumn()).AppendEol();
+        builder.AppendSpace(tabSize * 2).Append("SourceECClassId    : ");
+        if (partition->GetSourceECClassIdColumn())
+            builder.AppendSpace(tabSize * 2).Append(*partition->GetSourceECClassIdColumn()).AppendEol();
+        else
+            builder.AppendSpace(tabSize * 2).Append("null").AppendEol();
+
+        builder.AppendSpace(tabSize * 2).Append("TargetECInstanceId : ").Append(partition->GetTargetECInstanceIdColumn()).AppendEol();
+        builder.AppendSpace(tabSize * 2).Append("TargetECClassId    : ");
+        if (partition->GetSourceECClassIdColumn())
+            builder.AppendSpace(tabSize * 2).Append(*partition->GetTargetECClassIdColumn()).AppendEol();
+        else
+            builder.AppendSpace(tabSize * 2).Append("null").AppendEol();
+
+        }
+
+    return builder.ToString();
+    }
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Affan.Khan          07/16
+//---------------------------------------------------------------------------------------
 std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(ECDbCR ecdb, ECN::ECRelationshipClassCR relationship, MapStrategy mapStrategy, bool readonly)
     {
     std::unique_ptr<ForeignKeyPartitionView> info = std::unique_ptr<ForeignKeyPartitionView>(
@@ -347,7 +387,7 @@ std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(ECDbCR 
     CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
     PRECONDITION(stmt != nullptr, nullptr);
 
-    stmt->BindId(1, relationship.GetId());
+    stmt->BindId(1, GetRootClass(relationship).GetId());
     while (stmt->Step() == BE_SQLITE_ROW)
         {
         PropertyMapKind idPropertyMapKind = Enum::FromInt<PropertyMapKind>(stmt->GetValueInt(0));
@@ -433,7 +473,7 @@ std::vector<DbTable const*> ForeignKeyPartitionView::GetOtherEndTables(ECDbCR ec
             "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined " AND [T].[Type] != " SQLVAL_DbTable_Type_Overflow);
 
         PRECONDITION(stmt != nullptr, list);
-        stmt->BindId(1, relationshipClass.GetId());
+        stmt->BindId(1, GetRootClass(relationshipClass).GetId());
         stmt->BindInt(2, Enum::ToInt(otherEnd));
         while (stmt->Step() == BE_SQLITE_ROW)
             {
@@ -462,7 +502,7 @@ std::vector<DbTable const*> ForeignKeyPartitionView::GetOtherEndTables(ECDbCR ec
             "       AND [RC].[RelationshipEnd] = ? AND [T].[Type] != " SQLVAL_DbTable_Type_Joined " AND [T].[Type] != " SQLVAL_DbTable_Type_Overflow);
 
         PRECONDITION(stmt != nullptr, list);
-        stmt->BindId(1, relationshipClass.GetId());
+        stmt->BindId(1, GetRootClass(relationshipClass).GetId());
         stmt->BindInt(2, Enum::ToInt(otherEnd));
         while (stmt->Step() == BE_SQLITE_ROW)
             {

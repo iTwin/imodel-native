@@ -706,20 +706,21 @@ TEST_F(DbMappingTestFixture, MultiSessionImportWithMixin)
 
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId, ECClassId, SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId FROM ts.CarHasEndPoint"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_EQ(5, stmt.GetValueInt64(0)); //ECInstanceId
-    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1)); //ECClassId
-    ASSERT_EQ(1, stmt.GetValueInt64(2));//SourceECInstanceId
-    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));//SourceECClassId
-    ASSERT_EQ(5, stmt.GetValueInt64(4));//TargetECInstanceId
-    ASSERT_EQ(sterringId.GetValue(), stmt.GetValueInt64(5));//TargetECClassId
-    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-
     ASSERT_EQ(2, stmt.GetValueInt64(0));                  //ECInstanceId
     ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1));   //ECClassId
     ASSERT_EQ(1, stmt.GetValueInt64(2));                  //SourceECInstanceId
     ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));   //SourceECClassId
     ASSERT_EQ(2, stmt.GetValueInt64(4));                  //TargetECInstanceId
     ASSERT_EQ(engineId.GetValue(), stmt.GetValueInt64(5));//TargetECClassId
+
+    ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
+    ASSERT_EQ(5, stmt.GetValueInt64(0)); //ECInstanceId
+    ASSERT_EQ(relId.GetValue(), stmt.GetValueInt64(1)); //ECClassId
+    ASSERT_EQ(1, stmt.GetValueInt64(2));//SourceECInstanceId
+    ASSERT_EQ(carId.GetValue(), stmt.GetValueInt64(3));//SourceECClassId
+    ASSERT_EQ(5, stmt.GetValueInt64(4));//TargetECInstanceId
+    ASSERT_EQ(sterringId.GetValue(), stmt.GetValueInt64(5));//TargetECClassId
+
     ASSERT_EQ(BE_SQLITE_DONE, stmt.Step());
     stmt.Finalize();
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT Car.Id,Car.RelECClassId FROM ts.Engine"));

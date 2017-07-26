@@ -77,6 +77,8 @@ struct ForeignKeyPartitionView final : NonCopyableClass
             ~Partition() {}
             uint64_t GetHashCode() const { return m_hashCode; }
             //Relationship cannonical view
+            DbTable const& GetTable() const { return GetECInstanceIdColumn().GetTable(); }
+            DbTable const* GetOtherEndTable() const { return GetFromECClassIdColumn() == nullptr ? nullptr : &GetFromECClassIdColumn()->GetTable(); }
             DbColumn const& GetECInstanceIdColumn() const { return *GetColumn(ColumnId::ECInstanceId); }
             DbColumn const& GetECClassIdColumn() const { return *GetColumn(ColumnId::ECClassId); }
             DbColumn const& GetSourceECInstanceIdColumn() const { return *GetColumn(ColumnId::SourceECInstanceId); }
@@ -107,10 +109,10 @@ struct ForeignKeyPartitionView final : NonCopyableClass
 
     private:
         ForeignKeyPartitionView(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy);
+        BentleyStatus TryGetFromECClassIdColumn(DbColumn const*& column) const;
         static std::unique_ptr<ForeignKeyPartitionView> Create(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy, bool);
         static BentleyStatus GetMapStrategy(MapStrategy &, ECDbCR, ECN::ECRelationshipClassCR);
-        BentleyStatus TryGetFromECClassIdColumn(DbColumn const*& column) const;
-
+        static ECN::ECRelationshipClassCR GetRootClass(ECN::ECRelationshipClassCR ecRelationshipClass);
     public:
         ~ForeignKeyPartitionView() {}
         void UpdateFromECClassIdColumnOnInsert(bool enable) { m_updateFromECClassIdColumnOnInsert = enable; }
@@ -125,6 +127,8 @@ struct ForeignKeyPartitionView final : NonCopyableClass
         static std::unique_ptr<ForeignKeyPartitionView> CreateReadonly(ECDbCR, ECN::ECRelationshipClassCR);
         static std::unique_ptr<ForeignKeyPartitionView> Create(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy);
         static std::vector<DbTable const*> GetOtherEndTables(ECDbCR, ECN::ECRelationshipClassCR, MapStrategy);
+        Utf8String ToString() const;
+
     };
 
 //=======================================================================================

@@ -827,8 +827,8 @@ BentleyStatus DbMap::SaveDbSchema(SchemaImportContext& ctx) const
             return ERROR;
             }
 
-        if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
-            classMap.GetAs<RelationshipClassEndTableMap>().ResetPartitionCache();
+        //if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
+        //    classMap.GetAs<RelationshipClassEndTableMap>().ResetPartitionCache();
         }
 
     if (SUCCESS != DbSchemaPersistenceManager::RepopulateClassHasTableCacheTable(GetECDb()))

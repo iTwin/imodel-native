@@ -380,13 +380,17 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     const ECClassId classId = classMap.GetClass().GetId();
     std::unique_ptr<StorageDescription> storageDescription = std::unique_ptr<StorageDescription>(new StorageDescription(classId));
     std::set<ECClassId> derviedClassSet;
+    
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = classMap.GetAs<RelationshipClassEndTableMap> ();
-        for (DbTable const* endTable : relClassMap.GetPartitionView().GetTables(false))
+        auto fkView = ForeignKeyPartitionView::CreateReadonly(classMap.GetDbMap().GetECDb(), relClassMap.GetRelationshipClass());
+
+        for (auto partition : fkView->GetPartitions(true/*onlyPhysical*/))
             {
+            DbTable const& endTable = partition->GetTable();
             const LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
-            Partition* hp = storageDescription->AddHorizontalPartition(*endTable, true);
+            Partition* hp = storageDescription->AddHorizontalPartition(endTable, true);
             for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvpair : lwmc.GetConstraintClassesForRelationshipClass(classId))
                 {
                 ECClassId constraintClassId = kvpair.first;
@@ -396,7 +400,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
                     hp->AddClassId(constraintClassId);
                 }
 
-            hp->GenerateClassIdFilter(lwmc.GetClassesForTable(*endTable));
+            hp->GenerateClassIdFilter(lwmc.GetClassesForTable(endTable));
             }
         }
     else

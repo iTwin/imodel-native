@@ -990,11 +990,13 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
     ECN::ECRelationshipEnd thisEnd = relClassMap->GetForeignEnd();
 
     // Setup other end of relationship
-    RelationshipClassEndTableMap::Partition const* firstPartition = relClassMap->GetPartitionView().GetPhysicalPartitions().front();
+    auto fkView = ForeignKeyPartitionView::CreateReadonly(m_ecdb, relClassMap->GetRelationshipClass());
+    ForeignKeyPartitionView::Partition const* firstPartition = fkView->GetPartitions(true, true).front();
     if (!firstPartition)
         return;
+
     ECN::ECRelationshipEnd otherEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    DbColumn const* otherEndClassIdColumnCP = firstPartition->GetConstraintECClassId(otherEnd);
+    DbColumn const* otherEndClassIdColumnCP = firstPartition->GetFromECClassIdColumn();
     if (otherEndClassIdColumnCP == nullptr)
         {
         BeAssert(false && "Need to adjust code when constraint ecclassid column is nullptr");
