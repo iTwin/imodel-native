@@ -26,7 +26,7 @@
 #include "..\CGALEdgeCollapse.h"
 #undef static_assert
 #include <DgnPlatform/DgnPlatformApi.h>
-#ifdef VANCOUVER
+#ifdef VANCOUVER_API
 #include <DgnGeoCoord\DgnGeoCoord.h>
 #else
 #include <DgnPlatform\DgnGeoCoord.h>

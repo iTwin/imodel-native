@@ -12,7 +12,7 @@
 
 #pragma once
 
-#ifdef VANCOUVER
+#ifdef VANCOUVER_API
 #include <DgnGeoCoord\DgnGeoCoord.h>
 #else
 #include <DgnPlatform\DgnGeoCoord.h>
