@@ -2516,7 +2516,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
         }
 
     if (rc != BE_SQLITE_OK)
-        DoCloseDb();
+        CloseDb();
 
     return rc;
     }
