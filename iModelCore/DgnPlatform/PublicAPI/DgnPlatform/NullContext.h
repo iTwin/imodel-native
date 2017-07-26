@@ -63,7 +63,7 @@ struct NullContext : ViewContext
         void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP) override {}
         Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR transform, ClipVectorCP) const override {return new NullGraphicBuilder(Render::GraphicBuilder::CreateParams(GetDgnDb(), transform));}
-        virtual Render::GraphicPtr _Finish() { m_isOpen = false; return new NullGraphic(GetDgnDb()); }
+        Render::GraphicPtr _Finish() override { m_isOpen = false; return new NullGraphic(GetDgnDb()); }
     };
 
 protected:

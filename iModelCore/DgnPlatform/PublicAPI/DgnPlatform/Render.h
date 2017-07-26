@@ -1825,7 +1825,7 @@ namespace Quantization
             }
 
         //! Replace the contents of this list with the specified points, quantized to the specified params
-        void Assign(QPoint3dCP points, size_t nPoints, Params const& params)
+        void Assign(T const* points, size_t nPoints, Params const& params)
             {
             m_params = params;
             assign(points, points+nPoints);
@@ -1835,20 +1835,20 @@ namespace Quantization
         void Reset(Params const& params)
             {
             m_params = params;
-            clear();
+            this->clear();
             }
 
         Params const& GetParams() const { return m_params; }
         void SetParams(Params const& params) { m_params = params; }
 
         //! Quantize the specified point and add it to this list
-        void Add(DPoint const& dpt) { push_back(T(dpt, GetParams())); }
+        void Add(DPoint const& dpt) { this->push_back(T(dpt, GetParams())); }
         //! Quantize the specified point and add it to this list
         void Add(FPoint const& fpt) { Add(ToDPoint(fpt)); }
         //! Return the unquantized point at the specified index.
         DPoint Unquantize(size_t index) const { return UnquantizeAsVector(index); }
         //! Return the point at the specified index, unquantized as a vector type.
-        DVec UnquantizeAsVector(size_t index) const { BeAssert(index < size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
+        DVec UnquantizeAsVector(size_t index) const { BeAssert(index < this->size()); return (*this)[index].UnquantizeAsVector(GetParams()); }
         //! Return the point at the specified index
         FPoint Unquantize32(size_t index) const { return ToFPoint(Unquantize(index)); }
 
@@ -1871,7 +1871,6 @@ namespace Quantization
         static DPoint ToDPoint(FPoint const& fpt) { return T::ToDPoint(fpt); }
         static FPoint ToFPoint(FPoint const& fpt) { return fpt; }
         static DPoint ToDPoint(DPoint const& dpt) { return dpt; }
-
     };
 }
 
@@ -1921,7 +1920,7 @@ struct QPoint3d
 
     };
 
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Params);
 
     QPoint3d() { }
     QPoint3d(uint16_t x_, uint16_t y_, uint16_t z_) : x(x_), y(y_), z(z_) { }
@@ -2002,7 +2001,7 @@ struct QPoint2d
         DRange2d GetRange() const { return DRange2d::From (origin.x, origin.y, origin.x + Quantization::RangeScale() * scale.x, origin.y + Quantization::RangeScale() * scale.y); }
     };
 
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Params);
 
     QPoint2d() { }
     QPoint2d(DPoint2dCR pt, DRange2dCR range) : QPoint2d(pt, Params(range)) { }
@@ -2062,7 +2061,7 @@ struct QPoint1d
 
     uint16_t    x;
 
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(Params);
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(Params);
 
     QPoint1d() { }
     QPoint1d(double x, DRange1d range) : QPoint1d(x, Params(range)) { }
@@ -2308,7 +2307,7 @@ public:
     bool empty() const { return m_list.empty(); }
     void clear() { m_list.clear(); }
 
-    void Add(GraphicR graphic, OvrGraphicParamsCR ovr) { BeAssert(nullptr != &graphic); m_list.push_back(Node(graphic, ovr)); }
+    void Add(GraphicR graphic, OvrGraphicParamsCR ovr) { BeAssert(GraphicPtr(&graphic).IsValid()); m_list.push_back(Node(graphic, ovr)); }
     void Add(GraphicR graphic, OvrGraphicParamsCP ovr=nullptr) { Add(graphic, nullptr != ovr ? *ovr : OvrGraphicParams()); }
     uint32_t GetCount() const { return static_cast<uint32_t>(size()); }
 };

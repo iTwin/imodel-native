@@ -11,7 +11,6 @@
 #include <DgnPlatform/TileIO.h>
 #include <folly/BeFolly.h>
 
-
 #include <TilePublisher/Lib/Constants.h>
 
 USING_NAMESPACE_TILETREE
