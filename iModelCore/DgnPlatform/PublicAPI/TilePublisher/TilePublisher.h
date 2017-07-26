@@ -11,7 +11,6 @@
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnPlatformLib.h>
 #include <DgnPlatform/DgnGeoCoord.h>
-#include <DgnPlatform/AutoRestore.h>
 #include <DgnPlatform/DgnMaterial.h>
 #include <stdio.h>
 
