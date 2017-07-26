@@ -1446,7 +1446,7 @@ void ViewDefinition::LookAtViewAlignedVolume(DRange3dCR volume, double const* as
 
     SetExtents(newDelta);
     if (aspect)
-        AdjustAspectRatio(*aspect);
+        _AdjustAspectRatio(*aspect);
 
     newDelta = GetExtents();
 
@@ -1775,14 +1775,12 @@ DPoint3d ViewDefinition3d::_GetTargetPoint() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Keith.Bentley   01/03
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ViewDefinition::AdjustAspectRatio(double windowAspect)
+void ViewDefinition::_AdjustAspectRatio(double windowAspect)
     {
     DVec3d extents = GetExtents();
     double viewAspect = extents.x / extents.y;
 
-    auto drawingView = _ToDrawingView();
-    if (nullptr != drawingView)
-        windowAspect *= drawingView->GetAspectRatioSkew();
+    windowAspect *= GetAspectRatioSkew();
 
     if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
         return;

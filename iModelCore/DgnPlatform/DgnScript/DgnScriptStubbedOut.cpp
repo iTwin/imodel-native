@@ -11,14 +11,6 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                      07/15
 //---------------------------------------------------------------------------------------
-DgnDbStatus DgnScript::ExecuteEga(int& functionReturnStatus, Dgn::DgnElementR el, Utf8CP jsEgaFunctionName, DPoint3dCR origin, YawPitchRollAnglesCR angles, Json::Value const& parms)
-    {
-    return DgnDbStatus::NotEnabled;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      07/15
-//---------------------------------------------------------------------------------------
 DgnPlatformLib::Host::ScriptAdmin::ScriptAdmin()
     {
     }
@@ -37,13 +29,6 @@ BeJsEnvironmentR DgnPlatformLib::Host::ScriptAdmin::GetBeJsEnvironment()
     {
     BeAssert(false);
         return *(BeJsEnvironmentP)(nullptr);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Sam.Wilson                      02/16
-//---------------------------------------------------------------------------------------
-void DgnPlatformLib::Host::ScriptAdmin::_ThrowException(Utf8CP exname, Utf8CP details)
-    {
     }
 
 //---------------------------------------------------------------------------------------
