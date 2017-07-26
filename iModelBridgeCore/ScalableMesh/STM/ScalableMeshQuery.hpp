@@ -1958,7 +1958,7 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRA
 
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClipping(const bset<uint64_t>& clipsToShow) const
     {
-    if (clipsToShow.empty() || m_node->GetNbPoints() == 0 || dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node)->m_nodeHeader.m_nbFaceIndexes == 0) return true;
+    if (m_node->GetNbPoints() == 0 || dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node)->m_nodeHeader.m_nbFaceIndexes == 0) return true;
 
     assert(IsLoaded() == true);
 
