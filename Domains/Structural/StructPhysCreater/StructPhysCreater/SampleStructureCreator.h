@@ -9,7 +9,6 @@
 #pragma once
 
 #include "stdafx.h"
-#include "GeometricTools.h"
 
 
 //=======================================================================================
@@ -18,8 +17,11 @@
 struct SampleStructureCreator
     {
     private:
-        static const int DISTANCE_BETWEEN_STRUCTURES = 280;
+        double m_originX;
+        double m_originY;
+        double m_originZ;
 
+    protected:
         // Beam dimensions: 10" x 14" x 12' & 10" x 14" x 15'
         static const int BEAM_WIDTH = 10;
         static const int BEAM_DEPTH = 14;
@@ -45,37 +47,23 @@ struct SampleStructureCreator
         static const int COLUMN_OFFSET = COLUMN_WIDTH / 2;
         static const int WALL_OFFSET = (COLUMN_DEPTH - WALL_THICKNESS) / 2;
 
-        static double STRUCT_ORIGIN_X;
-        static double STRUCT_ORIGIN_Y;
-        static double STRUCT_ORIGIN_Z;
+        SampleStructureCreator(double originX, double originY, double originZ) :
+            m_originX(originX), m_originY(originY), m_originZ(originZ) { }
 
-        static Dgn::Placement3d SampleStructureCreator::GetStructurePlacement();
+        Dgn::Placement3d SampleStructureCreator::GetStructurePlacement();
 
-        static PhysicalProperties* SampleStructureCreator::GetBeam12Properties();
-        static PhysicalProperties* SampleStructureCreator::GetBeam15Properties();
-        static PhysicalProperties* SampleStructureCreator::GetColumnProperties();
-        static PhysicalProperties* SampleStructureCreator::GetSlabProperties();
-        static PhysicalProperties* SampleStructureCreator::GetWallProperties();
+        virtual PhysicalProperties* SampleStructureCreator::GetBeam12Properties() = 0;
+        virtual PhysicalProperties* SampleStructureCreator::GetBeam15Properties() = 0;
+        virtual PhysicalProperties* SampleStructureCreator::GetColumnProperties() = 0;
+        virtual PhysicalProperties* SampleStructureCreator::GetSlabProperties() = 0;
+        virtual PhysicalProperties* SampleStructureCreator::GetWallProperties() = 0;
 
         static Transform SampleStructureCreator::GetEmptyTransform();
 
     public:
-        static void InitConcreteStructurePlacement()
-            {
-            STRUCT_ORIGIN_X = 0.0;
-            STRUCT_ORIGIN_Y = 0.0;
-            STRUCT_ORIGIN_Z = 0.0;
-            }
-
-        static void InitSteelStructurePlacement()
-            {
-            STRUCT_ORIGIN_X = DISTANCE_BETWEEN_STRUCTURES;
-            STRUCT_ORIGIN_Y = 0.0;
-            STRUCT_ORIGIN_Z = 0.0;
-            }
-
-        static BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
-        static BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
-        static BentleyStatus SampleStructureCreator::CreateSlabs(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
-        static BentleyStatus SampleStructureCreator::CreateWalls(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus SampleStructureCreator::CreateSlabs(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus SampleStructureCreator::CreateWalls(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
     };
+

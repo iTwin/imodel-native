@@ -7,5 +7,12 @@
 
 #include <StructuralDomain/StructuralDomainApi.h>
 
+#include "StructPhysTools.h"
+
+#include "SampleStructureCreator.h"
+#include "ConcreteStructureCreator.h"
+#include "SteelStructureCreator.h"
+
+#include "StructPhysCreator.h"
 
 // TODO: reference additional headers your program requires here

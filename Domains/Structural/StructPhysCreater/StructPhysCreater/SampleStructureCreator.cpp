@@ -7,20 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
-#include "GeometricTools.h"
-#include "SampleStructureCreator.h"
 
 
-#pragma region PRIVATE_DATA_MEMBERS
-
-double SampleStructureCreator::STRUCT_ORIGIN_X = 0.0;
-double SampleStructureCreator::STRUCT_ORIGIN_Y = 0.0;
-double SampleStructureCreator::STRUCT_ORIGIN_Z = 0.0;
-
-#pragma endregion
-
-
-#pragma region PRIVATE_MEMBER_FUNCTIONS
+#pragma region PROTECTED_MEMBER_FUNCTIONS
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
@@ -28,53 +17,8 @@ double SampleStructureCreator::STRUCT_ORIGIN_Z = 0.0;
 Dgn::Placement3d SampleStructureCreator::GetStructurePlacement()
     {
     Dgn::Placement3d placement;
-    placement.GetOriginR() = DPoint3d::From(STRUCT_ORIGIN_X, STRUCT_ORIGIN_Y, STRUCT_ORIGIN_Z);
+    placement.GetOriginR() = DPoint3d::From(m_originX, m_originY, m_originZ);
     return placement;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-PhysicalProperties* SampleStructureCreator::GetBeam12Properties()
-    {
-    Dgn::ColorDef transBlue(0, 0, 0xff, 0x19);
-    return new PhysicalProperties(BEAM_WIDTH, BEAM_DEPTH, BEAM_12_LENGTH, ShapeTools::Shape::I, transBlue, transBlue);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-PhysicalProperties* SampleStructureCreator::GetBeam15Properties()
-    {
-    Dgn::ColorDef transBlue(0, 0, 0xff, 0x19);
-    return new PhysicalProperties(BEAM_WIDTH, BEAM_DEPTH, BEAM_15_LENGTH, ShapeTools::Shape::I, transBlue, transBlue);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-PhysicalProperties* SampleStructureCreator::GetColumnProperties()
-    {
-    Dgn::ColorDef transBlue(0, 0, 0xff, 0x19);
-    return new PhysicalProperties(COLUMN_WIDTH, COLUMN_DEPTH, COLUMN_HEIGHT, ShapeTools::Shape::HSSRectangle, transBlue, transBlue);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-PhysicalProperties* SampleStructureCreator::GetSlabProperties()
-    {
-    Dgn::ColorDef transRed(0xff, 0, 0, 0x19);
-    return new PhysicalProperties(SLAB_WIDTH, SLAB_DEPTH, SLAB_THICKNESS, ShapeTools::Shape::Rectangle, transRed, transRed);
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Bentley.Systems
-//---------------------------------------------------------------------------------------
-PhysicalProperties* SampleStructureCreator::GetWallProperties()
-    {
-    Dgn::ColorDef transRed(0xff, 0, 0, 0x19);
-    return new PhysicalProperties(WALL_WIDTH, WALL_DEPTH, WALL_THICKNESS, ShapeTools::Shape::Rectangle, transRed, transRed);
     }
 
 //---------------------------------------------------------------------------------------

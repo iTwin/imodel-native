@@ -7,8 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
-#include "SampleStructureCreator.h"
-#include "StructPhysCreator.h"
 
 #define STRUCTURAL_MODEL_NAME "SampleStructuralModel"
 
@@ -317,7 +315,7 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::Str
 
     ECN::ECClassContainerCR classes = schema->GetClasses();
 
-    SampleStructureCreator::InitConcreteStructurePlacement();
+    ConcreteStructureCreator* creator = new ConcreteStructureCreator();
 
     BentleyStatus status;
 
@@ -331,7 +329,7 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::Str
         Utf8String className = derivedClass->GetFullName();
         if (className == "Concrete:Beam")
             {
-            status = SampleStructureCreator::CreateBeams(physicalModel, schema, derivedClass);
+            status = creator->CreateBeams(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;
@@ -339,7 +337,7 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::Str
             }
         else if (className == "Concrete:Column")
             {
-            status = SampleStructureCreator::CreateColumns(physicalModel, schema, derivedClass);
+            status = creator->CreateColumns(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;
@@ -347,7 +345,7 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::Str
             }
         else if (className == "Concrete:Slab")
             {
-            status = SampleStructureCreator::CreateSlabs(physicalModel, schema, derivedClass);
+            status = creator->CreateSlabs(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;
@@ -355,7 +353,7 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::Str
             }
         else if (className == "Concrete:Wall")
             {
-            status = SampleStructureCreator::CreateWalls(physicalModel, schema, derivedClass);
+            status = creator->CreateWalls(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;
@@ -375,7 +373,7 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::Struct
 
     ECN::ECClassContainerCR classes = schema->GetClasses();
 
-    SampleStructureCreator::InitSteelStructurePlacement();
+    SteelStructureCreator* creator = new SteelStructureCreator();
 
     BentleyStatus status;
 
@@ -389,7 +387,7 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::Struct
         Utf8String className = derivedClass->GetFullName();
         if (className == "Steel:Beam")
             {
-            status = SampleStructureCreator::CreateBeams(physicalModel, schema, derivedClass);
+            status = creator->CreateBeams(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;
@@ -397,7 +395,7 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::Struct
             }
         else if (className == "Steel:Column")
             {
-            status = SampleStructureCreator::CreateColumns(physicalModel, schema, derivedClass);
+            status = creator->CreateColumns(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;
@@ -405,13 +403,13 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::Struct
             }
         else if (className == "Steel:Plate")
             {
-            status = SampleStructureCreator::CreateSlabs(physicalModel, schema, derivedClass);
+            status = creator->CreateSlabs(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;
                 }
 
-            status = SampleStructureCreator::CreateWalls(physicalModel, schema, derivedClass);
+            status = creator->CreateWalls(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;
@@ -474,7 +472,7 @@ BentleyStatus StructPhysCreator::DoCreate()
 
     DoUpdateSchema(db);
 
-    //CreateConcreteStructure(*physicalModel, *typeDefinitionModel);
+    CreateConcreteStructure(*physicalModel, *typeDefinitionModel);
     CreateSteelStructure(*physicalModel, *typeDefinitionModel);
 
 

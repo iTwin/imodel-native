@@ -161,14 +161,18 @@ xcopy /y $(srcRoot)DgnPlatform\LastResortFonts\lastresortfonts $(srcRoot)DgnDoma
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GeometricTools.h" />
+    <ClInclude Include="ConcreteStructureCreator.h" />
+    <ClInclude Include="StructPhysTools.h" />
     <ClInclude Include="SampleStructureCreator.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="SteelStructureCreator.h" />
     <ClInclude Include="StructPhysCreator.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="GeometricTools.cpp" />
+    <ClCompile Include="ConcreteStructureCreator.cpp" />
+    <ClCompile Include="SteelStructureCreator.cpp" />
+    <ClCompile Include="StructPhysTools.cpp" />
     <ClCompile Include="SampleStructureCreator.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
