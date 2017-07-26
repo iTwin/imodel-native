@@ -299,8 +299,10 @@ struct ScalableMeshModel : IMeshSpatialModel //, Dgn::Render::IGenerateMeshTiles
 
         SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
                 
-        void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
+        void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);        
 
+        void SetFileNameProperty(BeFileNameCR smFilename);
+		
         SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
 
         //! A DgnDb can have only one terrain. 
@@ -335,6 +337,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler:
     public : 
                      
         //NEEDS_WORK_SM : Currently for testing only
-        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement);
+        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true);
     };
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE

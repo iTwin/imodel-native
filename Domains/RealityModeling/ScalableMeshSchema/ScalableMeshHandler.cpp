@@ -1748,6 +1748,7 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     //m_properties.m_fileId = smFilename.GetNameUtf8();
     }
 
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -1886,7 +1887,7 @@ void ScalableMeshModel::GetClipSetIds(bvector<uint64_t>& allShownIds)
     if (m_smPtr.get() != nullptr) m_smPtr->GetAllClipIds(allShownIds);
     }
 
-IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement)
+IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile)
     {    
     /*    
     BeFileName smtFileName;
@@ -1908,7 +1909,16 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
 
     //After Insert model pointer is handled by DgnModels.
     model->Insert();
-    model->OpenFile(smFilename, db);
+
+    if (openFile)
+        { 
+        model->OpenFile(smFilename, db);
+        }
+    else
+        {
+        model->SetFileNameProperty(smFilename);        
+        }
+
     model->Update();
 
     if (model->IsTerrain())
@@ -1935,6 +1945,14 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
     
 
     return model.get();    
+    }
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre  07/2017
+//----------------------------------------------------------------------------------------
+void ScalableMeshModel::SetFileNameProperty(BeFileNameCR smFilename)
+    {
+    m_properties.m_fileId = smFilename.GetNameUtf8();
     }
 
 //----------------------------------------------------------------------------------------
@@ -1981,11 +1999,13 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
 
     if (m_smPtr == 0 && !m_tryOpen)
         {
-        BeFileName smFileName(((this)->m_properties).m_fileId);
+        WString fileNameW(((this)->m_properties).m_fileId.c_str(), true);
+        BeFileName smFileName;
+        smFileName.AppendString(fileNameW.c_str());
         //BeFileName smFileName;
-        //T_HOST.GetPointCloudAdmin()._ResolveFileUri(smFileName, (((this)->m_properties).m_fileId), GetDgnDb());
-
-        if (BeFileName::DoesPathExist(smFileName.c_str()))
+        
+        //NEEDS_WORK_SM : Doesn't work with URL
+        if (true /*BeFileName::DoesPathExist(smFileName.c_str())*/)
             {
             OpenFile(smFileName, GetDgnDb());
             }
