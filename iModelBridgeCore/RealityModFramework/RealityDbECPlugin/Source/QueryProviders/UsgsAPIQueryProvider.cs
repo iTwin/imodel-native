@@ -474,7 +474,10 @@ namespace IndexECPlugin.Source.QueryProviders
                 instance["DataSourceType"].StringValue = instanceSDS["DataSourceType"].StringValue;
                 }
 
-            instance["ThumbnailURL"].StringValue = instanceSEB["ThumbnailURL"].StringValue;
+            if ( instanceSEB["ThumbnailURL"] != null && !instanceSEB["ThumbnailURL"].IsNull )
+                {
+                instance["ThumbnailURL"].StringValue = instanceSEB["ThumbnailURL"].StringValue;
+                }
 
             if ( instanceMetadata["Legal"] != null && !instanceMetadata["Legal"].IsNull)
                 {
