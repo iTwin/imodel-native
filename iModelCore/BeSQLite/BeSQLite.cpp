@@ -1432,6 +1432,42 @@ void Db::ChangeDbGuid(BeGuid guid)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::SetAsMaster(BeGuid guid /*= BeGuid()*/)
+    {
+    if (GetBriefcaseId().IsMasterId())
+        {
+        BeAssert(false && "Db is already a master copy");
+        return BE_SQLITE_ERROR;
+        }
+
+    DbResult result = AssignBriefcaseId(BeBriefcaseId(BeBriefcaseId::Master()));
+    if (result == BE_SQLITE_OK)
+        {
+        if (!guid.IsValid())
+            guid.Create();
+        ChangeDbGuid(guid);
+        }
+
+    return result;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                  Ramanujam.Raman                   10/15
++---------------+---------------+---------------+---------------+---------------+------*/
+DbResult Db::SetAsBriefcase(BeBriefcaseId briefcaseId)
+    {
+    if (!GetBriefcaseId().IsMasterId() || briefcaseId.IsMasterId())
+        {
+        BeAssert(false && "Can only change Master -> Briefcase");
+        return BE_SQLITE_ERROR;
+        }
+
+    return AssignBriefcaseId(briefcaseId);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 DbResult Db::AssignBriefcaseId(BeBriefcaseId id)
@@ -1446,12 +1482,6 @@ DbResult Db::AssignBriefcaseId(BeBriefcaseId id)
     //it would mean though to destroy the current state of those values.
     if (!id.IsValid() || (currentId.IsValid() && currentId == id))
         return BE_SQLITE_ERROR;
-
-    if (!currentId.IsMasterId() || id.IsMasterId())
-        {
-        BeAssert(false && "Can only change Master -> Briefcase");
-        return BE_SQLITE_ERROR;
-        }
 
     // changing the BeBriefcaseId invalidates all BriefcaseLocalValues. Delete them.
     DbResult stat = ClearBriefcaseLocalValues();
@@ -2511,7 +2541,7 @@ DbResult Db::OpenBeSQLiteDb(Utf8CP dbName, OpenParams const& params)
         }
 
     if (rc != BE_SQLITE_OK)
-        DoCloseDb();
+        CloseDb();
 
     return rc;
     }

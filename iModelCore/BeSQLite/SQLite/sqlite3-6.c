@@ -1,3 +1,697 @@
+/************** Begin file fts3_tokenizer1.c *********************************/
+/*
+** 2006 Oct 10
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** Implementation of the "simple" full-text-search tokenizer.
+*/
+
+/*
+** The code in this file is only compiled if:
+**
+**     * The FTS3 module is being built as an extension
+**       (in which case SQLITE_CORE is not defined), or
+**
+**     * The FTS3 module is being built into the core of
+**       SQLite (in which case SQLITE_ENABLE_FTS3 is defined).
+*/
+/* #include "fts3Int.h" */
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
+
+/* #include <assert.h> */
+/* #include <stdlib.h> */
+/* #include <stdio.h> */
+/* #include <string.h> */
+
+/* #include "fts3_tokenizer.h" */
+
+typedef struct simple_tokenizer {
+  sqlite3_tokenizer base;
+  char delim[128];             /* flag ASCII delimiters */
+} simple_tokenizer;
+
+typedef struct simple_tokenizer_cursor {
+  sqlite3_tokenizer_cursor base;
+  const char *pInput;          /* input we are tokenizing */
+  int nBytes;                  /* size of the input */
+  int iOffset;                 /* current position in pInput */
+  int iToken;                  /* index of next token to be returned */
+  char *pToken;                /* storage for current token */
+  int nTokenAllocated;         /* space allocated to zToken buffer */
+} simple_tokenizer_cursor;
+
+
+static int simpleDelim(simple_tokenizer *t, unsigned char c){
+  return c<0x80 && t->delim[c];
+}
+static int fts3_isalnum(int x){
+  return (x>='0' && x<='9') || (x>='A' && x<='Z') || (x>='a' && x<='z');
+}
+
+/*
+** Create a new tokenizer instance.
+*/
+static int simpleCreate(
+  int argc, const char * const *argv,
+  sqlite3_tokenizer **ppTokenizer
+){
+  simple_tokenizer *t;
+
+  t = (simple_tokenizer *) sqlite3_malloc(sizeof(*t));
+  if( t==NULL ) return SQLITE_NOMEM;
+  memset(t, 0, sizeof(*t));
+
+  /* TODO(shess) Delimiters need to remain the same from run to run,
+  ** else we need to reindex.  One solution would be a meta-table to
+  ** track such information in the database, then we'd only want this
+  ** information on the initial create.
+  */
+  if( argc>1 ){
+    int i, n = (int)strlen(argv[1]);
+    for(i=0; i<n; i++){
+      unsigned char ch = argv[1][i];
+      /* We explicitly don't support UTF-8 delimiters for now. */
+      if( ch>=0x80 ){
+        sqlite3_free(t);
+        return SQLITE_ERROR;
+      }
+      t->delim[ch] = 1;
+    }
+  } else {
+    /* Mark non-alphanumeric ASCII characters as delimiters */
+    int i;
+    for(i=1; i<0x80; i++){
+      t->delim[i] = !fts3_isalnum(i) ? -1 : 0;
+    }
+  }
+
+  *ppTokenizer = &t->base;
+  return SQLITE_OK;
+}
+
+/*
+** Destroy a tokenizer
+*/
+static int simpleDestroy(sqlite3_tokenizer *pTokenizer){
+  sqlite3_free(pTokenizer);
+  return SQLITE_OK;
+}
+
+/*
+** Prepare to begin tokenizing a particular string.  The input
+** string to be tokenized is pInput[0..nBytes-1].  A cursor
+** used to incrementally tokenize this string is returned in 
+** *ppCursor.
+*/
+static int simpleOpen(
+  sqlite3_tokenizer *pTokenizer,         /* The tokenizer */
+  const char *pInput, int nBytes,        /* String to be tokenized */
+  sqlite3_tokenizer_cursor **ppCursor    /* OUT: Tokenization cursor */
+){
+  simple_tokenizer_cursor *c;
+
+  UNUSED_PARAMETER(pTokenizer);
+
+  c = (simple_tokenizer_cursor *) sqlite3_malloc(sizeof(*c));
+  if( c==NULL ) return SQLITE_NOMEM;
+
+  c->pInput = pInput;
+  if( pInput==0 ){
+    c->nBytes = 0;
+  }else if( nBytes<0 ){
+    c->nBytes = (int)strlen(pInput);
+  }else{
+    c->nBytes = nBytes;
+  }
+  c->iOffset = 0;                 /* start tokenizing at the beginning */
+  c->iToken = 0;
+  c->pToken = NULL;               /* no space allocated, yet. */
+  c->nTokenAllocated = 0;
+
+  *ppCursor = &c->base;
+  return SQLITE_OK;
+}
+
+/*
+** Close a tokenization cursor previously opened by a call to
+** simpleOpen() above.
+*/
+static int simpleClose(sqlite3_tokenizer_cursor *pCursor){
+  simple_tokenizer_cursor *c = (simple_tokenizer_cursor *) pCursor;
+  sqlite3_free(c->pToken);
+  sqlite3_free(c);
+  return SQLITE_OK;
+}
+
+/*
+** Extract the next token from a tokenization cursor.  The cursor must
+** have been opened by a prior call to simpleOpen().
+*/
+static int simpleNext(
+  sqlite3_tokenizer_cursor *pCursor,  /* Cursor returned by simpleOpen */
+  const char **ppToken,               /* OUT: *ppToken is the token text */
+  int *pnBytes,                       /* OUT: Number of bytes in token */
+  int *piStartOffset,                 /* OUT: Starting offset of token */
+  int *piEndOffset,                   /* OUT: Ending offset of token */
+  int *piPosition                     /* OUT: Position integer of token */
+){
+  simple_tokenizer_cursor *c = (simple_tokenizer_cursor *) pCursor;
+  simple_tokenizer *t = (simple_tokenizer *) pCursor->pTokenizer;
+  unsigned char *p = (unsigned char *)c->pInput;
+
+  while( c->iOffset<c->nBytes ){
+    int iStartOffset;
+
+    /* Scan past delimiter characters */
+    while( c->iOffset<c->nBytes && simpleDelim(t, p[c->iOffset]) ){
+      c->iOffset++;
+    }
+
+    /* Count non-delimiter characters. */
+    iStartOffset = c->iOffset;
+    while( c->iOffset<c->nBytes && !simpleDelim(t, p[c->iOffset]) ){
+      c->iOffset++;
+    }
+
+    if( c->iOffset>iStartOffset ){
+      int i, n = c->iOffset-iStartOffset;
+      if( n>c->nTokenAllocated ){
+        char *pNew;
+        c->nTokenAllocated = n+20;
+        pNew = sqlite3_realloc(c->pToken, c->nTokenAllocated);
+        if( !pNew ) return SQLITE_NOMEM;
+        c->pToken = pNew;
+      }
+      for(i=0; i<n; i++){
+        /* TODO(shess) This needs expansion to handle UTF-8
+        ** case-insensitivity.
+        */
+        unsigned char ch = p[iStartOffset+i];
+        c->pToken[i] = (char)((ch>='A' && ch<='Z') ? ch-'A'+'a' : ch);
+      }
+      *ppToken = c->pToken;
+      *pnBytes = n;
+      *piStartOffset = iStartOffset;
+      *piEndOffset = c->iOffset;
+      *piPosition = c->iToken++;
+
+      return SQLITE_OK;
+    }
+  }
+  return SQLITE_DONE;
+}
+
+/*
+** The set of routines that implement the simple tokenizer
+*/
+static const sqlite3_tokenizer_module simpleTokenizerModule = {
+  0,
+  simpleCreate,
+  simpleDestroy,
+  simpleOpen,
+  simpleClose,
+  simpleNext,
+  0,
+};
+
+/*
+** Allocate a new simple tokenizer.  Return a pointer to the new
+** tokenizer in *ppModule
+*/
+SQLITE_PRIVATE void sqlite3Fts3SimpleTokenizerModule(
+  sqlite3_tokenizer_module const**ppModule
+){
+  *ppModule = &simpleTokenizerModule;
+}
+
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3) */
+
+/************** End of fts3_tokenizer1.c *************************************/
+/************** Begin file fts3_tokenize_vtab.c ******************************/
+/*
+** 2013 Apr 22
+**
+** The author disclaims copyright to this source code.  In place of
+** a legal notice, here is a blessing:
+**
+**    May you do good and not evil.
+**    May you find forgiveness for yourself and forgive others.
+**    May you share freely, never taking more than you give.
+**
+******************************************************************************
+**
+** This file contains code for the "fts3tokenize" virtual table module.
+** An fts3tokenize virtual table is created as follows:
+**
+**   CREATE VIRTUAL TABLE <tbl> USING fts3tokenize(
+**       <tokenizer-name>, <arg-1>, ...
+**   );
+**
+** The table created has the following schema:
+**
+**   CREATE TABLE <tbl>(input, token, start, end, position)
+**
+** When queried, the query must include a WHERE clause of type:
+**
+**   input = <string>
+**
+** The virtual table module tokenizes this <string>, using the FTS3 
+** tokenizer specified by the arguments to the CREATE VIRTUAL TABLE 
+** statement and returns one row for each token in the result. With
+** fields set as follows:
+**
+**   input:   Always set to a copy of <string>
+**   token:   A token from the input.
+**   start:   Byte offset of the token within the input <string>.
+**   end:     Byte offset of the byte immediately following the end of the
+**            token within the input string.
+**   pos:     Token offset of token within input.
+**
+*/
+/* #include "fts3Int.h" */
+#if !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3)
+
+/* #include <string.h> */
+/* #include <assert.h> */
+
+typedef struct Fts3tokTable Fts3tokTable;
+typedef struct Fts3tokCursor Fts3tokCursor;
+
+/*
+** Virtual table structure.
+*/
+struct Fts3tokTable {
+  sqlite3_vtab base;              /* Base class used by SQLite core */
+  const sqlite3_tokenizer_module *pMod;
+  sqlite3_tokenizer *pTok;
+};
+
+/*
+** Virtual table cursor structure.
+*/
+struct Fts3tokCursor {
+  sqlite3_vtab_cursor base;       /* Base class used by SQLite core */
+  char *zInput;                   /* Input string */
+  sqlite3_tokenizer_cursor *pCsr; /* Cursor to iterate through zInput */
+  int iRowid;                     /* Current 'rowid' value */
+  const char *zToken;             /* Current 'token' value */
+  int nToken;                     /* Size of zToken in bytes */
+  int iStart;                     /* Current 'start' value */
+  int iEnd;                       /* Current 'end' value */
+  int iPos;                       /* Current 'pos' value */
+};
+
+/*
+** Query FTS for the tokenizer implementation named zName.
+*/
+static int fts3tokQueryTokenizer(
+  Fts3Hash *pHash,
+  const char *zName,
+  const sqlite3_tokenizer_module **pp,
+  char **pzErr
+){
+  sqlite3_tokenizer_module *p;
+  int nName = (int)strlen(zName);
+
+  p = (sqlite3_tokenizer_module *)sqlite3Fts3HashFind(pHash, zName, nName+1);
+  if( !p ){
+    sqlite3Fts3ErrMsg(pzErr, "unknown tokenizer: %s", zName);
+    return SQLITE_ERROR;
+  }
+
+  *pp = p;
+  return SQLITE_OK;
+}
+
+/*
+** The second argument, argv[], is an array of pointers to nul-terminated
+** strings. This function makes a copy of the array and strings into a 
+** single block of memory. It then dequotes any of the strings that appear
+** to be quoted.
+**
+** If successful, output parameter *pazDequote is set to point at the
+** array of dequoted strings and SQLITE_OK is returned. The caller is
+** responsible for eventually calling sqlite3_free() to free the array
+** in this case. Or, if an error occurs, an SQLite error code is returned.
+** The final value of *pazDequote is undefined in this case.
+*/
+static int fts3tokDequoteArray(
+  int argc,                       /* Number of elements in argv[] */
+  const char * const *argv,       /* Input array */
+  char ***pazDequote              /* Output array */
+){
+  int rc = SQLITE_OK;             /* Return code */
+  if( argc==0 ){
+    *pazDequote = 0;
+  }else{
+    int i;
+    int nByte = 0;
+    char **azDequote;
+
+    for(i=0; i<argc; i++){
+      nByte += (int)(strlen(argv[i]) + 1);
+    }
+
+    *pazDequote = azDequote = sqlite3_malloc(sizeof(char *)*argc + nByte);
+    if( azDequote==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      char *pSpace = (char *)&azDequote[argc];
+      for(i=0; i<argc; i++){
+        int n = (int)strlen(argv[i]);
+        azDequote[i] = pSpace;
+        memcpy(pSpace, argv[i], n+1);
+        sqlite3Fts3Dequote(pSpace);
+        pSpace += (n+1);
+      }
+    }
+  }
+
+  return rc;
+}
+
+/*
+** Schema of the tokenizer table.
+*/
+#define FTS3_TOK_SCHEMA "CREATE TABLE x(input, token, start, end, position)"
+
+/*
+** This function does all the work for both the xConnect and xCreate methods.
+** These tables have no persistent representation of their own, so xConnect
+** and xCreate are identical operations.
+**
+**   argv[0]: module name
+**   argv[1]: database name 
+**   argv[2]: table name
+**   argv[3]: first argument (tokenizer name)
+*/
+static int fts3tokConnectMethod(
+  sqlite3 *db,                    /* Database connection */
+  void *pHash,                    /* Hash table of tokenizers */
+  int argc,                       /* Number of elements in argv array */
+  const char * const *argv,       /* xCreate/xConnect argument array */
+  sqlite3_vtab **ppVtab,          /* OUT: New sqlite3_vtab object */
+  char **pzErr                    /* OUT: sqlite3_malloc'd error message */
+){
+  Fts3tokTable *pTab = 0;
+  const sqlite3_tokenizer_module *pMod = 0;
+  sqlite3_tokenizer *pTok = 0;
+  int rc;
+  char **azDequote = 0;
+  int nDequote;
+
+  rc = sqlite3_declare_vtab(db, FTS3_TOK_SCHEMA);
+  if( rc!=SQLITE_OK ) return rc;
+
+  nDequote = argc-3;
+  rc = fts3tokDequoteArray(nDequote, &argv[3], &azDequote);
+
+  if( rc==SQLITE_OK ){
+    const char *zModule;
+    if( nDequote<1 ){
+      zModule = "simple";
+    }else{
+      zModule = azDequote[0];
+    }
+    rc = fts3tokQueryTokenizer((Fts3Hash*)pHash, zModule, &pMod, pzErr);
+  }
+
+  assert( (rc==SQLITE_OK)==(pMod!=0) );
+  if( rc==SQLITE_OK ){
+    const char * const *azArg = (const char * const *)&azDequote[1];
+    rc = pMod->xCreate((nDequote>1 ? nDequote-1 : 0), azArg, &pTok);
+  }
+
+  if( rc==SQLITE_OK ){
+    pTab = (Fts3tokTable *)sqlite3_malloc(sizeof(Fts3tokTable));
+    if( pTab==0 ){
+      rc = SQLITE_NOMEM;
+    }
+  }
+
+  if( rc==SQLITE_OK ){
+    memset(pTab, 0, sizeof(Fts3tokTable));
+    pTab->pMod = pMod;
+    pTab->pTok = pTok;
+    *ppVtab = &pTab->base;
+  }else{
+    if( pTok ){
+      pMod->xDestroy(pTok);
+    }
+  }
+
+  sqlite3_free(azDequote);
+  return rc;
+}
+
+/*
+** This function does the work for both the xDisconnect and xDestroy methods.
+** These tables have no persistent representation of their own, so xDisconnect
+** and xDestroy are identical operations.
+*/
+static int fts3tokDisconnectMethod(sqlite3_vtab *pVtab){
+  Fts3tokTable *pTab = (Fts3tokTable *)pVtab;
+
+  pTab->pMod->xDestroy(pTab->pTok);
+  sqlite3_free(pTab);
+  return SQLITE_OK;
+}
+
+/*
+** xBestIndex - Analyze a WHERE and ORDER BY clause.
+*/
+static int fts3tokBestIndexMethod(
+  sqlite3_vtab *pVTab, 
+  sqlite3_index_info *pInfo
+){
+  int i;
+  UNUSED_PARAMETER(pVTab);
+
+  for(i=0; i<pInfo->nConstraint; i++){
+    if( pInfo->aConstraint[i].usable 
+     && pInfo->aConstraint[i].iColumn==0 
+     && pInfo->aConstraint[i].op==SQLITE_INDEX_CONSTRAINT_EQ 
+    ){
+      pInfo->idxNum = 1;
+      pInfo->aConstraintUsage[i].argvIndex = 1;
+      pInfo->aConstraintUsage[i].omit = 1;
+      pInfo->estimatedCost = 1;
+      return SQLITE_OK;
+    }
+  }
+
+  pInfo->idxNum = 0;
+  assert( pInfo->estimatedCost>1000000.0 );
+
+  return SQLITE_OK;
+}
+
+/*
+** xOpen - Open a cursor.
+*/
+static int fts3tokOpenMethod(sqlite3_vtab *pVTab, sqlite3_vtab_cursor **ppCsr){
+  Fts3tokCursor *pCsr;
+  UNUSED_PARAMETER(pVTab);
+
+  pCsr = (Fts3tokCursor *)sqlite3_malloc(sizeof(Fts3tokCursor));
+  if( pCsr==0 ){
+    return SQLITE_NOMEM;
+  }
+  memset(pCsr, 0, sizeof(Fts3tokCursor));
+
+  *ppCsr = (sqlite3_vtab_cursor *)pCsr;
+  return SQLITE_OK;
+}
+
+/*
+** Reset the tokenizer cursor passed as the only argument. As if it had
+** just been returned by fts3tokOpenMethod().
+*/
+static void fts3tokResetCursor(Fts3tokCursor *pCsr){
+  if( pCsr->pCsr ){
+    Fts3tokTable *pTab = (Fts3tokTable *)(pCsr->base.pVtab);
+    pTab->pMod->xClose(pCsr->pCsr);
+    pCsr->pCsr = 0;
+  }
+  sqlite3_free(pCsr->zInput);
+  pCsr->zInput = 0;
+  pCsr->zToken = 0;
+  pCsr->nToken = 0;
+  pCsr->iStart = 0;
+  pCsr->iEnd = 0;
+  pCsr->iPos = 0;
+  pCsr->iRowid = 0;
+}
+
+/*
+** xClose - Close a cursor.
+*/
+static int fts3tokCloseMethod(sqlite3_vtab_cursor *pCursor){
+  Fts3tokCursor *pCsr = (Fts3tokCursor *)pCursor;
+
+  fts3tokResetCursor(pCsr);
+  sqlite3_free(pCsr);
+  return SQLITE_OK;
+}
+
+/*
+** xNext - Advance the cursor to the next row, if any.
+*/
+static int fts3tokNextMethod(sqlite3_vtab_cursor *pCursor){
+  Fts3tokCursor *pCsr = (Fts3tokCursor *)pCursor;
+  Fts3tokTable *pTab = (Fts3tokTable *)(pCursor->pVtab);
+  int rc;                         /* Return code */
+
+  pCsr->iRowid++;
+  rc = pTab->pMod->xNext(pCsr->pCsr,
+      &pCsr->zToken, &pCsr->nToken,
+      &pCsr->iStart, &pCsr->iEnd, &pCsr->iPos
+  );
+
+  if( rc!=SQLITE_OK ){
+    fts3tokResetCursor(pCsr);
+    if( rc==SQLITE_DONE ) rc = SQLITE_OK;
+  }
+
+  return rc;
+}
+
+/*
+** xFilter - Initialize a cursor to point at the start of its data.
+*/
+static int fts3tokFilterMethod(
+  sqlite3_vtab_cursor *pCursor,   /* The cursor used for this query */
+  int idxNum,                     /* Strategy index */
+  const char *idxStr,             /* Unused */
+  int nVal,                       /* Number of elements in apVal */
+  sqlite3_value **apVal           /* Arguments for the indexing scheme */
+){
+  int rc = SQLITE_ERROR;
+  Fts3tokCursor *pCsr = (Fts3tokCursor *)pCursor;
+  Fts3tokTable *pTab = (Fts3tokTable *)(pCursor->pVtab);
+  UNUSED_PARAMETER(idxStr);
+  UNUSED_PARAMETER(nVal);
+
+  fts3tokResetCursor(pCsr);
+  if( idxNum==1 ){
+    const char *zByte = (const char *)sqlite3_value_text(apVal[0]);
+    int nByte = sqlite3_value_bytes(apVal[0]);
+    pCsr->zInput = sqlite3_malloc(nByte+1);
+    if( pCsr->zInput==0 ){
+      rc = SQLITE_NOMEM;
+    }else{
+      memcpy(pCsr->zInput, zByte, nByte);
+      pCsr->zInput[nByte] = 0;
+      rc = pTab->pMod->xOpen(pTab->pTok, pCsr->zInput, nByte, &pCsr->pCsr);
+      if( rc==SQLITE_OK ){
+        pCsr->pCsr->pTokenizer = pTab->pTok;
+      }
+    }
+  }
+
+  if( rc!=SQLITE_OK ) return rc;
+  return fts3tokNextMethod(pCursor);
+}
+
+/*
+** xEof - Return true if the cursor is at EOF, or false otherwise.
+*/
+static int fts3tokEofMethod(sqlite3_vtab_cursor *pCursor){
+  Fts3tokCursor *pCsr = (Fts3tokCursor *)pCursor;
+  return (pCsr->zToken==0);
+}
+
+/*
+** xColumn - Return a column value.
+*/
+static int fts3tokColumnMethod(
+  sqlite3_vtab_cursor *pCursor,   /* Cursor to retrieve value from */
+  sqlite3_context *pCtx,          /* Context for sqlite3_result_xxx() calls */
+  int iCol                        /* Index of column to read value from */
+){
+  Fts3tokCursor *pCsr = (Fts3tokCursor *)pCursor;
+
+  /* CREATE TABLE x(input, token, start, end, position) */
+  switch( iCol ){
+    case 0:
+      sqlite3_result_text(pCtx, pCsr->zInput, -1, SQLITE_TRANSIENT);
+      break;
+    case 1:
+      sqlite3_result_text(pCtx, pCsr->zToken, pCsr->nToken, SQLITE_TRANSIENT);
+      break;
+    case 2:
+      sqlite3_result_int(pCtx, pCsr->iStart);
+      break;
+    case 3:
+      sqlite3_result_int(pCtx, pCsr->iEnd);
+      break;
+    default:
+      assert( iCol==4 );
+      sqlite3_result_int(pCtx, pCsr->iPos);
+      break;
+  }
+  return SQLITE_OK;
+}
+
+/*
+** xRowid - Return the current rowid for the cursor.
+*/
+static int fts3tokRowidMethod(
+  sqlite3_vtab_cursor *pCursor,   /* Cursor to retrieve value from */
+  sqlite_int64 *pRowid            /* OUT: Rowid value */
+){
+  Fts3tokCursor *pCsr = (Fts3tokCursor *)pCursor;
+  *pRowid = (sqlite3_int64)pCsr->iRowid;
+  return SQLITE_OK;
+}
+
+/*
+** Register the fts3tok module with database connection db. Return SQLITE_OK
+** if successful or an error code if sqlite3_create_module() fails.
+*/
+SQLITE_PRIVATE int sqlite3Fts3InitTok(sqlite3 *db, Fts3Hash *pHash){
+  static const sqlite3_module fts3tok_module = {
+     0,                           /* iVersion      */
+     fts3tokConnectMethod,        /* xCreate       */
+     fts3tokConnectMethod,        /* xConnect      */
+     fts3tokBestIndexMethod,      /* xBestIndex    */
+     fts3tokDisconnectMethod,     /* xDisconnect   */
+     fts3tokDisconnectMethod,     /* xDestroy      */
+     fts3tokOpenMethod,           /* xOpen         */
+     fts3tokCloseMethod,          /* xClose        */
+     fts3tokFilterMethod,         /* xFilter       */
+     fts3tokNextMethod,           /* xNext         */
+     fts3tokEofMethod,            /* xEof          */
+     fts3tokColumnMethod,         /* xColumn       */
+     fts3tokRowidMethod,          /* xRowid        */
+     0,                           /* xUpdate       */
+     0,                           /* xBegin        */
+     0,                           /* xSync         */
+     0,                           /* xCommit       */
+     0,                           /* xRollback     */
+     0,                           /* xFindFunction */
+     0,                           /* xRename       */
+     0,                           /* xSavepoint    */
+     0,                           /* xRelease      */
+     0                            /* xRollbackTo   */
+  };
+  int rc;                         /* Return code */
+
+  rc = sqlite3_create_module(db, "fts3tokenize", &fts3tok_module, (void*)pHash);
+  return rc;
+}
+
+#endif /* !defined(SQLITE_CORE) || defined(SQLITE_ENABLE_FTS3) */
+
+/************** End of fts3_tokenize_vtab.c **********************************/
 /************** Begin file fts3_write.c **************************************/
 /*
 ** 2009 Oct 23
@@ -408,7 +1102,8 @@ static int fts3SqlStmt(
     if( !zSql ){
       rc = SQLITE_NOMEM;
     }else{
-      rc = sqlite3_prepare_v2(p->db, zSql, -1, &pStmt, NULL);
+      rc = sqlite3_prepare_v3(p->db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
+                              &pStmt, NULL);
       sqlite3_free(zSql);
       assert( rc==SQLITE_OK || pStmt==0 );
       p->aStmt[eStmt] = pStmt;
@@ -11379,6 +12074,7 @@ static int rtreeRename(sqlite3_vtab *pVtab, const char *zNewName){
 static int rtreeSavepoint(sqlite3_vtab *pVtab, int iSavepoint){
   Rtree *pRtree = (Rtree *)pVtab;
   int iwt = pRtree->inWrTrans;
+  UNUSED_PARAMETER(iSavepoint);
   pRtree->inWrTrans = 0;
   nodeBlobReset(pRtree);
   pRtree->inWrTrans = iwt;
@@ -11517,7 +12213,8 @@ static int rtreeSqlInit(
   for(i=0; i<N_STATEMENT && rc==SQLITE_OK; i++){
     char *zSql = sqlite3_mprintf(azSql[i], zDb, zPrefix);
     if( zSql ){
-      rc = sqlite3_prepare_v2(db, zSql, -1, appStmt[i], 0); 
+      rc = sqlite3_prepare_v3(db, zSql, -1, SQLITE_PREPARE_PERSISTENT,
+                              appStmt[i], 0); 
     }else{
       rc = SQLITE_NOMEM;
     }
@@ -11592,6 +12289,10 @@ static int getNodeSize(
     rc = getIntFromStmt(db, zSql, &pRtree->iNodeSize);
     if( rc!=SQLITE_OK ){
       *pzErr = sqlite3_mprintf("%s", sqlite3_errmsg(db));
+    }else if( pRtree->iNodeSize<(512-64) ){
+      rc = SQLITE_CORRUPT;
+      *pzErr = sqlite3_mprintf("undersize RTree blobs in \"%q_node\"",
+                               pRtree->zName);
     }
   }
 
@@ -13279,10 +13980,10 @@ SQLITE_API int sqlite3rbu_savestate(sqlite3rbu *pRbu);
 **
 ** If an error has already occurred as part of an sqlite3rbu_step()
 ** or sqlite3rbu_open() call, or if one occurs within this function, an
-** SQLite error code is returned. Additionally, *pzErrmsg may be set to
-** point to a buffer containing a utf-8 formatted English language error
-** message. It is the responsibility of the caller to eventually free any 
-** such buffer using sqlite3_free().
+** SQLite error code is returned. Additionally, if pzErrmsg is not NULL,
+** *pzErrmsg may be set to point to a buffer containing a utf-8 formatted
+** English language error message. It is the responsibility of the caller to
+** eventually free any such buffer using sqlite3_free().
 **
 ** Otherwise, if no error occurs, this function returns SQLITE_OK if the
 ** update has been partially applied, or SQLITE_DONE if it has been 
@@ -17138,7 +17839,11 @@ SQLITE_API int sqlite3rbu_close(sqlite3rbu *p, char **pzErrmsg){
 
     rbuEditErrmsg(p);
     rc = p->rc;
-    *pzErrmsg = p->zErrmsg;
+    if( pzErrmsg ){
+      *pzErrmsg = p->zErrmsg;
+    }else{
+      sqlite3_free(p->zErrmsg);
+    }
     sqlite3_free(p->zState);
     sqlite3_free(p);
   }else{
@@ -18849,6 +19554,9 @@ SQLITE_PRIVATE int sqlite3DbstatRegister(sqlite3 *db){
     0,                            /* xRollback */
     0,                            /* xFindMethod */
     0,                            /* xRename */
+    0,                            /* xSavepoint */
+    0,                            /* xRelease */
+    0,                            /* xRollbackTo */
   };
   return sqlite3_create_module(db, "dbstat", &dbstat_module, 0);
 }
@@ -21696,11 +22404,12 @@ static int sessionChangesetNext(
   p->in.iCurrent = p->in.iNext;
 
   op = p->in.aData[p->in.iNext++];
-  if( op=='T' || op=='P' ){
+  while( op=='T' || op=='P' ){
     p->bPatchset = (op=='P');
     if( sessionChangesetReadTblhdr(p) ) return p->rc;
     if( (p->rc = sessionInputBuffer(&p->in, 2)) ) return p->rc;
     p->in.iCurrent = p->in.iNext;
+    if( p->in.iNext>=p->in.nData ) return SQLITE_DONE;
     op = p->in.aData[p->in.iNext++];
   }
 
@@ -23688,6 +24397,7 @@ struct JsonParse {
   u8 oom;            /* Set to true if out of memory */
   u8 nErr;           /* Number of errors seen */
   u16 iDepth;        /* Nesting depth */
+  int nJson;         /* Length of the zJson string in bytes */
 };
 
 /*
@@ -23928,6 +24638,14 @@ static void jsonParseReset(JsonParse *pParse){
   pParse->nAlloc = 0;
   sqlite3_free(pParse->aUp);
   pParse->aUp = 0;
+}
+
+/*
+** Free a JsonParse object that was obtained from sqlite3_malloc().
+*/
+static void jsonParseFree(JsonParse *pParse){
+  jsonParseReset(pParse);
+  sqlite3_free(pParse);
 }
 
 /*
@@ -24318,7 +25036,10 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
     j = i+1;
     for(;;){
       c = z[j];
-      if( c<=0x1f ) return -1;  /* Control characters not allowed in strings */
+      if( (c & ~0x1f)==0 ){
+        /* Control characters are not allowed in strings */
+        return -1;
+      }
       if( c=='\\' ){
         c = z[++j];
         if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
@@ -24476,6 +25197,49 @@ static int jsonParseFindParents(JsonParse *pParse){
   }
   jsonParseFillInParentage(pParse, 0, 0);
   return SQLITE_OK;
+}
+
+/*
+** Magic number used for the JSON parse cache in sqlite3_get_auxdata()
+*/
+#define JSON_CACHE_ID  (-429938)
+
+/*
+** Obtain a complete parse of the JSON found in the first argument
+** of the argv array.  Use the sqlite3_get_auxdata() cache for this
+** parse if it is available.  If the cache is not available or if it
+** is no longer valid, parse the JSON again and return the new parse,
+** and also register the new parse so that it will be available for
+** future sqlite3_get_auxdata() calls.
+*/
+static JsonParse *jsonParseCached(
+  sqlite3_context *pCtx,
+  sqlite3_value **argv
+){
+  const char *zJson = (const char*)sqlite3_value_text(argv[0]);
+  int nJson = sqlite3_value_bytes(argv[0]);
+  JsonParse *p;
+  if( zJson==0 ) return 0;
+  p = (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID);
+  if( p && p->nJson==nJson && memcmp(p->zJson,zJson,nJson)==0 ){
+    p->nErr = 0;
+    return p; /* The cached entry matches, so return it */
+  }
+  p = sqlite3_malloc( sizeof(*p) + nJson + 1 );
+  if( p==0 ){
+    sqlite3_result_error_nomem(pCtx);
+    return 0;
+  }
+  memset(p, 0, sizeof(*p));
+  p->zJson = (char*)&p[1];
+  memcpy((char*)p->zJson, zJson, nJson+1);
+  if( jsonParse(p, pCtx, p->zJson) ){
+    sqlite3_free(p);
+    return 0;
+  }
+  p->nJson = nJson;
+  sqlite3_set_auxdata(pCtx, JSON_CACHE_ID, p, (void(*)(void*))jsonParseFree);
+  return (JsonParse*)sqlite3_get_auxdata(pCtx, JSON_CACHE_ID);
 }
 
 /*
@@ -24843,29 +25607,30 @@ static void jsonArrayLengthFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse x;          /* The parse */
+  JsonParse *p;          /* The parse */
   sqlite3_int64 n = 0;
   u32 i;
   JsonNode *pNode;
 
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
-  assert( x.nNode );
+  p = jsonParseCached(ctx, argv);
+  if( p==0 ) return;
+  assert( p->nNode );
   if( argc==2 ){
     const char *zPath = (const char*)sqlite3_value_text(argv[1]);
-    pNode = jsonLookup(&x, zPath, 0, ctx);
+    pNode = jsonLookup(p, zPath, 0, ctx);
   }else{
-    pNode = x.aNode;
+    pNode = p->aNode;
   }
   if( pNode==0 ){
-    x.nErr = 1;
-  }else if( pNode->eType==JSON_ARRAY ){
+    return;
+  }
+  if( pNode->eType==JSON_ARRAY ){
     assert( (pNode->jnFlags & JNODE_APPEND)==0 );
     for(i=1; i<=pNode->n; n++){
       i += jsonNodeSize(&pNode[i]);
     }
   }
-  if( x.nErr==0 ) sqlite3_result_int64(ctx, n);
-  jsonParseReset(&x);
+  sqlite3_result_int64(ctx, n);
 }
 
 /*
@@ -24881,20 +25646,21 @@ static void jsonExtractFunc(
   int argc,
   sqlite3_value **argv
 ){
-  JsonParse x;          /* The parse */
+  JsonParse *p;          /* The parse */
   JsonNode *pNode;
   const char *zPath;
   JsonString jx;
   int i;
 
   if( argc<2 ) return;
-  if( jsonParse(&x, ctx, (const char*)sqlite3_value_text(argv[0])) ) return;
+  p = jsonParseCached(ctx, argv);
+  if( p==0 ) return;
   jsonInit(&jx, ctx);
   jsonAppendChar(&jx, '[');
   for(i=1; i<argc; i++){
     zPath = (const char*)sqlite3_value_text(argv[i]);
-    pNode = jsonLookup(&x, zPath, 0, ctx);
-    if( x.nErr ) break;
+    pNode = jsonLookup(p, zPath, 0, ctx);
+    if( p->nErr ) break;
     if( argc>2 ){
       jsonAppendSeparator(&jx);
       if( pNode ){
@@ -24912,14 +25678,13 @@ static void jsonExtractFunc(
     sqlite3_result_subtype(ctx, JSON_SUBTYPE);
   }
   jsonReset(&jx);
-  jsonParseReset(&x);
 }
 
 /* This is the RFC 7396 MergePatch algorithm.
 */
 static JsonNode *jsonMergePatch(
   JsonParse *pParse,   /* The JSON parser that contains the TARGET */
-  int iTarget,         /* Node of the TARGET in pParse */
+  u32 iTarget,         /* Node of the TARGET in pParse */
   JsonNode *pPatch     /* The PATCH */
 ){
   u32 i, j;
