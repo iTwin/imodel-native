@@ -317,6 +317,8 @@ BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::Str
 
     ECN::ECClassContainerCR classes = schema->GetClasses();
 
+    SampleStructureCreator::InitConcreteStructurePlacement();
+
     BentleyStatus status;
 
     for each (ECN::ECClassP derivedClass in classes)
@@ -372,6 +374,8 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::Struct
     ECN::ECSchemaCP schema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_STEEL_SCHEMA_NAME);
 
     ECN::ECClassContainerCR classes = schema->GetClasses();
+
+    SampleStructureCreator::InitSteelStructurePlacement();
 
     BentleyStatus status;
 

@@ -13,11 +13,106 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
+CurveVectorPtr ShapeTools::GetRectSolidShape(double width, double depth)
+    {
+    DPoint3d points[4];
+    points[0] = DPoint3d::From(0.0, 0.0, 0.0);
+    points[1] = DPoint3d::From(width, 0.0, 0.0);
+    points[2] = DPoint3d::From(width, depth, 0.0);
+    points[3] = DPoint3d::From(0.0, depth, 0.0);
+
+    CurveVectorPtr shape = CurveVector::CreateLinear(points, _countof(points), CurveVector::BOUNDARY_TYPE_Outer, true);
+    return shape;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+CurveVectorPtr ShapeTools::GetHSSRectShape(double width, double depth)
+    {
+    /*double wallThickness = (width + depth) / 8;
+
+    DPoint3d points[8];
+    points[0] = DPoint3d::From(0.0, 0.0, 0.0);
+    points[1] = DPoint3d::From(width, 0.0, 0.0);
+    points[2] = DPoint3d::From(width, depth, 0.0);
+    points[3] = DPoint3d::From(0.0, depth, 0.0);
+
+    points[4] = DPoint3d::From(wallThickness, wallThickness, 0.0);
+    points[5] = DPoint3d::From(width - wallThickness, wallThickness, 0.0);
+    points[6] = DPoint3d::From(width - wallThickness, depth - wallThickness, 0.0);
+    points[7] = DPoint3d::From(wallThickness, depth - wallThickness, 0.0);
+
+    CurveVectorPtr shape = CurveVector::CreateLinear(points, _countof(points), CurveVector::BOUNDARY_TYPE_Outer, true);
+    return shape;*/
+
+    return GetRectSolidShape(width, depth);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+CurveVectorPtr ShapeTools::GetIShape(double width, double depth)
+    {
+    // TODO: Convert to function parameter
+    double flangeThickness = depth / 8;
+    double webThickness = width / 4;
+
+    DPoint3d points[12];
+    points[0] = DPoint3d::From(0.0, 0.0, 0.0);
+    points[1] = DPoint3d::From(width, 0.0, 0.0);
+
+    points[2] = DPoint3d::From(width, flangeThickness, 0.0);
+    points[3] = DPoint3d::From(width / 2 + webThickness / 2, flangeThickness, 0.0);
+
+    points[4] = DPoint3d::From(width / 2 + webThickness / 2, depth - flangeThickness, 0.0);
+    points[5] = DPoint3d::From(width, depth - flangeThickness, 0.0);
+
+    points[6] = DPoint3d::From(width, depth, 0.0);
+    points[7] = DPoint3d::From(0.0, depth, 0.0);
+
+    points[8] = DPoint3d::From(0.0, depth - flangeThickness, 0.0);
+    points[9] = DPoint3d::From(width / 2 - webThickness / 2, depth - flangeThickness, 0.0);
+
+    points[10] = DPoint3d::From(width / 2 - webThickness / 2, flangeThickness, 0.0);
+    points[11] = DPoint3d::From(0.0, flangeThickness, 0.0);
+
+    CurveVectorPtr shape = CurveVector::CreateLinear(points, _countof(points), CurveVector::BOUNDARY_TYPE_Outer, true);
+    return shape;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+CurveVectorPtr ShapeTools::GetLShape(double xFlangeSize, double yFlangeSize)
+    {
+    // TODO: Convert to function parameter
+    double flangeThickness = (xFlangeSize + yFlangeSize) / 8;
+
+    DPoint3d points[6];
+    points[0] = DPoint3d::From(0.0, 0.0, 0.0);
+    points[1] = DPoint3d::From(xFlangeSize, 0.0, 0.0);
+
+    points[2] = DPoint3d::From(xFlangeSize, yFlangeSize, 0.0);
+    points[3] = DPoint3d::From(xFlangeSize - flangeThickness, yFlangeSize, 0.0);
+
+    points[4] = DPoint3d::From(xFlangeSize - flangeThickness, flangeThickness, 0.0);
+    points[5] = DPoint3d::From(0.0, flangeThickness, 0.0);
+
+    CurveVectorPtr shape = CurveVector::CreateLinear(points, _countof(points), CurveVector::BOUNDARY_TYPE_Outer, true);
+    return shape;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
 BentleyStatus GeometricTools::CreateStructuralMemberGeometry(
     Dgn::PhysicalElementPtr element,
     StructuralPhysical::StructuralPhysicalModelR model,
     ECN::ECSchemaCP schema,
-    StructuralMemberGeometricProperties* properties)
+    PhysicalProperties* properties,
+    Transform rotationMatrix,
+    Transform linearMatrix)
     {
     Dgn::DgnDbR db = model.GetDgnDb();
     Dgn::DgnModelId modelId = model.GetModelId();
@@ -48,32 +143,53 @@ BentleyStatus GeometricTools::CreateStructuralMemberGeometry(
     params.SetFillColor(properties->GetFillColor());
     builder->Append(params);
 
-    DPoint3d points[4];
-    points[0] = DPoint3d::From(0.0, 0.0, 0.0);
-    points[1] = DPoint3d::From(properties->GetXDimension(), 0.0, 0.0);
-    points[2] = DPoint3d::From(properties->GetXDimension(), properties->GetYDimension(), 0.0);
-    points[3] = DPoint3d::From(0.0, properties->GetYDimension(), 0.0);
-
-    DVec3d vec = DVec3d::From(0.0, 0.0, properties->GetZDimension());
-
-    CurveVectorPtr shape = CurveVector::CreateLinear(points, _countof(points), CurveVector::BOUNDARY_TYPE_Outer, true);
+    // Get member shape
+    CurveVectorPtr shape;
+    switch (properties->GetShape())
+        {
+        case ShapeTools::Shape::I:
+            shape = ShapeTools::GetIShape(properties->GetXDimension(), properties->GetYDimension());
+            break;
+        case ShapeTools::Shape::L:
+            shape = ShapeTools::GetLShape(properties->GetXDimension(), properties->GetYDimension());
+            break;
+        case ShapeTools::Shape::HSSRectangle:
+            shape = ShapeTools::GetHSSRectShape(properties->GetXDimension(), properties->GetYDimension());
+            break;
+        case ShapeTools::Shape::Rectangle:
+        default:
+            shape = ShapeTools::GetRectSolidShape(properties->GetXDimension(), properties->GetYDimension());
+            break;
+        }
     if (!shape.IsValid())
         {
         return BentleyStatus::BSIERROR;
         }
 
-    ISolidPrimitivePtr panel = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(shape, vec, true));
-    if (!panel.IsValid())
+    // Get member "length"
+    DVec3d vec = DVec3d::From(0.0, 0.0, properties->GetZDimension());
+
+    // Create member
+    ISolidPrimitivePtr member = ISolidPrimitive::CreateDgnExtrusion(DgnExtrusionDetail(shape, vec, true));
+    if (!member.IsValid())
         {
         return BentleyStatus::BSIERROR;
         }
 
-    builder->Append(*panel);
+    // Transform member as needed
+    member->TransformInPlace(rotationMatrix);
+    member->TransformInPlace(linearMatrix);
 
-    if (BentleyStatus::SUCCESS != builder->Finish(*element))
+    if (!builder->Append(*member))
+        {
+        return BentleyStatus::BSIERROR;
+        }
+
+   if (BentleyStatus::SUCCESS != builder->Finish(*element))
         {
         return BentleyStatus::BSIERROR;
         }
 
     return BentleyStatus::SUCCESS;
     }
+
