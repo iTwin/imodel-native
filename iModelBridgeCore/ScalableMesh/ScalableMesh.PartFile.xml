@@ -15,8 +15,8 @@
       </Bindings>
     </Part>
 
-    <!--<Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="G" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1">-->
-      <Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="G">
+    <!--<Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="B02" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1">-->
+      <Part Name="ScalableMesh" BMakeFile="ScalableMesh.mke" ApiNumber="B02">
         <SubPart PartName="DgnPlatformDll"   PartFile="DgnPlatform"                          Repository="DgnPlatform" />
         <!--<SubPart PartName="TilePublisherLib" PartFile="DgnPlatform"                          Repository="DgnPlatform"/>-->
         <!--<SubPart PartName="PCLWrapper" />
