@@ -24,7 +24,6 @@
 //#include "InternalUtilityFunctions.h"
 #include "Edits\\ClipUtilities.h"
 #include <json/json.h>
-//#include <QuickVision\qvision.h>
 
 // This define does not work when it is set to 10000 and a dataset of 120000 is used
 #define MAX_POINTS_PER_DTM 10000
@@ -1586,125 +1585,6 @@ template <class POINT> void ScalableMeshCachedMeshNode<POINT>::LoadMesh(bool loa
     m_loadedTexture = __super::_GetTexture();                 
     }
 
-#if 0 //NEEDS_WORK_SM : Need do create a cached for texture since the same texture can pertain to more than one node
-QvCachedNodeManager::CachedNodesList QvCachedNodeManager::m_cachedNodes;
-
-QvCachedNodeManager::QvCachedNodeManager()
-    {
-    m_maxNbPoints = 3000000;
-    m_totalNbPoints = 0;
-    }
-
-void QvCachedNodeManager::AddCachedNode(__int64 nodeId, QvElem* qvElem, DTMDataRef* dtmDataRef, size_t nbPoints/*, MaterialPtr& materialPtr*/)
-    {
-    assert(qvElem != 0);
-
-    while (m_totalNbPoints + nbPoints > m_maxNbPoints)
-        {
-        assert(m_totalNbPoints >= m_cachedNodes.back().m_nbPoints);
-        m_totalNbPoints -= m_cachedNodes.back().m_nbPoints;
-        /*cachedNodeIter->*/m_cachedNodes.back().ReleaseQVisionCache(m_cachedNodes.back().m_nodeId);
-        DTMElementMeshDisplayHandler::s_materialMap.erase(m_cachedNodes.back().m_nodeId);
-        T_HOST.GetGraphicsAdmin()._DeleteQvElem (m_cachedNodes.back().m_qvElem);
-//        m_cachedNodes.back().ReleaseQVisionCache();
-        m_cachedNodes.pop_back();
-        }            
-
-    m_cachedNodes.push_front(QvCachedNode(nodeId, qvElem, dtmDataRef, nbPoints/*, materialPtr*/));
-
-    m_totalNbPoints += nbPoints;
-    }
-
-void QvCachedNodeManager::ClearCachedNodes(DTMDataRef* dtmDataRef)
-    {
-    auto cachedNodeIter(m_cachedNodes.begin());
-    auto cachedNodeIterEnd(m_cachedNodes.end());
-    
-    while (cachedNodeIter != cachedNodeIterEnd)
-        {
-        if (cachedNodeIter->m_dtmDataRef == dtmDataRef)            
-            {
-            // Delete QVCache for this particular node
-            // Delete s_material id for this node too.
-            cachedNodeIter->ReleaseQVisionCache(cachedNodeIter->m_nodeId);
-            DTMElementMeshDisplayHandler::s_materialMap.erase(cachedNodeIter->m_nodeId);
-            cachedNodeIter = m_cachedNodes.erase(cachedNodeIter);                        
-            }
-        else
-            {
-            cachedNodeIter++;
-            }        
-        }
-
-    m_totalNbPoints = 0;
-    }
-     
-//NEEDS_WORK_SM_PROGRESSIVE : Too slow, need optimization.
-QvElem* QvCachedNodeManager::FindQvElem(__int64 nodeId, DTMDataRef* dtmDataRef)
-    {
-    auto cachedNodeIter(m_cachedNodes.begin());
-    auto cachedNodeIterEnd(m_cachedNodes.end());
-
-    QvElem* foundElem = 0;
-
-    while (cachedNodeIter != cachedNodeIterEnd)
-        {
-        if ((cachedNodeIter->m_dtmDataRef == dtmDataRef) && 
-            (cachedNodeIter->m_nodeId == nodeId))
-            {
-            QvCachedNode qvCachedNode(*cachedNodeIter);
-            foundElem = cachedNodeIter->m_qvElem;
-//            cachedNodeIter->ReleaseQVisionCache();
-            m_cachedNodes.erase(cachedNodeIter);
-            m_cachedNodes.push_front(qvCachedNode);                    
-            break;
-            }
-
-        cachedNodeIter++;
-        }
-
-    return foundElem;
-    }
-/*
-MaterialPtr QvCachedNodeManager::GetMaterial(__int64 nodeId, DTMDataRef* dtmDataRef)
-{
-    auto cachedNodeIter(m_cachedNodes.begin());
-    auto cachedNodeIterEnd(m_cachedNodes.end());
-
-    //QvElem* foundElem = 0;
-
-    while (cachedNodeIter != cachedNodeIterEnd)
-    {
-        if ((cachedNodeIter->m_dtmDataRef == dtmDataRef) &&
-            (cachedNodeIter->m_nodeId == nodeId))
-        {
-            return cachedNodeIter->m_material;
-            //QvCachedNode qvCachedNode(*cachedNodeIter);
-            //foundElem = cachedNodeIter->m_qvElem;
-            //m_cachedNodes.erase(cachedNodeIter);
-            //m_cachedNodes.push_front(qvCachedNode);
-            //break;
-        }
-
-        cachedNodeIter++;
-    }
-
-    return nullptr;
-}*/
-
-QvCachedNodeManager& QvCachedNodeManager::GetManager()
-    {
-    static QvCachedNodeManager* s_manager = 0;
-
-    if (s_manager == 0)
-        {
-        s_manager = new QvCachedNodeManager();
-        }
-
-    return *s_manager;
-    }    
-#endif
-
 typedef struct {float x, y;} FloatXY;
 typedef struct {float x, y, z;} FloatXYZ;
 
@@ -2669,9 +2549,15 @@ template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetNodeExtent() const
 
 template <class POINT> DRange3d ScalableMeshNode<POINT>::_GetContentExtent() const
     {
-    LOAD_NODE
+    LOAD_NODE        
+
+    if (!m_node->m_nodeHeader.m_totalCountDefined)
+        { 
+        return DRange3d::NullRange();
+        }
 
     DRange3d range;
+
     Extent3dType ext = m_node->m_nodeHeader.m_contentExtent;
     range = DRange3d::From(DPoint3d::From(ExtentOp<Extent3dType>::GetXMin(ext), ExtentOp<Extent3dType>::GetYMin(ext), ExtentOp<Extent3dType>::GetZMin(ext)),
                            DPoint3d::From(ExtentOp<Extent3dType>::GetXMax(ext), ExtentOp<Extent3dType>::GetYMax(ext), ExtentOp<Extent3dType>::GetZMax(ext)));
