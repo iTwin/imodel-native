@@ -277,6 +277,7 @@ struct MemoryLayoutTests : ECTestFixture
                 "        <ECProperty propertyName=\"ABoolean\"         typeName=\"boolean\"  />"
                 "        <ECProperty propertyName=\"ALong\"            typeName=\"long\"  />"
                 "        <ECProperty propertyName=\"ABinary\"          typeName=\"binary\"  />"
+                //"        <ECProperty propertyName=\"ReadOnlyInt\"      typeName=\"int\" readOnly=\"True\"  />"
                 "        <ECArrayProperty propertyName=\"SomeStrings\" typeName=\"string\" />"
                 "        <ECArrayProperty propertyName=\"SomeInts\"    typeName=\"int\" />"
                 "        <ECArrayProperty propertyName=\"SomePoint3ds\"    typeName=\"point3d\" />"
@@ -657,6 +658,23 @@ struct MemoryLayoutTests : ECTestFixture
             v.SetStruct(manufInst.get());
             ASSERT_TRUE(ECObjectsStatus::Success == instance.SetValue(arrayAccessor, v, 3));
 
+            // ensure we can't set the array elements to other primitive types
+            {
+            DISABLE_ASSERTS
+            v.SetInteger(35);
+            ASSERT_TRUE(ECObjectsStatus::DataTypeNotSupported == instance.SetValue(arrayAccessor, v, 1));
+            v.SetUtf8CP("foobar");
+            ASSERT_TRUE(ECObjectsStatus::DataTypeNotSupported == instance.SetValue(arrayAccessor, v, 1));
+            }
+
+            // ensure we can not set the array to an instance of a struct that is not of the type (or derived from the type) of the property    
+            ECClassCP incompatibleClass = manufacturerEnabler.GetClass().GetSchema().GetClassCP("AllPrimitives");
+            ASSERT_TRUE(NULL != incompatibleClass);
+
+            StandaloneECInstancePtr incompatibleInstance = incompatibleClass->GetDefaultStandaloneEnabler()->CreateInstance();
+            v.SetStruct(incompatibleInstance.get());
+            ASSERT_TRUE(ECObjectsStatus::UnableToSetStructArrayMemberInstance == instance.SetValue(arrayAccessor, v, 0));
+
             VerifyVariableCountManufacturerArray(instance, v, arrayAccessor);
             }
 
@@ -789,6 +807,289 @@ struct MemoryLayoutTests : ECTestFixture
     };
 //static
 std::vector<Utf8String> MemoryLayoutTests::s_propertyNames;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static void  checkValue(Utf8CP accessString, ECValueCR value, ECN::StandaloneECInstancePtr& instance)
+    {
+    uint32_t propertyIndex = 0;
+    bool isSet = false;
+
+    ECValue ecValue;
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetEnabler().GetPropertyIndex(propertyIndex, accessString));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(ecValue, propertyIndex));
+    EXPECT_TRUE(ecValue.Equals(value));
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->IsPerPropertyBitSet(isSet, (uint8_t) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
+    EXPECT_TRUE(true == isSet);
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->IsPerPropertyBitSet(isSet, (uint8_t) PROPERTYFLAGINDEX_IsReadOnly, propertyIndex));
+    EXPECT_TRUE((0 == propertyIndex % 2) == isSet);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Bill.Steinbock                  09/2011
++---------------+---------------+---------------+---------------+---------------+------*/
+static void  setValue(Utf8CP accessString, ECValueCR value, ECN::StandaloneECInstancePtr& instance)
+    {
+    uint32_t propertyIndex = 0;
+    bool isSet = false;
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetEnabler().GetPropertyIndex(propertyIndex, accessString));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetValue(propertyIndex, value));
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->IsPerPropertyBitSet(isSet, (uint8_t) PROPERTYFLAGINDEX_IsLoaded, propertyIndex));
+    EXPECT_TRUE(true == isSet) << "IECInstance::IsPerPropertyBitSet for property " << accessString;
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->SetPerPropertyBit((uint8_t) PROPERTYFLAGINDEX_IsReadOnly, propertyIndex, 0 == propertyIndex % 2));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, CheckPerPropertyFlags)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
+    ECClassP ecClass = schema->GetClassP("CadData");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    uint8_t numBitPerProperty = instance->GetNumBitsInPerPropertyFlags();
+    EXPECT_TRUE(numBitPerProperty == 2);
+
+    DPoint2d   inSize = {10.5, 22.3};
+    DPoint3d   inPoint1 = {10.10, 11.11, 12.12};
+    DPoint3d   inPoint2 = {100.100, 110.110, 120.120};
+    DateTime   inTime = DateTime::GetCurrentTimeUtc();
+    int        inCount = 100;
+    double     inLength = 432.178;
+    bool       inTest = true;
+    int64_t    inTicks = 634027121070910000;
+
+    ECValue ecValue;
+    ecValue.SetDateTimeTicks(inTicks);
+
+    setValue("Count", ECValue(inCount), instance);
+    setValue("Name", ECValue("Test"), instance);
+    setValue("Length", ECValue(inLength), instance);
+    setValue("Field_Tested", ECValue(inTest), instance);
+    setValue("Size", ECValue(inSize), instance);
+    setValue("StartPoint", ECValue(inPoint1), instance);
+    setValue("EndPoint", ECValue(inPoint2), instance);
+    setValue("Service_Date", ECValue(inTime), instance);
+    setValue("Install_Date", ecValue, instance);
+
+    checkValue("Count", ECValue(inCount), instance);
+    checkValue("Name", ECValue("Test"), instance);
+    checkValue("Length", ECValue(inLength), instance);
+    checkValue("Field_Tested", ECValue(inTest), instance);
+    checkValue("Size", ECValue(inSize), instance);
+    checkValue("StartPoint", ECValue(inPoint1), instance);
+    checkValue("EndPoint", ECValue(inPoint2), instance);
+    checkValue("Service_Date", ECValue(inTime), instance);
+    checkValue("Install_Date", ecValue, instance);
+
+    bool isSet, lastPropertyEncountered = false;
+    uint32_t propertyIndex = 0;
+    instance->ClearAllPerPropertyFlags();
+    ECObjectsStatus status;
+
+    while (!lastPropertyEncountered)
+        {
+        for (uint8_t i = 0; i < numBitPerProperty; i++)
+            {
+            status = instance->IsPerPropertyBitSet(isSet, i, propertyIndex);
+            // break when property index exceeds actual property count
+            if (ECObjectsStatus::Success == status)
+                {
+                EXPECT_TRUE(false == isSet);
+                }
+            else
+                {
+                lastPropertyEncountered = true;
+                break;
+                }
+            }
+
+        propertyIndex++;
+        }
+    };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MemoryLayoutTests, PropertyLayoutBracketsTest)
+    {
+    // ClassLayout maintains a vector of PropertyLayouts sorted by access string.
+    // We discovered a defect in which the access string used for sorting did not include the brackets[] for array properties, causing lookup to fail.
+    // This test confirms that defect is corrected.
+    Utf8Char schemaXml[] =
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"BracketTestSchema\" nameSpacePrefix=\"bts\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "<ECClass typeName=\"BracketTestClass\" isDomainClass=\"True\">"
+        "<ECProperty propertyName=\"B0\" typeName=\"string\" />"
+        "<ECProperty propertyName=\"B1\" typeName=\"string\" />"
+        "<ECProperty propertyName=\"B2\" typeName=\"string\" />"
+        "<ECProperty propertyName=\"B3\" typeName=\"string\" />"
+        "<ECProperty propertyName=\"B4\" typeName=\"string\" />"
+        "<ECProperty propertyName=\"B5\" typeName=\"string\" />"
+        "<ECArrayProperty propertyName=\"B\" typeName=\"string\" minOccurs=\"0\" maxOccurs=\"unbounded\" />"
+        "</ECClass>"
+        "</ECSchema>";
+
+    // If brackets are omitted, then "B" precedes "B0"
+    // Else, "B0" preceds "B"
+    // The order of declaration of properties in the schema matters here.
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchemaPtr schema;
+    EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext));
+
+    ECClassP ecClass = schema->GetClassP("BracketTestClass");
+    ASSERT_TRUE(NULL != ecClass);
+
+    ClassLayoutPtr layout = ClassLayout::BuildFromClass(*ecClass);
+    ASSERT_TRUE(layout.IsValid());
+
+    PropertyLayoutCP propLayout;
+    EXPECT_EQ(ECObjectsStatus::Success, layout->GetPropertyLayout(propLayout, "B"));   // would have failed prior to bug fix
+    EXPECT_EQ(ECObjectsStatus::Success, layout->GetPropertyLayout(propLayout, "B0"));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(MemoryLayoutTests, ExpectCorrectPrimitiveTypeForNullValues)
+    {
+    ECSchemaPtr      schema = CreateTestSchema();
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassP ecClass = schema->GetClassP("AllPrimitives");
+    ASSERT_TRUE(NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance();
+
+    ECValue v;
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "AString"));
+    EXPECT_TRUE(v.IsNull());
+    EXPECT_TRUE(v.IsPrimitive());
+    EXPECT_TRUE(v.IsString());
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "ABoolean"));
+    EXPECT_TRUE(v.IsNull());
+    EXPECT_TRUE(v.IsPrimitive());
+    EXPECT_TRUE(v.IsBoolean());
+
+    ecClass = schema->GetClassP("NestedStructArray");
+    ASSERT_TRUE(NULL != ecClass);
+    enabler = ecClass->GetDefaultStandaloneEnabler();
+    instance = enabler->CreateInstance();
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "ManufacturerArray"));
+    EXPECT_TRUE(v.IsArray());
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->AddArrayElements("ManufacturerArray", 2));
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "ManufacturerArray", 0));
+    EXPECT_TRUE(v.IsStruct());
+    EXPECT_TRUE(v.IsNull());
+
+    ecClass = schema->GetClassP("FixedSizeArrayTester");
+    ASSERT_TRUE(NULL != ecClass);
+    enabler = ecClass->GetDefaultStandaloneEnabler();
+    instance = enabler->CreateInstance();
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->AddArrayElements("Struct1", 1));
+
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "Struct1"));
+    EXPECT_TRUE(v.IsArray());
+    EXPECT_TRUE(ECObjectsStatus::Success == instance->GetValue(v, "Struct1", 0));
+    EXPECT_TRUE(v.IsStruct());
+    EXPECT_TRUE(v.IsNull());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* MemoryECInstanceBase stores supporting instances as StandaloneECInstances.
+* For efficiency we want to avoid making a copy of the supporting instance when setting
+* it to the parent's struct array.
+* But we also want to avoid having more than one parent instance claim ownership of
+* a single supporting instance; otherwise modifying one would modify the other.
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, SupportingInstanceOwnership)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+    ECClassP parentClass = schema->GetClassP("NestedStructArray");    // contains an array of Manufacturer structs
+    ECClassP structClass = schema->GetClassP("Manufacturer");
+
+    StandaloneECInstancePtr originalStruct = structClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    StandaloneECInstancePtr parentA = parentClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    StandaloneECInstancePtr parentB = parentClass->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    parentA->AddArrayElements("ManufacturerArray", 1);
+    parentB->AddArrayElements("ManufacturerArray", 1);
+
+    ECValue structVal;
+    structVal.SetStruct(originalStruct.get());
+
+    parentA->SetValue("ManufacturerArray", structVal, 0);
+    parentB->SetValue("ManufacturerArray", structVal, 0);
+
+    parentA->GetValue(structVal, "ManufacturerArray", 0);
+    EXPECT_EQ(structVal.GetStruct().get(), originalStruct.get());
+
+    parentB->GetValue(structVal, "ManufacturerArray", 0);
+    EXPECT_NE(structVal.GetStruct().get(), originalStruct.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* When we duplicate instances, we want to make sure that supporting instances are copied
+* recursively.
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MemoryLayoutTests, CopyRecursiveSupportingInstances)
+    {
+    ECSchemaPtr schema = CreateTestSchema();
+
+    // populate our source instance with nested struct arrays
+    IECInstancePtr outer = schema->GetClassP("ClassWithStructArray")->GetDefaultStandaloneEnabler()->CreateInstance(),
+        middle = schema->GetClassP("NestedStructArray")->GetDefaultStandaloneEnabler()->CreateInstance(),
+        inner = schema->GetClassP("Manufacturer")->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    inner->SetValue("Name", ECValue("Hooray!"));
+
+    ECValue structVal;
+    middle->AddArrayElements("ManufacturerArray", 1);
+    structVal.SetStruct(inner.get());
+    middle->SetValue("ManufacturerArray", structVal, 0);
+
+    outer->AddArrayElements("ComplicatedStructArray", 1);
+    structVal.SetStruct(middle.get());
+    outer->SetValue("ComplicatedStructArray", structVal, 0);
+
+    // make a copy
+    StandaloneECInstancePtr outerCopy = outer->GetEnabler().GetClass().GetDefaultStandaloneEnabler()->CreateInstance();
+    outerCopy->CopyValues(*outer);
+
+    // confirm the nested struct array instances have been copied as well
+    outerCopy->GetValue(structVal, "ComplicatedStructArray", 0);
+    IECInstancePtr middleCopy = structVal.GetStruct();
+    EXPECT_NE(middleCopy.get(), middle.get());
+
+    middleCopy->GetValue(structVal, "ManufacturerArray", 0);
+    IECInstancePtr innerCopy = structVal.GetStruct();
+    EXPECT_NE(innerCopy.get(), inner.get());
+
+    // modify the original deepest supporting instance
+    ECValue v("Oh no!");
+    inner->SetValue("Name", v);
+
+    // confirm our copy of the deepest supporting instance remains intact
+    innerCopy->GetValue(v, "Name");
+    EXPECT_EQ(0, strcmp(v.GetUtf8CP(), "Hooray!"));
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Muhammad.Hassan                     07/16

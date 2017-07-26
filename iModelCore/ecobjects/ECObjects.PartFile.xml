@@ -105,20 +105,12 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
+    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="TestFixture"/>
         <SubPart PartName="PublishedApi"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
-        </Bindings>
-    </Part>
-
-    <Part Name="NonPublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-        <SubPart PartName="TestDependencies"/>
-        <SubPart PartName="TestFixture"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
         </Bindings>
     </Part>
 
@@ -132,8 +124,7 @@
 
     <!-- This part is the default test collection. It is included in MobileDgn's aggregate test collection. -->
     <Part Name="Tests" DeferType="BuildUnitTests">
-        <SubPart PartName="PublishedTests" />
-        <SubPart PartName="NonPublishedTests" />
+        <SubPart PartName="UnitTests" />
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->

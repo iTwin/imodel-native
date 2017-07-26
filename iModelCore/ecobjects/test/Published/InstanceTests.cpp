@@ -32,6 +32,7 @@ struct InstanceTests;
 struct CompressInstanceTests;
 struct PropertyTests;
 struct StringEncodingTests;
+struct PropertyIndexTests : ECTestFixture{};
 
 Utf8Char s_schemaXml[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
                 "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
@@ -868,6 +869,85 @@ TEST_F (CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
     instance->RemoveArrayElement ("myManufacturerStructArray", 2);
     instance->Compress ();
     validateArrayCount (*instance, "myManufacturerStructArray", 3);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyIndexTests, FlatteningIterator)
+    {
+    static const PrimitiveType testTypes[] = {PRIMITIVETYPE_Integer, PRIMITIVETYPE_String};
+    for (size_t typeIndex = 0; typeIndex < _countof(testTypes); typeIndex++)
+        {
+        auto primType = testTypes[typeIndex];
+        // Create an ECClass with nested structs like so:
+        //  1
+        //  2
+        //      3
+        //      4
+        //          5
+        //  6 { empty struct }
+        //  7
+        //      8
+        //  9
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema(schema, "Schema", "ts", 1, 0, 0);
+        PrimitiveECPropertyP primProp;
+        StructECPropertyP structProp;
+
+        ECStructClassP s4;
+        schema->CreateStructClass(s4, "S4");
+        EXPECT_EQ(ECObjectsStatus::Success, s4->CreatePrimitiveProperty(primProp, "P5", primType));
+
+        ECStructClassP s2;
+        schema->CreateStructClass(s2, "S2");
+        EXPECT_EQ(ECObjectsStatus::Success, s2->CreatePrimitiveProperty(primProp, "P3", primType));
+        EXPECT_EQ(ECObjectsStatus::Success, s2->CreateStructProperty(structProp, "P4", *s4));
+
+        ECStructClassP s6;
+        schema->CreateStructClass(s6, "S6");
+
+        ECStructClassP s7;
+        schema->CreateStructClass(s7, "S7");
+        EXPECT_EQ(ECObjectsStatus::Success, s7->CreatePrimitiveProperty(primProp, "P8", primType));
+
+        ECEntityClassP ecClass;
+        schema->CreateEntityClass(ecClass, "MyClass");
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreatePrimitiveProperty(primProp, "P1", primType));
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreateStructProperty(structProp, "P2", *s2));
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreateStructProperty(structProp, "P6", *s6));
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreateStructProperty(structProp, "P7", *s7));
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreatePrimitiveProperty(primProp, "P9", primType));
+
+        // Expect property indices returned using depth-first traversal of struct members
+        // Expect indices of struct properties are not returned
+        // Note that order in which property indices are assigned and returned depends on fixed-sized vs variable-sized property types.
+        Utf8CP expect[] = {"P1", "P2.P3", "P2.P4.P5", "P7.P8", "P9"};
+
+        auto const& enabler = *ecClass->GetDefaultStandaloneEnabler();
+        uint32_t propIdx;
+        bset<Utf8CP> matched;
+        for (PropertyIndexFlatteningIterator iter(enabler); iter.GetCurrent(propIdx); iter.MoveNext())
+            {
+            Utf8CP accessString = nullptr;
+            EXPECT_EQ(ECObjectsStatus::Success, enabler.GetAccessString(accessString, propIdx));
+            bool foundMatch = false;
+            for (size_t i = 0; i < _countof(expect); i++)
+                {
+                if (0 == strcmp(expect[i], accessString))
+                    {
+                    EXPECT_TRUE(matched.end() == matched.find(expect[i]));
+                    matched.insert(expect[i]);
+                    foundMatch = true;
+                    break;
+                    }
+                }
+
+            EXPECT_TRUE(foundMatch);
+            }
+
+        EXPECT_EQ(matched.size(), _countof(expect));
+        }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
