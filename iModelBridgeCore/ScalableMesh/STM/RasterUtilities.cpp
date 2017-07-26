@@ -216,13 +216,13 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
 
     rasterFile = pRasterFile;
 
-    return rasterSource;
 
-   /*
+
+
     HFCPtr<HIMMosaic> mosaicPtr = new HIMMosaic(GetWorldCluster()->GetCoordSysReference(HGF2DWorld_HMRWORLD));
     mosaicPtr->Add(rasterSource);
     return mosaicPtr.GetPtr();
-*/
+
 
     }
 

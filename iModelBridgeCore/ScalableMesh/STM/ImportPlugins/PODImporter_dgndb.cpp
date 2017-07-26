@@ -218,7 +218,7 @@ private:
         bool hasRange(IsFromFile() ? GetFileRange(range) : GetElementRange(range));
         ScalableMeshData data = ScalableMeshData::GetNull();
         data.AddExtent(range);
-        data.SetIsGroundDetection(true);
+        data.SetIsGroundDetection(false);
 
         return ContentDescriptor
             (
@@ -419,6 +419,7 @@ private:
     bool                            m_reachedEof;
     PointCloudQueryBuffersPtr       m_pointCloudQueryBufferPtr;
     bool                            m_isClip;
+    bool                            m_hasInternalClassif;
 
 
     /*---------------------------------------------------------------------------------**//**
@@ -426,17 +427,29 @@ private:
     * @bsimethod                                                  Raymond.Gauthier   10/2010
     +---------------+---------------+---------------+---------------+---------------+------*/
     explicit                        PODPointExtractor  (const PointCloudScenePtr& pointCloudScenePtr,
-                                                        bool                           isClip)
+                                                        bool                      isClip, 
+                                                        bool                      hasInternalClassif)
         :   m_pointCloudScenePtr(pointCloudScenePtr),
             m_reachedEof(false), 
-            m_isClip(isClip)
-        {
-        
-        m_pointCloudQueryBufferPtr = PointCloudQueryBuffers::Create(MAX_PT_QTY, (uint32_t)PointCloudChannelId::Rgb |
-                                                                   (uint32_t)PointCloudChannelId::Xyz |
-                                                                   (uint32_t)PointCloudChannelId::Intensity |
-                                                                   (uint32_t)PointCloudChannelId::Filter);
+            m_isClip(isClip),
+            m_hasInternalClassif(hasInternalClassif)
 
+        {
+        if (m_hasInternalClassif)
+            {
+            m_pointCloudQueryBufferPtr = PointCloudQueryBuffers::Create(MAX_PT_QTY, (uint32_t)PointCloudChannelId::Rgb |
+                                                                                    (uint32_t)PointCloudChannelId::Xyz |
+                                                                                    (uint32_t)PointCloudChannelId::Intensity |
+                                                                                    (uint32_t)PointCloudChannelId::Filter | 
+                                                                                    (uint32_t)PointCloudChannelId::Classification);
+            }
+        else
+            {
+            m_pointCloudQueryBufferPtr = PointCloudQueryBuffers::Create(MAX_PT_QTY, (uint32_t)PointCloudChannelId::Rgb |
+                                                                                    (uint32_t)PointCloudChannelId::Xyz |
+                                                                                    (uint32_t)PointCloudChannelId::Intensity |
+                                                                                    (uint32_t)PointCloudChannelId::Filter);
+            }            
         }
 
     /*---------------------------------------------------------------------------------**//**
@@ -474,14 +487,19 @@ private:
         uint32_t pointsReadQty = m_pointCloudQueryBufferPtr->GetPoints(query);
 
         unsigned char* filterBufferP(m_pointCloudQueryBufferPtr->GetFilterBuffer());
+        unsigned char* classificationBufferP = nullptr;
 
+        if (m_hasInternalClassif)
+            classificationBufferP = (m_pointCloudQueryBufferPtr->GetClassificationBuffer());
+        
         size_t packetInd = 0;
 
-        if (m_isClip)
+        if (m_isClip || classificationBufferP != nullptr)
             {
             for (size_t pointInd = 0; pointInd < pointsReadQty; pointInd++)
                 {
-                if (PointCloudChannels_Is_Point_Visible(filterBufferP[pointInd]))
+                if ((!m_isClip || PointCloudChannels_Is_Point_Visible(filterBufferP[pointInd])) && 
+                    (classificationBufferP == nullptr || (classificationBufferP[pointInd] == GROUND_CHANNEL_NUMBER)))
                     {
                     m_packetXYZ.Edit()[packetInd] = m_pointCloudQueryBufferPtr->GetXyzBuffer()[pointInd];
                     RgbColorDef tmpColor;
@@ -736,12 +754,8 @@ class PODPointExtractorCreator : public InputExtractorCreatorMixinBase<PODSource
                                                                                     const PointCloudScenePtr& pointCloudScenePtr,
                                                                                     bool                           isClipped,
                                                                                     bool                           isGroundDetection)
-        {
-        // NEEDS_WORK_SM : internal classification => classification ?
-       /* if (sourceBase.HasInternalClassification() || isGroundDetection)
-            return new PODPointExtractorWithInternalClassif(dataQueryPtr, sourceBase.GetElementHandle(), isClipped, isGroundDetection);*/
-
-        return new PODPointExtractor(pointCloudScenePtr, isClipped);
+        {        
+        return new PODPointExtractor(pointCloudScenePtr, isClipped, sourceBase.HasInternalClassification());
         }
 
     /*---------------------------------------------------------------------------------**//**
