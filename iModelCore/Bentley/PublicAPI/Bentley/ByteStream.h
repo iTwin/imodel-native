@@ -85,6 +85,18 @@ public:
         m_size += sizeof(buf);
         }
 
+    //! Append a value to the end of this ByteStream.
+    //! @param[in] value the value to save
+    template<typename T> void Append (T const& value) 
+        {
+        uint32_t  newSize = m_size + sizeof(value);
+        if (newSize > m_allocSize)
+            Reserve(2 * newSize);   // Double size to avoid realloc....
+    
+        memcpy(m_data + m_size, &value, sizeof(value));
+        m_size += sizeof(value);
+        }
+
     bool empty() const {return !HasData();}
     size_t size() const {return GetSize();}
     size_t capacity() const {return GetAllocSize();}

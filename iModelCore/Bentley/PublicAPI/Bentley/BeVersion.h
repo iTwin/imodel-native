@@ -16,8 +16,9 @@ BEGIN_BENTLEY_NAMESPACE
 #define VERSION_FORMAT_MAJOR_MINOR "%" PRIu16 ".%" PRIu16
 #define VERSION_PARSE_FORMAT "%d.%d.%d.%d"
 
-typedef struct BeVersion& BeVersionR;
-typedef const struct BeVersion& BeVersionCR;
+struct BeVersion;
+typedef BeVersion& BeVersionR;
+typedef BeVersion const& BeVersionCR;
 
 //=======================================================================================
 //! A 4-digit number that specifies version number

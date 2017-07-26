@@ -269,6 +269,7 @@ TEST (BeStringUtilitiesTests, ReverseStr)
     wchar_t * outStrW = BeStringUtilities::Wcsrev(inStrW);
     EXPECT_STREQ(L"=-)(*&^%$#@!tseTAsIsihT", outStrW) << outStrW;
     }
+
 //---------------------------------------------------------------------------------------
 // @betest                                     Umar.Hayat                  12/15
 //---------------------------------------------------------------------------------------
@@ -318,6 +319,7 @@ TEST (BeStringUtilitiesTests, Join)
         EXPECT_STREQ("Hello,World,!,", outStr.c_str()) << outStr;
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @betest                                     Umar.Hayat                  12/15
 //---------------------------------------------------------------------------------------
@@ -347,6 +349,7 @@ TEST (BeStringUtilitiesTests, Split)
         EXPECT_STREQ("4", tokens[3].c_str());
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @betest                                     Umar.Hayat                  12/15
 //---------------------------------------------------------------------------------------
@@ -390,6 +393,7 @@ TEST (BeStringUtilitiesTests, BeStringUtilWmemcpy)
 
     EXPECT_STREQ(src, dest);
     }
+
 //---------------------------------------------------------------------------------------
 // @betest                                     Hassan.Arshad                  10/13
 // Desc: Testing of Wmemcpy method.
@@ -919,6 +923,7 @@ TEST (BeStringUtilitiesTests, HexFormatOptions)
         EXPECT_STREQ (L"0X00FF11  ", str.c_str());
         }
     }
+
 //---------------------------------------------------------------------------------------
 // @betest                                      Umar.hayat                          12/15
 //---------------------------------------------------------------------------------------
@@ -1184,6 +1189,7 @@ TEST (BeStringUtilitiesTests, ParseDelimitedString)
     EXPECT_STREQ(L"3G4", tokens[2].c_str());
     EXPECT_STREQ(L"Fourty Two", tokens[3].c_str());
     }
+
 //---------------------------------------------------------------------------------------
 // @betest                                     Umar.Hayat                  03/16
 //---------------------------------------------------------------------------------------
