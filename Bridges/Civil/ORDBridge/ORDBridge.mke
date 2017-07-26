@@ -6,7 +6,7 @@
 #
 #---------------------------------------------------------------------------------------+
 %include mdl.mki
-%include $(SrcRoot)CivilShared/ORDBridge/ORDBridge.mki
+%include $(SrcRoot)Civil/iModelBridges/ORDBridge/ORDBridge.mki
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -33,7 +33,7 @@ PchExplicitDepends  = $(MultiCompileDepends)
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 
-CompileOptionsMki =$(SrcRoot)CivilShared/ORDBridge/ORDBridge.mki
+CompileOptionsMki =$(SrcRoot)Civil/iModelBridges/ORDBridge/ORDBridge.mki
 %include $(CompileOptionsMki)
 %include $(SharedMki)PreCompileHeader.mki
 

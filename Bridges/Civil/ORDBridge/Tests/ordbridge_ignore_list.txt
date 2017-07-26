@@ -1,1 +1,1 @@
-CivilSharedORDBridgeTestsFixture.ORDExampleConversionTest
+CiviliModelBridgesORDBridgeTestsFixture.ORDExampleConversionTest

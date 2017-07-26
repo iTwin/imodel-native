@@ -1,54 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../bsicommon/build/PartFile.xsd">
-
-    <Product Name="CiviliModelBridges-WinDesktop" OnlyPlatforms="x64" SaveProduct="true" PrgOutputDir="CiviliModelBridges-WinDesktop">
-        <Directories DirectoryListName="CivilSharedDirectoryList"/>
-        <!-- <SubPart PartName="CivilSharedTested" /> -->
-        <SubPart PartName="CiviliModelBridges-WinDesktopApp"/>
-    </Product>
-
-    <Part Name="CiviliModelBridges-WinDesktopApp" OnlyPlatforms="x64">
-        <SubPart PartName="CiviliModelBridgesAppLib"/>
-        <SubPart PartName="CiviliModelBridges-WinDesktop-Assets"/>
-        <SubPart PartName="DgnClientFxLibrary-Net" Repository="DgnClientFx" PartFile="DgnClientFx"/>
-    </Part>
-
-    <Part Name="CiviliModelBridges-WinDesktop-Assets" OnlyPlatforms="x64">
-        <SubPart PartName="DgnClientFxJsApi" Repository="DgnClientFx" PartFile="DgnClientFx"/>
-        <SubPart PartName="CiviliModelBridgesAppLib"/>
-        <SubPart PartName="DgnClientFxLibrary-Net" Repository="DgnClientFx" PartFile="DgnClientFx"/>
-    </Part>
-
-    <Part Name="CiviliModelBridges-iOS" OnlyPlatforms="iOSARM,iOSARM64,iOSARMActive,iOSX64,iOSX86">
-        <!-- <SubPart PartName="PrewireFieldApps" PartFile="FieldApps" Repository="FieldApps" /> -->
-
-        <SubPart
-            PartName="DgnClientSdk-Untested"
-            Repository="DgnClientFx"
-            PartFile="DgnClientFx" />
-
-        <!--        This eventually calls out to a CVS repository. Hopefully this gets fixed soon...it's not a problem on 0505 and I can't imagine that it stays broken.  For now we just don't pull this... -->
-        <!-- <SubPart 
-            PartName="MobileUtils"
-            PartFile="FieldApps"
-            Repository="FieldApps" />  -->
-        <SubPart PartName="CiviliModelBridgesAppLib" />
-    </Part>
-
-    <Part Name="CiviliModelBridgesAppLib">
-        <SubPart PartName="DgnClientFxLibrary" Repository="DgnClientFx" PartFile="DgnClientFx" />
-        <SubPart PartName="WebServicesClient" PartFile="WSClient" Repository="WSClient"/>
-        <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient"/>
-    </Part>
-
-    <ProductDirectoryList ListName="CiviliModelBridgesDirectoryList">
-        <ProductDirectory Name="Root" Path=""/>
-        <ProductDirectory Name="Assemblies" RelativeTo="Root" Path=""/>
-        <ProductDirectory Name="Assets" RelativeTo="Root" Path="Assets"/>
-        <ProductDirectory Name="Assets" RelativeTo="Root" Path="Assets" LibType="static"/>
-        <ProductDirectory Name="VendorNotices" RelativeTo="Root" Path="Notices"/>
-    </ProductDirectoryList>
     
     <!-- ........................................................................................................................................ -->
     <!-- ORDBridge    The bridge itself is a product, containing all of the needed shared libraries, plus assets. -->
@@ -132,6 +84,7 @@
     <Part Name="PrewireForORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/prewire.mke">
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="CiviliModelBridgesORDBridge" SubPartDirectory="UnitTests/CivilORDBridge"> Delivery/UnitTests/ordbridge_ignore_list.txt</Files>
+            <Directory ProductDirectoryName="UnitTests-Assets"  ProductSubDirectory="TestFiles" SourceName="Delivery/UnitTests/TestFiles"/>
         </Bindings>
     </Part>
 

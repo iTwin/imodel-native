@@ -10,7 +10,7 @@ struct ORDBridgeTestsHostImpl;
 //=======================================================================================
 struct ORDBridgeTestsHost
 {
-friend struct CivilSharedORDBridgeTestsFixture;
+friend struct CiviliModelBridgesORDBridgeTestsFixture;
 
 private:
     ORDBridgeTestsHostImpl* m_pimpl;
@@ -30,7 +30,7 @@ public:
 //=======================================================================================
 // Fixture class to ensure that the host is initialized at the beginning of every test
 //=======================================================================================
-struct CivilSharedORDBridgeTestsFixture : ::testing::Test
+struct CiviliModelBridgesORDBridgeTestsFixture : ::testing::Test
 {
 private:
     static ORDBridgeTestsHost* m_host;
@@ -52,7 +52,7 @@ protected:
 public:
 };
 
-typedef CivilSharedORDBridgeTestsFixture CivilSharedORDBridgeTests;
+typedef CiviliModelBridgesORDBridgeTestsFixture CiviliModelBridgesORDBridgeTests;
 
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC

@@ -3,7 +3,7 @@
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CivilSharedORDBridgeTests, ORDHelloWorldGeometryConversionTest)
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
     {
     ASSERT_TRUE(RunTestApp("Hello World\\Geometry.dgn", "default", "ORDHelloWorldGeometryTest.bim"));
     VerifyConvertedElements("ORDHelloWorldGeometryTest.bim", 1, 0);
@@ -12,7 +12,7 @@ TEST_F(CivilSharedORDBridgeTests, ORDHelloWorldGeometryConversionTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CivilSharedORDBridgeTests, ORDHelloWorldCorridorConversionTest)
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldCorridorConversionTest)
     {
     ASSERT_TRUE(RunTestApp("Hello World\\Corridor.dgn", "default", "ORDHelloWorldCorridorTest.bim"));
     VerifyConvertedElements("ORDHelloWorldCorridorTest.bim", 16, 1);
@@ -21,7 +21,7 @@ TEST_F(CivilSharedORDBridgeTests, ORDHelloWorldCorridorConversionTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CivilSharedORDBridgeTests, ORDFullyFederatedConversionTest)
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullyFederatedConversionTest)
     {
     ASSERT_TRUE(RunTestApp("Fully Federated\\container.dgn", "default", "ORDFullyFederatedTest.bim"));
     VerifyConvertedElements("ORDFullyFederatedTest.bim", 2, 0);
@@ -30,7 +30,7 @@ TEST_F(CivilSharedORDBridgeTests, ORDFullyFederatedConversionTest)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(CivilSharedORDBridgeTests, ORDIHLConversionTest)
+TEST_F(CiviliModelBridgesORDBridgeTests, ORDIHLConversionTest)
     {
     ASSERT_TRUE(RunTestApp("IHL\\IHL.dgn", "default", "ORDIHLTest.bim"));
     VerifyConvertedElements("ORDFullyFederatedTest.bim", 2, 0);

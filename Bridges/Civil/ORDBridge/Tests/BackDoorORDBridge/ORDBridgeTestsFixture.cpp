@@ -55,7 +55,7 @@ BeFileName ORDBridgeTestsHost::GetOutputDirectory()
     {
     BeFileName outputDir;
     BeTest::GetHost().GetOutputRoot(outputDir);
-    outputDir.AppendToPath(L"CivilSharedORDBridge\\");
+    outputDir.AppendToPath(L"CiviliModelBridgesORDBridge\\");
     return outputDir;
     }
 
@@ -137,19 +137,19 @@ ORDBridgeTestsHostImpl::~ORDBridgeTestsHostImpl()
         }
     }
 
-ORDBridgeTestsHost* CivilSharedORDBridgeTestsFixture::m_host = nullptr;
+ORDBridgeTestsHost* CiviliModelBridgesORDBridgeTestsFixture::m_host = nullptr;
 
 //---------------------------------------------------------------------------------------
 // Automatically called by gTest framework before running every test
 //---------------------------------------------------------------------------------------
-void CivilSharedORDBridgeTestsFixture::SetUpTestCase()
+void CiviliModelBridgesORDBridgeTestsFixture::SetUpTestCase()
     {
     m_host = new ORDBridgeTestsHost();
     }
 //---------------------------------------------------------------------------------------
 // Automatically called by gTest framework after running every test
 //---------------------------------------------------------------------------------------
-void CivilSharedORDBridgeTestsFixture::TearDownTestCase()
+void CiviliModelBridgesORDBridgeTestsFixture::TearDownTestCase()
     {
     delete m_host;
     m_host = nullptr;
@@ -158,14 +158,14 @@ void CivilSharedORDBridgeTestsFixture::TearDownTestCase()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      05/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool CivilSharedORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP modelName, Utf8CP bimFileName)
+bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP modelName, Utf8CP bimFileName)
     {
     char* outPath = getenv("OutRoot");
     BeFileName testAppPath = m_host->GetTestAppProductDirectory();
     testAppPath.AppendA("ORDBridgeTestApp.exe");
 
     BeFileName inputPath(outPath);
-    inputPath.AppendA("Winx64\\Product\\CivilShared-Tests\\Assets\\TestFiles\\");
+    inputPath.AppendA("Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\");
     inputPath.AppendA(input);
 
     BeFileName outputPath = m_host->GetOutputDirectory();
@@ -197,7 +197,7 @@ bool CivilSharedORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP modelName
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbPtr CivilSharedORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP bimFileName, size_t alignmentCount, size_t roadwayCount)
+DgnDbPtr CiviliModelBridgesORDBridgeTestsFixture::VerifyConvertedElements(Utf8CP bimFileName, size_t alignmentCount, size_t roadwayCount)
     {
     BeFileName outputPath = m_host->GetOutputDirectory();
     outputPath.AppendA(bimFileName);
