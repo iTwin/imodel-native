@@ -132,12 +132,8 @@ public:
 
     struct Base : Render::Graphic
     {
-    private:
-        IGeometryProcessorR m_processor;
-        ViewContextR m_context;
     public:
-        Base(DgnDbR db, IGeometryProcessorR processor, ViewContextR context)
-            : Render::Graphic(db), m_processor(processor), m_context(context) { }
+        explicit Base(DgnDbR db) : Render::Graphic(db) { }
     };
 }; // SimplifyGraphic
 

@@ -2394,7 +2394,7 @@ void GeometryProcessor::Process(IGeometryProcessorR processor, GeometrySourceCR 
 Render::GraphicPtr SimplifyGraphic::_Finish()
     {
     m_isOpen = false;
-    return new Base(GetDgnDb(), m_processor, m_context);
+    return new Base(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
