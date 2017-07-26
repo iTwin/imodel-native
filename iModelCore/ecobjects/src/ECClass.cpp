@@ -10,6 +10,11 @@
 
 BEGIN_BENTLEY_ECOBJECT_NAMESPACE
 
+static RelationshipMultiplicity s_zeroOneMultiplicity(0, 1);
+static RelationshipMultiplicity s_zeroManyMultiplicity(0, UINT_MAX);
+static RelationshipMultiplicity s_oneOneMultiplicity(1, 1);
+static RelationshipMultiplicity s_oneManyMultiplicity(1, UINT_MAX);
+
 extern ECObjectsStatus ResolveStructType(ECStructClassCP& structClass, Utf8StringCR typeName, ECClassCR ecClass, bool doLogging);
 
 // If you are developing schemas, particularly when editing them by hand, you want to have this variable set to false so you get the asserts to help you figure out what is going wrong.
@@ -2735,6 +2740,13 @@ RelationshipMultiplicityCR RelationshipMultiplicity::OneMany()
     {
     return s_oneManyMultiplicity;
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    07/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECRelationshipConstraint::ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify)
+    : m_isSource(isSource), m_verify(verify), m_relClass(relationshipClass), m_multiplicity(&s_zeroOneMultiplicity), m_isPolymorphic(true),
+    m_abstractConstraint(nullptr), m_verified(false) {}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                03/2010

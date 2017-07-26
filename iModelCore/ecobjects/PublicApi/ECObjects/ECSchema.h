@@ -2224,10 +2224,6 @@ public:
     ECOBJECTS_EXPORT static int Compare(RelationshipMultiplicity const& lhs, RelationshipMultiplicity const& rhs);
 };
 
-static RelationshipMultiplicity s_zeroOneMultiplicity(0, 1);
-static RelationshipMultiplicity s_zeroManyMultiplicity(0, UINT_MAX);
-static RelationshipMultiplicity s_oneOneMultiplicity(1, 1);
-static RelationshipMultiplicity s_oneManyMultiplicity(1, UINT_MAX);
 
 //=======================================================================================
 //! The in-memory representation of the source and target constraints for an ECRelationshipClass as defined by ECSchemaXML
@@ -2273,9 +2269,7 @@ private:
     ECObjectsStatus ValidateMultiplicityConstraint(bool resolveIssues = false) const;
     ECObjectsStatus ValidateMultiplicityConstraint(uint32_t& lowerLimit, uint32_t& upperLimit, bool resolveIssues = false) const;
 
-    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify)
-        : m_isSource(isSource), m_verify(verify), m_relClass(relationshipClass), m_multiplicity(&s_zeroOneMultiplicity),
-            m_isPolymorphic(true), m_abstractConstraint(nullptr), m_verified(false) {}
+    ECRelationshipConstraint(ECRelationshipClassP relationshipClass, bool isSource, bool verify);
 
 protected:
     ECSchemaCP _GetContainerSchema() const override;
