@@ -31,6 +31,22 @@ Transform SampleStructureCreator::GetEmptyTransform()
     return matrix;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+double SampleStructureCreator::Cos45Deg()
+    {
+    return sqrt(2.0) / 2.0;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+double SampleStructureCreator::Sin45Deg()
+    {
+    return sqrt(2.0) / 2.0;
+    }
+
 #pragma endregion
 
 

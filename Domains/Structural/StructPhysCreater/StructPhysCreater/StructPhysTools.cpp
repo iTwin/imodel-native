@@ -86,7 +86,7 @@ CurveVectorPtr ShapeTools::GetIShape(double width, double depth)
 CurveVectorPtr ShapeTools::GetLShape(double xFlangeSize, double yFlangeSize)
     {
     // TODO: Convert to function parameter
-    double flangeThickness = (xFlangeSize + yFlangeSize) / 8;
+    double flangeThickness = (xFlangeSize + yFlangeSize) / 24;
 
     DPoint3d points[6];
     points[0] = DPoint3d::From(0.0, 0.0, 0.0);

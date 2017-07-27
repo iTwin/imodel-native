@@ -56,6 +56,15 @@ PhysicalProperties* SteelStructureCreator::GetGussetPlateSmallProperties()
     return new PhysicalProperties(GUSSET_PLATE_SMALL_WIDTH, GUSSET_PLATE_SMALL_DEPTH, GUSSET_PLATE_SMALL_THICKNESS, ShapeTools::Shape::Rectangle, transMagenta, transMagenta);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+PhysicalProperties* SteelStructureCreator::GetBraceProperties()
+    {
+    Dgn::ColorDef transCyan(0, 0xff, 0xff, 0x19);
+    return new PhysicalProperties(BRACE_LEG_A_SIZE, BRACE_LEG_B_SIZE, BRACE_LENGTH, ShapeTools::Shape::L, transCyan, transCyan);
+    }
+
 #pragma endregion
 
 
@@ -79,7 +88,7 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
     rotationMatrix = GetEmptyTransform();
     rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 0.0, 1.0), DVec3d::From(0.0, -1.0, 0.0));
     linearMatrix = GetEmptyTransform();
-    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(WALL_WIDTH / 2 - GUSSET_PLATE_LARGE_OFFSET,
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(COLUMN_OFFSET + WALL_WIDTH / 2 - GUSSET_PLATE_LARGE_OFFSET,
                                                          COLUMN_OFFSET + BEAM_WIDTH / 2,
                                                          COLUMN_HEIGHT - BEAM_DEPTH - GUSSET_PLATE_LARGE_DEPTH),
                                           DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
@@ -133,7 +142,7 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
     rotationMatrix = GetEmptyTransform();
     rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 0.0, 1.0), DVec3d::From(0.0, -1.0, 0.0));
     linearMatrix = GetEmptyTransform();
-    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(WALL_WIDTH / 2 - GUSSET_PLATE_LARGE_OFFSET,
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(COLUMN_OFFSET + WALL_WIDTH / 2 - GUSSET_PLATE_LARGE_OFFSET,
                                                          SLAB_WIDTH + COLUMN_OFFSET - BEAM_WIDTH / 2,
                                                          COLUMN_HEIGHT - BEAM_DEPTH - GUSSET_PLATE_LARGE_DEPTH),
                                           DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
@@ -172,6 +181,88 @@ BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::Stru
     linearMatrix.InitFromOriginAndVectors(DPoint3d::From(WALL_WIDTH - COLUMN_DEPTH - COLUMN_OFFSET,
                                                          SLAB_WIDTH + COLUMN_OFFSET - BEAM_WIDTH / 2,
                                                          0.0),
+                                          DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    GeometricTools::CreateStructuralMemberGeometry(element, model, schema, properties, rotationMatrix, linearMatrix);
+    element->Insert(&status);
+    if (Dgn::DgnDbStatus::Success != status)
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus SteelStructureCreator::CreateBraces(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
+    {
+    Dgn::PhysicalElementPtr element;
+    PhysicalProperties* properties;
+    Transform rotationMatrix;
+    Transform linearMatrix;
+    Dgn::DgnDbStatus status;
+
+    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    properties = GetBraceProperties();
+    status = element->SetPlacement(GetStructurePlacement());
+    rotationMatrix = GetEmptyTransform();
+    rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(Cos45Deg(), 0.0, -Sin45Deg()), DVec3d::From(0.0, -1.0, 0.0), DVec3d::From(-Cos45Deg(), 0.0, -Sin45Deg()));
+    linearMatrix = GetEmptyTransform();
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(BRACE_LENGTH * Cos45Deg() + COLUMN_DEPTH + GUSSET_PLATE_SMALL_DEPTH * 1/3,
+                                                         COLUMN_OFFSET + BEAM_WIDTH / 2 - GUSSET_PLATE_SMALL_THICKNESS,
+                                                         BRACE_LENGTH * Cos45Deg() + GUSSET_PLATE_SMALL_DEPTH * 2/3),
+                                          DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    GeometricTools::CreateStructuralMemberGeometry(element, model, schema, properties, rotationMatrix, linearMatrix);
+    element->Insert(&status);
+    if (Dgn::DgnDbStatus::Success != status)
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    properties = GetBraceProperties();
+    status = element->SetPlacement(GetStructurePlacement());
+    rotationMatrix = GetEmptyTransform();
+    rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(-Cos45Deg(), 0.0, -Sin45Deg()), DVec3d::From(0.0, -1.0, 0.0), DVec3d::From(-Cos45Deg(), 0.0, Sin45Deg()));
+    linearMatrix = GetEmptyTransform();
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(WALL_WIDTH - GUSSET_PLATE_SMALL_WIDTH * 1/3,
+                                                         COLUMN_OFFSET + BEAM_WIDTH / 2 - GUSSET_PLATE_SMALL_THICKNESS,
+                                                         GUSSET_PLATE_SMALL_DEPTH * 2/3),
+                                          DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    GeometricTools::CreateStructuralMemberGeometry(element, model, schema, properties, rotationMatrix, linearMatrix);
+    element->Insert(&status);
+    if (Dgn::DgnDbStatus::Success != status)
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    properties = GetBraceProperties();
+    status = element->SetPlacement(GetStructurePlacement());
+    rotationMatrix = GetEmptyTransform();
+    rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(Cos45Deg(), 0.0, -Sin45Deg()), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(Cos45Deg(), 0.0, Sin45Deg()));
+    linearMatrix = GetEmptyTransform();
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(COLUMN_DEPTH + GUSSET_PLATE_SMALL_WIDTH * 1/3,
+                                                         SLAB_WIDTH + COLUMN_OFFSET - BEAM_WIDTH / 2 + GUSSET_PLATE_SMALL_THICKNESS,
+                                                         GUSSET_PLATE_SMALL_DEPTH * 2/3),
+                                          DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    GeometricTools::CreateStructuralMemberGeometry(element, model, schema, properties, rotationMatrix, linearMatrix);
+    element->Insert(&status);
+    if (Dgn::DgnDbStatus::Success != status)
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    properties = GetBraceProperties();
+    status = element->SetPlacement(GetStructurePlacement());
+    rotationMatrix = GetEmptyTransform();
+    rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(-Cos45Deg(), 0.0, -Sin45Deg()), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(Cos45Deg(), 0.0, -Sin45Deg()));
+    linearMatrix = GetEmptyTransform();
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0 - BRACE_LENGTH * Cos45Deg() + WALL_WIDTH - GUSSET_PLATE_SMALL_WIDTH * 1/3,
+                                                         SLAB_WIDTH + COLUMN_OFFSET - BEAM_WIDTH / 2 + GUSSET_PLATE_SMALL_THICKNESS,
+                                                         BRACE_LENGTH * Cos45Deg() + GUSSET_PLATE_SMALL_DEPTH * 2/3),
                                           DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
     GeometricTools::CreateStructuralMemberGeometry(element, model, schema, properties, rotationMatrix, linearMatrix);
     element->Insert(&status);

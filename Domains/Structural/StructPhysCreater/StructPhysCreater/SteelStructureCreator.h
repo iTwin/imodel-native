@@ -28,10 +28,12 @@ struct SteelStructureCreator : SampleStructureCreator
 
         PhysicalProperties* SteelStructureCreator::GetGussetPlateLargeProperties();
         PhysicalProperties* SteelStructureCreator::GetGussetPlateSmallProperties();
+        PhysicalProperties* SteelStructureCreator::GetBraceProperties();
 
     public:
         SteelStructureCreator() : SampleStructureCreator(STRUCT_ORIGIN_X, STRUCT_ORIGIN_Y, STRUCT_ORIGIN_Z) { }
 
         BentleyStatus SteelStructureCreator::CreateGussetPlates(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus SteelStructureCreator::CreateBraces(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
     };
 

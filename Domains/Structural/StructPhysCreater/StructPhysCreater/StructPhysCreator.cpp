@@ -409,6 +409,14 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::Struct
                 return BentleyStatus::ERROR;
                 }
             }
+        else if (className == "Steel:Brace")
+            {
+            status = creator->CreateBraces(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
         }
 
     return BentleyStatus::SUCCESS;
