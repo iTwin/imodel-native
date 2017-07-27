@@ -11,8 +11,6 @@
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-
-
 //*************************** AllOrAnyExp ******************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Affan.Khan                       05/2013
@@ -284,22 +282,6 @@ void FromExp::_ToECSql(ECSqlRenderContext& ctx) const
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    04/2015
 //+---------------+---------------+---------------+---------------+---------------+------
-GroupByExp::GroupByExp(std::unique_ptr<ValueExpListExp> groupingValueListExp) : Exp(Type::GroupBy)
-    {
-    m_groupingValueListExpIndex = AddChild(std::move(groupingValueListExp));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-ValueExpListExp const* GroupByExp::GetGroupingValueListExp() const
-    {
-    return GetChild<ValueExpListExp>(m_groupingValueListExpIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
 Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, FinalizeParseMode mode)
     {
     BeAssert(GetGroupingValueListExp() != nullptr);
@@ -314,9 +296,9 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
         ValueExp const* groupingValueExp = groupingValueListExp->GetValueExp(i);
         const Exp::Type expType = groupingValueExp->GetType();
         ECSqlTypeInfo const& typeInfo = groupingValueExp->GetTypeInfo();
-        if (expType == Exp::Type::Parameter || groupingValueExp->IsConstant() || typeInfo.IsGeometry() || typeInfo.IsNavigation() || typeInfo.IsArray())
+        if (expType == Exp::Type::Parameter || groupingValueExp->IsConstant() || typeInfo.IsNavigation())
             {
-            ctx.Issues().Report("Invalid expression '%s' in GROUP BY: Parameters, constants, geometry, navigation and array properties are not supported.", ToECSql().c_str());
+            ctx.Issues().Report("Invalid expression '%s' in GROUP BY: Parameters, constants, and navigation properties are not supported.", ToECSql().c_str());
             return FinalizeParseStatus::Error;
             }
         }
@@ -325,46 +307,11 @@ Exp::FinalizeParseStatus GroupByExp::_FinalizeParsing(ECSqlParseContext& ctx, Fi
     }
 
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-void GroupByExp::_ToECSql(ECSqlRenderContext& ctx) const
-    {
-    ctx.AppendToECSql("GROUP BY ").AppendToECSql(*GetGroupingValueListExp());
-    }
-
-//****************************** HavingExp *****************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-HavingExp::HavingExp(std::unique_ptr<BooleanExp> searchConditionExp) : Exp(Type::Having)
-    {
-    m_searchConditionExpIndex = AddChild(std::move(searchConditionExp));
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-BooleanExp const* HavingExp::GetSearchConditionExp() const
-    {
-    return GetChild<BooleanExp>(m_searchConditionExpIndex);
-    }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle                    04/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-void HavingExp::_ToECSql(ECSqlRenderContext& ctx) const
-    {
-    ctx.AppendToECSql("HAVING ").AppendToECSql(*GetSearchConditionExp());
-    }
-
-
 //****************************** LimitOffsetExp *****************************************
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-LimitOffsetExp::LimitOffsetExp(std::unique_ptr<ValueExp> limitExp, std::unique_ptr<ValueExp> offsetExp)
-    : Exp(Type::LimitOffset), m_offsetExpIndex(UNSET_CHILDINDEX)
+LimitOffsetExp::LimitOffsetExp(std::unique_ptr<ValueExp> limitExp, std::unique_ptr<ValueExp> offsetExp) : Exp(Type::LimitOffset)
     {
     BeAssert(limitExp != nullptr);
     m_limitExpIndex = AddChild(std::move(limitExp));
@@ -445,16 +392,6 @@ bool LimitOffsetExp::IsValidChildExp(ValueExp const& exp)
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       03/2014
 //+---------------+---------------+---------------+---------------+---------------+--------
-ValueExp const* LimitOffsetExp::GetLimitExp() const { return GetChild<ValueExp>(m_limitExpIndex);  }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       03/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
-bool LimitOffsetExp::HasOffset() const { return m_offsetExpIndex >= 0; }
-
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       03/2014
-//+---------------+---------------+---------------+---------------+---------------+--------
 ValueExp const* LimitOffsetExp::GetOffsetExp() const
     {
     if (!HasOffset())
@@ -483,15 +420,6 @@ void OrderByExp::_ToECSql(ECSqlRenderContext& ctx) const
     }
 
 //************************* OrderBySpecExp *******************************************
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Affan.Khan                       08/2013
-//+---------------+---------------+---------------+---------------+---------------+------
-OrderBySpecExp::OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection direction)
-    : Exp(Type::OrderBySpec), m_direction(direction)
-    {
-    AddChild(move(expr));
-    }
-
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                    09/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
