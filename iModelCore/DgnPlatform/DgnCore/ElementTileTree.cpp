@@ -534,7 +534,6 @@ private:
     TileSubGraphicPtr               m_subGraphic;
     DgnElementId                    m_curElemId;
     double                          m_curRangeDiagonalSquared;
-    bool                            m_wantCacheSolidPrimitives = false;
 protected:
     void PushGeometry(GeometryR geom);
 
@@ -759,7 +758,7 @@ bool TileBuilder::_WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& o
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileSubGraphic::TileSubGraphic(TileContext& context, DgnGeometryPartCP part)
-    : TileBuilder(context, nullptr != part ? part->GetBoundingBox() : DRange3d::NullRange()), m_input(part)
+    : TileBuilder(context, nullptr != part ? static_cast<DRange3d>(part->GetBoundingBox()) : DRange3d::NullRange()), m_input(part)
     {
     SetCheckGlyphBoxes(true);
     }
@@ -969,7 +968,6 @@ BentleyStatus Loader::LoadGeometryFromModel(Render::Primitives::GeometryCollecti
 #endif
 
     auto& tile = GetElementTile();
-    RootR root = tile.GetElementRoot();
 
     LoadContext loadContext(this);
     geometry = tile.GenerateGeometry(loadContext);
@@ -2097,7 +2095,6 @@ Render::Primitives::GeometryCollection Tile::GenerateGeometry(LoadContextCR cont
     {
     Render::Primitives::GeometryCollection geom;
 
-    auto const& root = GetElementRoot();
     GeometryList geometries = CollectGeometry(context);
     auto collection = CreateGeometryCollection(geometries, context);
     if (collection.IsEmpty() && !geometries.empty())

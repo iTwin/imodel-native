@@ -87,7 +87,7 @@ Render::GraphicPtr _CreateBranch(Render::GraphicBranch& branch, DgnDbR db, Trans
     {
 #if defined (NEEDS_WORK)
 #endif
-    return new SimplifyGraphic::Base(db, *this, *this);
+    return new SimplifyGraphic::Base(db);
     }
 
 UnhandledPreference _GetUnhandledPreference(CurveVectorCR, SimplifyGraphic&) const override {return UnhandledPreference::Curve;} // If view has clipping...

@@ -2415,7 +2415,7 @@ void GeometryListBuilder::_AddBSplineCurve2dR(RefCountedMSBsplineCurveR bcurve, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometryListBuilder::_AddBSplineSurface(MSBsplineSurfaceCR surface)
     {
-    _AddBSplineSurface(*surface.Clone());
+    _AddBSplineSurfaceR(*surface.Clone());
     }
 
 /*---------------------------------------------------------------------------------**//**

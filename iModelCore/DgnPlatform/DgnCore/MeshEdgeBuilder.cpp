@@ -190,8 +190,6 @@ void CalculateEdgeVisibility(DRange3dCR tileRange)
     // If there is no visibility indication in the mesh, infer from the mesh geometry.
     for (auto& edge : m_edgeMap)
         {
-        static bool      s_hideSheetEdges = true; // Possibly an option (for reality mesh tile edges??).
-
         if (!tileRange.IsContained(edge.second.m_points[0]) &&
             !tileRange.IsContained(edge.second.m_points[1]))
             {
@@ -252,11 +250,12 @@ void BuildPolylineFromEdgeChain(MeshEdgesR edges, PolyfaceEdgeChain const& chain
         else
             {
             if (indices.empty())
-                startDistance = startDistance;
+                startDistance = 0.0;
 
             indices.push_back(builderIndex->second);
             }
         }
+
     if (indices.size() > 1)
         edges.m_polylines.push_back(MeshPolyline(startDistance, rangeCenter, std::move(indices)));
     }

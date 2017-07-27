@@ -11,8 +11,7 @@
 #include <DgnPlatform/TileIO.h>
 #include <folly/BeFolly.h>
 
-
-#include <TilePublisher/Lib/Constants.h>
+#include "../TilePublisher/lib/Constants.h" // ###TODO: Move this stuff.
 
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER
@@ -441,7 +440,7 @@ PolylineMaterial(MeshCR mesh, bool is3d, Utf8CP suffix): TileMaterial(Utf8String
         ByteStream              bytes(32 * 4 * s_height);
         uint32_t*               dataP = (uint32_t*) bytes.GetDataP();
 
-        for (uint32_t y=0, mask = 0x0001; y < s_height; y++)
+        for (uint32_t y=0; y < s_height; y++)
             for (uint32_t x=0, mask = 0x0001; x < 32; x++, mask = mask << 1)
                 *dataP++ = (0 == (mask & (uint32_t) displayParams.GetLinePixels())) ? 0 : 0xffffffff;
 
@@ -747,6 +746,9 @@ public:
         return Json::FastWriter().write(json);
         }
 };
+
+// So dumb that this is required by linker...
+constexpr Utf8CP BatchTableBuilder::s_classNames[];
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
@@ -1650,7 +1652,6 @@ Utf8String AddMeshShaderTechnique(MeshMaterial const& mat, bool doBatchIds)
     AddShader(shaders, vertexShader.c_str(), GLTF_VERTEX_SHADER, vertexShaderBufferView.c_str());
     AddShader(shaders, fragmentShader.c_str(), GLTF_FRAGMENT_SHADER, fragmentShaderBufferView.c_str());
 
-    bool color2d = false;
     std::string vertexShaderString = s_shaderPrecision;
     if (doBatchIds)
         vertexShaderString.append(s_batchIdShaderAttribute);
@@ -2358,7 +2359,6 @@ BentleyStatus BeginBatchedTable(uint32_t& startPosition, uint32_t& lengthDataPos
     Utf8String          batchTableStr = BatchTableBuilder (featureTable, m_model.GetDgnDb(), m_model.Is3d()).ToString();
     uint32_t            batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
     uint32_t            b3dmNumBatches = featureTable.size();
-    uint32_t            zero;
 
     startPosition = m_buffer.GetSize();
     m_buffer.Append((const uint8_t *) s_b3dmMagic, 4);
@@ -2371,6 +2371,7 @@ BentleyStatus BeginBatchedTable(uint32_t& startPosition, uint32_t& lengthDataPos
     m_buffer.Append((const uint8_t *) batchTableStr.data(), batchTableStrLen);
 
     PadToBoundary();
+    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2388,8 +2389,6 @@ BentleyStatus EndBatchedTable(uint32_t startPosition, uint32_t lengthDataPositio
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileIO::WriteStatus WriteTile(TileTree::TileCR tile)
     {
-    uint32_t    startPosition = 0, lengthDataPosition = 0;
-
     AddTile(const_cast<TileTree::TileP> (&tile));
 
     return TileIO::WriteStatus::Success;

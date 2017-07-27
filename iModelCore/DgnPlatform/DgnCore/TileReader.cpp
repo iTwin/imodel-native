@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                                                                                                                                      
+/*--------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/TileReader.cpp $
 |
@@ -9,7 +9,7 @@
 #include <DgnPlatform/RenderPrimitives.h>
 #include <DgnPlatform/TileIO.h>
 
-#include <TilePublisher/Lib/Constants.h>
+#include "../TilePublisher/lib/Constants.h" // ###TODO: Move this stuff.
 
 USING_NAMESPACE_TILETREE
 USING_NAMESPACE_BENTLEY_RENDER
@@ -187,7 +187,7 @@ BentleyStatus ReadVertexAttributes(bvector<double>& values, Json::Value const& p
                     double  decodedMin = decodedMinValue[j].asDouble(), decodedMax = decodedMaxValue[j].asDouble();
                     double  scale =(decodedMax - decodedMin) /(double) 0xffff;
         
-                    for(size_t i=0, k = 0; i<count; i++)
+                    for(size_t i=0; i<count; i++)
                         {
                         double& value = values[i * nComponents + j];
 

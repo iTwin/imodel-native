@@ -55,8 +55,7 @@ struct TileIO
     static ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem, bool& isLeaf);
 
     // Write cesium tile from TileTree tile.
-    static WriteStatus TileIO::WriteCesiumTile(BeFileNameCR fileName, TileTree::TileCR tile, DgnModelR model);
-
+    static WriteStatus WriteCesiumTile(BeFileNameCR fileName, TileTree::TileCR tile, DgnModelR model);
 };  
 
 
