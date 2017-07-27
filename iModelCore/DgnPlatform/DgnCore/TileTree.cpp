@@ -1592,7 +1592,7 @@ DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::QPoint3dList TileTree::TriMesh::CreateParams::QuantizePoints() const
+Render::QPoint3dList TriMeshTree::TriMesh::CreateParams::QuantizePoints() const
     {
     // ###TODO: Is the tile's range known yet, and do we expect the range of points within it to be significantly smaller?
     DRange3d range = DRange3d::NullRange();
@@ -1610,7 +1610,7 @@ Render::QPoint3dList TileTree::TriMesh::CreateParams::QuantizePoints() const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::OctEncodedNormalList TileTree::TriMesh::CreateParams::QuantizeNormals() const
+Render::OctEncodedNormalList TriMeshTree::TriMesh::CreateParams::QuantizeNormals() const
     {
     OctEncodedNormalList oens;
     if (nullptr != m_normals)
@@ -1630,7 +1630,7 @@ Render::OctEncodedNormalList TileTree::TriMesh::CreateParams::QuantizeNormals() 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::TriMeshArgs TileTree::TriMesh::CreateTriMeshArgs(TextureP texture, FPoint2d const* textureUV) const
+Render::TriMeshArgs TriMeshTree::TriMesh::CreateTriMeshArgs(TextureP texture, FPoint2d const* textureUV) const
     {
     TriMeshArgs trimesh;
     trimesh.m_numIndices = m_indices.size();
@@ -1649,7 +1649,7 @@ Render::TriMeshArgs TileTree::TriMesh::CreateTriMeshArgs(TextureP texture, FPoin
 * Create a PolyfaceHeader from a Geometry
     * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr TileTree::TriMesh::GetPolyface() const
+PolyfaceHeaderPtr TriMeshTree::TriMesh::GetPolyface() const
     {
     TriMeshArgs trimesh = CreateTriMeshArgs(nullptr, nullptr);
     return trimesh.ToPolyface();
@@ -1660,7 +1660,7 @@ PolyfaceHeaderPtr TileTree::TriMesh::GetPolyface() const
 * Geometry is only valid for that Render::System
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render::SystemP renderSys)
+TriMeshTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render::SystemP renderSys)
     {
     // After we create a Render::Graphic, we only need the points/indices/normals for picking.
     // To save memory, only store them if the model is locatable.
@@ -1686,7 +1686,7 @@ TileTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render::Sy
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileTree::TriMesh::Draw(DrawArgsR args)
+void TriMeshTree::TriMesh::Draw(DrawArgsR args)
     {
     if (!m_graphics.empty())
         args.m_graphics.Add(m_graphics);
@@ -1695,12 +1695,83 @@ void TileTree::TriMesh::Draw(DrawArgsR args)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileTree::TriMesh::Pick(PickArgsR args)
+void TriMeshTree::TriMesh::Pick(PickArgsR args)
     {
     if (m_indices.empty())
         return;
 
     auto graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(args.m_root.GetDgnDb(), args.m_location));
     graphic->AddPolyface(*GetPolyface());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::SelectParent TriMeshTree::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& selectedTiles, DrawArgsR args) const
+    {
+    Visibility vis = GetVisibility(args);
+    if (Visibility::OutsideFrustum == vis)
+        {
+        _UnloadChildren(args.m_purgeOlderThan);
+        return SelectParent::No;
+        }
+
+    bool tooCoarse = Visibility::TooCoarse == vis;
+    auto children = _GetChildren(true);
+    if (tooCoarse && nullptr != children)
+        {
+        m_childrenLastUsed = args.m_now;
+        for (auto const& child : *children)
+            {
+            // 3mx requires that we load tiles recursively - we cannot jump directly to the tiles we actually want to draw...
+            if (!child->IsReady())
+                args.InsertMissing(*child);
+
+            child->_SelectTiles(selectedTiles, args);
+            }
+
+        return SelectParent::No;
+        }
+
+    // This node is either fine enough for the current view or has some unloaded children. We'll select it.
+    selectedTiles.push_back(this);
+
+    if (!tooCoarse)
+        {
+        // This node was fine enough for the current zoom scale and was successfully drawn. If it has loaded children from a previous pass, they're no longer needed.
+        _UnloadChildren(args.m_purgeOlderThan);
+        }
+
+    return SelectParent::No;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Tile::_DrawGraphics(DrawArgsR args) const
+    {
+    bool wantDebugRange = _WantDebugRangeGraphics();
+    if (wantDebugRange)
+        {
+        GraphicParams params;
+        params.SetLineColor(ColorDef::Red());
+
+        Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(GetRoot().GetDgnDb()));
+        graphic->ActivateGraphicParams(params);
+        graphic->AddRangeBox(m_range);
+        args.m_graphics.Add(*graphic->Finish());
+        }
+
+    for (auto mesh : m_meshes)
+        mesh->Draw(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Tile::_PickGraphics(PickArgsR args, int depth) const
+    {
+    for (auto mesh : m_meshes)
+        mesh->Pick(args);
     }
 

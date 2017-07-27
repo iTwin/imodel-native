@@ -10,6 +10,7 @@
 
 #include "DgnPlatform.h"
 #include <set>
+#include <forward_list>
 #include <folly/futures/Future.h>
 #include <Bentley/Tasks/CancellationToken.h>
 #include <BeHttp/HttpRequest.h>
@@ -638,49 +639,6 @@ struct PickArgs : TileArgs
 };
 
 //=======================================================================================
-//! Tiles for reality models typically consist of a single large textured mesh.
-//! TileTree::TriMesh creates a Render::GraphicPtr created from the mesh, and (for pickable tiles)
-//! holds the data required to describe the mesh for picking.
-// @bsistruct                                                   Paul.Connelly   07/17
-//=======================================================================================
-struct TriMesh : RefCountedBase, NonCopyableClass
-{
-    struct CreateParams
-    {
-        int32_t m_numIndices = 0;
-        int32_t const* m_vertIndex = nullptr;
-        int32_t m_numPoints = 0;
-        FPoint3d const* m_points = nullptr;
-        FPoint3d const* m_normals = nullptr;
-        FPoint2d const* m_textureUV = nullptr;
-        Render::TexturePtr m_texture;
-
-        Render::QPoint3dList QuantizePoints() const;
-        Render::OctEncodedNormalList QuantizeNormals() const;
-    };
-protected:
-    Render::QPoint3dList m_points = Render::QPoint3dList(DRange3d::NullRange());
-    Render::OctEncodedNormalList m_normals;
-    bvector<FPoint2d> m_textureUV;
-    bvector<int32_t> m_indices;
-    bvector<Render::GraphicPtr> m_graphics;
-
-    DGNPLATFORM_EXPORT Render::TriMeshArgs CreateTriMeshArgs(Render::TextureP texture, FPoint2d const* textureUV) const;
-public:
-    DGNPLATFORM_EXPORT TriMesh(CreateParams const&, RootR, Render::SystemP renderSys);
-    TriMesh() { }
-
-    DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetPolyface() const;
-    DGNPLATFORM_EXPORT void Draw(DrawArgsR);
-    DGNPLATFORM_EXPORT void Pick(PickArgsR);
-
-    void ClearGraphic() {m_graphics.clear();}
-    Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
-    bool IsEmpty() const {return m_points.empty();}
-    bool HasGraphics() const {return !m_graphics.empty() && m_graphics.front().IsValid();}
-};
-
-//=======================================================================================
 //! A QuadTree is a 2d TileTree that subdivides each tile into 4 child equal-sized tiles, each with one corner at the center of its parent.
 //! A tile in a QuadTree can be addressed by a TileId comprised of a level (depth) and a row/column numbers. 
 //! The root tile is {0,0,0} and it is not necessarily square.
@@ -828,4 +786,105 @@ public:
 };
 
 } // end OctTree
+
+//=======================================================================================
+//! Tiles for reality models typically consist of one or more large textured meshes.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+namespace TriMeshTree
+{
+//=======================================================================================
+//! Creates a Render::GraphicPtr created from the mesh, and (for pickable tiles)
+//! holds the data required to describe the mesh for picking.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct TriMesh : RefCountedBase, NonCopyableClass
+{
+    struct CreateParams
+    {
+        int32_t m_numIndices = 0;
+        int32_t const* m_vertIndex = nullptr;
+        int32_t m_numPoints = 0;
+        FPoint3d const* m_points = nullptr;
+        FPoint3d const* m_normals = nullptr;
+        FPoint2d const* m_textureUV = nullptr;
+        Render::TexturePtr m_texture;
+
+        Render::QPoint3dList QuantizePoints() const;
+        Render::OctEncodedNormalList QuantizeNormals() const;
+    };
+protected:
+    Render::QPoint3dList m_points = Render::QPoint3dList(DRange3d::NullRange());
+    Render::OctEncodedNormalList m_normals;
+    bvector<FPoint2d> m_textureUV;
+    bvector<int32_t> m_indices;
+    bvector<Render::GraphicPtr> m_graphics;
+
+    DGNPLATFORM_EXPORT Render::TriMeshArgs CreateTriMeshArgs(Render::TextureP texture, FPoint2d const* textureUV) const;
+public:
+    DGNPLATFORM_EXPORT TriMesh(CreateParams const&, RootR, Render::SystemP renderSys);
+    TriMesh() { }
+
+    DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetPolyface() const;
+    DGNPLATFORM_EXPORT void Draw(DrawArgsR);
+    DGNPLATFORM_EXPORT void Pick(PickArgsR);
+
+    void ClearGraphic() {m_graphics.clear();}
+    Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
+    bool IsEmpty() const {return m_points.empty();}
+    bool HasGraphics() const {return !m_graphics.empty() && m_graphics.front().IsValid();}
+};
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TriMesh);
+DEFINE_REF_COUNTED_PTR(TriMesh);
+
+//=======================================================================================
+//! The root of a TriMeshTree
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct Root : TileTree::Root
+{
+    DEFINE_T_SUPER(TileTree::Root);
+
+protected:
+    Root(DgnDbR db, TransformCR location, Utf8CP sceneFile, Render::SystemP system) : T_Super(db, location, sceneFile, system) { }
+
+    virtual TriMeshPtr _CreateGeometry(TriMesh::CreateParams const& args, Render::SystemP system) {return new TriMesh(args, *this, system);}
+    virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr; }
+};
+
+//=======================================================================================
+//! A TriMeshTree tile.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct Tile : TileTree::Tile
+{
+    DEFINE_T_SUPER(TileTree::Tile);
+    typedef std::forward_list<TriMeshPtr> TriMeshList; // ###TODO why linked list instead of vector?
+
+protected:
+    double m_maxDiameter;
+    double m_factor=0.5;
+
+    TriMeshList m_meshes;
+
+    Tile(Root& root, Tile const* parent, double maxDiameter=0.0) : TileTree::Tile(root, parent), m_maxDiameter(maxDiameter) { }
+    virtual bool _WantDebugRangeGraphics() const { return false; }
+
+    bool _HasGraphics() const override { return m_meshes.end() != std::find_if(m_meshes.begin(), m_meshes.end(), [](TriMeshPtr const& arg) { return arg->HasGraphics(); }); }
+    void _Invalidate() override { BeAssert(false); }
+    ChildTiles const* _GetChildren(bool) const override {return IsReady() ? &m_children : nullptr;}
+    double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
+    void _UnloadChildren(BeTimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
+
+    DGNPLATFORM_EXPORT SelectParent _SelectTiles(bvector<TileTree::TileCPtr>&, DrawArgsR) const override;
+    DGNPLATFORM_EXPORT void _DrawGraphics(DrawArgsR) const override;
+    DGNPLATFORM_EXPORT void _PickGraphics(PickArgsR, int depth) const override;
+public:
+    TriMeshList& GetGeometry() {return m_meshes;}
+    void ClearGeometry() {m_meshes.clear();}
+    Root& GetTriMeshRootR() {return static_cast<Root&>(GetRootR());}
+};
+
+} // end TriMeshTree
 END_TILETREE_NAMESPACE
