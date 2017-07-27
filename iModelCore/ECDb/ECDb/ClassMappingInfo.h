@@ -17,7 +17,6 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 struct DbMap;
 struct ClassMap;
-struct ClassMappingInfo;
 struct SchemaImportContext;
 
 //======================================================================================
@@ -31,19 +30,6 @@ enum class ClassMappingStatus
                                  // of multiple inheritance, where we attempt to map a child class for which 
                                  // not all parent classes have been mapped
     Error = 666
-    };
-
-//======================================================================================
-// @bsiclass                                                 Krischan.Eberle  02/2014
-//+===============+===============+===============+===============+===============+======
-struct ClassMappingInfoFactory final
-    {
-private:
-    ClassMappingInfoFactory ();
-    ~ClassMappingInfoFactory ();
-
-public:
-    static std::unique_ptr<ClassMappingInfo> Create(ClassMappingStatus&, SchemaImportContext&, ECDb const&, ECN::ECClassCR);
     };
 
 //======================================================================================
@@ -61,77 +47,47 @@ enum class RelationshipMappingType
 //! and relationships
 // @bsiclass                                                     Casey.Mullen      11/2011
 //+===============+===============+===============+===============+===============+======
-struct ClassMappingInfo : NonCopyableClass
+struct ClassMappingInfo final : NonCopyableClass
 {
-protected:
-    ECDb const& m_ecdb;
+private:
+    SchemaImportContext& m_ctx;
     ECN::ECClassCR m_ecClass;
     Nullable<MapStrategy> m_userDefinedStrategy;
+    MapStrategyExtendedInfo m_mapStrategyExtInfo;
     ShareColumnsCustomAttribute m_shareColumnsCA;
     bool m_hasJoinedTablePerDirectSubclassCA = false;
-
-    MapStrategyExtendedInfo m_mapStrategyExtInfo;
+    Nullable<RelationshipMappingType> m_relMappingType;
 
     ClassMap const* m_tphBaseClassMap = nullptr;
 
-private:
     Utf8String m_tableName;
     Utf8String m_ecInstanceIdColumnName;
     ECN::PrimitiveECPropertyCP m_classHasCurrentTimeStampProperty = nullptr;
 
-    ClassMappingStatus EvaluateMapStrategy(SchemaImportContext&);
+    BentleyStatus InitializeFromSchema();
+    BentleyStatus InitializeClassHasCurrentTimeStampProperty();
+    ClassMappingStatus EvaluateMapStrategy();
+    BentleyStatus EvaluateRootClassMapStrategy();
+    BentleyStatus EvaluateNonRootClassMapStrategy(ClassMap const& baseClassMap);
+    BentleyStatus EvaluateNonRootClassTablePerHierarchyMapStrategy(ClassMap const& baseClassMap);
 
     ClassMappingStatus TryGetBaseClassMap(ClassMap const*& baseClassMap) const;
-    BentleyStatus InitializeClassHasCurrentTimeStampProperty();
-
-protected:
-
-    virtual BentleyStatus _InitializeFromSchema(SchemaImportContext&);
-    virtual ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&);
-
-    BentleyStatus EvaluateRootClassMapStrategy(SchemaImportContext&);
-    BentleyStatus EvaluateNonRootClassMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap);
-
-    BentleyStatus EvaluateNonRootClassTablePerHierarchyMapStrategy(SchemaImportContext&, ClassMap const& baseClassMap);
-
+    DbMap const& GetDbMap() const;
     IssueReporter const& Issues() const;
 
     static MapStrategy GetDefaultStrategy(ECN::ECClassCR);
 
 public:
-    ClassMappingInfo(ECDb const& ecdb, ECN::ECClassCR ecClass) : m_ecdb(ecdb), m_ecClass(ecClass) {}
-    virtual ~ClassMappingInfo() {}
+    ClassMappingInfo(SchemaImportContext& ctx, ECN::ECClassCR ecClass) : m_ctx(ctx), m_ecClass(ecClass) {}
+    ~ClassMappingInfo() {}
 
-    ClassMappingStatus Initialize(SchemaImportContext&);
+    ClassMappingStatus Initialize();
 
     MapStrategyExtendedInfo const& GetMapStrategy() const { return m_mapStrategyExtInfo; }
     ClassMap const* GetTphBaseClassMap() const { BeAssert(m_mapStrategyExtInfo.GetStrategy() == MapStrategy::TablePerHierarchy); return m_tphBaseClassMap; }
-    DbMap const& GetDbMap() const {return m_ecdb.Schemas().GetDbMap();}
-    ECN::ECClassCR GetClass() const {return m_ecClass;}
     Utf8StringCR GetTableName() const {return m_tableName;}
     Utf8StringCR GetECInstanceIdColumnName() const {return m_ecInstanceIdColumnName;}
     ECN::PrimitiveECPropertyCP GetClassHasCurrentTimeStampProperty() const { return m_classHasCurrentTimeStampProperty; }
     };
-
-
-//======================================================================================
-// @bsiclass                                                     Krischan.Eberle     06/2015
-//+===============+===============+===============+===============+===============+======
-struct RelationshipMappingInfo final : public ClassMappingInfo
-    {
-private:
-    RelationshipMappingType m_mappingType;
-
-    BentleyStatus _InitializeFromSchema(SchemaImportContext&) override;
-    ClassMappingStatus _EvaluateMapStrategy(SchemaImportContext&) override;
-
-    BentleyStatus EvaluateRootClassLinkTableStrategy(SchemaImportContext&);
-    BentleyStatus EvaluateForeignKeyStrategy(SchemaImportContext&);
-
-public:
-    RelationshipMappingInfo(ECDb const& ecdb, ECN::ECRelationshipClassCR relationshipClass)  : ClassMappingInfo(ecdb, relationshipClass) {}
-    ~RelationshipMappingInfo() {}
-    };
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

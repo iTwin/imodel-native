@@ -14,29 +14,6 @@ USING_NAMESPACE_BENTLEY_EC
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
 //**********************************************************************************************
-// ClassMappingInfoFactory
-//**********************************************************************************************
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2014
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-std::unique_ptr<ClassMappingInfo> ClassMappingInfoFactory::Create(ClassMappingStatus& mapStatus, SchemaImportContext& ctx, ECDb const& ecdb, ECN::ECClassCR ecClass)
-    {
-    std::unique_ptr<ClassMappingInfo> info = nullptr;
-    ECRelationshipClassCP ecRelationshipClass = ecClass.GetRelationshipClassCP();
-    if (ecRelationshipClass != nullptr)
-        info = std::unique_ptr<ClassMappingInfo>(new RelationshipMappingInfo(ecdb, *ecRelationshipClass));
-    else
-        info = std::unique_ptr<ClassMappingInfo>(new ClassMappingInfo(ecdb, ecClass));
-
-    if (info == nullptr || (mapStatus = info->Initialize(ctx)) != ClassMappingStatus::Success)
-        return nullptr;
-
-    return info;
-    }
-
-
-//**********************************************************************************************
 // ClassMappingInfo
 //**********************************************************************************************
 //---------------------------------------------------------------------------------
@@ -55,21 +32,33 @@ MapStrategy ClassMappingInfo::GetDefaultStrategy(ECN::ECClassCR ecClass)
 //---------------------------------------------------------------------------------
 //@bsimethod                                 Affan.Khan                            07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus ClassMappingInfo::Initialize(SchemaImportContext& ctx)
+ClassMappingStatus ClassMappingInfo::Initialize()
     {
-    if (SUCCESS != _InitializeFromSchema(ctx))
+    if (SUCCESS != InitializeFromSchema())
         return ClassMappingStatus::Error;
 
-    return EvaluateMapStrategy(ctx);
+    return EvaluateMapStrategy();
     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMappingInfo::_InitializeFromSchema(SchemaImportContext& ctx)
+BentleyStatus ClassMappingInfo::InitializeFromSchema()
     {
     ECEntityClassCP entityClass = m_ecClass.GetEntityClassCP();
-    
+    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
+    if (relClass != nullptr)
+        {
+        BeAssert(relClass->GetBaseClasses().size() <= 1 && "Should actually have been enforced by ECSchemaValidator");
+
+        //determine whether a link table is required or not
+        RelationshipMappingType mappingType;
+        if (SUCCESS != DbMappingManager::Classes::TryDetermineRelationshipMappingType(mappingType, m_ctx, *m_ecClass.GetRelationshipClassCP()))
+            return ERROR;
+
+        m_relMappingType = mappingType;
+        }
+
     ClassMapCustomAttribute classMapCA;
     ECDbMapCustomAttributeHelper::TryGetClassMap(classMapCA, m_ecClass);
     ECDbMapCustomAttributeHelper::TryGetShareColumns(m_shareColumnsCA, m_ecClass);
@@ -80,6 +69,13 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema(SchemaImportContext& ctx)
         if (entityClass != nullptr && entityClass->IsMixin())
             {
             Issues().Report("Failed to map Mixin ECClass %s. Mixins may not have the ClassMap custom attribute.",
+                            m_ecClass.GetFullName());
+            return ERROR;
+            }
+
+        if (m_relMappingType == RelationshipMappingType::ForeignKeyOnSource || m_relMappingType == RelationshipMappingType::ForeignKeyOnTarget)
+            {
+            Issues().Report("Failed to map ECRelationshipClass %s. ECRelationshipClasses mapped as foreign key may not have the ClassMap custom attribute.",
                             m_ecClass.GetFullName());
             return ERROR;
             }
@@ -181,6 +177,13 @@ BentleyStatus ClassMappingInfo::_InitializeFromSchema(SchemaImportContext& ctx)
     else
         m_mapStrategyExtInfo = MapStrategyExtendedInfo(effectiveMapStrat);
 
+    if (m_tableName.empty())
+        {
+        // if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
+        if (SUCCESS != DbMappingManager::Tables::DetermineTableName(m_tableName, m_ecClass))
+            return ERROR;
+        }
+
     return InitializeClassHasCurrentTimeStampProperty();
     }
 
@@ -226,31 +229,9 @@ BentleyStatus ClassMappingInfo::InitializeClassHasCurrentTimeStampProperty()
     }
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                 Krischan.Eberle                    05/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus ClassMappingInfo::EvaluateMapStrategy(SchemaImportContext& ctx)
-    {
-    //Default values for table name and primary key column name
-    if (m_tableName.empty())
-        {
-        // if hint does not supply a table name, use {ECSchema prefix}_{ECClass name}
-        if (SUCCESS != DbMappingManager::Tables::DetermineTableName(m_tableName, m_ecClass))
-            return ClassMappingStatus::Error;
-        }
-
-    ClassMappingStatus stat = _EvaluateMapStrategy(ctx);
-    if (stat != ClassMappingStatus::Success)
-        return stat;
-
-    if (m_ecInstanceIdColumnName.empty())
-        m_ecInstanceIdColumnName.assign(COL_DEFAULTNAME_Id);
-
-    return ClassMappingStatus::Success;
-    }
-//---------------------------------------------------------------------------------------
 // @bsimethod                                 Ramanujam.Raman                07/2012
 //+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus ClassMappingInfo::_EvaluateMapStrategy(SchemaImportContext& ctx)
+ClassMappingStatus ClassMappingInfo::EvaluateMapStrategy()
     {
     if (m_ecClass.IsCustomAttributeClass() || m_ecClass.IsStructClass())
         {
@@ -281,33 +262,78 @@ ClassMappingStatus ClassMappingInfo::_EvaluateMapStrategy(SchemaImportContext& c
         }
 
     if (baseClassMap == nullptr)
-        return EvaluateRootClassMapStrategy(ctx) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
-
-    return EvaluateNonRootClassMapStrategy(ctx, *baseClassMap) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                02/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMappingInfo::EvaluateRootClassMapStrategy(SchemaImportContext& ctx)
-    {
-    SchemaPolicy const* noAdditionalRootEntityClassPolicy = nullptr;
-    if (ctx.GetSchemaPolicies().IsOptedIn(noAdditionalRootEntityClassPolicy, SchemaPolicy::Type::NoAdditionalRootEntityClasses))
         {
-        if (SUCCESS != noAdditionalRootEntityClassPolicy->GetAs<NoAdditionalRootEntityClassesPolicy>().Evaluate(m_ecdb, m_ecClass))
-            return ERROR;
+        if (SUCCESS != EvaluateRootClassMapStrategy())
+            return ClassMappingStatus::Error;
+        }
+    else
+        {
+        if (SUCCESS != EvaluateNonRootClassMapStrategy(*baseClassMap))
+            return ClassMappingStatus::Error;
         }
 
-    return SUCCESS;
+    if (m_ecInstanceIdColumnName.empty())
+        m_ecInstanceIdColumnName.assign(COL_DEFAULTNAME_Id);
+
+    return ClassMappingStatus::Success;
     }
 
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMappingInfo::EvaluateNonRootClassMapStrategy(SchemaImportContext& ctx, ClassMap const& baseClassMap)
+BentleyStatus ClassMappingInfo::EvaluateRootClassMapStrategy()
+    {
+    ECEntityClassCP entityClass = m_ecClass.GetEntityClassCP();
+    if (entityClass != nullptr)
+        {
+        BeAssert(m_relMappingType.IsNull());
+        SchemaPolicy const* noAdditionalRootEntityClassPolicy = nullptr;
+        if (m_ctx.GetSchemaPolicies().IsOptedIn(noAdditionalRootEntityClassPolicy, SchemaPolicy::Type::NoAdditionalRootEntityClasses))
+            {
+            if (SUCCESS != noAdditionalRootEntityClassPolicy->GetAs<NoAdditionalRootEntityClassesPolicy>().Evaluate(m_ctx.GetECDb(), *entityClass))
+                return ERROR;
+            }
+
+        return SUCCESS;
+        }
+
+    ECRelationshipClassCP relClass = m_ecClass.GetRelationshipClassCP();
+    BeAssert(relClass != nullptr && "Other class types should have been caught before");
+    BeAssert(!m_relMappingType.IsNull());
+    switch (m_relMappingType.Value())
+        {
+            case RelationshipMappingType::LinkTable:
+            {
+            SchemaPolicy const* noAdditionalLinkTablesPolicy = nullptr;
+            if (m_ctx.GetSchemaPolicies().IsOptedIn(noAdditionalLinkTablesPolicy, SchemaPolicy::Type::NoAdditionalLinkTables))
+                {
+                if (SUCCESS != noAdditionalLinkTablesPolicy->GetAs<NoAdditionalLinkTablesPolicy>().Evaluate(m_ctx.GetECDb(), *relClass))
+                    return ERROR;
+                }
+
+            return DbMappingManager::Classes::FailIfConstraintClassIsNotMapped(m_ctx, *relClass);
+            }
+
+            case RelationshipMappingType::ForeignKeyOnSource:
+                m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::ForeignKeyRelationshipInSourceTable);
+                return SUCCESS;
+
+            case RelationshipMappingType::ForeignKeyOnTarget:
+                m_mapStrategyExtInfo = MapStrategyExtendedInfo(MapStrategy::ForeignKeyRelationshipInTargetTable);
+                return SUCCESS;
+
+            default:
+                BeAssert(false);
+                return ERROR;
+        }
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                02/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ClassMappingInfo::EvaluateNonRootClassMapStrategy(ClassMap const& baseClassMap)
     {
     const MapStrategy baseStrategy = baseClassMap.GetMapStrategy().GetStrategy();
-
     switch (baseStrategy)
         {
             case MapStrategy::OwnTable:
@@ -334,12 +360,34 @@ BentleyStatus ClassMappingInfo::EvaluateNonRootClassMapStrategy(SchemaImportCont
             }
 
             case MapStrategy::TablePerHierarchy:
-                return EvaluateNonRootClassTablePerHierarchyMapStrategy(ctx, baseClassMap);
+                return EvaluateNonRootClassTablePerHierarchyMapStrategy(baseClassMap);
 
             case MapStrategy::ForeignKeyRelationshipInSourceTable:
+            {                
+            if (m_relMappingType != RelationshipMappingType::ForeignKeyOnSource)
+                {
+                Issues().Report("Failed to map ECRelationshipClass %s. It would be mapped as link table, but its base class %s is mapped as foreign key relationship. The mapping type must not change within an ECRelationshipClass hierarchy.",
+                                m_ecClass.GetFullName(), baseClassMap.GetClass().GetFullName());
+
+                return ERROR;
+                }
+
+            m_mapStrategyExtInfo = MapStrategyExtendedInfo(baseStrategy);
+            return SUCCESS;
+            }
             case MapStrategy::ForeignKeyRelationshipInTargetTable:
-                m_mapStrategyExtInfo = MapStrategyExtendedInfo(baseStrategy);
-                return SUCCESS; //Nothing to do for fk relationship subclasses
+            {
+            if (m_relMappingType != RelationshipMappingType::ForeignKeyOnTarget)
+                {
+                Issues().Report("Failed to map ECRelationshipClass %s. It would be mapped as link table, but its base class %s is mapped as foreign key relationship. The mapping type must not change within an ECRelationshipClass hierarchy.",
+                                m_ecClass.GetFullName(), baseClassMap.GetClass().GetFullName());
+
+                return ERROR;
+                }
+
+            m_mapStrategyExtInfo = MapStrategyExtendedInfo(baseStrategy);
+            return SUCCESS;
+            }
 
             default:
                 BeAssert(false && "should not be called");
@@ -350,7 +398,7 @@ BentleyStatus ClassMappingInfo::EvaluateNonRootClassMapStrategy(SchemaImportCont
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                02/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMappingInfo::EvaluateNonRootClassTablePerHierarchyMapStrategy(SchemaImportContext& ctx, ClassMap const& baseClassMap)
+BentleyStatus ClassMappingInfo::EvaluateNonRootClassTablePerHierarchyMapStrategy(ClassMap const& baseClassMap)
     {
     MapStrategyExtendedInfo const& baseStrategy = baseClassMap.GetMapStrategy();
     if (baseStrategy.GetStrategy() != MapStrategy::TablePerHierarchy && !baseStrategy.GetTphInfo().IsValid())
@@ -401,7 +449,7 @@ BentleyStatus ClassMappingInfo::EvaluateNonRootClassTablePerHierarchyMapStrategy
             //"<Rootclass name><Rootclass ECInstanceId column name>"
             ECClassId rootClassId = baseClassMap.GetTphHelper()->DetermineTphRootClassId();
             BeAssert(rootClassId.IsValid());
-            ECClassCP rootClass = m_ecdb.Schemas().GetClass(rootClassId);
+            ECClassCP rootClass = m_ctx.GetECDb().Schemas().GetClass(rootClassId);
             if (rootClass == nullptr)
                 {
                 BeAssert(false && "There should always be a root class map which defines the TablePerHierarchy strategy");
@@ -415,7 +463,6 @@ BentleyStatus ClassMappingInfo::EvaluateNonRootClassTablePerHierarchyMapStrategy
     m_mapStrategyExtInfo = MapStrategyExtendedInfo(tphInfo);
     return SUCCESS;
     }
-
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                07/2016
@@ -523,119 +570,15 @@ ClassMappingStatus ClassMappingInfo::TryGetBaseClassMap(ClassMap const*& foundBa
     return ClassMappingStatus::Success;
     }
 
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                 Krischan.Eberle                07/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+DbMap const& ClassMappingInfo::GetDbMap() const { return m_ctx.GetDbMap(); }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                06/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-IssueReporter const& ClassMappingInfo::Issues() const { return m_ecdb.GetImpl().Issues(); }
-
-
-//****************************************************************************************************
-//RelationshipClassMapInfo
-//****************************************************************************************************
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RelationshipMappingInfo::_InitializeFromSchema(SchemaImportContext& ctx)
-    {
-    if (SUCCESS != ClassMappingInfo::_InitializeFromSchema(ctx))
-        return ERROR;
-
-    BeAssert(m_ecClass.GetRelationshipClassCP() != nullptr);
-    BeAssert(m_ecClass.GetRelationshipClassCP()->GetBaseClasses().size() <= 1 && "Should actually have been enforced by ECSchemaValidator");
-
-    if (m_mapStrategyExtInfo.GetStrategy() == MapStrategy::NotMapped)
-        return SUCCESS;
-
-    //determine whether a link table is required or not
-    return DbMappingManager::Classes::TryDetermineRelationshipMappingType(m_mappingType, ctx, *m_ecClass.GetRelationshipClassCP());
-    }
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Ramanujam.Raman                07 / 2012
-//+---------------+---------------+---------------+---------------+---------------+------
-ClassMappingStatus RelationshipMappingInfo::_EvaluateMapStrategy(SchemaImportContext& ctx)
-    {
-    ClassMappingStatus stat = ClassMappingInfo::_EvaluateMapStrategy(ctx);
-    if (ClassMappingStatus::Success != stat)
-        return stat;
-
-    if (m_ecClass.HasBaseClasses())
-        {
-        BeAssert(m_ecClass.GetBaseClasses().size() == 1 && "Only 1 base class allowed for rels. This should have been caught before");
-
-        ClassMap const* baseClassMap = GetDbMap().GetClassMap(*m_ecClass.GetBaseClasses()[0]);
-        if (baseClassMap == nullptr)
-            return ClassMappingStatus::BaseClassesNotMapped;
-
-        const MapStrategy baseStrategy = baseClassMap->GetMapStrategy().GetStrategy();
-
-        if (baseClassMap->GetType() == ClassMap::Type::RelationshipEndTable)
-            {
-            if (m_mappingType == RelationshipMappingType::LinkTable)
-                {
-                Issues().Report("Failed to map ECRelationshipClass %s. It would be mapped as link table, but its base class %s is mapped as foreign key relationship. The mapping type must not change within an ECRelationshipClass hierarchy.",
-                                m_ecClass.GetFullName(), baseClassMap->GetClass().GetFullName());
-
-                return ClassMappingStatus::Error;
-                }
-
-            if (SUCCESS != EvaluateForeignKeyStrategy(ctx))
-                return ClassMappingStatus::Error;
-            }
-        else
-            {
-            BeAssert(baseClassMap->GetType() == ClassMap::Type::RelationshipLinkTable);
-            BeAssert(baseClassMap->GetMapStrategy().GetStrategy() == MapStrategy::TablePerHierarchy);
-            }
-
-        if (baseStrategy != m_mapStrategyExtInfo.GetStrategy())
-            {
-            Issues().Report("Failed to map ECRelationshipClass %s. Its mapping type (%s) differs from the mapping type of its base relationship class %s (%s). The mapping type must not change within an ECRelationshipClass hierarchy.",
-                            m_ecClass.GetFullName(), MapStrategyExtendedInfo::ToString(m_mapStrategyExtInfo.GetStrategy()),
-                            baseClassMap->GetClass().GetFullName(), MapStrategyExtendedInfo::ToString(baseStrategy));
-            return ClassMappingStatus::Error;
-            }
-
-        return ClassMappingStatus::Success;
-        }
-
-    //no base class
-    if (m_mappingType != RelationshipMappingType::LinkTable)
-        return EvaluateForeignKeyStrategy(ctx) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
-
-
-    SchemaPolicy const* noAdditionalLinkTablesPolicy = nullptr;
-    if (ctx.GetSchemaPolicies().IsOptedIn(noAdditionalLinkTablesPolicy, SchemaPolicy::Type::NoAdditionalLinkTables))
-        {
-        if (SUCCESS != noAdditionalLinkTablesPolicy->GetAs<NoAdditionalLinkTablesPolicy>().Evaluate(m_ecdb, *m_ecClass.GetRelationshipClassCP()))
-            return ClassMappingStatus::Error;
-        }
-
-    return EvaluateRootClassLinkTableStrategy(ctx) == SUCCESS ? ClassMappingStatus::Success : ClassMappingStatus::Error;
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                05 / 2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipMappingInfo::EvaluateRootClassLinkTableStrategy(SchemaImportContext& ctx)
-    {
-    BeAssert(m_mappingType == RelationshipMappingType::LinkTable);
-    return DbMappingManager::Classes::FailIfConstraintClassIsNotMapped(ctx, *m_ecClass.GetRelationshipClassCP());
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                05 / 2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus RelationshipMappingInfo::EvaluateForeignKeyStrategy(SchemaImportContext& ctx)
-    {
-    BeAssert(m_mappingType != RelationshipMappingType::LinkTable);
-    const MapStrategy strategy = m_mappingType == RelationshipMappingType::ForeignKeyOnSource ? MapStrategy::ForeignKeyRelationshipInSourceTable : MapStrategy::ForeignKeyRelationshipInTargetTable;
-    m_mapStrategyExtInfo = MapStrategyExtendedInfo(strategy);
-    return SUCCESS;
-    }
-
+IssueReporter const& ClassMappingInfo::Issues() const { return m_ctx.Issues(); }
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

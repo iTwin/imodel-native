@@ -60,7 +60,7 @@ struct NoAdditionalRootEntityClassesPolicy final : SchemaPolicy
         static std::unique_ptr<SchemaPolicy> Create(ECDbCR, ECN::ECSchemaId optingInSchemaId, ECN::IECInstanceCR policyCA, std::vector<ECN::ECSchemaId> const& systemSchemaExceptions);
         ~NoAdditionalRootEntityClassesPolicy() {}
 
-        BentleyStatus Evaluate(ECDbCR, ECN::ECClassCR) const;
+        BentleyStatus Evaluate(ECDbCR, ECN::ECEntityClassCR) const;
     };
 
 //=======================================================================================
