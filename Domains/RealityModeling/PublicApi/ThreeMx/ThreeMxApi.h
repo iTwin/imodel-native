@@ -179,8 +179,8 @@ private:
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
     virtual GeometryPtr _CreateGeometry(Geometry::CreateParams const& args, DRange3dCR tileRange, Dgn::Render::SystemP renderSys) {return new Geometry(args, *this, tileRange, renderSys);}
     virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr;}
-    virtual Utf8CP _GetName() const override { return m_rootResource.c_str(); }
-    virtual Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
+    Utf8CP _GetName() const override { return m_rootResource.c_str(); }
+    Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 
 public:
     Scene(Dgn::DgnDbR db, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system) : T_Super (db, location, sceneFile, system), m_sceneFile (sceneFile) {}
@@ -236,7 +236,7 @@ private:
     DRange3d GetSceneRange();
     SceneP Load(Dgn::Render::SystemP) const;
 
-    virtual uint32_t _GetExcessiveRefCountThreshold() const override { return 0xffff; } // tile publisher makes lots of referrents...
+    uint32_t _GetExcessiveRefCountThreshold() const override { return 0xffff; } // tile publisher makes lots of referrents...
 public:
     ThreeMxModel(CreateParams const& params) : T_Super(params) {m_location = Transform::FromIdentity();}
     ~ThreeMxModel() {}
