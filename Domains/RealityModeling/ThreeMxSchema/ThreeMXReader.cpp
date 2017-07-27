@@ -186,7 +186,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             bvector<Utf8String> nodeResources;
             nodeName = node.get("id", "").asCString();
 
-            NodePtr nodeptr  = new Node(GetRootR(), this);
+            NodePtr nodeptr  = new Node(GetTriMeshRootR(), this);
 
             if (!nodeptr->ReadHeader(node, nodeName, nodeResources))
                 return ERROR;
@@ -275,7 +275,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             if (texName.empty())
                 continue;
 
-            Geometry::CreateParams geomParams;
+            TileTree::TriMeshTree::TriMesh::CreateParams geomParams;
             geomParams.m_numPoints  = ctm.GetInteger(CTM_VERTEX_COUNT);
             geomParams.m_points     = ctm.GetFloatArray(CTM_VERTICES);
             geomParams.m_normals    = (ctm.GetInteger(CTM_HAS_NORMALS) == CTM_TRUE) ? ctm.GetFloatArray(CTM_NORMALS) : nullptr;
@@ -286,7 +286,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             auto texture = renderTextures.find(texName);
             geomParams.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
-            ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(geomParams, m_children[nodeId->second]->GetRange(), renderSys));
+            ((Node*)m_children[nodeId->second].get())->GetGeometry().push_front(scene._CreateGeometry(geomParams, renderSys));
             }
         }
 

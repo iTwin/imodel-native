@@ -40,16 +40,6 @@ DEFINE_REF_COUNTED_PTR(Node)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(ThreeMxModel)
 
-//=======================================================================================
-//! A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
-// @bsiclass                                                    Keith.Bentley   06/16
-//=======================================================================================
-struct Geometry : Dgn::TileTree::TriMesh
-{
-    Geometry() {}
-    THREEMX_EXPORT Geometry(CreateParams const& params, SceneR scene, DRange3dCR, Dgn::Render::SystemP renderSys);
-};
-
 /*=================================================================================**//**
 * Data about the 3mx scene read from the scene (.3mx) file. It holds the filename of the "root node" (relative to the location of the scene file.)
 * @bsiclass                                                     Ray.Bentley     03/2015
@@ -82,11 +72,10 @@ struct SceneInfo
 *
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
-struct Node : Dgn::TileTree::Tile
+struct Node : Dgn::TileTree::TriMeshTree::Tile
 {
-    DEFINE_T_SUPER(Dgn::TileTree::Tile);
+    DEFINE_T_SUPER(Dgn::TileTree::TriMeshTree::Tile);
     friend struct Scene;
-    typedef std::forward_list<GeometryPtr> GeometryList;
 
     //=======================================================================================
     // @bsiclass                                                    Mathieu.Marchand  11/2016
@@ -98,10 +87,6 @@ struct Node : Dgn::TileTree::Tile
         };
 
 private:
-    double m_maxDiameter; // maximum diameter
-    double m_factor=0.5;  // by default, 1/2 of diameter
-
-    GeometryList m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
     bool ReadHeader(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
@@ -112,34 +97,22 @@ private:
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
 
-    bool _HasGraphics() const override;
-    void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
-    void _Invalidate() override { BeAssert(false); }
-    SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>& selectedTiles, Dgn::TileTree::DrawArgsR args) const override;
-    void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
     Utf8String _GetTileCacheKey() const override {return GetChildFile();}
 public:
-    Node(Dgn::TileTree::RootR root, NodeP parent) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0) {}
+    Node(Dgn::TileTree::TriMeshTree::Root& root, NodeP parent) : Dgn::TileTree::TriMeshTree::Tile(root, parent) { }
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
-    void ClearGeometry() {m_geometry.clear();}
-    ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
-    double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
-    void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
-    void _UnloadChildren(BeTimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
     Dgn::ElementAlignedBox3d ComputeRange();
-    GeometryList& GetGeometry() {return m_geometry;}
 };
 
 /*=================================================================================**//**
 //! A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
-struct Scene : Dgn::TileTree::Root
+struct Scene : Dgn::TileTree::TriMeshTree::Root
 {
-    DEFINE_T_SUPER(Dgn::TileTree::Root);
+    DEFINE_T_SUPER(Dgn::TileTree::TriMeshTree::Root);
     friend struct Node;
-    friend struct Geometry;
     friend struct ThreeMxModel;
 
 private:
@@ -147,8 +120,7 @@ private:
     SceneInfo   m_sceneInfo;
     Dgn::ClipVectorCPtr m_clip;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
-    virtual GeometryPtr _CreateGeometry(Geometry::CreateParams const& args, DRange3dCR tileRange, Dgn::Render::SystemP renderSys) {return new Geometry(args, *this, tileRange, renderSys);}
-    virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr;}
+
     Utf8CP _GetName() const override { return m_rootResource.c_str(); }
     Dgn::ClipVectorCP _GetClipVector() const override { return m_clip.get(); }
 

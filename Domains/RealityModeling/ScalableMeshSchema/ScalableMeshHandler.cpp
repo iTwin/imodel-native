@@ -325,76 +325,10 @@ static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
 
-//SMGeometry
-/*-----------------------------------------------------------------------------------**//**
-* Construct a Geometry from a TriMeshArgs and a Scene. The scene is necessary to get the Render::System, and this
-* Geometry is only valid for that Render::System
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SMGeometry::SMGeometry(TriMeshArgs const& args, SMSceneR scene, Dgn::Render::SystemP renderSys)
-{
-    // After we create a Render::Graphic, we only need the points/indices/normals for picking.
-    // To save memory, only store them if the model is locatable.
-    if (scene.IsPickable())
-    {
-        m_indices.resize(args.m_numIndices);
-        memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
-
-        m_points.resize(args.m_numPoints);
-        memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
-
-        if (nullptr != args.m_normals)
-        {
-            m_normals.resize(args.m_numPoints);
-            memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
-        }
-    }
-
-    if (nullptr == renderSys /*|| !args.m_texture.IsValid()*/)
-        return;
-
-    m_texture = args.m_texture;
-    m_graphic = renderSys->_CreateTriMesh(args, scene.GetDgnDb());
-}
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
+* @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SMGeometry::GetGraphics(DrawArgsR args)
-    {
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SMGeometry::Pick(PickArgsR args)
-    {
-    if (m_indices.empty())
-        return;
-
-    auto graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(args.m_root.GetDgnDb(), args.m_location));
-    graphic->AddPolyface(*GetPolyface());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Create a PolyfaceHeader from a Geometry
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr SMGeometry::GetPolyface() const
-    {
-    Render::TriMeshArgs trimesh;
-    trimesh.m_numIndices = (int32_t)m_indices.size();
-    trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
-    trimesh.m_numPoints = (int32_t)m_points.size();
-    trimesh.m_points = m_points.empty() ? nullptr : &m_points.front();
-    trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
-    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();;
-
-    return trimesh.ToPolyface();
-    }
-
+SMGeometry::SMGeometry(CreateParams const& params, SMSceneR scene, Dgn::Render::SystemP sys) : Dgn::TileTree::TriMesh(params, scene, sys) { }
 
 //SMLoader
 //----------------------------------------------------------------------------------------

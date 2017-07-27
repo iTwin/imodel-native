@@ -21,14 +21,11 @@
 #include <DgnPlatform\Render.h>
 #include <forward_list>
 
-
-
 SCALABLEMESH_SCHEMA_TYPEDEFS(ScalableMeshModel)
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
-
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(SMGeometry)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(SMNode)
@@ -37,8 +34,6 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(SMScene)
 DEFINE_REF_COUNTED_PTR(SMGeometry)
 DEFINE_REF_COUNTED_PTR(SMNode)
 DEFINE_REF_COUNTED_PTR(SMScene)
-
-
 
 class ScalableMeshDrawingInfo;
 
@@ -92,36 +87,14 @@ public :
     const DMatrix4d& GetLocalToViewTransform() {return m_localToViewTransformation;}   
     };
 
-
-
 //=======================================================================================
-//! A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
-// @bsiclass                                                    Keith.Bentley   06/16
+// @bsistruct                                                   Paul.Connelly   07/17
 //=======================================================================================
-struct SMGeometry : RefCountedBase, NonCopyableClass
+struct SMGeometry : Dgn::TileTree::TriMesh
 {
-protected:
-    bvector<FPoint3d> m_points;
-    bvector<FPoint3d> m_normals;
-    bvector<FPoint2d> m_textureUV;
-    bvector<int32_t> m_indices;
-    Dgn::Render::GraphicPtr m_graphic;    
-
-public:
-    SMGeometry() {}
-    SMGeometry(Dgn::Render::TriMeshArgs const& args, SMSceneR scene, Dgn::Render::SystemP renderSys);
-    PolyfaceHeaderPtr GetPolyface() const;
-    void GetGraphics(Dgn::TileTree::DrawArgsR);
-    void Pick(Dgn::TileTree::PickArgsR);
-    void ClearGraphic() { m_graphic = nullptr; }
-    bvector<FPoint3d> const& GetPoints() const { return m_points; }
-    bool IsEmpty() const { return m_points.empty(); }
-
-
-    BentleyB0200::RefCountedPtr<BentleyB0200::Dgn::Render::Texture> m_texture;
+    SMGeometry() { }
+    SMGeometry(CreateParams const& params, SMSceneR scene, Dgn::Render::SystemP renderSys);
 };
-
-
 
 struct SMNode : Dgn::TileTree::Tile
 {
@@ -164,7 +137,10 @@ private:
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
 
+    bool _HasGraphics() const override;
     void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
+    void _Invalidate() override { BeAssert(false); }
+    SelectParent _SelectTiles(bvector<Dgn::TileTree::TileCPtr>&, Dgn::TileTree::DrawArgsR) const override;
     void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
     Utf8String _GetTileCacheKey() const override; 
 
