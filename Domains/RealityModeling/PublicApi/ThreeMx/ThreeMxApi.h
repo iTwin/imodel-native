@@ -44,40 +44,10 @@ DEFINE_REF_COUNTED_PTR(ThreeMxModel)
 //! A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
 // @bsiclass                                                    Keith.Bentley   06/16
 //=======================================================================================
-struct Geometry : RefCountedBase, NonCopyableClass
+struct Geometry : Dgn::TileTree::TriMesh
 {
-    struct CreateParams
-    {
-        int32_t m_numIndices = 0;
-        int32_t const* m_vertIndex = nullptr;
-        int32_t m_numPoints = 0;
-        FPoint3d const* m_points = nullptr;
-        FPoint3d const* m_normals = nullptr;
-        FPoint2d const* m_textureUV = nullptr;
-        Dgn::Render::TexturePtr m_texture;
-
-        Dgn::Render::QPoint3dList QuantizePoints() const;
-        Dgn::Render::OctEncodedNormalList QuantizeNormals() const;
-    };
-protected:
-    Dgn::Render::QPoint3dList m_points = Dgn::Render::QPoint3dList(DRange3d::NullRange());
-    Dgn::Render::OctEncodedNormalList m_normals;
-    bvector<FPoint2d> m_textureUV;
-    bvector<int32_t> m_indices;
-    bvector<Dgn::Render::GraphicPtr> m_graphics;
-
-    Dgn::Render::TriMeshArgs CreateTriMeshArgs(Dgn::Render::TextureP texture, FPoint2d const* textureUV) const;
-
-public:
     Geometry() {}
-    THREEMX_EXPORT Geometry(CreateParams const&, SceneR, DRange3dCR, Dgn::Render::SystemP renderSys);
-    PolyfaceHeaderPtr GetPolyface() const;
-    void Draw(Dgn::TileTree::DrawArgsR);
-    void Pick(Dgn::TileTree::PickArgsR);
-    void ClearGraphic() {m_graphics.clear();}
-    Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
-    bool IsEmpty() const {return m_points.empty();}
-    bool HasGraphics() const {return !m_graphics.empty() && m_graphics.front().IsValid();}
+    THREEMX_EXPORT Geometry(CreateParams const& params, SceneR scene, DRange3dCR, Dgn::Render::SystemP renderSys);
 };
 
 /*=================================================================================**//**
