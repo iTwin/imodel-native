@@ -670,7 +670,7 @@ TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_RemoveEmptyMixinBaseClasses) //
         "              <AppliesToEntityClass>Element</AppliesToEntityClass>"
         "          </IsMixin>"
         "      </ECCustomAttributes>"
-        "       <ECProperty propertyName='P2' typeName='string' />"
+        //"       <ECProperty propertyName='P2' typeName='string' />"
         "  </ECEntityClass>"
         "   <ECEntityClass typeName='Element'>"
         "       <ECProperty propertyName='Code' typeName='string' />"
@@ -721,7 +721,13 @@ TEST_F(SchemaUpgradeTestFixture, UpdateBaseClass_RemoveEmptyMixinBaseClasses) //
         "       <ECProperty propertyName='P1' typeName='string' />"
         "   </ECEntityClass>"
         "</ECSchema>");
-    ASSERT_EQ(ERROR, ImportSchema(editedSchemaItem));
+    ASSERT_EQ(SUCCESS, ImportSchema(editedSchemaItem));
+    {
+    ECClassCP supportOption = m_ecdb.Schemas().GetClass("TestSchema", "SupportOption");
+    ASSERT_NE(supportOption, nullptr);
+    ASSERT_STREQ(supportOption->GetBaseClasses().at(0)->GetFullName(), "TestSchema:Element");
+    ASSERT_EQ(1, supportOption->GetBaseClasses().size());
+    }
     }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Affan Khan                     03/16
