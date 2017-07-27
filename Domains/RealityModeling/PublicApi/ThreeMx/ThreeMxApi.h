@@ -247,7 +247,7 @@ public:
     THREEMX_EXPORT void _OnLoadedJsonProperties() override;
     THREEMX_EXPORT Dgn::AxisAlignedBox3d _QueryModelRange() const override;
     THREEMX_EXPORT void _OnFitView(Dgn::FitContextR) override;
-    THREEMX_EXPORT BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override;
+    // ###TODO_TILE_PUBLISH THREEMX_EXPORT BentleyStatus _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const override;
 
     //! Set the name of the scene (.3mx) file for this 3MX model. This can either be a local file name or a URL.
     //! @note New models are not valid until the have a scene file.

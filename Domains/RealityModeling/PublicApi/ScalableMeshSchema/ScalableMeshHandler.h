@@ -109,9 +109,9 @@ protected:
 
 public:
     SMGeometry() {}
-    SMGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args, SMSceneR scene, Dgn::Render::SystemP renderSys);
+    SMGeometry(Dgn::Render::TriMeshArgs const& args, SMSceneR scene, Dgn::Render::SystemP renderSys);
     PolyfaceHeaderPtr GetPolyface() const;
-    void GetGraphics(Dgn::TileTree::DrawGraphicsR);
+    void GetGraphics(Dgn::TileTree::DrawArgsR);
     void Pick(Dgn::TileTree::PickArgsR);
     void ClearGraphic() { m_graphic = nullptr; }
     bvector<FPoint3d> const& GetPoints() const { return m_points; }
@@ -164,8 +164,7 @@ private:
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
 
-    void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
-    void _GetGraphics(Dgn::TileTree::DrawGraphicsR, int depth) const override;
+    void _DrawGraphics(Dgn::TileTree::DrawArgsR) const override;
     void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
     Utf8String _GetTileCacheKey() const override; 
 
@@ -199,9 +198,8 @@ private:
     
     //SceneInfo   m_sceneInfo;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
-    virtual SMGeometryPtr _CreateGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args, Dgn::Render::SystemP renderSys) { return new SMGeometry(args, *this, renderSys); }
-    virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::Format targetFormat, Dgn::Render::Image::BottomUp bottomUp, Dgn::Render::SystemP renderSys) const { return renderSys ? renderSys->_CreateTexture(source, targetFormat, bottomUp) : nullptr; }
-    Dgn::ProgressiveTaskPtr _CreateProgressiveTask(Dgn::TileTree::DrawArgsR, Dgn::TileTree::TileLoadStatePtr) override;
+    virtual SMGeometryPtr _CreateGeometry(Dgn::Render::TriMeshArgs const& args, Dgn::Render::SystemP renderSys) { return new SMGeometry(args, *this, renderSys); }
+    virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::Format targetFormat, Dgn::Render::Image::BottomUp bottomUp, Dgn::Render::SystemP renderSys) const { return renderSys ? renderSys->_CreateTexture(source, bottomUp) : nullptr; }
     Utf8CP _GetName() const override { return "3SM"; }
 
 public:
@@ -283,7 +281,6 @@ struct ScalableMeshModel : IMeshSpatialModel //, Dgn::Render::IGenerateMeshTiles
         virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         
-        SCALABLEMESH_SCHEMA_EXPORT void _AddTerrainGraphics(TerrainContextR context) const override;
         SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
         SCALABLEMESH_SCHEMA_EXPORT void _OnFitView(FitContextR context) override;
                         

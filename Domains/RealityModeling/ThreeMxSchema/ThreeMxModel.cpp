@@ -617,7 +617,6 @@ Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip () const
     {
     return m_clip.IsValid() ? m_clip->Clone(nullptr) : nullptr;
     }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
@@ -627,4 +626,5 @@ BentleyStatus ThreeMxModel::_GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR
     classifiers = m_classifiers;
     return SUCCESS;
     }
+#endif
 

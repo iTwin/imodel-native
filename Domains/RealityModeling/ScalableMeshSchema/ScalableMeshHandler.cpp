@@ -294,117 +294,6 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 #endif
     }
 
-
-//========================================================================================
-// @bsiclass                                                        Mathieu.St-Pierre     02/2016
-//========================================================================================
-static bool s_drawInProcess = true;
-
-struct ScalableMeshProgressiveTask : ProgressiveTask
-    {
-    
-protected:
-        
-    IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
-    ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
-    const DMatrix4d&                        m_storageToUorsTransfo;    
-    IScalableMeshDisplayCacheManager*       m_displayNodesCache;
-    uint64_t                                m_nextShow;
-
-    ScalableMeshProgressiveTask (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
-                                 ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                                    DMatrix4d&                              storageToUorsTransfo,
-                                     IScalableMeshDisplayCacheManagerPtr& cacheManager)
-    : m_storageToUorsTransfo(storageToUorsTransfo)
-        {    
-        m_progressiveQueryEngine = progressiveQueryEngine;
-        m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
-        m_nextShow = 0;
-        m_displayNodesCache = cacheManager.get();
-        }
-
-public:
-
-    virtual bool _WantTimeoutSet(uint32_t& limit)   {return false; }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Mathieu.St-Pierre     02/2016
-//----------------------------------------------------------------------------------------
-ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& wantShow)
-    {   
-#if 0 //NEEDS_WORK_SM_TEMP_OUT
-    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
-
-    if (m_currentDrawingInfoPtr->m_overviewNodes.size() > 0)
-        {                    
-        int queryId = m_currentDrawingInfoPtr->m_currentQuery;
-
-        if (m_progressiveQueryEngine->IsQueryComplete(queryId))
-            {
-            m_currentDrawingInfoPtr->m_meshNodes.clear();
-            StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
-
-            assert(m_currentDrawingInfoPtr->m_overviewNodes.size() == 0 || m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
-
-            m_currentDrawingInfoPtr->m_overviewNodes.clear();
-
-            assert(status == SUCCESS);
-
-            //completionStatus = Completion::HealRequired; 
-
-#ifdef PRINT_SMDISPLAY_MSG        
-            PRINT_MSG("Heal required  meshNode : %I64u overviewMeshNode : %I64u \n", m_currentDrawingInfoPtr->m_meshNodes.size(), m_currentDrawingInfoPtr->m_overviewNodes.size());       
-#endif
-            }
-        else
-            {                                       
-            m_currentDrawingInfoPtr->m_meshNodes.clear();
-            StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
-            assert(status == SUCCESS);                                  
-
-            m_currentDrawingInfoPtr->m_overviewNodes.clear();
-            status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
-            assert(status == SUCCESS);                                  
-                                    
-            if (s_drawInProcess)
-                ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                                                      
-            }
-        }
-    else
-        {
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
-        return Completion::Finished;
-        }     
-    
-    if (now > m_nextShow)
-        {
-        m_nextShow = now + 1000; // once per second
-        wantShow = WantShow::Yes;
-        }
-           
-#endif
-    return Completion::Aborted;    
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                               Mathieu.St-Pierre      02/2016
-//----------------------------------------------------------------------------------------
-static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
-                      ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                      DMatrix4d&                              storageToUorsTransfo, 
-                      TerrainContextR                            context,
-                      IScalableMeshDisplayCacheManagerPtr& cacheManager)
-    {
-/*
-    context.GetViewport()->ScheduleTerrainProgressiveTask (*new ScalableMeshProgressiveTask(progressiveQueryEngine,
-                                                                                            currentDrawingInfoPtr,
-                                                                                                        storageToUorsTransfo,
-                                                                                                        cacheManager));
-*/
-    }
-
-};  
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
@@ -442,7 +331,7 @@ static bool s_waitQueryComplete = false;
 * Geometry is only valid for that Render::System
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-SMGeometry::SMGeometry(IGraphicBuilder::TriMeshArgs const& args, SMSceneR scene, Dgn::Render::SystemP renderSys)
+SMGeometry::SMGeometry(TriMeshArgs const& args, SMSceneR scene, Dgn::Render::SystemP renderSys)
 {
     // After we create a Render::Graphic, we only need the points/indices/normals for picking.
     // To save memory, only store them if the model is locatable.
@@ -465,19 +354,13 @@ SMGeometry::SMGeometry(IGraphicBuilder::TriMeshArgs const& args, SMSceneR scene,
         return;
 
     m_texture = args.m_texture;
-
-    auto graphic = renderSys->_CreateGraphic(Graphic::CreateParams());
-    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-    graphic->AddTriMesh(args);
-    graphic->Close();
-    
-    m_graphic = graphic;
+    m_graphic = renderSys->_CreateTriMesh(args, scene.GetDgnDb());
 }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SMGeometry::GetGraphics(DrawGraphicsR args)
+void SMGeometry::GetGraphics(DrawArgsR args)
     {
     if (m_graphic.IsValid())
         args.m_graphics.Add(*m_graphic);
@@ -491,7 +374,7 @@ void SMGeometry::Pick(PickArgsR args)
     if (m_indices.empty())
         return;
 
-    auto graphic = args.m_context.CreateGraphic(Graphic::CreateParams(nullptr, args.m_location));
+    auto graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(args.m_root.GetDgnDb(), args.m_location));
     graphic->AddPolyface(*GetPolyface());
     }
 
@@ -501,7 +384,7 @@ void SMGeometry::Pick(PickArgsR args)
 +---------------+---------------+---------------+---------------+---------------+------*/
 PolyfaceHeaderPtr SMGeometry::GetPolyface() const
     {
-    IGraphicBuilder::TriMeshArgs trimesh;
+    Render::TriMeshArgs trimesh;
     trimesh.m_numIndices = (int32_t)m_indices.size();
     trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
     trimesh.m_numPoints = (int32_t)m_points.size();
@@ -523,7 +406,7 @@ SMNode::SMLoader::SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadSta
     //assert(renderSys != nullptr); 
 
     if (renderSys == nullptr)
-        m_renderSys = m_tile->GetRoot().GetRenderSystem();
+        m_renderSys = m_tile->GetRoot().GetRenderSystemP();
     }
 
 
@@ -540,7 +423,7 @@ TileLoaderPtr SMNode::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Sys
 * Draw this node.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
+void SMNode::_DrawGraphics(DrawArgsR args) const
     {
     static bool s_debugRange = true;
     if (s_debugRange)
@@ -557,7 +440,7 @@ void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
     static bool s_debugTexture = false;
 
     if (!s_debugTexture)
-        _GetGraphics(args.m_graphics, depth);
+        _GetGraphics(args.m_graphics);
     else
         {        
         for (auto& geom : m_geometry)
@@ -595,7 +478,7 @@ void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
 * Draw this node.
 * @bsimethod                                    Keith.Bentley                   05/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SMNode::_GetGraphics(DrawGraphicsR args, int depth) const
+void SMNode::_GetGraphics(DrawGraphicsR args) const
     {
     for (auto geom : m_geometry)
         geom->GetGraphics(args);
