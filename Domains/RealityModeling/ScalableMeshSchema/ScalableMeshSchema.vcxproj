@@ -65,9 +65,9 @@ BentleyBuild.py -p ScalableMeshSchema -r DgnDomains-RealityModeling -f RealityMo
     <ClCompile Include="ScalableMeshSchemaPCH.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\PublicApi\ScalableMeshSchema\ScalableMeshDomain.h" />
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\ExportMacros.h" />
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\IMeshSpatialModel.h" />
+    <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshDomain.h" />
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshHandler.h" />
     <ClInclude Include="..\PublicApi\ScalableMeshSchema\ScalableMeshSchemaCommon.h" />
     <ClInclude Include="ScalableMeshDisplayCacheManager.h" />

@@ -74,14 +74,16 @@ Dgn::DgnDbStatus ScalableMeshDomain::UpdateSchema(SchemaUpdateScalableMeshDgnDbP
         return DgnDbStatus::Success;
 
     if (schemaOp != SchemaOperation::MinorSchemaUpdate && schemaOp != SchemaOperation::Import)
-        return DgnDbStatus::InvalidSchemaVersion;
+        return DgnDbStatus::InvalidProfileVersion;
 
     BeFileName schemaFileName = params.m_assetsRootDir;
     schemaFileName.AppendToPath(BENTLEY_SCALABLEMESH_SCHEMA_PATH);
 
-    DgnDbStatus retVal;
+    DgnDbStatus retVal = DgnDbStatus::Success;
+/*
     if (DgnDbStatus::Success != (retVal = ScalableMeshDomain::GetDomain().ImportSchema(*params.m_dgnDb, schemaFileName, DgnDomain::ImportSchemaOptions::CreateECClassViews)))
         return retVal;
+*/
 
     Utf8String schemaUpdateDescr("SAVECHANGES_SchemaUpdate");
     if (schemaOp == SchemaOperation::Import)
@@ -91,5 +93,4 @@ Dgn::DgnDbStatus ScalableMeshDomain::UpdateSchema(SchemaUpdateScalableMeshDgnDbP
         retVal = DgnDbStatus::WriteError;
 
     return retVal;
-
     }

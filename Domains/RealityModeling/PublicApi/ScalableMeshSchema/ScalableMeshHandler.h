@@ -15,14 +15,30 @@
 #include <TerrainModel/TerrainModel.h>
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 #include <ScalableMesh\IScalableMeshQuery.h>
+#include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/MeshTile.h>
+#include <DgnPlatform\Render.h>
+#include <forward_list>
+
+
 
 SCALABLEMESH_SCHEMA_TYPEDEFS(ScalableMeshModel)
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH
 
 BEGIN_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE
+
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(SMGeometry)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(SMNode)
+DEFINE_POINTER_SUFFIX_TYPEDEFS(SMScene)
+
+DEFINE_REF_COUNTED_PTR(SMGeometry)
+DEFINE_REF_COUNTED_PTR(SMNode)
+DEFINE_REF_COUNTED_PTR(SMScene)
+
+
 
 class ScalableMeshDrawingInfo;
 
@@ -44,12 +60,12 @@ public :
 
 public : 
         
-    ScalableMeshDrawingInfo(ViewContextP viewContext)        
+    ScalableMeshDrawingInfo(BentleyB0200::Dgn::ViewContextP viewContext)        
         {
-        m_drawPurpose = viewContext->GetDrawPurpose();           
+        //m_drawPurpose = viewContext->GetDrawPurpose();           
         const DMatrix4d localToView(viewContext->GetViewport()->GetWorldToViewMap()->M0);     
         memcpy(&m_localToViewTransformation, &localToView, sizeof(DMatrix4d));                
-        m_range = viewContext->GetViewport()->GetViewCorners();        
+        //m_range = viewContext->GetViewport()->GetViewCorners();        
         }
 
     ~ScalableMeshDrawingInfo()
@@ -77,14 +93,144 @@ public :
     };
 
 
+
+//=======================================================================================
+//! A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
+// @bsiclass                                                    Keith.Bentley   06/16
+//=======================================================================================
+struct SMGeometry : RefCountedBase, NonCopyableClass
+{
+protected:
+    bvector<FPoint3d> m_points;
+    bvector<FPoint3d> m_normals;
+    bvector<FPoint2d> m_textureUV;
+    bvector<int32_t> m_indices;
+    Dgn::Render::GraphicPtr m_graphic;    
+
+public:
+    SMGeometry() {}
+    SMGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args, SMSceneR scene, Dgn::Render::SystemP renderSys);
+    PolyfaceHeaderPtr GetPolyface() const;
+    void GetGraphics(Dgn::TileTree::DrawGraphicsR);
+    void Pick(Dgn::TileTree::PickArgsR);
+    void ClearGraphic() { m_graphic = nullptr; }
+    bvector<FPoint3d> const& GetPoints() const { return m_points; }
+    bool IsEmpty() const { return m_points.empty(); }
+
+
+    BentleyB0200::RefCountedPtr<BentleyB0200::Dgn::Render::Texture> m_texture;
+};
+
+
+
+struct SMNode : Dgn::TileTree::Tile
+{
+    DEFINE_T_SUPER(Dgn::TileTree::Tile);
+    friend struct SMScene;
+    typedef std::forward_list<SMGeometryPtr> GeometryList;
+
+    //=======================================================================================
+    // @bsiclass                                                    Mathieu.Marchand  11/2016
+    //=======================================================================================
+    struct SMLoader : Dgn::TileTree::TileLoader
+    {        
+        SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys);
+
+        BentleyStatus _LoadTile() override 
+            { 
+            return static_cast<SMNodeR>(*m_tile).Read3SMTile(m_tileBytes, (SMSceneR)m_tile->GetRootR(), GetRenderSystem(), true);
+            };
+
+        virtual folly::Future<BentleyStatus> _GetFromSource() override
+            {
+            //ScalableMesh has his own loader
+            return SUCCESS;
+            }
+    };
+
+private:
+    double m_maxDiameter; // maximum diameter
+    double m_factor = 0.5;  // by default, 1/2 of diameter
+
+    IScalableMeshNodePtr m_scalableMeshNodePtr;
+
+    GeometryList m_geometry;
+    //Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
+
+    bool ReadHeader(DPoint3d& centroid);
+    BentleyStatus Read3SMTile(Dgn::TileTree::StreamBuffer&, SMSceneR, Dgn::Render::SystemP renderSys, bool loadChildren);
+    BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren);
+
+    //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
+    Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
+
+    void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
+    void _GetGraphics(Dgn::TileTree::DrawGraphicsR, int depth) const override;
+    void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
+    Utf8String _GetTileCacheKey() const override; 
+
+public:
+    SMNode(Dgn::TileTree::RootR root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0), m_scalableMeshNodePtr(smNodePtr) {}
+    Utf8String GetFilePath(SMSceneR) const;
+
+    bool _HasChildren() const override { return m_scalableMeshNodePtr->GetChildrenNodes().size() > 0; }
+    void ClearGeometry() { m_geometry.clear(); }
+    ChildTiles const* _GetChildren(bool load) const override { return IsReady() ? &m_children : nullptr; }
+    double _GetMaximumSize() const override { return m_factor * m_maxDiameter; }
+    void _OnChildrenUnloaded() const override { m_loadStatus.store(LoadStatus::NotLoaded); }
+    void _UnloadChildren(BeTimePoint olderThan) const override { if (IsReady()) T_Super::_UnloadChildren(olderThan); }
+    Dgn::ElementAlignedBox3d ComputeRange();
+    GeometryList& GetGeometry() { return m_geometry; }
+};
+
+/*=================================================================================**//**
+//! A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
+// @bsiclass                                                    Keith.Bentley   03/16
++===============+===============+===============+===============+===============+======*/
+struct SMScene : Dgn::TileTree::Root
+{
+    DEFINE_T_SUPER(Dgn::TileTree::Root);
+    friend struct SMNode;
+    friend struct SMGeometry;    
+
+private:
+
+    IScalableMeshPtr m_smPtr;
+    
+    //SceneInfo   m_sceneInfo;
+    BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
+    virtual SMGeometryPtr _CreateGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args, Dgn::Render::SystemP renderSys) { return new SMGeometry(args, *this, renderSys); }
+    virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::Format targetFormat, Dgn::Render::Image::BottomUp bottomUp, Dgn::Render::SystemP renderSys) const { return renderSys ? renderSys->_CreateTexture(source, targetFormat, bottomUp) : nullptr; }
+    Dgn::ProgressiveTaskPtr _CreateProgressiveTask(Dgn::TileTree::DrawArgsR, Dgn::TileTree::TileLoadStatePtr) override;
+    Utf8CP _GetName() const override { return "3SM"; }
+
+public:
+    SMScene(Dgn::DgnDbR db, IScalableMeshPtr& smPtr, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system) : T_Super(db, location, sceneFile, system), m_smPtr(smPtr) {}
+
+    ~SMScene() { ClearAllTiles(); }
+
+    //SceneInfo const& GetSceneInfo() const { return m_sceneInfo; }
+    BentleyStatus LoadNodeSynchronous(SMNodeR);
+    BentleyStatus LoadScene(); // synchronous
+
+    SCALABLEMESH_SCHEMA_EXPORT BentleyStatus ReadSceneFile(); //!< Read the scene file synchronously
+};
+
 //=======================================================================================
 // @bsiclass                                                  
 //=======================================================================================
-struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
+struct ScalableMeshModel : IMeshSpatialModel //, Dgn::Render::IGenerateMeshTiles
     {
         DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
+        BE_JSON_NAME(scalablemesh)
+
     private:
+
+        mutable SMScenePtr m_scene;
+
+        void Load(Dgn::Render::SystemP) const;
+        
 
         //NEEDS_WORK_MS : Modify remove mutable
         mutable IScalableMeshPtr                m_smPtr;
@@ -119,15 +265,16 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
 
         Properties      m_properties;
 
-        virtual void _WriteJsonProperties(Json::Value&) const override;
-        virtual void _ReadJsonProperties(Json::Value const&) override;
-     
+        virtual void _OnSaveJsonProperties() override;
+        virtual void _OnLoadedJsonProperties() override;
+             
         virtual bool _IsMultiResolution() const { return true; };
-        virtual BentleyApi::Dgn::AxisAlignedBox3dCR _GetRange() const override;
+        virtual BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const override;        
+
         virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
         virtual BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
 
-        virtual BentleyStatus _ReloadClipMask(BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) override;
+        virtual BentleyStatus _ReloadClipMask(const BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) override;        
         virtual BentleyStatus _ReloadAllClipMasks() override;
         virtual BentleyStatus _StartClipMaskBulkInsert() override;
         virtual BentleyStatus _StopClipMaskBulkInsert() override;
@@ -137,10 +284,13 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
         virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
         
         SCALABLEMESH_SCHEMA_EXPORT void _AddTerrainGraphics(TerrainContextR context) const override;
-
-        virtual Render::TileGenerator::Status _GenerateMeshTiles(Render::TileNodePtr& rootTile, TransformCR transformDbToTile) override;
-
+        SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
+        SCALABLEMESH_SCHEMA_EXPORT void _OnFitView(FitContextR context) override;
+                        
+        
     public:
+
+        //virtual TileGeneratorStatus _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) override;
 
         //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
         ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params);
@@ -149,8 +299,10 @@ struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGenerateMeshTiles
 
         SCALABLEMESH_SCHEMA_EXPORT static ScalableMeshModelP CreateModel(BentleyApi::Dgn::DgnDbR dgnDb);
                 
-        void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);
+        void OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject);        
 
+        void SetFileNameProperty(BeFileNameCR smFilename);
+		
         SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
 
         //! A DgnDb can have only one terrain. 
@@ -185,6 +337,6 @@ struct EXPORT_VTABLE_ATTRIBUTE ScalableMeshModelHandler : Dgn::dgn_ModelHandler:
     public : 
                      
         //NEEDS_WORK_SM : Currently for testing only
-        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename);
+        SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile = true);
     };
 END_BENTLEY_SCALABLEMESH_SCHEMA_NAMESPACE

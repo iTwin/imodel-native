@@ -20,6 +20,9 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
                                                                  uint64_t nodeId,
                                                                  uint64_t smId)
     {
+
+    assert(!"MST_TODO");
+#if 0
     assert(m_renderSys != 0);
 
     Render::IGraphicBuilder::TriMeshArgs trimesh;
@@ -51,7 +54,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
     qvCachedDisplayMesh->m_graphic->Close();
 
     cachedDisplayMesh = qvCachedDisplayMesh.release();
-
+#endif
     return SUCCESS;
     }
 
@@ -73,6 +76,8 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
                                                                     int                      format,      // => see QV_*_FORMAT definitions above
                                                                     unsigned char const *    texels)      // => texel image)
     {
+    assert(!"MST_TODO");
+#if 0
     assert(m_renderSys != 0);
             
     std::unique_ptr<SmCachedDisplayTexture> qvCachedDisplayTexture(new SmCachedDisplayTexture);
@@ -83,7 +88,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
     qvCachedDisplayTexture->m_texturePtr = m_renderSys->_CreateTexture(textureImage);
     
     cachedDisplayTexture = qvCachedDisplayTexture.release();
-
+#endif
     return SUCCESS;
     }
 
@@ -121,7 +126,7 @@ bool ScalableMeshDisplayCacheManager::IsValidForId(QvElem* elem, uint64_t id)
 
 ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager()
     {
-    m_renderSys = 0;    
+    //m_renderSys = 0;    
     m_resourcesOutOfDate = false;
     }
 
@@ -132,6 +137,6 @@ ScalableMeshDisplayCacheManager::~ScalableMeshDisplayCacheManager()
 
 void ScalableMeshDisplayCacheManager::SetRenderSys(Dgn::Render::SystemP renderSys)
     {
-    m_renderSys = renderSys;
+    //m_renderSys = renderSys;
     }
 
