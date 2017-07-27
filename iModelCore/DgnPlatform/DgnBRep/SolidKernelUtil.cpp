@@ -603,6 +603,121 @@ BentleyStatus BRepUtil::GetAdjacentFaces(bvector<ISubEntityPtr>& adjacentFaces, 
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void BRepUtil::GetSubEntityVertices(bvector<ISubEntityPtr>& vertices, bvector<ISubEntityPtr> const& subEntities)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bset<PK_VERTEX_t> vertexTags;
+
+    for (ISubEntityPtr subEntityPtr : subEntities)
+        {
+        PK_ENTITY_t entityTag;
+
+        if (0 == (entityTag = PSolidSubEntity::GetSubEntityTag(*subEntityPtr)))
+            continue;
+
+        switch (subEntityPtr->GetSubEntityType())
+            {
+            case ISubEntity::SubEntityType::Vertex:
+                {
+                vertexTags.insert(entityTag);
+                break;
+                }
+
+            case ISubEntity::SubEntityType::Edge:
+                {
+                PK_ENTITY_t entities[2];
+
+                if (SUCCESS != PK_EDGE_ask_vertices(entityTag, entities))
+                    break;
+
+                if (PK_ENTITY_null != entities[0])
+                    vertexTags.insert(entities[0]);
+
+                if (PK_ENTITY_null != entities[1])
+                    vertexTags.insert(entities[1]);
+                break;
+                }
+            
+            case ISubEntity::SubEntityType::Face:
+                {
+                int           nEntity = 0;
+                PK_ENTITY_t*  entities = nullptr;
+
+                if (SUCCESS != PK_FACE_ask_vertices(entityTag, &nEntity, &entities))
+                    break;
+
+                for (int iEntity = 0; iEntity < nEntity; ++iEntity)
+                    vertexTags.insert(entities[iEntity]);
+
+                PK_MEMORY_free(entities);
+                break;
+                }
+            }
+        }
+
+    if (0 == vertexTags.size())
+        return;
+
+    Transform entityTransform = PSolidSubEntity::GetSubEntityTransform(*subEntities.front());
+
+    for (PK_VERTEX_t vertexTag : vertexTags)
+        vertices.push_back(PSolidSubEntity::CreateSubEntity(vertexTag, entityTransform));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void BRepUtil::GetSubEntityEdges(bvector<ISubEntityPtr>& edges, bvector<ISubEntityPtr> const& subEntities)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bset<PK_EDGE_t> edgeTags;
+
+    for (ISubEntityPtr subEntityPtr : subEntities)
+        {
+        PK_ENTITY_t entityTag;
+
+        if (0 == (entityTag = PSolidSubEntity::GetSubEntityTag(*subEntityPtr)))
+            continue;
+
+        switch (subEntityPtr->GetSubEntityType())
+            {
+            case ISubEntity::SubEntityType::Edge:
+                {
+                edgeTags.insert(entityTag);
+                break;
+                }
+            
+            case ISubEntity::SubEntityType::Face:
+                {
+                int           nEntity = 0;
+                PK_ENTITY_t*  entities = nullptr;
+
+                if (SUCCESS != PK_FACE_ask_edges(entityTag, &nEntity, &entities))
+                    break;
+
+                for (int iEntity = 0; iEntity < nEntity; ++iEntity)
+                    edgeTags.insert(entities[iEntity]);
+
+                PK_MEMORY_free(entities);
+                break;
+                }
+            }
+        }
+
+    if (0 == edgeTags.size())
+        return;
+
+    Transform entityTransform = PSolidSubEntity::GetSubEntityTransform(*subEntities.front());
+
+    for (PK_EDGE_t edgeTag : edgeTags)
+        edges.push_back(PSolidSubEntity::CreateSubEntity(edgeTag, entityTransform));
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  07/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::GetFaceParameterRange(ISubEntityCR subEntity, DRange1dR uRange, DRange1dR vRange)
