@@ -141,7 +141,7 @@ protected:
     DGNPLATFORM_EXPORT RangeIndex::Traverser::Accept _CheckRangeTreeNode(RangeIndex::FBoxCR, bool) const override;
     DGNPLATFORM_EXPORT ScanCriteria::Stop _OnRangeElementFound(DgnElementId) override;
     DGNPLATFORM_EXPORT virtual StatusInt _VisitElement(DgnElementId elementId, bool allowLoad);
-    DGNPLATFORM_EXPORT virtual Render::MaterialPtr _GetMaterial(DgnMaterialId id) const;
+    DGNPLATFORM_EXPORT virtual Render::MaterialPtr _GetMaterial(RenderMaterialId id) const;
     DGNPLATFORM_EXPORT ViewContext();
 
 public:
@@ -175,7 +175,7 @@ public:
     void AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}
     StatusInt VisitHit(HitDetailCR hit) {return _VisitHit(hit);}
-    Render::MaterialPtr GetMaterial(DgnMaterialId id) const { return _GetMaterial(id); }
+    Render::MaterialPtr GetMaterial(RenderMaterialId id) const { return _GetMaterial(id); }
 
 /** @name Coordinate Query and Conversion */
 /** @{ */

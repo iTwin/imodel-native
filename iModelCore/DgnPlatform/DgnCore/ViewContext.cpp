@@ -634,7 +634,7 @@ double ViewContext::GetPixelSizeAtPoint(DPoint3dCP inPoint) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::MaterialPtr ViewContext::_GetMaterial(DgnMaterialId id) const
+Render::MaterialPtr ViewContext::_GetMaterial(RenderMaterialId id) const
     {
     DgnViewportP vp = GetViewport();
     Render::TargetP target = nullptr != vp ? vp->GetRenderTarget() : nullptr;

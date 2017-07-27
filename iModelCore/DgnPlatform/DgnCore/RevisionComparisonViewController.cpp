@@ -64,12 +64,11 @@ bool    ComparisonData::ContainsElement(DgnElementCP element) const
     auto iter = std::find_if(m_persistent.begin(), m_persistent.end(), [=](PersistentState const& arg) { return arg.m_elementId == element->GetElementId(); });
     return (m_persistent.end() != iter);
     }
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::GraphicPtr  RevisionComparisonViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
+Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
     if (nullptr != context.GetIPickGeom())
         {
@@ -90,6 +89,8 @@ Render::GraphicPtr  RevisionComparisonViewController::_StrokeGeometry(ViewContex
         }
 
     return source.Stroke(context, pixelSize);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   04/17
 +---------------+---------------+---------------+---------------+---------------+------*/

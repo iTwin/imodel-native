@@ -97,10 +97,10 @@ private:
     DgnSubCategoryId    m_subCategoryId;
     TexturePtr          m_texture; // meshes only
     MaterialPtr         m_material; // meshes only
-    DgnMaterialCPtr     m_dgnMaterial;
+    RenderMaterialCPtr  m_dgnMaterial;
     RenderingAssetCP    m_renderingAsset = nullptr;
     GradientSymbCPtr    m_gradient;
-    DgnMaterialId       m_materialId;
+    RenderMaterialId    m_materialId;
     ColorDef            m_lineColor = ColorDef::White(); // all types of geometry (edge color for meshes)
     ColorDef            m_fillColor = ColorDef::White(); // meshes only
     uint32_t            m_width = 0; // linear and mesh (edges)
@@ -116,7 +116,7 @@ private:
     DisplayParamsCPtr Clone() const;
     
     DGNPLATFORM_EXPORT DisplayParams(Type, GraphicParamsCR, GeometryParamsCP, bool filled);
-    DGNPLATFORM_EXPORT DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, DgnMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys);
+    DGNPLATFORM_EXPORT DisplayParams(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys);
     DisplayParams(DisplayParamsCR rhs) = default;
     void Resolve(DgnDbR, System&);
     bool ComputeHasRegionOutline() const;
@@ -137,7 +137,7 @@ public:
     DgnGeometryClass GetClass() const { return m_class; }
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
-    DgnMaterialId GetMaterialId() const { return m_materialId; }
+    RenderMaterialId GetMaterialId() const { return m_materialId; }
     RenderingAssetCP GetRenderingAsset() const { return m_renderingAsset; }
 
     bool IgnoresLighting() const { return m_ignoreLighting; }
@@ -173,7 +173,7 @@ public:
         }
     static DisplayParamsCPtr CreateForGeomPartInstance(DisplayParamsCR partParams, DisplayParamsCR instanceParams);
 
-    static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, DgnMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys)
+    static DisplayParamsCPtr Create(Type type, DgnCategoryId catId, DgnSubCategoryId subCatId, GradientSymbCP gradient, RenderMaterialId matId, ColorDef lineColor, ColorDef fillColor, uint32_t width, LinePixels linePixels, FillFlags fillFlags, DgnGeometryClass geomClass, bool ignoreLights, DgnDbR dgnDb, System& renderSys)
         {
         return new DisplayParams(type, catId, subCatId, gradient, matId, lineColor, fillColor, width, linePixels, fillFlags, geomClass, ignoreLights, dgnDb, renderSys);
         }

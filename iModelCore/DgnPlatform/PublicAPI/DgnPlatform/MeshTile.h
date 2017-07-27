@@ -1048,7 +1048,6 @@ struct IGenerateMeshTiles
 
 
 //=======================================================================================
-    virtual BentleyStatus       _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return ERROR; }
 // static utility methods
 // @bsistruct                                                   Ray.Bentley     08/2016
 //=======================================================================================

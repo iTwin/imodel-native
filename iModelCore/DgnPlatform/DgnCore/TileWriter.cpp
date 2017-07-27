@@ -254,7 +254,7 @@ struct RenderSystem : Render::System
     RenderSystem()  { }
     ~RenderSystem() { }
 
-    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const override { return nullptr; }
+    virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override { return nullptr; } 
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const override { BeAssert(false); return nullptr; }
@@ -502,7 +502,7 @@ struct MeshMaterial : TileMaterial
     static constexpr double GetSpecularFinish() { return 0.9; }
     static constexpr double GetSpecularExponentMult() { return 48.0; }
 private:
-    DgnMaterialCPtr         m_material;
+    RenderMaterialCPtr      m_material;
     RgbFactor               m_specularColor = { 1.0, 1.0, 1.0 };
     double                  m_specularExponent = GetSpecularFinish() * GetSpecularExponentMult();
     bool                    m_ignoreLighting;
@@ -511,7 +511,7 @@ public:
     bool HasTransparency() const { return m_hasAlpha; }
     bool IgnoresLighting() const { return m_ignoreLighting; }
     TileColorIndex::Dimension GetColorIndexDimension() const { return m_colorDimension; }
-    DgnMaterialCP GetDgnMaterial() const { return m_material.get(); }
+    RenderMaterialCP GetDgnMaterial() const { return m_material.get(); }
     double GetSpecularExponent() const { return m_specularExponent; }
     RgbFactor const& GetSpecularColor() const { return m_specularColor; }
 
@@ -532,7 +532,7 @@ MeshMaterial(MeshCR mesh, bool is3d, Utf8StringCR suffix, DgnDbR db) : TileMater
 
     if (params.GetMaterialId().IsValid())
         {
-        m_material = DgnMaterial::Get(db, params.GetMaterialId());
+        m_material = RenderMaterial::Get(db, params.GetMaterialId());
         if (m_material.IsValid())
             {
             auto jsonMat = &m_material->GetRenderingAsset();

@@ -557,7 +557,7 @@ protected:
     void _AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, GeometryParamsR geomParams) override;
     bool _CheckStop() override { return WasAborted() || AddAbortTest(m_loadContext.WasAborted()); }
 
-    Render::MaterialPtr _GetMaterial(DgnMaterialId id) const override
+    Render::MaterialPtr _GetMaterial(RenderMaterialId id) const override
         {
         Render::SystemP system = m_loadContext.GetRenderSystem();
         return nullptr != system ? system->_GetMaterial(id, GetDgnDb()) : nullptr;

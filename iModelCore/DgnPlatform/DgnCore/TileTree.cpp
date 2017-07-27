@@ -1589,3 +1589,118 @@ DrawArgs::DrawArgs(SceneContextR context, TransformCR location, RootR root, BeTi
     //
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::QPoint3dList TileTree::TriMesh::CreateParams::QuantizePoints() const
+    {
+    // ###TODO: Is the tile's range known yet, and do we expect the range of points within it to be significantly smaller?
+    DRange3d range = DRange3d::NullRange();
+    for (int32_t i = 0; i < m_numPoints; i++)
+        range.Extend(DPoint3d::From(m_points[i]));
+
+    Render::QPoint3dList qpts(range);
+    qpts.reserve(m_numPoints);
+    for (int32_t i = 0; i < m_numPoints; i++)
+        qpts.Add(DPoint3d::From(m_points[i]));
+
+    return qpts;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::OctEncodedNormalList TileTree::TriMesh::CreateParams::QuantizeNormals() const
+    {
+    OctEncodedNormalList oens;
+    if (nullptr != m_normals)
+        {
+        oens.resize(m_numPoints);
+        for (size_t i = 0; i < m_numPoints; i++)
+            {
+            FPoint3d normal = m_normals[i];
+            FVec3d vec = FVec3d::From(normal.x, normal.y, normal.z);
+            oens[i] = OctEncodedNormal::From(vec);
+            }
+        }
+
+    return oens;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   05/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TriMeshArgs TileTree::TriMesh::CreateTriMeshArgs(TextureP texture, FPoint2d const* textureUV) const
+    {
+    TriMeshArgs trimesh;
+    trimesh.m_numIndices = m_indices.size();
+    trimesh.m_vertIndex = (uint32_t const*) (m_indices.empty() ? nullptr : &m_indices.front());
+    trimesh.m_numPoints = (uint32_t) m_points.size();
+    trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
+    trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
+    trimesh.m_textureUV = textureUV;
+    trimesh.m_pointParams = m_points.GetParams();
+    trimesh.m_texture = texture;
+
+    return trimesh;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Create a PolyfaceHeader from a Geometry
+    * @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr TileTree::TriMesh::GetPolyface() const
+    {
+    TriMeshArgs trimesh = CreateTriMeshArgs(nullptr, nullptr);
+    return trimesh.ToPolyface();
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* Construct a Geometry from a CreateParams and a Scene. The scene is necessary to get the Render::System, and this
+* Geometry is only valid for that Render::System
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TileTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render::SystemP renderSys)
+    {
+    // After we create a Render::Graphic, we only need the points/indices/normals for picking.
+    // To save memory, only store them if the model is locatable.
+    if (root.IsPickable())
+        {
+        m_indices.resize(args.m_numIndices);
+        memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
+
+        m_points = args.QuantizePoints();
+
+        if (nullptr != args.m_normals)
+            m_normals = args.QuantizeNormals();
+        }
+
+    if (nullptr == renderSys || !args.m_texture.IsValid())
+        return;
+
+    auto trimesh = CreateTriMeshArgs(args.m_texture.get(), args.m_textureUV);
+
+    m_graphics.push_back(renderSys->_CreateTriMesh(trimesh, root.GetDgnDb()));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileTree::TriMesh::Draw(DrawArgsR args)
+    {
+    if (!m_graphics.empty())
+        args.m_graphics.Add(m_graphics);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TileTree::TriMesh::Pick(PickArgsR args)
+    {
+    if (m_indices.empty())
+        return;
+
+    auto graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(args.m_root.GetDgnDb(), args.m_location));
+    graphic->AddPolyface(*GetPolyface());
+    }
+

@@ -9,6 +9,7 @@
 #include <BeSqLite/BeSqLite.h>
 #include "Constants.h"
 #include <Geom/OperatorOverload.h>
+#include <DgnPlatform/AutoRestore.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
@@ -3369,6 +3370,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     for (auto const& kvp : m_modelRanges)
         rootRange.Extend(kvp.second);
 
+#if defined(TODO_TILE_PUBLISH)
     for (auto& modelId : viewedModels)
         {
         auto                        getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(GetDgnDb().Models().GetModel(modelId).get());
@@ -3383,6 +3385,7 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
             m_classifierMap.Insert(modelId, classifiers);
             }
         }
+#endif
 
     if (!classifierModels.empty())
         {

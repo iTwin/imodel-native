@@ -746,7 +746,7 @@ virtual DisplayParamsCPtr _CreateDisplayParams(Json::Value const& materialValue)
                                   DgnCategoryId(materialValue["categoryId"].asUInt64()),
                                   DgnSubCategoryId(materialValue["subCategoryId"].asUInt64()),
                                   gradient.get(),
-                                  DgnMaterialId(materialValue["materialId"].asUInt64()),
+                                  RenderMaterialId(materialValue["materialId"].asUInt64()),
                                   ColorDef(materialValue["lineColor"].asUInt()),
                                   ColorDef(materialValue["fillColor"].asUInt()),
                                   materialValue["lineWidth"].asUInt(),

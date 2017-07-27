@@ -9,6 +9,7 @@
 //__PUBLISH_SECTION_START__
 
 #include "DgnPlatform.h"
+#include <set>
 #include <folly/futures/Future.h>
 #include <Bentley/Tasks/CancellationToken.h>
 #include <BeHttp/HttpRequest.h>
@@ -634,6 +635,49 @@ struct PickArgs : TileArgs
 {
     PickContextR m_context;
     PickArgs(PickContextR context, TransformCR location, RootR root, ClipVectorCP clip = nullptr) : TileArgs(location, root, clip), m_context(context) {}
+};
+
+//=======================================================================================
+//! Tiles for reality models typically consist of a single large textured mesh.
+//! TileTree::TriMesh creates a Render::GraphicPtr created from the mesh, and (for pickable tiles)
+//! holds the data required to describe the mesh for picking.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct TriMesh : RefCountedBase, NonCopyableClass
+{
+    struct CreateParams
+    {
+        int32_t m_numIndices = 0;
+        int32_t const* m_vertIndex = nullptr;
+        int32_t m_numPoints = 0;
+        FPoint3d const* m_points = nullptr;
+        FPoint3d const* m_normals = nullptr;
+        FPoint2d const* m_textureUV = nullptr;
+        Render::TexturePtr m_texture;
+
+        Render::QPoint3dList QuantizePoints() const;
+        Render::OctEncodedNormalList QuantizeNormals() const;
+    };
+protected:
+    Render::QPoint3dList m_points = Render::QPoint3dList(DRange3d::NullRange());
+    Render::OctEncodedNormalList m_normals;
+    bvector<FPoint2d> m_textureUV;
+    bvector<int32_t> m_indices;
+    bvector<Render::GraphicPtr> m_graphics;
+
+    DGNPLATFORM_EXPORT Render::TriMeshArgs CreateTriMeshArgs(Render::TextureP texture, FPoint2d const* textureUV) const;
+public:
+    DGNPLATFORM_EXPORT TriMesh(CreateParams const&, RootR, Render::SystemP renderSys);
+    TriMesh() { }
+
+    DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetPolyface() const;
+    DGNPLATFORM_EXPORT void Draw(DrawArgsR);
+    DGNPLATFORM_EXPORT void Pick(PickArgsR);
+
+    void ClearGraphic() {m_graphics.clear();}
+    Dgn::Render::QPoint3dListCR GetPoints() const {return m_points;}
+    bool IsEmpty() const {return m_points.empty();}
+    bool HasGraphics() const {return !m_graphics.empty() && m_graphics.front().IsValid();}
 };
 
 //=======================================================================================

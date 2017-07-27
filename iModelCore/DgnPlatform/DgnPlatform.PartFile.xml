@@ -54,7 +54,6 @@
     <!-- NOTE: DgnDb uses "G" as a library suffix to differentiate from DgnV8 libraries -->
     <Part Name="DgnPlatformDLL" BentleyBuildMakeFile="DgnPlatform.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
-        <SubPart PartName="TilePublisherPublicAPI" /><!-- for various gltf constants - ###TODO consider moving to TileIO.h -->
         <SubPart PartName="BeHttp"              PartFile="BeHttp"       Repository="BeHttp"/>
         <SubPart PartName="BeCurl"              PartFile="BeCurl"       Repository="Libsrc-Curl"/>
         <SubPart PartName="FollyShim"/> 

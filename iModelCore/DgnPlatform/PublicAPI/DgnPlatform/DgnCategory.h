@@ -152,7 +152,7 @@ public:
         bool GetWeight(uint32_t& val) const { if (m_flags.m_weight) val = m_value.GetWeight(); return m_flags.m_weight; }
         bool GetStyle(DgnStyleId& val) const { if (m_flags.m_style) val = m_value.GetStyle(); return m_flags.m_style; }
         bool GetDisplayPriority(int32_t& val) const { if (m_flags.m_priority) val = m_value.GetDisplayPriority(); return m_flags.m_priority; }
-        bool GetMaterial(DgnMaterialId& val) const { if (m_flags.m_material) val = m_value.GetMaterial(); return m_flags.m_material; }
+        bool GetMaterial(RenderMaterialId& val) const { if (m_flags.m_material) val = m_value.GetRenderMaterial(); return m_flags.m_material; }
         bool GetTransparency(double& val) const { if (m_flags.m_transparency) val = m_value.GetTransparency(); return m_flags.m_transparency; }
 
         bool IsAnyOverridden() const { return 0 != m_flags.m_int32; }
