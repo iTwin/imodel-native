@@ -259,7 +259,7 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
 
         }
     Render::Image image (width, height, std::move(imageBytes), Image::Format::Rgba);
-#define TEST_IMAGE
+
 #ifdef  TEST_IMAGE 
     std::FILE*       pFile;
     if (nullptr != (pFile = fopen("d:\\t3\\tmp\\png", "wb")))
@@ -272,6 +272,17 @@ Image GradientSymb::GetImage(uint32_t width, uint32_t height) const
     return image;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool GradientSymb::HasTransparency() const
+    {
+    for (uint32_t i = 0; i < m_nKeys; i++)
+        if (m_colors[i].GetAlpha() > 0)
+            return true;
+
+    return false;
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
