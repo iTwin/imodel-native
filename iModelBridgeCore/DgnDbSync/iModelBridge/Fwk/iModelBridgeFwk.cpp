@@ -1599,9 +1599,9 @@ BentleyStatus iModelBridgeFwk::WriteBridgesFile()
         LOG.fatalv(L"%ls - error writing bridges file", bridgesFileName.c_str());
         return BSIERROR;
         }
-    auto stmt = m_stateDb.GetCachedStatement("SELECT DISTINCT b.Name, b.IsPowerPlatformBased FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge)");
+    auto stmt = m_stateDb.GetCachedStatement("SELECT DISTINCT b.Name, b.IsPowerPlatformBased, a.SourceFile FROM fwk_BridgeAssignments a, fwk_InstalledBridges b WHERE (b.ROWID = a.Bridge)");
     while (BE_SQLITE_ROW == stmt->Step())
-        bridgesFile->PrintfTo(false, L"%ls;%d\n", WString(stmt->GetValueText(0), true).c_str(), stmt->GetValueBoolean(3));
+        bridgesFile->PrintfTo(false, L"%ls;%ls;%d\n", WString(stmt->GetValueText(0), true).c_str(), WString(stmt->GetValueText(2), true).c_str(), stmt->GetValueBoolean(1));
 
     bridgesFile->Close();
     bridgesFile = nullptr;
