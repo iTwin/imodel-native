@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Electrical" alias="elec" version="01.00.00" description="Bentley Electrical Schema" displayLabel="Bentley Electrical Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="ECv3ConversionAttributes" version="01.00.00" alias="V2ToV3"/>
+    <ECSchemaReference name="Bentley_Standard_CustomAttributes" version="01.00.13" alias="bsca"/>
+    <ECSchemaReference name="BentleyBase" version="01.00.00" alias="bentley"/>
+    <ECCustomAttributes>
+        <SchemaChangeTrackingState xmlns="Bentley_Standard_CustomAttributes.01.13">
+            <SchemaFullNameAtEditingStart>Electrical.01.00</SchemaFullNameAtEditingStart>
+            <TrackingEnabled>True</TrackingEnabled>
+        </SchemaChangeTrackingState>
+    </ECCustomAttributes>
+    <ECStructClass typeName="PropertyValues" description="Defines a property/value pair used for property collections." displayLabel="Property Values">
+        <ECProperty propertyName="PROPERTY_NAME" typeName="string" description="Name of a property." displayLabel="Property Name"/>
+        <ECProperty propertyName="PROPERTY_VALUE" typeName="string" description="Value of a property." displayLabel="Property Value"/>
+    </ECStructClass>
+    <!-- <ECEntityClass typeName="ElectricalItem" description="This class defines instances of electrical items such as devices, cables, raceway, etc." displayLabel="Electrical Item">
+        <BaseClass>bentley:BentleyBaseObject</BaseClass>
+        <ECCustomAttributes>
+            <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00">
+                <PropertyMapping>ID|elec_ID_</PropertyMapping>
+            </RenamedPropertiesMapping>
+        </ECCustomAttributes>
+        <ECProperty propertyName="DESCRIPTION" typeName="string" description="Description of the electrical item." displayLabel="Description"/>
+        <ECStructArrayProperty propertyName="PROPERTY_COLLECTION" typeName="PropertyValues" description="A user definable property collection used to define business attribute name and value pairs." displayLabel="Property Collection" minOccurs="1" maxOccurs="1"/>
+        <ECProperty propertyName="elec_ID_" typeName="string" description="Business ID for an electrical item."/>
+    </ECEntityClass> -->
+    <ECEntityClass typeName="Cable" description="This class defines an instance of a cable.">
+        <BaseClass>bentley:ElectricalItem</BaseClass>
+        <ECProperty propertyName="ESTIMATED_LENGTH" typeName="double" description="Estimated length of the cable." displayLabel="Estimated Length"/>
+        <ECProperty propertyName="CABLE_LENGTH" typeName="double" description="Actual length of the cable." displayLabel="Length"/>
+        <ECProperty propertyName="SOURCE_LENGTH" typeName="string" description="Added length of cable for termination within the cabinet or equipment." displayLabel="Source Length"/>
+        <ECProperty propertyName="TARGET_LENGTH" typeName="string" description="Added length of cable for termination within the cabinet or equipment." displayLabel="Target Length"/>
+        <ECProperty propertyName="CURRENT" typeName="string" description="Current passing through the cable." displayLabel="Current"/>
+        <ECProperty propertyName="VOLTAGE" typeName="string" description="Voltage applied to the cable." displayLabel="Voltage"/>
+        <ECProperty propertyName="NAME" typeName="string" displayLabel="Name">
+            <ECCustomAttributes>
+                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <ECExpression>this.ID</ECExpression>
+                    <FailureValue>&lt;Cable ID&gt;</FailureValue>
+                </CalculatedECPropertySpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <ECEntityClass typeName="Conductor" description="This class defines an instance of a conductor.">
+        <BaseClass>bentley:ElectricalItem</BaseClass>
+        <ECProperty propertyName="SIZE" typeName="string" description="Size/gauge (outer diameter) of the conductor." displayLabel="Size"/>
+        <ECProperty propertyName="COLOR" typeName="string" description="Color of the conductor." displayLabel="Color"/>
+        <ECProperty propertyName="Use" typeName="string" description="Specifies the use of the conductor such as 3 phase, control, interlock, etc."/>
+        <ECProperty propertyName="TYPE" typeName="string" description="Type of conductor such as THHN, etc." displayLabel="Type"/>
+        <ECProperty propertyName="VOLTAGE" typeName="string" description="Voltage applied to the conductor." displayLabel="Voltage"/>
+        <ECProperty propertyName="CURRENT" typeName="string" description="Current passing through the conductor." displayLabel="Current"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="CableCore" description="This class defines an instance of a cable core." displayLabel="Cable Core">
+        <BaseClass>bentley:ElectricalItem</BaseClass>
+        <ECProperty propertyName="NAME" typeName="string" description="Name of the cable core which could be a color or conductor number." displayLabel="Name"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CableHasCable" description="A cable can be comprised of multiple cables." displayLabel="Cable Has Cable" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Cable Has Cable" polymorphic="true">
+            <Class class="Cable"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Cable Has Cable (Reversed)" polymorphic="true">
+            <Class class="Cable"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CableHasCableCore" description="A cable has one or more cable cores." displayLabel="Cable Has Cable Core" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Cable Has Cable Core" polymorphic="true">
+            <Class class="Cable"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Cable Has Cable Core (Reversed)" polymorphic="true">
+            <Class class="CableCore"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="ConnectionPoint" description="This class defines an instance of a connection point." displayLabel="Connection Point">
+        <BaseClass>bentley:ElectricalNonPhysicalItem</BaseClass>
+        <ECProperty propertyName="NAME" typeName="string" description="Name of the connection point which will be visible on a drawing." displayLabel="Name"/>
+        <ECProperty propertyName="HIDDEN_NAME" typeName="string" description="A part of a connection point name which you may not want displayed on the drawing." displayLabel="Hidden Name"/>
+        <ECProperty propertyName="POSITION" typeName="point3d" description="Origin position of a connection point on the drawing." displayLabel="Position"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="CableIsConnectedFromSourceConnectionPoint" description="A cable can be connected from a source connection point." displayLabel="Cable Is Connected From Source Connection Point" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Cable Is Connected From Source Connection Point" polymorphic="true">
+            <Class class="Cable"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Cable Is Connected From Source Connection Point (Reversed)" polymorphic="true">
+            <Class class="ConnectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="CableIsConnectedToTargetConnectionPoint" description="A cable can be connected to a target connection point." displayLabel="Cable Is Connected To Target Connection Point" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Cable Is Connected To Target Connection Point" polymorphic="true">
+            <Class class="Cable"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Cable Is Connected To Target Connection Point (reversed)" polymorphic="true">
+            <Class class="ConnectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <!-- <ECEntityClass typeName="ElectricalItemType" description="This class defines an electrical item type." displayLabel="Electrical Item Type"> -->
+        <!-- <BaseClass>bentley:BentleyBaseObject</BaseClass> -->
+        <!-- <ECProperty propertyName="NAME" typeName="string" description="Name of electrical item type." displayLabel="Name"/> -->
+        <!-- <ECProperty propertyName="DESCRIPTION_1" typeName="string" description="First technical description of an electrical item type." displayLabel="Description 1"/> -->
+        <!-- <ECProperty propertyName="DESCRIPTION_2" typeName="string" description="Second technical description of an electrical item type." displayLabel="Description 2"/> -->
+        <!-- <ECProperty propertyName="DESCRIPTION_3" typeName="string" description="Third technical description of an electrical item type." displayLabel="Description 3"/> -->
+    <!-- </ECEntityClass> -->
+    <ECEntityClass typeName="CableType" description="Defines a specification for a cable." displayLabel="Cable Type">
+        <BaseClass>bentley:ElectricalItemType</BaseClass>
+        <ECProperty propertyName="SIZE" typeName="string" description="The size/gauge (outer diameter) of the cable." displayLabel="Size"/>
+        <ECProperty propertyName="SHORT_DESCRIPTION" typeName="string" description="A short description to help identify the cable type." displayLabel="Short Description"/>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="ConductorIsConnectedFromSourceConnectionPoint" description="A conductor can be connected from a source connection point." displayLabel="Conductor Is Connected From Source Connection Point" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Conductor Is Connected From Source Connection Point" polymorphic="true">
+            <Class class="Conductor"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Conductor Is Connected From Source Connection Point (Reversed)" polymorphic="true">
+            <Class class="ConnectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="ConductorIsConnectedToTargetConnectionPoint" description="A conductor can be connected to a target connection point." displayLabel="Conductor Is Connected To Target Connection Point" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Conductor Is Connected To Target Connection Point" polymorphic="true">
+            <Class class="Conductor"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Conductor Is Connected To Target Connection Point (Reversed)" polymorphic="true">
+            <Class class="ConnectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Device" description="This class defines an instance of a device.">
+        <BaseClass>bentley:ElectricalItem</BaseClass>
+        <ECProperty propertyName="POSITION" typeName="point3d" description="Origin position of a device." displayLabel="Position"/>
+        <ECProperty propertyName="NAME" typeName="string" displayLabel="Name">
+            <ECCustomAttributes>
+                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <ECExpression>this.ID</ECExpression>
+                    <FailureValue>&lt;Device&gt;</FailureValue>
+                </CalculatedECPropertySpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="DeviceHasConnectionPoint" description="A device can have one or more connection points." displayLabel="Device Has Connection Point" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Device Has Connection Point" polymorphic="true">
+            <Class class="Device"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Device Has Connection Point (Reversed)" polymorphic="true">
+            <Class class="ConnectionPoint"/>
+        </Target>
+    </ECRelationshipClass>
+	<!-- ======================================================================================== -->
+	<ECRelationshipClass typeName="ConductorHasCableCore" description="A conductor can have one or more cable cores." displayLabel="Conductor Has CableCore" modifier="None" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="Conductor Has Cable Core" polymorphic="true">
+            <Class class="Conductor"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Conductor Has CableCore (Reversed)" polymorphic="true">
+            <Class class="CableCore"/>
+        </Target>
+    </ECRelationshipClass>
+	<ECRelationshipClass typeName="ConductorHasTerminationInfo" description="A conductor can have termination information." displayLabel="Conductor Has TerminationInfo" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Conductor Has TerminationInfo" polymorphic="true">
+            <Class class="Conductor"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Conductor Has TerminationInfo (Reversed)" polymorphic="true">
+            <Class class="TerminationInfo"/>
+        </Target>
+    </ECRelationshipClass>
+	<ECRelationshipClass typeName="ConductorHasWire" description="A conductor can have one or more wires." displayLabel="Conductor Has Wire" modifier="None" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="Conductor Has Wire" polymorphic="true">
+            <Class class="Conductor"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Conductor Has Wire (Reversed)" polymorphic="true">
+            <Class class="Wire"/>
+        </Target>
+    </ECRelationshipClass>
+	<ECRelationshipClass typeName="DeviceHasTerminalBlock" description="A conductor can have one or more terminal blocks." displayLabel="Conductor Has TerminalBlock" modifier="None" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="Conductor Has TerminalBlock" polymorphic="true">
+            <Class class="Device"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Conductor Has TerminalBlock (Reversed)" polymorphic="true">
+            <Class class="TerminalBlock"/>
+        </Target>
+    </ECRelationshipClass>
+	<!-- ======================================================================================== -->
+	
+    <ECRelationshipClass typeName="DeviceHasDevice" description="A device can be comprised of other devices." displayLabel="Device Has Device" modifier="None" strength="referencing">
+        <Source multiplicity="(0..*)" roleLabel="Device Has Device" polymorphic="true">
+            <Class class="Device"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Device Has Device (Reversed)" polymorphic="true">
+            <Class class="Device"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="DocumentProperties" description="This class is a document property collection of user definable properties." displayLabel="Document Properties">
+        <ECStructProperty propertyName="PROPERTY_COLLECTION" typeName="PropertyValues" description="User definable document properties." displayLabel="Property Collection"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="ElectricalCatalog" description="This class represents a manufacturer's catalog entry which can be associated with an electrical item." displayLabel="Electrical Catalog">
+        <BaseClass>bentley:BentleyBaseObject</BaseClass>
+        <ECProperty propertyName="MANUFACTURER" typeName="string" description="Manufacturer of the electrical item." displayLabel="Manufacturer"/>
+        <ECProperty propertyName="PART_NUMBER" typeName="string" description="Manufacturer catalog number or internal part number of the electrical item." displayLabel="Part Number"/>
+        <ECProperty propertyName="HEIGHT" typeName="double" description="Height of the electrical item." displayLabel="Height"/>
+        <ECProperty propertyName="WIDTH" typeName="double" description="Width of the electrical item." displayLabel="Width"/>
+        <ECProperty propertyName="DIAMETER" typeName="double" description="Diameter of the electrical item." displayLabel="Diameter"/>
+        <ECProperty propertyName="DEPTH" typeName="double" description="Depth of the electrical item." displayLabel="Depth"/>
+        <ECProperty propertyName="WEIGHT" typeName="double" description="Weight of the electrical item." displayLabel="Weight"/>
+        <ECProperty propertyName="DESCRIPTION_1" typeName="string" description="Technical description of the electrical item." displayLabel="Description 1"/>
+        <ECProperty propertyName="DESCRIPTION_2" typeName="string" description="Technical description of the electrical item." displayLabel="Description 2"/>
+        <ECStructArrayProperty propertyName="PROPERTY_COLLECTION" typeName="PropertyValues" description="A user definable property collection for additional catalog data." displayLabel="Property Collection" minOccurs="1" maxOccurs="1"/>
+        <ECProperty propertyName="NAME" typeName="string" displayLabel="Name">
+            <ECCustomAttributes>
+                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <ECExpression>this.PART_NUMBER</ECExpression>
+                    <FailureValue>&lt;Catalog&gt;</FailureValue>
+                </CalculatedECPropertySpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+    <!-- <ECRelationshipClass typeName="ElectricalItemHasCatalog" description="Used to capture a relationship between an Electrical Item and a Catalog entry it is associated with." displayLabel="Electrical Item Has Catalog" modifier="None" strength="referencing"> -->
+        <!-- <ECProperty propertyName="QUANTITY" typeName="double" displayLabel="Quantity"/> -->
+        <!-- <Source multiplicity="(0..1)" roleLabel="Electrical Item Has Catalog" polymorphic="true"> -->
+            <!-- <Class class="bentley:ElectricalItem"/> -->
+        <!-- </Source> -->
+        <!-- <Target multiplicity="(0..*)" roleLabel="Electrical Item Has Catalog (Reversed)" polymorphic="true"> -->
+            <!-- <Class class="ElectricalCatalog"/> -->
+        <!-- </Target> -->
+    <!-- </ECRelationshipClass> -->
+    <!-- <ECRelationshipClass typeName="ElectricalItemHasElectricalType" displayLabel="Electrical Item Has Electrical Type" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Electrical Item Has Electrical Type" polymorphic="true">
+            <Class class="bentley:ElectricalItem"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Electrical Item Has Electrical Type (Reversed)" polymorphic="true" abstractConstraint="ElectricalItemType">
+            <Class class="CableType"/>
+            <Class class="bentley:ElectricalItemType"/>
+        </Target>
+    </ECRelationshipClass> -->
+    <ECEntityClass typeName="LogicalGroup" description="Logical Group object used for grouping electrical items." displayLabel="Logical Group">
+        <BaseClass>bentley:BentleyBaseObject</BaseClass>
+        <ECCustomAttributes>
+            <RenamedPropertiesMapping xmlns="ECv3ConversionAttributes.01.00">
+                <PropertyMapping>ID|elec_ID_</PropertyMapping>
+            </RenamedPropertiesMapping>
+        </ECCustomAttributes>
+        <ECProperty propertyName="DESCRIPTION" typeName="string" description="Description of the logical group." displayLabel="Description"/>
+        <ECProperty propertyName="NAME" typeName="string" displayLabel="Name">
+            <ECCustomAttributes>
+                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <ECExpression>this.ID</ECExpression>
+                    <FailureValue>&lt;Logical Group&gt;</FailureValue>
+                </CalculatedECPropertySpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+        <ECProperty propertyName="elec_ID_" typeName="string" description="ID of a Logical Group."/>
+    </ECEntityClass>
+    <!-- <ECRelationshipClass typeName="LogicalGroupHasElectricalItem" description="A logical group can contain electrical items." displayLabel="Logical Group Has Electrical Item" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Logical Group Has Electrical Item" polymorphic="true">
+            <Class class="LogicalGroup"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Logical Group Has Electrical Item (Reversed)" polymorphic="true">
+            <Class class="bentley:ElectricalItem"/>
+        </Target>
+    </ECRelationshipClass> -->
+    <ECRelationshipClass typeName="LogicalGroupHasLogicalGroup" description="A logical group can have multiple levels of subgroups." displayLabel="Logical Group Has Logical Group" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Logical Group Has Logical Group" polymorphic="true">
+            <Class class="LogicalGroup"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Logical Group Has Logical Group (Reversed)" polymorphic="true">
+            <Class class="LogicalGroup"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="Raceway" description="This class defines an instance of a raceway.">
+        <BaseClass>bentley:ElectricalItem</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="RacewaySegment" description="This class defines an instance of a raceway segment." displayLabel="Raceway Segment">
+        <BaseClass>bentley:ElectricalNonPhysicalItem</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RacewayHasRacewaySegment" description="A raceway can have one or more raceway segments." displayLabel="Raceway Has Raceway Segment" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Raceway Has Raceway Segment" polymorphic="true">
+            <Class class="Raceway"/>
+        </Source>
+        <Target multiplicity="(0..*)" roleLabel="Raceway Has Raceway Segment (Reversed)" polymorphic="true">
+            <Class class="RacewaySegment"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RacewayItem" description="This class defines an instance of a raceway item." displayLabel="Raceway Item">
+        <BaseClass>bentley:ElectricalItem</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="RacewayRoutingLine" description="This class defines an instance of a raceway routing line." displayLabel="Raceway Routing Line">
+        <BaseClass>bentley:ElectricalNonPhysicalItem</BaseClass>
+    </ECEntityClass>
+    <ECRelationshipClass typeName="RacewayItemHasRacewayRoutingLine" description="A raceway item can have a routing line." displayLabel="Raceway Item Has Raceway Routing Line" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Raceway Item Has Raceway Routing Line" polymorphic="true">
+            <Class class="RacewayItem"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Raceway Item Has Raceway Routing Line (Reversed)" polymorphic="true">
+            <Class class="RacewayRoutingLine"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RacewaySegmentHasRacewayItem" description="A raceway segment can have one or more raceway items." displayLabel="Raceway Segment Has Raceway Item" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Raceway Segment Has Raceway Item" polymorphic="true">
+            <Class class="RacewaySegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Raceway Segment Has Raceway Item (Reversed)" polymorphic="true">
+            <Class class="RacewayItem"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RacewaySegmenthasRacewayRoutingline" description="A raceway segment can have a routing line." displayLabel="Raceway Segment has Raceway Routing line" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Raceway Segment has Raceway Routing line" polymorphic="true">
+            <Class class="RacewaySegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Raceway Segment has Raceway Routing line (Reversed)" polymorphic="true">
+            <Class class="RacewayRoutingLine"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECRelationshipClass typeName="RacewaySegmentHasRoutedCable" description="A raceway segment can have routed cables." displayLabel="Raceway Segment Has Routed Cable" modifier="None" strength="referencing">
+        <Source multiplicity="(0..1)" roleLabel="Raceway Segment Has Routed Cable" polymorphic="true">
+            <Class class="RacewaySegment"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="Raceway Segment Has Routed Cable (Reversed)" polymorphic="true">
+            <Class class="Cable"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECEntityClass typeName="RacewayType" description="Defines a specification for a raceway item." displayLabel="Raceway Type">
+        <BaseClass>bentley:ElectricalItemType</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="TerminalBlock" description="This class defines an instance of a terminal device." displayLabel="Terminal Block">
+        <BaseClass>bentley:ElectricalNonPhysicalItem</BaseClass>
+        <ECProperty propertyName="NUMBER" typeName="string" description="The number of the terminal within a strip." displayLabel="Number"/>
+    </ECEntityClass>
+    <ECEntityClass typeName="TerminationInfo" description="This class defines the conductor termination information (only used by BRCM)." displayLabel="Termination Info">
+        <BaseClass>bentley:ElectricalNonPhysicalItem</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass typeName="Wire" description="This class defines an instance of a wire.">
+        <BaseClass>bentley:ElectricalItem</BaseClass>
+        <ECProperty propertyName="NAME" typeName="string" displayLabel="Name">
+            <ECCustomAttributes>
+                <CalculatedECPropertySpecification xmlns="Bentley_Standard_CustomAttributes.01.13">
+                    <ECExpression>this.ID</ECExpression>
+                    <FailureValue>&lt;Wire&gt;</FailureValue>
+                </CalculatedECPropertySpecification>
+            </ECCustomAttributes>
+        </ECProperty>
+    </ECEntityClass>
+</ECSchema>
