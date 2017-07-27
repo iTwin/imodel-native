@@ -14,6 +14,9 @@ ContextDeliveryDir  = $(BuildContext)Delivery/
 
 o = $(OutputRootDir)Build/DwgResources/
 
+always:
+    ~mkdir $(o)
+
 SQLANG_CHeader      = $(DwgPubApi)DwgImporter.h
 SQLANG_Xliff        = $(o)DwgImporter_en.xliff
 
@@ -24,12 +27,9 @@ $(BuildContext)SubParts/xliffs/DwgImporter_en.xliff : $(SQLANG_Xliff)
 
 # Create the sqlang database
 SQLANG_OutputDb     = $(o)DwgImporter_en-US.sqlang.db3
-SQLANG_DeliveryDir  = $(ContextDelivery)
-SQLANG_XliffWildcard =$(BuildContext)SubParts/xliffs/*.xliff
+SQLANG_DeliveryDir  = $(ContextDeliveryDir)
+SQLANG_XliffWildcard = $(BuildContext)SubParts/xliffs/*.xliff
 %include $(SrcRoot)bsicommon\sqlang\mki\XliffsToDb.mke
-
-$(ContextDeliveryDir)DwgImporter_en-US.sqlang.db3 : $(o)DwgImporter_en-US.sqlang.db3
-    $(LinkFirstDepToFirstTarget)
 
 $(ContextDeliveryDir)ConvertConfig.xsd : $(baseDir)Config/ConvertConfig.xsd
     LinkADeepCopy.py -s "$<" -d "$(o)ConvertConfig.xsd" -l "$@"

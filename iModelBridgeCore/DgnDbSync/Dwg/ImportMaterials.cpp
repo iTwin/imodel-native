@@ -94,9 +94,9 @@ public:
         m_mapLayer = 1.0;
         }
     // main method to create the material from DWG
-    BentleyStatus       Create (DgnMaterialId& outId);
+    BentleyStatus       Create (RenderMaterialId& outId);
     // update existing material from DWG
-    BentleyStatus       Update (DgnMaterialR out);
+    BentleyStatus       Update (RenderMaterialR out);
     }; // MaterialFactory
 
 /*---------------------------------------------------------------------------------**//**
@@ -703,14 +703,14 @@ void            MaterialFactory::Convert ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   MaterialFactory::Create (DgnMaterialId& idOut)
+BentleyStatus   MaterialFactory::Create (RenderMaterialId& idOut)
     {
     this->Convert ();
 
     DictionaryModelR model = m_importer.GetDgnDb().GetDictionaryModel ();
 
     // create a DGN material
-    DgnMaterial dgnMaterial(model, m_paletteName, m_materialName);
+    RenderMaterial dgnMaterial(model, m_paletteName, m_materialName);
 
     // WIP - need a description?
     // Utf8String  description (m_dwgMaterial->GetDescription().c_str());
@@ -734,7 +734,7 @@ BentleyStatus   MaterialFactory::Create (DgnMaterialId& idOut)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   MaterialFactory::Update (DgnMaterialR out)
+BentleyStatus   MaterialFactory::Update (RenderMaterialR out)
     {
     this->Convert ();
     
@@ -755,14 +755,14 @@ BentleyStatus   MaterialFactory::Update (DgnMaterialR out)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus   DwgImporter::_ImportMaterial (DwgDbMaterialPtr& dwgMaterial, Utf8StringCR paletteName, Utf8StringCR materialName)
     {
-    DgnMaterialId   dgnMaterialId;
+    RenderMaterialId   dgnMaterialId;
     MaterialFactory factory(*this, dwgMaterial, paletteName, materialName);
     BentleyStatus   status = factory.Create (dgnMaterialId);
 
     if (status == BSISUCCESS)
         {
         this->GetSyncInfo().InsertMaterial (dgnMaterialId, *dwgMaterial.get());
-        m_importedMaterials.insert (T_DwgDgnMaterialId(dwgMaterial->GetObjectId(), dgnMaterialId));
+        m_importedMaterials.insert (T_DwgRenderMaterialId(dwgMaterial->GetObjectId(), dgnMaterialId));
         }
     
     return  status;
@@ -826,7 +826,7 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
                 // update material & syncInfo as needed
                 this->_OnUpdateMaterial (oldMaterial, material);
                 // add to processed material list
-                m_importedMaterials.insert (T_DwgDgnMaterialId(material->GetObjectId(), oldMaterial.m_id));
+                m_importedMaterials.insert (T_DwgRenderMaterialId(material->GetObjectId(), oldMaterial.m_id));
                 continue;
                 }
             }
@@ -840,17 +840,17 @@ BentleyStatus   DwgImporter::_ImportMaterialSection ()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterialId   DwgImporter::GetDgnMaterialFor (DwgDbObjectIdCR materialId)
+RenderMaterialId   DwgImporter::GetDgnMaterialFor (DwgDbObjectIdCR materialId)
     {
     auto        found = m_importedMaterials.find (materialId);
     if (found != m_importedMaterials.end())
         return  found->second;
 
     // default to the first material, usually the Global
-    for (auto entry : DgnMaterial::MakeIterator(this->GetDgnDb()))
+    for (auto entry : RenderMaterial::MakeIterator(this->GetDgnDb()))
         return  entry.GetId ();
 
-    return  DgnMaterialId();
+    return  RenderMaterialId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -896,9 +896,9 @@ BentleyStatus   DwgImporter::_OnUpdateMaterial (DwgSyncInfo::Material const& syn
     if (newSyncMaterial.IsSame(syncMaterial))
         return  BSISUCCESS;
 
-    DgnMaterialPtr  newElement;
-    DgnMaterialCPtr oldElement = DgnMaterial::Get (this->GetDgnDb(), syncMaterial.m_id);
-    if (!oldElement.IsValid() || !(newElement = oldElement->MakeCopy<DgnMaterial>()).IsValid())
+    RenderMaterialPtr  newElement;
+    RenderMaterialCPtr oldElement = RenderMaterial::Get (this->GetDgnDb(), syncMaterial.m_id);
+    if (!oldElement.IsValid() || !(newElement = oldElement->MakeCopy<RenderMaterial>()).IsValid())
         return  BSIERROR;
 
     // re-create the material and update BIM:

@@ -590,7 +590,7 @@ void    GetDisplayParams (Render::GeometryParams& params)
     if (!this->CanUseByLayer(m_dwgdb.IsValid() && m_dwgdb->GetMaterialByLayerId() == m_materialId))
         {
         // set effective material
-        DgnMaterialId   materialId = this->GetDgnMaterial ();
+        RenderMaterialId   materialId = this->GetDgnMaterial ();
         params.SetMaterialId (materialId);
         }
 
@@ -753,7 +753,7 @@ double          GetEffectiveLinetypeScale () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnMaterialId   GetDgnMaterial () const
+RenderMaterialId   GetDgnMaterial () const
     {
     DwgDbObjectId       effectiveMaterial = m_materialId;
 
@@ -775,7 +775,7 @@ DgnMaterialId   GetDgnMaterial () const
         return  m_dwgImporter.GetDgnMaterialFor (effectiveMaterial);
 
     BeDataAssert (false && "Invalid DWG material object ID!!");
-    return  DgnMaterialId();
+    return  RenderMaterialId();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2388,7 +2388,7 @@ DwgImporter::GeometryBuilderInfo::GeometryBuilderInfo (Render::GeometryParamsCR 
     m_geometryBuilder = builder;
     m_categoryId = geomParams.GetCategoryId ();
     m_subCategoryId = geomParams.GetSubCategoryId ();
-    m_materialId = geomParams.IsMaterialFromSubCategoryAppearance() ? DgnMaterialId() : geomParams.GetMaterialId();
+    m_materialId = geomParams.IsMaterialFromSubCategoryAppearance() ? RenderMaterialId() : geomParams.GetMaterialId();
     m_weight = geomParams.IsWeightFromSubCategoryAppearance() ? 0 : geomParams.GetWeight();
     m_lineColor = geomParams.IsLineColorFromSubCategoryAppearance() ? ColorDef() : geomParams.GetLineColor();
     m_fillColor = geomParams.IsFillColorFromSubCategoryAppearance() ? ColorDef() : geomParams.GetFillColor();

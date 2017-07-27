@@ -29,8 +29,7 @@ ImportXDataDepends  = $(baseDir)ImportXData.h                   \
 CCompOpts + -DDWGTOOLKIT_$(DWGTOOLKIT)
 
 %if $(DWGTOOLKIT) == "RealDwg"
-    ### Need to bypass the line #pragma comment(lib, "acpal.lib") in PAL\api\def.h; else we have link with acpal.lib!!??
-    ### Remove it when RealDWG2018 has it fixed (request has been sent to Adesk)!
+    ### Suppress RealDWG import/export directives so we don't have to link with its libs.
     CCompOpts + -D_ADESK_STATIC_LINKING_
 %endif
 

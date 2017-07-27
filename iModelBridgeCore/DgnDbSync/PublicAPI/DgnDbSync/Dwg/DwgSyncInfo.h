@@ -552,14 +552,14 @@ struct DwgSyncInfo
 
     public:
         StableIdPolicy      m_idPolicy;
-        DgnMaterialId       m_id;
+        RenderMaterialId    m_id;
         DwgFileId           m_fileId;
         uint64_t            m_objectId;
         Utf8String          m_name;
         DwgObjectHash       m_hash;
         
         explicit Material () { m_id.Invalidate(); }
-        explicit Material (DgnMaterialId id, DwgFileId fid, StableIdPolicy policy, DwgDbMaterialCR material);
+        explicit Material (RenderMaterialId id, DwgFileId fid, StableIdPolicy policy, DwgDbMaterialCR material);
         BeSQLite::DbResult Insert (BeSQLite::Db&) const;
         BeSQLite::DbResult Update (BeSQLite::Db&) const;
         bool IsValid() const { return m_id.IsValid(); }
@@ -577,7 +577,7 @@ struct DwgSyncInfo
                 Entry (BeSQLite::StatementP sql, bool isValid) : DbTableIterator::Entry (sql,isValid) {}
 
             public:
-                DGNDBSYNC_EXPORT DgnMaterialId GetDgnMaterialId();
+                DGNDBSYNC_EXPORT RenderMaterialId GetRenderMaterialId();
                 DGNDBSYNC_EXPORT DwgFileId GetDwgFileId();
                 DGNDBSYNC_EXPORT uint64_t GetDwgObjectId();
                 Entry const& operator* () const {return *this;}
@@ -739,9 +739,9 @@ public:
 
     //! Query sync info for a dwg material in the current dwg file.
     DGNDBSYNC_EXPORT bool FindMaterial (Material& out, DwgDbObjectIdCR id);
-    DGNDBSYNC_EXPORT Material InsertMaterial (DgnMaterialId id, DwgDbMaterialCR material);
+    DGNDBSYNC_EXPORT Material InsertMaterial (RenderMaterialId id, DwgDbMaterialCR material);
     DGNDBSYNC_EXPORT BentleyStatus UpdateMaterial (DwgSyncInfo::Material& prov);
-    DGNDBSYNC_EXPORT BentleyStatus DeleteMaterial (DgnMaterialId id);
+    DGNDBSYNC_EXPORT BentleyStatus DeleteMaterial (RenderMaterialId id);
 
     //! @}
 

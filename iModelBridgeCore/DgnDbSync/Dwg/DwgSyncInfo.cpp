@@ -1564,7 +1564,7 @@ bool DwgSyncInfo::FindMaterial (DwgSyncInfo::Material& out, DwgDbObjectIdCR mate
     if (stmt->Step() != BE_SQLITE_ROW)
         return  false;
 
-    out.m_id = stmt->GetValueId<DgnMaterialId>(0);
+    out.m_id = stmt->GetValueId<RenderMaterialId>(0);
     out.m_fileId = fileId;
     out.m_objectId = dwgId;
     out.m_name.AssignOrClear (stmt->GetValueText(1));
@@ -1579,7 +1579,7 @@ bool DwgSyncInfo::FindMaterial (DwgSyncInfo::Material& out, DwgDbObjectIdCR mate
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgSyncInfo::Material   DwgSyncInfo::InsertMaterial (DgnMaterialId id, DwgDbMaterialCR material)
+DwgSyncInfo::Material   DwgSyncInfo::InsertMaterial (RenderMaterialId id, DwgDbMaterialCR material)
     {
     DwgDbDatabasePtr    dwg = material.GetDatabase ();
     DwgFileId   fileId = DwgFileId::GetFrom (dwg.IsNull() ? m_dwgImporter.GetDwgDb() : *dwg);
@@ -1587,7 +1587,7 @@ DwgSyncInfo::Material   DwgSyncInfo::InsertMaterial (DgnMaterialId id, DwgDbMate
 
     if (BE_SQLITE_DONE != prov.Insert(*m_dgndb))
         {
-        prov.m_id = DgnMaterialId ();
+        prov.m_id = RenderMaterialId ();
         m_dwgImporter.ReportSyncInfoIssue(DwgImporter::IssueSeverity::Info, DwgImporter::IssueCategory::Sync(), DwgImporter::Issue::MaterialError(),
                                   Utf8PrintfString("%s (%lld)", prov.m_name.c_str(), id).c_str());
         }
@@ -1625,7 +1625,7 @@ DbResult DwgSyncInfo::Material::Insert (BeSQLite::Db& db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-DwgSyncInfo::Material::Material (DgnMaterialId id, DwgFileId fid, StableIdPolicy policy, DwgDbMaterialCR material)
+DwgSyncInfo::Material::Material (RenderMaterialId id, DwgFileId fid, StableIdPolicy policy, DwgDbMaterialCR material)
     {
     m_id = id;
     m_fileId = fid;
@@ -1677,7 +1677,7 @@ BentleyStatus   DwgSyncInfo::UpdateMaterial (DwgSyncInfo::Material& prov)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Don.Fu          10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   DwgSyncInfo::DeleteMaterial (DgnMaterialId id)
+BentleyStatus   DwgSyncInfo::DeleteMaterial (RenderMaterialId id)
     {
     CachedStatementPtr stmt;
     m_dgndb->GetCachedStatement(stmt, "DELETE FROM " SYNCINFO_ATTACH(SYNC_TABLE_Material) " WHERE Id=?");
@@ -1703,7 +1703,7 @@ DwgSyncInfo::MaterialIterator::Entry DwgSyncInfo::MaterialIterator::begin() cons
     return Entry(m_stmt.get(), BE_SQLITE_ROW == m_stmt->Step());
     }
 
-DgnMaterialId DwgSyncInfo::MaterialIterator::Entry::GetDgnMaterialId() { return m_sql->GetValueId<DgnMaterialId>(0); }
+RenderMaterialId DwgSyncInfo::MaterialIterator::Entry::GetRenderMaterialId() { return m_sql->GetValueId<RenderMaterialId>(0); }
 DwgSyncInfo::DwgFileId DwgSyncInfo::MaterialIterator::Entry::GetDwgFileId() { return DwgFileId(m_sql->GetValueInt(1)); }
 uint64_t DwgSyncInfo::MaterialIterator::Entry::GetDwgObjectId() { return m_sql->GetValueInt64(2); }
 
