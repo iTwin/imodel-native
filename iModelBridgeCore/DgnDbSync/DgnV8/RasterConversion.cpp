@@ -963,7 +963,7 @@ BentleyStatus SpatialConverterBase::_ConvertRasterElement(DgnV8EhCR v8eh, Resolv
             continue;
 
         auto viewController = ViewDefinition::LoadViewController(entry.GetId(), GetDgnDb());
-        if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinition().GetCategorySelector().IsCategoryViewed(category))
+        if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinitionR().GetCategorySelector().IsCategoryViewed(category))
             continue;
 
         auto& viewdef = viewController->ToSpatialViewP()->GetSpatialViewDefinition();

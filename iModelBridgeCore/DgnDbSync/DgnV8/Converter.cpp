@@ -1591,6 +1591,7 @@ void Converter::OnCreateComplete()
     // else
     //  ensureAUserView
 
+
     GenerateThumbnails();
     }
 

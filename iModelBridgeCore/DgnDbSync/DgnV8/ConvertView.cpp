@@ -100,7 +100,7 @@ void Converter::CreateModelSet(DgnModelIdSet& selection, DgnModel const& rootMod
     AddAttachmentsToSelection(selection, v8RootModel, trans);
     }
 
-static Render::GraphicParams::LinePixels toLinePixels(int styleNo)
+static Render::LinePixels toLinePixels(int styleNo)
     {
     static uint32_t s_linePixels[] = {
         0,     // 0
@@ -112,7 +112,7 @@ static Render::GraphicParams::LinePixels toLinePixels(int styleNo)
         0xf888f888,     // 6
         0xff18ff18      // 7
         };
-    return (styleNo>=0 && styleNo<_countof(s_linePixels)) ? (Render::GraphicParams::LinePixels) s_linePixels[styleNo] : Render::GraphicParams::LinePixels::Invalid;
+    return (styleNo>=0 && styleNo<_countof(s_linePixels)) ? (Render::LinePixels) s_linePixels[styleNo] : Render::LinePixels::Invalid;
     }
 
 static ColorDef toColorDef(Bentley::RgbFactor const& val) {return ColorDef(((RgbFactor const&)val).ToIntColor());}
@@ -227,14 +227,14 @@ void Converter::ConvertDisplayStyle(DisplayStyleR style, DgnV8Api::DisplayStyle 
         hlParams.m_hidden.m_width = overrides.m_hiddenEdgeWeight==0xffff ? hlParams.m_visible.m_width : overrides.m_hiddenEdgeWeight + 1;
 
     if (overrides.m_flags.m_visibleEdgeStyle)
-        hlParams.m_visible.m_pattern = Render::GraphicParams::LinePixels::Solid;
+        hlParams.m_visible.m_pattern = Render::LinePixels::Solid;
     else
-        hlParams.m_visible.m_pattern = Render::GraphicParams::LinePixels::Invalid;
+        hlParams.m_visible.m_pattern = Render::LinePixels::Invalid;
 
     if (overrides.m_flags.m_hiddenEdgeStyle)
-        hlParams.m_hidden.m_pattern = 0 == v8flags.m_hiddenEdgeLineStyle ? Render::GraphicParams::LinePixels::HiddenLine : toLinePixels(v8flags.m_hiddenEdgeLineStyle);
+        hlParams.m_hidden.m_pattern = 0 == v8flags.m_hiddenEdgeLineStyle ? Render::LinePixels::HiddenLine : toLinePixels(v8flags.m_hiddenEdgeLineStyle);
     else
-        hlParams.m_hidden.m_pattern = Render::GraphicParams::LinePixels::Solid;
+        hlParams.m_hidden.m_pattern = Render::LinePixels::Solid;
 
     if (overrides.m_flags.m_hLineTransparency)
         hlParams.m_transparencyThreshold = overrides.m_hLineTransparencyThreshold;
@@ -370,7 +370,7 @@ ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefini
             {
             m_spatialConverter.ConvertV8PointCloudViewSettings(*spatialVC, parms.m_viewInfo);
             spatialVC->StoreState();
-            auto val = spatialVC->GetViewDefinition().GetDisplayStyle().GetStyle(VIEW_SETTING_PointCloud);
+            auto val = spatialVC->GetViewDefinitionR().GetDisplayStyle().GetStyle(VIEW_SETTING_PointCloud);
             if (!val.isNull())
                 view->GetDisplayStyle().SetStyle(VIEW_SETTING_PointCloud, val);
             }

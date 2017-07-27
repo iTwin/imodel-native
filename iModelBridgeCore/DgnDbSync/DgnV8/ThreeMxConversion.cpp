@@ -277,7 +277,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
     for (auto const& entry : ViewDefinition::MakeIterator(db))
         {
         auto viewController = ViewDefinition::LoadViewController(entry.GetId(), db);
-        if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinition().GetCategorySelector().IsCategoryViewed(category))
+        if (!viewController.IsValid() || !viewController->IsSpatialView() || !viewController->GetViewDefinitionR().GetCategorySelector().IsCategoryViewed(category))
             continue;
 
         auto& modelSelector = viewController->ToSpatialViewP()->GetSpatialViewDefinition().GetModelSelector();
