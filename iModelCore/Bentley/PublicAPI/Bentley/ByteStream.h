@@ -75,15 +75,6 @@ public:
             m_size += size;
             }
         }
-    template<typename T> void Append (T const& buf) 
-        {
-        uint32_t  newSize = m_size + sizeof(buf);
-        if (newSize > m_allocSize)
-            Reserve(2 * newSize);   // Double size to avoid realloc....
-    
-        memcpy(m_data + m_size, &buf, sizeof(buf));
-        m_size += sizeof(buf);
-        }
 
     //! Append a value to the end of this ByteStream.
     //! @param[in] value the value to save
