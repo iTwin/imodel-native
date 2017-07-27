@@ -403,13 +403,7 @@ BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::Struct
             }
         else if (className == "Steel:Plate")
             {
-            status = creator->CreateSlabs(physicalModel, schema, derivedClass);
-            if (status != BentleyStatus::SUCCESS)
-                {
-                return BentleyStatus::ERROR;
-                }
-
-            status = creator->CreateWalls(physicalModel, schema, derivedClass);
+            status = creator->CreateGussetPlates(physicalModel, schema, derivedClass);
             if (status != BentleyStatus::SUCCESS)
                 {
                 return BentleyStatus::ERROR;

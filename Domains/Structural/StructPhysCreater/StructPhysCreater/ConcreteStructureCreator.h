@@ -25,10 +25,14 @@ struct ConcreteStructureCreator : SampleStructureCreator
         PhysicalProperties* ConcreteStructureCreator::GetBeam12Properties();
         PhysicalProperties* ConcreteStructureCreator::GetBeam15Properties();
         PhysicalProperties* ConcreteStructureCreator::GetColumnProperties();
+
         PhysicalProperties* ConcreteStructureCreator::GetSlabProperties();
         PhysicalProperties* ConcreteStructureCreator::GetWallProperties();
 
     public:
         ConcreteStructureCreator() : SampleStructureCreator(STRUCT_ORIGIN_X, STRUCT_ORIGIN_Y, STRUCT_ORIGIN_Z) { }
+
+        BentleyStatus ConcreteStructureCreator::CreateSlabs(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
+        BentleyStatus ConcreteStructureCreator::CreateWalls(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
     };
 

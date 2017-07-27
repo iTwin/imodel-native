@@ -43,9 +43,27 @@ struct SampleStructureCreator
         static const int WALL_DEPTH = 120;
         static const int WALL_THICKNESS = 8;
 
+        // Gusset Plate (large) dimensions: 3' x 1.5' x 1"
+        static const int GUSSET_PLATE_LARGE_WIDTH = 36;
+        static const int GUSSET_PLATE_LARGE_DEPTH = 18;
+        static const int GUSSET_PLATE_LARGE_THICKNESS = 1;
+
+        // Gusset Plate (small) dimensions: 1.5' x 1.5' x 1"
+        static const int GUSSET_PLATE_SMALL_WIDTH = 18;
+        static const int GUSSET_PLATE_SMALL_DEPTH = 18;
+        static const int GUSSET_PLATE_SMALL_THICKNESS = 1;
+
+        // Brace : 7" x 4" x 3/8"
+        static const int BRACE_LEG_A_SIZE = 7;
+        static const int BRACE_LEG_B_SIZE = 4;
+        static const int BRACE_THICKNESS = 1; // Temp
+
         // Other placement computations
         static const int COLUMN_OFFSET = COLUMN_WIDTH / 2;
         static const int WALL_OFFSET = (COLUMN_DEPTH - WALL_THICKNESS) / 2;
+
+        static const int GUSSET_PLATE_LARGE_OFFSET = GUSSET_PLATE_LARGE_WIDTH / 2;
+
 
         SampleStructureCreator(double originX, double originY, double originZ) :
             m_originX(originX), m_originY(originY), m_originZ(originZ) { }
@@ -55,15 +73,11 @@ struct SampleStructureCreator
         virtual PhysicalProperties* SampleStructureCreator::GetBeam12Properties() = 0;
         virtual PhysicalProperties* SampleStructureCreator::GetBeam15Properties() = 0;
         virtual PhysicalProperties* SampleStructureCreator::GetColumnProperties() = 0;
-        virtual PhysicalProperties* SampleStructureCreator::GetSlabProperties() = 0;
-        virtual PhysicalProperties* SampleStructureCreator::GetWallProperties() = 0;
 
         static Transform SampleStructureCreator::GetEmptyTransform();
 
     public:
         BentleyStatus SampleStructureCreator::CreateBeams(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
         BentleyStatus SampleStructureCreator::CreateColumns(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
-        BentleyStatus SampleStructureCreator::CreateSlabs(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
-        BentleyStatus SampleStructureCreator::CreateWalls(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass);
     };
 

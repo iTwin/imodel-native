@@ -58,3 +58,78 @@ PhysicalProperties* ConcreteStructureCreator::GetWallProperties()
 
 #pragma endregion
 
+
+#pragma region PUBLIC_MEMBER_FUNCTIONS
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus ConcreteStructureCreator::CreateSlabs(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
+    {
+    Dgn::PhysicalElementPtr element;
+    PhysicalProperties* properties;
+    Transform rotationMatrix;
+    Transform linearMatrix;
+    Dgn::DgnDbStatus status;
+
+    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    properties = GetSlabProperties();
+    status = element->SetPlacement(GetStructurePlacement());
+    rotationMatrix = GetEmptyTransform();
+    rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    linearMatrix = GetEmptyTransform();
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(COLUMN_OFFSET, COLUMN_OFFSET, COLUMN_HEIGHT), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    GeometricTools::CreateStructuralMemberGeometry(element, model, schema, properties, rotationMatrix, linearMatrix);
+    element->Insert(&status);
+    if (Dgn::DgnDbStatus::Success != status)
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus ConcreteStructureCreator::CreateWalls(StructuralPhysical::StructuralPhysicalModelR model, ECN::ECSchemaCP schema, ECN::ECClassP elementClass)
+    {
+    Dgn::PhysicalElementPtr element;
+    PhysicalProperties* properties;
+    Transform rotationMatrix;
+    Transform linearMatrix;
+    Dgn::DgnDbStatus status;
+
+    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    properties = GetWallProperties();
+    status = element->SetPlacement(GetStructurePlacement());
+    rotationMatrix = GetEmptyTransform();
+    rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 0.0, 1.0), DVec3d::From(0.0, -1.0, 0.0));
+    linearMatrix = GetEmptyTransform();
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(COLUMN_OFFSET, WALL_THICKNESS + WALL_OFFSET, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    GeometricTools::CreateStructuralMemberGeometry(element, model, schema, properties, rotationMatrix, linearMatrix);
+    element->Insert(&status);
+    if (Dgn::DgnDbStatus::Success != status)
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    element = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElement(schema->GetName(), elementClass->GetName(), model);
+    properties = GetWallProperties();
+    status = element->SetPlacement(GetStructurePlacement());
+    rotationMatrix = GetEmptyTransform();
+    rotationMatrix.InitFromOriginAndVectors(DPoint3d::From(0.0, 0.0, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 0.0, 1.0), DVec3d::From(0.0, -1.0, 0.0));
+    linearMatrix = GetEmptyTransform();
+    linearMatrix.InitFromOriginAndVectors(DPoint3d::From(COLUMN_OFFSET, SLAB_WIDTH + WALL_THICKNESS + WALL_OFFSET, 0.0), DVec3d::From(1.0, 0.0, 0.0), DVec3d::From(0.0, 1.0, 0.0), DVec3d::From(0.0, 0.0, 1.0));
+    GeometricTools::CreateStructuralMemberGeometry(element, model, schema, properties, rotationMatrix, linearMatrix);
+    element->Insert(&status);
+    if (Dgn::DgnDbStatus::Success != status)
+        {
+        return BentleyStatus::ERROR;
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+#pragma endregion
+
