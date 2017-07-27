@@ -296,8 +296,8 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
                         DgnV8MirrorICSPluginConstants.DocumentProcessorGuid, DgnV8MirrorICSPluginConstants.Steps.PowerPlatformExample));
 
             msm.AddKeyin("mdl load bimbridge");
-            msm.AddKeyin("bimbridge init " + cmdLineArgs);
-            msm.AddKeyin("bimbridge sync");
+            msm.AddKeyin("sync init " + cmdLineArgs);
+            msm.AddKeyin("sync bimdata");
 
             mspi.MicroStationMessage = msm;
             //Execute this in BAS somewhow
