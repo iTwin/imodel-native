@@ -101,6 +101,18 @@ void PropertyNameListExp::_ToECSql(ECSqlRenderContext& ctx) const
 
 
 //*************************** ValueListExp ******************************************
+
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                    Krischan.Eberle       07/2017
+//+---------------+---------------+---------------+---------------+---------------+--------
+ValueExpListExp::ValueExpListExp(std::vector<std::unique_ptr<ValueExp>>& valueExpList) : ValueExpListExp()
+    {
+    for (std::unique_ptr<ValueExp>& valueExp : valueExpList)
+        {
+        AddValueExp(valueExp);
+        }
+    }
+
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
@@ -113,17 +125,6 @@ Exp::FinalizeParseStatus ValueExpListExp::_FinalizeParsing(ECSqlParseContext& ct
     return FinalizeParseStatus::Completed;
     }
 
-//-----------------------------------------------------------------------------------------
-// @bsimethod                                    Krischan.Eberle       11/2013
-//+---------------+---------------+---------------+---------------+---------------+--------
-ParameterExp* ValueExpListExp::TryGetAsParameterExpP(size_t index) const
-    {
-    Exp* exp = GetChildP<Exp>(index);
-    if (!exp->IsParameterExp())
-        return nullptr;
-
-    return static_cast<ParameterExp*> (exp);
-    }
 
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle       08/2013

@@ -61,11 +61,11 @@ struct PerformanceRegularVsOverflowTestFixture : ECDbTestFixture
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::RunIntegerTest(int intValues[], Scenario scenario, bool getReadTime)
     {
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     StopWatch timer(true);
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
@@ -85,12 +85,12 @@ void PerformanceRegularVsOverflowTestFixture::RunIntegerTest(int intValues[], Sc
     if (getReadTime)
         {
         ReopenECDb();
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
 
         const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
 
         timer.Start();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Prop FROM ts.TestClass WHERE ECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Prop FROM ts.TestClass WHERE ECInstanceId=?"));
         for (int i = 0; i < s_readCount; i++)
             {
             statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement);
@@ -112,11 +112,11 @@ void PerformanceRegularVsOverflowTestFixture::RunIntegerTest(int intValues[], Sc
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::RunLongTest(int64_t longValues[], Scenario scenario, bool getReadTime)
     {
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     StopWatch timer(true);
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
@@ -136,12 +136,12 @@ void PerformanceRegularVsOverflowTestFixture::RunLongTest(int64_t longValues[], 
     if (getReadTime)
         {
         ReopenECDb();
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
 
         const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
 
         timer.Start();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Prop FROM ts.TestClass WHERE ECInstanceId=?"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Prop FROM ts.TestClass WHERE ECInstanceId=?"));
         for (int i = 0; i < s_readCount; i++)
             {
             statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement);
@@ -163,11 +163,11 @@ void PerformanceRegularVsOverflowTestFixture::RunLongTest(int64_t longValues[], 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::RunDoubleTest(double doubleValues[], Scenario scenario, bool getReadTime)
     {
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     StopWatch timer(true);
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
@@ -187,11 +187,11 @@ void PerformanceRegularVsOverflowTestFixture::RunDoubleTest(double doubleValues[
     if (getReadTime)
         {
         ReopenECDb();
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
         const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
 
         timer.Start();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
         for (int i = 0; i < s_readCount; i++)
             {
             statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement);
@@ -216,11 +216,11 @@ void PerformanceRegularVsOverflowTestFixture::RunDoubleTest(double doubleValues[
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::RunBoolTest(bool boolValues[], Scenario scenario, bool getReadTime)
     {
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     StopWatch timer(true);
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
@@ -240,11 +240,11 @@ void PerformanceRegularVsOverflowTestFixture::RunBoolTest(bool boolValues[], Sce
     if (getReadTime)
         {
         ReopenECDb();
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
         const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
 
         timer.Start();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
         for (int i = 0; i < s_readCount; i++)
             {
             statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement);
@@ -266,11 +266,11 @@ void PerformanceRegularVsOverflowTestFixture::RunBoolTest(bool boolValues[], Sce
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::RunStringTest(Utf8String stringValues[], Scenario scenario, bool getReadTime)
     {
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     StopWatch timer(true);
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
@@ -290,11 +290,11 @@ void PerformanceRegularVsOverflowTestFixture::RunStringTest(Utf8String stringVal
     if (getReadTime)
         {
         ReopenECDb();
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
         const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
 
         timer.Start();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
         for (int i = 0; i < s_readCount; i++)
             {
             statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement);
@@ -316,11 +316,11 @@ void PerformanceRegularVsOverflowTestFixture::RunStringTest(Utf8String stringVal
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::RunPoint2dTest(std::vector<DPoint2d> const& point2dValues, Scenario scenario, bool getReadTime)
     {
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     StopWatch timer(true);
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
@@ -340,12 +340,12 @@ void PerformanceRegularVsOverflowTestFixture::RunPoint2dTest(std::vector<DPoint2
     if (getReadTime)
         {
         ReopenECDb();
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
 
         const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
 
         timer.Start();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
         for (int i = 0; i < s_readCount; i++)
             {
             statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement);
@@ -368,11 +368,11 @@ void PerformanceRegularVsOverflowTestFixture::RunPoint2dTest(std::vector<DPoint2
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::RunPoint3dTest(std::vector<DPoint3d> const& point3dValues, Scenario scenario, bool getReadTime)
     {
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     StopWatch timer(true);
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
@@ -392,11 +392,11 @@ void PerformanceRegularVsOverflowTestFixture::RunPoint3dTest(std::vector<DPoint3
     if (getReadTime)
         {
         ReopenECDb();
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
         const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
 
         timer.Start();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
         for (int i = 0; i < s_readCount; i++)
             {
             statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement);
@@ -418,11 +418,11 @@ void PerformanceRegularVsOverflowTestFixture::RunPoint3dTest(std::vector<DPoint3
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::RunBlobTest(Utf8String stringValues[], Scenario scenario, bool getReadTime)
     {
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
 
     StopWatch timer(true);
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "INSERT INTO ts.TestClass(ECInstanceId, Prop) VALUES(?,?)"));
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
@@ -442,11 +442,11 @@ void PerformanceRegularVsOverflowTestFixture::RunBlobTest(Utf8String stringValue
     if (getReadTime)
         {
         ReopenECDb();
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
         const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
 
         timer.Start();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Prop FROM ts.TestClass WHERE ECInstanceId = ?"));
         for (int i = 0; i < s_readCount; i++)
             {
             statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement);
@@ -476,7 +476,7 @@ void PerformanceRegularVsOverflowTestFixture::RunIntegerTestSpecifiedSchema(int 
 
     StopWatch timer(true);
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), insertECSql.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, insertECSql.c_str()));
     for (int i = 0; i < s_insertCount; i++)
         {
         statement.BindInt64(1, s_firstInstanceId + i);
@@ -507,7 +507,7 @@ void PerformanceRegularVsOverflowTestFixture::RunIntegerTestSpecifiedSchema(int 
         const int instanceIdIncrement = DetermineECInstanceIdIncrement(s_insertCount, s_readCount);
         //printf("SelectECSql : %s\n", selectECSql.c_str());
         timer.Start();
-        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), selectECSql.c_str()));
+        ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, selectECSql.c_str()));
         for (int i = 0; i < s_readCount; i++)
             {
             if (!statement.BindInt64(1, s_firstInstanceId + i*instanceIdIncrement).IsSuccess())
@@ -568,7 +568,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, IntegerPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "intinsertperformanceregularcolumn.ecdb");
 
     RunIntegerTest(intValues, Scenario::Regular, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
 
     fileName.Sprintf("int_OverflowColumn_opcount_%d_seed_%d.ecdb", s_insertCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_Integer, Scenario::Overflow);
@@ -576,7 +576,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, IntegerPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "intinsertperformanceoverflowcolumn.ecdb");
 
     RunIntegerTest(intValues, Scenario::Overflow, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -599,14 +599,14 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, LongPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "longinsertperformanceregularcolumn.ecdb");
 
     RunLongTest(longValues, Scenario::Regular, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
 
     fileName.Sprintf("long_OverflowColumn_opcount_%d_seed_%d.ecdb", s_insertCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_Long, Scenario::Overflow);
     SetUpTestDb(fileName, testSchemaXml.c_str(), "longinsertperformanceoverflowcolumn.ecdb");
 
     RunLongTest(longValues, Scenario::Overflow, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -628,16 +628,16 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, DoublePerformance)
     Utf8String fileName;
     fileName.Sprintf("double_regularColumn_opcount_%d_seed_%d.ecdb", s_insertCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
     SetUpTestDb(fileName, testSchemaXml.c_str(), "doubleinsertperformanceregularcolumn.ecdb");
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_TRUE(m_ecdb.IsDbOpen());
     RunDoubleTest(doubleValues, Scenario::Regular, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
 
     fileName.Sprintf("double_overflowColumn_opcount_%d_seed_%d.ecdb", s_insertCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_Long, Scenario::Overflow);
     SetUpTestDb(fileName, testSchemaXml.c_str(), "doubleinsertperformanceoverflowcolumn.ecdb");
 
     RunDoubleTest(doubleValues, Scenario::Overflow, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -659,14 +659,14 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, BoolPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "boolinsertperformanceregularcolumn.ecdb");
 
     RunBoolTest(boolValues, Scenario::Regular, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
 
     fileName.Sprintf("bool_OverflowColumn_opcount_%d_seed_%d.ecdb", s_insertCount, DateTime::GetCurrentTimeUtc().GetDayOfYear());
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_Boolean, Scenario::Overflow);
     SetUpTestDb(fileName, testSchemaXml.c_str(), "boolinsertperformanceoverflowcolumn.ecdb");
 
     RunBoolTest(boolValues, Scenario::Overflow, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -685,7 +685,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, StringPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "stringinsertperformanceregularcolumn.ecdb");
 
     RunStringTest(stringValues, Scenario::Regular, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
 
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_String, Scenario::Overflow);
 
@@ -693,7 +693,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, StringPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "stringinsertperformanceoverflowcolumn.ecdb");
 
     RunStringTest(stringValues, Scenario::Overflow, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -715,7 +715,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, Point2dPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "point2dinsertperformanceregularcolumn.ecdb");
 
     RunPoint2dTest(point2dValues, Scenario::Regular, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
 
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_Point2d, Scenario::Overflow);
 
@@ -723,7 +723,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, Point2dPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "point2dinsertperformanceoverflowcolumn.ecdb");
 
     RunPoint2dTest(point2dValues, Scenario::Overflow, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -745,7 +745,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, Point3dPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "point3dinsertperformanceregularcolumn.ecdb");
 
     RunPoint3dTest(point3dValues, Scenario::Regular, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
 
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_Point3d, Scenario::Overflow);
 
@@ -753,7 +753,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, Point3dPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "point3dinsertperformanceoverflowcolumn.ecdb");
 
     RunPoint3dTest(point3dValues, Scenario::Overflow, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -772,7 +772,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, BlobPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "binaryinsertperformanceregularcolumn.ecdb");
 
     RunBlobTest(stringValues, Scenario::Regular, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
 
     GetTestSchemaXml(testSchemaXml, PRIMITIVETYPE_Binary, Scenario::Overflow);
 
@@ -780,7 +780,7 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, BlobPerformance)
     SetUpTestDb(fileName, testSchemaXml.c_str(), "binaryinsertperformanceoverflowcolumn.ecdb");
 
     RunBlobTest(stringValues, Scenario::Overflow, true);
-    GetECDb().CloseDb();
+    m_ecdb.CloseDb();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -799,9 +799,9 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, IntegerPerformance_VaryPropertie
         {
         dbName.Sprintf("RegularVsOverflow_%d-SharedColumns_%d-Properties.ecdb", 0, propertyCount);
         SetUpDbWithSpecifiedSchema(dbName.c_str(), propertyCount, 0);
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
         RunIntegerTestSpecifiedSchema(intValues, propertyCount, 0, true);
-        GetECDb().CloseDb();
+        m_ecdb.CloseDb();
         }
 
     // varying propertyCount [0-60] and columnCount [0-60]
@@ -810,9 +810,9 @@ TEST_F(PerformanceRegularVsOverflowTestFixture, IntegerPerformance_VaryPropertie
         {
         dbName.Sprintf("RegularVsOverflow_%d-SharedColumns_%d-Properties.ecdb", count + 1, count);
         SetUpDbWithSpecifiedSchema(dbName.c_str(), count, count + 1);
-        ASSERT_TRUE(GetECDb().IsDbOpen());
+        ASSERT_TRUE(m_ecdb.IsDbOpen());
         RunIntegerTestSpecifiedSchema(intValues, count, count + 1, true);
-        GetECDb().CloseDb();
+        m_ecdb.CloseDb();
         }
     }
 
@@ -862,13 +862,12 @@ void PerformanceRegularVsOverflowTestFixture::SetUpTestDb(Utf8String seedDbName,
 
     if (!seedFilePath.DoesPathExist())
         {
-        SetupECDb(seedDbName.c_str(), SchemaItem(schemaXml, true), s_initialInstanceCount);
-
-        GetECDb().SaveChanges();
-        GetECDb().CloseDb();
+        SetupECDb(seedDbName.c_str(), SchemaItem(schemaXml));
+        ASSERT_EQ(SUCCESS, PopulateECDb(s_initialInstanceCount));
+        m_ecdb.CloseDb();
         }
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(m_ecdb, destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(destFileName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -883,7 +882,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
 
     if (!seedFilePath.DoesPathExist())
         {
-        SetupECDb(seedFileName.c_str());
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb(seedFileName.c_str()));
 
         ECSchemaPtr testSchema = nullptr;
         ECEntityClassP testClass = nullptr;
@@ -899,7 +898,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
 
         if (maxSharedColumnsBeforeOverflow > 0)
             {
-            readContext->AddSchemaLocater(GetECDb().GetSchemaLocater());
+            readContext->AddSchemaLocater(m_ecdb.GetSchemaLocater());
             SchemaKey ecdbmapKey = SchemaKey("ECDbMap", 2, 0);
             ECSchemaPtr ecdbMapSchema = readContext->LocateSchema(ecdbmapKey, SchemaMatchType::LatestWriteCompatible);
             ASSERT_TRUE(ecdbMapSchema.IsValid());
@@ -926,13 +925,13 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
             testClass->CreatePrimitiveProperty(primitiveP, propName, PrimitiveType::PRIMITIVETYPE_Integer);
             }
 
-        EXPECT_EQ(BentleyStatus::SUCCESS, GetECDb().Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
-        EXPECT_EQ(BE_SQLITE_OK, GetECDb().SaveChanges());
+        EXPECT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(readContext->GetCache().GetSchemas()));
+        EXPECT_EQ(BE_SQLITE_OK, m_ecdb.SaveChanges());
 
-        GetECDb().CloseDb();
+        m_ecdb.CloseDb();
         }
 
-    ASSERT_EQ(DbResult::BE_SQLITE_OK, CloneECDb(GetECDb(), seedDbName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
+    ASSERT_EQ(BE_SQLITE_OK, CloneECDb(seedDbName.c_str(), seedFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -940,7 +939,7 @@ void PerformanceRegularVsOverflowTestFixture::SetUpDbWithSpecifiedSchema(Utf8Str
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::GetECSqlStatements(Utf8StringR insertECSql, Utf8StringR selectECSql)
     {
-    ECSchemaCP ecSchema = GetECDb().Schemas().GetSchema("TestSchema", true);
+    ECSchemaCP ecSchema = m_ecdb.Schemas().GetSchema("TestSchema", true);
     for (ECClassCP testClass : ecSchema->GetClasses())
         {
         Utf8StringCR className = testClass->GetECSqlName();
@@ -981,8 +980,8 @@ void PerformanceRegularVsOverflowTestFixture::GetECSqlStatements(Utf8StringR ins
 +---------------+---------------+---------------+---------------+---------------+------*/
 void PerformanceRegularVsOverflowTestFixture::ReopenECDb()
     {
-    Utf8String dbFileName(GetECDb().GetDbFileName());
-    GetECDb().CloseDb();
+    Utf8String dbFileName(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
     ASSERT_EQ(BE_SQLITE_OK, m_ecdb.OpenBeSQLiteDb(dbFileName.c_str(), ECDb::OpenParams(Db::OpenMode::ReadWrite)));
     }
 

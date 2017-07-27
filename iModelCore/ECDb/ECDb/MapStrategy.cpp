@@ -40,9 +40,9 @@ Utf8CP MapStrategyExtendedInfo::ToString(MapStrategy strategy)
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, bool hasJoinedTablePerDirectSubclassOption, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumnsCustomAttribute const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, bool hasJoinedTablePerDirectSubclassOption, ECClassCR ecClass, IssueReporter const& issues)
     {
-    if (SUCCESS != DetermineSharedColumnsInfo(shareColumnsCA, baseMapStrategy, baseClassShareColumnsCA, ecClass, issues))
+    if (SUCCESS != DetermineSharedColumnsInfo(shareColumnsCA, baseMapStrategy, ecClass, issues))
         return ERROR;
 
     if (SUCCESS != DetermineJoinedTableInfo(hasJoinedTablePerDirectSubclassOption, baseMapStrategy, ecClass, issues))
@@ -62,7 +62,7 @@ BentleyStatus TablePerHierarchyInfo::Initialize(ShareColumns const& shareColumns
 //---------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle              08/2016
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumns const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ShareColumns const* baseClassShareColumnsCA, ECClassCR ecClass, IssueReporter const& issues)
+BentleyStatus TablePerHierarchyInfo::DetermineSharedColumnsInfo(ShareColumnsCustomAttribute const& shareColumnsCA, MapStrategyExtendedInfo const* baseMapStrategy, ECClassCR ecClass, IssueReporter const& issues)
     {
     m_shareColumnsMode = ShareColumnsMode::No; //default
     //first check whether column sharing is inherited from base class.
@@ -129,67 +129,6 @@ BentleyStatus TablePerHierarchyInfo::DetermineJoinedTableInfo(bool hasJoinedTabl
         m_joinedTableInfo = JoinedTableInfo::ParentOfJoinedTable;
     else
         m_joinedTableInfo = JoinedTableInfo::None;
-
-    return SUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                08/2016
-//+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ClassMappingCACache::Initialize(ECN::ECClassCR ecClass)
-    {
-    if (ECDbMapCustomAttributeHelper::TryGetClassMap(m_classMapCA, ecClass))
-        {
-        Nullable<Utf8String> mapStrategyStr;
-        if (SUCCESS != m_classMapCA.TryGetMapStrategy(mapStrategyStr))
-            return ERROR;
-
-        if (mapStrategyStr.IsNull())
-            {
-            m_hasMapStrategy = false;
-            //only set this to default in case using code calls GetStrategy without
-            //checking for m_hasMapStrategy
-            m_mapStrategy = MapStrategyExtendedInfo::DEFAULT; 
-            }
-        else
-            {
-            if (SUCCESS != TryParse(m_mapStrategy, mapStrategyStr.Value().c_str(), ecClass))
-                return ERROR;
-
-            m_hasMapStrategy = true;
-            }
-        }
-
-    ECDbMapCustomAttributeHelper::TryGetShareColumns(m_shareColumnsCA, ecClass);
-
-    if (ecClass.IsEntityClass())
-        m_hasJoinedTablePerDirectSubclassOption = ECDbMapCustomAttributeHelper::HasJoinedTablePerDirectSubclass(*ecClass.GetEntityClassCP());
-
-    ECDbMapCustomAttributeHelper::TryGetDbIndexList(m_dbIndexListCA, ecClass);
-    return SUCCESS;
-    }
-
-
-//---------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                06/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-//static
-BentleyStatus ClassMappingCACache::TryParse(MapStrategy& mapStrategy, Utf8CP mapStrategyStr, ECClassCR ecClass)
-    {
-    if (BeStringUtilities::StricmpAscii(mapStrategyStr, "OwnTable") == 0)
-        mapStrategy = MapStrategy::OwnTable;
-    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "NotMapped") == 0)
-        mapStrategy = MapStrategy::NotMapped;
-    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "TablePerHierarchy") == 0)
-        mapStrategy = MapStrategy::TablePerHierarchy;
-    else if (BeStringUtilities::StricmpAscii(mapStrategyStr, "ExistingTable") == 0)
-        mapStrategy = MapStrategy::ExistingTable;
-    else
-        {
-        LOG.errorv("ECClass '%s' has a ClassMap custom attribute with an invalid value for MapStrategy: %s.", ecClass.GetFullName(), mapStrategyStr);
-        return ERROR;
-        }
 
     return SUCCESS;
     }

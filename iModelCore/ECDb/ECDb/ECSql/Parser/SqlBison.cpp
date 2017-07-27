@@ -184,8 +184,8 @@ using namespace connectivity;
 
 /* In a future release of Bison, this section will be replaced
    by #include "SqlBison.h".  */
-#ifndef YY_SQLYY_D_DEV_DGNDB_BIM20DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
-# define YY_SQLYY_D_DEV_DGNDB_BIM20DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
+#ifndef YY_SQLYY_E_BSW_BIM0200HOLDOUTS_ECDB_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
+# define YY_SQLYY_E_BSW_BIM0200HOLDOUTS_ECDB_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED
 /* Enabling traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -402,7 +402,7 @@ int SQLyyparse ();
 #endif
 #endif /* ! YYPARSE_PARAM */
 
-#endif /* !YY_SQLYY_D_DEV_DGNDB_BIM20DEV_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED  */
+#endif /* !YY_SQLYY_E_BSW_BIM0200HOLDOUTS_ECDB_SRC_ECDB_ECDB_ECSQL_PARSER_SQLBISON_H_INCLUDED  */
 
 /* Copy the second part of user declarations.  */
 

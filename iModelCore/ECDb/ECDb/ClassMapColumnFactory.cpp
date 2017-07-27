@@ -11,41 +11,37 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
-bool ColumnMaps::IsColumnInUsed(DbColumn const& column) const
-    {
-    return n_columns.find(&column) != n_columns.end();
-    }
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-void ColumnMaps::Insert(SingleColumnDataPropertyMap const& propertyMap)
-    {
-    Insert(propertyMap.GetAccessString().c_str(), propertyMap.GetColumn());
-    }
+bool ColumnMaps::IsColumnInUsed(DbColumn const& column) const { return n_columns.find(&column) != n_columns.end(); }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+void ColumnMaps::Insert(SingleColumnDataPropertyMap const& propertyMap) { Insert(propertyMap.GetAccessString().c_str(), propertyMap.GetColumn()); }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-Utf8CP ColumnMaps::Copy(Utf8CP str)
+Utf8StringCR ColumnMaps::Copy(Utf8StringCR str)
     {
-    Utf8String strObject = str;
-    auto itor = m_strings.find(strObject);
+    auto itor = m_strings.find(str);
     if (itor != m_strings.end())
-        return (*itor).c_str();
+        return *itor;
 
-    return (*(m_strings.insert(strObject).first)).c_str();
+    return *(m_strings.insert(str).first);
     }
+
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-void ColumnMaps::Insert(Utf8CP accessString, DbColumn const& column, bool newlyMappedColumn)
+void ColumnMaps::Insert(Utf8StringCR accessString, DbColumn const& column, bool newlyMappedColumn)
     {
-    //Assert(accessString);
-    accessString = Copy(accessString);
-    m_maps.insert(make_bpair(accessString, &column));
+    Utf8StringCR copiedAccessString = Copy(accessString);
+    m_maps.insert(make_bpair(copiedAccessString.c_str(), &column));
     n_columns.insert(&column);
     if (newlyMappedColumn)
-        m_newMappedColumns.insert(accessString);
+        m_newMappedColumns.insert(copiedAccessString.c_str());
     }
 
 //------------------------------------------------------------------------------------------
@@ -58,7 +54,6 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
     if (!contextClass.HasBaseClasses())
         return SUCCESS;
 
-    std::vector<ECN::ECClassCP> mixins;
     std::vector<ClassMapCP> baseClasses;
 
     for (ECClassCP baseClass : contextClass.GetBaseClasses())
@@ -70,14 +65,6 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
             return ERROR;
             }
 
-        if (baseClassMap->GetJoinedOrPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
-            {
-            ECClassCR baseClass = baseClassMap->GetClass();
-            if (baseClass.IsEntityClass() && baseClass.GetEntityClassCP()->IsMixin())
-                mixins.push_back(&baseClass);
-
-            continue;
-            }
 
         if (baseClassMap->GetPrimaryTable().GetId() != classMap.GetPrimaryTable().GetId())
             continue;
@@ -88,15 +75,10 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
 
     if (baseClasses.size() > 1)
         {
-        BeAssert(false && "Expecting zero or one base classs");
+        BeAssert(false && "Expecting zero or one base class");
         return ERROR;
         }
 
-    if (!mixins.empty())
-        {
-        if (QueryMixinColumnMaps(columnMaps, classMap, &mixins) != SUCCESS)
-            return ERROR;
-        }
 
     for (ClassMap const* baseClassMap : baseClasses)
         if (Query(columnMaps, *baseClassMap, Filter::InheritedAndLocal, nullptr) != SUCCESS)
@@ -117,10 +99,11 @@ BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, C
         {
         if (ClassMapCP derivedClassMap = dbMap.GetClassMap(*derivedClass))
             {
-            if (derivedClassMap->GetPrimaryTable().GetPersistenceType() == PersistenceType::Virtual)
+            DbTable const& primTable = derivedClassMap->GetPrimaryTable();
+            if (primTable.GetType() == DbTable::Type::Virtual)
                 continue;
 
-            if (derivedClassMap->GetPrimaryTable().GetId() != contextClassMap.GetPrimaryTable().GetId())
+            if (primTable.GetId() != contextClassMap.GetPrimaryTable().GetId())
                 continue;
 
             if (Query(columnMaps, *derivedClassMap, Filter::DerivedAndLocal, &contextClassMap) != SUCCESS)
@@ -129,209 +112,6 @@ BentleyStatus ColumnMapContext::QueryDerivedColumnMaps(ColumnMaps& columnMaps, C
         }
 
     return SUCCESS;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-void ColumnMapContext::AppendRelationshipColumnMaps(ColumnMaps& columnMaps, ClassMap const& classMap, ECN::ECClassId relationshipClassId)
-    {
-    std::vector<DbTable*> const& tables = classMap.GetTables();
-    ECDbCR ecdb = classMap.GetDbMap().GetECDb();
-    ECClassCP relClass = ecdb.Schemas().GetClass(relationshipClassId);
-    BeAssert(relClass != nullptr);
-    ClassMap const* relMap = ecdb.Schemas().GetDbMap().GetClassMap(*relClass);
-    if (relMap == nullptr || relMap->GetTables().empty())
-        return;
-
-    if (relMap->GetType() != ClassMap::Type::RelationshipEndTable)
-        return;
-
-    RelationshipClassEndTableMap const& endTableMap = relMap->GetAs<RelationshipClassEndTableMap>();
-    RelationshipConstraintMap const& persistedEnd = endTableMap.GetConstraintMap(endTableMap.GetReferencedEnd());
-    const SingleColumnDataPropertyMap* id = nullptr;
-    const SingleColumnDataPropertyMap* relClassId = nullptr;
-    for (DbTable const* table : tables)
-        {
-        if (id == nullptr)
-            id = persistedEnd.GetECInstanceIdPropMap()->FindDataPropertyMap(*table);
-
-        if (relClassId == nullptr)
-            relClassId = relMap->GetECClassIdPropertyMap()->FindDataPropertyMap(*table);
-
-        if (id != nullptr && relClassId != nullptr)
-            break;
-        }
-
-    if (relClassId != nullptr || id != nullptr)
-        {
-        columnMaps.Insert(endTableMap.GetAcccessStringForId(), id->GetColumn());
-        columnMaps.Insert(endTableMap.GetAcccessStringForRelClassId(), relClassId->GetColumn());
-        }
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-BentleyStatus ColumnMapContext::QueryEndTableRelationshipMaps(ColumnMaps& columnMaps, ClassMap const& classMap, RelationshpFilter filter)
-    {
-    LightweightCache const& lwc = classMap.GetDbMap().GetECDb().Schemas().GetDbMap().GetLightweightCache();
-    //This should include relationship that the mixin have added to current class
-    if (filter == RelationshpFilter::Direct)
-        {
-        for (ECN::ECClassId relClassId : lwc.GetDirectRelationshipClasssForConstraintClass(classMap.GetClass().GetId()))
-            AppendRelationshipColumnMaps(columnMaps, classMap, relClassId);
-        }
-    else
-        {
-        for (auto const& entry : lwc.GetRelationshipClassesForConstraintClass(classMap.GetClass().GetId()))
-            AppendRelationshipColumnMaps(columnMaps, classMap, entry.first);
-        }
-
-    return SUCCESS;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-BentleyStatus ColumnMapContext::QueryMixinColumnMaps(ColumnMaps& columnMaps, ClassMap const& classMap, std::vector<ECN::ECClassCP> const* seedMixins)
-    {
-    ECDbCR ecdb = classMap.GetDbMap().GetECDb();
-    std::vector<ECN::ECClassCP> mixins;
-    if (seedMixins)
-        mixins = *seedMixins;
-    else
-        if (FindMixins(mixins, ecdb, classMap.GetClass().GetId()) != SUCCESS)
-            return ERROR;
-
-    bmap<ECN::ECClassCP, ClassMapCP> resolved;
-    std::deque<ECClassCP> q;
-    for (ECClassCP mixin : mixins)
-        {
-        if (resolved.find(mixin) != resolved.end())
-            continue;
-
-        q.push_back(mixin);
-        while (!q.empty())
-            {
-            if (ClassMapCP impl = FindMixinImplementation(ecdb, *q.front(), classMap.GetJoinedOrPrimaryTable().GetId(), classMap.GetClass().GetId()))
-                {
-                if (resolved.find(mixin) == resolved.end())
-                    resolved[q.front()] = impl;
-
-                q.clear();
-                }
-            else
-                {
-                for (ECClassCP b : q.front()->GetBaseClasses())
-                    q.push_back(b);
-
-                q.pop_front();
-                }
-            }
-        }
-
-    for (auto const& r : resolved)
-        {
-        ECClassCP mixin = r.first;
-        ClassMapCP impl = r.second;
-        for (ECPropertyCP property : mixin->GetProperties())
-            {
-            if (property->GetIsNavigation())
-                continue;
-
-            PropertyMap const* propertyMap = impl->GetPropertyMaps().Find(property->GetName().c_str());
-            if (propertyMap == nullptr)
-                continue;
-
-            SearchPropertyMapVisitor visitor(PropertyMap::Type::SingleColumnData);
-            propertyMap->AcceptVisitor(visitor);
-            for (PropertyMap const* p : visitor.Results())
-                columnMaps.Insert(p->GetAs<SingleColumnDataPropertyMap>());
-            }
-        }
-
-    return SUCCESS;
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-BentleyStatus ColumnMapContext::FindMixins(std::vector<ECN::ECClassCP>& mixins, ECDbCR ecdb, ECN::ECClassId contextClassId)
-    {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(
-        "SELECT  CHBC.BaseClassId from " TABLE_ClassHierarchyCache " CCH "
-        "INNER JOIN " TABLE_ClassHasBaseClasses " CHBC ON CHBC.ClassId = CCH.ClassId "
-        "WHERE CCH.BaseClassId=? AND CHBC.BaseClassId IN ("
-        "SELECT CA.ContainerId FROM " TABLE_Class " C"
-        "                      INNER JOIN " TABLE_Schema " S ON S.Id=C.SchemaId"
-        "                      INNER JOIN " TABLE_CustomAttribute " CA ON CA.ClassId = C.Id "
-        "                      WHERE C.Name = 'IsMixin' AND S.Name='CoreCustomAttributes') "
-        "GROUP BY CHBC.BaseClassId");
-
-    if (BE_SQLITE_OK != stmt->BindId(1, contextClassId))
-        {
-        BeAssert(false);
-        return ERROR;
-        }
-
-    while (stmt->Step() == BE_SQLITE_ROW)
-        {
-        ECClassId mixinId = stmt->GetValueId<ECClassId>(0);
-        ECClassCP classCP = ecdb.Schemas().GetClass(mixinId);
-        if (!classCP->IsEntityClass() || !classCP->GetEntityClassCP()->IsMixin())
-            {
-            BeAssert(false && "SQL query has issue. Something changed about Mixin CA");
-            return ERROR;
-            }
-
-        mixins.push_back(classCP);
-        }
-
-    auto a = begin(mixins);
-    for (; a != end(mixins); ++a)
-        for (auto b = a + 1; b != end(mixins); ++b)
-            {
-            if ((*a)->Is((*b)))
-                {
-                a = mixins.erase(a);
-                break;
-                }
-            }
-
-    return SUCCESS;
-    }
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-ClassMap const* ColumnMapContext::FindMixinImplementation(ECDbCR ecdb, ECN::ECClassCR contextClass, DbTableId primaryTable, ECN::ECClassId skipId)
-    {
-    ECDerivedClassesList const& derivedClasses = ecdb.Schemas().GetDerivedClasses(contextClass);
-    DbMap const& dbMap = ecdb.Schemas().GetDbMap();
-    for (ECN::ECClassCP derivedClass : derivedClasses)
-        {
-        if (skipId == derivedClass->GetId())
-            continue;
-
-        if (ClassMapCP dervicedClassMap = dbMap.GetClassMap(*derivedClass))
-            {
-            if (dervicedClassMap->GetJoinedOrPrimaryTable().GetId() == primaryTable)
-                return dervicedClassMap;
-            else
-                return nullptr;
-            }
-        }
-
-    for (ECN::ECClassCP derivedClass : derivedClasses)
-        {
-        if (skipId == derivedClass->GetId())
-            continue;
-
-        if (ClassMapCP dervicedClassMap = FindMixinImplementation(ecdb, *derivedClass, primaryTable, skipId))
-            return dervicedClassMap;
-        }
-
-    return nullptr;
     }
 
 //------------------------------------------------------------------------------------------
@@ -350,15 +130,11 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
-        if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
-            return ERROR;
-
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
-            return ERROR;
-
         if (base == nullptr)
             {
-            const size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().Size();
+            ECPropertyIterableCR itor = classMap.GetClass().GetProperties(true);
+            const size_t nProperties = std::distance(itor.begin(), itor.end()) + 2;
+            const size_t unmapped = nProperties - classMap.GetPropertyMaps().Size();            
             if (unmapped > 0)
                 {
                 if (QueryInheritedColumnMaps(columnMaps, classMap) != SUCCESS)
@@ -372,9 +148,6 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
         if (QueryLocalColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
 
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
-            return ERROR;
-
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
         }
@@ -386,19 +159,15 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
 
         if (base == nullptr)
             {
-            size_t unmapped = (classMap.GetClass().GetPropertyCount(true) + 2) - classMap.GetPropertyMaps().Size();
+            ECPropertyIterableCR itor = classMap.GetClass().GetProperties(true);
+            const size_t nProperties = std::distance(itor.begin(), itor.end()) + 2;
+            const size_t unmapped = nProperties - classMap.GetPropertyMaps().Size();
             if (unmapped > 0)
                 {
                 if (QueryInheritedColumnMaps(columnMaps, classMap) != SUCCESS)
                     return ERROR;
                 }
             }
-
-        if (QueryEndTableRelationshipMaps(columnMaps, classMap, relationshipFilter) != SUCCESS)
-            return ERROR;
-
-        if (QueryMixinColumnMaps(columnMaps, classMap, nullptr) != SUCCESS)
-            return ERROR;
 
         if (QueryDerivedColumnMaps(columnMaps, classMap) != SUCCESS)
             return ERROR;
@@ -417,7 +186,6 @@ BentleyStatus ColumnMapContext::Query(ColumnMaps& columnMaps, ClassMap const& cl
     BentleyStatus r = Query(columnMaps, classMap, filter, nullptr);
     stopwatch.Stop();
     fullTime += stopwatch.GetElapsedSeconds();
-    LOG.debugv("ColumnMapContext::Query(%s) (%.4f seconds). [total=%.4f]", classMap.GetClass().GetFullName(), stopwatch.GetElapsedSeconds(), fullTime);
     return r;
     }
 
@@ -428,9 +196,6 @@ BentleyStatus ColumnMapContext::QueryLocalColumnMaps(ColumnMaps& columnMaps, Cla
     {
     for (ECPropertyCP property : classMap.GetClass().GetProperties(true))
         {
-        if (property->GetIsNavigation())
-            continue;
-
         PropertyMap const* propertyMap = classMap.GetPropertyMaps().Find(property->GetName().c_str());
         if (propertyMap == nullptr)
             continue;
@@ -442,6 +207,19 @@ BentleyStatus ColumnMapContext::QueryLocalColumnMaps(ColumnMaps& columnMaps, Cla
         }
 
     return SUCCESS;
+    }
+
+//*****************************************************************************************
+//ClassMapColumnFactory
+//*****************************************************************************************
+// ------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap) : m_classMap(classMap), m_primaryOrJoinedTable(&m_classMap.GetJoinedOrPrimaryTable())
+    {
+    m_useSharedColumnStrategy = (classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes);
+    if (m_useSharedColumnStrategy && m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow().IsValid())
+        m_maxSharedColumnCount = m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow();
     }
 
 //------------------------------------------------------------------------------------------
@@ -485,12 +263,7 @@ uint32_t ClassMapColumnFactory::MaxColumnsRequiredToPersistProperty(ECN::ECPrope
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-ECDbCR ClassMapColumnFactory::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8CP accessString) const
+DbColumn* ClassMapColumnFactory::AllocateColumn(SchemaImportContext& ctx, ECN::ECPropertyCR ecProp, DbColumn::Type colType, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     std::function<ECN::ECClassId(ECN::ECPropertyCR, Utf8StringCR)> getPersistenceClassId = [&] (ECN::ECPropertyCR ecProp, Utf8StringCR propAccessString)
         {
@@ -530,7 +303,7 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
             return;
             }
 
-        DbColumn const* existingColumn = GetEffectiveTable()->FindColumnP(requestedColumnName.c_str());
+        DbColumn const* existingColumn = GetEffectiveTable(ctx)->FindColumnP(requestedColumnName.c_str());
         if (existingColumn != nullptr && IsColumnInUse(*existingColumn))
             {
             Utf8Char classIdStr[ECN::ECClassId::ID_STRINGBUFFER_LENGTH];
@@ -542,27 +315,36 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
         };
 
 
-    DbColumn* existingColumn = GetEffectiveTable()->FindColumnP(params.GetColumnName().c_str());
+    DbTable* effectiveTableP = GetEffectiveTable(ctx);
+    if (effectiveTableP == nullptr)
+        {
+        BeAssert(false);
+        return nullptr;
+        }
+    DbTable& effectiveTable = *effectiveTableP;
+
+    DbColumn* existingColumn = effectiveTable.FindColumnP(params.GetColumnName().c_str());
     if (existingColumn != nullptr && !IsColumnInUse(*existingColumn) &&
         DbColumn::IsCompatible(existingColumn->GetType(), colType))
         {
-        if (!GetEffectiveTable()->IsOwnedByECDb() || (existingColumn->GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
+        if (effectiveTable.GetType() == DbTable::Type::Existing ||
+            (existingColumn->GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
                                                       existingColumn->GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
                                                       existingColumn->GetConstraints().GetCollation() == params.GetCollation()))
             {
             return existingColumn;
             }
 
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Column %s in table %s is used by multiple property maps where property name and data type matches,"
+        ctx.Issues().Report("Column %s in table %s is used by multiple property maps where property name and data type matches,"
                                                            " but where one of the constraints NOT NULL, UNIQUE, or COLLATE differs.",
-                                                           existingColumn->GetName().c_str(), GetEffectiveTable()->GetName().c_str());
+                                                           existingColumn->GetName().c_str(), effectiveTable.GetName().c_str());
         return nullptr;
         }
 
 
     BeAssert(!params.GetColumnName().empty() && "Column name must not be null for default strategy");
     bool effectiveNotNullConstraint = params.AddNotNullConstraint();
-    if (params.AddNotNullConstraint() && (GetEffectiveTable()->HasExclusiveRootECClass() && GetEffectiveTable()->GetExclusiveRootECClassId() != m_classMap.GetClass().GetId()))
+    if (params.AddNotNullConstraint() && (effectiveTable.HasExclusiveRootECClass() && effectiveTable.GetExclusiveRootECClassId() != m_classMap.GetClass().GetId()))
         {
         LOG.warningv("For the ECProperty '%s' on ECClass '%s' a NOT NULL constraint is defined. The constraint cannot be enforced though because "
                      "the ECProperty has base ECClasses mapped to the same table.",
@@ -581,14 +363,14 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
     resolveColumnName(tmp, params.GetColumnName(), classId, retryCount);
 
     resolvedColumnName = tmp;
-    while (GetEffectiveTable()->FindColumnP(resolvedColumnName.c_str()) != nullptr)
+    while (effectiveTable.FindColumnP(resolvedColumnName.c_str()) != nullptr)
         {
         retryCount++;
         resolvedColumnName = tmp;
         resolveColumnName(resolvedColumnName, params.GetColumnName(), classId, retryCount);
         }
 
-    DbColumn* newColumn = GetEffectiveTable()->CreateColumn(resolvedColumnName, colType, DbColumn::Kind::DataColumn, PersistenceType::Physical);
+    DbColumn* newColumn = effectiveTable.CreateColumn(resolvedColumnName, colType, DbColumn::Kind::Default, PersistenceType::Physical);
     if (newColumn == nullptr)
         return nullptr;
 
@@ -607,12 +389,12 @@ DbColumn* ClassMapColumnFactory::AllocateColumn(ECN::ECPropertyCR ecProp, DbColu
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(ECN::ECPropertyCR prop, DbColumn::CreateParams const& params, Utf8CP accessString) const
+DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(SchemaImportContext& ctx, ECN::ECPropertyCR prop, DbColumn::CreateParams const& params, Utf8StringCR accessString) const
     {
     //Defining a col name for a shared column is a DB thing and DB CAs are taken strictly.
     if (params.IsColumnNameFromPropertyMapCA())
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a value for 'ColumnName'. "
+        ctx.Issues().Report("Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a value for 'ColumnName'. "
                                                            "'ColumnName' must not be specified for this ECProperty because it is mapped to a column shared with other ECProperties.",
                                                            prop.GetClass().GetFullName(), prop.GetName().c_str());
         return nullptr;
@@ -621,7 +403,7 @@ DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(ECN::ECPropertyCR prop, D
     //Defining a collation which is not doable is an error because this is a DB thing and DB CAs are taken strictly.
     if (params.GetCollation() != DbColumn::Constraints::Collation::Unset)
         {
-        GetECDb().GetECDbImplR().GetIssueReporter().Report("Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a Collation constraint "
+        ctx.Issues().Report("Failed to map ECProperty '%s:%s'. It has a 'PropertyMap' custom attribute which specifies a Collation constraint "
                                                            "which cannot be created because the ECProperty is mapped to a column shared with other ECProperties.",
                                                            prop.GetClass().GetFullName(), prop.GetName().c_str());
         return nullptr;
@@ -629,19 +411,15 @@ DbColumn* ClassMapColumnFactory::AllocatedSharedColumn(ECN::ECPropertyCR prop, D
 
     //NOT NULL and UNIQUE will soon become ECSchema level things. They are not an error, and can only be taken as hints because
     //the ECSchema level doesn't say which layer (DB or API) has to enforce it
-    bool addNotNullConstraint = params.AddNotNullConstraint();
-    bool addUniqueConstraint = params.AddUniqueConstraint();
     if (params.AddNotNullConstraint() || params.AddUniqueConstraint())
         {
         LOG.warningv("For the ECProperty '%s' on ECClass '%s' either a NOT NULL or a UNIQUE constraint is defined. The constraint cannot be enforced though because "
                      "the ECProperty is mapped to a column shared with other ECProperties.",
                      prop.GetName().c_str(), prop.GetClass().GetFullName());
 
-        addNotNullConstraint = false;
-        addUniqueConstraint = false;
         }
 
-    return RegisterColumnMap(accessString, ReuseOrCreateSharedColumn());
+    return RegisterColumnMap(accessString, ReuseOrCreateSharedColumn(ctx));
     }
 
 //------------------------------------------------------------------------------------------
@@ -682,7 +460,7 @@ void ClassMapColumnFactory::ReserveSharedColumns(uint32_t columnsRequired) const
         {
         const uint32_t maxColumnInBaseTable = 63;
         const std::vector<DbColumn const*> physicalColumns = m_primaryOrJoinedTable->FindAll(PersistenceType::Physical);
-        const std::vector<DbColumn const*> sharedColumns = m_primaryOrJoinedTable->FindAll(DbColumn::Kind::SharedDataColumn);
+        const std::vector<DbColumn const*> sharedColumns = m_primaryOrJoinedTable->FindAll(DbColumn::Kind::SharedData);
         const uint32_t nAvaliablePhysicalColumns = maxColumnInBaseTable - (uint32_t) physicalColumns.size();
         sharedColumnThatCanBeReused = 0;
         for (DbColumn const* sharedColumn : sharedColumns)
@@ -717,29 +495,12 @@ void ClassMapColumnFactory::ReserveSharedColumns(uint32_t columnsRequired) const
         m_areSharedColumnsReserved = true;
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-DbTable* ClassMapColumnFactory::GetEffectiveTable() const
-    {
-    if (m_areSharedColumnsReserved)
-        return GetOrCreateOverflowTable();
 
-    return m_primaryOrJoinedTable;
-    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-bool ClassMapColumnFactory::IsColumnInUse(DbColumn const& column) const
-    {
-    return GetColumnMaps()->IsColumnInUsed(column);
-    }
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8CP accessString, DbColumn* column) const
+DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8StringCR accessString, DbColumn* column) const
     {
     GetColumnMaps()->Insert(accessString, *column, true);
     return column;
@@ -748,55 +509,64 @@ DbColumn* ClassMapColumnFactory::RegisterColumnMap(Utf8CP accessString, DbColumn
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::Allocate(ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8CP accessString) const
+DbColumn* ClassMapColumnFactory::Allocate(SchemaImportContext& ctx, ECN::ECPropertyCR property, DbColumn::Type type, DbColumn::CreateParams const& param, Utf8StringCR accessString, bool forcePhysicalColum) const
     {
-    if (DbColumn* column = GetColumnMaps()->FindP(accessString))
+    if (DbColumn* column = GetColumnMaps()->FindP(accessString.c_str()))
         {
         if (IsCompatible(*column, type, param))
             return column;
         }
 
-    if (m_useSharedColumnStrategy)
-        return AllocatedSharedColumn(property, param, accessString);
+    if (m_useSharedColumnStrategy && !forcePhysicalColum)
+        return AllocatedSharedColumn(ctx, property, param, accessString);
 
-    return AllocateColumn(property, type, param, accessString);
+    return AllocateColumn(ctx, property, type, param, accessString);
     }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable() const
+DbTable* ClassMapColumnFactory::GetEffectiveTable(SchemaImportContext& ctx) const
+    {
+    if (m_areSharedColumnsReserved)
+        return GetOrCreateOverflowTable(ctx);
+
+    return m_primaryOrJoinedTable;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+bool ClassMapColumnFactory::IsColumnInUse(DbColumn const& column) const { return GetColumnMaps()->IsColumnInUsed(column); }
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+DbTable* ClassMapColumnFactory::GetOrCreateOverflowTable(SchemaImportContext& ctx) const
     {
     if (m_overflowTable != nullptr)
         return m_overflowTable;
 
     if (m_primaryOrJoinedTable->GetLinkNode().GetChildren().empty())
         {
-        DbTable* overflowTable = m_classMap.GetDbMap().GetDbSchemaR().CreateOverflowTable(*m_primaryOrJoinedTable);
+        DbTable* overflowTable = DbMappingManager::Tables::CreateOverflowTable(ctx, *m_primaryOrJoinedTable);
         const_cast<ClassMap&>(m_classMap).SetOverflowTable(*overflowTable);
-        return m_overflowTable = overflowTable;
-
+        m_overflowTable = overflowTable;
+        return m_overflowTable;
         }
     else if (m_primaryOrJoinedTable->GetLinkNode().GetChildren().size() == 1)
         {
         DbTable::LinkNode const* overflowTable = m_primaryOrJoinedTable->GetLinkNode().GetChildren()[0];
         if (overflowTable->GetType() == DbTable::Type::Overflow)
-            return  m_overflowTable = &overflowTable->GetTableR();
+            {
+            m_overflowTable = &overflowTable->GetTableR();
+            return m_overflowTable;
+            }
         }
 
     BeAssert(false && "Cannot create overflow table");
     return nullptr;
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-ClassMapColumnFactory::ClassMapColumnFactory(ClassMap const& classMap) : m_classMap(classMap), m_primaryOrJoinedTable(&m_classMap.GetJoinedOrPrimaryTable())
-    {
-    m_useSharedColumnStrategy = (classMap.GetMapStrategy().GetTphInfo().IsValid() && classMap.GetMapStrategy().GetTphInfo().GetShareColumnsMode() == TablePerHierarchyInfo::ShareColumnsMode::Yes);
-    if (m_useSharedColumnStrategy && m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow().IsValid())
-        m_maxSharedColumnCount = m_classMap.GetMapStrategy().GetTphInfo().GetMaxSharedColumnsBeforeOverflow();
-    }
 
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
@@ -813,15 +583,15 @@ ColumnMaps* ClassMapColumnFactory::GetColumnMaps() const
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
-DbColumn* ClassMapColumnFactory::ReuseOrCreateSharedColumn() const
+DbColumn* ClassMapColumnFactory::ReuseOrCreateSharedColumn(SchemaImportContext& ctx) const
     {
-    for (DbColumn const* column : GetEffectiveTable()->GetColumns())
+    for (DbColumn const* column : GetEffectiveTable(ctx)->GetColumns())
         {
         if (column->IsShared() && !GetColumnMaps()->IsColumnInUsed(*column))
             return const_cast<DbColumn*>(column);
         }
 
-    return GetEffectiveTable()->CreateSharedColumn();
+    return GetEffectiveTable(ctx)->CreateSharedColumn();
     }
 
 //------------------------------------------------------------------------------------------
@@ -831,9 +601,10 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
     {
     if (DbColumn::IsCompatible(avaliableColumn.GetType(), type))
         {
-        if (!m_primaryOrJoinedTable->IsOwnedByECDb() || (avaliableColumn.GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
-                                                         avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
-                                                         avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))
+        if (m_primaryOrJoinedTable->GetType() == DbTable::Type::Existing
+            || (avaliableColumn.GetConstraints().HasNotNullConstraint() == params.AddNotNullConstraint() &&
+                avaliableColumn.GetConstraints().HasUniqueConstraint() == params.AddUniqueConstraint() &&
+                avaliableColumn.GetConstraints().GetCollation() == params.GetCollation()))
             {
             return true;
             }
@@ -842,6 +613,10 @@ bool ClassMapColumnFactory::IsCompatible(DbColumn const& avaliableColumn, DbColu
     return false;
     }
 
+
+//***************************************************************************************
+// ClassMapColumnFactory::ColumnResolutionScope
+//***************************************************************************************
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
@@ -854,21 +629,6 @@ ClassMapColumnFactory::ColumnResolutionScope::ColumnResolutionScope(ClassMap con
         }
 
     m_classMap.GetColumnFactory().m_columnResolutionScope = this;
-    }
-
-
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-ColumnMaps& ClassMapColumnFactory::ColumnResolutionScope::GetColumnMaps()
-    {
-    if (!m_init)
-        {
-        _Fill(m_columnMaps);
-        m_init = true;
-        }
-
-    return m_columnMaps;
     }
 
 //------------------------------------------------------------------------------------------
@@ -897,6 +657,27 @@ ClassMapColumnFactory::ColumnResolutionScope::~ColumnResolutionScope()
 //------------------------------------------------------------------------------------------
 //@bsimethod                                                    Affan.Khan       05 / 2017
 //-----------------------------------------------------------------------------------------
+ColumnMaps& ClassMapColumnFactory::ColumnResolutionScope::GetColumnMaps()
+    {
+    if (!m_init)
+        {
+        _Fill(m_columnMaps);
+        m_init = true;
+        }
+
+    return m_columnMaps;
+    }
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
+ECDbCR ClassMapColumnFactory::GetECDb() const { return m_classMap.GetDbMap().GetECDb(); }
+
+
+
+//------------------------------------------------------------------------------------------
+//@bsimethod                                                    Affan.Khan       05 / 2017
+//-----------------------------------------------------------------------------------------
 void ImportColumnResolutionScope::_Fill(ColumnMaps& columnMaps)
     {
     ColumnMapContext::Query(columnMaps, m_classMap, ColumnMapContext::Filter::InheritedAndLocal);
@@ -910,14 +691,4 @@ void UpdateColumnResolutionScope::_Fill(ColumnMaps& columnMaps)
     ColumnMapContext::Query(columnMaps, m_classMap, ColumnMapContext::Filter::Full);
     }
 
-//------------------------------------------------------------------------------------------
-//@bsimethod                                                    Affan.Khan       05 / 2017
-//-----------------------------------------------------------------------------------------
-void EndTableRelationshipColumnResolutionScope::_Fill(ColumnMaps& columnMaps)
-    {
-    for (ClassMapCP classMap : m_relevantMaps)
-        {
-        ColumnMapContext::Query(columnMaps, *classMap, ColumnMapContext::Filter::Full);
-        }
-    }
 END_BENTLEY_SQLITE_EC_NAMESPACE

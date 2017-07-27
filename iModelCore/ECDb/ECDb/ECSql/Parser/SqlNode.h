@@ -458,9 +458,6 @@ namespace connectivity
                 */
             bool impl_parseTableNameNodeToString_throw (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
 
-            Utf8String convertDateTimeString (const SQLParseNodeParameter& rParam, const Utf8String& rString) const;
-            Utf8String convertDateString (const SQLParseNodeParameter& rParam, const Utf8String& rString) const;
-            Utf8String convertTimeString (const SQLParseNodeParameter& rParam, const Utf8String& rString) const;
             void parseLeaf (Utf8String& rString, const SQLParseNodeParameter& rParam) const;
 #if !NDEBUG
         private:

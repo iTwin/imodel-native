@@ -276,7 +276,7 @@ void ECSqlTypeInfo::DetermineTypeInfo(ECPropertyCR ecProperty)
     if (primitiveType == ECN::PRIMITIVETYPE_DateTime)
         {
         DateTime::Info dateTimeInfo;
-        StandardCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty);
+        CoreCustomAttributeHelper::GetDateTimeInfo(dateTimeInfo, ecProperty);
         Populate(isArray, &primitiveType, nullptr, minOccurs, maxOccurs, &dateTimeInfo);
         }
     else

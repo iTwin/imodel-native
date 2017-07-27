@@ -6,20 +6,23 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Bentley/Bentley.h>
-#include <Bentley/CatchNonPortable.h>
-#include <BeSQLite/BeSQLite.h>
-#include <ECObjects/ECObjectsAPI.h>
-#include <ECDb/ECDbApi.h>
+#include <Bentley/BeId.h>
+#include <Bentley/Nullable.h>
 #include <Bentley/DateTime.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Bentley/PerformanceLogger.h>
+#include <Bentley/CatchNonPortable.h>
+#include <Bentley/Nullable.h>
+#include <BeSQLite/BeSQLite.h>
+#include <ECObjects/ECObjectsAPI.h>
+#include <ECObjects/SchemaComparer.h>
+#include <ECDb/ECDbApi.h>
 #include <algorithm>
 #include <memory>
 
 #include "ECDbInternalTypes.h"
 #include "ECDbLogger.h"
 #include "IssueReporter.h"
-#include "Nullable.h"
 
 #include "ECDbImpl.h"
 
@@ -32,6 +35,8 @@
 #include "ECDbSqlFunctions.h"
 
 #include "DbMap.h"
+#include "DbMappingManager.h"
+#include "DbMapValidator.h"
 #include "MapStrategy.h"
 #include "DbSchema.h"
 #include "SqlNames.h"
@@ -44,8 +49,6 @@
 #include "ClassMappingInfo.h"
 #include "ClassMapPersistenceManager.h"
 #include "ClassMapPersistenceManager.h"
-#include "ClassMapper.h"
-#include <ECObjects/SchemaComparer.h>
 #include "LightweightCache.h"
 #include "ClassMapColumnFactory.h"
 #include "ViewGenerator.h"

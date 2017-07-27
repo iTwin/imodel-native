@@ -15,7 +15,7 @@ BEGIN_ECDBUNITTESTS_NAMESPACE
 //=======================================================================================
 // @bsistruct                                                   Mike.Embick     12/15
 //=======================================================================================
-struct ECDbMetaSchemaECSqlTestFixture : SchemaImportTestFixture
+struct ECDbMetaSchemaECSqlTestFixture : ECDbTestFixture
     {
 private:
     void AssertSchemaDef(ECSchemaCR expectedSchema, ECSqlStatement const& actualSchemaDefRow);
@@ -27,15 +27,14 @@ private:
     void AssertEnumerationValue(ECEnumeratorCR expectedEnumValue, IECSqlValue const& actualEnumValue);
     void AssertKindOfQuantityDefs(ECSchemaCR expectedSchema);
     void AssertKindOfQuantityDef(KindOfQuantityCR expectedKoq, ECSqlStatement const& actualKoqDefRow);
+    void AssertPropertyCategoryDefs(ECSchemaCR expectedSchema);
+    void AssertPropertyCategoryDef(PropertyCategoryCR expectedCat, ECSqlStatement const& actualCatDefRow);
     void AssertPropertyDefs(ECClassCR expectedClass);
     void AssertPropertyDef(ECPropertyCR expectedProp, ECSqlStatement const& actualPropertyDefRow);
 
 protected:
     void AssertSchemaDefs();
-    void AssertClassHasBaseClasses (ECClassContainer& ecClasses);
-    void GetAllBaseClassNames (ECClassP ecClass, std::vector<Utf8String>& classNames, int* classCount);
-    bool ContainsClassName (Utf8String searchedClassName, std::vector<Utf8String>& classNames);
-    void VerifyECDbPropertyInheritance(ECClassCP ecClass);
+    void VerifyECDbPropertyInheritance(ECClassCP);
     };
 
 //---------------------------------------------------------------------------------
@@ -44,23 +43,24 @@ protected:
 void ECDbMetaSchemaECSqlTestFixture::AssertSchemaDefs()
     {
     ECSqlStatement schemaStatement;
-    ASSERT_EQ(ECSqlStatus::Success, schemaStatement.Prepare(GetECDb(), "SELECT Name,* FROM meta.ECSchemaDef"));
+    ASSERT_EQ(ECSqlStatus::Success, schemaStatement.Prepare(m_ecdb, "SELECT Name,* FROM meta.ECSchemaDef"));
     
     int actualSchemaCount = 0;
     while (BE_SQLITE_ROW == schemaStatement.Step())
         {
         Utf8CP actualSchemaName = schemaStatement.GetValueText(0);
-        ECSchemaCP expectedSchema = GetECDb().Schemas().GetSchema(actualSchemaName);
+        ECSchemaCP expectedSchema = m_ecdb.Schemas().GetSchema(actualSchemaName);
         ASSERT_TRUE(expectedSchema != nullptr);
 
         AssertSchemaDef(*expectedSchema, schemaStatement);
         AssertClassDefs(*expectedSchema);
         AssertEnumerationDefs(*expectedSchema);
         AssertKindOfQuantityDefs(*expectedSchema);
+        AssertPropertyCategoryDefs(*expectedSchema);
         actualSchemaCount++;
         }
 
-    bvector<ECSchemaCP> expectedSchemas = GetECDb().Schemas().GetSchemas(false);
+    bvector<ECSchemaCP> expectedSchemas = m_ecdb.Schemas().GetSchemas(false);
     ASSERT_EQ((int) expectedSchemas.size(), actualSchemaCount);
     }
 
@@ -83,7 +83,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, 
         if (colName.EqualsI("ECInstanceId"))
             ASSERT_EQ(expectedSchema.GetId().GetValue(), val.GetId<ECSchemaId>().GetValue()) << "ECSchemaDef.ECInstanceId";
         else if (colName.EqualsI("ECClassId"))
-            ASSERT_EQ(GetECDb().Schemas().GetClass("ECDbMeta", "ECSchemaDef")->GetId(), val.GetId<ECClassId>()) << "ECSchemaDef.ECClassId";
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "ECSchemaDef")->GetId(), val.GetId<ECClassId>()) << "ECSchemaDef.ECClassId";
         else if (colName.EqualsI("Name"))
             ASSERT_STREQ(expectedSchema.GetName().c_str(), val.GetText()) << "ECSchemaDef.Name";
         else if (colName.EqualsI("DisplayLabel"))
@@ -121,7 +121,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertSchemaDef(ECSchemaCR expectedSchema, 
 void ECDbMetaSchemaECSqlTestFixture::AssertClassDefs(ECSchemaCR expectedSchema)
     {
     ECSqlStatement classStatement;
-    ASSERT_EQ(ECSqlStatus::Success, classStatement.Prepare(GetECDb(), "SELECT c.Name, c.* FROM meta.ECSchemaDef s "
+    ASSERT_EQ(ECSqlStatus::Success, classStatement.Prepare(m_ecdb, "SELECT c.Name, c.* FROM meta.ECSchemaDef s "
                                                            "JOIN meta.ECClassDef c USING meta.SchemaOwnsClasses "
                                                            "WHERE s.Name=?"));
 
@@ -152,7 +152,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECS
     ECCustomAttributeClassCP expectedCAClass = expectedClass.GetCustomAttributeClassCP();
     ECRelationshipClassCP expectedRelClass = expectedClass.GetRelationshipClassCP();
     
-    ECClassId schemaOwnsClassesRelClassId = GetECDb().Schemas().GetClassId("ECDbMeta", "SchemaOwnsClasses");
+    ECClassId schemaOwnsClassesRelClassId = m_ecdb.Schemas().GetClassId("ECDbMeta", "SchemaOwnsClasses");
     ASSERT_TRUE(schemaOwnsClassesRelClassId.IsValid());
 
     const int colCount = actualClassDefRow.GetColumnCount();
@@ -174,7 +174,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECS
 
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(GetECDb().Schemas().GetClass("ECDbMeta", "ECClassDef")->GetId(), val.GetId<ECClassId>()) << "ECClassDef.ECClassId";
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "ECClassDef")->GetId(), val.GetId<ECClassId>()) << "ECClassDef.ECClassId";
             continue;
             }
 
@@ -276,7 +276,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertClassDef(ECClassCR expectedClass, ECS
 void ECDbMetaSchemaECSqlTestFixture::AssertBaseClasses(ECClassCR expectedClass)
     {
     ECSqlStatement directBaseClassStatement;
-    ASSERT_EQ(ECSqlStatus::Success, directBaseClassStatement.Prepare(GetECDb(), "SELECT TargetECInstanceId FROM meta.ClassHasBaseClasses WHERE SourceECInstanceId=? ORDER BY Ordinal"));
+    ASSERT_EQ(ECSqlStatus::Success, directBaseClassStatement.Prepare(m_ecdb, "SELECT TargetECInstanceId FROM meta.ClassHasBaseClasses WHERE SourceECInstanceId=? ORDER BY Ordinal"));
     ASSERT_EQ(ECSqlStatus::Success, directBaseClassStatement.BindId(1, expectedClass.GetId()));
 
     int ordinal = 0;
@@ -297,7 +297,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertBaseClasses(ECClassCR expectedClass)
 void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationDefs(ECSchemaCR expectedSchema)
     {
     ECSqlStatement enumStatement;
-    ASSERT_EQ(ECSqlStatus::Success, enumStatement.Prepare(GetECDb(), "SELECT e.Name, e.* FROM meta.ECSchemaDef s "
+    ASSERT_EQ(ECSqlStatus::Success, enumStatement.Prepare(m_ecdb, "SELECT e.Name, e.* FROM meta.ECSchemaDef s "
                                                            "JOIN meta.ECEnumerationDef e USING meta.SchemaOwnsEnumerations "
                                                            "WHERE s.Name=?"));
 
@@ -322,7 +322,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationDefs(ECSchemaCR expectedSc
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expectedEnum, ECSqlStatement const& actualEnumerationDefRow)
     {
-    ECClassId schemaOwnsEnumsRelClassId = GetECDb().Schemas().GetClassId("ECDbMeta", "SchemaOwnsEnumerations");
+    ECClassId schemaOwnsEnumsRelClassId = m_ecdb.Schemas().GetClassId("ECDbMeta", "SchemaOwnsEnumerations");
     ASSERT_TRUE(schemaOwnsEnumsRelClassId.IsValid());
 
     const int colCount = actualEnumerationDefRow.GetColumnCount();
@@ -345,7 +345,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationDef(ECEnumerationCR expect
 
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(GetECDb().Schemas().GetClass("ECDbMeta", "ECEnumerationDef")->GetId(), val.GetId<ECClassId>()) << "ECEnumerationDef.ECClassId";
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "ECEnumerationDef")->GetId(), val.GetId<ECClassId>()) << "ECEnumerationDef.ECClassId";
             continue;
             }
 
@@ -468,7 +468,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertEnumerationValue(ECEnumeratorCR expec
 void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDefs(ECSchemaCR expectedSchema)
     {
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(GetECDb(), "SELECT koq.Name, koq.* FROM meta.ECSchemaDef s "
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT koq.Name, koq.* FROM meta.ECSchemaDef s "
                                                           "JOIN meta.KindOfQuantityDef koq USING meta.SchemaOwnsKindOfQuantities "
                                                           "WHERE s.Name=?"));
 
@@ -513,7 +513,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
 
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(GetECDb().Schemas().GetClass("ECDbMeta", "KindOfQuantityDef")->GetId(), val.GetId<ECClassId>()) << "KindOfQuantityDef.ECClassId";
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "KindOfQuantityDef")->GetId(), val.GetId<ECClassId>()) << "KindOfQuantityDef.ECClassId";
             continue;
             }
 
@@ -584,13 +584,111 @@ void ECDbMetaSchemaECSqlTestFixture::AssertKindOfQuantityDef(KindOfQuantityCR ex
         }
     }
 
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertPropertyCategoryDefs(ECSchemaCR expectedSchema)
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT cat.Name, cat.* FROM meta.ECSchemaDef s "
+                                                      "JOIN meta.PropertyCategoryDef cat USING meta.SchemaOwnsPropertyCategories "
+                                                      "WHERE s.Name=?"));
+
+    ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, expectedSchema.GetName().c_str(), IECSqlBinder::MakeCopy::No));
+
+    int actualCatCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        Utf8CP actualCatName = statement.GetValueText(0);
+        PropertyCategoryCP expectedCat = expectedSchema.GetPropertyCategoryCP(actualCatName);
+        ASSERT_TRUE(expectedCat != nullptr);
+
+        AssertPropertyCategoryDef(*expectedCat, statement);
+        actualCatCount++;
+        }
+
+    ASSERT_EQ((int) expectedSchema.GetPropertyCategoryCount(), actualCatCount);
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                                                    Krischan.Eberle 06/2016
+//+---------------+---------------+---------------+---------------+---------------+------
+void ECDbMetaSchemaECSqlTestFixture::AssertPropertyCategoryDef(PropertyCategoryCR expectedCat, ECSqlStatement const& actualCatDefRow)
+    {
+    const int colCount = actualCatDefRow.GetColumnCount();
+    for (int i = 0; i < colCount; i++)
+        {
+        IECSqlValue const& val = actualCatDefRow.GetValue(i);
+        ECSqlColumnInfoCR colInfo = val.GetColumnInfo();
+
+        ECPropertyCP colInfoProp = colInfo.GetProperty();
+        ASSERT_TRUE(colInfoProp != nullptr);
+
+        Utf8StringCR colName = colInfoProp->GetName();
+
+        if (colName.EqualsI("ECInstanceId"))
+            {
+            //EnumerationId is not exposed in API. So we can only test that the actual id is generally a valid one
+            ASSERT_TRUE(val.GetId<BeInt64Id>().IsValid()) << "PropertyCategoryDef.ECInstanceId";
+            continue;
+            }
+
+        if (colName.EqualsI("ECClassId"))
+            {
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "PropertyCategoryDef")->GetId(), val.GetId<ECClassId>()) << "PropertyCategoryDef.ECClassId";
+            continue;
+            }
+
+        if (colName.EqualsI("Schema"))
+            {
+            ECClassId actualRelClassId;
+            ASSERT_EQ(expectedCat.GetSchema().GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "PropertyCategoryDef.Schema";
+            ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "PropertyCategoryDef.Schema";
+            continue;
+            }
+
+        if (colName.EqualsI("Name"))
+            {
+            ASSERT_STREQ(expectedCat.GetName().c_str(), val.GetText()) << "PropertyCategoryDef.Name";
+            continue;
+            }
+
+        if (colName.EqualsI("DisplayLabel"))
+            {
+            if (expectedCat.GetIsDisplayLabelDefined())
+                ASSERT_STREQ(expectedCat.GetInvariantDisplayLabel().c_str(), val.GetText()) << "PropertyCategoryDef.DisplayLabel";
+            else
+                ASSERT_TRUE(val.IsNull()) << "PropertyCategoryDef.DisplayLabel";
+
+            continue;
+            }
+
+        if (colName.EqualsI("Description"))
+            {
+            if (!expectedCat.GetInvariantDescription().empty())
+                ASSERT_STREQ(expectedCat.GetInvariantDescription().c_str(), val.GetText()) << "PropertyCategoryDef.Description";
+            else
+                ASSERT_TRUE(val.IsNull()) << "PropertyCategoryDef.Description";
+
+            continue;
+            }
+
+        if (colName.EqualsI("Priority"))
+            {
+            ASSERT_EQ((int) expectedCat.GetPriority(), val.GetInt()) << "PropertyCategoryDef.Priority";
+            continue;
+            }
+        }
+    }
+
 //---------------------------------------------------------------------------------
 // @bsimethod                                                    Krischan.Eberle 04/2016
 //+---------------+---------------+---------------+---------------+---------------+------
 void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDefs(ECClassCR expectedClass)
     {
     ECSqlStatement propStatement;
-    ASSERT_EQ(ECSqlStatus::Success, propStatement.Prepare(GetECDb(), "SELECT p.Name, p.* FROM meta.ECPropertyDef p "
+    ASSERT_EQ(ECSqlStatus::Success, propStatement.Prepare(m_ecdb, "SELECT p.Name, p.* FROM meta.ECPropertyDef p "
                                                            "JOIN meta.ECClassDef c USING meta.ClassOwnsLocalProperties "
                                                            "JOIN meta.ECSchemaDef s USING meta.SchemaOwnsClasses "
                                                            "WHERE s.Name=? AND c.Name=? ORDER BY p.Ordinal"));
@@ -651,7 +749,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
         
         if (colName.EqualsI("ECClassId"))
             {
-            ASSERT_EQ(GetECDb().Schemas().GetClass("ECDbMeta", "ECPropertyDef")->GetId(), val.GetId<ECClassId>()) << "ECPropertyDef.ECClassId";
+            ASSERT_EQ(m_ecdb.Schemas().GetClass("ECDbMeta", "ECPropertyDef")->GetId(), val.GetId<ECClassId>()) << "ECPropertyDef.ECClassId";
             continue;
             }
 
@@ -694,6 +792,12 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             continue;
             }
 
+        if (colName.EqualsI("Priority"))
+            {
+            ASSERT_EQ(expectedProp.GetPriority(), val.GetInt()) << "ECPropertyDef.Priority for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            continue;
+            }
+
         if (colName.EqualsI("Ordinal"))
             {
             int actualOrdinal = val.GetInt();
@@ -730,6 +834,36 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             continue;
             }
 
+        if (colName.EqualsI("KindOfQuantity"))
+            {
+            KindOfQuantityCP expectedKoq = expectedProp.GetKindOfQuantity();
+
+            if (expectedKoq != nullptr)
+                {
+                ECClassId actualRelClassId;
+                ASSERT_EQ(expectedKoq->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.KindOfQuantity for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("Category"))
+            {
+            if (expectedProp.GetCategory() != nullptr)
+                {
+                ECClassId actualRelClassId;
+                ASSERT_EQ(expectedProp.GetCategory()->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.Category for prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
         if (colName.EqualsI("PrimitiveType"))
             {
             if (primProp != nullptr && primProp->GetEnumeration() == nullptr)
@@ -741,6 +875,97 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
 
             continue;
             }
+
+        if (colName.EqualsI("PrimitiveTypeMinLength"))
+            {
+            if (expectedProp.IsMinimumLengthDefined())
+                ASSERT_EQ((int) expectedProp.GetMinimumLength(), val.GetInt()) << "ECPropertyDef.PrimitiveTypeMinLength for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.PrimitiveTypeMinLength for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("PrimitiveTypeMaxLength"))
+            {
+            if (expectedProp.IsMaximumLengthDefined())
+                ASSERT_EQ((int) expectedProp.GetMaximumLength(), val.GetInt()) << "ECPropertyDef.PrimitiveTypeMaxLength for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.PrimitiveTypeMaxLength for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("PrimitiveTypeMinValue"))
+            {
+            if (expectedProp.IsMinimumValueDefined())
+                {
+                ECValue expectedMinValue;
+                ASSERT_EQ(ECObjectsStatus::Success, expectedProp.GetMinimumValue(expectedMinValue)) << "ECPropertyDef.PrimitiveTypeMinValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(expectedMinValue.IsPrimitive());
+                double expectedMin = 0.0;
+                switch (expectedMinValue.GetPrimitiveType())
+                    {
+                        case PRIMITIVETYPE_Double:
+                            expectedMin = expectedMinValue.GetDouble();
+                            break;
+
+                        case PRIMITIVETYPE_Integer:
+                            expectedMin = (double) expectedMinValue.GetInteger();
+                            break;
+
+                        case PRIMITIVETYPE_Long:
+                            expectedMin = (double) expectedMinValue.GetLong();
+                            break;
+
+                        default:
+                            FAIL() << "Unexpected min value for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                            return;
+                    }
+
+                ASSERT_DOUBLE_EQ(expectedMin, val.GetDouble()) << "ECPropertyDef.PrimitiveTypeMinValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.PrimitiveTypeMinValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
+        if (colName.EqualsI("PrimitiveTypeMaxValue"))
+            {
+            if (expectedProp.IsMaximumValueDefined())
+                {
+                ECValue expectedMaxValue;
+                ASSERT_EQ(ECObjectsStatus::Success, expectedProp.GetMaximumValue(expectedMaxValue)) << "ECPropertyDef.PrimitiveTypeMaxValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                ASSERT_TRUE(expectedMaxValue.IsPrimitive());
+                double expectedMax = 0.0;
+                switch (expectedMaxValue.GetPrimitiveType())
+                    {
+                        case PRIMITIVETYPE_Double:
+                            expectedMax = expectedMaxValue.GetDouble();
+                            break;
+
+                        case PRIMITIVETYPE_Integer:
+                            expectedMax = (double) expectedMaxValue.GetInteger();
+                            break;
+
+                        case PRIMITIVETYPE_Long:
+                            expectedMax = (double) expectedMaxValue.GetLong();
+                            break;
+
+                        default:
+                            FAIL() << "Unexpected max value for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                            return;
+                    }
+
+                ASSERT_DOUBLE_EQ(expectedMax, val.GetDouble()) << "ECPropertyDef.PrimitiveTypeMaxValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+                }
+            else
+                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.PrimitiveTypeMaxValue for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
+
+            continue;
+            }
+
 
         if (colName.EqualsI("Enumeration"))
             {
@@ -802,26 +1027,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
             continue;
             }
 
-        if (colName.EqualsI("KindOfQuantity"))
-            {
-            KindOfQuantityCP expectedKoq = nullptr;
-            if (primProp != nullptr)
-                expectedKoq = primProp->GetKindOfQuantity();
-            else if (primArrayProp != nullptr)
-                expectedKoq = primArrayProp->GetKindOfQuantity();
-
-            if (expectedKoq != nullptr)
-                {
-                ECClassId actualRelClassId;
-                ASSERT_EQ(expectedKoq->GetId().GetValue(), val.GetNavigation(&actualRelClassId).GetValueUnchecked()) << "ECPropertyDef.KindOfQuantity for prim or prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                ASSERT_EQ(colInfoProp->GetAsNavigationProperty()->GetRelationshipClass()->GetId().GetValue(), actualRelClassId.GetValue()) << "ECPropertyDef.KindOfQuantity for prim or prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-                }
-            else
-                ASSERT_TRUE(val.IsNull()) << "ECPropertyDef.KindOfQuantity for neither prim nor prim array prop for " << expectedProp.GetClass().GetFullName() << "." << expectedProp.GetName().c_str();
-
-            continue;
-            }
-
+        
         if (colName.EqualsI("ArrayMinOccurs"))
             {
             ArrayECPropertyCP arrayProp = nullptr;
@@ -892,8 +1098,7 @@ void ECDbMetaSchemaECSqlTestFixture::AssertPropertyDef(ECPropertyCR expectedProp
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(ECDbMetaSchemaECSqlTestFixture, VerifyQueries)
     {
-    SetupECDb("ecdbmetaschematests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbmetaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
     AssertSchemaDefs();
     }
 
@@ -902,11 +1107,10 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, VerifyQueries)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbMetaSchemaECSqlTestFixture, ECClassId)
     {
-    SetupECDb("metaschematests.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(GetECDb().IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("metaschematests.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
     ECSqlStatement stmt;
-    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(GetECDb(), "SELECT * from meta.ECSchemaDef WHERE ECClassId IS NOT NULL"));
+    ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT * from meta.ECSchemaDef WHERE ECClassId IS NOT NULL"));
      }
  
 /*---------------------------------------------------------------------------------------
@@ -986,10 +1190,9 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, TestPropertyOverrides)
     ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "n", PRIMITIVETYPE_String));
     
     // create ECDb with test schema, then read it back out to update local copy
-    ECDbR ecdb = SetupECDb("PropertyOverrides.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
-    importSchema(ecdb, *testSchema);
-    ECSchemaCP readOutSchema = ecdb.Schemas().GetSchema("testSchema");
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("PropertyOverrides.ecdb"));
+    importSchema(m_ecdb, *testSchema);
+    ECSchemaCP readOutSchema = m_ecdb.Schemas().GetSchema("testSchema");
     ECClassCP readOutmn = readOutSchema->GetClassCP("MN");
 
     // compare local copy properties with ECSql-retrieved properties
@@ -1004,8 +1207,8 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, TestPropertyOverrides)
     ASSERT_EQ(ECObjectsStatus::Success, mn->CreatePrimitiveProperty(primitiveProperty, "k", PRIMITIVETYPE_String));
 
     // re-import and read out schema, then validate through ECSql
-    importSchema(ecdb, *testSchema);
-    readOutSchema = ecdb.Schemas().GetSchema("testSchema");
+    importSchema(m_ecdb, *testSchema);
+    readOutSchema = m_ecdb.Schemas().GetSchema("testSchema");
     readOutmn = readOutSchema->GetClassCP("MN");
     VerifyECDbPropertyInheritance(readOutmn);
 
@@ -1023,8 +1226,8 @@ TEST_F(ECDbMetaSchemaECSqlTestFixture, TestPropertyOverrides)
     ASSERT_EQ(ECObjectsStatus::Success, ab->CreatePrimitiveProperty(primitiveProperty, "h", PRIMITIVETYPE_String));
 
     // re-import and read out schema, then validate through ECSql
-    importSchema(ecdb, *testSchema);
-    readOutSchema = ecdb.Schemas().GetSchema("testSchema");
+    importSchema(m_ecdb, *testSchema);
+    readOutSchema = m_ecdb.Schemas().GetSchema("testSchema");
     readOutmn = readOutSchema->GetClassCP("MN");
     VerifyECDbPropertyInheritance(readOutmn);
     }
@@ -1036,7 +1239,7 @@ void ECDbMetaSchemaECSqlTestFixture::VerifyECDbPropertyInheritance(ECClassCP ecC
     {
     // retrieve all local, inherited, and overridden properties from a given class
     ECSqlStatement propertyStatement;
-    ASSERT_EQ(ECSqlStatus::Success, propertyStatement.Prepare(GetECDb(), "SELECT p.ECInstanceId FROM meta.ECClassDef c1 "
+    ASSERT_EQ(ECSqlStatus::Success, propertyStatement.Prepare(m_ecdb, "SELECT p.ECInstanceId FROM meta.ECClassDef c1 "
         "JOIN meta.ClassHasAllBaseClasses rel ON rel.SourceECInstanceId = c1.ECInstanceId "
         "JOIN meta.ECClassDef c2 ON c2.ECInstanceId = rel.TargetECInstanceId "
         "INNER JOIN meta.ECPropertyDef p ON p.Class.Id = c2.ECInstanceId "

@@ -61,7 +61,7 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
     BeAssert(propertyPathId.IsValid());
     BeAssert(columnId.IsValid());
 
-    CachedStatementPtr stmt = GetMapSaveContext().GetECDb().GetCachedStatement("INSERT INTO ec_PropertyMap(Id,ClassId,PropertyPathId,ColumnId) VALUES(?,?,?,?)");
+    CachedStatementPtr stmt = GetMapSaveContext().GetECDb().GetImpl().GetCachedSqliteStatement("INSERT INTO ec_PropertyMap(Id,ClassId,PropertyPathId,ColumnId) VALUES(?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -69,7 +69,7 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
         }
 
     BeInt64Id pmId;
-    if (GetMapSaveContext().GetECDb().GetECDbImplR().GetSequence(IdSequences::Key::PropertyMapId).GetNextValue(pmId))
+    if (GetMapSaveContext().GetECDb().GetImpl().GetSequence(IdSequences::Key::PropertyMapId).GetNextValue(pmId))
         return ERROR;
 
     if (BE_SQLITE_OK != stmt->BindId(1, pmId) ||
@@ -95,7 +95,7 @@ BentleyStatus DbClassMapSaveContext::InsertPropertyMap(ECPropertyId rootProperty
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExtendedInfo const& mapStrategyExtInfo)
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_ClassMap(ClassId, MapStrategy, ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo) VALUES (?,?,?,?,?)");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_ClassMap(ClassId, MapStrategy, ShareColumnsMode, MaxSharedColumnsBeforeOverflow, JoinedTableInfo) VALUES (?,?,?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -134,7 +134,7 @@ BentleyStatus DbMapSaveContext::InsertClassMap(ECClassId classId, MapStrategyExt
 //---------------------------------------------------------------------------------------
 BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::ECPropertyId rootPropertyId, Utf8CP accessString, bool addIfDoesNotExist)
     {
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT Id FROM ec_PropertyPath WHERE RootPropertyId =? AND AccessString = ?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT Id FROM ec_PropertyPath WHERE RootPropertyId =? AND AccessString = ?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to prepare statement");
@@ -152,13 +152,13 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
     if (!addIfDoesNotExist)
         return ERROR;
 
-    if (m_ecdb.GetECDbImplR().GetSequence(IdSequences::Key::PropertyPathId).GetNextValue(id) != BE_SQLITE_OK)
+    if (m_ecdb.GetImpl().GetSequence(IdSequences::Key::PropertyPathId).GetNextValue(id) != BE_SQLITE_OK)
         {
         BeAssert(false);
         return ERROR;
         }
 
-    stmt = m_ecdb.GetCachedStatement("INSERT INTO ec_PropertyPath(Id, RootPropertyId, AccessString) VALUES(?,?,?)");
+    stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("INSERT INTO ec_PropertyPath(Id, RootPropertyId, AccessString) VALUES(?,?,?)");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to prepare statement");
@@ -182,9 +182,8 @@ BentleyStatus DbMapSaveContext::TryGetPropertyPathId(PropertyPathId& id, ECN::EC
 //static
 BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, ClassMapLoadContext& ctx, ECDbCR ecdb, ECN::ECClassCR ecClass)
     {
-    loadContext.m_isValid = false;
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT MapStrategy,ShareColumnsMode,MaxSharedColumnsBeforeOverflow,JoinedTableInfo,UpdatableViewInfo "
-                                                      "FROM ec_ClassMap WHERE ClassId=?");
+    loadContext.m_classMapExists = false;
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT MapStrategy,ShareColumnsMode,MaxSharedColumnsBeforeOverflow,JoinedTableInfo FROM ec_ClassMap WHERE ClassId=?");
     if (stmt == nullptr)
         {
         BeAssert(false && "Failed to get statement");
@@ -192,8 +191,18 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         }
 
     stmt->BindId(1, ecClass.GetId());
-    if (stmt->Step() != BE_SQLITE_ROW)
-        return ERROR;
+    const DbResult stat = stmt->Step();
+    switch (stat)
+        {
+            case BE_SQLITE_ROW:
+                break;
+
+            case BE_SQLITE_DONE:
+                return SUCCESS; //does not exist yet -> m_isValid == false;
+
+            default:
+                return ERROR;
+        }
 
     const MapStrategy mapStrategy = Enum::FromInt<MapStrategy>(stmt->GetValueInt(0));
     if (mapStrategy == MapStrategy::TablePerHierarchy)
@@ -214,14 +223,11 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
         loadContext.m_mapStrategyExtInfo = MapStrategyExtendedInfo(mapStrategy);
         }
 
-    if (!stmt->IsColumnNull(4))
-        loadContext.m_updatableViewInfo = ClassMap::UpdatableViewInfo(stmt->GetValueText(4));
-
     stmt = nullptr; //to release the statement.
     if (ReadPropertyMaps(loadContext, ecdb, ecClass.GetId()) != SUCCESS)
         return ERROR;
 
-    loadContext.m_isValid = true;
+    loadContext.m_classMapExists = true;
     return SUCCESS;
     }
 
@@ -232,7 +238,7 @@ BentleyStatus DbClassMapLoadContext::Load(DbClassMapLoadContext& loadContext, Cl
 BentleyStatus DbClassMapLoadContext::ReadPropertyMaps(DbClassMapLoadContext& ctx, ECDbCR ecdb, ECClassId classId)
     {
     ctx.m_columnByAccessString.clear();
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT T.Name, C.Name, A.AccessString"
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT T.Name, C.Name, A.AccessString"
                                                       " FROM ec_PropertyMap P"
                                                       "     INNER JOIN ec_Column C ON C.Id = P.ColumnId"
                                                       "     INNER JOIN ec_Table T ON T.Id = C.TableId"

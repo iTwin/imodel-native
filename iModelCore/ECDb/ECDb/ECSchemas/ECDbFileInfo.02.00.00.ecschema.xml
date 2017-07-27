@@ -16,13 +16,13 @@
         </ECProperty>
     </ECEntityClass>
     <ECEntityClass typeName="EmbeddedFileInfo" modifier="Sealed" description="Attributes of a file stored in the ECDb file." displayLabel="Embedded File Info">
-        <BaseClass>FileInfo</BaseClass>
         <ECCustomAttributes>
             <ClassMap xmlns="ECDbMap.02.00">
                 <MapStrategy>ExistingTable</MapStrategy>
                 <TableName>be_EmbedFile</TableName>
             </ClassMap>
         </ECCustomAttributes>
+        <BaseClass>FileInfo</BaseClass>
         <ECProperty propertyName="Name" typeName="string" description="File name">
             <ECCustomAttributes>
                 <PropertyMap xmlns="ECDbMap.02.00">
@@ -50,12 +50,20 @@
     </ECEnumeration>
     
     <ECEntityClass typeName="ExternalFileInfo" description="Attributes of a file stored external to the repository." displayLabel="External File Info">
+        <ECCustomAttributes>
+            <ClassMap xmlns="ECDbMap.02.00">
+                <MapStrategy>TablePerHierarchy</MapStrategy>
+            </ClassMap>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+            </ShareColumns>
+        </ECCustomAttributes>
         <BaseClass>FileInfo</BaseClass>
         <ECProperty propertyName="RootFolder" typeName="StandardRootFolderType" description="Discrete set of root folders defined by the application. The DgnClientFx's standard root folders are reserved folders. Custom root folders must use ids other than the ones used for the standard root folders." />
         <ECProperty propertyName="RelativePath" typeName="string" description="File path relative to root folder"/>
     </ECEntityClass>
     
-    <ECEntityClass typeName="FileInfoOwnership">
+    <ECEntityClass typeName="FileInfoOwnership" modifier="Sealed">
         <ECCustomAttributes>
             <DbIndexList xmlns="ECDbMap.02.00">
                   <Indexes>

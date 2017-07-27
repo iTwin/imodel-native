@@ -20,7 +20,7 @@ uint32_t CachedECSqlStatement::Release()
     // Since statements can be referenced from multiple threads, and since we want to reset the statement 
     // when it is only held by the StatementCache, we need to hold the cache's mutex for the entire scope of this
     // method. However, the reference count member must still be atomic since we don't acquire the mutex for AddRef.
-    BeDbMutexHolder holder(m_cache.m_mutex);
+    BeMutexHolder lock(m_cache.m_mutex);
 
     const bool isInCache = m_isInCache; // hold this in a local before we decrement the refcount in case another thread deletes us
     const uint32_t countWas = m_refCount.DecrementAtomicPost();
@@ -79,7 +79,7 @@ struct ECSqlStatementCacheDiagnostics
 // @bsimethod                                                Krischan.Eberle      02/2015
 //---------------------------------------------------------------------------------------
 ECSqlStatementCache::ECSqlStatementCache(uint32_t maxSize, Utf8CP name)
-: m_mutex(BeDbMutex::MutexType::Recursive), m_maxSize(std::max<uint32_t> (maxSize, 1)), //a size of 0 doesn't make sense, so move it to the minimum size of 1
+: m_maxSize(std::max<uint32_t> (maxSize, 1)), //a size of 0 doesn't make sense, so move it to the minimum size of 1
   m_name(name)
     {
     BeAssert(m_maxSize > 0);
@@ -103,7 +103,7 @@ void ECSqlStatementCache::GetPreparedStatement(CachedECSqlStatementPtr& stmt, EC
     {
     if (true)
         {
-        BeDbMutexHolder _v_v(m_mutex);
+        BeMutexHolder _v_v(m_mutex);
 
         stmt = FindEntry(ecsql);
         if (stmt.IsValid())
@@ -150,6 +150,7 @@ CachedECSqlStatement* ECSqlStatementCache::FindEntry(Utf8CP ecsql) const
 //---------------------------------------------------------------------------------------
 void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR ecdb, Utf8CP ecsql) const
     {
+    BeMutexHolder _v_v(m_mutex);
     if (((uint32_t) m_entries.size()) >= m_maxSize) // if cache is full, remove oldest entry
         {
         CachedECSqlStatementPtr& last = m_entries.back();
@@ -168,7 +169,7 @@ void ECSqlStatementCache::AddStatement(CachedECSqlStatementPtr& newEntry, ECDbCR
 //---------------------------------------------------------------------------------------
 void ECSqlStatementCache::Empty()
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder lock(m_mutex);
     for (CachedECSqlStatementPtr& stmt : m_entries)
         {
         stmt->m_isInCache = false;

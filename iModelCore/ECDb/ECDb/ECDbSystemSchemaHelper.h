@@ -159,9 +159,6 @@ struct ECDbSystemSchemaHelper final : NonCopyableClass
         //! @return System property or nullptr in case of errors
         ECN::ECPropertyCP GetSystemProperty(ECSqlSystemPropertyInfo const&) const;
         ECSqlSystemPropertyInfo const& GetSystemPropertyInfo(ECN::ECPropertyCR) const;
-
-        bool IsSystemPropertyAlias(Utf8CP& sysPropName, Utf8StringCR propName) const;
-
         void ClearCache() const { m_byPropIdCache.clear(); }
     };
 

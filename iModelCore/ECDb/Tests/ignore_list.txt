@@ -1,7 +1,6 @@
 #----------------------------------------------------------------------------------------
 #   Tests that are ignored on purpose
 #----------------------------------------------------------------------------------------
-InstanceCRUDTests.*     # No need to run with the build, used by testing after build for verifying CRUD operations.
 ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run with build.
 
 #----------------------------------------------------------------------------------------
@@ -10,14 +9,17 @@ ThreadSafetyTests.*     # Experimental tests for thread safety. Should not run w
 #TFS 519203
 JsonReaderTests.ReadInstanceAlongWithRelatedInstances
 
-#TFS 520596
-RelationshipMappingTestFixture.AddDerivedClassOfConstraintOnNsideOf1NRelationship
-RelationshipMappingTestFixture.AddDerivedClassOfConstraintOn1sideOf1NRelationship
-RelationshipMappingTestFixture.AddDerivedClassOfConstraintsForNNRelationship
-
 #TFS 520654
-SchemaUpdateTestFixture.UpdateECDbMapCA_DbIndexChanges
-SchemaUpdateTestFixture.RemoveKindOfQuantityFromECProperty
-SchemaUpdateTestFixture.RemoveKindOfQuantityFromECArrayProperty
+SchemaUpgradeTestFixture.UpdateECDbMapCA_DbIndexChanges
 
+#TFS 720060 Fails due to ECObjects supplementation bug
+SchemaManagerTests.ImportMultipleSupplementalSchemas
+
+#TFS 721630 
+ECSqlSelectPrepareTests.LikeOperator
+
+#TFS 516084
+SchemaRulesTestFixture.CircularStructReferences
+
+FileFormatCompatibilityTests.CompareDdl_NewFile
 

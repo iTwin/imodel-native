@@ -61,7 +61,7 @@ struct GetTablesPropertyMapVisitor final : IPropertyMapVisitor
         ~GetTablesPropertyMapVisitor() {}
 
         std::set<DbTable const*> const& GetTables() const { return m_tables; }
-        DbTable const* GetSingleTable() const;
+
     };
 
 //=======================================================================================
@@ -80,9 +80,9 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
         BentleyStatus _Visit(SystemPropertyMap const&) const override;
 
     public:
-        explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool recurseIntoCompoundPropertyMaps = true)            
+        explicit SearchPropertyMapVisitor(PropertyMap::Type filter = PropertyMap::Type::All, bool recurseIntoCompoundPropertyMaps = true)
             {
-            SetCallbackPropertyMapFilter([filter](PropertyMap const& propertyMap) {return Enum::Contains(filter, propertyMap.GetType()); });
+            SetCallbackPropertyMapFilter([filter](PropertyMap const& propertyMap) { return Enum::Contains(filter, propertyMap.GetType()); });
             SetCallbackRecurseIntoCompoundPropertyMap([recurseIntoCompoundPropertyMaps](CompoundDataPropertyMap const&) { return recurseIntoCompoundPropertyMaps; });
             }
 
@@ -93,7 +93,6 @@ struct SearchPropertyMapVisitor final : IPropertyMapVisitor
 
         std::vector<PropertyMap const*> const& Results() const { return m_foundPropertyMaps; }
     };
-
 
 
 //=======================================================================================

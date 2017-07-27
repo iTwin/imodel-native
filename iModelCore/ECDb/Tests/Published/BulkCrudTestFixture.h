@@ -51,14 +51,12 @@ struct BulkCrudTestFixture : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 struct BulkBisDomainCrudTestFixture : public BulkCrudTestFixture
     {
-    protected:
-        bool m_failed = false;
     private:
-        void CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder);
-        void ImportSchemasFromFolder(BeFileName const& schemaFolder);
+        BentleyStatus CreateFakeBimFile(Utf8CP fileName, BeFileNameCR bisSchemaFolder);
+        BentleyStatus ImportSchemasFromFolder(BeFileName const& schemaFolder);
 
     protected:
-        void SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder);
+        BentleyStatus SetupDomainBimFile(Utf8CP fileName, BeFileName const& domainSchemaFolder, BeFileName const& bisSchemaFolder);
         static BeFileName GetDomainSchemaFolder(BeFileName& bisSchemaFolder);
     };
 END_ECDBUNITTESTS_NAMESPACE

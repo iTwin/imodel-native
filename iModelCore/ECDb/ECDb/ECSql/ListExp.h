@@ -90,10 +90,10 @@ struct ValueExpListExp final : ComputedExp
 
     public:
         ValueExpListExp() : ComputedExp(Type::ValueExpList) {}
+        explicit ValueExpListExp(std::vector<std::unique_ptr<ValueExp>>&);
 
         void AddValueExp(std::unique_ptr<ValueExp>& valueExp) { AddChild(std::move(valueExp)); }
         ValueExp const* GetValueExp(size_t index) const { return GetChild<ValueExp>(index); }
-        ParameterExp* TryGetAsParameterExpP(size_t index) const;
     };
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

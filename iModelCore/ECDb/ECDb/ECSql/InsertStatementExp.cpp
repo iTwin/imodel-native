@@ -13,7 +13,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //-----------------------------------------------------------------------------------------
 // @bsimethod                                    Krischan.Eberle                   11/2013
 //+---------------+---------------+---------------+---------------+---------------+--------
-InsertStatementExp::InsertStatementExp(std::unique_ptr<ClassNameExp>& classNameExp, std::unique_ptr<PropertyNameListExp>& propertyNameListExp, std::unique_ptr<ValueExpListExp>& valuesExp)
+InsertStatementExp::InsertStatementExp(std::unique_ptr<ClassNameExp>& classNameExp, std::unique_ptr<PropertyNameListExp>& propertyNameListExp, std::vector<std::unique_ptr<ValueExp>>& valueExpList)
     : Exp(Type::Insert), m_isOriginalPropertyNameListUnset(propertyNameListExp == nullptr || propertyNameListExp->GetChildrenCount() == 0)
     {
     m_classNameExpIndex = AddChild(std::move(classNameExp));
@@ -22,7 +22,8 @@ InsertStatementExp::InsertStatementExp(std::unique_ptr<ClassNameExp>& classNameE
         propertyNameListExp = std::make_unique<PropertyNameListExp>();
 
     m_propertyNameListExpIndex = AddChild(std::move(propertyNameListExp));
-    m_valuesExpIndex = AddChild(std::move(valuesExp));
+
+    m_valuesExpIndex = AddChild(std::make_unique<ValueExpListExp>(valueExpList));
     }
 
 //-----------------------------------------------------------------------------------------

@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="PhysicalMaterial" alias="physMat" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+
+    <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
+
+    <ECEntityClass typeName="Aluminum" modifier="Sealed">
+        <BaseClass>bis:PhysicalMaterial</BaseClass>
+        <!-- Note: ECProperties are expected in the future, but discipline-specific domains use JsonProperties or aspects for now. -->
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Concrete" modifier="Sealed">
+        <BaseClass>bis:PhysicalMaterial</BaseClass>
+        <!-- Note: ECProperties are expected in the future, but discipline-specific domains use JsonProperties or aspects for now. -->
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Steel" modifier="Sealed">
+        <BaseClass>bis:PhysicalMaterial</BaseClass>
+        <!-- Note: ECProperties are expected in the future, but discipline-specific domains use JsonProperties or aspects for now. -->
+    </ECEntityClass>
+
+</ECSchema>

@@ -272,7 +272,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertJson(StopWatch& timer
                 return ERROR;
         }
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), insertSql))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, insertSql))
         return ERROR;
 
     rapidjson::Document json;
@@ -396,8 +396,8 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
     if (SUCCESS != RunInsertJson(timer, fileName.c_str(), arrayType, arraySize, rowCount, mode))
         return ERROR;
 
-    Utf8String filePath = GetECDb().GetDbFileName();
-    GetECDb().CloseDb();
+    Utf8String filePath = m_ecdb.GetDbFileName();
+    m_ecdb.CloseDb();
 
     if (BE_SQLITE_OK != m_ecdb.OpenBeSQLiteDb(filePath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly)))
         return ERROR;
@@ -420,7 +420,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectJson(PrimitiveType ar
         }
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), selSql))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, selSql))
         return ERROR;
 
     rapidjson::Document arrayJson;
@@ -613,7 +613,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunInsertECD(StopWatch& timer,
         }
 
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), insertSql))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, insertSql))
         return ERROR;
 
     uint32_t propIndex = 0;
@@ -659,8 +659,8 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
     if (SUCCESS != RunInsertECD(timer, fileName.c_str(), arrayType, arraySize, rowCount, mode))
         return ERROR;
 
-    Utf8String filePath = GetECDb().GetDbFileName();
-    GetECDb().CloseDb();
+    Utf8String filePath = m_ecdb.GetDbFileName();
+    m_ecdb.CloseDb();
 
     if (BE_SQLITE_OK != m_ecdb.OpenBeSQLiteDb(filePath.c_str(), ECDb::OpenParams(Db::OpenMode::Readonly)))
         return ERROR;
@@ -691,7 +691,7 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::RunSelectECD(PrimitiveType arr
 
     timer.Start();
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), selSql))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, selSql))
         return ERROR;
 
     while (BE_SQLITE_ROW == stmt.Step())
@@ -931,14 +931,14 @@ BentleyStatus PerformancePrimArrayJsonVsECDTests::PopulateECDArray(IECInstanceR 
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PerformancePrimArrayJsonVsECDTests::SetupTest(Utf8CP fileName, ECDb::OpenParams const& params)
     {
-    ECDbR ecdb = SetupECDb(fileName);
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE testecd(Id INTEGER PRIMARY KEY, val BLOB);CREATE TABLE testjson(Id INTEGER PRIMARY KEY, val TEXT);"))
+    EXPECT_EQ(BE_SQLITE_OK, SetupECDb(fileName));
+    if (BE_SQLITE_OK != m_ecdb.ExecuteSql("CREATE TABLE testecd(Id INTEGER PRIMARY KEY, val BLOB);CREATE TABLE testjson(Id INTEGER PRIMARY KEY, val TEXT);"))
         return ERROR;
 
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
     BeFileName testFilePath;
-    testFilePath.AssignUtf8(ecdb.GetDbFileName());
-    ecdb.CloseDb();
+    testFilePath.AssignUtf8(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
 
     return m_ecdb.OpenBeSQLiteDb(testFilePath, params) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }

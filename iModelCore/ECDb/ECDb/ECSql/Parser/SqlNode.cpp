@@ -89,22 +89,7 @@ extern void setParser(::connectivity::OSQLParser*);
 
 namespace
     {
-    // -----------------------------------------------------------------------------
-    sal_Bool lcl_saveConvertToNumber(const RefCountedPtr< XNumberFormatter > & _xFormatter, sal_Int32 _nKey, const Utf8String& _sValue, double& _nrValue)
-        {
 
-        sal_Bool bRet = sal_False;
-        try
-            {
-
-            _nrValue = _xFormatter->convertStringToNumber(_nKey, _sValue);
-            bRet = sal_True;
-            }
-        catch (Exception&)
-            {
-            }
-        return bRet;
-        }
     // -----------------------------------------------------------------------------
     void replaceAndReset(connectivity::OSQLParseNode*& _pResetNode, connectivity::OSQLParseNode* _pNewNode)
         {
@@ -188,54 +173,6 @@ namespace connectivity
     //=============================================================================
     //= OSQLParseNode
     //=============================================================================
-    //-----------------------------------------------------------------------------
-    Utf8String OSQLParseNode::convertDateString(const SQLParseNodeParameter& rParam, const Utf8String& rString) const
-        {
-        //WIP_ECSQL: convert this code
-        //   RTL_LOGFILE_CONTEXT_AUTHOR( aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::convertDateString" );
-        //Date aDate = DBTypeConversion::toDate(rString);
-        //RefCountedPtr< XNumberFormatsSupplier > xSupplier(rParam.xFormatter->getNumberFormatsSupplier());
-        //RefCountedPtr< XNumberFormatTypes >        xTypes(xSupplier->getNumberFormats(), UNO_QUERY);
-
-        //double fDate = DBTypeConversion::toDouble(aDate,DBTypeConversion::getNULLDate(xSupplier));
-        //sal_Int32 nKey = xTypes->getStandardIndex(rParam.rLocale) + 36; // XXX hack
-        //return rParam.xFormatter->convertNumberToString(nKey, fDate);
-        TODO_ConvertCode();
-        return rString;
-        }
-
-    //-----------------------------------------------------------------------------
-    Utf8String OSQLParseNode::convertDateTimeString(const SQLParseNodeParameter& rParam, const Utf8String& rString) const
-        {
-        //   RTL_LOGFILE_CONTEXT_AUTHOR( aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::convertDateTimeString" );
-        //DateTime aDate = DBTypeConversion::toDateTime(rString);
-        //RefCountedPtr< XNumberFormatsSupplier >  xSupplier(rParam.xFormatter->getNumberFormatsSupplier());
-        //RefCountedPtr< XNumberFormatTypes >  xTypes(xSupplier->getNumberFormats(), UNO_QUERY);
-
-        //double fDateTime = DBTypeConversion::toDouble(aDate,DBTypeConversion::getNULLDate(xSupplier));
-        //sal_Int32 nKey = xTypes->getStandardIndex(rParam.rLocale) + 51; // XXX hack
-        //return rParam.xFormatter->convertNumberToString(nKey, fDateTime);
-
-        TODO_ConvertCode();
-        return rString;
-        }
-
-    //-----------------------------------------------------------------------------
-    Utf8String OSQLParseNode::convertTimeString(const SQLParseNodeParameter& rParam, const Utf8String& rString) const
-        {
-        //   RTL_LOGFILE_CONTEXT_AUTHOR( aLogger, "parse", "Ocke.Janssen@sun.com", "OSQLParseNode::convertTimeString" );
-        //Time aTime = DBTypeConversion::toTime(rString);
-        //RefCountedPtr< XNumberFormatsSupplier >  xSupplier(rParam.xFormatter->getNumberFormatsSupplier());
-
-        //RefCountedPtr< XNumberFormatTypes >  xTypes(xSupplier->getNumberFormats(), UNO_QUERY);
-
-        //double fTime = DBTypeConversion::toDouble(aTime);
-        //sal_Int32 nKey = xTypes->getStandardIndex(rParam.rLocale) + 41; // XXX hack
-        //return rParam.xFormatter->convertNumberToString(nKey, fTime);
-        TODO_ConvertCode();
-        return rString;
-        }
-
     //-----------------------------------------------------------------------------
     void OSQLParseNode::parseNodeToStr(Utf8String& rString,
         const RefCountedPtr< XConnection >& _rxConnection,
@@ -358,15 +295,6 @@ namespace connectivity
             }
         _out_rString = sBuffer;
         return bSuccess;
-        }
-
-    //-----------------------------------------------------------------------------
-    namespace
-        {
-        bool lcl_isAliasNamePresent(const OSQLParseNode& _rTableNameNode)
-            {
-            return OSQLParseNode::getTableRange(_rTableNameNode.getParent()).size() != 0;
-            }
         }
 
     //-----------------------------------------------------------------------------
@@ -794,135 +722,9 @@ namespace connectivity
             {
             ///affan for us its just one local right now . is decimal
             pLiteral->m_aNodeValue.ReplaceAll(",", "");
-
-            //      if ( s_xLocaleData->getLocaleItem( m_pData->aLocale ).decimalSeparator.toChar() == ',' )
-            //{
-            //    pLiteral->m_aNodeValue = pLiteral->m_aNodeValue.replace('.', sal_Char());
-            //    // and replace decimal
-            //    pLiteral->m_aNodeValue = pLiteral->m_aNodeValue.replace(',', '.');
-            //}
-            //   else
-            //    pLiteral->m_aNodeValue = pLiteral->m_aNodeValue.replace(',', sal_Char());
             }
         }
     // -----------------------------------------------------------------------------
-    OSQLParseNode* OSQLParser::convertNode(sal_Int32 nType, OSQLParseNode*& pLiteral)
-        {
-        if (!pLiteral)
-            return NULL;
-
-        OSQLParseNode* pReturn = pLiteral;
-
-        if ((pLiteral->isRule() && !SQL_ISRULE(pLiteral, value_exp)) || SQL_ISTOKEN(pLiteral, FALSE) || SQL_ISTOKEN(pLiteral, TRUE))
-            {
-            switch (nType)
-                {
-                case DataType::CHAR:
-                case DataType::VARCHAR:
-                case DataType::LONGVARCHAR:
-                case DataType::CLOB:
-                    if (!SQL_ISRULE(pReturn, char_value_exp) && !buildStringNodes(pReturn))
-                        pReturn = NULL;
-                default:
-                    break;
-                }
-            }
-        else
-            {
-            switch (pLiteral->getNodeType())
-                {
-                case SQL_NODE_STRING:
-                    switch (nType)
-                        {
-                        case DataType::CHAR:
-                        case DataType::VARCHAR:
-                        case DataType::LONGVARCHAR:
-                        case DataType::CLOB:
-                            break;
-                        case DataType::DATE:
-                        case DataType::TIME:
-                        case DataType::TIMESTAMP:
-                            if (m_xFormatter.IsValid())
-                                pReturn = buildDate(nType, pReturn);
-                            break;
-                        default:
-                            m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_INVALID_COMPARE);
-                            break;
-                        }
-                    break;
-                case SQL_NODE_ACCESS_DATE:
-                    switch (nType)
-                        {
-                        case DataType::DATE:
-                        case DataType::TIME:
-                        case DataType::TIMESTAMP:
-                            if (m_xFormatter.IsValid())
-                                pReturn = buildDate(nType, pReturn);
-                            else
-                                m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_INVALID_DATE_COMPARE);
-                            break;
-                        default:
-                            m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_INVALID_COMPARE);
-                            break;
-                        }
-                    break;
-                case SQL_NODE_INTNUM:
-                    switch (nType)
-                        {
-                        case DataType::BIT:
-                        case DataType::BOOLEAN:
-                        case DataType::DECIMAL:
-                        case DataType::NUMERIC:
-                        case DataType::TINYINT:
-                        case DataType::SMALLINT:
-                        case DataType::INTEGER:
-                        case DataType::BIGINT:
-                        case DataType::FLOAT:
-                        case DataType::REAL:
-                        case DataType::DOUBLE:
-                            // kill thousand seperators if any
-                            killThousandSeparator(pReturn);
-                            break;
-                        case DataType::CHAR:
-                        case DataType::VARCHAR:
-                        case DataType::LONGVARCHAR:
-                        case DataType::CLOB:
-                            pReturn = buildNode_STR_NUM(pReturn);
-                            break;
-                        default:
-                            m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_INVALID_INT_COMPARE);
-                            break;
-                        }
-                    break;
-                case SQL_NODE_APPROXNUM:
-                    switch (nType)
-                        {
-                        case DataType::DECIMAL:
-                        case DataType::NUMERIC:
-                        case DataType::FLOAT:
-                        case DataType::REAL:
-                        case DataType::DOUBLE:
-                            // kill thousand seperators if any
-                            killThousandSeparator(pReturn);
-                            break;
-                        case DataType::CHAR:
-                        case DataType::VARCHAR:
-                        case DataType::LONGVARCHAR:
-                        case DataType::CLOB:
-                            pReturn = buildNode_STR_NUM(pReturn);
-                            break;
-                        case DataType::INTEGER:
-                        default:
-                            m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_INVALID_REAL_COMPARE);
-                            break;
-                        }
-                    break;
-                default:
-                    ;
-                }
-            }
-        return pReturn;
-        }
     // -----------------------------------------------------------------------------
     sal_Int16 OSQLParser::buildPredicateRule(OSQLParseNode*& pAppend, OSQLParseNode* pLiteral, OSQLParseNode*& pCompare, OSQLParseNode* pLiteral2)
         {
@@ -930,23 +732,6 @@ namespace connectivity
         sal_Int16 nErg = 0;
         if (m_xField.IsValid())
             {
-            //sal_Int32 nType = 0;
-            //try
-            //{
-            //    m_xField->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_TYPE)) >>= nType;
-            //}
-            //catch( Exception& )
-            //{
-            //    return nErg;
-            //}
-
-            //OSQLParseNode* pNode1 = convertNode(nType,pLiteral);
-            //if ( pNode1 )
-            //{
-            //    OSQLParseNode* pNode2 = convertNode(nType,pLiteral2);
-            //    if ( !m_sErrorMessage.size() )
-            //        nErg = buildNode(pAppend,pCompare,pNode1,pNode2);
-            //}
             TODO_ConvertCode();
             }
         if (!pCompare->getParent()) // I have no parent so I was not used and I must die :-)
@@ -957,75 +742,10 @@ namespace connectivity
     sal_Int16 OSQLParser::buildLikeRule(OSQLParseNode*& pAppend, OSQLParseNode*& pLiteral, const OSQLParseNode* pEscape)
         {
         sal_Int16 nErg = 0;
-        //sal_Int32 nType = 0;
 
         if (!m_xField.IsValid())
             return nErg;
-        //try
-        //{
-        //    Any aValue;
-        //    {
-        //        aValue = m_xField->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_TYPE));
-        //        aValue >>= nType;
-        //    }
-        //}
-        //catch( Exception& )
-        //{
-        //    return nErg;
-        //}
 
-        //switch (nType)
-        //{
-        //    case DataType::CHAR:
-        //    case DataType::VARCHAR:
-        //    case DataType::LONGVARCHAR:
-        //    case DataType::CLOB:
-        //        if(pLiteral->isRule())
-        //        {
-        //            pAppend->append(pLiteral);
-        //            nErg = 1;
-        //        }
-        //        else
-        //        {
-        //            switch(pLiteral->getNodeType())
-        //            {
-        //                case SQL_NODE_STRING:
-        //                    pLiteral->m_aNodeValue = ConvertLikeToken(pLiteral, pEscape, sal_False);
-        //                    pAppend->append(pLiteral);
-        //                    nErg = 1;
-        //                    break;
-        //                case SQL_NODE_APPROXNUM:
-        //                    if (m_xFormatter.IsValid() && m_nFormatKey)
-        //                    {
-        //                        sal_Int16 nScale = 0;
-        //                        try
-        //                        {
-        //                            Any aValue = getNumberFormatProperty( m_xFormatter, m_nFormatKey, Utf8StringHelper::createFromAscii("Decimals") );
-        //                            aValue >>= nScale;
-        //                        }
-        //                        catch( Exception& )
-        //                        {
-        //                        }
-
-        //                        pAppend->append(new OSQLInternalNode(stringToDouble(pLiteral->getTokenValue(),nScale),SQL_NODE_STRING));
-        //                    }
-        //                    else
-        //                        pAppend->append(new OSQLInternalNode(pLiteral->getTokenValue(),SQL_NODE_STRING));
-
-        //                    delete pLiteral;
-        //                    nErg = 1;
-        //                    break;
-        //                default:
-        //                    m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_VALUE_NO_LIKE);
-        //                    m_sErrorMessage = m_sErrorMessage.replaceAt(m_sErrorMessage.indexOf(Utf8StringHelper::createFromAscii("#1")),2,pLiteral->getTokenValue());
-        //                    break;
-        //            }
-        //        }
-        //        break;
-        //    default:
-        //        m_sErrorMessage = m_pContext->getErrorMessage(IParseContext::ERROR_FIELD_NO_LIKE);
-        //        break;
-        //}
         TODO_ConvertCode();
         return nErg;
         }
@@ -1036,46 +756,6 @@ namespace connectivity
         OSQLParseNode* pNewNode = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE, OSQLParser::RuleID(OSQLParseNode::fct_spec));
         pNewNode->append(new OSQLInternalNode(Utf8StringHelper::createFromAscii("{"), SQL_NODE_PUNCTUATION));
         TODO_ConvertCode();
-        //OSQLParseNode* pDateNode = new OSQLInternalNode(aEmptyString, SQL_NODE_RULE,OSQLParser::RuleID(OSQLParseNode::odbc_fct_spec));
-        //pNewNode->append(pDateNode);
-        //pNewNode->append(new OSQLInternalNode(Utf8StringHelper::createFromAscii("}"), SQL_NODE_PUNCTUATION));
-
-        //switch (nType)
-        //{
-        //    case DataType::DATE:
-        //    {
-        //        Date aDate = DBTypeConversion::toDate(fValue,DBTypeConversion::getNULLDate(m_xFormatter->getNumberFormatsSupplier()));
-        //        Utf8String aString = DBTypeConversion::toDateString(aDate);
-        //        pDateNode->append(new OSQLInternalNode(aEmptyString, SQL_NODE_KEYWORD, SQL_TOKEN_D));
-        //        pDateNode->append(new OSQLInternalNode(aString, SQL_NODE_STRING));
-        //        break;
-        //    }
-        //    case DataType::TIME:
-        //    {
-        //        Time aTime = DBTypeConversion::toTime(fValue);
-        //        Utf8String aString = DBTypeConversion::toTimeString(aTime);
-        //        pDateNode->append(new OSQLInternalNode(aEmptyString, SQL_NODE_KEYWORD, SQL_TOKEN_T));
-        //        pDateNode->append(new OSQLInternalNode(aString, SQL_NODE_STRING));
-        //        break;
-        //    }
-        //    case DataType::TIMESTAMP:
-        //    {
-        //        DateTime aDateTime = DBTypeConversion::toDateTime(fValue,DBTypeConversion::getNULLDate(m_xFormatter->getNumberFormatsSupplier()));
-        //        if (aDateTime.Seconds || aDateTime.Minutes || aDateTime.Hours)
-        //        {
-        //            Utf8String aString = DBTypeConversion::toDateTimeString(aDateTime);
-        //            pDateNode->append(new OSQLInternalNode(aEmptyString, SQL_NODE_KEYWORD, SQL_TOKEN_TS));
-        //            pDateNode->append(new OSQLInternalNode(aString, SQL_NODE_STRING));
-        //        }
-        //        else
-        //        {
-        //            Date aDate(aDateTime.Day,aDateTime.Month,aDateTime.Year);
-        //            pDateNode->append(new OSQLInternalNode(aEmptyString, SQL_NODE_KEYWORD, SQL_TOKEN_D));
-        //            pDateNode->append(new OSQLInternalNode(DBTypeConversion::toDateString(aDate), SQL_NODE_STRING));
-        //        }
-        //        break;
-        //    }
-        //}
 
         return pNewNode;
         }
@@ -1085,56 +765,12 @@ namespace connectivity
         OSQLParseNode* pReturn = NULL;
         if (_pLiteral)
             {
-            //if (m_nFormatKey)
-            //{
-            //    sal_Int16 nScale = 0;
-            //    Utf8String aDec;
-            //    try
-            //    {
-            //        Any aValue = getNumberFormatProperty( m_xFormatter, m_nFormatKey, Utf8String(RTL_CONSTASCII_USTRINGPARAM("Decimals")) );
-            //        aValue >>= nScale;
-            //    }
-            //    catch( Exception& )
-            //    {
-            //    }
-
-            //    pReturn = new OSQLInternalNode(stringToDouble(_pLiteral->getTokenValue(),nScale),SQL_NODE_STRING);
-            //}
-            //else
             pReturn = new OSQLInternalNode(_pLiteral->getTokenValue(), SQL_NODE_STRING);
 
             delete _pLiteral;
             _pLiteral = NULL;
             }
         return pReturn;
-        }
-    // -----------------------------------------------------------------------------
-    Utf8String OSQLParser::stringToDouble(const Utf8String& _rValue, sal_Int16 _nScale)
-        {
-        Utf8String aValue;
-        //if(!m_xCharClass.IsValid())
-        //    m_xCharClass  = RefCountedPtr<XCharacterClassification>(m_xServiceFactory->createInstance(Utf8StringHelper::createFromAscii("com.sun.star.i18n.CharacterClassification")),UNO_QUERY);
-        //if(m_xCharClass.IsValid() && s_xLocaleData.IsValid())
-        //{
-        //    try
-        //    {
-        //        ParseResult aResult = m_xCharClass->parsePredefinedToken(KParseType::ANY_NUMBER,_rValue,0,m_pData->aLocale,0,Utf8String(),KParseType::ANY_NUMBER,Utf8String());
-        //        if((aResult.TokenType & KParseType::IDENTNAME) && aResult.EndPos == _rValue.size())
-        //        {
-        //            aValue = Utf8String::valueOf(aResult.Value);
-        //            sal_Int32 nPos = aValue.lastIndexOf(Utf8StringHelper::createFromAscii("."));
-        //            if((nPos+_nScale) < aValue.size())
-        //                aValue = aValue.replaceAt(nPos+_nScale,aValue.size()-nPos-_nScale,Utf8String());
-        //            aValue = aValue.replaceAt(aValue.lastIndexOf(Utf8StringHelper::createFromAscii(".")),1,s_xLocaleData->getLocaleItem(m_pData->aLocale).decimalSeparator);
-        //            return aValue;
-        //        }
-        //    }
-        //    catch(Exception&)
-        //    {
-        //    }
-        //}
-        aValue = _rValue; //affan
-        return aValue;
         }
 
     //-----------------------------------------------------------------------------
@@ -1152,48 +788,6 @@ namespace connectivity
 
         if (m_xField.IsValid())
             {
-            //sal_Int32 nType=0;
-            //try
-            //{
-            ////    // get the field name
-            ////    Utf8String aString;
-
-            ////    // retrieve the fields name
-            ////    // #75243# use the RealName of the column if there is any otherwise the name which could be the alias
-            ////    // of the field
-            ////    RefCountedPtr< XPropertySetInfo> xInfo = m_xField->getPropertySetInfo();
-            ////    if ( xInfo->hasPropertyByName(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_REALNAME)))
-            ////        m_xField->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_REALNAME)) >>= aString;
-            ////    else
-            ////        m_xField->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_NAME)) >>= aString;
-
-            ////    m_sFieldName = aString;
-
-            ////    // get the field format key
-            ////    if ( xInfo->hasPropertyByName(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FORMATKEY)))
-            ////        m_xField->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_FORMATKEY)) >>= m_nFormatKey;
-            ////    else
-            ////        m_nFormatKey = 0;
-
-            ////    // get the field type
-            ////    m_xField->getPropertyValue(OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_TYPE)) >>= nType;
-            //}
-            //catch ( Exception& )
-            //{
-            //    OSL_ASSERT(0);
-            //}
-
-            //if (m_nFormatKey && m_xFormatter.IsValid())
-            //    {
-            //    /*           Any aValue = getNumberFormatProperty( m_xFormatter, m_nFormatKey, OMetaConnection::getPropMap().getNameByIndex(PROPERTY_ID_LOCALE) );
-            //               OSL_ENSURE(aValue.getValueType() == ::getCppuType((const ::com::sun::star::lang::Locale*)0), "OSQLParser::PredicateTree : invalid language property !");
-
-            //               if (aValue.getValueType() == ::getCppuType((const ::com::sun::star::lang::Locale*)0))
-            //               aValue >>= m_pData->aLocale;
-            //               */
-            //    }
-            //else
-            //    m_pData->aLocale = m_pContext->getPreferredLocale();
 
             if (m_xFormatter.IsValid())
                 {
@@ -1221,25 +815,7 @@ namespace connectivity
                 //           }
                 }
 
-            //switch (nType)
-            //{
-            //    case DataType::DATE:
-            //    case DataType::TIME:
-            //    case DataType::TIMESTAMP:
-            //        s_pScanner->SetRule(s_pScanner->GetDATERule());
-            //        break;
-            //    case DataType::CHAR:
-            //    case DataType::VARCHAR:
-            //    case DataType::LONGVARCHAR:
-            //    case DataType::CLOB:
-            //        s_pScanner->SetRule(s_pScanner->GetSTRINGRule());
-            //        break;
-            //    default:
-            //        if ( s_xLocaleData->getLocaleItem( m_pData->aLocale ).decimalSeparator.toChar() == ',' )
-            //            s_pScanner->SetRule(s_pScanner->GetGERRule());
-            //        else
-            //            s_pScanner->SetRule(s_pScanner->GetENGRule());
-            //}
+
             TODO_ConvertCode();
             }
         else
@@ -2513,52 +2089,6 @@ namespace connectivity
 
         return nType;
         }
-    // -----------------------------------------------------------------------------
-    sal_Int32 OSQLParser::getFunctionParameterType(sal_uInt32 _nTokenId, sal_uInt32 _nPos)
-        {
-        sal_Int32 nType = DataType::VARCHAR;
-
-        if (_nTokenId == SQL_TOKEN_INSERT)
-            {
-            if (_nPos == 2 || _nPos == 3)
-                nType = DataType::INTEGER;
-            }
-        else if (_nTokenId == SQL_TOKEN_LEFT)
-            {
-            if (_nPos == 2)
-                nType = DataType::INTEGER;
-            }
-        else if (_nTokenId == SQL_TOKEN_SUBSTRING)
-            {
-            if (_nPos != 1)
-                nType = DataType::INTEGER;
-            }
-        else if (_nTokenId == SQL_TOKEN_EXTRACT)              nType = DataType::VARCHAR;
-        else if (_nTokenId == SQL_TOKEN_HOUR)                 nType = DataType::TIME;
-        else if (_nTokenId == SQL_TOKEN_MINUTE)               nType = DataType::TIME;
-        else if (_nTokenId == SQL_TOKEN_MONTH)                nType = DataType::DATE;
-        else if (_nTokenId == SQL_TOKEN_NOW)                  nType = DataType::TIMESTAMP;
-        else if (_nTokenId == SQL_TOKEN_SECOND)               nType = DataType::TIME;
-        else if (_nTokenId == SQL_TOKEN_WEEK)                 nType = DataType::DATE;
-        else if (_nTokenId == SQL_TOKEN_YEAR)                 nType = DataType::DATE;
-
-        else if (_nTokenId == SQL_TOKEN_COUNT)                nType = DataType::INTEGER;
-        else if (_nTokenId == SQL_TOKEN_MAX)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_MIN)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_AVG)                  nType = DataType::DOUBLE;
-        else if (_nTokenId == SQL_TOKEN_SUM)                  nType = DataType::DOUBLE;
-
-        else if (_nTokenId == SQL_TOKEN_LOWER)                nType = DataType::VARCHAR;
-        else if (_nTokenId == SQL_TOKEN_UPPER)                nType = DataType::VARCHAR;
-
-        return nType;
-        }
-
-    // -----------------------------------------------------------------------------
-    //const SQLError& OSQLParser::getErrorHelper() const
-    //{
-    //    return m_pData->aErrors;
-    //}
 
     // -----------------------------------------------------------------------------
     OSQLParseNode::Rule OSQLParseNode::getKnownRuleID() const

@@ -19,7 +19,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 //static
 DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
     {
-    PERFLOG_START("ECDb", "profile schema import");
+    PERFLOG_START("ECDb", "Profile schema import");
     ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
     context->AddSchemaLocater(ecdb.GetSchemaLocater());
 
@@ -40,15 +40,14 @@ DbResult ProfileSchemaUpgrader::ImportProfileSchemas(ECDbCR ecdb)
         return BE_SQLITE_ERROR;
 
     //import if already existing
-    BentleyStatus importStat = ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetECDbImplR().GetSettings().GetSchemaImportToken());
-    PERFLOG_FINISH("ECDb", "profile schema import");
-    if (importStat != SUCCESS)
+    if (SUCCESS != ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas(), ecdb.GetImpl().GetSettings().GetSchemaImportToken()))
         {
         LOG.errorv("Creating / upgrading ECDb file failed because importing the ECDb standard ECSchemas into the file '%s' failed.",
                    ecdb.GetDbFileName());
         return BE_SQLITE_ERROR;
         }
 
+    PERFLOG_FINISH("ECDb", "Profile schema import");
     return BE_SQLITE_OK;
     }
 

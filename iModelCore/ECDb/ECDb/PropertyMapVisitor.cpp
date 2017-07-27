@@ -130,19 +130,6 @@ BentleyStatus GetTablesPropertyMapVisitor::_Visit(SystemPropertyMap const& prope
     return SUCCESS;
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Affan.Khan          07/16
-//---------------------------------------------------------------------------------------
-DbTable const* GetTablesPropertyMapVisitor::GetSingleTable() const
-    {
-    BeAssert(!m_tables.empty());
-    if (m_tables.size() != 1)
-        return nullptr;
-
-    return *(m_tables.begin());
-    }
-
-
 //************************************SearchPropertyMapVisitor********************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Affan.Khan          07/16

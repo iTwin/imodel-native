@@ -15,42 +15,51 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 // @bsimethod                                 Krischan.Eberle                    05/2014
 //---------------------------------------------------------------------------------------
 //static
-bool SchemaValidator::ValidateSchemas(IssueReporter const& issues, bvector<ECN::ECSchemaCP> const& schemas, bool doNotFailOnLegacyIssues)
+bool SchemaValidator::ValidateSchemas(SchemaImportContext& ctx, IssueReporter const& issueReporter, bvector<ECN::ECSchemaCP> const& schemas)
     {
-    std::vector<std::unique_ptr<IClassValidationRule>> classRules;
-    classRules.push_back(std::make_unique<ValidBaseClassesRule>(doNotFailOnLegacyIssues));
-    classRules.push_back(std::make_unique<ValidRelationshipRule>());
-    classRules.push_back(std::make_unique<ValidPropertiesRule>());
-
+    PERFLOG_START("ECDb", "Schema Validation");
     bool valid = true;
+
+    ValidBaseClassesRule baseClassesRule;
+    ValidRelationshipRule relRule;
+
+    ValidPropertyRule validPropertyRule;
     for (ECSchemaCP schema : schemas)
         {
         if (schema->GetName().EqualsIAscii(ECSCHEMA_ECDbSystem))
-            continue; //skip because it would violate by design to ValidPropertyNameRule as it defines the ECSQL system props
+            continue; //skip because it would violate by design some of the property naming rules
 
         for (ECClassCP ecClass : schema->GetClasses())
             {
-            for (std::unique_ptr<IClassValidationRule> const& classRule : classRules)
+            //per class rules
+            bool succeeded = baseClassesRule.Validate(ctx, issueReporter, *schema, *ecClass);
+            if (!succeeded)
+                valid = false;
+
+            succeeded = relRule.Validate(issueReporter, *schema, *ecClass);
+            if (!succeeded)
+                valid = false;
+
+            //per property rules
+            for (ECPropertyCP prop : ecClass->GetProperties(false))
                 {
-                const bool succeeded = classRule->ValidateClass(issues, *schema, *ecClass);
-                if (!succeeded)
+                if (!validPropertyRule.Validate(issueReporter, *ecClass, *prop))
                     valid = false;
                 }
             }
         }
 
+    PERFLOG_FINISH("ECDb", "Schema Validation");
     return valid;
     }
 
-
-//**********************************************************************
-// ValidBaseClassesRule
-//**********************************************************************
-
+//*************************************************************************
+//SchemaValidator::ValidBaseClassesRule
+//*************************************************************************
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidBaseClassesRule::_ValidateClass(IssueReporter const& issues, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
+bool SchemaValidator::ValidBaseClassesRule::Validate(SchemaImportContext const& ctx, IssueReporter const& issueReporter, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
     ECBaseClassesList const& baseClasses = ecClass.GetBaseClasses();
     if (baseClasses.empty())
@@ -62,7 +71,7 @@ bool ValidBaseClassesRule::_ValidateClass(IssueReporter const& issues, ECN::ECSc
         {
         if (isAbstract && baseClass->GetClassModifier() == ECClassModifier::None)
             {
-            if (m_doNotFailForLegacyIssues)
+            if (ctx.GetOptions() == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues)
                 {
                 //in legacy mode we log all issues as warning, so do not return on first issue
                 LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: An abstract class must not have a non-abstract base class.",
@@ -70,7 +79,7 @@ bool ValidBaseClassesRule::_ValidateClass(IssueReporter const& issues, ECN::ECSc
                 continue; 
                 }
 
-            issues.Report("ECClass '%s' has invalid base classes which can lead to data corruption. Error: An abstract class must not have a non-abstract base class.",
+            issueReporter.Report("ECClass '%s' has invalid base class: An abstract class must not have a non-abstract base class.",
                               ecClass.GetFullName());
             return false;
             }
@@ -84,7 +93,7 @@ bool ValidBaseClassesRule::_ValidateClass(IssueReporter const& issues, ECN::ECSc
         ECEntityClassCP entityBaseClass = baseClass->GetEntityClassCP();
         if (entityBaseClass == nullptr || !entityBaseClass->IsMixin())
             {
-            if (m_doNotFailForLegacyIssues && ecClass.IsEntityClass())
+            if (ctx.GetOptions() == SchemaManager::SchemaImportOptions::DoNotFailSchemaValidationForLegacyIssues && ecClass.IsEntityClass())
                 {
                 //in legacy mode entity class multi-inheritance must be supported, but  not for other class types
                 LOG.warningv("ECClass '%s' has invalid base classes which can lead to data corruption. Error: Multi-inheritance is not supported. Use mixins instead.",
@@ -92,7 +101,7 @@ bool ValidBaseClassesRule::_ValidateClass(IssueReporter const& issues, ECN::ECSc
                 continue;
                 }
 
-            issues.Report("ECClass '%s' has invalid base classes which can lead to data corruption. Error: Multi-inheritance is not supported.",
+            issueReporter.Report("ECClass '%s' has multiple base classes. Multi-inheritance is not supported. Use mixins instead.",
                           ecClass.GetFullName());
             return false;
             }
@@ -101,99 +110,93 @@ bool ValidBaseClassesRule::_ValidateClass(IssueReporter const& issues, ECN::ECSc
     return true;
     }
 
-
-//**********************************************************************
-// ValidRelationshipRule
-//**********************************************************************
+//*************************************************************************
+//SchemaValidator::ValidRelationshipRule
+//*************************************************************************
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidRelationshipRule::_ValidateClass(IssueReporter const& issues, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
+bool SchemaValidator::ValidRelationshipRule::Validate(IssueReporter const& issueReporter, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
     {
     ECRelationshipClassCP relClass = ecClass.GetRelationshipClassCP();
     if (relClass == nullptr)
         return true;
 
-    return ValidateConstraint(issues, *relClass, relClass->GetSource()) && ValidateConstraint(issues, *relClass, relClass->GetTarget());
+    return ValidateConstraint(issueReporter, *relClass, ECRelationshipEnd::ECRelationshipEnd_Source, relClass->GetSource()) && ValidateConstraint(issueReporter, *relClass, ECRelationshipEnd::ECRelationshipEnd_Target, relClass->GetTarget());
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidRelationshipRule::ValidateConstraint(IssueReporter const& issues, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipConstraintCR constraint) const
+bool SchemaValidator::ValidRelationshipRule::ValidateConstraint(IssueReporter const& issueReporter, ECN::ECRelationshipClassCR relClass, ECN::ECRelationshipEnd constraintEnd, ECN::ECRelationshipConstraintCR constraint) const
     {
     ECRelationshipConstraintClassList const& constraintClasses = constraint.GetConstraintClasses();
     const size_t constraintClassCount = constraintClasses.size();
     //we cannot yet enforce one class per constraint.
     if (constraintClassCount == 0)
         {
-        issues.Report("The relationship class '%'s is not abstract and therefore constraints must be defined.", relClass.GetFullName());
+        issueReporter.Report("The relationship class '%'s is not abstract and therefore constraints must be defined. The %s constraint is empty though.", 
+                             relClass.GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
         return false;
         }
 
     bool valid = true;
+    bset<ECClassCP> duplicateConstraintClasses;
     for (ECClassCP constraintClass : constraintClasses)
         {
-        if (ClassMap::IsAnyClass(*constraintClass))
+        if (constraintClass->GetSchema().IsStandardSchema() && constraintClass->GetName().EqualsIAscii("AnyClass"))
             {
-            issues.Report("The relationship class '%s' uses the AnyClass constraint. AnyClass is not supported.", relClass.GetFullName());
+            issueReporter.Report("The relationship class '%s' uses the AnyClass constraint. AnyClass is not supported.", relClass.GetFullName());
             valid = false;
             }
 
-        ECRelationshipClassCP relClassAsConstraint = constraintClass->GetRelationshipClassCP();
-        if (relClassAsConstraint != nullptr)
+        if (duplicateConstraintClasses.find(constraintClass) != duplicateConstraintClasses.end())
             {
-            issues.Report(" The relationship class '%s' has the constraint class '%s' which is a relationship class. This is not supported.", relClass.GetFullName(), relClassAsConstraint->GetFullName());
+            issueReporter.Report(" The relationship class '%s' defines class '%s' more than once in the %s constraint. This is not supported.", 
+                                 relClass.GetFullName(), constraintClass->GetFullName(), constraintEnd == ECRelationshipEnd_Source ? "source" : "target");
             valid = false;
             }
+        else
+            duplicateConstraintClasses.insert(constraintClass);
         }
 
     return valid;
     }
 
-
-//**********************************************************************
-// ValidPropertiesRule
-//**********************************************************************
-
+//*************************************************************************
+//SchemaValidator::ValidPropertyRule
+//*************************************************************************
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    10/2016
+// @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidPropertiesRule::_ValidateClass(IssueReporter const& issues, ECN::ECSchemaCR schema, ECN::ECClassCR ecClass) const
+bool SchemaValidator::ValidPropertyRule::Validate(IssueReporter const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
     {
-    //only iterate local props as every class will be validated separately
     bool isValid = true;
+    if (!ValidatePropertyName(issueReporter, ecClass, prop))
+        isValid = false;
 
-    NavigationPropertyValidationContext navPropCtx(issues, ecClass);
-    for (ECPropertyCP prop : ecClass.GetProperties(false))
+    if (!ValidatePropertyStructType(issueReporter, ecClass, prop))
+        isValid = false;
+
+    if (prop.GetIsNavigation())
         {
-        if (!ValidatePropertyName(issues, ecClass, *prop))
+        NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
+        if (navProp->GetRelationshipClass()->HasBaseClasses())
+            {
+            issueReporter.Report("Invalid navigation property in ECClass '%s': The navigation property '%s' references the relationship class '%s' which has a base class. Navigation properties must always reference the root relationship class though.", 
+                                 ecClass.GetFullName(), navProp->GetName().c_str(), navProp->GetRelationshipClass()->GetFullName());
             isValid = false;
-
-        if (!ValidatePropertyStructType(issues, ecClass, *prop))
-            isValid = false;
-
-        if (!ValidateNavigationProperty(navPropCtx, *prop))
-            isValid = false;
-        }
-
-
-    if (navPropCtx.HasNavigationProperties())
-        {
-        if (!ValidateInheritedNavigationProperties(navPropCtx))
-            isValid = false;
-
-        navPropCtx.LogIssues();
+            }
         }
 
     return isValid;
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
+// @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidPropertiesRule::ValidatePropertyName(IssueReporter const& issues, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
+bool SchemaValidator::ValidPropertyRule::ValidatePropertyName(IssueReporter const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
     {
     Utf8StringCR propName = prop.GetName();
 
@@ -220,7 +223,7 @@ bool ValidPropertiesRule::ValidatePropertyName(IssueReporter const& issues, ECN:
 
     if (isCollision)
         {
-        issues.Report("Invalid property in ECClass '%s': The property '%s' has a name of an ECSQL system property which is not allowed.", ecClass.GetFullName(), propName.c_str());
+        issueReporter.Report("Invalid property in ECClass '%s': The property '%s' has a name of an ECSQL system property which is not allowed.", ecClass.GetFullName(), propName.c_str());
         return false;
         }
 
@@ -228,9 +231,9 @@ bool ValidPropertiesRule::ValidatePropertyName(IssueReporter const& issues, ECN:
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    06/2014
+// @bsimethod                                 Krischan.Eberle                    07/2015
 //---------------------------------------------------------------------------------------
-bool ValidPropertiesRule::ValidatePropertyStructType(IssueReporter const& issues, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
+bool SchemaValidator::ValidPropertyRule::ValidatePropertyStructType(IssueReporter const& issueReporter, ECN::ECClassCR ecClass, ECN::ECPropertyCR prop) const
     {
     ECClassCP structType = nullptr;
     if (prop.GetIsStruct())
@@ -247,133 +250,12 @@ bool ValidPropertiesRule::ValidatePropertyStructType(IssueReporter const& issues
 
     if (structType->Is(&ecClass))
         {
-        issues.Report("ECClass '%s' contains the ECProperty '%s' which is of the same type or a derived type than this ECClass.",
-                      ecClass.GetFullName(), prop.GetName().c_str());
+        issueReporter.Report("ECClass '%s' contains the ECProperty '%s' which is of the same type or a derived type than this ECClass.",
+                             ecClass.GetFullName(), prop.GetName().c_str());
         return false;
         }
 
     return true;
     }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    10/2016
-//---------------------------------------------------------------------------------------
-bool ValidPropertiesRule::ValidateNavigationProperty(NavigationPropertyValidationContext& ctx, ECN::ECPropertyCR prop) const
-    {
-    NavigationECPropertyCP navProp = prop.GetAsNavigationProperty();
-    if (navProp == nullptr)
-        return true;
-
-    //Multiplicity validation
-    if (&navProp->GetClass() == &ctx.m_ecClass && navProp->IsMultiple())
-        {
-        if (ctx.m_issues.IsEnabled())
-            {
-            ECRelationshipClassCR relClass = *navProp->GetRelationshipClass();
-            ECRelationshipConstraintCR toConstraint = navProp->GetDirection() == ECRelatedInstanceDirection::Forward ? relClass.GetTarget() : relClass.GetSource();
-
-            ctx.m_issues.Report("Invalid navigation property in ECClass '%s': '%s' has a multiplicity of '%s' although the maximum supported multiplicity is 1.",
-                                ctx.m_ecClass.GetFullName(), navProp->GetName().c_str(), toConstraint.GetMultiplicity().ToString().c_str());
-            }
-
-        return false;
-        }
-
-    //Duplicate relationships validation
-    ECRelationshipClassCR rootRelClass = ctx.GetRootRelationship(*navProp->GetRelationshipClass());
-
-    bset<NavigationECPropertyCP>& duplicateNavProps = ctx.m_navPropsByRelAndDirection[&rootRelClass][navProp->GetDirection()];
-    duplicateNavProps.insert(navProp);
-    if (duplicateNavProps.size() > 1)
-        {
-        ctx.m_hasDuplicates = true;
-        return false;
-        }
-
-    return true;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-bool ValidPropertiesRule::ValidateInheritedNavigationProperties(NavigationPropertyValidationContext& ctx) const
-    {
-    bool isValid = true;
-    for (ECClassCP baseClass : ctx.m_ecClass.GetBaseClasses())
-        {
-        //now include inherited nav props to avoid recursion
-        for (ECPropertyCP prop : baseClass->GetProperties(true))
-            {
-            NavigationECPropertyCP navProp = prop->GetAsNavigationProperty();
-            if (navProp == nullptr)
-                continue;
-
-            //Duplicate relationships validation
-            ECRelationshipClassCR rootRelClass = ctx.GetRootRelationship(*navProp->GetRelationshipClass());
-            bset<NavigationECPropertyCP>& duplicateNavProps = ctx.m_navPropsByRelAndDirection[&rootRelClass][navProp->GetDirection()];
-            duplicateNavProps.insert(navProp);
-            if (duplicateNavProps.size() > 1)
-                {
-                ctx.m_hasDuplicates = true;
-                isValid = false;
-                }
-            }
-        }
-
-    return isValid;
-    }
-
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-void ValidPropertiesRule::NavigationPropertyValidationContext::LogIssues() const
-    {
-    if (!m_hasDuplicates || !m_issues.IsEnabled())
-        return;
-
-    for (auto const& kvPair1 : m_navPropsByRelAndDirection)
-        {
-        ECRelationshipClassCP rootRelClass = kvPair1.first;
-        for (auto const& kvPair2 : kvPair1.second)
-            {
-            ECRelatedInstanceDirection direction = kvPair2.first;
-            bset<NavigationECPropertyCP> const& duplicateNavProps = kvPair2.second;
-            if (duplicateNavProps.size() > 1)
-                {
-                Utf8String violatingNavProps;
-                bool isFirstItem = true;
-                for (NavigationECPropertyCP navProp : duplicateNavProps)
-                    {
-                    if (!isFirstItem)
-                        violatingNavProps.append(",");
-
-                    violatingNavProps.append(navProp->GetName());
-                    isFirstItem = false;
-                    }
-
-                m_issues.Report("ECClass '%s' has violating navigation properties: More than one navigation property is defined for the relationship '%s' (or a subclass thereof) with direction '%s': %s",
-                                m_ecClass.GetFullName(), rootRelClass->GetFullName(), direction == ECRelatedInstanceDirection::Forward ? "Forward" : "Backward",
-                                violatingNavProps.c_str());
-                }
-            }
-        }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                 Krischan.Eberle                    05/2017
-//---------------------------------------------------------------------------------------
-//static
-ECRelationshipClassCR ValidPropertiesRule::NavigationPropertyValidationContext::GetRootRelationship(ECN::ECRelationshipClassCR relClass)
-    {
-    if (!relClass.HasBaseClasses())
-        return relClass;
-
-    //multi-inheritance is not support for relationships (caught by another rule), so we
-    //can safely just use the first base class
-    return GetRootRelationship(*relClass.GetBaseClasses()[0]->GetRelationshipClassCP());
-    }
-
 
 END_BENTLEY_SQLITE_EC_NAMESPACE

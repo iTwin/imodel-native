@@ -245,94 +245,45 @@ void NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(BeSQLite::
     ASSERT_EQ(BE_SQLITE_OK, orderInserter.Insert(*orderInstance9));
 
     //Insert Relationship Instance CustomerHasOrder
-    ECRelationshipClassCP customerHasOrder = ecdb.Schemas().GetClass("ECSqlStatementTests", "CustomerHasOrder")->GetRelationshipClassCP();
-    ASSERT_TRUE(customerHasOrder != nullptr);
+    std::function<void(StandaloneECInstancePtr&, StandaloneECInstancePtr&)> InsertCustomerHasOrder = [&](StandaloneECInstancePtr& customer, StandaloneECInstancePtr& order)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, "UPDATE ECST.[Order] SET Customer.Id=? WHERE ECInstanceId=?"), ECSqlStatus::Success);
+        stmt.BindText(1, customer->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        stmt.BindText(2, order->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+        };
 
-    StandaloneECRelationshipInstancePtr customerHasOrderInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*customerHasOrder)->CreateRelationshipInstance();
-    BeSQLite::EC::ECInstanceInserter customerHasOrderInserter(ecdb, *customerHasOrder, nullptr);
-    ASSERT_TRUE(customerHasOrderInserter.IsValid());
+    InsertCustomerHasOrder(customerInstance1, orderInstance1);
+    InsertCustomerHasOrder(customerInstance1, orderInstance2);
+    InsertCustomerHasOrder(customerInstance1, orderInstance3);
+    InsertCustomerHasOrder(customerInstance2, orderInstance4);
+    InsertCustomerHasOrder(customerInstance2, orderInstance5);
+    InsertCustomerHasOrder(customerInstance2, orderInstance6);
+    InsertCustomerHasOrder(customerInstance3, orderInstance7);
+    InsertCustomerHasOrder(customerInstance3, orderInstance8);
+    InsertCustomerHasOrder(customerInstance3, orderInstance9);
 
-    customerHasOrderInstance->SetSource(customerInstance1.get());
-    customerHasOrderInstance->SetTarget(orderInstance1.get());
-    customerHasOrderInstance->SetInstanceId("source->target");
-    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
 
-    customerHasOrderInstance->SetSource(customerInstance1.get());
-    customerHasOrderInstance->SetTarget(orderInstance2.get());
-    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    std::function<void(StandaloneECInstancePtr&, StandaloneECInstancePtr&)> InsertEmployeeHasOrder = [&] (StandaloneECInstancePtr& customer, StandaloneECInstancePtr& order)
+        {
+        ECSqlStatement stmt;
+        ASSERT_EQ(stmt.Prepare(ecdb, "UPDATE ECST.[Order] SET Employee.Id=? WHERE ECInstanceId=?"), ECSqlStatus::Success);
+        stmt.BindText(1, customer->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        stmt.BindText(2, order->GetInstanceId().c_str(), IECSqlBinder::MakeCopy::No);
+        ASSERT_EQ(stmt.Step(), BE_SQLITE_DONE);
+        };
 
-    customerHasOrderInstance->SetSource(customerInstance1.get());
-    customerHasOrderInstance->SetTarget(orderInstance3.get());
-    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
+    InsertEmployeeHasOrder(employeeInstance1, orderInstance1);
+    InsertEmployeeHasOrder(employeeInstance1, orderInstance2);
+    InsertEmployeeHasOrder(employeeInstance1, orderInstance3);
+    InsertEmployeeHasOrder(employeeInstance2, orderInstance4);
+    InsertEmployeeHasOrder(employeeInstance2, orderInstance5);
+    InsertEmployeeHasOrder(employeeInstance2, orderInstance6);
+    InsertEmployeeHasOrder(employeeInstance3, orderInstance7);
+    InsertEmployeeHasOrder(employeeInstance3, orderInstance8);
+    InsertEmployeeHasOrder(employeeInstance3, orderInstance9);
 
-    customerHasOrderInstance->SetSource(customerInstance2.get());
-    customerHasOrderInstance->SetTarget(orderInstance4.get());
-    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
-
-    customerHasOrderInstance->SetSource(customerInstance2.get());
-    customerHasOrderInstance->SetTarget(orderInstance5.get());
-    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
-
-    customerHasOrderInstance->SetSource(customerInstance2.get());
-    customerHasOrderInstance->SetTarget(orderInstance6.get());
-    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
-
-    customerHasOrderInstance->SetSource(customerInstance3.get());
-    customerHasOrderInstance->SetTarget(orderInstance7.get());
-    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
-
-    customerHasOrderInstance->SetSource(customerInstance3.get());
-    customerHasOrderInstance->SetTarget(orderInstance8.get());
-    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
-
-    customerHasOrderInstance->SetSource(customerInstance3.get());
-    customerHasOrderInstance->SetTarget(orderInstance9.get());
-    ASSERT_EQ(BE_SQLITE_OK, customerHasOrderInserter.Insert(*customerHasOrderInstance));
-
-    //Insert Relationship Instance EmployeeHasOrder
-    ECRelationshipClassCP employeeHasOrder = ecdb.Schemas().GetClass("ECSqlStatementTests", "EmployeeHasOrder")->GetRelationshipClassCP();
-    ASSERT_TRUE(employeeHasOrder != nullptr);
-
-    StandaloneECRelationshipInstancePtr employeeHasOrderInstance = StandaloneECRelationshipEnabler::CreateStandaloneRelationshipEnabler(*employeeHasOrder)->CreateRelationshipInstance();
-    BeSQLite::EC::ECInstanceInserter employeeHasOrderInserter(ecdb, *employeeHasOrder, nullptr);
-    ASSERT_TRUE(employeeHasOrderInserter.IsValid());
-
-    employeeHasOrderInstance->SetSource(employeeInstance1.get());
-    employeeHasOrderInstance->SetTarget(orderInstance1.get());
-    employeeHasOrderInstance->SetInstanceId("source->target");
-    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
-
-    employeeHasOrderInstance->SetSource(employeeInstance1.get());
-    employeeHasOrderInstance->SetTarget(orderInstance2.get());
-    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
-
-    employeeHasOrderInstance->SetSource(employeeInstance1.get());
-    employeeHasOrderInstance->SetTarget(orderInstance3.get());
-    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
-
-    employeeHasOrderInstance->SetSource(employeeInstance2.get());
-    employeeHasOrderInstance->SetTarget(orderInstance4.get());
-    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
-
-    employeeHasOrderInstance->SetSource(employeeInstance2.get());
-    employeeHasOrderInstance->SetTarget(orderInstance5.get());
-    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
-
-    employeeHasOrderInstance->SetSource(employeeInstance2.get());
-    employeeHasOrderInstance->SetTarget(orderInstance6.get());
-    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
-
-    employeeHasOrderInstance->SetSource(employeeInstance3.get());
-    employeeHasOrderInstance->SetTarget(orderInstance7.get());
-    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
-
-    employeeHasOrderInstance->SetSource(employeeInstance3.get());
-    employeeHasOrderInstance->SetTarget(orderInstance8.get());
-    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
-
-    employeeHasOrderInstance->SetSource(employeeInstance3.get());
-    employeeHasOrderInstance->SetTarget(orderInstance9.get());
-    ASSERT_EQ(BE_SQLITE_OK, employeeHasOrderInserter.Insert(*employeeHasOrderInstance));
 
     //Create and Insert Instances of Shipper
     ECClassCP shipperClass = ecdb.Schemas().GetClass("ECSqlStatementTests", "Shipper");

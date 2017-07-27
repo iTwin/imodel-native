@@ -16,7 +16,7 @@ BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 struct SystemPropertyMap : PropertyMap
     {
     public:
-        struct PerTableIdPropertyMap: SingleColumnDataPropertyMap
+        struct PerTableIdPropertyMap : SingleColumnDataPropertyMap
             {
         private:
             DbColumn::Type _GetColumnDataType() const override { return DbColumn::Type::Integer; }

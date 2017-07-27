@@ -36,9 +36,9 @@ TEST_F(ECDbTestFixture, TwoConnections)
     {
     BeFileName testECDbPath;
     {
-    ECDbR ecdb = SetupECDb("one.ecdb");
-    testECDbPath = BeFileName(ecdb.GetDbFileName());
-    ecdb.CloseDb();
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("one.ecdb"));
+    testECDbPath = BeFileName(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
     }
 
     TestOtherConnectionECDb ecdb1, ecdb2;
@@ -123,9 +123,9 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
     {
     BeFileName testECDbPath;
     {
-    ECDbR ecdb = SetupECDb("one.ecdb");
-    testECDbPath = BeFileName(ecdb.GetDbFileName());
-    ecdb.CloseDb();
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("one.ecdb"));
+    testECDbPath = BeFileName(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
     }
 
     ECDb ecdb1;
@@ -174,14 +174,14 @@ TEST_F(ECDbTestFixture, TwoConnectionsWithBusyRetryHandler)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
     {
-    ECDbR ecdb = SetupECDb("ecdbbriefcaseIdtest.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
     
-    BeBriefcaseId id = ecdb.GetBriefcaseId();
+    BeBriefcaseId id = m_ecdb.GetBriefcaseId();
     ASSERT_TRUE(id.IsValid());
     int32_t previousBriefcaseId = id.GetValue();
     BeBriefcaseId nextid = id.GetNextBriefcaseId();
-    ASSERT_EQ(BE_SQLITE_OK, ecdb.AssignBriefcaseId(nextid));
-    int32_t changedBriefcaseId = ecdb.GetBriefcaseId().GetValue();
+    ASSERT_EQ(BE_SQLITE_OK, m_ecdb.SetAsBriefcase(nextid));
+    int32_t changedBriefcaseId = m_ecdb.GetBriefcaseId().GetValue();
     ASSERT_NE(previousBriefcaseId, changedBriefcaseId);
     }
 
@@ -190,16 +190,16 @@ TEST_F(ECDbTestFixture, GetAndAssignBriefcaseIdForDb)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECDbTestFixture, GetAndChangeGUIDForDb)
     {
-    ECDbR ecdb = SetupECDb("ecdbbriefcaseIdtest.ecdb", BeFileName(L"StartupCompany.02.00.ecschema.xml"), 3);
+    ASSERT_EQ(SUCCESS, SetupECDb("ecdbbriefcaseIdtest.ecdb", SchemaItem::CreateForFile("StartupCompany.02.00.ecschema.xml")));
 
-    BeGuid guid = ecdb.GetDbGuid();
+    BeGuid guid = m_ecdb.GetDbGuid();
     ASSERT_TRUE(guid.IsValid());
 
     BeGuid oldGuid = guid;
     guid.Create();
     if (guid.IsValid())
-        ecdb.ChangeDbGuid(guid);
-    BeGuid newGuid = ecdb.GetDbGuid();
+        m_ecdb.ChangeDbGuid(guid);
+    BeGuid newGuid = m_ecdb.GetDbGuid();
     ASSERT_TRUE(newGuid.IsValid());
     ASSERT_TRUE(oldGuid != newGuid);
 

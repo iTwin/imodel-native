@@ -700,23 +700,17 @@ BentleyStatus ECDb_ECSqlInsert()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Krischan.Eberle                   01/14
 //+---------------+---------------+---------------+---------------+---------------+------
-BentleyStatus ECDb_ECSqlInsertRelation()
+BentleyStatus ECDb_ECSqlInsertRelationViaNavigationProperty()
     {
     ECDb ecdb;
-    ECClassCP companyClass = nullptr;
     ECInstanceId companyECInstanceId;
-    ECClassCP employeeClass = nullptr;
-    ECInstanceId employee1ECInstanceId;
-    ECInstanceId employee2ECInstanceId;
 
-    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlInsertRelation.sampleCode
+    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlInsertRelationViaNavigationProperty.sampleCode
 
     // ECSQL
-    // In the ECRelationship CompanyHasEmployees the Company class is the source end and the Employee class is
-    // the target end.
     // Use binding parameters so that the prepared statement can be reused with different values.
     ECSqlStatement statement;
-    ECSqlStatus stat = statement.Prepare(ecdb, "INSERT INTO stco.CompanyHasEmployees (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    ECSqlStatus stat = statement.Prepare(ecdb, "INSERT INTO stco.Employee(FirstName, LastName, Company) VALUES (?,?,?)");
     if (!stat.IsSuccess())
         {
         // do error handling here...
@@ -724,18 +718,16 @@ BentleyStatus ECDb_ECSqlInsertRelation()
         }
 
     //*** Relate first employee to company***
-    // Preparational step not shown in the example: Retrieve the ECInstanceIds and ECClassIds of the instances to relate
-
     // Note: parameter indices are 1-bound!
-    statement.BindId(1, companyECInstanceId);
-    statement.BindId(2, companyClass->GetId());
-    statement.BindId(3, employee1ECInstanceId);
-    statement.BindId(4, employeeClass->GetId());
+    statement.BindText(1, "Laura", IECSqlBinder::MakeCopy::No);
+    statement.BindText(2, "Miller", IECSqlBinder::MakeCopy::No);
+    ECClassId companyHasEmployeesRelClassId = ecdb.Schemas().GetClassId("stco", "CompanyHasEmployees", SchemaLookupMode::ByAlias);
+    statement.BindNavigationValue(3, companyECInstanceId, companyHasEmployeesRelClassId);
 
     // Execute statement
-    ECInstanceKey newRelationshipECInstanceKey;
+    ECInstanceKey employee1ECInstanceId;
     // Note: For non-select statements BE_SQLITE_DONE indicates successful execution
-    if (BE_SQLITE_DONE != statement.Step(newRelationshipECInstanceKey))
+    if (BE_SQLITE_DONE != statement.Step(employee1ECInstanceId))
         {
         // do error handling here...
         return ERROR;
@@ -747,10 +739,78 @@ BentleyStatus ECDb_ECSqlInsertRelation()
     // Reset bound values
     statement.ClearBindings();
 
-    statement.BindId(1, companyECInstanceId);
-    statement.BindId(2, companyClass->GetId());
-    statement.BindId(3, employee2ECInstanceId);
-    statement.BindId(4, employeeClass->GetId());
+    statement.BindText(1, "John", IECSqlBinder::MakeCopy::No);
+    statement.BindText(2, "Smith", IECSqlBinder::MakeCopy::No);
+    statement.BindNavigationValue(3, companyECInstanceId, companyHasEmployeesRelClassId);
+
+    // Execute statement
+    ECInstanceKey employee2ECInstanceId;
+    if (BE_SQLITE_DONE != statement.Step(employee2ECInstanceId))
+        {
+        // do error handling here...
+        return ERROR;
+        }
+
+    //__PUBLISH_EXTRACT_END__
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Krischan.Eberle                   06/17
+//+---------------+---------------+---------------+---------------+---------------+------
+BentleyStatus ECDb_ECSqlInsertRelation()
+    {
+    ECDb ecdb;
+    ECInstanceId monitorECInstanceId;
+    ECInstanceId laptopECInstanceId;
+    ECInstanceId employee1ECInstanceId;
+    ECInstanceId employee2ECInstanceId;
+
+    //__PUBLISH_EXTRACT_START__ Overview_ECDb_ECSqlInsertRelation.sampleCode
+
+    // ECSQL
+    // In the ECRelationship HardwareUsedByEmployee the Employee class is the source end and the Hardware class is
+    // the target end.
+    // Use binding parameters so that the prepared statement can be reused with different values.
+    ECSqlStatement statement;
+    ECSqlStatus stat = statement.Prepare(ecdb, "INSERT INTO stco.HardwareUsedByEmployee (SourceECInstanceId, SourceECClassId, TargetECInstanceId, TargetECClassId) VALUES (?, ?, ?, ?)");
+    if (!stat.IsSuccess())
+        {
+        // do error handling here...
+        return ERROR;
+        }
+
+    //*** Relate a monitor to employee 1***
+    ECClassId employeeClassId = ecdb.Schemas().GetClassId("stco", "Employee", SchemaLookupMode::ByAlias);
+    ECClassId monitorClassId = ecdb.Schemas().GetClassId("stco", "Monitor", SchemaLookupMode::ByAlias);
+
+    // Note: parameter indices are 1-bound!
+    statement.BindId(1, employee1ECInstanceId);
+    statement.BindId(2, employeeClassId);
+    statement.BindId(3, monitorECInstanceId);
+    statement.BindId(4, monitorClassId);
+
+    // Execute statement
+    ECInstanceKey newRelationshipECInstanceKey;
+    // Note: For non-select statements BE_SQLITE_DONE indicates successful execution
+    if (BE_SQLITE_DONE != statement.Step(newRelationshipECInstanceKey))
+        {
+        // do error handling here...
+        return ERROR;
+        }
+
+    //*** Relate a laptop to employee 2***
+    // Reset statement so that it can be re-executed.
+    statement.Reset();
+    // Reset bound values
+    statement.ClearBindings();
+
+    ECClassId laptopClassId = ecdb.Schemas().GetClassId("stco", "Laptop", SchemaLookupMode::ByAlias);
+
+    statement.BindId(1, employee2ECInstanceId);
+    statement.BindId(2, employeeClassId);
+    statement.BindId(3, laptopECInstanceId);
+    statement.BindId(4, laptopClassId);
 
     // Execute statement
     if (BE_SQLITE_DONE != statement.Step(newRelationshipECInstanceKey))

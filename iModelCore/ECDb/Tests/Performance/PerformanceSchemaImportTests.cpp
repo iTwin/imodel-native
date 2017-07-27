@@ -11,7 +11,7 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_ECDBUNITTESTS_NAMESPACE
 
-struct PerformanceSchemaImportTests : public SchemaImportTestFixture
+struct PerformanceSchemaImportTests : public ECDbTestFixture
     {
     static ECN::ECSchemaPtr CreateTestSchema(size_t noOfClass, size_t propertiesPerClass, bool customAttributeOnSchema, bool customAttributesOnClasses, bool customAttributesOnProperties, size_t NumberOfCustomAttributes);
     static void SetStruct1Val(StandaloneECInstancePtr instance, int intVal, Utf8CP stringVal, bool boolVal);
@@ -186,8 +186,7 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         double importTime = 0.0;
         double schemaExportTime = 0.0;
 
-        ECDbR ecdb = SetupECDb("schemaWithCAImportPerformance.ecdb");
-        ASSERT_TRUE(ecdb.IsDbOpen());
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("schemaWithCAImportPerformance.ecdb"));
 
         ecSchema = PerformanceSchemaImportTests::CreateTestSchema(5000, 100, true, true, true, i);
         ASSERT_TRUE(ecSchema.IsValid());
@@ -195,13 +194,13 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         schemas.push_back(ecSchema.get());
 
         StopWatch timer(true);
-        ASSERT_EQ(SUCCESS, ecdb.Schemas().ImportSchemas(schemas));
+        ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(schemas));
         timer.Stop();
         importTime = timer.GetElapsedSeconds();
-        ecdb.SaveChanges();
+        m_ecdb.SaveChanges();
 
         timer.Start();
-        ECSchemaCP ecschema = ecdb.Schemas().GetSchema("TestSchema", true);
+        ECSchemaCP ecschema = m_ecdb.Schemas().GetSchema("TestSchema", true);
         timer.Stop();
         schemaExportTime = timer.GetElapsedSeconds();
         ASSERT_TRUE(ecschema != nullptr);
@@ -212,7 +211,7 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
         testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (ClearCache Time)", i, i);
         testDescription.Sprintf("Schema with 5000 Class, 100 properties each, with 1 CA on Schema, %d CA Per Class and %d CA per Property (Schema Export Time)", i, i);
         LOGTODB(TEST_DETAILS, schemaExportTime, i, testDescription.c_str());
-        ecdb.CloseDb();
+        m_ecdb.CloseDb();
         }
     }
 
@@ -221,19 +220,18 @@ TEST_F(PerformanceSchemaImportTests, SchemaWithCustomAttributeImportPerformance)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(PerformanceSchemaImportTests, ImportSimpleSchema)
     {
-    ECDbCR ecdb = SetupECDb("ImportSimpleSchema.ecdb");
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(BE_SQLITE_OK, SetupECDb("ImportSimpleSchema.ecdb"));
 
     ECSchemaReadContextPtr context = nullptr;
-    ECSchemaPtr schemaptr = ReadECSchemaFromDisk(context, BeFileName(L"BasicSchema.01.70.ecschema.xml"));
-    ASSERT_TRUE(schemaptr != nullptr);
+    ASSERT_EQ(SUCCESS, ReadECSchema(context, m_ecdb, SchemaItem(R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="Simple" alias="s" version="01.00" displayLabel="Basic Schema" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <ECEntityClass typeName="Foo" modifier="None"/>
+        </ECSchema>)xml")));
 
     StopWatch timer(true);
-    BentleyStatus stat = ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas());
+    ASSERT_EQ(SUCCESS, m_ecdb.Schemas().ImportSchemas(context->GetCache().GetSchemas()));
     timer.Stop();
-    ASSERT_EQ(SUCCESS, stat);
-
-    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), -1, "Simple Schema Import Test with NO CustomAttribute and Reference Schemas");
+    LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), 1, "Simple Schema Import Test with just a single class w/o props");
     }
 
 //---------------------------------------------------------------------------------------
@@ -245,9 +243,8 @@ TEST_F(PerformanceSchemaImportTests, CreateEmptyECDb)
     StopWatch timer(true);
     for (int i = 0; i < opCount; i++)
         {
-        ECDbR ecdb = SetupECDb("empty.ecdb");
-        ASSERT_TRUE(ecdb.IsDbOpen());
-        ecdb.CloseDb();
+        ASSERT_EQ(BE_SQLITE_OK, SetupECDb("empty.ecdb"));
+        m_ecdb.CloseDb();
         }
     timer.Stop();
     LOGTODB(TEST_DETAILS, timer.GetElapsedSeconds(), opCount, "Creating empty ECDb files");

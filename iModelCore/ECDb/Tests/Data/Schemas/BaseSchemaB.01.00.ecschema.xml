@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ECSchema schemaName="BaseSchemaB" alias="bsb" version="01.00" displayLabel="Base Schema B" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
-    <ECEntityClass typeName="BaseBClass1" modifier="None"/>
-    <ECEntityClass typeName="BaseBClass2" modifier="None"/>
-    <ECEntityClass typeName="DataObject" displayLabel="Data Object" modifier="None"/>
-</ECSchema>

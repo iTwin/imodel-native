@@ -89,7 +89,7 @@ std::vector<ECN::ECClassId> const& LightweightCache::LoadClassIdsPerTable(DbTabl
         return itor->second;
 
     std::vector<ECN::ECClassId>& subset = m_classIdsPerTable[&tbl];
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT ClassId FROM " TABLE_ClassHasTablesCache " WHERE TableId = ?");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT ClassId FROM " TABLE_ClassHasTablesCache " WHERE TableId = ?");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -121,7 +121,7 @@ bset<DbTable const*> const& LightweightCache::LoadTablesForClassId(ECN::ECClassI
         return itor->second;
 
     bset<DbTable const*>& subset = m_tablesPerClassId[classId];
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT TableId FROM " TABLE_ClassHasTablesCache " WHERE ClassId = ? ORDER BY TableId");
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT TableId FROM " TABLE_ClassHasTablesCache " WHERE ClassId = ? ORDER BY TableId");
     if (stmt == nullptr)
         {
         BeAssert(false);
@@ -159,7 +159,7 @@ bset<ECN::ECClassId> const& LightweightCache::GetDirectRelationshipClasssForCons
     {
     if (m_contraintClassDirectRelationships.empty())
         {
-        CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+        CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
             "SELECT RCC.ClassId, RC.RelationshipClassId  FROM ec_RelationshipConstraintClass RCC "
             "INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId "
             "GROUP BY RCC.ClassId, RC.RelationshipClassId ");
@@ -193,7 +193,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         return itor->second;
 
     bmap<ECN::ECClassId, RelationshipEnd>& relClassIds = m_relationshipClassIdsPerConstraintClassIds[constraintClassId];
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement(
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
         "SELECT [RC].[RelationshipClassId], " 
         "       [RC].[RelationshipEnd] "
         "FROM   [ec_RelationshipConstraint] [RC] "
@@ -241,7 +241,7 @@ bmap<ECN::ECClassId, LightweightCache::RelationshipEnd> const& LightweightCache:
         return itor->second;
 
     bmap<ECN::ECClassId, RelationshipEnd>& constraintClassIds = m_constraintClassIdsPerRelClassIds[relationshipId];
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement("SELECT IFNULL(CH.ClassId, RCC.ClassId) ConstraintClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement("SELECT IFNULL(CH.ClassId, RCC.ClassId) ConstraintClassId, RC.RelationshipEnd FROM ec_RelationshipConstraintClass RCC"
                                                                  "       INNER JOIN ec_RelationshipConstraint RC ON RC.Id = RCC.ConstraintId"
                                                                  "       LEFT JOIN " TABLE_ClassHierarchyCache " CH ON CH.BaseClassId = RCC.ClassId AND RC.IsPolymorphic=" SQLVAL_True
                                                                  " WHERE RC.RelationshipClassId=?");
@@ -286,7 +286,7 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
 
     ClassIdsPerTableMap& subset = m_horizontalPartitions[classId];
     ECClassId mixInId;
-    CachedStatementPtr stmt = m_ecdb.GetCachedStatement( 
+    CachedStatementPtr stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
             "SELECT [CA].[ContainerId] "
             "FROM   " TABLE_Class " C "
             "       INNER JOIN " TABLE_CustomAttribute " CA ON [CA].[ClassId] = [C].[Id] "
@@ -297,14 +297,14 @@ LightweightCache::ClassIdsPerTableMap const& LightweightCache::LoadHorizontalPar
     stmt->BindId(1, classId);
     bool isMixin = (stmt->Step() == BE_SQLITE_ROW);
     if (isMixin)
-        stmt = m_ecdb.GetCachedStatement(
+        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
             "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
             "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
             "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
             "       INNER JOIN ec_Table t ON t.Id = ct.TableId "
             "WHERE ch.BaseClassId=?1 ");
     else
-        stmt = m_ecdb.GetCachedStatement(
+        stmt = m_ecdb.GetImpl().GetCachedSqliteStatement(
             "SELECT ch.ClassId, ct.TableId FROM " TABLE_ClassHasTablesCache " ct"
             "       INNER JOIN " TABLE_ClassHierarchyCache " ch ON ch.ClassId = ct.ClassId"
             "       INNER JOIN ec_ClassMap cm ON cm.ClassId=ch.BaseClassId"
@@ -383,12 +383,10 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     if (classMap.GetType() == ClassMap::Type::RelationshipEndTable)
         {
         RelationshipClassEndTableMap const& relClassMap = classMap.GetAs<RelationshipClassEndTableMap> ();
-        for (DbTable const* endTable : relClassMap.GetTables())
+        for (DbTable const* endTable : relClassMap.GetPartitionView().GetTables(false))
             {
             const LightweightCache::RelationshipEnd foreignEnd = relClassMap.GetForeignEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? LightweightCache::RelationshipEnd::Source : LightweightCache::RelationshipEnd::Target;
-
             Partition* hp = storageDescription->AddHorizontalPartition(*endTable, true);
-
             for (bpair<ECClassId, LightweightCache::RelationshipEnd> const& kvpair : lwmc.GetConstraintClassesForRelationshipClass(classId))
                 {
                 ECClassId constraintClassId = kvpair.first;
@@ -423,7 +421,7 @@ std::unique_ptr<StorageDescription> StorageDescription::Create(ClassMap const& c
     //add vertical partitions
     for (auto table : lwmc.GetVerticalPartitionsForClass(classId))
         {
-        if (table->GetPersistenceType() == PersistenceType::Virtual)
+        if (table->GetType() == DbTable::Type::Virtual)
             continue;
 
         Partition* vp = storageDescription->AddVerticalPartition(*table, storageDescription->GetHorizontalPartition(*table) != nullptr);
@@ -481,11 +479,10 @@ Partition const& StorageDescription::GetRootHorizontalPartition() const
 //------------------------------------------------------------------------------------------
 Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool isRootPartition)
     {
-    const bool isVirtual = table.GetPersistenceType() == PersistenceType::Virtual;
     m_horizontalPartitions.push_back(Partition(table));
 
     const size_t indexOfAddedPartition = m_horizontalPartitions.size() - 1;
-    if (!isVirtual)
+    if (table.GetType() != DbTable::Type::Virtual)
         m_nonVirtualHorizontalPartitionIndices.push_back(indexOfAddedPartition);
 
     if (isRootPartition)
@@ -499,8 +496,8 @@ Partition* StorageDescription::AddHorizontalPartition(DbTable const& table, bool
 //------------------------------------------------------------------------------------------
 Partition* StorageDescription::AddVerticalPartition(DbTable const& table, bool isRootPartition)
     {
-    BeAssert(table.GetPersistenceType() == PersistenceType::Physical);
-    if (table.GetPersistenceType() == PersistenceType::Virtual)
+    BeAssert(table.GetType() != DbTable::Type::Virtual);
+    if (table.GetType() == DbTable::Type::Virtual)
         return nullptr;
 
     m_verticalPartitions.push_back(Partition(table));

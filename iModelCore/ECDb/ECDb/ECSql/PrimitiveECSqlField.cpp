@@ -23,7 +23,7 @@ PrimitiveECSqlField::PrimitiveECSqlField(ECSqlSelectPreparedStatement& stmt, ECS
         {
         ECPropertyCP property = m_ecsqlColumnInfo.GetProperty();
         BeAssert(property != nullptr && "ColumnInfo::GetProperty can return null. Please double-check");
-        if (StandardCustomAttributeHelper::GetDateTimeInfo(m_datetimeMetadata, *property) != ECObjectsStatus::Success)
+        if (CoreCustomAttributeHelper::GetDateTimeInfo(m_datetimeMetadata, *property) != ECObjectsStatus::Success)
             {
             LOG.error("Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");
             BeAssert(false && "Could not read DateTimeInfo custom attribute from the corresponding ECProperty.");

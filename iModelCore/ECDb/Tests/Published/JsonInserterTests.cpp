@@ -39,8 +39,7 @@ struct JsonInserterTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertJsonCppJSON)
     {
-    ECDbR ecdb = SetupECDb("insertUsingJsonAPI.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("insertUsingJsonAPI.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -51,26 +50,26 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
     Json::Value jsonInput;
     ECDbTestUtility::ReadJsonInputFromFile(jsonInput, jsonInputFile);
 
-    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
+    ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
-    JsonInserter inserter(ecdb, *documentClass, nullptr);
+    JsonInserter inserter(m_ecdb, *documentClass, nullptr);
 
     //----------------------------------------------------------------------------------- 
     // Insert using JsonCpp
     //-----------------------------------------------------------------------------------
     ECInstanceKey id;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, jsonInput));
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT NULL FROM jt.Document WHERE ECInstanceId=? AND Name=?"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT NULL FROM jt.Document WHERE ECInstanceId=? AND Name=?"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, id.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(2, "A-Model.pdf", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     statement.Finalize();
 
     /* Retrieve the previously imported instance as JSON */
-    ECSqlStatus prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ONLY jt.Document");
+    ECSqlStatus prepareStatus = statement.Prepare(m_ecdb, "SELECT * FROM ONLY jt.Document");
     ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
     DbResult stepStatus = statement.Step();
     ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
@@ -94,10 +93,10 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
 
     //verify Json Insertion using the other Overload
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(jsonInput));
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     //Verify Inserted Instances.
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT COUNT(*) FROM jt.Document"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT COUNT(*) FROM jt.Document"));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     ASSERT_EQ(2, statement.GetValueInt(0));
     statement.Finalize();
@@ -108,8 +107,7 @@ TEST_F(JsonInserterTests, InsertJsonCppJSON)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertRapidJson)
     {
-    ECDbR ecdb = SetupECDb("InsertUsingRapidJson.ecdb", BeFileName(L"JsonTests.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertUsingRapidJson.ecdb", SchemaItem::CreateForFile("JsonTests.01.00.ecschema.xml")));
 
     // Read JSON input from file
     BeFileName jsonInputFile;
@@ -125,26 +123,26 @@ TEST_F(JsonInserterTests, InsertRapidJson)
     bool parseSuccessful = !rapidJsonInput.Parse<0>(Json::FastWriter().write(jsonInput).c_str()).HasParseError();
     ASSERT_TRUE(parseSuccessful);
 
-    ECClassCP documentClass = ecdb.Schemas().GetClass("JsonTests", "Document");
+    ECClassCP documentClass = m_ecdb.Schemas().GetClass("JsonTests", "Document");
     ASSERT_TRUE(documentClass != nullptr);
-    JsonInserter inserter(ecdb, *documentClass, nullptr);
+    JsonInserter inserter(m_ecdb, *documentClass, nullptr);
 
     //-----------------------------------------------------------------------------------
     // Insert using rapidjson
     //-----------------------------------------------------------------------------------
     ECInstanceKey id;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(id, rapidJsonInput));
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, "SELECT NULL FROM jt.Document WHERE ECInstanceId=? AND Name=?"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT NULL FROM jt.Document WHERE ECInstanceId=? AND Name=?"));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindId(1, id.GetInstanceId()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(2, "A-Model.pdf", IECSqlBinder::MakeCopy::No));
     ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
     statement.Finalize();
 
     /* Retrieve the previously imported instance as JSON */
-    ECSqlStatus prepareStatus = statement.Prepare(ecdb, "SELECT * FROM ONLY jt.Document");
+    ECSqlStatus prepareStatus = statement.Prepare(m_ecdb, "SELECT * FROM ONLY jt.Document");
     ASSERT_TRUE(ECSqlStatus::Success == prepareStatus);
     DbResult stepStatus = statement.Step();
     ASSERT_EQ(BE_SQLITE_ROW, stepStatus);
@@ -172,10 +170,9 @@ TEST_F(JsonInserterTests, InsertRapidJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, InsertPartialPointJson)
     {
-    ECDbCR ecdb = SetupECDb("InsertPartialPointJson.ecdb", BeFileName(L"ECSqlTest.01.00.ecschema.xml"));
-    ASSERT_TRUE(ecdb.IsDbOpen());
+    ASSERT_EQ(SUCCESS, SetupECDb("InsertPartialPointJson.ecdb", SchemaItem::CreateForFile("ECSqlTest.01.00.ecschema.xml")));
 
-    ECClassCP testClass = ecdb.Schemas().GetClass("ECSqlTest", "PSA");
+    ECClassCP testClass = m_ecdb.Schemas().GetClass("ECSqlTest", "PSA");
     ASSERT_TRUE(testClass != nullptr);
 
     std::vector<std::pair<Utf8CP, bool>> testDataset
@@ -191,7 +188,7 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
                 {R"json( { "P3D" : { "x": 3.14, "z": 3.14 } } )json", false}
         };
 
-    JsonInserter inserter(ecdb, *testClass, nullptr);
+    JsonInserter inserter(m_ecdb, *testClass, nullptr);
     ASSERT_TRUE(inserter.IsValid());
 
     for (std::pair<Utf8CP, bool> const& testItem : testDataset)
@@ -214,11 +211,9 @@ TEST_F(JsonInserterTests, InsertPartialPointJson)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     {
-    ECDbTestFixture::Initialize();
-    ECDbR ecdb = SetupECDb("schemaupgradetest.ecdb", BeFileName(L"DSCacheSchema.01.03.ecschema.xml"));
-    ecdb.SaveChanges();
+    ASSERT_EQ(SUCCESS, SetupECDb("schemaupgradetest.ecdb", SchemaItem::CreateForFile("DSCacheSchema.01.03.ecschema.xml")));
 
-    IECClassLocaterR classLocater = ecdb.GetClassLocater();
+    IECClassLocaterR classLocater = m_ecdb.GetClassLocater();
     ECClassCP rootClass = classLocater.LocateClass("DSCacheSchema", "Root");
     ASSERT_NE(nullptr, rootClass);
 
@@ -228,7 +223,7 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     // Test quety for same instance
     Utf8String ecsql = "SELECT ECInstanceId FROM [DSC].[Root] WHERE [Name] = ? LIMIT 1 ";
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(ecdb, ecsql.c_str()));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, ecsql.c_str()));
     ASSERT_EQ(ECSqlStatus::Success, statement.BindText(1, rootName.c_str(), IECSqlBinder::MakeCopy::No));
     EXPECT_EQ(BE_SQLITE_DONE, statement.Step());
 
@@ -237,7 +232,7 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
     rootInstance["Name"] = rootName;
     rootInstance["Persistance"] = 0;
 
-    JsonInserter inserter(ecdb, *rootClass, nullptr);
+    JsonInserter inserter(m_ecdb, *rootClass, nullptr);
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(rootInstance));
 
     // Try again
@@ -253,7 +248,7 @@ TEST_F(JsonInserterTests, CreateRoot_ExistingRoot_ReturnsSameKey)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(JsonInserterTests, ECPrimitiveValueFromJson)
     {
-    ECDbR ecdb = SetupECDb("ecprimitivevaluefromjson.ecdb", SchemaItem(
+    ASSERT_EQ(SUCCESS, SetupECDb("ecprimitivevaluefromjson.ecdb", SchemaItem(
         "<?xml version='1.0' encoding='utf-8'?>"
         "<ECSchema schemaName='TestSchema' alias='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
         "    <ECEntityClass typeName='Parent' modifier='None'>"
@@ -262,8 +257,7 @@ TEST_F(JsonInserterTests, ECPrimitiveValueFromJson)
         "        <ECProperty propertyName='p2d' typeName='point2d' />"
         "        <ECProperty propertyName='p3d' typeName='point3d' />"
         "    </ECEntityClass>"
-        "</ECSchema>", true), 0);
-    ASSERT_TRUE(ecdb.IsDbOpen());
+        "</ECSchema>")));
 
     rapidjson::Document rapidJsonVal;
     rapidJsonVal.SetObject();
@@ -285,16 +279,16 @@ TEST_F(JsonInserterTests, ECPrimitiveValueFromJson)
     point3dObjValue.AddMember("z", 0, rapidJsonVal.GetAllocator());
     rapidJsonVal.AddMember("p3d", point3dObjValue, rapidJsonVal.GetAllocator());
 
-    ECClassCP parentClass = ecdb.Schemas().GetClass("TestSchema", "Parent");
+    ECClassCP parentClass = m_ecdb.Schemas().GetClass("TestSchema", "Parent");
     ASSERT_TRUE(parentClass != nullptr);
-    JsonInserter inserter(ecdb, *parentClass, nullptr);
+    JsonInserter inserter(m_ecdb, *parentClass, nullptr);
 
     ECInstanceKey key;
     ASSERT_EQ(BE_SQLITE_OK, inserter.Insert(key, rapidJsonVal));
-    ecdb.SaveChanges();
+    m_ecdb.SaveChanges();
 
     ECSqlStatement stmt;
-    ECSqlStatus prepareStatus = stmt.Prepare(ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?");
+    ECSqlStatus prepareStatus = stmt.Prepare(m_ecdb, "SELECT * FROM ts.Parent WHERE p2d=? AND p3d=?");
     stmt.BindPoint2d(1, DPoint2d::From(0, 0));
     stmt.BindPoint3d(2, DPoint3d::From(0, 0, 0));
     DbResult stepStatus = stmt.Step();
@@ -361,14 +355,16 @@ struct PrimArrayJsonInserterTests : public ECDbTestFixture
 //+---------------+---------------+---------------+---------------+---------------+------
 BentleyStatus PrimArrayJsonInserterTests::SetupTest(Utf8CP fileName)
     {
-    ECDbR ecdb = SetupECDb(fileName);
-    if (BE_SQLITE_OK != ecdb.ExecuteSql("CREATE TABLE testjson(Id INTEGER PRIMARY KEY, val TEXT);"))
+    if (BE_SQLITE_OK != SetupECDb(fileName))
         return ERROR;
 
-    ecdb.SaveChanges();
+    if (BE_SQLITE_OK != m_ecdb.ExecuteSql("CREATE TABLE testjson(Id INTEGER PRIMARY KEY, val TEXT);"))
+        return ERROR;
+
+    m_ecdb.SaveChanges();
     BeFileName testFilePath;
-    testFilePath.AssignUtf8(ecdb.GetDbFileName());
-    ecdb.CloseDb();
+    testFilePath.AssignUtf8(m_ecdb.GetDbFileName());
+    m_ecdb.CloseDb();
 
     return m_ecdb.OpenBeSQLiteDb(testFilePath, ECDb::OpenParams(Db::OpenMode::ReadWrite)) == BE_SQLITE_OK ? SUCCESS : ERROR;
     }
@@ -379,7 +375,7 @@ BentleyStatus PrimArrayJsonInserterTests::SetupTest(Utf8CP fileName)
 BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
     {
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "INSERT INTO " JSONTABLE_NAME "(val) VALUES(?)"))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "INSERT INTO " JSONTABLE_NAME "(val) VALUES(?)"))
         return ERROR;
 
     for (int i = 0; i < rowCount; i++)
@@ -483,7 +479,7 @@ BentleyStatus PrimArrayJsonInserterTests::RunInsertJson(PrimitiveType arrayType)
 BentleyStatus PrimArrayJsonInserterTests::RunSelectJson(PrimitiveType arrayType)
     {
     Statement stmt;
-    if (BE_SQLITE_OK != stmt.Prepare(GetECDb(), "SELECT val FROM " JSONTABLE_NAME))
+    if (BE_SQLITE_OK != stmt.Prepare(m_ecdb, "SELECT val FROM " JSONTABLE_NAME))
         return ERROR;
 
     while (BE_SQLITE_ROW == stmt.Step())
