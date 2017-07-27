@@ -11,7 +11,7 @@
 USING_NAMESPACE_TILETREE
 
 //static const uint32_t DRAW_FINER_DELTA = 2;
-static const uint32_t DRAW_COARSER_DELTA = 6;
+//static const uint32_t DRAW_COARSER_DELTA = 6;
 
 
 //---------------------------------------------------------------------------------------------
