@@ -123,14 +123,6 @@
         </ECCustomAttributes>
     </ECEntityClass>
 
-    <ECEntityClass typeName="MultiAspect" displayLabel="Multi-Aspect">
-        <!-- Originally designed for the converted secondary instances from a v8 file-->
-        <BaseClass>bis:ElementMultiAspect</BaseClass>
-        <ECCustomAttributes>
-            <ClassHasHandler xmlns="BisCore.01.00"/>
-        </ECCustomAttributes>
-    </ECEntityClass>
-
     <ECEntityClass typeName="PhysicalType" modifier="Sealed" displayLabel="Physical Type">
         <BaseClass>bis:PhysicalType</BaseClass>
         <ECCustomAttributes>

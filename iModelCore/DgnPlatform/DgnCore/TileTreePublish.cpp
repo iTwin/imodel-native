@@ -121,12 +121,9 @@ struct GeometryProcessor : Dgn::IGeometryProcessor
     virtual IFacetOptionsP _GetFacetOptionsP() override { return m_facetOptions.get(); }
     virtual bool _DoClipping() const override {return true;}
 
-
     virtual bool _ProcessTriMesh(Render::TriMeshArgsCR args, SimplifyGraphic& simplifyGraphic) override         { m_tile->AddTriMesh (args, simplifyGraphic); return true;     }
 
 };  // GeometryProcessor
-
-
 
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2017
@@ -149,7 +146,6 @@ struct Context
 
 };
 
-
 /*=================================================================================**//**
 * @bsiclass                                                     Ray.Bentley     04/2017
 +===============+===============+===============+===============+===============+======*/
@@ -166,7 +162,7 @@ struct RenderSystem : Render::System
     RenderSystem(ContextR context) :m_context(context), m_processor(context.m_outputTile.get()) {  }
     ~RenderSystem() { }
 
-    virtual MaterialPtr _GetMaterial(DgnMaterialId, DgnDbR) const override { return nullptr; }
+    virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
     virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override { return nullptr; } 
     virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const override { BeAssert(false); return nullptr; }
     virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const override { BeAssert(false); return nullptr; }
@@ -177,7 +173,6 @@ struct RenderSystem : Render::System
 
     virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override { BeAssert(false); return nullptr; }
     virtual LightPtr   _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const override { BeAssert(false); return nullptr; }
-
     virtual int _Initialize(void* systemWindow, bool swRendering) override { return  0; }
     virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) override { return nullptr; }
     virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) override { return nullptr; }
@@ -224,7 +219,6 @@ virtual GraphicBuilderPtr _CreateGraphic(Graphic::CreateParams const& params) co
     BeAssert(false);
     return nullptr;
     }
-
 };
 
 

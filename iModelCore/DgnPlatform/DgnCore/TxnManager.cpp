@@ -179,7 +179,7 @@ bool TxnManager::IsMultiTxnMember(TxnId rowid) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
 +---------------+---------------+---------------+---------------+---------------+------*/
-TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this)
+TxnManager::TxnManager(DgnDbR dgndb) : m_dgndb(dgndb), m_stmts(20), m_rlt(*this), m_initTableHandlers(false)
     {
     m_action = TxnAction::None;
 
@@ -210,15 +210,20 @@ DbResult TxnManager::InitializeTableHandlers()
     BeAssert(m_dgndb.IsBriefcase() && "No need to initialize table handlers in the master copy");
     BeAssert(!m_dgndb.IsReadonly() && "No need to initialize table handlers in a Readonly DgnDb");
 
+    if (m_initTableHandlers)
+        return BE_SQLITE_OK;
+
     for (auto table : m_tables)
         table->_Initialize();
-
+    
     DbResult result = m_dgndb.SaveChanges(); // "Commit" the creation of temp tables, so that a subsequent call to AbandonChanges will not un-create them.
     if (result != BE_SQLITE_OK)
         {
         BeAssert(false);
         return result;
         }
+
+    m_initTableHandlers = true;
 
     return BE_SQLITE_OK;
     }

@@ -13,6 +13,7 @@
 #include <DgnPlatform/DgnGeoCoord.h>
 #include <DgnPlatform/AutoRestore.h>
 #include <DgnPlatform/DgnMaterial.h>
+#include <DgnPlatform/ModelSpatialClassifier.h>
 #include <stdio.h>
 
 #if defined(__TILEPUBLISHER_LIB_BUILD__)
@@ -105,6 +106,8 @@ struct  PublishTileData
     void AddBinaryData(void const* data, size_t size);
     void PadBinaryDataToBoundary(size_t boundarySize);
     template<typename T> void AddBufferView(Utf8CP name, T const& bufferData);
+    Utf8String GetJsonString() const { return Json::FastWriter().write(m_json); }
+
 };
 
 //=======================================================================================
@@ -188,7 +191,7 @@ struct MeshMaterial : TileMaterial
     static constexpr double GetSpecularFinish() { return 0.9; }
     static constexpr double GetSpecularExponentMult() { return 48.0; }
 private:
-    DgnMaterialCPtr         m_material;
+    RenderMaterialCPtr      m_material;
     RgbFactor               m_specularColor = { 1.0, 1.0, 1.0 };
     double                  m_specularExponent = GetSpecularFinish() * GetSpecularExponentMult();
     bool                    m_ignoreLighting;
@@ -200,7 +203,7 @@ public:
     bool HasTransparency() const { return m_hasAlpha; }
     bool IgnoresLighting() const { return m_ignoreLighting; }
     ColorIndex::Dimension GetColorIndexDimension() const { return m_colorDimension; }
-    DgnMaterialCP GetDgnMaterial() const { return m_material.get(); }
+    RenderMaterialCP GetDgnMaterial() const { return m_material.get(); }
     double GetSpecularExponent() const { return m_specularExponent; }
     RgbFactor const& GetSpecularColor() const { return m_specularColor; }
 
@@ -250,25 +253,27 @@ struct PublisherContext : TileGenerator::ITileCollector
 
         void RecordPointCloud (size_t nPoints);
         };
-    Statistics                              m_statistics;
+    Statistics                                  m_statistics;
 
 protected:
-    DgnDbR                                  m_db;
-    DgnViewIdSet                            m_viewIds;
-    BeFileName                              m_outputDir;
-    BeFileName                              m_dataDir;
-    WString                                 m_rootName;
-    Transform                               m_dbToTile;
-    Transform                               m_spatialToEcef;
-    size_t                                  m_maxTilesetDepth;
-    bmap<DgnModelId, DRange3d>              m_modelRanges;
-    BeMutex                                 m_mutex;
-    bool                                    m_publishSurfacesOnly;
-    TextureMode                             m_textureMode;
+    DgnDbR                                      m_db;
+    DgnViewIdSet                                m_viewIds;
+    BeFileName                                  m_outputDir;
+    BeFileName                                  m_dataDir;
+    WString                                     m_rootName;
+    Transform                                   m_dbToTile;
+    Transform                                   m_spatialToEcef;
+    size_t                                      m_maxTilesetDepth;
+    bmap<DgnModelId, DRange3d>                  m_modelRanges;
+    BeMutex                                     m_mutex;
+    bool                                        m_publishSurfacesOnly;
+    TextureMode                                 m_textureMode;
+    bool                                        m_publishAsClassifier;
+    bmap<DgnModelId, ModelSpatialClassifiers>   m_classifierMap;
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
 
-    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const = 0;
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, bool asClassifier) const = 0;
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
 
     TILEPUBLISHER_EXPORT Status InitializeDirectories(BeFileNameCR dataDir);
@@ -283,14 +288,17 @@ protected:
     void WriteCategoriesJson(Json::Value&, DgnElementIdSet const& allCategorySelectors);
     Json::Value GetDisplayStylesJson(DgnElementIdSet const& styleIds);
     Json::Value GetDisplayStyleJson(DisplayStyleCR style);
+    Json::Value GetClassifiersJson(ModelSpatialClassifiersCR classifiers);
+    Json::Value GetAllClassifiersJson();
+
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
 
-    BeFileName GetModelTilesetName(DgnModelCR model);
+    BeFileName GetTilesetFileName(DgnModelId modelId);
+    Utf8String GetTilesetName(DgnModelId modelId, bool asClassifier);
     void WriteModelTileset(TileNodeCR tile);
-
     void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId);
     void GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId);
 public:
@@ -302,11 +310,13 @@ public:
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
     TextureMode GetTextureMode() const { return m_textureMode; }
+    bool DoPublishAsClassifier() const { return m_publishAsClassifier; }
+    WString GetTileExtension (TileNodeCR til);
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
 
-    WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension) const { return _GetTileUrl(tile, fileExtension); }
+    WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension, bool asClassifier) const { return _GetTileUrl(tile, fileExtension, asClassifier); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId);
     TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
@@ -374,7 +384,8 @@ private:
     void WriteTileMeshes (std::FILE* outputFile, PublishableTileGeometryR geometry);
     void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes);
     void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
-    void WriteGltf(std::FILE* outputFile, PublishTileData tileData);
+    void WriteGltf(std::FILE* outputFile, PublishTileData const& tileData);
+    void WriteVector(std::FILE* outputFile, PublishableTileGeometryR geometry);
 
     void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
     void AddDefaultScene (PublishTileData& tileData);

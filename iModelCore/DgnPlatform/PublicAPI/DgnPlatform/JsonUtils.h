@@ -20,6 +20,46 @@ BEGIN_BENTLEY_DGN_NAMESPACE
 //=======================================================================================
 struct JsonUtils
 {
+    BE_JSON_NAME(low)
+    BE_JSON_NAME(high)
+    BE_JSON_NAME(yaw)
+    BE_JSON_NAME(pitch)
+    BE_JSON_NAME(roll)
+    BE_JSON_NAME(degrees)
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value AngleInDegreesToJson(AngleInDegrees angle)
+    {
+    Json::Value val;
+    val[json_degrees()] = angle.Degrees();
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static Json::Value YawPitchRollToJson(YawPitchRollAngles angles)
+    {
+    Json::Value val;
+    val[json_yaw()] = AngleInDegreesToJson(angles.GetYaw());
+    val[json_pitch()] = AngleInDegreesToJson(angles.GetPitch());
+    val[json_roll()] = AngleInDegreesToJson(angles.GetRoll());
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static YawPitchRollAngles YawPitchRollFromJson(JsonValueCR val)
+    {
+    double yaw = val[json_yaw()].asDouble();
+    double pitch = val[json_pitch()].asDouble();
+    double roll = val[json_roll()].asDouble();
+    return YawPitchRollAngles::FromDegrees(yaw, pitch, roll);
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     09/12
 //---------------------------------------------------------------------------------------
@@ -113,8 +153,8 @@ static void DVec3dToJson(JsonValueR outValue, DVec3dCR vec)
 //---------------------------------------------------------------------------------------
 static void DRange3dFromJson(DRange3dR range, JsonValueCR inValue)
     {
-    DPoint3dFromJson(range.low, inValue["low"]);
-    DPoint3dFromJson(range.high, inValue["high"]);
+    DPoint3dFromJson(range.low, inValue[json_low()]);
+    DPoint3dFromJson(range.high, inValue[json_high()]);
     }
 
 //---------------------------------------------------------------------------------------
@@ -122,8 +162,8 @@ static void DRange3dFromJson(DRange3dR range, JsonValueCR inValue)
 //---------------------------------------------------------------------------------------
 static void DRange3dToJson(JsonValueR outValue, DRange3dCR range)
     {
-    DPoint3dToJson(outValue["low"], range.low);
-    DPoint3dToJson(outValue["high"], range.high);
+    DPoint3dToJson(outValue[json_low()], range.low);
+    DPoint3dToJson(outValue[json_high()], range.high);
     }
 
 //---------------------------------------------------------------------------------------
@@ -250,7 +290,7 @@ static T IdFromJson(JsonValueCR json)
 template<typename T>
 static void IdToJson(JsonValueR outValue, T id)
     {
-    outValue = id.ToString(typename T::UseHex::Yes);
+    outValue = id.ToString(T::UseHex::Yes);
     }
 
 //---------------------------------------------------------------------------------------
@@ -366,18 +406,6 @@ DGNPLATFORM_EXPORT static void NavigationPropertyToJson(JsonValueR json, ECN::EC
 * @bsimethod                                                    Sam.Wilson      07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 DGNPLATFORM_EXPORT static void NavigationPropertyFromJson(ECN::ECValue&, JsonValueCR json, DgnDbR db);
-
-/*---------------------------------------------------------------------------------**//**
-*! Represent a 64-bit integer in JSON, in the format used by iModelJson.
-* @bsimethod                                                    Sam.Wilson      07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT static uint64_t UInt64FromJson(JsonValueCR json);
-
-/*---------------------------------------------------------------------------------**//**
-*! Parse a 64-bit integer from JSON, according to the format used by iModelJson.
-* @bsimethod                                                    Sam.Wilson      07/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DGNPLATFORM_EXPORT static void UInt64ToJson(JsonValueR json, uint64_t value);
 
 };
 

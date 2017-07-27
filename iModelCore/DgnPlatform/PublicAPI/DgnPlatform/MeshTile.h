@@ -5,6 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+#define CLASSIFICATION_WIP
+
 #pragma once
 /*__PUBLISH_SECTION_START__*/
 
@@ -115,7 +117,7 @@ private:
     DgnGeometryClass                m_class = DgnGeometryClass::Primary;
     bool                            m_isColorFromBackground = false;
     // Mesh only...
-    DgnMaterialId                   m_materialId;
+    RenderMaterialId                m_materialId;
     bool                            m_ignoreLighting;
     GradientSymbPtr                 m_gradient;
     // Polyline only...
@@ -127,7 +129,7 @@ private:
     DGNPLATFORM_EXPORT TileDisplayParams(GraphicParamsCP graphicParams, GeometryParamsCP geometryParams, bool ignoreLighting, bool useLineParams);
     TileDisplayParams(uint32_t color, TileTextureImageP texture, bool ignoreLighting) : m_color(color), m_textureImage(texture), m_ignoreLighting(ignoreLighting), m_rasterWidth(0), m_linePixels(0) { }
     TileDisplayParams(uint32_t color, GeometryParamsCR geometryParams) : m_color(color), m_ignoreLighting(false), m_materialId(geometryParams.GetMaterialId()), m_rasterWidth(0), m_linePixels(0), m_class(geometryParams.GetGeometryClass()) {}
-    TileDisplayParams(uint32_t color, DgnMaterialId materialId) : m_color(color), m_materialId(materialId), m_ignoreLighting(false), m_rasterWidth(0), m_linePixels(0) {}
+    TileDisplayParams(uint32_t color, RenderMaterialId materialId) : m_color(color), m_materialId(materialId), m_ignoreLighting(false), m_rasterWidth(0), m_linePixels(0) {}
     TileDisplayParams() : TileDisplayParams(nullptr, nullptr, false, false) {}
 
     TileDisplayParamsCPtr Clone() const;
@@ -144,7 +146,7 @@ public:
 
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
-    DgnMaterialId GetMaterialId() const { return m_materialId; }
+    RenderMaterialId GetRenderMaterialId() const { return m_materialId; }
     DgnGeometryClass GetClass() const { return m_class; }
     uint32_t GetColor() const { return m_color; }
     uint32_t GetRasterWidth() const { return m_rasterWidth; }
@@ -548,20 +550,20 @@ private:
     double                  m_tolerance;
     double                  m_areaTolerance;
     size_t                  m_triangleIndex;
-    DgnMaterialCPtr         m_materialEl;
+    RenderMaterialCPtr      m_materialEl;
     RenderingAssetCP        m_material = nullptr;
     FeatureAttributesMapR   m_attributes;
     Transform               m_transformToDgn;
 
-    bool GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb);
+    bool GetMaterial(RenderMaterialId materialId, DgnDbR dgnDb);
     TileMeshBuilder(TileDisplayParamsCR params, TransformCR transformFromDgn, double tolerance, double areaTolerance, FeatureAttributesMapR attr) : m_mesh(TileMesh::Create(params)), m_unclusteredVertexMap(VertexKey::Comparator(tolerance * 1.0E-3)), m_clusteredVertexMap(VertexKey::Comparator(tolerance)), 
             m_tolerance(tolerance), m_areaTolerance(areaTolerance), m_triangleIndex(0), m_attributes(attr) { m_transformToDgn.InverseOf(transformFromDgn); }
 public:
     static TileMeshBuilderPtr Create(TileDisplayParamsCR params, TransformCR transformFromDgn, double tolerance, double areaTolerance, FeatureAttributesMapR attr) { return new TileMeshBuilder(params, transformFromDgn, tolerance, areaTolerance, attr); }
 
-    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool includeParams, uint32_t color);
+    DGNPLATFORM_EXPORT void AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool doVertexClustering, bool includeParams, uint32_t color);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureAttributesCR attr, bool doVertexClustering, uint32_t color);
-    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool includeParams, uint32_t color);
+    DGNPLATFORM_EXPORT void AddPolyface(PolyfaceQueryCR polyface, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attr, bool includeParams, uint32_t color);
 
     void AddMesh(TileTriangleCR triangle);
     void AddTriangle(TileTriangleCR triangle);
@@ -889,7 +891,7 @@ public:
 struct ElementTileNode : TileNode
 {
 private:
-    bool                    m_isLeaf;
+    bool                    m_isLeaf;                         
     mutable bool            m_containsParts;
 
     TileMeshList GenerateMeshes(DgnDbR db, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, bool doRangeTest, ITileGenerationFilterCP filter, TileGeometryList const& geometries) const;
@@ -914,6 +916,7 @@ public:
 
     void AdjustTolerance(double newTolerance);
     void SetIsLeaf(bool isLeaf) { m_isLeaf = isLeaf; }
+
     TileGeometryList const& GetGeometries() const { return m_geometries; }
 
 };
@@ -1045,6 +1048,7 @@ struct IGenerateMeshTiles
 
 
 //=======================================================================================
+    virtual BentleyStatus       _GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const { return ERROR; }
 // static utility methods
 // @bsistruct                                                   Ray.Bentley     08/2016
 //=======================================================================================
@@ -1052,7 +1056,7 @@ struct TileUtil
 {
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
     DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
-    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelCR model);
+    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId, bool asClassifier = false);
 
 };  // TileUtil
 

@@ -188,6 +188,12 @@ namespace dgn_ElementHandler
         ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_InformationRecordElement, InformationRecordElement, InformationRecord, InformationContent, DGNPLATFORM_EXPORT)
     };
 
+    //! The ElementHandler for DriverBundleElement
+    struct EXPORT_VTABLE_ATTRIBUTE DriverBundle : InformationContent
+    {
+        ELEMENTHANDLER_DECLARE_MEMBERS(BIS_CLASS_DriverBundleElement, DriverBundleElement, DriverBundle, InformationContent, DGNPLATFORM_EXPORT)
+    };
+
     //! The ElementHandler for DefinitionElement
     struct EXPORT_VTABLE_ATTRIBUTE Definition : InformationContent
     {

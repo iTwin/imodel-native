@@ -3528,11 +3528,14 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
                 continue;
 
             size_t  iNextLimit = data.m_rawPts.size()-1, iPrevLimit = 0;
+            bool    allVerticesMove = true;
 
             for (size_t iPt = 0; iPt < data.m_rawPts.size(); ++iPt)
                 {
                 if (!data.m_rawPts[iPt].IsEqual(data.m_adjPts[iPt], 1.0e-10))
                     continue; // If this vertex moves we won't create an imprint from it (may create imprint to it)...
+
+                allVerticesMove = false;
 
                 size_t  iNext = (iPt < data.m_rawPts.size()-1) ? iPt+1 : 0;
 
@@ -3615,6 +3618,17 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
                     }
                 }
 
+            if (allVerticesMove)
+                {
+                SurfaceIndices surface;
+
+                surface.m_indices[0] = 0;
+                surface.m_indices[1] = 1;
+                surface.m_indices[2] = 2;
+
+                data.m_surface.push_back(surface);
+                }
+
             if (0 == data.m_imprint.size() && 0 == data.m_surface.size())
                 continue;
 
@@ -3631,12 +3645,32 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
 
     for (FaceVertexData& data : faceData)
         {
+        PK_ENTITY_t  targetTag = PSolidSubEntity::GetSubEntityTag(*data.m_facePtr);
+        Transform    bodyToCurveTrans = PSolidSubEntity::GetSubEntityTransform(*data.m_facePtr), curveToBodyTrans;
+
+        curveToBodyTrans.InverseOf(bodyToCurveTrans);
+
+        if (data.m_imprint.empty() && 1 == data.m_surface.size())
+            {
+            PK_PLANE_sf_t plane;
+
+            if (!data.GetNewSurfaceForResultFace(plane, targetTag, bodyToCurveTrans, curveToBodyTrans))
+                continue;
+
+            PK_PLANE_t planeTag;
+
+            if (SUCCESS != PK_PLANE_create(&plane, &planeTag))
+                continue;
+
+            replaceFaces.push_back(targetTag);
+            replaceSurfs.push_back(planeTag);
+            replaceSenses.push_back(PK_LOGICAL_true);
+            continue;
+            }
+
         bvector<PK_ENTITY_t>    toolBodies;
         bvector<PK_CURVE_t>     toolCurves;
         bvector<PK_INTERVAL_t>  toolIntervals;
-        Transform               bodyToCurveTrans = PSolidSubEntity::GetSubEntityTransform(*data.m_facePtr), curveToBodyTrans;
-
-        curveToBodyTrans.InverseOf(bodyToCurveTrans);
 
         for (ImprintIndices& imprint : data.m_imprint)
             {
@@ -3657,7 +3691,6 @@ BentleyStatus transformVertices(IBRepEntityR targetEntity, bvector<ISubEntityPtr
         if (toolBodies.empty())
             return ERROR;
 
-        PK_ENTITY_t          targetTag = PSolidSubEntity::GetSubEntityTag(*data.m_facePtr);
         PK_CURVE_project_o_t options;
         PK_CURVE_project_r_t results;
         PK_ENTITY_track_r_t  tracking;

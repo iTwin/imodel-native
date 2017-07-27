@@ -183,24 +183,6 @@
             <Class class="bis:Element"/>
         </Target>
     </ECRelationshipClass>
-    <ECRelationshipClass typeName="TestElementIsRelatedToElement" strength="referencing" modifier="Sealed">
-        <ECProperty propertyName="Property1" typeName="string"/>
-        <Source multiplicity="(0..*)" roleLabel="TestElementIsRelatedToElement" polymorphic="true">
-            <Class class="bis:Element"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="TestElementIsRelatedToElement (Reversed)" polymorphic="true">
-            <Class class="bis:Element"/>
-        </Target>
-    </ECRelationshipClass>
-    <ECRelationshipClass typeName="TestElementIsRelatedToElement2" strength="referencing" modifier="Sealed">
-        <ECProperty propertyName="Property1" typeName="string"/>
-        <Source multiplicity="(0..*)" roleLabel="TestElementIsRelatedToElement2" polymorphic="true">
-            <Class class="bis:Element"/>
-        </Source>
-        <Target multiplicity="(0..*)" roleLabel="TestElementIsRelatedToElement2 (Reversed)" polymorphic="true">
-            <Class class="bis:Element"/>
-        </Target>
-    </ECRelationshipClass>
     <ECEntityClass typeName="TestGroup">
         <BaseClass>bis:PhysicalElement</BaseClass>
         <!-- Used to test the IElementGroup interface -->

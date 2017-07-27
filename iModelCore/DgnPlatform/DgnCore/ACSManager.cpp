@@ -460,9 +460,7 @@ GraphicBuilderPtr AuxCoordSystem::_CreateGraphic(DecorateContextR context, ACSDi
     else if (ACSDisplayOptions::None == (options & ACSDisplayOptions::Active))
         pixelSize *= 0.9;
 
-    DrawingViewDefinitionCP drawingViewDef = context.GetViewport()->GetViewController().GetViewDefinition().ToDrawingView();
-
-    double      exagg = (nullptr != drawingViewDef ? drawingViewDef->GetAspectRatioSkew() : 1.0);
+    double      exagg = context.GetViewport()->GetViewController().GetViewDefinition().GetAspectRatioSkew();
     double      scale = context.GetPixelSizeAtPoint(&drawOrigin) * pixelSize;
     RotMatrix   rMatrix = _GetRotation();
     Transform   transform;

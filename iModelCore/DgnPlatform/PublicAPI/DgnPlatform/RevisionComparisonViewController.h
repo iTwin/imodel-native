@@ -129,6 +129,7 @@ public:
     void Clear() { m_persistent.clear(); m_transient.clear(); }
     void Add(DgnElementCPtr el, DbOpcode opcode) { m_transient.insert(TransientState(el, opcode)); }
     void Add(DgnElementId id, DbOpcode opcode) { m_persistent.insert(PersistentState(id, opcode)); }
+    bool ContainsElement(DgnElementCP element) const;
 };
 
 //=======================================================================================

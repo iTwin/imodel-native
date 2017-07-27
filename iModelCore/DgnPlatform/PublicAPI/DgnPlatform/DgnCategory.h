@@ -44,6 +44,9 @@ public:
     BE_PROP_NAME(Properties)
     BE_PROP_NAME(Description)
 
+    BE_JSON_NAME(appearance)
+    BE_JSON_NAME(descr)
+
     //! The parameters that can determine how graphics on a SubCategory appear when drawn.
     //! @ingroup GROUP_DgnCategory
     //! @ingroup GROUP_Appearance
@@ -58,10 +61,21 @@ public:
         uint32_t m_weight;
         DgnStyleId m_style;
         int32_t m_displayPriority; // only valid for SubCategories in 2D models
-        DgnMaterialId m_material;
+        RenderMaterialId m_material;
         double m_transparency;
 
     public:
+        BE_JSON_NAME(invisible)
+        BE_JSON_NAME(dontPlot)
+        BE_JSON_NAME(dontSnap)
+        BE_JSON_NAME(dontLocate)
+        BE_JSON_NAME(color)
+        BE_JSON_NAME(weight)
+        BE_JSON_NAME(style)
+        BE_JSON_NAME(priority)
+        BE_JSON_NAME(material)
+        BE_JSON_NAME(transp)
+
         void Init() {memset(this, 0, sizeof(*this)); m_material.Invalidate(); m_color = ColorDef::White();} // white on white reversal makes this a better default color than black.
         Appearance() {Init();}
         explicit Appearance(Utf8StringCR val) {FromJson(val);}
@@ -77,7 +91,7 @@ public:
         void SetWeight(uint32_t val) {m_weight=val;}
         void SetStyle(DgnStyleId val) {m_style=val;}
         void SetDisplayPriority(int32_t val) {m_displayPriority=val;}
-        void SetMaterial(DgnMaterialId val) {m_material=val;}
+        void SetRenderMaterial(RenderMaterialId val) {m_material=val;}
         void SetTransparency(double val) {m_transparency=val;}
         bool IsInvisible() const {return m_invisible;}
         bool IsVisible() const {return !m_invisible;}
@@ -85,7 +99,7 @@ public:
         uint32_t GetWeight() const {return m_weight;}
         DgnStyleId GetStyle() const {return m_style;}
         int32_t GetDisplayPriority() const {return m_displayPriority;}
-        DgnMaterialId GetMaterial() const {return m_material;}
+        RenderMaterialId GetRenderMaterial() const {return m_material;}
         double GetTransparency() const {return m_transparency;}
         DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
         bool IsEqual(Appearance const& other) const {return *this==other;}
@@ -126,7 +140,7 @@ public:
         void SetWeight(uint32_t val) {m_flags.m_weight=true; m_value.SetWeight(val);}
         void SetStyle(DgnStyleId val) {m_flags.m_style=true; m_value.SetStyle(val);}
         void SetDisplayPriority(int32_t val) {m_flags.m_priority=true; m_value.SetDisplayPriority(val);}
-        void SetMaterial(DgnMaterialId val) {m_flags.m_material=true; m_value.SetMaterial(val);}
+        void SetRenderMaterial(RenderMaterialId val) {m_flags.m_material=true; m_value.SetRenderMaterial(val);}
         void SetTransparency(double val) {m_flags.m_transparency=true; m_value.SetTransparency(val);}
 
         void ToJson(JsonValueR outValue) const;
@@ -183,6 +197,7 @@ private:
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT DgnDbStatus _SetParentId(DgnElementId parentId, DgnClassId parentRelClassId) override;
@@ -263,6 +278,9 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnCategory : DefinitionElement
     friend struct dgn_ElementHandler::Category;
 
 public:
+    BE_JSON_NAME(rank)
+    BE_JSON_NAME(descr)
+
     //! The Rank of a category indicates how it was created and where it can be used.
     //! @ingroup GROUP_DgnCategory
     enum class Rank
@@ -279,6 +297,7 @@ protected:
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement& statement, ECSqlClassParams const& selectParams) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR source) override;
     DGNPLATFORM_EXPORT void _RemapIds(DgnImportContext&) override;
@@ -317,6 +336,7 @@ public:
 
     //! Looks up the DgnCategoryId of a category by code.
     DGNPLATFORM_EXPORT static DgnCategoryId QueryCategoryId(DgnDbR db, DgnCodeCR code);
+
     //! Gets a DgnCategory by ID. 
     //! @note It is better to use DrawingCategory::Get or SpatialCategory::Get if the type of category is known
     static DgnCategoryCPtr Get(DgnDbR db, DgnCategoryId categoryId) {return db.Elements().Get<DgnCategory>(categoryId);}

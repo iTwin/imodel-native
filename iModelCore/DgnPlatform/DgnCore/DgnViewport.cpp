@@ -437,12 +437,8 @@ struct ViewChangedCaller
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnViewport::_AdjustAspectRatio(DPoint3dR origin, DVec3dR delta)
     {
-    double windowAspect = GetViewRect().Aspect();
+    double windowAspect = GetViewRect().Aspect() * m_viewController->GetViewDefinition().GetAspectRatioSkew();
     double viewAspect = delta.x / delta.y;
-
-    auto drawingView = m_viewController->GetViewDefinition()._ToDrawingView();
-    if (nullptr != drawingView)
-        windowAspect *= drawingView->GetAspectRatioSkew();
 
     if (fabs(1.0 - (viewAspect / windowAspect)) < 1.0e-9)
         return;

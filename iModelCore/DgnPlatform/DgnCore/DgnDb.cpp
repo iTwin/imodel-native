@@ -225,12 +225,6 @@ DbResult DgnDb::_OnDbOpening()
 //--------------------------------------------------------------------------------------
 DbResult DgnDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     {
-    if (newBriefcaseId.IsMasterId())
-        {
-        BeAssert(false && "Can only change Master -> Briefcase");
-        return BE_SQLITE_ERROR;
-        }
-
     DbResult result = T_Super::_OnBriefcaseIdAssigned(newBriefcaseId);
     if (result != BE_SQLITE_OK)
         return result;
@@ -239,8 +233,13 @@ DbResult DgnDb::_OnBriefcaseIdAssigned(BeBriefcaseId newBriefcaseId)
     if (result != BE_SQLITE_OK)
         return result;
 
-    Txns().EnableTracking(true);
-    return Txns().InitializeTableHandlers(); // Note: The briefcase id can be changed only once from master->briefcase
+    if (!newBriefcaseId.IsMasterId())
+        {
+        Txns().EnableTracking(true);
+        result = Txns().InitializeTableHandlers();
+        }
+
+    return result;
     }
 
 //--------------------------------------------------------------------------------------
@@ -598,77 +597,6 @@ DgnDbStatus DgnDb::CompactFile()
         savepoint->Begin();
 
     return BE_SQLITE_OK != rc ? DgnDbStatus::SQLiteError : DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnScriptLibrary::RegisterScript(Utf8CP tsProgramName, Utf8CP tsProgramText, DgnScriptType stype, DateTime const& lastModifiedTime, bool updateExisting)
-    {
-    DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
-    DbResult res = files.AddEntry(tsProgramName, (DgnScriptType::JavaScript == stype)? "js": "ts", nullptr, &lastModifiedTime);
-    if (BE_SQLITE_OK != res)
-        {
-        if (!BeSQLiteLib::IsConstraintDbResult(res) || !updateExisting)
-            {
-            return DgnDbStatus::SQLiteError;
-            }
-        }
-
-    if (BE_SQLITE_OK != files.Save(tsProgramText, strlen(tsProgramText)+1, tsProgramName, &lastModifiedTime, true))
-        return DgnDbStatus::SQLiteError;
-    
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnScriptLibrary::QueryScript(Utf8StringR sText, DgnScriptType& stypeFound, DateTime& lastModifiedTime, Utf8CP sName, DgnScriptType stypePreferred)
-    {
-    DbEmbeddedFileTable& files = GetDgnDb().EmbeddedFiles();
-    uint64_t size;
-    Utf8String ftype;
-    auto id = files.QueryFile(sName, &size, nullptr, nullptr, &ftype, &lastModifiedTime);
-    if (!id.IsValid())
-        return DgnDbStatus::NotFound;
-
-    if (ftype.EqualsI("js"))
-        stypeFound = DgnScriptType::JavaScript;
-    else
-        stypeFound = DgnScriptType::TypeScript;
-
-    bvector<Byte> chars;
-    if (BE_SQLITE_OK != files.Read(chars, sName))
-        return DgnDbStatus::NotFound;
-
-    Utf8CP str = (Utf8CP)&chars[0];
-    sText.assign(str, str+chars.size());
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      07/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnScriptLibrary::ReadText(Utf8StringR jsprog, BeFileNameCR jsFileName)
-    {
-    uint64_t fileSize;
-    if (jsFileName.GetFileSize(fileSize) != BeFileNameStatus::Success)
-        return DgnDbStatus::NotFound;
-
-    BeFile file;
-    if (BeFileStatus::Success != file.Open(jsFileName, BeFileAccess::Read))
-        return DgnDbStatus::NotFound;
-
-    size_t bufSize = (size_t)fileSize;
-    jsprog.resize(bufSize+1);
-    uint32_t nread;
-    if (BeFileStatus::Success != file.Read(&jsprog[0], &nread, (uint32_t)fileSize))
-        return DgnDbStatus::ReadError;
-
-    BeAssert(nread <= bufSize);
-    jsprog[nread] = 0;
-    return DgnDbStatus::Success;
     }
 
 /*---------------------------------------------------------------------------------**//**

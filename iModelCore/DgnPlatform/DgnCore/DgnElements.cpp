@@ -1203,8 +1203,7 @@ DgnElementCPtr DgnElements::LoadElement(DgnElementId elementId,  bool makePersis
     if (BE_SQLITE_ROW != result)
         return nullptr;
 
-    DgnCode code;
-    code.From(stmt->GetValueId<CodeSpecId>(Column::CodeSpec), stmt->GetValueId<DgnElementId>(Column::CodeScope), stmt->GetValueText(Column::CodeValue));
+    DgnCode code(stmt->GetValueId<CodeSpecId>(Column::CodeSpec), stmt->GetValueId<DgnElementId>(Column::CodeScope), stmt->GetValueText(Column::CodeValue));
 
     DgnElement::CreateParams createParams(m_dgndb, stmt->GetValueId<DgnModelId>(Column::ModelId), 
                     stmt->GetValueId<DgnClassId>(Column::ClassId), 
@@ -1261,7 +1260,7 @@ DgnElementCPtr DgnElements::QueryElementByFederationGuid(BeGuidCR federationGuid
 +---------------+---------------+---------------+---------------+---------------+------*/
 ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause, PolymorphicQuery polymorphic) const
     {
-    Utf8String sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeValue,Model.Id,Parent.Id,UserLabel,LastMod FROM ");
+    Utf8String sql("SELECT ECInstanceId,ECClassId,FederationGuid,CodeSpec.Id,CodeScope.Id,CodeValue,Model.Id,Parent.Id,UserLabel,LastMod FROM ");
     if (PolymorphicQuery::No == polymorphic)
         sql.append("ONLY ");
 
@@ -1287,11 +1286,62 @@ ElementIterator DgnElements::MakeIterator(Utf8CP className, Utf8CP whereClause, 
 DgnElementId ElementIteratorEntry::GetElementId() const {return m_statement->GetValueId<DgnElementId>(0);}
 DgnClassId ElementIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
 BeGuid ElementIteratorEntry::GetFederationGuid() const {return m_statement->GetValueGuid(2);}
-Utf8CP ElementIteratorEntry::GetCodeValue() const {return m_statement->GetValueText(3);}
-DgnModelId ElementIteratorEntry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(4);}
-DgnElementId ElementIteratorEntry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(5);}
-Utf8CP ElementIteratorEntry::GetUserLabel() const {return m_statement->GetValueText(6);}
-DateTime ElementIteratorEntry::GetLastModifyTime() const {return m_statement->GetValueDateTime(7);}
+DgnCode ElementIteratorEntry::GetCode() const {return DgnCode(m_statement->GetValueId<CodeSpecId>(3), m_statement->GetValueId<DgnElementId>(4), m_statement->GetValueText(5));}
+Utf8CP ElementIteratorEntry::GetCodeValue() const {return m_statement->GetValueText(5);}
+DgnModelId ElementIteratorEntry::GetModelId() const {return m_statement->GetValueId<DgnModelId>(6);}
+DgnElementId ElementIteratorEntry::GetParentId() const {return m_statement->GetValueId<DgnElementId>(7);}
+Utf8CP ElementIteratorEntry::GetUserLabel() const {return m_statement->GetValueText(8);}
+DateTime ElementIteratorEntry::GetLastModifyTime() const {return m_statement->GetValueDateTime(9);}
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementAspectIterator DgnElement::MakeAspectIterator() const
+    {
+    ElementAspectIterator iterator;
+    iterator.Prepare(GetDgnDb(), 
+        "SELECT ECInstanceId,ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementUniqueAspect) " WHERE Element.Id=:ElementIdParam1 UNION "
+        "SELECT ECInstanceId,ECClassId,Element.Id FROM " BIS_SCHEMA(BIS_CLASS_ElementMultiAspect)  " WHERE Element.Id=:ElementIdParam2",
+        0 /* Index of ECInstanceId */);
+
+    ECSqlStatement* statement = iterator.GetStatement();
+    if (statement)
+        {
+        statement->BindId(statement->GetParameterIndex("ElementIdParam1"), GetElementId());
+        statement->BindId(statement->GetParameterIndex("ElementIdParam2"), GetElementId());
+        }
+
+    return iterator;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Shaun.Sewall                    07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+ElementAspectIterator DgnElements::MakeAspectIterator(Utf8CP className, Utf8CP whereClause, Utf8CP orderByClause) const
+    {
+    Utf8String sql("SELECT ECInstanceId,ECClassId,Element.Id FROM ");
+    sql.append(className);
+
+    if (whereClause)
+        {
+        sql.append(" ");
+        sql.append(whereClause);
+        }
+
+    if (orderByClause)
+        {
+        sql.append(" ");
+        sql.append(orderByClause);
+        }
+
+    ElementAspectIterator iterator;
+    iterator.Prepare(m_dgndb, sql.c_str(), 0 /* Index of ECInstanceId */);
+    return iterator;
+    }
+
+ECInstanceId ElementAspectIteratorEntry::GetECInstanceId() const {return m_statement->GetValueId<ECInstanceId>(0);}
+DgnClassId ElementAspectIteratorEntry::GetClassId() const {return m_statement->GetValueId<DgnClassId>(1);}
+DgnElementId ElementAspectIteratorEntry::GetElementId() const {return m_statement->GetValueId<DgnElementId>(2);}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   06/15
@@ -1574,7 +1624,7 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnCodeCR code) const
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
 
-    return QueryElementIdByCode(code.GetCodeSpecId(), code.GetScopeElementId(), code.GetValue());
+    return QueryElementIdByCode(code.GetCodeSpecId(), code.GetScopeElementId(GetDgnDb()), code.GetValue());
     }
 
 /*---------------------------------------------------------------------------------**//**

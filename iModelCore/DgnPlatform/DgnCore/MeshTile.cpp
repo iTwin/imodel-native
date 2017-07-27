@@ -365,7 +365,7 @@ TileGeneratorStatus TileGenerationCache::Populate(DgnDbR db, DgnModelR model)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnTextureCPtr TileDisplayParams::QueryTexture(DgnDbR db) const
     {
-    DgnMaterialCPtr material = DgnMaterial::Get(db, m_materialId);
+    RenderMaterialCPtr material = RenderMaterial::Get(db, m_materialId);
     if (!material.IsValid())
         return nullptr;
 
@@ -882,12 +882,12 @@ void TileMeshBuilder::AddTriangle(TileTriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool TileMeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb)
+bool TileMeshBuilder::GetMaterial(RenderMaterialId materialId, DgnDbR dgnDb)
     {
     if (!materialId.IsValid())
         return false;
 
-    m_materialEl = DgnMaterial::Get(dgnDb, materialId);
+    m_materialEl = RenderMaterial::Get(dgnDb, materialId);
     BeAssert(m_materialEl.IsValid());
     m_material = &m_materialEl->GetRenderingAsset();
     return true;
@@ -896,50 +896,54 @@ bool TileMeshBuilder::GetMaterial(DgnMaterialId materialId, DgnDbR dgnDb)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
-    auto const&       points = visitor.Point();
-    BeAssert(3 == points.size());
+    auto const&         points = visitor.Point();
+    size_t              nTriangles = points.size() - 2;
 
-    if (doVertexCluster)
+    for (size_t iTriangle =0; iTriangle< nTriangles; iTriangle++)
         {
-        DVec3d      cross;
-
-        cross.CrossProductToPoints (points.at(0), points.at(1), points.at(2));
-        if (cross.MagnitudeSquared() < m_areaTolerance)
-            return;
-        }
-
-    TileTriangle            newTriangle(!visitor.GetTwoSided());
-    bvector<DPoint2d>       params = visitor.Param();
-
-    if (includeParams &&
-        !params.empty() &&
-        (m_material || GetMaterial(materialId, dgnDb)))
-        {
-        auto patternMap = m_material->GetPatternMap();
-        bvector<DPoint2d>   computedParams;
-
-        if (patternMap.IsValid())
+        if (doVertexCluster)
             {
-            BeAssert (m_mesh->Points().empty() || !m_mesh->Params().empty());
-            if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor, &m_transformToDgn))
-                params = computedParams;
+            DVec3d      cross;
+
+            cross.CrossProductToPoints (points.at(0), points.at(iTriangle+1), points.at(iTriangle+2));
+            if (cross.MagnitudeSquared() < m_areaTolerance)
+                return;
             }
-        }
-            
-    bool haveNormals = !visitor.Normal().empty();
-    for (size_t i = 0; i < 3; i++)
-        {
-        VertexKey vertex(points.at(i), haveNormals ? &visitor.Normal().at(i) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(i), attributes, fillColor);
-        newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
-        }
 
-    BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
-    BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
+        TileTriangle            newTriangle(!visitor.GetTwoSided());
+        bvector<DPoint2d>       params = visitor.Param();
 
-    AddTriangle(newTriangle);
-    ++m_triangleIndex;
+        if (includeParams &&
+            !params.empty() &&
+            (m_material || GetMaterial(materialId, dgnDb)))
+            {
+            auto patternMap = m_material->GetPatternMap();
+            bvector<DPoint2d>   computedParams;
+
+            if (patternMap.IsValid())
+                {
+                BeAssert (m_mesh->Points().empty() || !m_mesh->Params().empty());
+                if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor, &m_transformToDgn))
+                    params = computedParams;
+                }
+            }
+                
+        bool haveNormals = !visitor.Normal().empty();
+        for (size_t i = 0; i < 3; i++)
+            {
+            size_t index = (0 == i) ? 0 : iTriangle + i; 
+            VertexKey vertex(points.at(index), haveNormals ? &visitor.Normal().at(index) : nullptr, !includeParams || params.empty() ? nullptr : &params.at(index), attributes, fillColor);
+            newTriangle.m_indices[i] = doVertexCluster ? AddClusteredVertex(vertex) : AddVertex(vertex);
+            }
+
+        BeAssert(m_mesh->Params().empty() || m_mesh->Params().size() == m_mesh->Points().size());
+        BeAssert(m_mesh->Normals().empty() || m_mesh->Normals().size() == m_mesh->Points().size());
+
+        AddTriangle(newTriangle);
+        ++m_triangleIndex;
+        }
      }
 
 /*---------------------------------------------------------------------------------**//**
@@ -961,7 +965,7 @@ void TileMeshBuilder::AddPolyline (bvector<DPoint3d>const& points, FeatureAttrib
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, DgnMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool includeParams, uint32_t fillColor)
+void TileMeshBuilder::AddPolyface (PolyfaceQueryCR polyface, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool includeParams, uint32_t fillColor)
     {
     for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
         AddTriangle(*visitor, materialId, dgnDb, attributes, false, includeParams, fillColor);
@@ -1036,7 +1040,12 @@ IFacetOptionsPtr TileGenerator::CreateTileFacetOptions(double chordTolerance)
 
     opts->SetChordTolerance(chordTolerance);
     opts->SetAngleTolerance(s_defaultAngleTolerance);
+#ifdef PRE_TRIANGLE_CONVEX
     opts->SetMaxPerFace(3);
+#else
+    opts->SetMaxPerFace(100);
+    opts->SetConvexFacetsRequired(true);
+#endif
     opts->SetCurvedSurfaceMaxPerFace(3);
     opts->SetParamsRequired(true);
     opts->SetNormalsRequired(true);
@@ -2669,8 +2678,11 @@ bool TileGeometryProcessor::_ProcessSurface(MSBsplineSurfaceCR surface, Simplify
 bool TileGeometryProcessor::_ProcessPolyface(PolyfaceQueryCR polyface, bool filled, SimplifyGraphic& gf) 
     {
     PolyfaceHeaderPtr clone = polyface.Clone();
+
+#ifdef PRE_TRIANGLE_CONVEX
     if (!clone->IsTriangulated())
         clone->Triangulate();
+#endif
 
     clone->Transform(Transform::FromProduct(m_transformFromDgn, gf.GetLocalToWorldTransform()));
 
@@ -3100,7 +3112,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
                     {
                     if (isContained || myTileRange.IntersectsWith(DRange3d::From(visitor->GetPointCP(), static_cast<int32_t>(visitor->Point().size()))))
                         {
-                        meshBuilder->AddTriangle (*visitor, displayParams->GetMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor());
+                        meshBuilder->AddTriangle (*visitor, displayParams->GetRenderMaterialId(), db, attributes, doVertexCluster, hasTexture, hasTexture ? 0 : displayParams->GetColor());
                         }
                     }
                 }
@@ -3170,12 +3182,12 @@ BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString TileUtil::GetRootNameForModel(DgnModelCR model)
+WString TileUtil::GetRootNameForModel(DgnModelId modelId, bool asClassifier)
     {
-    WString name(model.GetName().c_str(), BentleyCharEncoding::Utf8);
+    WString name = asClassifier ? L"Classifier" : L"Model";
     name.append(1, '_');
     WChar idBuf[17];
-    BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), model.GetModelId().GetValue(), HexFormatOptions::None);
+    BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), modelId.GetValue(), HexFormatOptions::None);
     name.append(idBuf);
     return name;
     }

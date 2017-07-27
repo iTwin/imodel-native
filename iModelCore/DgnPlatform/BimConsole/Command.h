@@ -331,23 +331,6 @@ struct DbSchemaCommand final : public Command
     };
 
 //---------------------------------------------------------------------------------------
-// @bsiclass                                                   Krischan.Eberle    02/2017
-//---------------------------------------------------------------------------------------
-struct ValidateCommand final : public Command
-    {
-    private:
-        Utf8String _GetName() const override { return ".validate"; }
-        Utf8String _GetUsage() const override;
-        void _Run(Session&, Utf8StringCR args) const override;
-
-        void ValidateDbMappings(Session&, std::vector<Utf8String> const& args) const;
-
-    public:
-        ValidateCommand() : Command() {}
-        ~ValidateCommand() {}
-    };
-
-//---------------------------------------------------------------------------------------
 // @bsiclass                                                   Krischan.Eberle    03/2017
 //---------------------------------------------------------------------------------------
 struct SchemaStatsCommand final : public Command

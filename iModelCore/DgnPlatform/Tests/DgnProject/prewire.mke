@@ -33,34 +33,3 @@ $(BuildContext)Delivery/UnitTests/DgnPlatformTestDomain.h : $(DgnPlatformAPISrc)
 $(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/2-0-1-53/ : $(SrcRoot)CompatibilityTestFiles/2-0-1-53/
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-#   -------------------------------------------------------------------------------------------
-#   Compile .ts files to .js files, ready to be executed by script tests
-#   -------------------------------------------------------------------------------------------
-ScriptOutDir = $(OutputRootDir)build/DgnPlatform/UnitTests/Script/
-
-always:
-    !~@mkdir ${ScriptOutDir}
-
-%ifndef BENTLEYCONFIG_NO_JAVASCRIPT
-
-TypeScriptCompile = $(BuildContext)SubParts/NodeJs/node$(toolchainExeext) $(BuildContext)SubParts/TypeScript/tsc.js
-
-#
-#                   DgnScriptTest
-#
-
-tsSourceFiles = $[@wildcard $(baseDir)Published/DgnScriptTest/*.ts] $[@wildcard $(BuildContext)SubParts/Script/*.d.ts]
-
-%if !defined(NDEBUG)
-    DEBUG_PARMS = --sourceMap --sourceRoot $(baseDir)Published/DgnScriptTest --mapRoot ${ScriptOutDir}
-%endif
-
-$(ScriptOutDir)DgnScriptTest.js : $(tsSourceFiles)
-    $(msg)
-    $(TypeScriptCompile) $(tsSourceFiles) --target ES5 --noImplicitAny --removeComments --declaration $(DEBUG_PARMS) --out $@
-    ~time
-
-%endif
-
-$(BuildContext)Delivery/UnitTests/Script : $(ScriptOutDir)
-    $(LinkFirstDepToFirstTargetAsDirectory)

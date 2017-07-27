@@ -471,7 +471,7 @@ DgnElement::CreateParams DgnElement::InitCreateParamsFromECInstance(DgnDbR db, E
             return CreateParams(db, DgnModelId(), classId);
             }
 
-        code.From(codeSpecId, codeScopeElementId, v.GetUtf8CP());
+        code = DgnCode(codeSpecId, codeScopeElementId, v.GetUtf8CP());
         }
 
     DgnElement::CreateParams params(db, modelId, classId, code);
@@ -1824,52 +1824,3 @@ void JsonUtils::NavigationPropertyFromJson(ECN::ECValue& navValue, JsonValueCR j
     navValue = ECValue(eid, relClassId);
     }
 
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   Sam.Wilson     06/16
-//---------------------------------------------------------------------------------------
-void JsonUtils::UInt64ToJson(JsonValueR outValue, uint64_t value)
-    {
-    if (value <= (uint64_t)(int64_t)std::numeric_limits<double>::max())
-        {
-        outValue = (double)value;
-        return;
-        }
-
-    // *** NEEDS WORK: 
-    outValue = Json::arrayValue;
-    uint32_t lo = (uint32_t)(0xffffffff & value);
-    uint32_t hi = (uint32_t)(value >> 32);
-    outValue[0] = hi; 
-    outValue[1] = lo; 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      06/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-uint64_t JsonUtils::UInt64FromJson(JsonValueCR json)
-    {
-    if (json.isArray())
-        {
-        return (((uint64_t)json[0].asUInt()) << 32) | (uint32_t)json[1].asUInt();
-        }
-
-    if (json.isIntegral())
-        {
-        return json.asUInt64();
-        }
-
-    if (json.isDouble())
-        {
-        return (uint64_t)(int64_t)json.asDouble();
-        }
-
-    if (json.isString())
-        {
-        uint64_t v = 0;
-        BeStringUtilities::ParseUInt64(v, json.asCString());
-        return v;
-        }
-
-    BeAssert(false);
-    return 0;
-    }

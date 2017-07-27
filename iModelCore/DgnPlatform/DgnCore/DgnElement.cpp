@@ -266,7 +266,7 @@ DgnDbStatus DgnElement::_OnInsert()
         {
         m_code = _GenerateDefaultCode();
         if (!m_code.IsValid())
-            return DgnDbStatus::InvalidName;
+            return DgnDbStatus::InvalidCode;
         }
 
     if (GetDgnDb().Elements().QueryElementIdByCode(m_code).IsValid())
@@ -355,6 +355,15 @@ DgnDbStatus DefinitionElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClas
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DefinitionElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_isPrivate()] = m_isPrivate;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      03/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DefinitionElement::_CopyFrom(DgnElementCR el)
@@ -436,7 +445,7 @@ SubjectPtr Subject::Create(SubjectCR parentSubject, Utf8StringCR name, Utf8CP de
     DgnModelId modelId = DgnModel::RepositoryModelId();
     DgnClassId classId = db.Domains().GetClassId(dgn_ElementHandler::Subject::GetHandler());
     DgnElementId parentId = parentSubject.GetElementId();
-    DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsChildSubjects);
+    DgnClassId parentRelClassId = db.Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsSubjects);
 
     if (!classId.IsValid() || !parentId.IsValid() || !parentRelClassId.IsValid() || name.empty())
         return nullptr;
@@ -1087,7 +1096,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
 
     statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeSpec), m_code.GetCodeSpecId());
-    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScopeElementId());
+    statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScopeElementId(GetDgnDb()));
 
     if (HasUserLabel())
         statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_UserLabel), GetUserLabel(), IECSqlBinder::MakeCopy::No);
@@ -1194,6 +1203,32 @@ DgnDbStatus DgnElement::_LoadFromDb()
         return DgnDbStatus::ReadError;
     
     return _ReadSelectParams(*select.m_statement, select.m_params);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
+    {
+    val[json_id()] = m_elementId.ToString(BeInt64Id::UseHex::Yes);
+
+    auto ecClass = GetElementClass();
+    val[json_schemaName()] = ecClass->GetSchema().GetName();
+    val[json_className()] = ecClass->GetName();
+    val[json_model()] = m_modelId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_code()] = m_code.ToJson2();
+
+    if (m_parentId.IsValid())
+        val[json_parent()] = m_parentId.ToString(BeInt64Id::UseHex::Yes);
+
+    if (m_federationGuid.IsValid())
+        val[json_federationGuid()] = m_federationGuid.ToString();
+
+    if (!m_userLabel.empty())
+        val[json_userLabel()] = m_userLabel;
+
+    if (!m_jsonProperties.empty())
+        val[json_jsonProperties()] = m_jsonProperties;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1476,15 +1511,6 @@ void DgnElement::CopyAppDataFrom(DgnElementCR source) const
         {
         AddAppData(*a.first, a.second.get());
         }
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Sam.Wilson                      08/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
-    {
-    m_specId = importer.RemapCodeSpecId(m_specId);
-    m_scopeElementId = importer.FindElementId(m_scopeElementId);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2442,27 +2468,19 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsString())
-                return DgnDbStatus::BadArg;
-            DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetCodeSpecId(), existingCode.GetScopeElementId(), value.ToString());
-            return el.SetCode(newCode);
+            return DgnDbStatus::ReadOnly; // must set CodeSpec, CodeScope, and CodeValue together
             });
 
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeScope,
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetNavigationInfo(el.GetCode().GetScopeElementId());
+            value.SetNavigationInfo(el.GetCode().GetScopeElementId(el.GetDgnDb()));
             return DgnDbStatus::Success;
             },
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsNavigation())
-                return DgnDbStatus::BadArg;
-            DgnCode existingCode = el.GetCode();
-            DgnCode newCode(existingCode.GetCodeSpecId(), value.GetNavigationInfo().GetId<DgnElementId>(), existingCode.GetValue());
-            return el.SetCode(newCode);
+            return DgnDbStatus::ReadOnly; // must set CodeSpec, CodeScope, and CodeValue together
             });
         
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeSpec, 
@@ -2474,11 +2492,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
         
         [](DgnElementR el, ECValueCR value)
             {
-            if (!value.IsNavigation())
-                return DgnDbStatus::BadArg;
-            DgnCode existingCode = el.GetCode();
-            DgnCode newCode(value.GetNavigationInfo().GetId<CodeSpecId>(), existingCode.GetScopeElementId(), existingCode.GetValue());
-            return el.SetCode(newCode);
+            return DgnDbStatus::ReadOnly; // must set CodeSpec, CodeScope, and CodeValue together
             });
         
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_Model, 
@@ -2758,88 +2772,6 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
 
     GeometricElement::RegisterGeometricPropertyAccessors(params, layout);
     }
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    10/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::Key const& DgnElement::ExternalKeyAspect::GetAppDataKey()
-    {
-    static Key s_appDataKey;
-    return s_appDataKey;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::ExternalKeyAspectPtr DgnElement::ExternalKeyAspect::Create(CodeSpecId codeSpecId, Utf8CP externalKey)
-    {
-    if (!codeSpecId.IsValid() || !externalKey || !*externalKey)
-        {
-        BeAssert(false);
-        return nullptr;
-        }
-
-    return new DgnElement::ExternalKeyAspect(codeSpecId, externalKey);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::AppData::DropMe DgnElement::ExternalKeyAspect::_OnInserted(DgnElementCR element)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("INSERT INTO " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " (Element.Id,Element.RelECClassId,CodeSpecId,ExternalKey) VALUES (?,?,?,?)", element.GetDgnDb().GetECCrudWriteToken());
-    if (!statement.IsValid())
-        return DgnElement::AppData::DropMe::Yes;
-
-    statement->BindId(1, element.GetElementId());
-    statement->BindId(2, element.GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_ElementOwnsExternalKeys));
-    statement->BindId(3, GetCodeSpecId());
-    statement->BindText(4, GetExternalKey(), IECSqlBinder::MakeCopy::No);
-
-    ECInstanceKey key;
-    if (BE_SQLITE_DONE != statement->Step(key))
-        {
-        BeAssert(false);
-        }
-
-    return DgnElement::AppData::DropMe::Yes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::ExternalKeyAspect::Query(Utf8StringR externalKey, DgnElementCR element, CodeSpecId codeSpecId)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetPreparedECSqlStatement("SELECT ExternalKey FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE Element.Id=? AND CodeSpecId=?");
-    if (!statement.IsValid())
-        return DgnDbStatus::ReadError;
-
-    statement->BindId(1, element.GetElementId());
-    statement->BindId(2, codeSpecId);
-
-    if (BE_SQLITE_ROW != statement->Step())
-        return DgnDbStatus::ReadError;
-
-    externalKey.AssignOrClear(statement->GetValueText(0));
-    return DgnDbStatus::Success;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Shaun.Sewall                    09/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus DgnElement::ExternalKeyAspect::Delete(DgnElementCR element, CodeSpecId codeSpecId)
-    {
-    CachedECSqlStatementPtr statement = element.GetDgnDb().GetNonSelectPreparedECSqlStatement("DELETE FROM " BIS_SCHEMA(BIS_CLASS_ElementExternalKey) " WHERE Element.Id=? AND CodeSpecId=?", element.GetDgnDb().GetECCrudWriteToken());
-    if (!statement.IsValid())
-        return DgnDbStatus::WriteError;
-
-    statement->BindId(1, element.GetElementId());
-    statement->BindId(2, codeSpecId);
-
-    if (BE_SQLITE_DONE != statement->Step())
-        return DgnDbStatus::WriteError;
-
-    return DgnDbStatus::Success;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
@@ -2947,12 +2879,7 @@ DgnDbStatus DgnElement::SetCode(DgnCodeCR newCode)
         return DgnDbStatus::MissingHandler;
 
     m_code = newCode;
-
-    DgnDbStatus status = ValidateCode();
-    if (DgnDbStatus::Success != status)
-        m_code = oldCode;
-
-    return status;
+    return DgnDbStatus::Success; // WIP: Validation?
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3577,6 +3504,21 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+    val[json_category()] = m_categoryId.ToString(BeInt64Id::UseHex::Yes);
+
+    if (opts["noGeometry"].asBool(false))
+        return;
+
+    // load geometry
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
@@ -3761,6 +3703,15 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams const& params)
@@ -3788,6 +3739,16 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
                               ElementAlignedBox3d(boxLow.x, boxLow.y, boxLow.z, boxHi.x, boxHi.y, boxHi.z));
     return DgnDbStatus::Success;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(val, opts);
+
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -3818,8 +3779,13 @@ void GeometricElement2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement2d::_OnInsert()
     {
-    // GeometricElement2ds can only reside in 2D models
-    return GetModel()->Is2dModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    if (!GetModel()->Is2dModel())
+        return DgnDbStatus::WrongModel; // A GeometricElement2d can only reside in a 2D model
+        
+    if (!DrawingCategory::Get(GetDgnDb(), GetCategoryId()).IsValid())
+        return DgnDbStatus::InvalidCategory; // A GeometricElement2d requires an existing DrawingCategory
+
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3857,8 +3823,13 @@ void GeometricElement3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus GeometricElement3d::_OnInsert()
     {
-    // GeometricElement3ds can only reside in 3D models
-    return GetModel()->Is3dModel() ? T_Super::_OnInsert() : DgnDbStatus::WrongModel;
+    if (!GetModel()->Is3dModel())
+        return DgnDbStatus::WrongModel; // A GeometricElement3d can only reside in a 3D model
+        
+    if (!SpatialCategory::Get(GetDgnDb(), GetCategoryId()).IsValid())
+        return DgnDbStatus::InvalidCategory; // A GeometricElement3d requires an existing SpatialCategory
+
+    return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
