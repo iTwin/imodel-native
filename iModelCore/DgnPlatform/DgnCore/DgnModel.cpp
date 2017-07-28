@@ -682,6 +682,27 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
+    {
+    val[json_id()] = m_modelId.ToString(BeInt64Id::UseHex::Yes);
+
+    auto ecClass = GetDgnDb().Schemas().GetClass(m_classId);
+
+    val[json_schemaName()] = ecClass->GetSchema().GetName();
+    val[json_className()] = ecClass->GetName();
+    if (m_parentModelId.IsValid())
+        val[json_parentModel()] = m_parentModelId.ToString(BeInt64Id::UseHex::Yes);
+
+    if (m_modeledElementId.IsValid())
+        val[json_modeledElement()] = m_modeledElementId.ToString(BeInt64Id::UseHex::Yes);
+
+    if (!m_jsonProperties.empty())
+        val[json_jsonProperties()] = m_jsonProperties;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::Update()

@@ -72,11 +72,7 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
     STATUSTYPE m_status;
     Utf8String m_errmsg;
 
-    DgnDbPromiseAsyncWorkerBase(STATUSTYPE defaultStatus)
-        : Nan::AsyncWorker(nullptr), m_resolver(nullptr), m_status(defaultStatus)
-        {
-        }
-
+    DgnDbPromiseAsyncWorkerBase(STATUSTYPE defaultStatus) : Nan::AsyncWorker(nullptr), m_resolver(nullptr), m_status(defaultStatus) {}
     ~DgnDbPromiseAsyncWorkerBase()
         {
         if (nullptr == m_resolver)
@@ -190,7 +186,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         
         void Execute() override
             {
-            if (BSISUCCESS != imodeljs::OpenDgnDb(m_status, m_errmsg, m_db->m_dgndb, m_dbname, m_mode))
+            if (BSISUCCESS != IModelJs::OpenDgnDb(m_status, m_errmsg, m_db->m_dgndb, m_dbname, m_mode))
                 Reject();
             }
 
@@ -222,7 +218,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         void Execute() override
             {
-            if (BSISUCCESS != imodeljs::GetECClassMetaData(m_status, m_errmsg, m_metaDataJson, GetDgnDb(), m_ecSchema.c_str(), m_ecClass.c_str()))
+            if (BSISUCCESS != IModelJs::GetECClassMetaData(m_status, m_errmsg, m_metaDataJson, GetDgnDb(), m_ecSchema.c_str(), m_ecClass.c_str()))
                 Reject();
             }
 
@@ -234,15 +230,15 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         };
 
     //=======================================================================================
-    // Returns the results of calling an element's ToJson method
+    // Get the properties for a DgnElement
     //! @bsiclass
     //=======================================================================================
-    struct GetElementPropertiesWorker : WorkerBase<DgnDbStatus>
+    struct GetElementWorker : WorkerBase<DgnDbStatus>
         {
         Json::Value m_opts;         // input
         Json::Value m_elementJson;  // ouput
         
-        GetElementPropertiesWorker(NodeAddonDgnDb* db, Nan::Utf8String const& inOpts) : WorkerBase(db, DgnDbStatus::Success), m_opts(Json::Value::From(*inOpts, *inOpts+inOpts.length())) {}
+        GetElementWorker(NodeAddonDgnDb* db, Nan::Utf8String const& inOpts) : WorkerBase(db, DgnDbStatus::Success), m_opts(Json::Value::From(*inOpts, *inOpts+inOpts.length())) {}
 
         static NAN_METHOD(Start)
             {
@@ -250,12 +246,41 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
             DGNDB_MUST_BE_OPEN(db);
             REQUIRE_ARGUMENT_STRING(0, opts, "Argument 0 must be a Json string");
-            (new GetElementPropertiesWorker(db, opts))->ScheduleAndReturnPromise(info);
+            (new GetElementWorker(db, opts))->ScheduleAndReturnPromise(info);
             }
 
         void Execute() override
             {
-            if (BSISUCCESS != imodeljs::GetElementProperties(m_status, m_errmsg, m_elementJson, GetDgnDb(), m_opts))
+            if (BSISUCCESS != IModelJs::GetElement(m_status, m_errmsg, m_elementJson, GetDgnDb(), m_opts))
+                Reject();
+            }
+
+        void _ResolvePromise(T_ResolverLocal& r) override {r->Resolve(Nan::New(m_elementJson.ToString().c_str()).ToLocalChecked());}
+        };
+
+    //=======================================================================================
+    // Get the properties for a DgnModel
+    //! @bsiclass
+    //=======================================================================================
+    struct GetModelWorker : WorkerBase<DgnDbStatus>
+        {
+        Json::Value m_opts;         // input
+        Json::Value m_elementJson;  // ouput
+        
+        GetModelWorker(NodeAddonDgnDb* db, Nan::Utf8String const& inOpts) : WorkerBase(db, DgnDbStatus::Success), m_opts(Json::Value::From(*inOpts, *inOpts+inOpts.length())) {}
+
+        static NAN_METHOD(Start)
+            {
+            Nan::HandleScope scope;
+            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+            DGNDB_MUST_BE_OPEN(db);
+            REQUIRE_ARGUMENT_STRING(0, opts, "Argument 0 must be a Json string");
+            (new GetModelWorker(db, opts))->ScheduleAndReturnPromise(info);
+            }
+
+        void Execute() override
+            {
+            if (BSISUCCESS != IModelJs::GetModel(m_status, m_errmsg, m_elementJson, GetDgnDb(), m_opts))
                 Reject();
             }
 
@@ -288,7 +313,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         void Execute() override 
             {
-            if (BSISUCCESS != imodeljs::GetElementPropertiesForDisplay(m_status, m_errmsg, m_elementJson, GetDgnDb(), m_id.c_str()))
+            if (BSISUCCESS != IModelJs::GetElementPropertiesForDisplay(m_status, m_errmsg, m_elementJson, GetDgnDb(), m_id.c_str()))
                 Reject();
             }
         
@@ -342,7 +367,8 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         t->SetClassName(Nan::New("DgnDb").ToLocalChecked());
 
         Nan::SetPrototypeMethod(t, "openDgnDb", OpenDgnDbWorker::Start);
-        Nan::SetPrototypeMethod(t, "getElement", GetElementPropertiesWorker::Start);
+        Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
+        Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
 
@@ -404,7 +430,7 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
 
         void Execute() override
             {
-            if (BSISUCCESS != imodeljs::GetCachedECSqlStatement(m_status, m_errmsg, m_stmt->m_statement, GetDgnDb(), m_ecsql.c_str()))
+            if (BSISUCCESS != IModelJs::GetCachedECSqlStatement(m_status, m_errmsg, m_stmt->m_statement, GetDgnDb(), m_ecsql.c_str()))
                 {
                 m_status = DbResult::BE_SQLITE_ERROR;
                 Reject();
@@ -437,7 +463,7 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
 
         void Execute() override
             {
-            if (BSISUCCESS != imodeljs::StepStatementOnce(m_status, m_errmsg, m_rowJson, GetDgnDb(), *m_stmt->m_statement))
+            if (BSISUCCESS != IModelJs::StepStatementOnce(m_status, m_errmsg, m_rowJson, GetDgnDb(), *m_stmt->m_statement))
                 Reject();
             }
         
@@ -471,7 +497,7 @@ struct NodeAddonECSqlStatement : Nan::ObjectWrap
 
         void Execute() override
             {
-            if (BSISUCCESS != imodeljs::StepStatementAll(m_status, m_errmsg, m_rowsJson, GetDgnDb(), *m_stmt->m_statement))
+            if (BSISUCCESS != IModelJs::StepStatementAll(m_status, m_errmsg, m_rowsJson, GetDgnDb(), *m_stmt->m_statement))
                 Reject();
             }
 
@@ -537,7 +563,7 @@ static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object>
     v8::String::Utf8Value v8utf8(v8filename);
     BeFileName addondir = BeFileName(*v8utf8, true).GetDirectoryName();
 
-    imodeljs::Initialize(addondir);
+    IModelJs::Initialize(addondir);
     NodeAddonDgnDb::Init(target);
     NodeAddonECSqlStatement::Init(target);
     }
@@ -545,4 +571,4 @@ static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object>
 Nan::Persistent<FunctionTemplate> NodeAddonDgnDb::s_constructor_template;
 Nan::Persistent<FunctionTemplate> NodeAddonECSqlStatement::s_constructor_template;
 
-NODE_MODULE(imodeljs, registerModule)
+NODE_MODULE(IModelJs, registerModule)

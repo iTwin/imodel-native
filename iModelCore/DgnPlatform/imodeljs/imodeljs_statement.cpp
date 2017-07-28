@@ -11,13 +11,13 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus imodeljs::StepStatementOnce(BeSQLite::DbResult& status, Utf8StringR errmsg, JsonValueR results, DgnDbR dgndb, BeSQLite::EC::ECSqlStatement& stmt)
+BentleyStatus IModelJs::StepStatementOnce(BeSQLite::DbResult& status, Utf8StringR errmsg, JsonValueR results, DgnDbR dgndb, BeSQLite::EC::ECSqlStatement& stmt)
     {
     BeSqliteDbMutexHolder serializeAccess(dgndb); // hold mutex, so that I have a chance to get last ECDb error message
 
     if (BE_SQLITE_ROW == (status = stmt.Step()))
         {
-        imodeljs::GetRowAsJson(results, stmt);
+        IModelJs::GetRowAsJson(results, stmt);
         return BSISUCCESS;
         }
 
@@ -34,7 +34,7 @@ BentleyStatus imodeljs::StepStatementOnce(BeSQLite::DbResult& status, Utf8String
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus imodeljs::StepStatementAll(BeSQLite::DbResult& status, Utf8StringR errmsg, JsonValueR results, DgnDbR dgndb, BeSQLite::EC::ECSqlStatement& stmt)
+BentleyStatus IModelJs::StepStatementAll(BeSQLite::DbResult& status, Utf8StringR errmsg, JsonValueR results, DgnDbR dgndb, BeSQLite::EC::ECSqlStatement& stmt)
     {
     BeSqliteDbMutexHolder serializeAccess(dgndb); // hold mutex, so that I have a chance to get last ECDb error message
 
@@ -43,7 +43,7 @@ BentleyStatus imodeljs::StepStatementAll(BeSQLite::DbResult& status, Utf8StringR
     while (BE_SQLITE_ROW == (status = stmt.Step()))
         {
         Json::Value row(Json::objectValue);
-        imodeljs::GetRowAsJson(row, stmt);
+        IModelJs::GetRowAsJson(row, stmt);
         results.append(row);
         }
 
@@ -57,7 +57,7 @@ BentleyStatus imodeljs::StepStatementAll(BeSQLite::DbResult& status, Utf8StringR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus imodeljs::GetCachedECSqlStatement(BeSQLite::DbResult& status, Utf8StringR errmsg, BeSQLite::EC::CachedECSqlStatementPtr& stmt, DgnDbR dgndb, Utf8CP ecsql)
+BentleyStatus IModelJs::GetCachedECSqlStatement(BeSQLite::DbResult& status, Utf8StringR errmsg, BeSQLite::EC::CachedECSqlStatementPtr& stmt, DgnDbR dgndb, Utf8CP ecsql)
     {
     BeSqliteDbMutexHolder serializeAccess(dgndb); // hold mutex, so that I have a chance to get last ECDb error message
 
