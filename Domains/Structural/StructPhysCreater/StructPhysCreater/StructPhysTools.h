@@ -62,6 +62,9 @@ struct PhysicalProperties
 //=======================================================================================
 struct GeometricTools
     {
+    private:
+        static BentleyStatus GeometricTools::AppendMemberToBuilder(Dgn::GeometryBuilderPtr builder, PhysicalProperties* properties, Transform rotationMatrix, Transform linearMatrix);
+
     public:
         static BentleyStatus CreateStructuralMemberGeometry(
             Dgn::PhysicalElementPtr element,
