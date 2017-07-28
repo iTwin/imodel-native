@@ -31,3 +31,12 @@ TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Syste
     return new Loader(GetRoot()._ConstructTileResource(*this), *this, loads, renderSys);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool Node::_WantDebugRangeGraphics() const
+    {
+    static bool s_debugRange = false;
+    return s_debugRange;
+    }
+

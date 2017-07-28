@@ -44,7 +44,7 @@ BentleyStatus Scene::LoadScene()
     {
     if (SUCCESS != ReadSceneFile())
         return ERROR;
-    
+
     CreateCache(m_sceneInfo.m_sceneName.c_str(), 1024*1024*1024); // 1 GB
 
     Node* root = new Node(*this, nullptr);
@@ -151,7 +151,7 @@ DgnModelId ModelHandler::CreateModel(RepositoryLinkCR modeledElement, Utf8CP sce
     model->SetSceneFile(sceneFile);
     if (trans)
         model->SetLocation(*trans);
-    
+
     if (clip)
         model->SetClip(ClipVector::CreateCopy(*clip).get());
 
@@ -210,7 +210,7 @@ TileTree::RootPtr ThreeMxModel::_CreateTileTree(Render::SystemP system)
     scene->SetClip(m_clip.get());
     return scene.get();
     }
-                                                                  
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
@@ -219,7 +219,7 @@ void ThreeMxModel::_PickTerrainGraphics(PickContextR context) const
     {
     if (!m_root.IsValid())
         return;
-    
+
     auto scene = static_cast<SceneP>(m_root.get());
     PickContext::ActiveDescription descr(context, GetName());
     scene->Pick(context, scene->GetLocation(), m_clip.get());
@@ -241,7 +241,7 @@ void ThreeMxModel::_OnFitView(FitContextR context)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ThreeMxModel::_OnSaveJsonProperties() 
+void ThreeMxModel::_OnSaveJsonProperties()
     {
     T_Super::_OnSaveJsonProperties();
 
@@ -352,13 +352,13 @@ struct  PublishTileNode : ModelTileNode
         TileMeshBuilderR    m_builder;
         DgnModelId          m_modelId;
         DgnDbR              m_dgnDb;
-        
+
         ClipOutputCollector(DgnModelId modelId, DgnDbR dgnDb, TileMeshBuilderR builder) : m_builder(builder), m_modelId(modelId), m_dgnDb (dgnDb) { }
 
         virtual StatusInt   _ProcessUnclippedPolyface(PolyfaceQueryCR polyfaceQuery) override { m_builder.AddPolyface(polyfaceQuery, DgnMaterialId(), m_dgnDb, FeatureAttributes(), true, 0); return SUCCESS; }
         virtual StatusInt   _ProcessClippedPolyface(PolyfaceHeaderR polyfaceHeader) override  { m_builder.AddPolyface(polyfaceHeader, DgnMaterialId(), m_dgnDb, FeatureAttributes(), true, 0); return SUCCESS; }
         };
-    
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -419,7 +419,7 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
                 nullptr != (publishTexture = dynamic_cast <Publish3mxTexture*> (publishGeometry->m_texture.get())))
                 {
                 auto const&   found = builderMap.find(publishTexture);
-                
+
                 if (found == builderMap.end())
                     {
                     TileTextureImagePtr     tileTexture = TileTextureImage::Create(publishTexture->m_source);
@@ -432,7 +432,7 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
                     {
                     builder = found->second;
                     }
-                }                                   
+                }
 
             if (ClipPlaneContainment_StronglyInside != clipContainment)
                 {
@@ -446,12 +446,12 @@ virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileG
                 }
             }
         node.ClearGeometry();       // No longer needed.... reduce memory usage.
-        }                                                                                                                                                                                                                        
+        }
 
     for (auto& builder : builderMap)
         if (!builder.second->GetMesh()->IsEmpty())
             tileMeshes.push_back(builder.second->GetMesh());
-        
+
     return publishableGeometry;
     }
 
@@ -491,7 +491,7 @@ struct Publish3MxContext
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth)
-    { 
+    {
     double          tolerance = (0.0 == node._GetMaximumSize()) ? 1.0E6 : (2.0 * node.GetRadius() / node._GetMaximumSize());
     DRange3d        dgnRange;
 
@@ -533,9 +533,9 @@ void ProcessTile(PublishTileNode& tile, NodeR node, size_t depth)
                 }
             }
         }
-    folly::via(&BeFolly::ThreadPool::GetIoPool(), [&]()  
-        {  
-        m_collector._AcceptTile(tile);  
+    folly::via(&BeFolly::ThreadPool::GetIoPool(), [&]()
+        {
+        m_collector._AcceptTile(tile);
         m_completedTiles++;
         });
 
@@ -570,7 +570,7 @@ END_UNNAMED_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) 
+TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter)
     {
     // ###TODO? Merge. m_scene = nullptr;      // Clear previous scene. (avoid trying to open twice).
 
@@ -585,7 +585,7 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
         tileClip = ClipVector::CreateCopy(*m_clip);
         tileClip->TransformInPlace(transformDbToTile);
         }
-    
+
     Publish3MxContext   publishContext (*scene, *this, transformDbToTile, tileClip.get(), collector, progressMeter);
     T_PublishTilePtr    rootPublishTile =  new PublishTileNode(*this, *scene, (NodeR) *scene->GetRootTile(), transformDbToTile, 0, 0, nullptr, tileClip.get());
 
@@ -603,7 +603,7 @@ TileGeneratorStatus ThreeMxModel::_GenerateMeshTiles(TileNodePtr& rootTile, Tran
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::TileTree::RootCPtr ThreeMxModel::_GetPublishingTileTree(Dgn::Render::SystemP renderSys) const
-    { 
+    {
     Load(renderSys);
 
     return m_scene.get();
@@ -621,7 +621,7 @@ Dgn::ClipVectorPtr ThreeMxModel::_GetPublishingClip () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ThreeMxModel::_GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const 
+BentleyStatus ThreeMxModel::_GetSpatialClassifiers(Dgn::ModelSpatialClassifiersR classifiers) const
     {
     classifiers = m_classifiers;
     return SUCCESS;
