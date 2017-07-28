@@ -870,6 +870,7 @@ protected:
 
     Tile(Root& root, Tile const* parent, double maxDiameter=0.0) : TileTree::Tile(root, parent), m_maxDiameter(maxDiameter) { }
     virtual bool _WantDebugRangeGraphics() const { return false; }
+    DGNPLATFORM_EXPORT void AddDebugRangeGraphics(DrawArgsR args) const;
 
     bool _HasGraphics() const override { return m_meshes.end() != std::find_if(m_meshes.begin(), m_meshes.end(), [](TriMeshPtr const& arg) { return arg->HasGraphics(); }); }
     void _Invalidate() override { BeAssert(false); }

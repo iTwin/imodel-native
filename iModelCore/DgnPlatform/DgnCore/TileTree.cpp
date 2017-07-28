@@ -1748,19 +1748,24 @@ Tile::SelectParent TriMeshTree::Tile::_SelectTiles(bvector<TileTree::TileCPtr>& 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Tile::AddDebugRangeGraphics(DrawArgsR args) const
+    {
+    GraphicParams params;
+    params.SetLineColor(ColorDef::Red());
+
+    Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(GetRoot().GetDgnDb()));
+    graphic->ActivateGraphicParams(params);
+    graphic->AddRangeBox(m_range);
+    args.m_graphics.Add(*graphic->Finish());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
 void TriMeshTree::Tile::_DrawGraphics(DrawArgsR args) const
     {
-    bool wantDebugRange = _WantDebugRangeGraphics();
-    if (wantDebugRange)
-        {
-        GraphicParams params;
-        params.SetLineColor(ColorDef::Red());
-
-        Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(GetRoot().GetDgnDb()));
-        graphic->ActivateGraphicParams(params);
-        graphic->AddRangeBox(m_range);
-        args.m_graphics.Add(*graphic->Finish());
-        }
+    if (_WantDebugRangeGraphics())
+        AddDebugRangeGraphics(args);
 
     for (auto mesh : m_meshes)
         mesh->Draw(args);
