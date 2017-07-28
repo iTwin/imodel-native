@@ -1341,6 +1341,8 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::InsertElement(DgnElementR element, DgnDbStatus* outStat)
     {
+    DgnDb::VerifyClientThread();
+
     DgnDbStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
     // don't allow elements that already have an id unless the "preassignedId" flag is set (PKPM requested a "back door" for sync workflows)
@@ -1423,6 +1425,8 @@ void DgnElements::FinishUpdate(DgnElementCR replacement, DgnElementCR original)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* outStat)
     {
+    DgnDb::VerifyClientThread();
+
     DgnDbStatus ALLOW_NULL_OUTPUT(stat,outStat);
 
     if (replacement.IsPersistent())
@@ -1530,6 +1534,8 @@ DgnDbStatus DgnElements::PerformDelete(DgnElementCR element)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
     {
+    DgnDb::VerifyClientThread();
+
     if (&elementIn.GetDgnDb() != &m_dgndb)
         return DgnDbStatus::WrongDgnDb;
 

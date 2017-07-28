@@ -443,7 +443,7 @@ protected:
     Utf8String ToDetailJson();
     JsonValueCR GetDetails() const {return m_jsonProperties[json_viewDetails()];}
     JsonValueR GetDetailsR() {return m_jsonProperties[json_viewDetails()];}
-    void AdjustAspectRatio(double windowAspect);
+    DGNPLATFORM_EXPORT virtual void _AdjustAspectRatio(double windowAspect);
 
 public:
     BE_JSON_NAME(categorySelectorId)
