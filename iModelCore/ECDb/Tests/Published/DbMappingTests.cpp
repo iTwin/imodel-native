@@ -6713,7 +6713,154 @@ TEST_F(DbMappingTestFixture, BaseClassAndMixins_Diamond)
         }
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  Maha Nasir                  04/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(DbMappingTestFixture, CAOnMixins_FailingCases)
+    {
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Abstract'/>"
+        "    <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "            <AppliesToEntityClass>Foo</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "        <ClassMap xmlns='ECDbMap.02.00'>"
+        "            <MapStrategy>NotMapped</MapStrategy>"
+        "        </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='FooProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "NotMapped mapping strategy on Mixins is not supported";
 
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Abstract'/>"
+        "    <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "            <AppliesToEntityClass>Foo</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "        <ClassMap xmlns='ECDbMap.02.00'>"
+        "            <MapStrategy>OwnTable</MapStrategy>"
+        "        </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='FooProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "OwnTable mapping strategy on Mixins is not supported";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Abstract'/>"
+        "    <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "            <AppliesToEntityClass>Foo</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "        <ClassMap xmlns='ECDbMap.02.00'>"
+        "           <MapStrategy>TablePerHierarchy</MapStrategy>"
+        "        </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='FooProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "TPH mapping strategy on Mixins is not supported";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Abstract'/>"
+        "    <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "            <AppliesToEntityClass>Foo</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "        <ClassMap xmlns='ECDbMap.02.00'>"
+        "            <MapStrategy>ExistingTable</MapStrategy>"
+        "                <TableName>be_Prop</TableName>"
+        "        </ClassMap>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='FooProp' typeName='int' />"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "ExistingTable mapping strategy on Mixins is not supported";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Abstract'/>"
+        "    <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "            <AppliesToEntityClass>Foo</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='FooProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <ColumnName>FooId</ColumnName>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "PropertyMap CA on Mixins is not supported";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Abstract'/>"
+        "    <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "            <AppliesToEntityClass>Foo</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='FooProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <Collation>NoCase</Collation>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "PropertyMap CA on Mixins is not supported";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <ECSchemaReference name='CoreCustomAttributes' version='01.00' prefix='CoreCA' />"
+        "    <ECSchemaReference name='ECDbMap' version='02.00' prefix='ecdbmap' />"
+        "    <ECEntityClass typeName='Foo' modifier='Abstract'/>"
+        "    <ECEntityClass typeName='IMixin' modifier='Abstract'>"
+        "        <ECCustomAttributes>"
+        "          <IsMixin xmlns='CoreCustomAttributes.01.00'>"
+        "            <AppliesToEntityClass>Foo</AppliesToEntityClass>"
+        "          </IsMixin>"
+        "        </ECCustomAttributes>"
+        "        <ECProperty propertyName='FooProp' typeName='int'>"
+        "           <ECCustomAttributes>"
+        "            <PropertyMap xmlns='ECDbMap.02.00'>"
+        "               <IsUnique>True</IsUnique>"
+        "            </PropertyMap>"
+        "           </ECCustomAttributes>"
+        "       </ECProperty>"
+        "    </ECEntityClass>"
+        "</ECSchema>"))) << "PropertyMap CA on Mixins is not supported";
+    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Krischan.Eberle         10/15
 //+---------------+---------------+---------------+---------------+---------------+------
@@ -6802,9 +6949,7 @@ void AssertECInstanceIdAutoGeneration(ECDbCR ecdb, bool expectedToSucceed, Utf8C
     BeTest::SetFailOnAssert(true);
     }
 
-
-
-//---------------------------------------------------------------------------------------
+//+---------------+---------------+---------------+---------------+---------------+------
 // @bsimethod                                   Krischan.Eberle                     12/16
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(DbMappingTestFixture, PropertyMapCAOnNavigationProperty)
