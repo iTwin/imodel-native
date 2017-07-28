@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 
 <Package
   xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
@@ -8,14 +8,14 @@
 
   <Identity
     Name="39cf25d9-cd5d-446e-9ec2-034a7df6dc41"
-    Publisher="CN=Jeff.Marker"
+    Publisher="CN=bsi"
     Version="1.0.0.0" />
 
   <mp:PhoneIdentity PhoneProductId="39cf25d9-cd5d-446e-9ec2-034a7df6dc41" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
     <DisplayName>BeTestTest1</DisplayName>
-    <PublisherDisplayName>Jeff.Marker</PublisherDisplayName>
+    <PublisherDisplayName>bsi</PublisherDisplayName>
     <Logo>Assets\StoreLogo.png</Logo>
   </Properties>
 
