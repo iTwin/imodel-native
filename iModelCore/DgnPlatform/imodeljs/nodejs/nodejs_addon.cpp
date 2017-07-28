@@ -190,8 +190,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         
         void Execute() override
             {
-            if (BSISUCCESS != imodeljs::OpenDgnDb(m_status, m_errmsg, m_db->m_dgndb, m_dbname, m_mode))
-                Reject();
+            imodeljs::OpenDgnDb(m_status, m_errmsg, m_db->m_dgndb, m_dbname, m_mode);
             }
 
         void _ResolvePromise(T_ResolverLocal& r) override {r->Resolve(v8::Integer::New(v8::Isolate::GetCurrent(), m_status));}
