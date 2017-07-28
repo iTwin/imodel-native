@@ -613,6 +613,7 @@ public:
     virtual void _MapTexture(Texture const& texture, TextureMapParams const& params = TextureMapParams()) = 0;
 
     bool HasTextures() const { return !m_mappedTextures.empty(); }
+    TextureCPtr GetMappedTexture(size_t i) const {return i < m_mappedTextures.size() ? m_mappedTextures[i] : TextureCPtr(nullptr);}
 };
 
 //=======================================================================================

@@ -215,7 +215,13 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
                     }
                 }
 
-            if (m_material.IsNull() || !m_material->HasTextures()) // textures baked into material...
+            if (m_material.IsValid() && m_material->HasTextures())
+                {
+                // Texture already baked into material...e.g. skybox.
+                // ###TODO: Why is it a vector? AFAICT only 1 texture supported...
+                m_texture = const_cast<TextureP>(m_material->GetMappedTexture(0).get()); // ###TODO constness...
+                }
+            else
                 {
                 m_resolved = !m_materialId.IsValid() && m_gradient.IsNull();
                 if (m_resolved)
