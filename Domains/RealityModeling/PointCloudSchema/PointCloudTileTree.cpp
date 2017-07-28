@@ -57,7 +57,7 @@ BentleyStatus _LoadTile() override
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley    02/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-folly::Future<BentleyStatus> _GetFromSource()
+folly::Future<BentleyStatus> _GetFromSource() override
     {
     RefCountedPtr<Loader> me(this);
     return folly::via(&PointCloudFileThread::Get(), [me] ()
@@ -78,7 +78,6 @@ BentleyStatus DoGetFromSource()
     auto&                       root = static_cast<RootCR>(m_tile->GetRoot());
     static const size_t         s_maxTileBatchCount = 500000;
     static size_t               s_maxLeafPointCount = 20000;
-    static double               s_minLeafSize = 1.0;        // Minimum of 1 meter...
     bool                        colorsPresent;
     static   BeMutex            s_queryMutex;
     BeMutexHolder               lock(s_queryMutex);        // Arrgh.... Queries are not thread safe??
