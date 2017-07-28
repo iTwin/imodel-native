@@ -860,7 +860,7 @@ protected:
 struct Tile : TileTree::Tile
 {
     DEFINE_T_SUPER(TileTree::Tile);
-    typedef std::forward_list<TriMeshPtr> TriMeshList; // ###TODO why linked list instead of vector?
+    typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.
 
 protected:
     double m_maxDiameter;
