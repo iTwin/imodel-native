@@ -2923,7 +2923,8 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
                 
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
-        assert(status == SUCCESS);
+		if (status != SUCCESS)
+			return status == SUCCESS ? SUCCESS : ERROR;
 /*
         Utf8String newBaseEditsFilePath = Utf8String(m_baseExtraFilesPath) + "_terrain_";
         newBaseEditsFilePath.append(std::to_string(id).c_str());
