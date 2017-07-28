@@ -1130,49 +1130,203 @@ struct  VectorPosition
         }
     };
 
-
 uint16_t    zigZagEncode(int32_t value) { return (uint16_t) (((value << 1) ^ (value >> 15)) & 0xffff); }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     07/2017
++===============+===============+===============+===============+===============+======*/
+struct VectorTileWriter
+{
+    Json::Value         m_featureTable;
+    ByteStream          m_polygonIndices;
+    ByteStream          m_polylineIndices;
+    ByteStream          m_polygonPositionsX;
+    ByteStream          m_polygonPositionsY;
+    ByteStream          m_polylinePositionsX;
+    ByteStream          m_polylinePositionsY;
+    ByteStream          m_pointPositionsX;
+    ByteStream          m_pointPositionsY;
+    ByteStream          m_featureBinary;
+    ByteStream          m_batchIdsBuffer;
+    VectorPosition      m_lastPosition;
+    DRange3d            m_range;
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+VectorTileWriter(DRange3dCR range) : m_range(range) 
+    { 
+    m_featureTable["RTC_CENTER"][0] = 0.0; m_featureTable["RTC_CENTER"][1] = 0.0; m_featureTable["RTC_CENTER"][2] = 0.0;
+    m_featureTable["MINIMUM_HEIGHT"] = -1000.0;
+    m_featureTable["MAXIMUM_HEIGHT"] =  1000.0;
+    m_featureTable["FORMAT"] = 1;  // Cartesian coordinates.
+
+    auto& rectangle     = m_featureTable["RECTANGLE"];
+    rectangle[0]  = range.low.x;
+    rectangle[1]  = range.low.y;         
+    rectangle[2]  = range.high.x;
+    rectangle[3]  = range.high.y;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddPolygonPosition(DPoint3dCR point)
+    {
+    VectorPosition     thisPosition(point, m_range);
+
+    m_polygonPositionsX.Append(zigZagEncode(thisPosition.m_x - m_lastPosition.m_x));
+    m_polygonPositionsY.Append(zigZagEncode(thisPosition.m_y - m_lastPosition.m_y));
+
+    m_lastPosition = thisPosition;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddPolygon (ByteStream& polygonIndexCountBuffer, TileMeshCR mesh, uint32_t const* indices, uint32_t indexCount)
+    {
+    for (uint32_t i=0; i<indexCount; i++)
+        {
+        uint32_t    index = indices[i];
+
+        m_polygonIndices.Append((uint32_t) (m_polygonPositionsX.size()/sizeof(uint16_t)));
+        AddPolygonPosition (mesh.Points().at(index));
+        }
+    m_batchIdsBuffer.Append(mesh.Attributes().at(*indices));
+    m_featureBinary.Append(indexCount);
+    polygonIndexCountBuffer.Append(indexCount);
+    }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void addVectorPosition(ByteStream& positionsX, ByteStream& positionsY, DPoint3dCR point, VectorPosition& lastPosition, DRange3dCR range)
+BentleyStatus   ExtractPolygonBoundaryFromTriangles(bvector<uint32_t>& indices,  bvector<TileTriangle const*>& triangles)
     {
-    VectorPosition     thisPosition(point, range);
+    struct  MeshEdge
+        {
+        uint32_t                m_indices[2];
+        bool                    m_interior;
 
-    positionsX.Append(zigZagEncode(thisPosition.m_x - lastPosition.m_x));
-    positionsY.Append(zigZagEncode(thisPosition.m_y - lastPosition.m_y));
+        MeshEdge() { }
+        MeshEdge(uint32_t index0, uint32_t index1) : m_interior(false)
+            {
+            if (index0 < index1)
+                {
+                m_indices[0] = index0;
+                m_indices[1] = index1;
+                }
+            else
+                {
+                m_indices[0] = index1;
+                m_indices[1] = index0;
+                }
 
-    lastPosition = thisPosition;
-    }
+            }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley   06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void addVectorPolygons (Json::Value& json, ByteStream& positionsX, ByteStream& positionsY, ByteStream& indices, ByteStream& featureBinary, TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR tileRange)
-    {
-    uint32_t            polygonCount =0;
-    ByteStream          polygonIndexCountBuffer, batchIdsBuffer;
-    VectorPosition      lastPosition;
+        bool MeshEdge::operator < (MeshEdge const& rhs) const { return m_indices[0] == rhs.m_indices[0] ? (m_indices[1] < rhs.m_indices[1]) :  (m_indices[0] < rhs.m_indices[0]); }
+        };                 
 
-//#define MERGE_TRIANGLES
-    // Merging polygons seems like a good idea but the createTileFromVertices workers asssumes the vertices are ordered around the perimeter of polygons.
-#ifndef MERGE_TRIANGLES
+    struct  PolylineSegment
+        {
+        MeshEdge        m_edge;
+        bool            m_processed;
+
+        PolylineSegment(MeshEdge const& edge) : m_edge (edge), m_processed(false) { }
+        };
+
+    struct MapEntry
+        {
+        uint32_t            m_endIndex;
+        PolylineSegment*    m_segment;
+
+        MapEntry() { }
+        MapEntry(uint32_t endIndex, PolylineSegment* segment) : m_endIndex(endIndex), m_segment(segment) { }
+        };
+    
+    bset<MeshEdge>                  edges;
+    bvector<PolylineSegment>        segments;
+    bmultimap <uint32_t, MapEntry>  segmentMap;
+
     for (auto& triangle : triangles)
         {
         for (size_t i=0; i<3; i++)
             {
-            indices.Append((uint32_t) (positionsX.size()/sizeof(uint16_t)));
-            addVectorPosition(positionsX, positionsY, mesh.Points().at(triangle.m_indices[i]), lastPosition, tileRange);
+            MeshEdge    thisEdge(triangle->m_indices[i], triangle->m_indices[(i + 1) % 3]);
+
+            auto const&   insertPair = edges.insert(thisEdge);
+
+            if (!insertPair.second)
+                insertPair.first->m_interior = true;        
             }
-        batchIdsBuffer.Append(mesh.Attributes().at(triangle.m_indices[0]));
-        featureBinary.Append((uint32_t) 3);
-        polygonIndexCountBuffer.Append((uint32_t) 3);
-        polygonCount++;
         }
-    
-#else
+    for (auto& edge : edges)
+        if (!edge.m_interior)
+            segments.push_back(PolylineSegment(edge));
+
+    std::list<uint32_t> indexList;
+    bool                first = true;
+
+    for (auto& segment : segments)
+        {
+        segmentMap.Insert (segment.m_edge.m_indices[0], MapEntry(segment.m_edge.m_indices[1], &segment));
+        segmentMap.Insert (segment.m_edge.m_indices[1], MapEntry(segment.m_edge.m_indices[0], &segment));
+        }
+
+    auto&   segment = segments.front();
+
+    indexList.push_back (segment.m_edge.m_indices[0]);
+    indexList.push_back (segment.m_edge.m_indices[1]);
+    segment.m_processed = true;
+
+    bool    linkFound = false;
+
+    do
+        {
+        linkFound = false;
+        for (bmultimap <uint32_t, MapEntry>::iterator curr = segmentMap.lower_bound (indexList.back()), end = segmentMap.upper_bound(indexList.back()); !linkFound && curr != end; curr++)
+            {
+            if (!curr->second.m_segment->m_processed)
+                {
+                linkFound = true;
+                indexList.push_back(curr->second.m_endIndex);
+                curr->second.m_segment->m_processed = true;
+                break;
+                }
+            }
+        for (bmultimap <uint32_t, MapEntry>::iterator curr = segmentMap.lower_bound (indexList.front()), end = segmentMap.upper_bound(indexList.front()); !linkFound && curr != end; curr++)
+            {
+            if (!curr->second.m_segment->m_processed)
+                {
+                linkFound = true;
+                indexList.push_front(curr->second.m_endIndex);
+                curr->second.m_segment->m_processed = true;
+                break;
+                }
+            }
+        } while (linkFound);
+
+    if (indexList.size() != segments.size() + 1)
+        return ERROR;
+
+    for (auto& index : indexList)
+        indices.push_back(index);
+
+    BeAssert (indices.front() == indices.back());
+    indices.pop_back();     // SCP.
+
+    return SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddPolygons (TileMeshCR mesh, bvector<TileTriangle> const& triangles)
+    {
+    ByteStream          polygonIndexCountBuffer, batchIdsBuffer;
+    VectorPosition      lastPosition;
+
     // Need to process all triangles that have the same attribute value as a single "polygon".
     bmap <uint16_t, bvector<TileTriangle const*>> triangleMap;
     
@@ -1188,45 +1342,31 @@ void addVectorPolygons (Json::Value& json, ByteStream& positionsX, ByteStream& p
 
     for (auto& curr : triangleMap)
         {
-        bmap    <uint32_t, uint32_t>    indexMap;
-        uint32_t                        thisPolygonPointCount = 0, thisPolygonIndexCount = 0;
+        bmap <uint32_t, uint32_t>   indexMap;
+        uint32_t                    thisPolygonPointCount = 0, thisPolygonIndexCount = 0;
+        bvector<uint32_t>           polygonIndices;
 
-        for (auto& triangle : curr.second)
+        if (SUCCESS ==ExtractPolygonBoundaryFromTriangles(polygonIndices, curr.second))
             {
-            for (size_t i=0; i<3; i++)
-                {
-                uint32_t    triangleIndex = triangle->m_indices[i], outIndex  = positionsX.size()/sizeof(uint16_t);
-                auto        insertPair = indexMap.Insert(triangleIndex, outIndex);
-
-                if (insertPair.second)  
-                    {
-                    thisPolygonPointCount++;
-                    addVectorPosition(positionsX, positionsY, mesh.Points().at(triangleIndex), lastPosition, tileRange);
-                    }
-                else
-                    {
-                    outIndex = insertPair.first->second;
-                    }
-
-                thisPolygonIndexCount++;
-                indices.Append(outIndex);
-                }
+            AddPolygon(polygonIndexCountBuffer, mesh, polygonIndices.data(), (uint32_t) polygonIndices.size());
             }
-        batchIdsBuffer.Append(curr.first);
-        featureBinary.Append(thisPolygonPointCount);
-        polygonIndexCountBuffer.Append(thisPolygonIndexCount);
-        polygonCount++;
+        else
+            {
+            // Can't extract a polygon if holes - write as seperate triangles.
+            for (auto& triangle : triangles)
+                AddPolygon(polygonIndexCountBuffer, mesh, triangle.m_indices, 3);
+            }
         }
-#endif
-    json["POLYGONS_LENGTH"] = polygonCount;
-    json["POLYGON_COUNT"]["byteOffset"] = 0;
-    json["POLYGON_INDEX_COUNT"]["byteOffset"] = featureBinary.size();
-    featureBinary.Append(polygonIndexCountBuffer.data(), polygonIndexCountBuffer.size());
-    json["POLYGON_BATCH_IDS"]["byteOffset"] = featureBinary.size();
-    featureBinary.Append(batchIdsBuffer.data(), batchIdsBuffer.size());
-    padTo4ByteBoundary(featureBinary);
+    m_featureTable["POLYGONS_LENGTH"] = polygonIndexCountBuffer.size() / sizeof(uint32_t);
+    m_featureTable["POLYGON_COUNT"]["byteOffset"] = 0;
+    m_featureTable["POLYGON_INDEX_COUNT"]["byteOffset"] = m_featureBinary.size();
+    m_featureBinary.Append(polygonIndexCountBuffer.data(), polygonIndexCountBuffer.size());
+    m_featureTable["POLYGON_BATCH_IDS"]["byteOffset"] = m_featureBinary.size();
+    m_featureBinary.Append(m_batchIdsBuffer.data(), m_batchIdsBuffer.size());
+    padTo4ByteBoundary(m_featureBinary);
     }
 
+#ifdef NOTYET
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1257,46 +1397,16 @@ void addVectorPolylinesAndPoints (Json::Value& json, ByteStream& polylinePositio
     featureBinary.Append(batchIdsBuffer.data(), batchIdsBuffer.size());
     padTo4ByteBoundary(featureBinary);
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteVector(std::FILE* outputFile, PublishableTileGeometryR geometry)
+void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
     {
-    Json::Value         json;
-    ByteStream          polygonIndices, polylineIndices, polygonPositionsX, polygonPositionsY, polylinePositionsX, polylinePositionsY, pointPositionsX, pointPositionsY, featureTableBinary;
-
-    json["RTC_CENTER"][0] = 0.0; json["RTC_CENTER"][1] = 0.0; json["RTC_CENTER"][2] = 0.0;
-    json["MINIMUM_HEIGHT"] = -1000.0;
-    json["MAXIMUM_HEIGHT"] =  1000.0;
-    json["FORMAT"] = 1;  // Cartesian coordinates.
-
-    DRange3d            contentRange = DRange3d::NullRange();
-
-    for (auto& mesh : geometry.Meshes())
-        contentRange.Extend(mesh->Points());
-
-    auto& rectangle     = json["RECTANGLE"];
-    rectangle[0]  = contentRange.low.x;
-    rectangle[1]  = contentRange.low.y;         
-    rectangle[2]  = contentRange.high.x;
-    rectangle[3]  = contentRange.high.y;
-
-    BeAssert (geometry.PointClouds().empty() && geometry.Parts().empty());
-    for (auto& mesh : geometry.Meshes())
-        {
-        if (!mesh->Triangles().empty())
-            addVectorPolygons(json, polygonPositionsX, polygonPositionsY, polygonIndices, featureTableBinary, *mesh, mesh->Triangles(), contentRange);
-
-#ifdef POLYLINE_SUPPORT
-        if (!mesh->Polylines().empty())
-            addVectorPolylinesAndPoints (json, polylinePositionsX, polylinePositionsY, polylineIndices, pointPositionsX, pointPositionsY, featureTableBinary, *mesh, mesh->Polylines(), contentRange);
-#endif
-        }
-
-    BatchTableBuilder   batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d());
+    BatchTableBuilder   batchTableBuilder(tile.GetAttributes(), db, tile.GetModel().Is3d());
     Utf8String          batchTableStr = batchTableBuilder.ToString(), 
-                        featureTableStr = getJsonString(json);
+                        featureTableStr = getJsonString(m_featureTable);
 
     long    startPosition = ftell (outputFile);
     std::fwrite(s_vectorMagic, 1, 4, outputFile);
@@ -1304,29 +1414,58 @@ void TilePublisher::WriteVector(std::FILE* outputFile, PublishableTileGeometryR 
     long    lengthDataPosition = ftell(outputFile);
     FWriteValue((uint32_t) 0, outputFile);    // Filled in below.
     FWriteValue((uint32_t) featureTableStr.size(), outputFile);
-    FWriteValue((uint32_t) featureTableBinary.size(), outputFile);   // No binary feature data.
+    FWriteValue((uint32_t) m_featureBinary.size(), outputFile);   // No binary feature data.
     FWriteValue((uint32_t) batchTableStr.size(), outputFile);
     FWriteValue((uint32_t) 0, outputFile);  // No binary batch data.
-    FWriteValue((uint32_t) polygonIndices.size(), outputFile);
-    FWriteValue((uint32_t) (2*polygonPositionsX.size()), outputFile);
-    FWriteValue((uint32_t) (2*polylinePositionsX.size()), outputFile);
-    FWriteValue((uint32_t) (2*pointPositionsX.size()), outputFile);
+    FWriteValue((uint32_t) m_polygonIndices.size(), outputFile);
+    FWriteValue((uint32_t) (2*m_polygonPositionsX.size()), outputFile);
+    FWriteValue((uint32_t) (2*m_polylinePositionsX.size()), outputFile);
+    FWriteValue((uint32_t) (2*m_pointPositionsX.size()), outputFile);
     FWrite(featureTableStr, outputFile);
-    FWrite(featureTableBinary, outputFile);
+    FWrite(m_featureBinary, outputFile);
     FWrite(batchTableStr, outputFile);
-    FWrite(polygonIndices, outputFile);
-    FWrite(polylineIndices, outputFile);
-    FWrite(polygonPositionsX, outputFile);
-    FWrite(polygonPositionsY, outputFile);
-    FWrite(polylinePositionsX, outputFile);
-    FWrite(polylinePositionsY, outputFile);
-    FWrite(pointPositionsX, outputFile);
-    FWrite(pointPositionsY, outputFile);
+    FWrite(m_polygonIndices, outputFile);
+    FWrite(m_polylineIndices, outputFile);
+    FWrite(m_polygonPositionsX, outputFile);
+    FWrite(m_polygonPositionsY, outputFile);
+    FWrite(m_polylinePositionsX, outputFile);
+    FWrite(m_polylinePositionsY, outputFile);
+    FWrite(m_pointPositionsX, outputFile);
+    FWrite(m_pointPositionsY, outputFile);
 
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
     FWriteValue(dataSize, outputFile);
     std::fseek(outputFile, 0, SEEK_END);
+    }
+
+};  // VectorTileWriter
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WriteVector(std::FILE* outputFile, PublishableTileGeometryR geometry)
+    {
+    DRange3d            contentRange = DRange3d::NullRange();
+
+    for (auto& mesh : geometry.Meshes())
+        contentRange.Extend(mesh->Points());
+
+    VectorTileWriter      writer(contentRange);
+
+    BeAssert (geometry.PointClouds().empty() && geometry.Parts().empty());
+    for (auto& mesh : geometry.Meshes())
+        {
+        if (!mesh->Triangles().empty())
+            writer.AddPolygons(*mesh, mesh->Triangles());
+
+#ifdef POLYLINE_SUPPORT
+        if (!mesh->Polylines().empty())
+            writer.AddPolyline();
+#endif
+        }
+    writer.Write(outputFile, m_tile, m_context.GetDgnDb());
 
     m_tile.SetPublishedRange (contentRange);
     }
