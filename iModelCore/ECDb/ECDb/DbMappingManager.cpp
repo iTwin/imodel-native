@@ -1438,7 +1438,7 @@ BentleyStatus DbMappingManager::FkRelationships::UpdatePersistedEnd(SchemaImport
 
     //nav prop only supported if going from foreign end (where FK column is persisted) to referenced end
     const ECRelationshipEnd fkEnd = fkRelMappingInfo.GetForeignKeyEnd();
-    const ECRelationshipEnd referencedEnd = fkRelMappingInfo.GetReferencedEnd();
+    //const ECRelationshipEnd referencedEnd = fkRelMappingInfo.GetReferencedEnd();
     const ECRelatedInstanceDirection navDirection = navProp.GetDirection();
     if ((fkEnd == ECRelationshipEnd_Source && navDirection == ECRelatedInstanceDirection::Backward) ||
         (fkEnd == ECRelationshipEnd_Target && navDirection == ECRelatedInstanceDirection::Forward))
