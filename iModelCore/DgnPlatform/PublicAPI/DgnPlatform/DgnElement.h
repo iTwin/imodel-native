@@ -1578,20 +1578,24 @@ public:
     //! @param[in] importer Enables the element to copy the resources that it needs (if copying between DgnDbs) and to remap any references that it holds to things outside itself to the copies of those things.
     //! @remarks The element's code will \em not be copied to the copied element if the import is being performed within a single DgnDb, as it is never correct for two elements within the same DgnDb to have the same code.
     //! @return The persistent copy of the element
+    //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnElementCPtr Import(DgnDbStatus* stat, DgnModelR destModel, DgnImportContext& importer) const;
 
     //! Update the persistent state of a DgnElement in the DgnDb from this modified copy of it.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Update(el, stat);
+    //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnElementCPtr Update(DgnDbStatus* stat=nullptr);
 
     //! Insert this DgnElement into the DgnDb.
     //! This is merely a shortcut for el.GetDgnDb().Elements().Insert(el, stat);
+    //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnElementCPtr Insert(DgnDbStatus* stat=nullptr);
 
     template<class T> RefCountedCPtr<T> InsertT(DgnDbStatus* stat=nullptr) {return dynamic_cast<T const*>(Insert(stat).get());}
 
     //! Delete this DgnElement from the DgnDb,
     //! This is merely a shortcut for el.GetDgnDb().Elements().Delete(el);
+    //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnDbStatus Delete() const;
 
     //! Get the ElementHandler for this DgnElement.
@@ -2323,6 +2327,8 @@ protected:
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DGNPLATFORM_EXPORT void _AdjustPlacementForImport(DgnImportContext const&) override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR) override;
+    DGNPLATFORM_EXPORT DgnDbStatus _OnDelete() const override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParamsCR) override;
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
@@ -3520,6 +3526,7 @@ public:
     //! @param[in] stat An optional status value. Will be DgnDbStatus::Success if the insert was successful, error status otherwise.
     //! @return RefCountedCPtr to the newly persisted /b copy of /c element. Will be invalid if the insert failed.
     //! @note The element's code must be unique among all elements within the DgnDb, or this method will fail with DgnDbStatus::DuplicateCode.
+    //! @note This function can only be safely invoked from the client thread.
     template<class T> RefCountedCPtr<T> Insert(T& element, DgnDbStatus* stat=nullptr) {return (T const*) InsertElement(element, stat).get();}
 
     //! Update the original persistent DgnElement from which the supplied DgnElement was copied.
@@ -3528,11 +3535,13 @@ public:
     //! @return RefCountedCPtr to the modified persistent element. Will be invalid if the update failed.
     //! @note This call returns a RefCountedCPtr to the *original* peristent element (which has now been updated to reflect the changes from
     //! modifiedElement). modifiedElement does *not* become persistent from this call.
+    //! @note This function can only be safely invoked from the client thread.
     template<class T> RefCountedCPtr<T> Update(T& modifiedElement, DgnDbStatus* stat=nullptr) {return (T const*) UpdateElement(modifiedElement, stat).get();}
 
     //! Delete a DgnElement from this DgnDb.
     //! @param[in] element The element to delete.
     //! @return DgnDbStatus::Success if the element was deleted, error status otherwise.
+    //! @note This function can only be safely invoked from the client thread.
     DGNPLATFORM_EXPORT DgnDbStatus Delete(DgnElementCR element);
 
     //! Delete a DgnElement from this DgnDb by DgnElementId.

@@ -209,13 +209,20 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
         DGNPLATFORM_EXPORT static uint64_t Parse(Utf8CP name);
     };
 
+    BE_JSON_NAME(id)
+    BE_JSON_NAME(schemaName)
+    BE_JSON_NAME(className)
+    BE_JSON_NAME(parentModel)
+    BE_JSON_NAME(modeledElement)
+    BE_JSON_NAME(jsonProperties)
+    BE_JSON_NAME(UserProps)
+
 private:
     template<class T> void CallAppData(T const& caller) const;
 
     void UnloadRangeIndex();
     DgnDbStatus BindInsertAndUpdateParams(BeSQLite::EC::ECSqlStatement& statement);
     DgnDbStatus Read(DgnModelId modelId);
-    BE_JSON_NAME(UserProps)
     ECN::AdHocJsonValueR GetUserPropsR() {return (ECN::AdHocJsonValueR) m_jsonProperties[json_UserProps()];}
 
 protected:
@@ -256,6 +263,10 @@ protected:
     //! to the supplied ECSqlStatement, using statement.GetParameterIndex with your property's name.
     //! Then you @em must call T_Super::_BindWriteParams
     DGNPLATFORM_EXPORT virtual void _BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInsert forInsert);
+
+    //! Convert this DgnModel to a Json::Value.
+    //! @note If you override this method, you @em must call T_Super::_ToJson()
+    DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const;
 
     //! Invoked on saving the JsonProperties field into the Db as part of an Insert or Update operation.
     //! @note If you override this method, you @em must call T_Super::_WriteJsonProperties.
@@ -696,6 +707,8 @@ public:
 
     void RemoveUserProperties(Utf8CP nameSpace) {GetUserPropsR().RemoveMember(nameSpace);}
     /** @} */
+
+    Json::Value ToJson(JsonValueCR opts) const {Json::Value val; _ToJson(val, opts); return val;}
 }; // DgnModel
 
 //=======================================================================================

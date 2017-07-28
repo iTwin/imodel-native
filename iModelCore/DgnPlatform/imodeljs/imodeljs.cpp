@@ -12,8 +12,7 @@
 static Utf8String s_lastEcdbIssue;
 static BeFileName s_addonDllDir;
 
-namespace { // Ensure that none of the classes defined here end up with the same name as classes defined in DgnPlatform. 
-            // If that happened, the Windows linker would silently select one of the implementations to use everywhere.
+BEGIN_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
@@ -53,7 +52,7 @@ struct KnownAddonLocationsAdmin : DgnPlatformLib::Host::IKnownLocationsAdmin
 struct AddonHost : DgnPlatformLib::Host
 {
 private:
-    void _SupplyProductName(Utf8StringR name) override { name.assign("imodeljs"); }
+    void _SupplyProductName(Utf8StringR name) override { name.assign("IModelJs"); }
     IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new KnownAddonLocationsAdmin(); }
     BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override
         {
@@ -71,12 +70,12 @@ public:
     AddonHost() { BeAssertFunctions::SetBeAssertHandler(&AddonHost::OnAssert); }
 };
 
-}; // end anonymous namespace
+END_UNNAMED_NAMESPACE
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-void imodeljs::Initialize(BeFileNameCR addonDllDir)
+void IModelJs::Initialize(BeFileNameCR addonDllDir)
     {
     s_addonDllDir = addonDllDir;
 
@@ -90,7 +89,7 @@ void imodeljs::Initialize(BeFileNameCR addonDllDir)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-Utf8String imodeljs::GetLastEcdbIssue() 
+Utf8String IModelJs::GetLastEcdbIssue() 
     {
     // It's up to the caller to serialize access to this.
     return s_lastEcdbIssue;
@@ -99,7 +98,7 @@ Utf8String imodeljs::GetLastEcdbIssue()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
-DgnDbPtr imodeljs::GetDbByName(DbResult& dbres, Utf8String& errmsg, BeFileNameCR fn, DgnDb::OpenMode mode)
+DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, Utf8String& errmsg, BeFileNameCR fn, DgnDb::OpenMode mode)
     {
     static bmap<BeFileName, DgnDbPtr>* s_dbs;
     
@@ -145,7 +144,7 @@ DgnDbPtr imodeljs::GetDbByName(DbResult& dbres, Utf8String& errmsg, BeFileNameCR
                 {
                 dbres = DbResult::BE_SQLITE_NOTFOUND;
                 errmsg = Utf8String(dbDir);
-                errmsg.append(" - directory not found. Where are the bim files? You can put them in a subdirectory called 'briefcases', or you can set NODE_DGNDB_DIR in your shell to point to a directory that contains them.");
+                errmsg.append(" - directory not found. Where are the .bim files? You can put them in a subdirectory called 'briefcases', or you can set NODE_DGNDB_DIR in your shell to point to a directory that contains them.");
                 return nullptr;
                 }
             }
@@ -169,35 +168,33 @@ DgnDbPtr imodeljs::GetDbByName(DbResult& dbres, Utf8String& errmsg, BeFileNameCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-Json::Value& imodeljs::GetRowAsRawJson(Json::Value& rowAsJson, ECSqlStatement& stmt)
+Json::Value IModelJs::GetRowAsRawJson(ECSqlStatement& stmt)
     {
-    if (rowAsJson.isNull())
-        {
-        JsonECSqlSelectAdapter adapter(stmt);
-        adapter.GetRowAsIs(rowAsJson);
-        }
+    Json::Value rowAsJson;
+    JsonECSqlSelectAdapter adapter(stmt);
+    adapter.GetRowAsIs(rowAsJson);
     return rowAsJson;
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-void imodeljs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
+void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt) 
     {
     int cols = stmt.GetColumnCount();
 
-    Json::Value rawRowJson;
-
-    for (int i = 0; i < cols; i++)
+    for (int i = 0; i < cols; ++i)
         {
         IECSqlValue const& value = stmt.GetValue(i);
         ECSqlColumnInfoCR info = value.GetColumnInfo();
         BeAssert(info.IsValid());
     
         Utf8String name = info.GetProperty()->GetName();
-        
         name[0] = tolower(name[0]);
         
+        if (rowJson.isMember(name)) // we already added this member, skip it.
+            continue;
+
         if (value.IsNull())
             {
             rowJson[name] = Json::Value();
@@ -216,7 +213,7 @@ void imodeljs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
 
         if (!typedesc.IsPrimitive())
             {
-            rowJson[name] = GetRowAsRawJson(rawRowJson, stmt)[i];     // *** WIP_NODE_ADDON
+            rowJson[name] = GetRowAsRawJson(stmt)[i];     // *** WIP_NODE_ADDON
             continue;
             }
 
@@ -258,7 +255,7 @@ void imodeljs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
             default: 
                 {
                 BeAssert(false && "TBD");
-                rowJson[name] = GetRowAsRawJson(rawRowJson, stmt)[i];     // *** WIP_NODE_ADDON
+                rowJson[name] = GetRowAsRawJson(stmt)[i];     // *** WIP_NODE_ADDON
                 }
             }
         }
@@ -267,7 +264,7 @@ void imodeljs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-void imodeljs::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCollectionCR props) 
+void IModelJs::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesCollectionCR props) 
     {
     for (ECN::ECPropertyValue const& prop : props)
         {
