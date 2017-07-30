@@ -74,6 +74,25 @@ public:
 }; // end anonymous namespace
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+void imodeljs::InitLogging()
+    {
+#if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
+    Utf8CP configFileEnv = getenv("CONFIG_OPTION_CONFIG_FILE");
+    if (!configFileEnv)
+        return;
+         
+    BeFileName configPathname(configFileEnv, true);
+    if (!BeFileName::DoesPathExist(configPathname.c_str()))
+        return;
+
+    NativeLogging::LoggingConfig::SetOption(CONFIG_OPTION_CONFIG_FILE, configPathname.GetName());
+    NativeLogging::LoggingConfig::ActivateProvider(NativeLogging::LOG4CXX_LOGGING_PROVIDER);
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
 void imodeljs::Initialize(BeFileNameCR addonDllDir)
@@ -84,6 +103,7 @@ void imodeljs::Initialize(BeFileNameCR addonDllDir)
     std::call_once(s_initFlag, []() 
         {
         DgnPlatformLib::Initialize(*new AddonHost, true);
+        InitLogging();
         });
     }
 
@@ -278,4 +298,314 @@ void imodeljs::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesColle
         else 
             ECUtils::ConvertECValueToJson(pvalue, prop.GetValue());
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+JsECDbPtr imodeljs::OpenECDb(DbResult &dbres, Utf8StringR errmsg, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode)
+    {
+    BeSystemMutexHolder threadSafeInScope;
+
+    if (!pathname.DoesPathExist())
+        {
+        dbres = DbResult::BE_SQLITE_NOTFOUND;
+        errmsg = Utf8String(pathname);
+        errmsg.append(" - not found.");
+        return nullptr;
+        }
+
+
+    JsECDbPtr ecdb = new JsECDb();
+    DbResult result = ecdb->OpenBeSQLiteDb(pathname, BeSQLite::Db::OpenParams(openMode));
+    if (result != BE_SQLITE_OK)
+        {
+        errmsg = JsECDb::InterpretDbResult(dbres);
+        return nullptr;
+        }
+
+    ecdb->AddIssueListener(s_listener);
+    return ecdb;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+JsECDbPtr imodeljs::CreateECDb(DbResult &dbres, Utf8String &errmsg, BeFileNameCR pathname)
+    {
+    BeSystemMutexHolder threadSafeInScope;
+    
+    BeFileName path = pathname.GetDirectoryName();
+    if (!path.DoesPathExist())
+        {
+        dbres = DbResult::BE_SQLITE_NOTFOUND;
+        errmsg = Utf8String(path);
+        errmsg.append(" - path not found. Specify a location that exists");
+        return nullptr;
+        }
+
+    JsECDbPtr ecdb = new JsECDb();
+
+    DbResult result = ecdb->CreateNewDb(pathname);
+    if (result != BE_SQLITE_OK)
+        {
+        errmsg = JsECDb::InterpretDbResult(dbres);
+        return nullptr;
+        }
+
+    ecdb->AddIssueListener(s_listener);
+    return ecdb;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+BentleyStatus imodeljs::ImportSchema(Utf8StringR errmsg, ECDbR ecdb, BeFileNameCR pathname)
+    {
+    BeSystemMutexHolder threadSafeInScope;
+
+    if (!pathname.DoesPathExist())
+        {
+        errmsg = Utf8String(pathname);
+        errmsg.append(" - not found.");
+        return BentleyStatus::ERROR;
+        }
+
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
+    schemaContext->SetFinalSchemaLocater(ecdb.GetSchemaLocater());
+
+    ECSchemaPtr schema;
+    SchemaReadStatus schemaStatus = ECSchema::ReadFromXmlFile(schema, pathname.GetName(), *schemaContext);
+    if (SchemaReadStatus::Success != schemaStatus)
+        {
+        errmsg = Utf8String(pathname);
+        errmsg.append(" - could not be read.");
+        return ERROR;
+        }
+
+    bvector<ECSchemaCP> schemas;
+    schemas.push_back(schema.get());
+    BentleyStatus status = ecdb.Schemas().ImportSchemas(schemas);
+    if (status != SUCCESS)
+        {
+        errmsg = Utf8String(pathname);
+        errmsg.append(" - could not be imported");
+        return status;
+        }
+
+    DbResult result = ecdb.SaveChanges();
+    if (result != BE_SQLITE_OK)
+        {
+        errmsg = "Could not save ECDb after importing schema";
+        return status;
+        }
+
+    return SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+// static
+ECClassCP imodeljs::GetClassFromInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR jsonInstance)
+    {
+    if (!jsonInstance.isMember("$ECClassKey"))
+        {
+        errmsg = "Could not determine the class. The JSON instance must include a valid $ECClassKey member";
+        return nullptr;
+        }
+        
+    Utf8String classKey = jsonInstance["$ECClassKey"].asString();
+    if (classKey.empty())
+        {
+        errmsg = "Could not determine the class. The JSON instance must include a valid $ECClassKey member";
+        return nullptr;
+        }
+
+    Utf8String::size_type dotIndex = classKey.find('.');
+    if (Utf8String::npos == dotIndex || classKey.length() == dotIndex + 1)
+        {
+        errmsg = "Could not determine the class. The JSON instance contains an invalid $ECClassKey: ";
+        errmsg.append(classKey.c_str());
+        return nullptr;
+        }
+
+    Utf8String schemaName = classKey.substr(0, dotIndex);
+    Utf8String className = classKey.substr(dotIndex + 1);
+
+    ECClassCP ecClass = ecdb.Schemas().GetClass(schemaName, className);
+    if (!ecClass)
+        {
+        errmsg = "Could not find a class with the key: ";
+        errmsg.append(classKey.c_str());
+        return nullptr;
+        }
+
+    return ecClass;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+// static
+ECInstanceId imodeljs::GetInstanceIdFromInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR jsonInstance)
+    {
+    if (!jsonInstance.isMember("$ECInstanceId"))
+        {
+        errmsg = "Could not determine the instance id. The JSON instance does must include $ECInstanceId";
+        return ECInstanceId();
+        }
+
+    ECInstanceId instanceId = ECInstanceId(BeStringUtilities::ParseUInt64(jsonInstance["$ECInstanceId"].asCString()));
+    if (!instanceId.IsValid())
+        {
+        errmsg = "Could not parse the instance id from $ECInstanceId: ";
+        errmsg.append(jsonInstance["$ECInstanceId"].asCString());
+        return ECInstanceId();
+        }
+
+    return instanceId;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+// static
+DbResult imodeljs::InsertInstance(Utf8StringR errmsg, ECInstanceId& insertedId, ECDbCR ecdb, JsonValueCR jsonInstance)
+    {
+    ECClassCP ecClass = GetClassFromInstance(errmsg, ecdb, jsonInstance);
+    if (!ecClass)
+        return BE_SQLITE_ERROR;
+
+    JsonInserter inserter(ecdb, *ecClass, nullptr);
+    ECInstanceKey instanceKey;
+    DbResult result = inserter.Insert(instanceKey, jsonInstance);
+    if (result != BE_SQLITE_OK)
+        {
+        errmsg.Sprintf("Could not insert instance with key %s", jsonInstance["$ECClassKey"].asCString());
+        return result;
+        }
+    insertedId = instanceKey.GetInstanceId();
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+// static
+DbResult imodeljs::UpdateInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR jsonInstance)
+    {
+    ECClassCP ecClass = GetClassFromInstance(errmsg, ecdb, jsonInstance);
+    if (!ecClass)
+        return BE_SQLITE_ERROR;
+
+    ECInstanceId instanceId = GetInstanceIdFromInstance(errmsg, ecdb, jsonInstance);
+    if (!instanceId.IsValid())
+        return BE_SQLITE_ERROR;
+
+    JsonUpdater updater(ecdb, *ecClass, nullptr);
+    DbResult result = updater.Update(instanceId, jsonInstance);
+    if (result != BE_SQLITE_OK)
+        {
+        errmsg.Sprintf("Could not update instance with key %s and id %s", jsonInstance["$ECClassKey"].asCString(), jsonInstance["$ECInstanceId"].asCString());
+        return result;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+// static
+DbResult imodeljs::ReadInstance(Utf8StringR errmsg, JsonValueR jsonInstance, ECDbCR ecdb, JsonValueCR instanceKey)
+    {
+    ECClassCP ecClass = GetClassFromInstance(errmsg, ecdb, instanceKey);
+    if (!ecClass)
+        return BE_SQLITE_ERROR;
+
+    ECInstanceId instanceId = GetInstanceIdFromInstance(errmsg, ecdb, instanceKey);
+    if (!instanceId.IsValid())
+        return BE_SQLITE_ERROR;
+
+    JsonReader reader(ecdb, ecClass->GetId());
+    BentleyStatus status = reader.ReadInstance(jsonInstance, instanceId, JsonECSqlSelectAdapter::FormatOptions(ECValueFormat::RawNativeValues));
+    if (status != BentleyStatus::SUCCESS)
+        {
+        errmsg.Sprintf("Could not read instance with key %s and id %s", instanceKey["$ECClassKey"].asCString(), instanceKey["$ECInstanceId"].asCString());
+        return BE_SQLITE_ERROR;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+// static
+DbResult imodeljs::DeleteInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR instanceKey)
+    {
+    ECClassCP ecClass = GetClassFromInstance(errmsg, ecdb, instanceKey);
+    if (!ecClass)
+        return BE_SQLITE_ERROR;
+
+    ECInstanceId instanceId = GetInstanceIdFromInstance(errmsg, ecdb, instanceKey);
+    if (!instanceId.IsValid())
+        return BE_SQLITE_ERROR;
+
+    JsonDeleter deleter(ecdb, *ecClass, nullptr);
+    DbResult result = deleter.Delete(instanceId);
+    if (result != BE_SQLITE_OK)
+        {
+        errmsg.Sprintf("Could not delete instance with key %s and id %s", instanceKey["$ECClassKey"].asCString(), instanceKey["$ECInstanceId"].asCString());
+        return result;
+        }
+
+    return BE_SQLITE_OK;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+// static
+DbResult imodeljs::ContainsInstance(Utf8StringR errmsg, bool& containsInstance, ECDbCR ecdb, JsonValueCR instanceKey)
+    {
+    if (!instanceKey.isMember("$ECClassKey"))
+        {
+        errmsg = "Could not determine the class. The JSON instance must include a valid $ECClassKey member";
+        return BE_SQLITE_ERROR;
+        }
+
+    Utf8String classKey = instanceKey["$ECClassKey"].asString();
+    if (classKey.empty())
+        {
+        errmsg = "Could not determine the class. The JSON instance must include a valid $ECClassKey member";
+        return BE_SQLITE_ERROR;
+        }
+
+    ECInstanceId instanceId = GetInstanceIdFromInstance(errmsg, ecdb, instanceKey);
+    if (!instanceId.IsValid())
+        return BE_SQLITE_ERROR;
+
+    Utf8PrintfString ecsql("SELECT NULL FROM %s WHERE ECInstanceId=?", classKey.c_str());
+    ECSqlStatement stmt;
+    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()))
+        {
+        errmsg = imodeljs::GetLastEcdbIssue();
+        return BE_SQLITE_ERROR;
+        }
+
+    stmt.BindId(1, instanceId);
+
+    DbResult result = stmt.Step();
+
+    if (result != BE_SQLITE_ROW && result != BE_SQLITE_DONE)
+        {
+        errmsg = imodeljs::GetLastEcdbIssue();
+        return result;
+        }
+
+    containsInstance = (result == BE_SQLITE_ROW);
+    return BE_SQLITE_OK;
     }
