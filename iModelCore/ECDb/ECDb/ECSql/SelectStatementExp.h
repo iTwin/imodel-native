@@ -10,6 +10,7 @@
 
 #include "ClassRefExp.h"
 #include "JoinExp.h"
+#include "ListExp.h"
 #include "OptionsExp.h"
 #include "PropertyNameExp.h"
 #include "WhereExp.h"
@@ -56,12 +57,7 @@ struct DerivedPropertyExp final : Exp
         Utf8String m_nestedAlias;
 
         void _ToECSql(ECSqlRenderContext&) const override;
-        Utf8String _ToString() const override
-            {
-            Utf8String str("DerivedProperty [Column alias: ");
-            str.append(m_columnAlias).append("]");
-            return str;
-            }
+        Utf8String _ToString() const override { Utf8String str("DerivedProperty [Column alias: "); str.append(m_columnAlias).append("]"); return str; }
 
     public:
         DerivedPropertyExp(std::unique_ptr<ValueExp> valueExp, Utf8CP columnAlias);
@@ -100,8 +96,6 @@ struct FromExp final : Exp
         void FindRangeClassRefs(RangeClassInfo::List&, RangeClassInfo::Scope scope = RangeClassInfo::Scope::Local) const;
     };
 
-struct ValueExpListExp;
-
 //=======================================================================================
 //! @bsiclass                                                Krischan.Eberle      04/2015
 //+===============+===============+===============+===============+===============+======
@@ -111,14 +105,14 @@ struct GroupByExp final : Exp
         size_t m_groupingValueListExpIndex;
 
         Exp::FinalizeParseStatus _FinalizeParsing(ECSqlParseContext&, FinalizeParseMode) override;
-        void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToECSql(ECSqlRenderContext& ctx) const override { ctx.AppendToECSql("GROUP BY ").AppendToECSql(*GetGroupingValueListExp()); }
         Utf8String _ToString() const override { return "GroupBy"; }
 
     public:
-        explicit GroupByExp(std::unique_ptr<ValueExpListExp>);
+        explicit GroupByExp(std::unique_ptr<ValueExpListExp> groupingValueListExp) : Exp(Type::GroupBy) { m_groupingValueListExpIndex = AddChild(std::move(groupingValueListExp)); }
         ~GroupByExp() {}
 
-        ValueExpListExp const* GetGroupingValueListExp() const;
+        ValueExpListExp const* GetGroupingValueListExp() const { return GetChild<ValueExpListExp>(m_groupingValueListExpIndex); }
     };
 
 //=======================================================================================
@@ -129,14 +123,14 @@ struct HavingExp final : Exp
     private:
         size_t m_searchConditionExpIndex;
 
-        void _ToECSql(ECSqlRenderContext&) const override;
+        void _ToECSql(ECSqlRenderContext& ctx) const override { ctx.AppendToECSql("HAVING ").AppendToECSql(*GetSearchConditionExp()); }
         Utf8String _ToString() const override { return "Having"; }
 
     public:
-        explicit HavingExp(std::unique_ptr<BooleanExp> searchConditionExp);
+        explicit HavingExp(std::unique_ptr<BooleanExp> searchConditionExp) : Exp(Type::Having) { m_searchConditionExpIndex = AddChild(std::move(searchConditionExp)); }
         ~HavingExp() {}
 
-        BooleanExp const* GetSearchConditionExp() const;
+        BooleanExp const* GetSearchConditionExp() const { return GetChild<BooleanExp>(m_searchConditionExpIndex); }
     };
 
 //=======================================================================================
@@ -146,7 +140,7 @@ struct LimitOffsetExp final : Exp
     {
     private:
         size_t m_limitExpIndex;
-        int m_offsetExpIndex;
+        int m_offsetExpIndex = UNSET_CHILDINDEX;
 
         void _ToECSql(ECSqlRenderContext&) const override;
         Utf8String _ToString() const override { return "LimitOffset"; }
@@ -158,8 +152,8 @@ struct LimitOffsetExp final : Exp
         explicit LimitOffsetExp(std::unique_ptr<ValueExp> limit, std::unique_ptr<ValueExp> offset = nullptr);
         ~LimitOffsetExp() {}
 
-        ValueExp const* GetLimitExp() const;
-        bool HasOffset() const;
+        ValueExp const* GetLimitExp() const { return GetChild<ValueExp>(m_limitExpIndex); }
+        bool HasOffset() const { return m_offsetExpIndex >= 0; }
         ValueExp const* GetOffsetExp() const;
     };
 
@@ -183,7 +177,7 @@ struct OrderBySpecExp final : Exp
         Utf8String _ToString() const override;
 
     public:
-        OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection direction);
+        OrderBySpecExp(std::unique_ptr<ComputedExp>& expr, SortDirection direction) : Exp(Type::OrderBySpec), m_direction(direction) { AddChild(std::move(expr)); }
         ComputedExp const* GetSortExpression() const { return GetChild<ComputedExp>(0); }
         SortDirection GetSortDirection() const { return m_direction; }
     };
@@ -198,8 +192,7 @@ struct OrderByExp final : Exp
         Utf8String _ToString() const override { return "OrderBy"; }
 
     public:
-        explicit OrderByExp(std::vector<std::unique_ptr<OrderBySpecExp>>& specs)
-            : Exp(Type::OrderBy)
+        explicit OrderByExp(std::vector<std::unique_ptr<OrderBySpecExp>>& specs) : Exp(Type::OrderBy)
             {
             for (auto& spec : specs)
                 AddChild(move(spec));

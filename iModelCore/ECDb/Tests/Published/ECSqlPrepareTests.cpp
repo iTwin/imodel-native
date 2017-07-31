@@ -536,36 +536,36 @@ TEST_F(ECSqlSelectPrepareTests, Functions)
 //+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(ECSqlSelectPrepareTests, GroupBy)
     {
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY I"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT B, count(*) FROM ecsql.PSA GROUP BY B"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT Bi, count(*) FROM ecsql.PSA GROUP BY Bi"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.PSA GROUP BY Bi"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT DtUtc, count(*) FROM ecsql.PSA GROUP BY DtUtc"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.PSA GROUP BY S")) << "group by column not in select clause is supported (although against standard)";
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY Length(S)")) << "functions in group by is supported (although against standard)";
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.PSA GROUP BY Length(S)"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT Bi, count(*) FROM ecsql.PSA GROUP BY Hex(Bi)"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT I, L, count(*) FROM ecsql.PSA GROUP BY I + L"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.THBase GROUP BY ECClassId"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY ?"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY NULL"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY 1"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT P2D, count(*) FROM ecsql.PSA GROUP BY P2D"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT P3D, count(*) FROM ecsql.PSA GROUP BY P3D"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp, count(*) FROM ecsql.PSA GROUP BY PStructProp"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT Bi_Array, count(*) FROM ecsql.PSA GROUP BY Bi_Array"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT PStruct_Array, count(*) FROM ecsql.PSA GROUP BY PStruct_Array"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY I HAVING Geometry IS NOT NULL"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING PStructProp IS NOT NULL"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING Length(S) > 1"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.P GROUP BY Bi HAVING Hex(Bi) like '0C0B%'"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.P GROUP BY Bi HAVING Hex(Bi) like '1C0B%'"));
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT S, count(*) FROM ecsql.PSA HAVING Length(S) > 1")) << "Although standard SQL allows, SQLite doesn't support HAVING without GROUP BY.";
-    ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT MyPSA, count(*) FROM ecsql.P GROUP BY MyPSA"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT MyPSA.Id, count(*) FROM ecsql.P GROUP BY MyPSA.Id"));
-    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT MyPSA.RelECClassId, count(*) FROM ecsql.P GROUP BY MyPSA.RelECClassId"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY I"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT B, count(*) FROM ecsql.PSA GROUP BY B"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Bi, count(*) FROM ecsql.PSA GROUP BY Bi"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.PSA GROUP BY Bi"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT DtUtc, count(*) FROM ecsql.PSA GROUP BY DtUtc"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY Geometry"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.PSA GROUP BY S")) << "group by column not in select clause is supported (although against standard)";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY Length(S)")) << "functions in group by is supported (although against standard)";
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.PSA GROUP BY Length(S)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Bi, count(*) FROM ecsql.PSA GROUP BY Hex(Bi)"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT I, L, count(*) FROM ecsql.PSA GROUP BY I + L"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT count(*) FROM ecsql.THBase GROUP BY ECClassId"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY ?"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY NULL"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT I, count(*) FROM ecsql.PSA GROUP BY 1"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT P2D, count(*) FROM ecsql.PSA GROUP BY P2D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT P3D, count(*) FROM ecsql.PSA GROUP BY P3D"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp, count(*) FROM ecsql.PSA GROUP BY PStructProp"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Bi_Array, count(*) FROM ecsql.PSA GROUP BY Bi_Array"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT PStruct_Array, count(*) FROM ecsql.PSA GROUP BY PStruct_Array"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Geometry, count(*) FROM ecsql.PASpatial GROUP BY I HAVING Geometry IS NOT NULL"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING PStructProp IS NOT NULL"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT S, count(*) FROM ecsql.PSA GROUP BY S HAVING Length(S) > 1"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.P GROUP BY Bi HAVING Hex(Bi) like '0C0B%'"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT Hex(Bi), count(*) FROM ecsql.P GROUP BY Bi HAVING Hex(Bi) like '1C0B%'"));
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT S, count(*) FROM ecsql.PSA HAVING Length(S) > 1")) << "Although standard SQL allows, SQLite doesn't support HAVING without GROUP BY.";
+    EXPECT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT MyPSA, count(*) FROM ecsql.P GROUP BY MyPSA"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT MyPSA.Id, count(*) FROM ecsql.P GROUP BY MyPSA.Id"));
+    EXPECT_EQ(ECSqlStatus::Success, Prepare("SELECT MyPSA.RelECClassId, count(*) FROM ecsql.P GROUP BY MyPSA.RelECClassId"));
     }
 
 //---------------------------------------------------------------------------------------

@@ -1754,7 +1754,7 @@ BentleyStatus DbMappingManager::Tables::CreateVirtualTableForFkRelationship(Sche
  DbTable* DbMappingManager::Tables::FindOrCreateTable(SchemaImportContext& ctx, ClassMap const& classMap, ClassMappingInfo const& info, DbTable::Type tableType, DbTable const* primaryTable)
      {
      BeAssert(!info.GetECInstanceIdColumnName().empty() && "should always be set (either to user value or default value) by this time");
-     const ECClassId exclusiveRootClassId = IsExclusiveRootClassOfTable(info) ? info.GetClass().GetId() : ECClassId();;
+     const ECClassId exclusiveRootClassId = IsExclusiveRootClassOfTable(info) ? classMap.GetClass().GetId() : ECClassId();
      DbTable* table = ctx.GetECDb().Schemas().GetDbMap().GetDbSchema().FindTableP(info.GetTableName().c_str());
      if (table != nullptr)
          {

@@ -329,13 +329,12 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
 
      if (existingClassMap == nullptr)
          {
-         ClassMappingStatus status = ClassMappingStatus::Success;
-         std::unique_ptr<ClassMappingInfo> classMapInfo = ClassMappingInfoFactory::Create(status, ctx, m_ecdb, ecClass);
-         if ((status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error))
+         ClassMappingInfo mappingInfo(ctx, ecClass);
+         ClassMappingStatus status = mappingInfo.Initialize();
+         if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
              return status;
 
-         BeAssert(classMapInfo != nullptr);
-         MapStrategyExtendedInfo const& mapStrategy = classMapInfo->GetMapStrategy();
+         MapStrategyExtendedInfo const& mapStrategy = mappingInfo.GetMapStrategy();
          ClassMapPtr classMap = nullptr;
          if (mapStrategy.GetStrategy() == MapStrategy::NotMapped)
              classMap = ClassMapFactory::CreateForMapping<NotMappedClassMap>(m_ecdb, ecClass, mapStrategy);
@@ -358,7 +357,7 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
              return status;
 
          ctx.AddClassMapForSaving(ecClass.GetId());
-         status = classMap->Map(ctx, *classMapInfo);
+         status = classMap->Map(ctx, mappingInfo);
          if (status == ClassMappingStatus::BaseClassesNotMapped || status == ClassMappingStatus::Error)
              return status;
 

@@ -1434,28 +1434,355 @@ TEST_F(ECSqlStatementTestFixture, GroupByClauseTests)
     stmt.Finalize();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                             Muhammad Hassan                         12/15
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(ECSqlStatementTestFixture, StructInGroupByClause)
+//---------------------------------------------------------------------------------
+// @bsimethod                             Krischan.Eberle               07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GroupByPoint)
     {
-    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem::CreateForFile("ECSqlStatementTests.01.00.ecschema.xml")));
-    NestedStructArrayTestSchemaHelper::PopulateECSqlStatementTestsDb(m_ecdb);
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                      <ECEntityClass typeName="Foo" >
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Origin" typeName="Point3d" />
+                      </ECEntityClass>
+                 </ECSchema>)xml")));
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(Name,Origin) VALUES(?,?)"));
+
+    DPoint3d pt1 = DPoint3d::From(1.0,2.0,3.0);
+    DPoint3d pt2 = DPoint3d::From(-1.0, -2.0, 3.0);
+
+    bmap<DPoint3d const*, int> ptCount;
+
+    {
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint3d(2, pt1));
+    ptCount[&pt1] = 1;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint3d(2, pt1));
+    ptCount[&pt1]++;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 3", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint3d(2, pt1));
+    ptCount[&pt1]++;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 4", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindPoint3d(2, pt2));
+    ptCount[&pt2] = 1;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 5", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    }
 
     ECSqlStatement statement;
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT AVG(Phone) FROM ECST.Customer GROUP BY PersonName"));
-    ASSERT_EQ(DbResult::BE_SQLITE_ROW, statement.Step());
-    ASSERT_EQ(1650, statement.GetValueInt(0));
-    statement.Finalize();
-
-    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Country FROM ECST.Customer GROUP BY PersonName"));
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Origin, count(*) FROM ts.Foo GROUP BY Origin"));
     int rowCount = 0;
-    while (statement.Step() == DbResult::BE_SQLITE_ROW)
+    while (BE_SQLITE_ROW == statement.Step())
         {
-        ASSERT_STREQ("USA", statement.GetValueText(0));
         rowCount++;
+        if (statement.IsValueNull(0))
+            ASSERT_EQ(1, statement.GetValueInt(1)) << statement.GetECSql();
+        else
+            {
+            DPoint3d actualPt = statement.GetValuePoint3d(0);
+            if (pt1.AlmostEqual(actualPt))
+                ASSERT_EQ(ptCount[&pt1], statement.GetValueInt(1)) << statement.GetECSql();
+            else if (pt2.AlmostEqual(actualPt))
+                ASSERT_EQ(ptCount[&pt2], statement.GetValueInt(1)) << statement.GetECSql();
+            else
+                FAIL();
+            }
         }
-    ASSERT_EQ(3, rowCount);
+    ASSERT_EQ(3, rowCount) << statement.GetECSql();
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                             Krischan.Eberle               07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GroupByGeometry)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                      <ECEntityClass typeName="Foo" >
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Geometry" typeName="Bentley.Geometry.Common.IGeometry" />
+                      </ECEntityClass>
+                 </ECSchema>)xml")));
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(Name,Geometry) VALUES(?,?)"));
+
+    IGeometryPtr geometry1 = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+    IGeometryPtr geometry2 = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(1.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+
+    bmap<IGeometry*, int> geometryCount;
+    {
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 1", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindGeometry(2, *geometry1));
+    geometryCount[geometry1.get()] = 1;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 2", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindGeometry(2, *geometry1));
+    geometryCount[geometry1.get()]++;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 3", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindGeometry(2, *geometry1));
+    geometryCount[geometry1.get()]++;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 4", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindGeometry(2, *geometry2));
+    geometryCount[geometry2.get()] = 1;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(1, "Item 5", IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    }
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Geometry, count(*) FROM ts.Foo GROUP BY Geometry"));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        rowCount++;
+        if (statement.IsValueNull(0))
+            ASSERT_EQ(1, statement.GetValueInt(1)) << statement.GetECSql();
+        else
+            {
+            IGeometryPtr actualGeom = statement.GetValueGeometry(0);
+            if (geometry1->IsSameStructureAndGeometry(*actualGeom))
+                ASSERT_EQ(geometryCount[geometry1.get()], statement.GetValueInt(1)) << statement.GetECSql();
+            else if (geometry2->IsSameStructureAndGeometry(*actualGeom))
+                ASSERT_EQ(geometryCount[geometry2.get()], statement.GetValueInt(1)) << statement.GetECSql();
+            else
+                FAIL();
+            }
+        }
+    ASSERT_EQ(3, rowCount) << statement.GetECSql();
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                             Krischan.Eberle               07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GroupByStruct)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                     <ECStructClass typeName="Person" >
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Age" typeName="int" />
+                    </ECStructClass>
+                      <ECEntityClass typeName="Foo" >
+                        <ECProperty propertyName="Code" typeName="int" />
+                        <ECStructProperty propertyName="Person" typeName="Person" />
+                      </ECEntityClass>
+                 </ECSchema>)xml")));
+
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(Code,Person.Name,Person.Age) VALUES(?,?,?)"));
+
+    std::pair<Utf8CP, int> person1 = std::make_pair("John", 45);
+    std::pair<Utf8CP, int> person2 = std::make_pair("Mary", 35);
+
+    bmap<std::pair<Utf8CP, int>*, int> personCount;
+    {
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(1, 1));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, person1.first, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, person1.second));
+    personCount[&person1] = 1;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(1, 2));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, person1.first, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, person1.second));
+    personCount[&person1]++;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(1, 3));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, person1.first, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, person1.second));
+    personCount[&person1]++;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(1, 4));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindText(2, person2.first, IECSqlBinder::MakeCopy::No));
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(3, person2.second));
+    personCount[&person2] = 1;
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+
+    insertStmt.Reset();
+    insertStmt.ClearBindings();
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.BindInt(1, 5));
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    }
+
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Person, count(*) FROM ts.Foo GROUP BY Person"));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        rowCount++;
+        if (statement.IsValueNull(0))
+            ASSERT_EQ(1, statement.GetValueInt(1)) << statement.GetECSql();
+        else
+            {
+            IECSqlValue const& actualPerson = statement.GetValue(0);
+            if (strcmp(person1.first, actualPerson["Name"].GetText()) == 0)
+                ASSERT_EQ(personCount[&person1], statement.GetValueInt(1)) << statement.GetECSql();
+            else if (strcmp(person2.first, actualPerson["Name"].GetText()) == 0)
+                ASSERT_EQ(personCount[&person2], statement.GetValueInt(1)) << statement.GetECSql();
+            else
+                FAIL();
+            }
+        }
+    ASSERT_EQ(3, rowCount) << statement.GetECSql();
+    }
+
+//---------------------------------------------------------------------------------
+// @bsimethod                             Krischan.Eberle               07/17
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(ECSqlStatementTestFixture, GroupByArray)
+    {
+    ASSERT_EQ(SUCCESS, SetupECDb("ECSqlStatementTests.ecdb", SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                     <ECStructClass typeName="Person" >
+                        <ECProperty propertyName="Name" typeName="string" />
+                        <ECProperty propertyName="Age" typeName="int" />
+                    </ECStructClass>
+                      <ECEntityClass typeName="Foo" >
+                        <ECStructArrayProperty propertyName="Persons" typeName="Person" />
+                        <ECArrayProperty propertyName="Deadlines" typeName="dateTime" />
+                        <ECArrayProperty propertyName="Vertexes" typeName="Point3d" />
+                        <ECArrayProperty propertyName="Geometries" typeName="Bentley.Geometry.Common.IGeometry" />
+                      </ECEntityClass>
+                 </ECSchema>)xml")));
+
+    const int nonNullRowCount = 3;
+    ECSqlStatement insertStmt;
+    ASSERT_EQ(ECSqlStatus::Success, insertStmt.Prepare(m_ecdb, "INSERT INTO ts.Foo(Persons,Deadlines,Vertexes,Geometries) VALUES(?,?,?,?)"));
+    for (int i = 0; i < nonNullRowCount; i++)
+        {
+                {
+                IECSqlBinder& binder = insertStmt.GetBinder(1);
+                IECSqlBinder& element1Binder = binder.AddArrayElement();
+                ASSERT_EQ(ECSqlStatus::Success, element1Binder["Name"].BindText("John", IECSqlBinder::MakeCopy::Yes));
+                ASSERT_EQ(ECSqlStatus::Success, element1Binder["Age"].BindInt(40));
+                IECSqlBinder& element2Binder = binder.AddArrayElement();
+                ASSERT_EQ(ECSqlStatus::Success, element2Binder["Name"].BindText("Mary", IECSqlBinder::MakeCopy::Yes));
+                ASSERT_EQ(ECSqlStatus::Success, element2Binder["Age"].BindInt(35));
+                }
+
+                {
+                IECSqlBinder& binder = insertStmt.GetBinder(2);
+                ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindDateTime(DateTime(2017, 07, 27)));
+                ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindDateTime(DateTime(1971, 04, 30)));
+                }
+
+                {
+                IECSqlBinder& binder = insertStmt.GetBinder(3);
+                ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindPoint3d(DPoint3d::From(1.0, 2.0, 3.0)));
+                ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindPoint3d(DPoint3d::From(-1.0, -2.0, -3.0)));
+                }
+
+                {
+                IGeometryPtr line = IGeometry::Create(ICurvePrimitive::CreateLine(DSegment3d::From(0.0, 0.0, 0.0, 1.0, 1.0, 1.0)));
+                IECSqlBinder& binder = insertStmt.GetBinder(4);
+                ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindGeometry(*line));
+                ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindGeometry(*line));
+                ASSERT_EQ(ECSqlStatus::Success, binder.AddArrayElement().BindGeometry(*line));
+                }
+
+        ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+        insertStmt.Reset();
+        insertStmt.ClearBindings();
+        }
+
+    //insert an empty row
+    ASSERT_EQ(BE_SQLITE_DONE, insertStmt.Step());
+    insertStmt.Finalize();
+
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Persons, count(*) FROM ts.Foo GROUP BY Persons"));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        rowCount++;
+        if (statement.IsValueNull(0))
+            ASSERT_EQ(1, statement.GetValueInt(1)) << statement.GetECSql();
+        else
+            ASSERT_EQ(nonNullRowCount, statement.GetValueInt(1)) << statement.GetECSql();
+        }
+    ASSERT_EQ(2, rowCount) << statement.GetECSql();
+    }
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Deadlines, count(*) FROM ts.Foo GROUP BY Deadlines"));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        rowCount++;
+        if (statement.IsValueNull(0))
+            ASSERT_EQ(1, statement.GetValueInt(1)) << statement.GetECSql();
+        else
+            ASSERT_EQ(nonNullRowCount, statement.GetValueInt(1)) << statement.GetECSql();
+        }
+    ASSERT_EQ(2, rowCount) << statement.GetECSql();
+    }
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Vertexes, count(*) FROM ts.Foo GROUP BY Vertexes"));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        rowCount++;
+        if (statement.IsValueNull(0))
+            ASSERT_EQ(1, statement.GetValueInt(1)) << statement.GetECSql();
+        else
+            ASSERT_EQ(nonNullRowCount, statement.GetValueInt(1)) << statement.GetECSql();
+        }
+    ASSERT_EQ(2, rowCount) << statement.GetECSql();
+    }
+    {
+    ECSqlStatement statement;
+    ASSERT_EQ(ECSqlStatus::Success, statement.Prepare(m_ecdb, "SELECT Geometries, count(*) FROM ts.Foo GROUP BY Geometries"));
+    int rowCount = 0;
+    while (BE_SQLITE_ROW == statement.Step())
+        {
+        rowCount++;
+        if (statement.IsValueNull(0))
+            ASSERT_EQ(1, statement.GetValueInt(1)) << statement.GetECSql();
+        else
+            ASSERT_EQ(nonNullRowCount, statement.GetValueInt(1)) << statement.GetECSql();
+        }
+    ASSERT_EQ(2, rowCount) << statement.GetECSql();
+    }
     }
 
 /*---------------------------------------------------------------------------------**//**
