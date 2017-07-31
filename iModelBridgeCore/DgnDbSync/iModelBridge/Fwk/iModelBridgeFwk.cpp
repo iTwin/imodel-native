@@ -406,6 +406,14 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
                 return BSIERROR;
             continue;
             }
+        
+        if (argv[iArg] == wcsstr(argv[iArg], L"--fwk-bridgeAssetsDir="))
+            {
+            BeFileName assetsDir(getArgValueW(argv[iArg]));
+            if (assetsDir.DoesPathExist())
+                m_bridgeAssetsDir = assetsDir;
+            continue;
+            }
 
         BeAssert(false);
         fwprintf(stderr, L"%ls: unrecognized fwk argument\n", argv[iArg]);
@@ -423,12 +431,13 @@ BentleyStatus iModelBridgeFwk::JobDefArgs::ParseCommandLine(bvector<WCharCP>& ba
 //---------------------------------------------------------------------------------------
 BentleyStatus iModelBridgeFwk::JobDefArgs::Validate(int argc, WCharCP argv[])
     {
+    /*Commented out this assert for ease of debugging when not running against automation services.
     if (m_bridgeLibraryName.empty() && m_bridgeRegSubKey.empty()
      || !m_bridgeLibraryName.empty() && !m_bridgeRegSubKey.empty())
         {
         fwprintf(stderr, L"Either --fwk-bridge-library or --fwk-bridge-regsubkey must be specified, but not both.\n");
         return BSIERROR;
-        }
+        }*/
 
     if (!m_bridgeLibraryName.empty() && !m_bridgeLibraryName.DoesPathExist())
         {
@@ -1073,7 +1082,10 @@ int iModelBridgeFwk::RunExclusive(int argc, WCharCP argv[])
         }
 
     if (m_jobEnvArgs.m_bridgeAssetsDir.empty())
+        {
         m_jobEnvArgs.m_bridgeAssetsDir = findBridgeAssetsDir(m_jobEnvArgs.m_bridgeLibraryName.GetDirectoryName());
+
+        }
 
     // Put out this info message, so that we can relate all subsequent logging messages to this bridge.
     // The log on this machine may have messages from many bridge jobs.

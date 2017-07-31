@@ -144,14 +144,14 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
                     }
                     */
                 cmdLine += "\n--server-environment=" + m_iModelHubEnv;
-                cmdLine += "\n--server-repository=" + m_iModelHubRepoName;
-                cmdLine += "\n--server-project=" + m_iModelHubProjectName;
+                cmdLine += "\n--server-repository=\"" + m_iModelHubRepoName+"\"";
+                cmdLine += "\n--server-project=\"" + m_iModelHubProjectName+"\"";
 
                 if ( m_createRepoIfNecessary )
                     cmdLine += "\n--fwk-create-repository-if-necessary";
 
                 if ( m_revisionComment != "" )
-                    cmdLine += "\n--fwk-revision-comment=" + m_revisionComment;
+                    cmdLine += "\n--fwk-revision-comment=\"" + m_revisionComment+"\"";
 
                 // NB! Don't store username or password in rsp file and don't print them to the log!
 
@@ -360,7 +360,7 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
                 {
                 file.WriteLine(args.ToCmdLine());
                 foreach ( string sheetFile in sheetFiles )
-                    file.WriteLine("--fwk-input-sheet=" + sheetFile);
+                    file.WriteLine("--fwk-input-sheet=\"" + sheetFile+"\"");
                 }
 
             //  Make sure all documents are assigned to bridges and then read back the unique set of bridges.
