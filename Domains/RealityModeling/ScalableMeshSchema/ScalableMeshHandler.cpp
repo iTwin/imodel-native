@@ -480,7 +480,7 @@ bool SMNode::ReadHeader(DPoint3d& centroid)
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
-static bool s_applyTexture = false;
+static bool s_applyTexture = true;
 
 BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
     {
@@ -495,6 +495,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     DPoint3d centroid;
     centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
+    //centroid = DPoint3d::From(0, 0, 0);
 
     if (!ReadHeader(centroid))
         return ERROR;
@@ -685,15 +686,15 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     TileTree::TriMeshTree::TriMesh::CreateParams trimesh;
 
-    trimesh.m_numPoints = smMeshPtr->GetNbPoints();
-    FPoint3d* points = new FPoint3d[smMeshPtr->GetNbPoints()];
+    trimesh.m_numPoints = polyfaceQuery->GetPointIndexCount(); //smMeshPtr->GetNbPoints();
+    FPoint3d* points = new FPoint3d[trimesh.m_numPoints];
 
-    for (size_t pointInd = 0; pointInd < smMeshPtr->GetNbPoints(); pointInd++)
+    for (size_t pointInd = 0; pointInd < trimesh.m_numPoints; pointInd++)
         {
 
-        points[pointInd].x = (float)polyfaceQuery->GetPointCP()[pointInd].x - centroid.x;
-        points[pointInd].y = (float)polyfaceQuery->GetPointCP()[pointInd].y - centroid.y;
-        points[pointInd].z = (float)polyfaceQuery->GetPointCP()[pointInd].z - centroid.z;
+        points[pointInd].x = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].x - centroid.x;
+        points[pointInd].y = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].y - centroid.y;
+        points[pointInd].z = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].z - centroid.z;
 
         /*
            points[pointInd].x = (float)polyfaceQuery->GetPointCP()[pointInd].x;
@@ -709,23 +710,23 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     _fPoint2d* textureUv;
 
-    textureUv = new _fPoint2d[polyfaceQuery->GetParamCount()];
+    textureUv = new _fPoint2d[trimesh.m_numIndices];
 
     for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
         {
-        vertIndex[faceVerticeInd] = polyfaceQuery->GetPointIndexCP()[faceVerticeInd] - 1;
+        vertIndex[faceVerticeInd] = faceVerticeInd; //polyfaceQuery->GetPointIndexCP()[faceVerticeInd] - 1;
         }
 
-    for (size_t paramInd = 0; paramInd < polyfaceQuery->GetParamCount(); paramInd++)
-        {
-        const DPoint2d* uv = &polyfaceQuery->GetParamCP()[paramInd];
+    for (size_t paramInd = 0; paramInd < polyfaceQuery->GetPointIndexCount(); paramInd++)
+        {        
+        const DPoint2d* uv = &polyfaceQuery->GetParamCP()[polyfaceQuery->GetParamIndexCP()[paramInd] - 1];
         textureUv[paramInd].x = uv->x;
         textureUv[paramInd].y = uv->y;
         }
 
     trimesh.m_vertIndex = vertIndex;
 
-    if (s_applyTexture)
+    if (s_applyTexture && renderSys != nullptr)
         {
         trimesh.m_textureUV = textureUv;
 
@@ -944,7 +945,7 @@ void ScalableMeshModel::_PickTerrainGraphics(Dgn::PickContextR context) const
  * @bsimethod                                    Keith.Bentley                   05/16
  +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshModel::_OnFitView(FitContextR context)
-    {
+    {    
     auto scene = Load(nullptr);
     if (nullptr == scene)
         return;

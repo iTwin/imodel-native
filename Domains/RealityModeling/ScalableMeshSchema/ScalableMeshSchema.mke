@@ -100,7 +100,6 @@ LINKER_LIBRARIES            =   $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(l
                                 $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)ScalableMesh$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)TerrainModelCore$(libext) \
-                                $(ContextSubpartsLibs)$(libprefix)qvision$(libext) \
                                 $(ContextSubpartsLibs)$(libprefix)BeFolly$(libext)
 
 

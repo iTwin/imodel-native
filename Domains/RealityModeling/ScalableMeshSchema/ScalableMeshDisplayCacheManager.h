@@ -4,7 +4,6 @@
 #include <ScalableMesh/IScalableMesh.h>
 #include <ScalableMesh\IScalableMeshProgressiveQuery.h>
 #define QV_NO_MSTN_TYPES
-#include <QuickVision\qvision.h>
 
 #include <DgnPlatform/Render.h>
 
@@ -75,9 +74,9 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
         void SetRenderSys(Dgn::Render::SystemP renderSys);
         bool IsDirty();
 
-        bool IsValid(QvElem* elem);
+        //bool IsValid(QvElem* elem);
 
-        bool IsValidForId(QvElem* elem, uint64_t id);
+        //bool IsValidForId(QvElem* elem, uint64_t id);
 
         ScalableMeshDisplayCacheManager();
 

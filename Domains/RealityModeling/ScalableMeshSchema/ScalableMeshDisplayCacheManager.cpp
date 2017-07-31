@@ -104,6 +104,7 @@ bool ScalableMeshDisplayCacheManager::IsDirty()
     return m_resourcesOutOfDate;
     }
 
+#if 0 
 bool ScalableMeshDisplayCacheManager::IsValid(QvElem* elem)
 {
    // std::lock_guard<std::mutex> l(elemMutex);
@@ -123,6 +124,7 @@ bool ScalableMeshDisplayCacheManager::IsValidForId(QvElem* elem, uint64_t id)
     return false;*/
     return true;
 }
+#endif
 
 ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager()
     {
