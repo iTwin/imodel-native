@@ -849,6 +849,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
 
     return SUCCESS;
     }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------
@@ -856,7 +857,7 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
     {
     NativeSqlBuilder::List unionList;
     constexpr Utf8CP otherEndAlias = "__OtherEnd";
-    const bool isECClassView =ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames();
+    const bool isECClassView = ctx.GetViewType() == ViewType::ECClassView && ctx.GetAs<ECClassViewContext>().MustCaptureViewColumnNames();
     if (isECClassView)
         {
         ECClassViewContext& viewContext = ctx.GetAs<ECClassViewContext>();
@@ -870,98 +871,92 @@ BentleyStatus ViewGenerator::RenderRelationshipClassEndTableMap(NativeSqlBuilder
 
     const DbColumn::Type castIntoType = isECClassView ? DbColumn::Type::Integer : DbColumn::Type::Any; //Any mean do not cast.
     const ECClassId classId = relationMap.GetClass().GetId();
-    for (auto const& key : relationMap.GetPartitionView().GetPartitionMap())
+    std::unique_ptr<ForeignKeyPartitionView> view = ForeignKeyPartitionView::CreateReadonly(ctx.GetECDb(), relationMap.GetRelationshipClass());
+    for (auto const& partition : view->GetPartitions(true, true))
         {
-        for (auto const & partition : key.second)
+        const bool isSelf = partition->GetSourceECClassIdColumn()->GetId() == partition->GetTargetECClassIdColumn()->GetId();
+        const bool  appendAlias = unionList.empty();
+        NativeSqlBuilder view;
+        view.Append("SELECT ");
+        //ECCInstance
+        view.Append(partition->GetECInstanceIdColumn(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECInstanceId).AppendComma();
+
+        //ECClassId
+        if (partition->GetECClassIdColumn().IsVirtual())
+            view.Append(classId).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECClassId).AppendComma();
+        else
+            view.Append(partition->GetECClassIdColumn(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECClassId).AppendComma();
+
+        //SourceECInstanceId
+        view.Append(partition->GetSourceECInstanceIdColumn(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECInstanceId).AppendComma();
+
+        //SourceECClassID
+        if (partition->GetSourceECClassIdColumn()->IsVirtual())
             {
-            if (!partition->CanQuery())
-                continue;
+            // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
+            // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
+            std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetSourceECClassIdColumn()->GetTable());
+            BeAssert(classIds.size() == 1);
+            if (classIds.size() != 1)
+                return ERROR;
 
-            const bool isSelf = partition->GetSourceECClassId()->GetId() == partition->GetTargetECClassId()->GetId();
-            const bool  appendAlias = unionList.empty();
-            NativeSqlBuilder view;
-            view.Append("SELECT ");
-
-            //ECCInstance
-            view.Append(partition->GetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECInstanceId).AppendComma();
-
-            //ECClassId
-            if (partition->GetECClassId().IsVirtual())
-                view.Append(classId).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECClassId).AppendComma();
-            else
-                view.Append(partition->GetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_ECClassId).AppendComma();
-
-            //SourceECInstanceId
-            view.Append(partition->GetSourceECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECInstanceId).AppendComma();
-
-            //SourceECClassID
-            if (partition->GetSourceECClassId()->IsVirtual())
-                {
-                // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
-                // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
-                std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetSourceECClassId()->GetTable());
-                BeAssert(classIds.size() == 1);
-                if (classIds.size() != 1)
-                    return ERROR;
-
-                view.Append(classIds.front()).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
-                }
-            else
-                {
-                if (isSelf && relationMap.GetReferencedEnd() == ECRelationshipEnd_Source)
-                    view.Append(otherEndAlias, *partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
-                else
-                    view.Append(*partition->GetSourceECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
-                }
-            //TargetECInstanceId
-            view.Append(partition->GetTargetECInstanceId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECInstanceId).AppendComma();
-
-            //TargetECClassId
-            if (partition->GetTargetECClassId()->IsVirtual())
-                {
-                // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
-                // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
-                std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetTargetECClassId()->GetTable());
-                BeAssert(classIds.size() == 1);
-                if (classIds.size() != 1)
-                    return ERROR;
-
-                view.Append(classIds.front()).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
-                }
-            else
-                {
-
-                if (isSelf && relationMap.GetReferencedEnd() == ECRelationshipEnd_Target)
-                    view.Append(otherEndAlias, *partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
-                else
-                    view.Append(*partition->GetTargetECClassId(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
-                }
-            //FROM
-            view.Append(" FROM ").Append(partition->GetECInstanceId().GetTable());
-            DbColumn const& refClassId = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassId() : *partition->GetTargetECClassId();
-            DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceId() : partition->GetTargetECInstanceId();
-            if (refClassId.GetPersistenceType() == PersistenceType::Physical)
-                {
-                DbColumn const* idColumn = refClassId.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
-                if (isSelf)
-                    view.Append(" INNER JOIN ").Append(refClassId.GetTable()).AppendSpace().Append(otherEndAlias).Append(" ON ").Append(otherEndAlias, idColumn->GetName().c_str()).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
-                else
-                    view.Append(" INNER JOIN ").Append(refClassId.GetTable()).Append(" ON ").Append(*idColumn).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
-                }
-
-            view.Append(" WHERE ").Append(referenceIdColumn).Append(" IS NOT NULL");
-            if (partition->GetECClassId().GetPersistenceType() == PersistenceType::Physical)
-                {
-                const bool isPolymorphic = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery() : true;
-                view.Append(" AND ").Append(partition->GetECClassId());
-                if (isPolymorphic)
-                    view.Append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").Append(relationMap.GetClass().GetId()).Append(")");
-                else
-                    view.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(relationMap.GetClass().GetId());
-                }
-
-            unionList.push_back(view);
+            view.Append(classIds.front()).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
             }
+        else
+            {
+            if (isSelf && relationMap.GetReferencedEnd() == ECRelationshipEnd_Source)
+                view.Append(otherEndAlias, *partition->GetSourceECClassIdColumn(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+            else
+                view.Append(*partition->GetSourceECClassIdColumn(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_SourceECClassId).AppendComma();
+            }
+        //TargetECInstanceId
+        view.Append(partition->GetTargetECInstanceIdColumn(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECInstanceId).AppendComma();
+
+        //TargetECClassId
+        if (partition->GetTargetECClassIdColumn()->IsVirtual())
+            {
+            // If ClassId is virtual then the class must be mapped to its own table other wise it would have a ECClassId column.
+            // Following reverse lookup class from table and expect exactly one class map to table that is only way that the ECClassId is virtual
+            std::vector<ECClassId> const& classIds = ctx.GetECDb().Schemas().GetDbMap().GetLightweightCache().GetClassesForTable(partition->GetTargetECClassIdColumn()->GetTable());
+            BeAssert(classIds.size() == 1);
+            if (classIds.size() != 1)
+                return ERROR;
+
+            view.Append(classIds.front()).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+            }
+        else
+            {
+
+            if (isSelf && relationMap.GetReferencedEnd() == ECRelationshipEnd_Target)
+                view.Append(otherEndAlias, *partition->GetTargetECClassIdColumn(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+            else
+                view.Append(*partition->GetTargetECClassIdColumn(), castIntoType).AppendSpace().AppendIf(appendAlias, ECDBSYS_PROP_TargetECClassId);
+            }
+        //FROM
+        view.Append(" FROM ").Append(partition->GetECInstanceIdColumn().GetTable());
+        DbColumn const& refClassId = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? *partition->GetSourceECClassIdColumn() : *partition->GetTargetECClassIdColumn();
+        DbColumn const& referenceIdColumn = relationMap.GetReferencedEnd() == ECRelationshipEnd::ECRelationshipEnd_Source ? partition->GetSourceECInstanceIdColumn() : partition->GetTargetECInstanceIdColumn();
+        if (refClassId.GetPersistenceType() == PersistenceType::Physical)
+            {
+            DbColumn const* idColumn = refClassId.GetTable().FindFirst(DbColumn::Kind::ECInstanceId);
+            if (isSelf)
+                view.Append(" INNER JOIN ").Append(refClassId.GetTable()).AppendSpace().Append(otherEndAlias).Append(" ON ").Append(otherEndAlias, idColumn->GetName().c_str()).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
+            else
+                view.Append(" INNER JOIN ").Append(refClassId.GetTable()).Append(" ON ").Append(*idColumn).Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(referenceIdColumn);
+            }
+
+        view.Append(" WHERE ").Append(referenceIdColumn).Append(" IS NOT NULL");
+        if (partition->GetECClassIdColumn().GetPersistenceType() == PersistenceType::Physical)
+            {
+            const bool isPolymorphic = ctx.GetViewType() == ViewType::SelectFromView ? ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery() : true;
+            view.Append(" AND ").Append(partition->GetECClassIdColumn());
+            if (isPolymorphic)
+                view.Append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").Append(relationMap.GetClass().GetId()).Append(")");
+            else
+                view.Append(ExpHelper::ToSql(BooleanSqlOperator::EqualTo)).Append(relationMap.GetClass().GetId());
+            }
+
+        unionList.push_back(view);
         }
 
     if (unionList.empty())
