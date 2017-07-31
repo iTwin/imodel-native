@@ -92,7 +92,7 @@ void ViewController::ChangeCategoryDisplay(DgnCategoryId categoryId, bool onOff)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   02/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-ViewController::ViewController(ViewDefinitionCR def) : m_dgndb(def.GetDgnDb()), m_definition(def.MakeCopy<ViewDefinition>())
+ViewController::ViewController(ViewDefinitionCR def, SkipClone skipClone) : m_dgndb(def.GetDgnDb()), m_definition((skipClone == SkipClone::Yes) ? const_cast<ViewDefinitionP>(&def) : def.MakeCopy<ViewDefinition>())
     {
     DgnElementId acsId = def.GetAuxiliaryCoordinateSystemId();
 

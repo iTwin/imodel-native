@@ -592,7 +592,7 @@ DgnCode DgnCode::FromJson2(JsonValueCR value)
     {
     DgnCode val;
     val.m_specId = CodeSpecId(value[json_spec()].asUInt64());
-    val.m_scope = value[json_value()].asString();
+    val.m_scope = value[json_scope()].asString();
     val.m_value = value[json_value()].asString();
     return val;
     }
