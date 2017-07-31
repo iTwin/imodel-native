@@ -20,6 +20,7 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelConnection.h       \
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelManager.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelAdmin.h            \
+                                $(iModelHubClientMkiPublicApiDir)Client/VersionsManager.h   \
                                 $(iModelHubClientMkiPublicApiDir)Client/Result.h                 \
                                 $(iModelHubClientMkiPublicApiDir)Client/Error.h                  \
                                 $(iModelHubClientMkiPublicApiDir)Client/ClientHelper.h           \
@@ -39,6 +40,7 @@ iModelHubClientMkiHeaders =	$(iModelHubClientMkiPublicApiDir)Common.h           
                                 $(iModelHubClientMkiPublicApiDir)Client/iModelInfo.h             \
                                 $(iModelHubClientMkiPublicApiDir)Client/BriefcaseInfo.h          \
                                 $(iModelHubClientMkiPublicApiDir)Client/ChangeSetInfo.h          \
+                                $(iModelHubClientMkiPublicApiDir)Client/VersionInfo.h       \
                                 $(iModelHubClientMkiPublicApiDir)Client/Configuration.h
 
 #----------------------------------------------------------------------------------------
@@ -60,6 +62,8 @@ $(o)BriefcaseInfo$(oext)                   : $(iModelHubClientMkiSourceDir)Brief
 $(o)ChangeSetInfo$(oext)                   : $(iModelHubClientMkiSourceDir)ChangeSetInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)FileInfo$(oext)                        : $(iModelHubClientMkiSourceDir)FileInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)VersionInfo$(oext)                     : $(iModelHubClientMkiSourceDir)VersionInfo.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)iModelConnection$(oext)                : $(iModelHubClientMkiSourceDir)iModelConnection.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
@@ -92,3 +96,5 @@ $(o)ChangeSetPrePushEvent$(oext)           : $(iModelHubClientMkiSourceDir)Event
 $(o)CodeEvent$(oext)                       : $(iModelHubClientMkiSourceDir)Events/CodeEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
 
 $(o)DeletedEvent$(oext)                    : $(iModelHubClientMkiSourceDir)Events/DeletedEvent.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
+
+$(o)VersionsManager$(oext)                 : $(iModelHubClientMkiSourceDir)VersionsManager.cpp $(iModelHubClientMkiHeaders) ${MultiCompileDepends}
