@@ -185,6 +185,7 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
         case Type::Mesh:
             m_material = gfParams.GetMaterial();
             m_gradient = gfParams.GetGradientSymb();
+            m_fillColor = gfParams.GetFillColor();
 
             // We need these as well as line color for edges. Unfortunate side effect: may cause mesh params to compare inequal despite mesh itself not requiring these.
             m_width = gfParams.GetWidth();
@@ -195,8 +196,6 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
                 m_fillFlags = FillFlags::ByView;
                 if (gfParams.IsBlankingRegion())
                     m_fillFlags = m_fillFlags | FillFlags::Blanking;
-
-                m_fillColor = gfParams.GetFillColor();
                 }
 
             if (nullptr != geomParams)
