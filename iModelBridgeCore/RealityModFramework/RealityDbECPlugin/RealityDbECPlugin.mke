@@ -144,14 +144,16 @@ ASSEMBLY_STRONGNAME = 1
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/AssemblyProperties.cs \
             $(baseDir)Source/Helpers/DataReadingHelper.cs \
-			$(baseDir)Source/Helpers/DbConnectionCreator.cs \
+            $(baseDir)Source/Helpers/DbConnectionCreator.cs \
             $(baseDir)Source/Helpers/DbConnectionHelper.cs \
             $(baseDir)Source/Helpers/DBGeometryhelpers.cs \
             $(baseDir)Source/Helpers/DownloadReportHelper.cs \
             $(baseDir)Source/Helpers/ECQueryConverter.cs \
+			$(baseDir)Source/Helpers/IBUDDIWrapper.cs \
             $(baseDir)Source/Helpers/ECToSQLMap.cs \
+            $(baseDir)Source/Helpers/ExecuteQueryHelper.cs \
             $(baseDir)Source/Helpers/IDbQuerier.cs \
-			$(baseDir)Source/Helpers/IHttpResponseGetter.cs \
+            $(baseDir)Source/Helpers/IHttpResponseGetter.cs \
             $(baseDir)Source/Helpers/InstanceCacheManager.cs \
             $(baseDir)Source/Helpers/InstanceComplement.cs \
             $(baseDir)Source/Helpers/InstanceModifier.cs \
@@ -162,7 +164,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/Helpers/MimicTableAccessor.cs \
             $(baseDir)Source/Helpers/MimicTableWriter.cs \
             $(baseDir)Source/Helpers/Packager.cs \
-			$(baseDir)Source/Helpers/RetrievalController.cs \
+            $(baseDir)Source/Helpers/RetrievalController.cs \
             $(baseDir)Source/Helpers/SourceStringMap.cs \
             $(baseDir)Source/Helpers/SqlQueryHelpers.cs \
             $(baseDir)Source/Helpers/TableAliasCreator.cs \
@@ -192,7 +194,7 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Source/JTokenExtension.cs \
             $(baseDir)Source/Log.cs \
             $(baseDir)Source/models.cs
-			
+            
 #           $(baseDir)Source/QueryProviders/AustraliaAPIQueryProvider.cs \
 #           $(baseDir)Source/Helpers/IAustraliaDataFetcher.cs \
 

@@ -69,12 +69,12 @@ namespace IndexECPlugin.Source.Helpers
         /// RDSDataFetcher constructor
         /// </summary>
         /// <param name="httpResponseGetter">An httpResponseGetter object for communicating with RDS</param>
-        public RDSDataFetcher (IHttpResponseGetter httpResponseGetter)
+        /// <param name="buddiWrapper">The BUDDIWrapper object for communicating with BUDDI</param>
+        public RDSDataFetcher (IHttpResponseGetter httpResponseGetter, IBUDDIWrapper buddiWrapper)
             {
             m_httpResponseGetter = httpResponseGetter;
 
             string buddiRegionCode = ConfigurationRoot.GetAppSetting("RECPBuddiRegionCode");
-            BUDDIClient buddiClient = new BUDDIClient();
 
             int buddiRegionCodeInt; 
             bool successfulParse = int.TryParse(buddiRegionCode, out buddiRegionCodeInt);
@@ -84,18 +84,18 @@ namespace IndexECPlugin.Source.Helpers
                 string rdsBaseName;
                 if ( successfulParse )
                     {
-                    rdsBaseName = buddiClient.GetUrl(IndexConstants.RdsName, buddiRegionCodeInt);
+                    rdsBaseName = buddiWrapper.GetUrl(IndexConstants.RdsName, buddiRegionCodeInt);
                     }
                 else
                     {
-                    rdsBaseName = buddiClient.GetUrl(IndexConstants.RdsName);
+                    rdsBaseName = buddiWrapper.GetUrl(IndexConstants.RdsName);
                     }
                 m_rdsUrlBase = rdsBaseName + "v2.3/repositories/S3MXECPlugin--Server/S3MX/";
                 }
             catch ( Exception )
                 {
                 m_rdsUrlBase = ConfigurationRoot.GetAppSetting("RECPRdsUrlBase");
-                if ( m_rdsUrlBase == null )
+                if ( string.IsNullOrEmpty(m_rdsUrlBase) )
                     {
                     throw new OperationFailedException("There was an error getting RDS url.");
                     }

@@ -246,11 +246,14 @@ namespace IndexECPlugin.Source.Helpers
                     string baseClassKeyPropertyName;
                     string derivedClassKeyPropertyName;
 
+                    //The derived class linker is not used by the current ecclasses in the schema. For test coverage purpose, I have commented these lines.
+                    //DO NOT REMOVE THE FOLLOWING COMMENTED LINES
                     if ( queriedClass.GetCustomAttributes("DerivedClassLinker") != null )
-                        {
-                        baseClassKeyPropertyName = derivedClass.GetCustomAttributes("DerivedClassLinker").GetPropertyValue("BaseClassKeyProperty").StringValue;
-                        derivedClassKeyPropertyName = derivedClass.GetCustomAttributes("DerivedClassLinker").GetPropertyValue("DerivedClassKeyProperty").StringValue;
-                        }
+                        //{
+                        //baseClassKeyPropertyName = derivedClass.GetCustomAttributes("DerivedClassLinker").GetPropertyValue("BaseClassKeyProperty").StringValue;
+                        //derivedClassKeyPropertyName = derivedClass.GetCustomAttributes("DerivedClassLinker").GetPropertyValue("DerivedClassKeyProperty").StringValue;
+                        //}
+                        throw new NotImplementedException("The DerivedClassLinker is deactivated");
 
                     else
                         {
@@ -332,30 +335,34 @@ namespace IndexECPlugin.Source.Helpers
 
             if ( propertyTableName != firstTableDescriptor.Name )
                 {
-                var firstTableKeyAttribute = dbColumn["FirstTableKey"];
-                var newTableKeyAttribute = dbColumn["NewTableKey"];
+                //***********DO NOT ERASE COMMENTED CODE.******************
+                //This code is deactivated, since there is no classes in the schema that can activate this part of code,
+                //making it hard to test. 
+                throw new NotImplementedException("Multitables ECClasses are deactivated for the moment.");
+                //var firstTableKeyAttribute = dbColumn["FirstTableKey"];
+                //var newTableKeyAttribute = dbColumn["NewTableKey"];
 
-                if ( firstTableKeyAttribute.IsNull || newTableKeyAttribute.IsNull )
-                    {
-                    throw new ProgrammerException("The ECSchema was incorrectly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
-                    }
-                string firstTableKey = firstTableKeyAttribute.StringValue;
-                string newTableKey = newTableKeyAttribute.StringValue;
+                //if ( firstTableKeyAttribute.IsNull || newTableKeyAttribute.IsNull )
+                //    {
+                //    throw new ProgrammerException("The ECSchema was incorrectly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
+                //    }
+                //string firstTableKey = firstTableKeyAttribute.StringValue;
+                //string newTableKey = newTableKeyAttribute.StringValue;
 
-                if ( String.IsNullOrWhiteSpace(firstTableKey) || String.IsNullOrWhiteSpace(newTableKey) )
-                    {
-                    throw new ProgrammerException("The ECSchema was incorrectly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
-                    }
+                //if ( String.IsNullOrWhiteSpace(firstTableKey) || String.IsNullOrWhiteSpace(newTableKey) )
+                //    {
+                //    throw new ProgrammerException("The ECSchema was incorrectly written. If the JoinTableName property is not null, the FirstTableKey and NewTableKey must be specified.");
+                //    }
 
-                newPropertyTableDescriptor = new TableDescriptor(propertyTableName, m_tac.GetNewTableAlias());
-                newPropertyTableDescriptor.SetTableJoined(firstTableDescriptor, firstTableKey, newTableKey);
+                //newPropertyTableDescriptor = new TableDescriptor(propertyTableName, m_tac.GetNewTableAlias());
+                //newPropertyTableDescriptor.SetTableJoined(firstTableDescriptor, firstTableKey, newTableKey);
 
-                TableDescriptor similarTable;
-                bool joinSuccessful = m_sqlQueryBuilder.AddLeftJoinClause(newPropertyTableDescriptor, out similarTable);
-                if ( !joinSuccessful )
-                    {
-                    newPropertyTableDescriptor = similarTable;
-                    }
+                //TableDescriptor similarTable;
+                //bool joinSuccessful = m_sqlQueryBuilder.AddLeftJoinClause(newPropertyTableDescriptor, out similarTable);
+                //if ( !joinSuccessful )
+                //    {
+                //    newPropertyTableDescriptor = similarTable;
+                //    }
                 }
             return newPropertyTableDescriptor;
             }

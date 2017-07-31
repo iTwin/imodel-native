@@ -111,6 +111,8 @@
     <Compile Include="Tests\Helpers\DownloadReportHelperTests.cs" />
     <Compile Include="Tests\Helpers\ECQueryConverterTests.cs" />
     <Compile Include="Tests\Helpers\ECToSQLMapTests.cs" />
+    <Compile Include="Tests\Helpers\ExecuteQueryHelperTests.cs" />
+    <Compile Include="Tests\Helpers\RDSDataFetcherTests.cs" />
     <Compile Include="Tests\Helpers\RetrievalControllerTests.cs" />
     <Compile Include="Tests\Helpers\SourceStringMapTests.cs" />
     <Compile Include="Tests\Helpers\TableAliasCreatorTests.cs" />

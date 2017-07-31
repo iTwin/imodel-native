@@ -78,25 +78,26 @@ ASSEMBLY_STRONGNAME = 1
 
 ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Common/SetupHelpers.cs \
-			$(baseDir)Common/DataReaderStub.cs \
-			$(baseDir)Common/FakeDbCommand.cs \
-			$(baseDir)Common/FakeDataParameterCollection.cs \
+            $(baseDir)Common/DataReaderStub.cs \
+            $(baseDir)Common/FakeDbCommand.cs \
+            $(baseDir)Common/FakeDataParameterCollection.cs \
             $(baseDir)Tests/DataExtractorTests.cs \
-			$(baseDir)Tests/IECInstanceExtensionTests.cs \
+            $(baseDir)Tests/IECInstanceExtensionTests.cs \
             $(baseDir)Tests/IndexECPluginRDSTests.cs \
             $(baseDir)Tests/IndexECPluginUSGSTests.cs \
-			$(baseDir)Tests/JTokenExtensionTests.cs \
+            $(baseDir)Tests/JTokenExtensionTests.cs \
             $(baseDir)Tests/PolygonModelTests.cs \
             $(baseDir)Tests/SqlQueryProviderTests.cs \
             $(baseDir)Tests/SqlServerInsertStatementBuilderTests.cs \
             $(baseDir)Tests/USGSDataExtractorsTests.cs\
             $(baseDir)Tests/USGSDataFetcherTests.cs \
-			$(baseDir)Tests/Helpers/DataReadingHelperTests.cs \
+            $(baseDir)Tests/Helpers/DataReadingHelperTests.cs \
             $(baseDir)Tests/Helpers/DbConnectionHelperTests.cs \
             $(baseDir)Tests/Helpers/DBGeometryHelpersTests.cs \
             $(baseDir)Tests/Helpers/DownloadReportHelperTests.cs \
             $(baseDir)Tests/Helpers/ECQueryConverterTests.cs \
             $(baseDir)Tests/Helpers/ECToSQLMapTests.cs \
+            $(baseDir)Tests/Helpers/ExecuteQueryHelperTests.cs \
             $(baseDir)Tests/Helpers/IDbQuerierTests.cs \
             $(baseDir)Tests/Helpers/InstanceCacheManagerTests.cs \
             $(baseDir)Tests/Helpers/InstanceComplementTests.cs \
@@ -104,15 +105,16 @@ ASSEMBLY_SOURCE_LIST = \
             $(baseDir)Tests/Helpers/MimicTableWriterTests.cs \
             $(baseDir)Tests/Helpers/MimicTableAccessorTests.cs \
             $(baseDir)Tests/Helpers/PackagerTests.cs \
-			$(baseDir)Tests/Helpers/RetrievalControllerTests.cs \
+            $(baseDir)Tests/Helpers/RDSDataFetcherTests.cs \
+            $(baseDir)Tests/Helpers/RetrievalControllerTests.cs \
             $(baseDir)Tests/Helpers/SourceStringMapTests.cs \
             $(baseDir)Tests/Helpers/TableAliasCreatorTests.cs \
             $(baseDir)Tests/Helpers/TableDescriptorTests.cs \
-			$(baseDir)Tests/SQLQueryBuilder/GenericParamNameValueMapTests.cs \
-			$(baseDir)Tests/SQLQueryBuilder/SQLQueryBuilderTests.cs \
-			$(baseDir)Tests/SQLQueryBuilder/SQLServerMergeUpsertStatementBuilderTests.cs \
-			$(baseDir)Tests/SQLQueryBuilder/SqlServerParamNameValueMapTests.cs \
-			$(baseDir)Tests/SQLQueryBuilder/StandardSQLQueryBuilderTests.cs
+            $(baseDir)Tests/SQLQueryBuilder/GenericParamNameValueMapTests.cs \
+            $(baseDir)Tests/SQLQueryBuilder/SQLQueryBuilderTests.cs \
+            $(baseDir)Tests/SQLQueryBuilder/SQLServerMergeUpsertStatementBuilderTests.cs \
+            $(baseDir)Tests/SQLQueryBuilder/SqlServerParamNameValueMapTests.cs \
+            $(baseDir)Tests/SQLQueryBuilder/StandardSQLQueryBuilderTests.cs
             
 
 #ASSEMBLY_RESX_FILE_TO_BUILD = $(baseDir)LocalizableStrings.resx
