@@ -54,6 +54,9 @@ $(BuildContext)PublicAPI/VersionedDgnV8Api/Geom : $(headersOutputBaseDir)Version
 $(BuildContext)PublicAPI/VersionedDgnV8Api/GeomSerialization : $(headersOutputBaseDir)VersionedDgnV8Api/GeomSerialization
     $(LinkFirstDepToFirstTargetAsDirectory)
 
+$(BuildContext)PublicAPI/VersionedDgnV8Api/ImagePP : $(headersOutputBaseDir)VersionedDgnV8Api/ImagePP
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
 $(BuildContext)PublicAPI/VersionedDgnV8Api/Logging : $(headersOutputBaseDir)VersionedDgnV8Api/Logging
     $(LinkFirstDepToFirstTargetAsDirectory)
 
