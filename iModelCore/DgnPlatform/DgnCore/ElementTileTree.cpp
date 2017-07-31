@@ -1440,13 +1440,13 @@ bool Root::WantCacheGeometry(double rangeDiagSq) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void Root::AddCachedGeometry(GeometryList&& geometry, DgnElementId elementId, double rangeDiagSq) const
+void Root::AddCachedGeometry(GeometryList const& geometry, size_t startIndex, DgnElementId elementId, double rangeDiagSq) const
     {
     if (!WantCacheGeometry(rangeDiagSq))
         return;
 
     BeMutexHolder lock(m_mutex);
-    auto pair = m_geomLists.Insert(elementId, std::move(geometry));
+    auto pair = m_geomLists.Insert(elementId, geometry.Slice(startIndex, geometry.size()));
     if (pair.second)
         {
         for (auto& geom : pair.first->second)
@@ -1525,11 +1525,10 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     params.SetWidth(0);
     if (wantRange)
         {
-        bool isLeaf = IsLeaf() || HasZoomFactor();
-        ColorDef color = isLeaf ? ColorDef::DarkBlue() : ColorDef::DarkOrange();
+        ColorDef color = IsLeaf() ? ColorDef::DarkBlue() : (HasZoomFactor() ? ColorDef::DarkMagenta() : ColorDef::DarkOrange());
         params.SetLineColor(color);
         params.SetFillColor(color);
-        params.SetLinePixels(isLeaf ? LinePixels::Code5 : LinePixels::Code4);
+        params.SetLinePixels((IsLeaf() || HasZoomFactor()) ? LinePixels::Code5 : LinePixels::Code4);
         gf->ActivateGraphicParams(params);
         gf->AddRangeBox(GetRange());
         }
@@ -2268,8 +2267,6 @@ GraphicPtr TileContext::FinishGraphic(GeometryAccumulatorR accum, TileBuilder& b
     for (auto& geom : accum.GetGeometries())
         PushGeometry(*geom);
 
-    m_root.AddCachedGeometry(std::move(accum.GetGeometries()), accum.GetElementId(), builder.GetRangeDiagonalSquared());
-
     return m_finishedGraphic; // carries no useful info and is just going to be discarded...
     }
 
@@ -2300,7 +2297,12 @@ void TileContext::ProcessElement(DgnElementId elemId, double rangeDiagonalSquare
             {
             m_curElemId = elemId;
             m_curRangeDiagonalSquared = rangeDiagonalSquared;
+
+            size_t elemGeomIndex = m_geometries.size();
+
             VisitElement(elemId, false);
+
+            m_root.AddCachedGeometry(m_geometries, elemGeomIndex, elemId, rangeDiagonalSquared);
             }
         }
     catch (...)

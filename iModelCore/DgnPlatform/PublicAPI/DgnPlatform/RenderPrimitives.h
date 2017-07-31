@@ -797,6 +797,8 @@ public:
 
     QPoint3d::Params ComputeQuantizationParams() const { return QPoint3d::Params(ComputeRange()); }
     DRange3d ComputeRange() const;
+
+    GeometryList Slice(size_t startIndex, size_t endIndex) const;
 };
 
 //=======================================================================================

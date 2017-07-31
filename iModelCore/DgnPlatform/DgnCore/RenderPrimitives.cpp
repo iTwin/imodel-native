@@ -2531,6 +2531,21 @@ DRange3d GeometryList::ComputeRange() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+GeometryList GeometryList::Slice(size_t startIdx, size_t endIdx) const
+    {
+    BeAssert(startIdx < endIdx && endIdx <= size());
+
+    GeometryList list;
+    list.m_complete = m_complete;
+    list.m_curved = m_curved;
+    list.m_list.assign(begin() + startIdx, begin() + endIdx);
+
+    return list;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void QVertex3dList::Requantize()

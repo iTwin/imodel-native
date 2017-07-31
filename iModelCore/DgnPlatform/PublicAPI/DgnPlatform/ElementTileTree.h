@@ -183,7 +183,7 @@ public:
     Render::Primitives::GeomPartPtr FindOrInsertGeomPart(ISolidPrimitiveR prim, DRange3dCR range, Render::Primitives::DisplayParamsCR displayParams, DgnElementId elemId) const;
 
     bool GetCachedGeometry(Render::Primitives::GeometryList& geometry, DgnElementId elementId, double rangeDiagonalSquared) const;
-    void AddCachedGeometry(Render::Primitives::GeometryList&& geometry, DgnElementId elementId, double rangeDiagonalSquared) const;
+    void AddCachedGeometry(Render::Primitives::GeometryList const& geometry, size_t startIndex, DgnElementId elementId, double rangeDiagonalSquared) const;
     bool WantCacheGeometry(double rangeDiagonalSquared) const;
 
     DGNPLATFORM_EXPORT static void ToggleDebugBoundingVolumes();
