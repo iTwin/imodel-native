@@ -114,7 +114,7 @@ BentleyStatus MapTile::Loader::_LoadTile()
     MapTileR tile = static_cast<MapTileR>(*m_tile);
     MapRootR mapRoot = tile.GetMapRoot();
 
-    auto graphic = GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams(mapRoot.GetDgnDb()));
+    auto graphic = GetRenderSystem()->_CreateGraphic(GraphicBuilder::CreateParams::World(mapRoot.GetDgnDb()));
 
     // some tile servers (for example Bing) start returning PNG tiles at a certain zoom level, even if you request Jpeg.
     ImageSource::Format format = mapRoot.m_format;

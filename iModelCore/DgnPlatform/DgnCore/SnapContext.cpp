@@ -482,7 +482,7 @@ void _OutputGraphics(ViewContextR context) override
         if (geom.IsValid())
             {
             if (!graphic.IsValid())
-                graphic = context.CreateGraphic(GraphicBuilder::CreateParams(source->GetSourceDgnDb(), iter.GetGeometryToWorld()));
+                graphic = context.CreateWorldGraphic(iter.GetGeometryToWorld());
 
             geom->AddToGraphic(*graphic);
             break; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...
@@ -509,7 +509,7 @@ void _OutputGraphics(ViewContextR context) override
                 continue;
 
             if (!graphic.IsValid())
-                graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), partIter.GetGeometryToWorld()));
+                graphic = context.CreateWorldGraphic(partIter.GetGeometryToWorld());
 
             partGeom->AddToGraphic(*graphic);
             continue; // Keep going, want to draw all matching geometry (ex. multi-symb BRep is Polyface per-symbology)...

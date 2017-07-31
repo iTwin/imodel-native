@@ -765,7 +765,7 @@ Render::GraphicPtr _GetGraphic(ViewContextR context) const override
     {
     if (!m_graphic.IsValid())
         {
-        auto builder = context.CreateGraphic(); // Don't supply viewport, graphic has to be independent of view render mode, etc.
+        auto builder = context.CreateWorldGraphic(); // Don't supply viewport, graphic has to be independent of view render mode, etc.
         builder->SetSymbology(ColorDef::White(), ColorDef::White(), 1); // Expect caller to draw using overrides to control color, weight, and style.
 
         GeometricPrimitiveCPtr geom = _GetGeometry();

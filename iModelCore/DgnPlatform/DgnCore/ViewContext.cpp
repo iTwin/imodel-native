@@ -309,7 +309,7 @@ StatusInt ViewContext::_OutputGeometry(GeometrySourceCR source)
     if (nullptr == GetIPickGeom())
         return SUCCESS;
 
-    Render::GraphicBuilderPtr rangeGraphic = CreateGraphic(GraphicBuilder::CreateParams(source.GetSourceDgnDb(), (2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform())));
+    auto rangeGraphic = CreateWorldGraphic(2 == s_drawRange ? Transform::FromIdentity() : source.GetPlacementTransform());
     Render::GeometryParams rangeParams;
 
     rangeParams.SetCategoryId(source.GetCategoryId()); // Need category for pick...
@@ -1545,7 +1545,7 @@ void DecorateContext::DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix,
     uorPerPixel *= refScale;
 
     bool drawDots = ((refSpacing.x/uorPerPixel) > minGridSeperationPixels) &&((refSpacing.y/uorPerPixel) > minGridSeperationPixels);
-    Render::GraphicBuilderPtr graphic = CreateGraphic(GraphicBuilder::CreateParams(vp.GetViewController().GetDgnDb()));
+    auto graphic = CreateWorldGraphic();
 
     drawGrid(*graphic, isoGrid, drawDots, gridOrg, gridX, gridY, gridsPerRef, repetitions, vp);
     AddWorldDecoration(*graphic->Finish());

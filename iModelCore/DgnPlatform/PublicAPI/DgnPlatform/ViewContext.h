@@ -169,8 +169,11 @@ public:
     ClipVectorCPtr GetActiveVolume() const {return m_volume;}
     void EnableStopAfterTimout(BeDuration::Milliseconds timeout) {m_endTime = BeTimePoint::FromNow(timeout); m_stopAfterTimeout=true;}
 
-    Render::GraphicBuilderPtr CreateGraphic(Render::GraphicBuilder::CreateParams const& params) {return _CreateGraphic(params);}
-    Render::GraphicBuilderPtr CreateGraphic() {return _CreateGraphic(Render::GraphicBuilder::CreateParams(GetDgnDb()));}
+    Render::GraphicBuilderPtr CreateWorldGraphic(TransformCR tf=Transform::FromIdentity())
+        { return _CreateGraphic(Render::GraphicBuilder::CreateParams::World(GetDgnDb(), tf, GetViewport())); }
+    Render::GraphicBuilderPtr CreateViewGraphic(TransformCR tf=Transform::FromIdentity())
+        { return _CreateGraphic(Render::GraphicBuilder::CreateParams::View(GetDgnDb(), tf, GetViewport())); }
+
     Render::GraphicPtr CreateBranch(Render::GraphicBranch& branch, DgnDbR db, TransformCR tf, ClipVectorCP clips=nullptr) {return _CreateBranch(branch, db, tf, clips);}
     void AddSubGraphic(Render::GraphicBuilderR graphic, DgnGeometryPartId partId, TransformCR subToGraphic, Render::GeometryParamsR geomParams) {return _AddSubGraphic(graphic, partId, subToGraphic, geomParams);}
     StatusInt VisitGeometry(GeometrySourceCR elem) {return _VisitGeometry(elem);}

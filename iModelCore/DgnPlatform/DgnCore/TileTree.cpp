@@ -1700,7 +1700,7 @@ void TriMeshTree::TriMesh::Pick(PickArgsR args)
     if (m_indices.empty())
         return;
 
-    auto graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(args.m_root.GetDgnDb(), args.m_location));
+    auto graphic = args.m_context.CreateWorldGraphic(args.m_location);
     graphic->AddPolyface(*GetPolyface());
     }
 
@@ -1753,7 +1753,7 @@ void TriMeshTree::Tile::AddDebugRangeGraphics(DrawArgsR args) const
     GraphicParams params;
     params.SetLineColor(ColorDef::Red());
 
-    Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic(GraphicBuilder::CreateParams(GetRoot().GetDgnDb()));
+    auto graphic = args.m_context.CreateWorldGraphic();
     graphic->ActivateGraphicParams(params);
     graphic->AddRangeBox(m_range);
     args.m_graphics.Add(*graphic->Finish());

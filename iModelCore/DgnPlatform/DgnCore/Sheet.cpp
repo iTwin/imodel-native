@@ -274,7 +274,7 @@ BentleyStatus Attachment::Tile::Loader::_LoadTile()
     auto& tile = static_cast<Tile&>(*m_tile);
     Tree& tree = tile.GetTree();
     auto system = GetRenderSystem();
-    auto graphic = system->_CreateGraphic(GraphicBuilder::CreateParams(tree.GetDgnDb()));
+    auto graphic = system->_CreateGraphic(GraphicBuilder::CreateParams::World(tree.GetDgnDb()));
 
     graphic->SetSymbology(tree.m_tileColor, tree.m_tileColor, 0); // this is to set transparency
     graphic->AddTile(*m_texture, tile.m_corners); // add the texture to the graphic, mapping to corners of tile (in BIM world coordinates)
@@ -631,7 +631,7 @@ void Sheet::ViewController::_LoadState()
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr Sheet::Model::CreateBorder(ViewContextR context, DPoint2dCR size)
     {
-    Render::GraphicBuilderPtr border = context.CreateGraphic();
+    Render::GraphicBuilderPtr border = context.CreateWorldGraphic();
     RectanglePoints rect(0, 0, size.x, size.y);
     border->SetSymbology(ColorDef::Black(), ColorDef::Black(), 2, LinePixels::Solid);
     border->AddLineString2d(5, rect, 0.0);

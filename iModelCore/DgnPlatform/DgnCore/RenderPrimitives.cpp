@@ -2463,7 +2463,9 @@ void PrimitiveBuilder::_AddSubGraphic(Graphic& gf, TransformCR subToGf, GraphicP
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicBuilderPtr PrimitiveBuilder::_CreateSubGraphic(TransformCR subToGf, ClipVectorCP clip) const
     {
-    return GetSystem()._CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb(), subToGf.IsIdentity() ? GetLocalToWorldTransform() : Transform::FromIdentity()));
+    auto tf = subToGf.IsIdentity() ? GetLocalToWorldTransform() : Transform::FromIdentity();
+    auto params = m_createParams.SubGraphic(tf);
+    return GetSystem()._CreateGraphic(params);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2511,7 +2513,7 @@ void GeometryListBuilder::ReInitialize(TransformCR localToWorld, TransformCR acc
     {
     m_accum.ReInitialize(accumTf, elemId);
     ActivateGraphicParams(GraphicParams(), nullptr);
-    m_createParams.m_placement = localToWorld;
+    m_createParams.SetPlacement(localToWorld);
     m_isOpen = true;
 
     _Reset();

@@ -469,7 +469,7 @@ GraphicBuilderPtr AuxCoordSystem::_CreateGraphic(DecorateContextR context, ACSDi
     rMatrix.ScaleRows(rMatrix, scale, scale / exagg, scale);
     transform.InitFrom(rMatrix, drawOrigin);
 
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), transform));
+    auto graphic = context.CreateWorldGraphic(transform);
 
     DgnViewportR vp = *context.GetViewport();
     _AddAxis(*graphic, 0, options, vp);

@@ -577,7 +577,7 @@ bool AcceptCurveVector(CurveVectorCR curves)
     if (SUCCESS != Attach(m_fp.GetViewport(), m_purpose))
         return false;
 
-    Render::GraphicBuilderPtr graphic = CreateGraphic(GraphicBuilder::CreateParams(GetDgnDb()));
+    auto graphic = CreateWorldGraphic();
 
     graphic->AddCurveVector(curves, false);
 

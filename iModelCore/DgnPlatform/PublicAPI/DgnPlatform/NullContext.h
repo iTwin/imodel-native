@@ -62,7 +62,7 @@ struct NullContext : ViewContext
         void _AddTile(Render::TextureCR tile, TileCorners const& corners) override {}
         void _AddDgnOle(Render::DgnOleDraw*) override {}
         void _AddSubGraphic(Render::GraphicR, TransformCR, Render::GraphicParamsCR, ClipVectorCP) override {}
-        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR transform, ClipVectorCP) const override {return new NullGraphicBuilder(Render::GraphicBuilder::CreateParams(GetDgnDb(), transform));}
+        Render::GraphicBuilderPtr _CreateSubGraphic(TransformCR transform, ClipVectorCP) const override {return new NullGraphicBuilder(GetCreateParams().SubGraphic(transform));}
         Render::GraphicPtr _Finish() override { m_isOpen = false; return new NullGraphic(GetDgnDb()); }
     };
 

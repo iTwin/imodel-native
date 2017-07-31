@@ -71,7 +71,7 @@ void SpatialViewController::_DrawDecorations(DecorateContextR context)
     DRange2d runningTextBounds = DRange2d::NullRange();
 
     // Always draw text in black, then create a white blanking region behind it so that it's always visible.
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic();
+    Render::GraphicBuilderPtr graphic = context.CreateViewGraphic();
     graphic->SetSymbology(ColorDef::Black(), ColorDef::Black(), 0);
 
     for (Utf8StringCR msg : m_copyrightMsgs)

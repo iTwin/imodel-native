@@ -63,7 +63,7 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool filled, SimplifyGraphic&) ov
 //---------------------------------------------------------------------------------------
 void _OutputGraphics(ViewContext& viewContext) override
     {
-    Render::GraphicBuilderPtr graphic = viewContext.CreateGraphic();
+    Render::GraphicBuilderPtr graphic = viewContext.CreateWorldGraphic();
     Render::GeometryParams defaultParams;
     LineStyleContext lsContext(*graphic, defaultParams, viewContext);
 
@@ -289,7 +289,7 @@ bool GetUseTextureColors() {return m_useTextureColors;}
 Render::GraphicPtr Stroke(ViewContextR context) const
     {
     // Create the graphic
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), m_transformForTexture));
+    auto graphic = context.CreateWorldGraphic(m_transformForTexture);
     LineStyleContext lsContext(*graphic, m_geomParams, context);
 
     lsContext.SetCreatingTexture();

@@ -1301,7 +1301,7 @@ public:
 };
 
 //=======================================================================================
-//! Exposes methods for constructing a Graphic from graphic primitives.
+//! Exposes methods for constructing a Graphic from geometric primitives.
 // @bsistruct                                                   Paul.Connelly   05/16
 //=======================================================================================
 struct GraphicBuilder : RefCountedBase
@@ -1311,12 +1311,50 @@ struct GraphicBuilder : RefCountedBase
         DPoint3d m_pts[4];
     };
 
+    //! Parameters used to construct a GraphicBuilder.
     struct CreateParams
     {
-        DgnDbR      m_dgndb;
-        Transform   m_placement;
-        explicit CreateParams(DgnDbR db, TransformCR placement=Transform::FromIdentity()) : m_dgndb(db), m_placement(placement) {}
+    private:
+        DgnDbR          m_dgndb;
+        Transform       m_placement;
+        DgnViewportP    m_viewport;
+        bool            m_worldCoords = true;
+
+        CreateParams(DgnDbR db, TransformCR tf, DgnViewportP vp, bool world) : m_dgndb(db), m_placement(tf), m_viewport(vp), m_worldCoords(world) { }
+    public:
+        //! Create params for a graphic in world coordinates, not associated with any viewport.
+        //! This function is chiefly used for tile generation code as the tolerance for faceting the graphic's geometry is independent of any viewport.
+        //! If this function is used outside of tile generation context, a default coarse tolerance will be used.
+        //! To get a tolerance appropriate to a viewport, use the overload accepting a DgnViewport.
+        static CreateParams World(DgnDbR db, TransformCR placement=Transform::FromIdentity(), DgnViewportP vp=nullptr)
+            { return CreateParams(db, placement, vp, true); }
+
+        //! Create params for a graphic in world coordinates associated with a viewport.
+        //! This function is chiefly used for code which produces world decorations and dynamics.
+        //! The faceting tolerance will be computed from the finished graphic's range and the viewport.
+        DGNPLATFORM_EXPORT static CreateParams World(DgnViewportR vp, TransformCR placement=Transform::FromIdentity());
+
+        //! Create params for a view decoration (defined in view coordinates).
+        static CreateParams View(DgnDbR db, TransformCR placement=Transform::FromIdentity(), DgnViewportP vp=nullptr)
+            { return CreateParams(db, placement, vp, false); }
+
+        //! Create params for a view decoration (defined in view coordinates).
+        DGNPLATFORM_EXPORT static CreateParams View(DgnViewportR vp, TransformCR placement=Transform::FromIdentity());
+
+        //! Create params for a subgraphic
+        CreateParams SubGraphic(TransformCR placement=Transform::FromIdentity()) const
+            { return CreateParams(m_dgndb, placement, m_viewport, m_worldCoords); }
+
+        DgnDbR GetDgnDb() const { return m_dgndb; }
+        TransformCR GetPlacement() const { return m_placement; }
+        DgnViewportP GetViewport() const { return m_viewport; }
+        bool IsWorldCoordinates() const { return m_worldCoords; }
+        bool IsViewCoordinates() const { return !IsWorldCoordinates(); }
+
+        void SetPlacement(TransformCR tf) { m_placement=tf; }
     };
+
+    DEFINE_POINTER_SUFFIX_TYPEDEFS_NO_STRUCT(CreateParams);
 
     enum class AsThickenedLine { No=0, Yes=1 };
 
@@ -1373,9 +1411,13 @@ public:
     DGNPLATFORM_EXPORT GraphicBuilderPtr CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip=nullptr) const { return _CreateSubGraphic(subToGraphic, clip); }
 
     GraphicPtr Finish() { BeAssert(IsOpen()); return IsOpen() ? _Finish() : nullptr; }
-    DgnDbR GetDgnDb() const {return m_createParams.m_dgndb;}
-    TransformCR GetLocalToWorldTransform() const {return m_createParams.m_placement;}
+
     CreateParams const& GetCreateParams() const {return m_createParams;}
+    DgnDbR GetDgnDb() const {return m_createParams.GetDgnDb();}
+    TransformCR GetLocalToWorldTransform() const {return m_createParams.GetPlacement();}
+    DgnViewportP GetViewport() const {return m_createParams.GetViewport();}
+    bool IsWorldCoordinates() const {return m_createParams.IsWorldCoordinates();}
+    bool IsViewCoordinates() const {return m_createParams.IsViewCoordinates();}
     bool WantStrokeLineStyle(LineStyleSymbCR symb, IFacetOptionsPtr& facetOptions) { return _WantStrokeLineStyle(symb, facetOptions); }
     bool WantStrokePattern(PatternParamsCR pattern) { return _WantStrokePattern(pattern); }
 

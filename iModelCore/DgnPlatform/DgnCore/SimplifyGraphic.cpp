@@ -45,7 +45,7 @@ CurveVectorPtr GetCurveVector() {return m_curves;}
 static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::GraphicBuilder::CreateParams(graphic.GetCreateParams()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -58,7 +58,7 @@ static CurveVectorPtr Process(SimplifyGraphic const& graphic, ISolidPrimitiveCR 
 static CurveVectorPtr Process(SimplifyGraphic const& graphic, MSBsplineSurfaceCR geom, ViewContextR context, bool includeEdges, bool includeFaceIso)
     {
     SimplifyCurveCollector    processor;
-    Render::GraphicBuilderPtr builder = new SimplifyGraphic(Render::GraphicBuilder::CreateParams(graphic.GetCreateParams()), processor, context);
+    Render::GraphicBuilderPtr builder = new SimplifyGraphic(graphic.GetCreateParams(), processor, context);
 
     WireframeGeomUtil::Draw(*builder, geom, &context, includeEdges, includeFaceIso);
 
@@ -389,7 +389,7 @@ SimplifyGraphic::SimplifyGraphic(Render::GraphicBuilder::CreateParams const& par
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicBuilderPtr SimplifyGraphic::_CreateSubGraphic(TransformCR subToGraphic, ClipVectorCP clip) const
     {
-    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::GraphicBuilder::CreateParams(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGraphic)), m_processor, m_context);
+    SimplifyGraphic* subGraphic = new SimplifyGraphic(Render::GraphicBuilder::CreateParams::World(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), subToGraphic)), m_processor, m_context);
 
     subGraphic->m_currGraphicParams  = m_currGraphicParams;
     subGraphic->m_currGeometryParams = m_currGeometryParams;

@@ -1056,7 +1056,7 @@ private:
     DGNPLATFORM_EXPORT Render::GraphicPtr _Finish() final override;
 protected:
     GeometryListBuilder(System& system, CreateParams const& params, DgnElementId elemId=DgnElementId(), TransformCR accumulatorTf=Transform::FromIdentity())
-        : GraphicBuilder(params), m_accum(params.m_dgndb, system) { m_accum.SetElementId(elemId); m_accum.SetTransform(accumulatorTf); }
+        : GraphicBuilder(params), m_accum(params.GetDgnDb(), system) { m_accum.SetElementId(elemId); m_accum.SetTransform(accumulatorTf); }
 
     DGNPLATFORM_EXPORT void _ActivateGraphicParams(GraphicParamsCR, Render::GeometryParamsCP) override;
     DGNPLATFORM_EXPORT void _AddArc2d(DEllipse3dCR ellipse, bool isEllipse, bool filled, double zDepth) override;

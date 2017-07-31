@@ -545,7 +545,7 @@ protected:
         if (builder->GetRefCount() > 2)
             builder = new TileBuilder(*this, m_curElemId, m_curRangeDiagonalSquared, params);
         else
-            m_tileBuilder->ReInitialize(m_curElemId, m_curRangeDiagonalSquared, params.m_placement);
+            m_tileBuilder->ReInitialize(m_curElemId, m_curRangeDiagonalSquared, params.GetPlacement());
 
         BeAssert(builder->GetRefCount() <= 2);
         return builder;
@@ -633,7 +633,7 @@ TileBuilder::TileBuilder(TileContext& context, DgnElementId elemId, double range
 * @bsimethod                                                    Paul.Connelly   05/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileBuilder::TileBuilder(TileContext& context, DRange3dCR range)
-    : GeometryListBuilder(context.GetRenderSystem(), CreateParams(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
+    : GeometryListBuilder(context.GetRenderSystem(), CreateParams::World(context.GetDgnDb())), m_context(context), m_rangeDiagonalSquared(range.low.DistanceSquared(range.high))
     {
     // for TileSubGraphic...
     SetCheckGlyphBoxes(true);
@@ -731,7 +731,7 @@ void TileBuilder::_AddSubGraphic(GraphicR mainGraphic, TransformCR subToGraphic,
 +---------------+---------------+---------------+---------------+---------------+------*/
 GraphicBuilderPtr TileBuilder::_CreateSubGraphic(TransformCR tf, ClipVectorCP clip) const
     {
-    CreateParams params(GetDgnDb(), Transform::FromProduct(GetLocalToWorldTransform(), tf));
+    CreateParams params = GetCreateParams().SubGraphic(Transform::FromProduct(GetLocalToWorldTransform(), tf));
     TileBuilderPtr subGf = new TileBuilder(m_context, GetElementId(), m_rangeDiagonalSquared, params);
     subGf->ActivateGraphicParams(GetGraphicParams(), GetGeometryParams());
     return subGf.get();
@@ -800,7 +800,7 @@ TileContext::TileContext(GeometryList& geometries, RootR root, DRange3dCR range,
     SetViewFlags(GetDefaultViewFlags());
 
     // These are reused...
-    m_tileBuilder = new TileBuilder(*this, DgnElementId(), 0.0, GraphicBuilder::CreateParams(root.GetDgnDb()));
+    m_tileBuilder = new TileBuilder(*this, DgnElementId(), 0.0, GraphicBuilder::CreateParams::World(root.GetDgnDb()));
     m_subGraphic = new TileSubGraphic(*this);
     }
 
@@ -1520,7 +1520,7 @@ GraphicPtr Tile::GetDebugGraphics(Root::DebugOptions options) const
     if (!wantRange && !wantContentRange)
         return (m_debugGraphics.m_graphic = nullptr);
 
-    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystemP()->_CreateGraphic(GraphicBuilder::CreateParams(GetElementRoot().GetDgnDb()));
+    GraphicBuilderPtr gf = GetElementRoot().GetRenderSystemP()->_CreateGraphic(GraphicBuilder::CreateParams::World(GetElementRoot().GetDgnDb()));
     GraphicParams params;
     params.SetWidth(0);
     if (wantRange)

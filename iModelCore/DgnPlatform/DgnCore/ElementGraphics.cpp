@@ -1012,7 +1012,7 @@ bool _ProcessCurveVector(CurveVectorCR curves, bool isFilled, SimplifyGraphic& g
 +---------------+---------------+---------------+---------------+---------------+------*/
 void _OutputGraphics(ViewContextR context) override
     {
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb()));
+    auto graphic = context.CreateWorldGraphic();
 
     if (nullptr != m_entryId && m_entryId->IsValid())
         graphic->SetGeometryStreamEntryId(m_entryId);

@@ -4075,7 +4075,7 @@ Render::GraphicPtr GeometrySource::_Stroke(ViewContextR context, double pixelSiz
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr GeometrySource::Draw(ViewContextR context, double pixelSize) const
     {
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), GetPlacementTransform()));
+    auto graphic = context.CreateWorldGraphic(GetPlacementTransform());
     Render::GeometryParams params;
 
     params.SetCategoryId(GetCategoryId());
@@ -4133,7 +4133,7 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 {
                 GeometryParams geomParams(iter.GetGeometryParams());
 
-                graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), iter.GetSourceToWorld()));
+                graphic = context.CreateWorldGraphic(iter.GetSourceToWorld());
                 context.AddSubGraphic(*graphic, iter.GetGeometryPartId(), iter.GetGeometryToSource(), geomParams);
 
                 return graphic->Finish();
@@ -4147,7 +4147,7 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 context.CookGeometryParams(geomParams, graphicParams); // Don't activate yet...need to tweak...
                 graphicParams.SetWidth(graphicParams.GetWidth()+2); // NOTE: Would be nice if flashing made element "glow" for now just bump up weight...
 
-                graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb()));
+                graphic = context.CreateWorldGraphic();
                 graphic->ActivateGraphicParams(graphicParams);
 
                 bool doSegmentFlash = (hit.GetHitType() < HitDetailType::Snap);
@@ -4191,7 +4191,7 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                 if (geom.IsValid())
                     {
                     if (!graphic.IsValid())
-                        graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), iter.GetGeometryToWorld()));
+                        graphic = context.CreateWorldGraphic(iter.GetGeometryToWorld());
 
                     GeometryParams geomParams(iter.GetGeometryParams());
 
@@ -4221,7 +4221,7 @@ Render::GraphicPtr GeometrySource::_StrokeHit(ViewContextR context, HitDetailCR 
                         continue;
 
                     if (!graphic.IsValid())
-                        graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb(), partIter.GetGeometryToWorld()));
+                        graphic = context.CreateWorldGraphic(partIter.GetGeometryToWorld());
 
                     GeometryParams geomParams(partIter.GetGeometryParams());
 
@@ -5537,7 +5537,7 @@ void TextAnnotationDrawToGeometricPrimitive::_OutputGraphics(ViewContextR contex
     {
     TextAnnotationDraw annotationDraw(m_text);
     Render::GeometryParams geomParams(m_builder.GetGeometryParams());
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic(GraphicBuilder::CreateParams(context.GetDgnDb()));
+    auto graphic = context.CreateWorldGraphic();
 
     annotationDraw.Draw(*graphic, context, geomParams);
     graphic->Finish();

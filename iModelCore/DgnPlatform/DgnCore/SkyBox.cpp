@@ -91,7 +91,7 @@ void SpatialViewController::DrawGroundPlane(DecorateContextR context)
     params.SetFillColor(ColorDef::White()); // Fill should be set to opaque white for gradient texture...
     params.SetGradient(gradient.get());
 
-    Render::GraphicBuilderPtr graphic = context.CreateGraphic();
+    Render::GraphicBuilderPtr graphic = context.CreateWorldGraphic();
     graphic->ActivateGraphicParams(params);
     graphic->AddShape(5, pts, true);
     context.AddWorldDecoration(*graphic->Finish());
@@ -315,7 +315,7 @@ void SpatialViewController::DrawSkyBox(RenderContextR context)
     BeAssert(m_skybox.IsValid());
 
     // create a graphic for the skybox, and assign the sky material to it.
-    Render::GraphicBuilderPtr skyGraphic = context.CreateGraphic();
+    Render::GraphicBuilderPtr skyGraphic = context.CreateWorldGraphic();
     GraphicParams params;
     params.SetMaterial(m_skybox.get());
     skyGraphic->ActivateGraphicParams(params);
