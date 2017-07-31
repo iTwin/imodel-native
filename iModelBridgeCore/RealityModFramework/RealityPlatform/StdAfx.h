@@ -2,7 +2,7 @@
 |
 |     $Source: RealityPlatform/StdAfx.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <windows.h>
@@ -32,7 +32,7 @@ USING_NAMESPACE_IMAGEPP
 #include <GeoCoord/BaseGeoCoord.h>
 #include <GeoCoord/basegeocoordapi.h>
 
-#include <Vortex/VortexAPI.h>
+
 
 
 #ifdef _MANAGED
