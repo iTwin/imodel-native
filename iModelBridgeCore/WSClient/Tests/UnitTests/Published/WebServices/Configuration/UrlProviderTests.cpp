@@ -173,7 +173,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectGateway.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgRepositoryFederation.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectForms.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str());
@@ -190,7 +190,7 @@ TEST_F(UrlProviderTests, GetUrl_ValidateAllGetters)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectGateway.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgRepositoryFederation.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectForms.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str());
@@ -222,7 +222,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgPunchList.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str());
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectGateway.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgRepositoryFederation.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectForms.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsStsAuth.Get().c_str());
     EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str());
@@ -245,7 +245,7 @@ TEST_F(UrlProviderTests, CleanUpCache_UrlsWereCached_RemovesUrlsFromLocalState)
     UrlProvider::Urls::ConnectWsgPunchList.Get().c_str();
     UrlProvider::Urls::ConnectWsgClashIssues.Get().c_str();
     UrlProvider::Urls::ConnectWsgSharedContent.Get().c_str();
-    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgProjectGateway.Get().c_str());
+    EXPECT_STREQ(url.c_str(), UrlProvider::Urls::ConnectWsgRepositoryFederation.Get().c_str());
     UrlProvider::Urls::ConnectForms.Get().c_str();
     UrlProvider::Urls::ImsStsAuth.Get().c_str();
     UrlProvider::Urls::ImsActiveStsDelegationService.Get().c_str();
