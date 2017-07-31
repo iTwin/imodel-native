@@ -104,7 +104,7 @@ struct UrlProvider
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgPunchList;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgClashIssues;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgSharedContent;
-            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgProjectGateway;
+            WSCLIENT_EXPORT static const UrlDescriptor ConnectWsgRepositoryFederation;
             WSCLIENT_EXPORT static const UrlDescriptor ConnectForms;
             WSCLIENT_EXPORT static const UrlDescriptor ImsStsAuth;
             WSCLIENT_EXPORT static const UrlDescriptor ImsActiveStsDelegationService;
