@@ -109,7 +109,7 @@ static void customAttributesToJson(JsonValueR jcas, ECN::IECCustomAttributeConta
         {
         Json::Value jca(Json::objectValue);
         ECN::ECValuesCollection caProps(*ca);
-        imodeljs::GetECValuesCollectionAsJson(jca["properties"], caProps);
+        IModelJs::GetECValuesCollectionAsJson(jca["properties"], caProps);
         ecclassToJson(jca["ecclass"], ca->GetClass());
         jcas.append(jca);
         }
@@ -118,7 +118,7 @@ static void customAttributesToJson(JsonValueR jcas, ECN::IECCustomAttributeConta
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus imodeljs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR mjson, DgnDbR dgndb, Utf8CP ecSchemaName, Utf8CP ecClassName)
+BentleyStatus IModelJs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR mjson, DgnDbR dgndb, Utf8CP ecSchemaName, Utf8CP ecClassName)
     {
     auto ecclass = dgndb.Schemas().GetClass(ecSchemaName, ecClassName);
     if (nullptr == ecclass)
@@ -181,7 +181,7 @@ BentleyStatus imodeljs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errm
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus imodeljs::GetElementProperties(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, Json::Value const& inOpts)
+BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, Json::Value const& inOpts)
     {
     DgnElementId eid(inOpts[json_id()].asUInt64());
     if (!eid.IsValid())
@@ -214,7 +214,7 @@ BentleyStatus imodeljs::GetElementProperties(DgnDbStatus& status, Utf8StringR er
     auto stmt = dgndb.GetPreparedECSqlStatement(autoHandledProps.c_str());
     if (!stmt.IsValid())
         {
-        errmsg = imodeljs::GetLastEcdbIssue();
+        errmsg = IModelJs::GetLastEcdbIssue();
         status = DgnDbStatus::WrongClass;
         return BSIERROR;
         }
@@ -222,9 +222,47 @@ BentleyStatus imodeljs::GetElementProperties(DgnDbStatus& status, Utf8StringR er
     stmt->BindId(1, eid);
 
     if (BE_SQLITE_ROW == stmt->Step())
+        GetRowAsJson(elementJson, *stmt);
+
+    return BSISUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelJs::GetModel(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR modelJson, DgnDbR dgndb, Json::Value const& inOpts)
+    {
+    DgnModelId modelId(inOpts[json_id()].asUInt64());
+    if (!modelId.IsValid())
         {
-        imodeljs::GetRowAsJson(elementJson, *stmt);
+        auto codeVal = inOpts[json_code()];
+        if (!codeVal)
+            {
+            errmsg = "DgnDbStatus::NotFound";
+            status = DgnDbStatus::NotFound;
+            return BSIERROR;
+            }
+        modelId = dgndb.Models().QuerySubModelId(DgnCode::FromJson2(codeVal));
         }
+
+    //  Look up the model
+    auto model = dgndb.Models().GetModel(modelId);
+
+    if (!model.IsValid())
+        return BSISUCCESS;      // This is not an exception. It just returns an empty result.
+
+    modelJson = model->ToJson(inOpts);
+
+    auto stmt = dgndb.Models().GetSelectStmt(*model);
+    if (!stmt.IsValid())
+        {
+        errmsg = IModelJs::GetLastEcdbIssue();
+        status = DgnDbStatus::WrongClass;
+        return BSIERROR;
+        }
+
+    if (BE_SQLITE_ROW == stmt->Step())
+        GetRowAsJson(modelJson, *stmt);
 
     return BSISUCCESS;
     }
@@ -232,7 +270,7 @@ BentleyStatus imodeljs::GetElementProperties(DgnDbStatus& status, Utf8StringR er
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus imodeljs::GetElementPropertiesForDisplay(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR result, DgnDbR dgndb, Utf8CP eidstr)
+BentleyStatus IModelJs::GetElementPropertiesForDisplay(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR result, DgnDbR dgndb, Utf8CP eidstr)
     {
     DgnElementId elemId(DgnElementId::FromString(eidstr).GetValueUnchecked());
     if (!elemId.IsValid())
@@ -312,9 +350,9 @@ BentleyStatus imodeljs::GetElementPropertiesForDisplay(DgnDbStatus& status, Utf8
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus imodeljs::OpenDgnDb(BeSQLite::DbResult& result, Utf8StringR errmsg, DgnDbPtr& db, BeFileNameCR dbname, DgnDb::OpenMode mode)
+BentleyStatus IModelJs::OpenDgnDb(BeSQLite::DbResult& result, Utf8StringR errmsg, DgnDbPtr& db, BeFileNameCR dbname, DgnDb::OpenMode mode)
     {
-    db = imodeljs::GetDbByName(result, errmsg, dbname, mode);
+    db = IModelJs::GetDbByName(result, errmsg, dbname, mode);
     return db.IsValid()? BSISUCCESS: BSIERROR;
     }
 

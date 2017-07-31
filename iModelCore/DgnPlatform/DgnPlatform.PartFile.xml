@@ -769,7 +769,6 @@
   <Part Name="iModelJsNodeAddonLib" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke">
     <SubPart PartName="node-gyp" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
-    <SubPart PartName="iModelHubClient" PartFile="WSClient" Repository="WSClient" />
     <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module">
