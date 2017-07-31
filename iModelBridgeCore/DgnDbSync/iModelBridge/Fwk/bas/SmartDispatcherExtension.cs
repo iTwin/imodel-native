@@ -290,6 +290,7 @@ namespace BentleyB0200.Dgn.DgnV8Mirror.ICS
             //TODO: How do I get the document Guid and datasource.
             //msm.DocumentID = asContext.WorkingDocumentInfo.DocumentGuid;
             //msm.Datasource = asContext.WorkingDocumentInfo.Datasource;
+            msm.AddKeyin(String.Format("rd=\"{0}\"", rootFile));
             msm.CustomDescription = String.Format("BAS keyins for {0}", DgnV8MirrorICSPluginConstants.DocumentProcessorName);
             msm = AddAutomationServiceMDLApp(msm, "AutomationService.ma");
             msm.AddKeyin(String.Format("automationservice setdocumentprocessor {0} {1}",
