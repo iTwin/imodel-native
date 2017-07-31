@@ -344,6 +344,14 @@ DGNPLATFORM_EXPORT static BentleyStatus GetLoopEdgesFromEdge(bvector<ISubEntityP
 //! @return SUCCESS if the output vector was populated.
 DGNPLATFORM_EXPORT static BentleyStatus GetAdjacentFaces(bvector<ISubEntityPtr>& subEntities, ISubEntityCR subEntity, bool includeVertex = true, bool includeRedundant = true, bool includeSmoothOnly = false, bool oneLevel = true);
 
+//! Return a vector of unique vertices from a set of sub-entities that can include faces, edges, and vertices.
+//! @note The input subEntities are all expected/required to be from the same body.
+DGNPLATFORM_EXPORT static void GetSubEntityVertices(bvector<ISubEntityPtr>& vertices, bvector<ISubEntityPtr> const& subEntities);
+
+//! Return a vector of unique edges from a set of sub-entities that can include faces, edges. Vertex sub-entities are ignored.
+//! @note The input subEntities are all expected/required to be from the same body.
+DGNPLATFORM_EXPORT static void GetSubEntityEdges(bvector<ISubEntityPtr>& edges, bvector<ISubEntityPtr> const& subEntities);
+
 //! Get uv face parameter range for the given face sub-entity.
 //! @param[in] subEntity The face sub-entity to query.
 //! @param[out] uRange The u parameter range of the face.

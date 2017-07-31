@@ -133,8 +133,13 @@ protected:
 
     mutable bmap<AppData::Key const*, RefCountedPtr<AppData>, std::less<AppData::Key const*>, 8> m_appData;
 
+    enum class SkipClone {No=0, Yes=1,};
     //! Construct a ViewController object.
-    DGNPLATFORM_EXPORT ViewController(ViewDefinitionCR definition);
+    //! @param[in] definition The ViewDefinition to be controlled by this ViewController
+    //! @param [in] skipClone Every ViewController *must* have a unique copy of a (non-persistent) ViewDefinition. Usually this
+    //! rule is enforced by cloning the ViewDefintion as the ViewController is constructed. If you know that you have a unique
+    //! non-persistent ViewDefinition, you can use SkipClone::Yes to skip the cloning of definition.
+    DGNPLATFORM_EXPORT ViewController(ViewDefinitionCR definition, SkipClone skipClone=SkipClone::No);
 
     virtual ~ViewController() {}
     enum class FitComplete {No=0, Yes=1};

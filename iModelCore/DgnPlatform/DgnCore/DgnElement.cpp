@@ -3633,6 +3633,7 @@ DgnDbStatus GeometricElement::_OnUpdate(DgnElementCR el)
     return DgnDbStatus::Success == stat ? T_Super::_OnUpdate(el) : stat;
     }
 
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   03/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3746,9 +3747,7 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const 
     {
     T_Super::_ToJson(val, opts);
-
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -3829,8 +3828,16 @@ DgnDbStatus GeometricElement3d::_OnInsert()
     if (!SpatialCategory::Get(GetDgnDb(), GetCategoryId()).IsValid())
         return DgnDbStatus::InvalidCategory; // A GeometricElement3d requires an existing SpatialCategory
 
+    m_dgndb.GetSceneQueue().AbortAll(); 
+
     return T_Super::_OnInsert();
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus GeometricElement3d::_OnUpdate(DgnElementCR el) {m_dgndb.GetSceneQueue().AbortAll(); return T_Super::_OnUpdate(el);}
+DgnDbStatus GeometricElement3d::_OnDelete() const {m_dgndb.GetSceneQueue().AbortAll(); return T_Super::_OnDelete();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15

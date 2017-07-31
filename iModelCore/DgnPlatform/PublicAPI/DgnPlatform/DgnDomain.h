@@ -189,6 +189,7 @@ The DgnDomain for the base "dgn" schema is called BisCoreDomain. It is always lo
 */
 
 struct DgnDomains;
+struct TxnTable;
 
 //=======================================================================================
 //! A DgnDomain is a singleton C++ object that provides the runtime implementation for an ECSchema.
@@ -369,7 +370,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnDomain : NonCopyableClass
     public:
         TableHandler() : m_domain(nullptr) {}
         void SetDomain(DgnDomain& domain) {m_domain = &domain;}
-        virtual struct TxnTable* _Create(TxnManager&) const = 0;
+        virtual TxnTable* _Create(TxnManager&) const = 0;
     };
 
 private:

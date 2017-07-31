@@ -479,6 +479,22 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
 
     m_pending.clear();
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SceneQueue::AbortAll()
+    {
+    BeMutexHolder holder(m_cv.GetMutex());
+    if (State::Active != m_state)
+        return;
+
+    m_pending.clear();
+    if (!m_active.IsValid())
+        return;
+
+    m_active->RequestAbort();  // if we're working on a query tell it to stop
+    m_cv.InfiniteWait(holder); // wait for it to complete.
+    }
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR view)
