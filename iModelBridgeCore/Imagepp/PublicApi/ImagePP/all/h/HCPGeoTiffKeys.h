@@ -2,7 +2,7 @@
 //:>
 //:>     $Source: PublicApi/ImagePP/all/h/HCPGeoTiffKeys.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 // Class : HCPGeoTiffKeys
@@ -21,7 +21,7 @@ BEGIN_IMAGEPP_NAMESPACE
 
 class HRFRasterFile;
 
-class HCPGeoTiffKeys : public HFCShareableObject<HCPGeoTiffKeys>, public IGeoTiffKeysList
+class HCPGeoTiffKeys : public HFCShareableObject<HCPGeoTiffKeys>, public GeoCoordinates::IGeoTiffKeysList
     {
 
 
