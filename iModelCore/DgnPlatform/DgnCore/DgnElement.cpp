@@ -3828,16 +3828,14 @@ DgnDbStatus GeometricElement3d::_OnInsert()
     if (!SpatialCategory::Get(GetDgnDb(), GetCategoryId()).IsValid())
         return DgnDbStatus::InvalidCategory; // A GeometricElement3d requires an existing SpatialCategory
 
-    m_dgndb.GetSceneQueue().AbortAll(); 
-
     return T_Super::_OnInsert();
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus GeometricElement3d::_OnUpdate(DgnElementCR el) {m_dgndb.GetSceneQueue().AbortAll(); return T_Super::_OnUpdate(el);}
-DgnDbStatus GeometricElement3d::_OnDelete() const {m_dgndb.GetSceneQueue().AbortAll(); return T_Super::_OnDelete();}
+DgnDbStatus GeometricElement3d::_OnUpdate(DgnElementCR el) {return T_Super::_OnUpdate(el);}
+DgnDbStatus GeometricElement3d::_OnDelete() const {return T_Super::_OnDelete();}
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
