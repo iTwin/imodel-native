@@ -15782,7 +15782,7 @@ BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_initFromGeoTiffKeys
 (
 StatusInt*                        warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
 WStringP                          warningOrErrorMsg,  // Error message.
-IGeoTiffKeysList*                 geoTiffKeys,        // The GeoTiff key list
+GeoCoordinates::IGeoTiffKeysList*                 geoTiffKeys,        // The GeoTiff key list
 GeoCoordinates::BaseGCS* pBaseGcs
 )
     {
@@ -15914,7 +15914,7 @@ GeoCoordinates::BaseGCS* pBaseGcs
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_getGeoTiffKeys
 (
-IGeoTiffKeysList* pList,
+GeoCoordinates::IGeoTiffKeysList* pList,
 GeoCoordinates::BaseGCS* pBaseGcs
 )
     {

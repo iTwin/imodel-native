@@ -2,7 +2,7 @@
 |
 |     $Source: BaseGeoCoord/PublicAPI/basegeocoordapi.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -13,12 +13,13 @@
 #include <string>
 #include "ExportMacros.h"
 
-// Forward Declarations
-struct IGeoTiffKeysList;
 
 // Forward Declarations
 BEGIN_BENTLEY_NAMESPACE
-namespace GeoCoordinates {class BaseGCS;}
+namespace GeoCoordinates {
+    class BaseGCS;
+    struct IGeoTiffKeysList;
+    }
 END_BENTLEY_NAMESPACE
 
 BEGIN_EXTERN_C
@@ -60,7 +61,7 @@ BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_initFromGeoTiffKeys
 (
 StatusInt*                        warning,            // Warning. Function returns SUCCESS, but some warning desribed in ERRMSG and warning, passed back.
 WString*                 warningOrErrorMsg,  // Error message.
-IGeoTiffKeysList*                 geoTiffKeys,        // The GeoTiff key list
+GeoCoordinates::IGeoTiffKeysList*                 geoTiffKeys,        // The GeoTiff key list
 GeoCoordinates::BaseGCS* pBaseGcs
 );
 
@@ -119,7 +120,7 @@ GeoCoordinates::BaseGCS* pBaseGcs
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt baseGeoCoord_getGeoTiffKeys
 (
-IGeoTiffKeysList* pList,
+GeoCoordinates::IGeoTiffKeysList* pList,
 GeoCoordinates::BaseGCS* pBaseGcs
 );
 

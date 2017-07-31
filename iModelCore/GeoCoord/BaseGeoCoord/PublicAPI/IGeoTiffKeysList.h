@@ -2,11 +2,16 @@
 //:>
 //:>     $Source: BaseGeoCoord/PublicAPI/IGeoTiffKeysList.h $
 //:>
-//:>  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+//:>  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 //:>
 //:>+--------------------------------------------------------------------------------------
 #pragma once
 /*__PUBLISH_SECTION_START__*/
+
+/** @namespace BentleyApi::GeoCoordinates Geographic Coordinate System classes @see GeoCoordinate */
+BEGIN_BENTLEY_NAMESPACE
+
+namespace GeoCoordinates {
 
 /*=================================================================================**//**
 * @bsiclass
@@ -92,3 +97,6 @@ virtual void            AddKey (const GeoKeyItem& key)=0;
 
 /*__PUBLISH_SECTION_START__*/
 };
+
+} // ends GeoCoordinates namespace
+END_BENTLEY_NAMESPACE

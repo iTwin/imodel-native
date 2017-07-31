@@ -546,7 +546,7 @@ BASEGEOCOORD_EXPORTED StatusInt         InitFromGeoTiffKeys
 (
 StatusInt*                  warning,
 WStringP                    warningErrorMsg,
-::IGeoTiffKeysList const*   geoTiffKeys,
+GeoCoordinates::IGeoTiffKeysList const*   geoTiffKeys,
 bool                        allowUnitsOverride
 );
 
@@ -571,7 +571,7 @@ BASEGEOCOORD_EXPORTED StatusInt         SetFromCSName (WCharCP coordinateSystemK
 +---------------+---------------+---------------+---------------+---------------+------*/
 BASEGEOCOORD_EXPORTED StatusInt         GetGeoTiffKeys
 (
-::IGeoTiffKeysList*     geoTiffKeys,         // The GeoTiff keys list.
+GeoCoordinates::IGeoTiffKeysList*     geoTiffKeys,         // The GeoTiff keys list.
 bool                    originalsIfPresent   // true indicates the original geokeys should be returned
 
 ) const;
