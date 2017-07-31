@@ -1637,6 +1637,8 @@ void GenericClassParamsProvider::_GetClassParams(ECSqlClassParamsR ecSqlParams)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlClassParams const& DgnElements::GetECSqlClassParams(DgnClassId classId) const
     {
+    BeMutexHolder _v(m_mutex);
+
     ECSqlClassParams& params = m_classParams[classId];
     if (!params.IsInitialized())
         {
