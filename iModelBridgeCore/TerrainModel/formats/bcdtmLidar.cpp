@@ -336,7 +336,7 @@ struct LasVLR
 #else
 #define GEOTIFFKEYSLISTCONST
 #endif
-struct GeoTiffKeysList : IGeoTiffKeysList
+struct GeoTiffKeysList : GeoCoordinates::IGeoTiffKeysList
     {
     struct sGeoKeys
         {
@@ -361,7 +361,7 @@ struct GeoTiffKeysList : IGeoTiffKeysList
 
         for (int i = 0; i < keys->wNumberOfKeys; i++)
             {
-            IGeoTiffKeysList::GeoKeyItem item;
+            GeoCoordinates::IGeoTiffKeysList::GeoKeyItem item;
             item.KeyID = keys->pKey[i].wKeyID;
             if (keys->pKey[i].wTIFFTagLocation == 0)
                 {
@@ -386,7 +386,7 @@ struct GeoTiffKeysList : IGeoTiffKeysList
         m_index = 0;
         }
 
-    bvector<IGeoTiffKeysList::GeoKeyItem> m_keys;
+    bvector<GeoCoordinates::IGeoTiffKeysList::GeoKeyItem> m_keys;
     mutable int m_index;
     virtual bool            GetFirstKey (GeoKeyItem* po_Key) GEOTIFFKEYSLISTCONST
         {
