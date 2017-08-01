@@ -5,10 +5,6 @@
     <Part Name="AzureSDK">
         <SubPart PartName="cpprestsdk"      PartFile="${SrcRoot}bsicommon/CvsPartfiles/cpprestsdk"   Repository="Bin-cpprestsdk" />        
         <SubPart PartName="wastorage"       PartFile="${SrcRoot}bsicommon/CvsPartfiles/wastorage"    Repository="Bin-wastorage" />
-        <Bindings>
-            <Assemblies>SubParts\Assemblies\$(shlibprefix)wastorage$(shlibext)</Assemblies>
-            <Assemblies>SubParts\Assemblies\$(shlibprefix)cpprest140_2_6$(shlibext)</Assemblies>            
-        </Bindings>
     </Part>
 
     <!--<Part Name="CloudDataSource" BMakeFile="CloudDataSource.mke" BMakeOptions="+dENABLE_COMPILER_ANALYZE=1 +dSECURITY_ONLY_COMPILER_ANALYZE=1" ApiNumber="G">-->
