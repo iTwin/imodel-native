@@ -234,5 +234,6 @@ struct DynamicUpdatePlan : UpdatePlan
     DynamicUpdatePlan() {m_abortFlags.SetStopEvents(StopEvents::ForQuickUpdate);}
 };
 
+    DGNPLATFORM_EXPORT void AbortAll();
 END_BENTLEY_DGN_NAMESPACE
 

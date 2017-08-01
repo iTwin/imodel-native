@@ -476,9 +476,6 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
-
-    m_pending.clear();
-
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR view)

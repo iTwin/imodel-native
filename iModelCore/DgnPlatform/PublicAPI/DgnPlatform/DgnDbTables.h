@@ -318,6 +318,7 @@ struct DgnModels : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnModel;
+    friend struct IModelJs;
     friend struct dgn_TxnTable::Model;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
