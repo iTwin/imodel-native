@@ -2512,39 +2512,30 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
 +---------------+---------------+---------------+---------------+---------------+------*/
 double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
     {
+    constexpr double s_sizeToToleranceRatio = 0.25;
+    double tolerance;
+
     auto const& params = GetCreateParams();
     if (params.IsViewCoordinates())
-        return 0.25; // nice round locate circle...
-
-    auto vp = params.GetViewport();
-    if (nullptr == vp)
+        {
+        tolerance = 1.0;
+        }
+    else if (nullptr == params.GetViewport())
         {
         BeAssert(false && "No viewport supplied to GraphicBuilder::CreateParams - falling back to default coarse tolerance");
-        return 5.0;
+        tolerance = 20.0;
         }
-
-    BeAssert(!accum.IsEmpty());
-    DRange3d range = accum.GetGeometries().ComputeRange(); // NB: Already multiplied by transform...
-    TransformCR tf = GetLocalToWorldTransform();
-
-    double toleranceScale = 1.0;
-    if (!tf.IsIdentity())
+    else
         {
-        // We facet before applying transform, therefore must apply scale to tolerance (see ACS triad for pathological case...)
-        RotMatrix rot;
-        tf.GetMatrix(rot);
-        rot.IsUniformScale(toleranceScale); // supplies max scale...return value not relevant.
+        BeAssert(!accum.IsEmpty());
+        DRange3d range = accum.GetGeometries().ComputeRange(); // NB: Already multiplied by transform...
 
-        BeAssert(toleranceScale > 0.0);
-        toleranceScale = toleranceScale > 0.0 ? 1.0/toleranceScale : 1.0;
+        // NB: Geometry::CreateFacetOptions() will apply any scale factors from transform...no need to do it here.
+        DPoint3d pt = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
+        tolerance = params.GetViewport()->GetPixelSizeAtPoint(&pt);
         }
 
-    DPoint3d pt = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
-    double pixelSize = vp->GetPixelSizeAtPoint(&pt);
-    pixelSize *= toleranceScale;
-
-    constexpr double s_sizeToToleranceRatio = 0.5;
-    return pixelSize * s_sizeToToleranceRatio;
+    return tolerance * s_sizeToToleranceRatio;
     }
 
 /*---------------------------------------------------------------------------------**//**
