@@ -15,9 +15,11 @@
     %error Define XCTEST_PRODUCT as the name of the Product in the output directory that contains BeTestiOS.xcodeproj for the specified test suite.
 %endif
 
-
-ProductBaseDir = $(OutputRootDir)Product/
-
+%ifdef CREATE_STATIC_LIBRARIES
+    ProductBaseDir = $(OutputRootDir)../Product/
+%else
+    ProductBaseDir = $(OutputRootDir)Product/
+%endif
 
 XCODEPROJ=$(ProductBaseDir)$(XCTEST_PRODUCT)/BeTestiOS.xcodeproj
 
