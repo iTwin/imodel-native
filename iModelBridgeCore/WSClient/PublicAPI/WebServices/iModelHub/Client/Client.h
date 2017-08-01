@@ -222,6 +222,13 @@ public:
     //! @note Should use iModelAdmin provided by Client::GetiModelAdmin.
     IMODELHUBCLIENT_EXPORT iModelManagerTaskPtr CreateiModelManager(iModelInfoCR iModelInfo, FileInfoCR fileInfo, BriefcaseInfoCR briefcaseInfo,
         ICancellationTokenPtr cancellationToken = nullptr);
+
+    //! Opens iModel with schema upgrade.
+    //! @param[out] status BE_SQLITE_OK if the DgnDb file was successfully opened, error code otherwise. May be NULL.
+    //! @param[in] filePath Path to DgnDb that schema changes should be merged to.
+    //! @param[in] changeSets ChangeSets to merge.
+    //! @return Returns a shared pointer to opened DgnDb instance.
+    IMODELHUBCLIENT_EXPORT static DgnDbPtr OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets);
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE
