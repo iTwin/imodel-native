@@ -1252,6 +1252,7 @@ namespace dgn_ModelHandler
         DOMAINHANDLER_DECLARE_MEMBERS (BIS_CLASS_Model, Model, DgnDomain::Handler, DGNPLATFORM_EXPORT)
 
     private:
+        mutable BeMutex m_mutex;
         ECSqlClassParams m_classParams;
 
         ECSqlClassParams const& GetECSqlClassParams();
