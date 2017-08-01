@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ConcreteSchema/PublicAPI/Concrete/ConcreteDomain.h $
+|     $Source: SteelSchema/PublicAPI/Steel/SteelDomain.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,35 +8,35 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include "ConcreteDefinitions.h"
+#include "SteelDefinitions.h"
 
-BEGIN_BENTLEY_CONCRETE_NAMESPACE
+BEGIN_BENTLEY_STEEL_NAMESPACE
 
 //=======================================================================================
-//! The DgnDomain for the Concrete schema.
-//! @ingroup GROUP_Concrete
+//! The DgnDomain for the Steel schema.
+//! @ingroup GROUP_Steel
 //=======================================================================================
-struct ConcreteDomain : Dgn::DgnDomain
+struct SteelDomain : Dgn::DgnDomain
     {
-    DOMAIN_DECLARE_MEMBERS(ConcreteDomain, CONCRETE_EXPORT)
+    DOMAIN_DECLARE_MEMBERS(SteelDomain, STEEL_EXPORT)
 
     protected:
-        WCharCP _GetSchemaRelativePath() const override { return BENTLEY_CONCRETE_SCHEMA_PATH; }
+        WCharCP _GetSchemaRelativePath() const override { return BENTLEY_STEEL_SCHEMA_PATH; }
         virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
         virtual void _OnDgnDbOpened(Dgn::DgnDbR) const override;
         static void InsertDomainCodeSpecs(Dgn::DgnDbR db);
 
     public:
-        ConcreteDomain();
-        CONCRETE_EXPORT static Dgn::CodeSpecId QueryConcreteCodeSpecId(Dgn::DgnDbCR dgndb);
+        SteelDomain();
+        STEEL_EXPORT static Dgn::CodeSpecId QuerySteelCodeSpecId(Dgn::DgnDbCR dgndb);
     };
 
 //=======================================================================================
 // @bsiclass                                    BentleySystems
 //=======================================================================================
-struct ConcreteCategory : NonCopyableClass
+struct SteelCategory : NonCopyableClass
     {
-    friend struct ConcreteDomain;
+    friend struct SteelDomain;
 
     private:
         static void InsertDomainCategories(Dgn::DgnDbR);
@@ -45,8 +45,9 @@ struct ConcreteCategory : NonCopyableClass
 
     public:
         //! Get the DgnSubCategoryId
-        CONCRETE_EXPORT static Dgn::DgnCategoryId QueryStructuralPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName);
+        STEEL_EXPORT static Dgn::DgnCategoryId QueryStructuralPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName);
     };
 
 
-END_BENTLEY_CONCRETE_NAMESPACE
+END_BENTLEY_STEEL_NAMESPACE
+

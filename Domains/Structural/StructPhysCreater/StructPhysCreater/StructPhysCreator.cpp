@@ -7,8 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
-#include "SampleStructureCreator.h"
-#include "StructPhysCreator.h"
+
+#define STRUCTURAL_MODEL_NAME "SampleStructuralModel"
+
 
 
 #pragma region FREE_FUNCTIONS
@@ -40,9 +41,6 @@ Dgn::CategorySelectorPtr StructPhysCreator::CreateCategorySelector(Dgn::Definiti
     // We have to give the selector a unique name of its own. Since we are set up up a new bim,
     // we know that we can safely choose any name.
     auto categorySelector = new Dgn::CategorySelector(model, "Default");
-    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalDoorCategoryId(model.GetDgnDb()));
-    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(model.GetDgnDb()));
-    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWallCategoryId(model.GetDgnDb()));
     return categorySelector;
     }
 
@@ -196,6 +194,32 @@ Dgn::DgnDbPtr StructPhysCreator::CreateDgnDb(BeFileNameCR outputFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
+BentleyStatus StructPhysCreator::DoUpdateSchema(Dgn::DgnDbPtr db)
+    {
+    StructuralPhysical::StructuralPhysicalModelCPtr model = StructuralDomain::StructuralDomainUtilities::GetStructuralPhyicalModel(STRUCTURAL_MODEL_NAME, *db);
+
+    ECN::ECSchemaPtr dynSchema = StructuralDomain::StructuralDomainUtilities::GetUpdateableSchema(model);
+
+    if (!dynSchema.IsValid())
+        return BentleyStatus::ERROR;
+
+    //ECN::ECEntityClassP myClass = StructuralDomain::StructuralDomainUtilities::CreatePhysicalElementEntityClass(db, dynSchema, "MyRctClass");
+
+    //ECN::PrimitiveECPropertyP myProp;
+
+    //myClass->CreatePrimitiveProperty(myProp, "MyStringProp");
+
+    Dgn::SchemaStatus schemaStatus = StructuralDomain::StructuralDomainUtilities::UpdateSchemaInDb(*db, *dynSchema);
+
+    if (schemaStatus != Dgn::SchemaStatus::Success)
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
 BentleyStatus StructPhysCreator::PopulateInstanceProperties(ECN::IECInstancePtr instance)
     {
     ECN::ECClassCR ecClass = instance->GetClass();
@@ -285,54 +309,114 @@ BentleyStatus StructPhysCreator::PopulateElementProperties(Dgn::PhysicalElementP
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus StructPhysCreator::CreateStructure(BuildingPhysical::BuildingPhysicalModelR physicalModel, BuildingPhysical::BuildingTypeDefinitionModelR typeModel)
+BentleyStatus StructPhysCreator::CreateConcreteStructure(StructuralPhysical::StructuralPhysicalModelR physicalModel, StructuralPhysical::StructuralTypeDefinitionModelR typeModel)
     {
-    ECN::ECClassCP baseClass = physicalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME, AP_CLASS_ArchitecturalBaseElement);
+    ECN::ECSchemaCP schema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_CONCRETE_SCHEMA_NAME);
 
-    ECN::ECDerivedClassesList classList = baseClass->GetDerivedClasses();
+    ECN::ECClassContainerCR classes = schema->GetClasses();
+
+    ConcreteStructureCreator* creator = new ConcreteStructureCreator();
 
     BentleyStatus status;
 
-    int i = 0;
-    for each (ECN::ECClassP derivedClass in classList)
+    for each (ECN::ECClassP derivedClass in classes)
         {
-        // Use an arbitrary, distinct class for each physical element type
-        switch (i)
+        if (ECN::ECClassModifier::Abstract == derivedClass->GetClassModifier())
             {
-            case 0: // Beams
-                status = SampleStructureCreator::CreateBeams(physicalModel, derivedClass);
-                if (status != BentleyStatus::SUCCESS)
-                    {
-                    return BentleyStatus::ERROR;
-                    }
-                break;
-            case 1: // Columns
-                status = SampleStructureCreator::CreateColumns(physicalModel, derivedClass);
-                if (status != BentleyStatus::SUCCESS)
-                    {
-                    return BentleyStatus::ERROR;
-                    }
-                break;
-            case 2: // Slabs
-                status = SampleStructureCreator::CreateSlabs(physicalModel, derivedClass);
-                if (status != BentleyStatus::SUCCESS)
-                    {
-                    return BentleyStatus::ERROR;
-                    }
-                break;
-            case 3: // Walls
-                status = SampleStructureCreator::CreateWalls(physicalModel, derivedClass);
-                if (status != BentleyStatus::SUCCESS)
-                    {
-                    return BentleyStatus::ERROR;
-                    }
-                break;
-            default:
-                return BentleyStatus::SUCCESS;
-                break;
+            continue;
             }
 
-        i++;
+        Utf8String className = derivedClass->GetFullName();
+        if (className == "Concrete:Beam")
+            {
+            status = creator->CreateBeams(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        else if (className == "Concrete:Column")
+            {
+            status = creator->CreateColumns(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        else if (className == "Concrete:Slab")
+            {
+            status = creator->CreateSlabs(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        else if (className == "Concrete:Wall")
+            {
+            status = creator->CreateWalls(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        }
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus StructPhysCreator::CreateSteelStructure(StructuralPhysical::StructuralPhysicalModelR physicalModel, StructuralPhysical::StructuralTypeDefinitionModelR typeModel)
+    {
+    ECN::ECSchemaCP schema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_STEEL_SCHEMA_NAME);
+
+    ECN::ECClassContainerCR classes = schema->GetClasses();
+
+    SteelStructureCreator* creator = new SteelStructureCreator();
+
+    BentleyStatus status;
+
+    for each (ECN::ECClassP derivedClass in classes)
+        {
+        if (ECN::ECClassModifier::Abstract == derivedClass->GetClassModifier())
+            {
+            continue;
+            }
+
+        Utf8String className = derivedClass->GetFullName();
+        if (className == "Steel:Beam")
+            {
+            status = creator->CreateBeams(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        else if (className == "Steel:Column")
+            {
+            status = creator->CreateColumns(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        else if (className == "Steel:Plate")
+            {
+            status = creator->CreateGussetPlates(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
+        else if (className == "Steel:Brace")
+            {
+            status = creator->CreateBraces(physicalModel, schema, derivedClass);
+            if (status != BentleyStatus::SUCCESS)
+                {
+                return BentleyStatus::ERROR;
+                }
+            }
         }
 
     return BentleyStatus::SUCCESS;
@@ -369,9 +453,7 @@ Dgn::DgnViewId StructPhysCreator::CreateView(Dgn::DefinitionModelR model, Utf8CP
 //---------------------------------------------------------------------------------------
 BentleyStatus StructPhysCreator::DoCreate()
     {
-    Dgn::DgnDomains::RegisterDomain(BentleyApi::ArchitecturalPhysical::ArchitecturalPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
-    Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingCommon::BuildingCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
-    Dgn::DgnDomains::RegisterDomain(BentleyApi::BuildingPhysical::BuildingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+     StructuralDomain::StructuralDomainUtilities::RegisterDomainHandlers();
 
     Dgn::DgnDbPtr db = CreateDgnDb(GetOutputFileName());
     if (!db.IsValid())
@@ -379,57 +461,21 @@ BentleyStatus StructPhysCreator::DoCreate()
         return BentleyStatus::ERROR;
         }
 
-    // Create an DefinitionPartitionElement for the structure model
+    // Create the models in the BIM file
 
-    Dgn::SubjectCPtr rootSubject = db->Elements().GetRootSubject();
+    BentleyStatus status = StructuralDomain::StructuralDomainUtilities::CreateStructuralModels(STRUCTURAL_MODEL_NAME, *db);
 
-    Dgn::PhysicalPartitionCPtr partition = Dgn::PhysicalPartition::CreateAndInsert(*rootSubject, "StructuralPhysicalModel");
-    if (!partition.IsValid())
-        {
+    if (BentleyStatus::SUCCESS != status)
         return BentleyStatus::ERROR;
-        }
 
-    BuildingPhysical::BuildingPhysicalModelPtr physicalModel = BuildingPhysical::BuildingPhysicalModel::Create(*partition);
-    if (!physicalModel.IsValid())
-        {
-        return BentleyStatus::ERROR;
-        }
+    StructuralPhysical::StructuralPhysicalModelPtr       physicalModel = StructuralDomain::StructuralDomainUtilities::GetStructuralPhyicalModel(STRUCTURAL_MODEL_NAME, *db);
+    StructuralPhysical::StructuralTypeDefinitionModelPtr typeDefinitionModel = StructuralDomain::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(STRUCTURAL_MODEL_NAME, *db);
 
-    Dgn::ElementIterator itr = db->Elements().MakeIterator(BIS_SCHEMA("PhysicalPartition"));
-    for each (Dgn::ElementIteratorEntry ele in itr)
-        {
-        Utf8CP codeValue = ele.GetCodeValue();
 
-        Dgn::DgnElementCPtr element = db->Elements().GetElement(ele.GetElementId());
+    DoUpdateSchema(db);
 
-        Dgn::PhysicalPartitionCPtr part1 = const_pointer_cast<Dgn::PhysicalPartition>(element);
-
-        if (part1.IsValid())
-            {
-            Dgn::DgnModelCPtr model = part1->GetSubModel();
-            BuildingPhysical::BuildingPhysicalModelCPtr bm = const_pointer_cast<BuildingPhysical::BuildingPhysicalModel>(model);
-
-            if (bm.IsValid())
-                {
-                bm->GetClassId();
-                }
-            }
-        }
-
-    Dgn::DefinitionPartitionCPtr defPartition = Dgn::DefinitionPartition::CreateAndInsert(*rootSubject, "StructureTypeDefinitionModel");
-    if (!defPartition.IsValid())
-        {
-        return BentleyStatus::ERROR;
-        }
-
-    // Create a ToyTilePhysicalModel in memory
-    BuildingPhysical::BuildingTypeDefinitionModelPtr typeDefinitionModel = BuildingPhysical::BuildingTypeDefinitionModel::Create(*defPartition);
-    if (!typeDefinitionModel.IsValid())
-        {
-        return BentleyStatus::ERROR;
-        }
-
-    CreateStructure(*physicalModel, *typeDefinitionModel);
+    CreateConcreteStructure(*physicalModel, *typeDefinitionModel);
+    CreateSteelStructure(*physicalModel, *typeDefinitionModel);
 
 
     // Set the project extents to include the elements in the physicalModel, plus a margin

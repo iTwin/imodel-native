@@ -47,8 +47,8 @@
 //-----------------------------------------------------------------------------------------
 // ECClass names (combine with ARCHITECTURAL_PHYSICAL_SCHEMA macro for use in ECSql)
 //-----------------------------------------------------------------------------------------
-#define BP_CLASS_StructuralPhysicalModel                               "StructuralPhysicalModel"
-#define BP_CLASS_StructuralTypeDefinitionModel                         "StructuralTypeDefinitionModel"
+#define SP_CLASS_StructuralPhysicalModel                               "StructuralPhysicalModel"
+#define SP_CLASS_StructuralTypeDefinitionModel                         "StructuralTypeDefinitionModel"
 
 //-----------------------------------------------------------------------------------------
 // All R, CR, P, CP, Ptr, CPtr declarations

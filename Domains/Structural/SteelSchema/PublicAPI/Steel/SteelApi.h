@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/StructuralDomain/StructuralDomainApi.h $
+|     $Source: SteelSchema/PublicAPI/Steel/SteelApi.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,10 +9,6 @@
 
 //__PUBLISH_SECTION_START__
 
-#include "Concrete\ConcreteApi.h"
-#include "Steel\SteelApi.h"
-#include "StructuralPhysical\StructuralPhysicalApi.h"
-#include "StructuralMaterials\StructuralMaterialsApi.h"
-
-#include "StructuralDomainUtilities.h"
+#include "SteelDefinitions.h"
+#include "SteelDomain.h"
 

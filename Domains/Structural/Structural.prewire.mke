@@ -19,6 +19,8 @@ $(targetAPIDir)StructuralDomainUtilities.h : $(_MakeFilePath)PublicAPI\Structura
 
 %include $(_MakeFilePath)ConcreteSchema/ConcreteSchema.prewire.mki
 
+%include $(_MakeFilePath)SteelSchema/SteelSchema.prewire.mki
+
 %include $(_MakeFilePath)StructuralPhysicalSchema/StructuralPhysicalSchema.prewire.mki
 
 %include $(_MakeFilePath)StructuralMaterials/StructuralMaterialsSchema.prewire.mki

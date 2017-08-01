@@ -27,7 +27,7 @@ struct EXPORT_VTABLE_ATTRIBUTE ConcreteElement : Dgn::PhysicalElement
 
     //public:
         //CONCRETE_EXPORT static Concrete::ConcreteElementPtr                        Create(Utf8StringCR, BuildingPhysical::BuildingPhysicalModelR);
-        //ARCHITECTURAL_PHYSICAL_EXPORT static ArchitecturalBaseElementPtr           Create(CreateParams const& params);
+        //CONCRETE_EXPORT static ConcreteElementPtr                                  Create(CreateParams const& params);
         //ARCHITECTURAL_PHYSICAL_EXPORT static ECN::IECInstancePtr                   AddClassificationAspect (BuildingPhysical::BuildingPhysicalModelR model, ArchitecturalBaseElementPtr element) {return AddAspect( model, element, BC_CLASS_Classification); }
         //ARCHITECTURAL_PHYSICAL_EXPORT static ECN::IECInstancePtr                   AddManufacturerAspect(BuildingPhysical::BuildingPhysicalModelR model, ArchitecturalBaseElementPtr element) { return AddAspect(model, element, BC_CLASS_Manufacturer); }
 

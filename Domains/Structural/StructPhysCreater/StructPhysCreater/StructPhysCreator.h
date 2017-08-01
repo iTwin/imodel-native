@@ -9,7 +9,7 @@
 #pragma once
 
 #include "stdafx.h"
-#include <DgnPlatform/DesktopTools/WindowsKnownLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 
 
 //=======================================================================================
@@ -21,7 +21,7 @@ struct StructPhysCreator : Dgn::DgnPlatformLib::Host
         BeFileName m_outputFileName;
         bool m_overwriteExistingOutputFile = true;
 
-        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::WindowsKnownLocationsAdmin(); }
+        virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new Dgn::KnownDesktopLocationsAdmin(); }
         virtual void _SupplyProductName(Utf8StringR name) override { name.assign("StructPhysCreator"); }
         virtual BeSQLite::L10N::SqlangFiles _SupplySqlangFiles() override;
 
@@ -41,9 +41,12 @@ struct StructPhysCreator : Dgn::DgnPlatformLib::Host
 
         Dgn::DgnDbPtr CreateDgnDb(BeFileNameCR outputFileName);
 
+        BentleyStatus DoUpdateSchema(Dgn::DgnDbPtr db);
+
         BentleyStatus PopulateInstanceProperties(ECN::IECInstancePtr instance);
         BentleyStatus PopulateElementProperties(Dgn::PhysicalElementPtr element);
-        BentleyStatus CreateStructure(BuildingPhysical::BuildingPhysicalModelR, BuildingPhysical::BuildingTypeDefinitionModelR);
+        BentleyStatus CreateConcreteStructure(StructuralPhysical::StructuralPhysicalModelR, StructuralPhysical::StructuralTypeDefinitionModelR);
+        BentleyStatus CreateSteelStructure(StructuralPhysical::StructuralPhysicalModelR, StructuralPhysical::StructuralTypeDefinitionModelR);
 
         Dgn::DgnViewId CreateView(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR displayStyle);
 

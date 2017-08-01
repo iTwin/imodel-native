@@ -27,10 +27,16 @@
     <ClInclude Include="StructPhysCreator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GeometricTools.h">
+    <ClInclude Include="SampleStructureCreator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SampleStructureCreator.h">
+    <ClInclude Include="ConcreteStructureCreator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SteelStructureCreator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="StructPhysTools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -44,10 +50,16 @@
     <ClCompile Include="StructPhysCreaterApp.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="GeometricTools.cpp">
+    <ClCompile Include="SampleStructureCreator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="SampleStructureCreator.cpp">
+    <ClCompile Include="StructPhysTools.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ConcreteStructureCreator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="SteelStructureCreator.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -21,9 +21,9 @@ struct StructuralTypeDefinitionModel : Dgn::DefinitionModel
     friend struct StructuralTypeDefinitionModelHandler;
 
     // The DGNMODEL_DECLARE_MEMBERS macro automates some required configuration:
-    // Parameter 1) BP_CLASS_StructuralTypeDefinitionModel - the name of the ECEntityClass in the ecschema.xml file
+    // Parameter 1) SP_CLASS_StructuralTypeDefinitionModel - the name of the ECEntityClass in the ecschema.xml file
     // Parameter 2) Dgn::DefinitionModel - the superclass of StructuralTypeDefinitionModel
-    DGNMODEL_DECLARE_MEMBERS(BP_CLASS_StructuralTypeDefinitionModel, Dgn::DefinitionModel);
+    DGNMODEL_DECLARE_MEMBERS(SP_CLASS_StructuralTypeDefinitionModel, Dgn::DefinitionModel);
 
     protected:
         //! StructuralTypeDefinitionModel wants custom behavior when elements are inserted
@@ -44,11 +44,11 @@ struct StructuralTypeDefinitionModel : Dgn::DefinitionModel
 struct StructuralTypeDefinitionModelHandler : Dgn::dgn_ModelHandler::Definition
     {
     // The MODELHANDLER_DECLARE_MEMBERS macro automates some required configuration:
-    // Parameter 1) BP_CLASS_StructuralTypeDefinitionModel - the name of the ECEntityClass in the ecschema.xml file
+    // Parameter 1) SP_CLASS_StructuralTypeDefinitionModel - the name of the ECEntityClass in the ecschema.xml file
     // Parameter 2) StructuralTypeDefinitionModel - the DgnModel subclass which provides the custom behavior for the ECEntityClass
     // Parameter 3) TStructuralTypeDefinitionModelHandler - the factory class that will create instances of StructuralTypeDefinitionModel
     // Parameter 4) Dgn::dgn_ModelHandler::Definition - the superclass of StructuralTypeDefinitionModelHandler
-    MODELHANDLER_DECLARE_MEMBERS(BP_CLASS_StructuralTypeDefinitionModel, StructuralTypeDefinitionModel, StructuralTypeDefinitionModelHandler, Dgn::dgn_ModelHandler::Definition, STRUCTURAL_PHYSICAL_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(SP_CLASS_StructuralTypeDefinitionModel, StructuralTypeDefinitionModel, StructuralTypeDefinitionModelHandler, Dgn::dgn_ModelHandler::Definition, STRUCTURAL_PHYSICAL_EXPORT)
     };
 
 

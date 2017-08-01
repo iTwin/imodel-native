@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ConcreteSchema/ConcreteDomain.cpp $
+|     $Source: SteelSchema/SteelDomain.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,33 +8,24 @@
 #include "StructuralDomainInternal.h"
 
 
-BEGIN_BENTLEY_CONCRETE_NAMESPACE
+BEGIN_BENTLEY_STEEL_NAMESPACE
 
-DOMAIN_DEFINE_MEMBERS(ConcreteDomain)
+DOMAIN_DEFINE_MEMBERS(SteelDomain)
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Jiang                     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ConcreteDomain::ConcreteDomain() : Dgn::DgnDomain(BENTLEY_CONCRETE_SCHEMA_NAME, "Bentley Concrete Domain", 1)
+SteelDomain::SteelDomain() : Dgn::DgnDomain(BENTLEY_STEEL_SCHEMA_NAME, "Bentley Steel Domain", 1)
     {
-    //RegisterHandler(ConcreteElementHandler::GetHandler());
-
-    //RegisterHandler(FrameElementHandler::GetHandler());
-    //RegisterHandler(BeamHandler::GetHandler());
-    //RegisterHandler(ColumnHandler::GetHandler());
-
-    //RegisterHandler(SurfaceElementHandler::GetHandler());
-    //RegisterHandler(SlabHandler::GetHandler());
-    //RegisterHandler(WallHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Jiang                     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConcreteDomain::InsertDomainCodeSpecs(Dgn::DgnDbR db)
+void SteelDomain::InsertDomainCodeSpecs(Dgn::DgnDbR db)
     {
-    Dgn::CodeSpecPtr codeSpec = Dgn::CodeSpec::Create(db, BENTLEY_CONCRETE_AUTHORITY, Dgn::CodeScopeSpec::CreateModelScope());
+    Dgn::CodeSpecPtr codeSpec = Dgn::CodeSpec::Create(db, BENTLEY_STEEL_AUTHORITY, Dgn::CodeScopeSpec::CreateModelScope());
     if (codeSpec.IsValid())
         {
         codeSpec->Insert();
@@ -44,7 +35,7 @@ void ConcreteDomain::InsertDomainCodeSpecs(Dgn::DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Jiang                     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConcreteDomain::_OnSchemaImported(Dgn::DgnDbR dgndb) const
+void SteelDomain::_OnSchemaImported(Dgn::DgnDbR dgndb) const
     {
     Dgn::DgnSubCategory::Appearance defaultApperance;
     defaultApperance.SetInvisible(false);
@@ -55,21 +46,21 @@ void ConcreteDomain::_OnSchemaImported(Dgn::DgnDbR dgndb) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Eric.Jiang                     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void ConcreteDomain::_OnDgnDbOpened(Dgn::DgnDbR db) const
+void SteelDomain::_OnDgnDbOpened(Dgn::DgnDbR db) const
     {
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-void ConcreteCategory::InsertDomainCategories(Dgn::DgnDbR db)
+void SteelCategory::InsertDomainCategories(Dgn::DgnDbR db)
     {
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::DgnCategoryId ConcreteCategory::InsertCategory(Dgn::DgnDbR db, Utf8CP codeValue, Dgn::ColorDef const& color)
+Dgn::DgnCategoryId SteelCategory::InsertCategory(Dgn::DgnDbR db, Utf8CP codeValue, Dgn::ColorDef const& color)
     {
     Dgn::DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
@@ -82,7 +73,7 @@ Dgn::DgnCategoryId ConcreteCategory::InsertCategory(Dgn::DgnDbR db, Utf8CP codeV
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::DgnSubCategoryId ConcreteCategory::InsertSubCategory(Dgn::DgnDbR db, Dgn::DgnCategoryId categoryId, Utf8CP name, Dgn::ColorDef const& color)
+Dgn::DgnSubCategoryId SteelCategory::InsertSubCategory(Dgn::DgnDbR db, Dgn::DgnCategoryId categoryId, Utf8CP name, Dgn::ColorDef const& color)
     {
     Dgn::DgnSubCategory::Appearance appearance;
     appearance.SetColor(color);
@@ -101,7 +92,7 @@ Dgn::DgnSubCategoryId ConcreteCategory::InsertSubCategory(Dgn::DgnDbR db, Dgn::D
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::DgnCategoryId ConcreteCategory::QueryStructuralPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName)
+Dgn::DgnCategoryId SteelCategory::QueryStructuralPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName)
     {
     Dgn::DgnCategoryId id = Dgn::DgnCategory::QueryCategoryId(db, Dgn::SpatialCategory::CreateCode(db.GetDictionaryModel(), categoryName));
 
@@ -115,4 +106,4 @@ Dgn::DgnCategoryId ConcreteCategory::QueryStructuralPhysicalCategoryId(Dgn::DgnD
     }
 
 
-END_BENTLEY_CONCRETE_NAMESPACE
+END_BENTLEY_STEEL_NAMESPACE
