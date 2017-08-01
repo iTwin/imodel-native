@@ -191,6 +191,8 @@
     <ClCompile Include="iModelHubClient\FileInfo.cpp" />
     <ClCompile Include="iModelHubClient\Logging.cpp" />
     <ClCompile Include="iModelHubClient\iModelInfo.cpp" />
+    <ClCompile Include="iModelHubClient\VersionInfo.cpp" />
+    <ClCompile Include="iModelHubClient\VersionsManager.cpp" />
     <ClCompile Include="Ims\SolrQuery.cpp" />
     <ClCompile Include="Ims\SolrClient.cpp" />
     <ClCompile Include="Licensing\UsageTrackingData.cpp" />
@@ -294,6 +296,8 @@
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\ChangeSetPostPushEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\ChangeSetPrePushEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\FileInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\VersionInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\VersionsManager.h" />
     <ClInclude Include="PublicAPI\WebServices\Azure\AzureServiceBusSASDTO.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\ECInstanceKeyFilter.h" />
     <ClInclude Include="PublicAPI\WebServices\Cache\Util\JsonUtil.h" />

@@ -44,6 +44,7 @@ IHttpHandlerPtr            customHandler
     wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
 
     m_wsRepositoryClient = wsRepositoryClient;
+    m_versionsManager = VersionsManager(m_wsRepositoryClient);
     }
 
 //---------------------------------------------------------------------------------------

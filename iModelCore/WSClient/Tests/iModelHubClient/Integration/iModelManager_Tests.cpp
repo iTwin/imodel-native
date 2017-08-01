@@ -19,7 +19,6 @@
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
-USING_NAMESPACE_BENTLEY_EC
 
 #define EXPECT_STATUS(STAT, EXPR)          EXPECT_EQ(RepositoryStatus:: STAT, (EXPR))
 #define BIS_ECSCHEMA_CLASS_NAME(className) BIS_ECSCHEMA_NAME "." className
@@ -2355,3 +2354,83 @@ TEST_F(iModelManagerTests, CodeIdsTest)
     EXPECT_EQ(DgnCode::ScopeRequirement::FederationGuid, code2Result.GetScopeRequirement());
     }
 */
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Viktorija.Adomauskaite           07/2017
+//---------------------------------------------------------------------------------------
+TEST_F(iModelManagerTests, VersionsTest)
+    {
+    //set up
+    auto versionManager = m_connection->GetVersionsManager();
+
+    IntegrationTestsBase::CreateNonAdminUser();
+    auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
+    auto nonAdminConnection = ConnectToiModel(*nonAdminClient, m_imodel);
+    auto nonAdminVersionManager = nonAdminConnection->GetVersionsManager();
+    
+    auto briefcase = AcquireBriefcase();
+
+    //push some ChangeSets for Versions
+    CreateModel("Model1", briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+    auto changeSet1 = PushPendingChanges(*briefcase);
+
+    CreateModel("Model2", briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+    auto changeSet2 = PushPendingChanges(*briefcase);
+
+    //test create version
+    EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 0);
+    VersionInfoPtr version1 = new VersionInfo("Version1", "Description", changeSet1);
+    auto result = versionManager.CreateVersion(*version1)->GetResult();
+    EXPECT_SUCCESS(result);
+    version1 = result.GetValue();
+    EXPECT_NE("", version1->GetId());
+    EXPECT_EQ("admin", version1->GetUserCreated());
+    EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 1);
+
+    auto versionToFail = VersionInfo(nullptr, nullptr, changeSet2);
+    EXPECT_EQ(Error::Id::UserDoesNotHavePermission, nonAdminVersionManager.CreateVersion(versionToFail)->GetResult().GetError().GetId());
+    EXPECT_EQ(Error::Id::MissingRequiredProperties, versionManager.CreateVersion(versionToFail)->GetResult().GetError().GetId());
+    versionToFail = VersionInfo("Version1", nullptr, changeSet1);
+    EXPECT_EQ(Error::Id::ChangeSetAlreadyHasVersion,  versionManager.CreateVersion(versionToFail)->GetResult().GetError().GetId());
+    versionToFail = VersionInfo("Version1", nullptr, changeSet2);
+    EXPECT_EQ(Error::Id::VersionAlreadyExists,        versionManager.CreateVersion(versionToFail)->GetResult().GetError().GetId());
+    versionToFail = VersionInfo("Version2", nullptr, "NotExistingChangeSet");
+    EXPECT_EQ(Error::Id::ChangeSetDoesNotExist,   versionManager.CreateVersion(versionToFail)->GetResult().GetError().GetId());
+    EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 1);
+
+    VersionInfoPtr version2 = new VersionInfo("Version2", nullptr, changeSet2);
+    result = versionManager.CreateVersion(*version2)->GetResult();
+    EXPECT_SUCCESS(result);
+    version2 = result.GetValue();
+    EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 2);
+
+    //test update version
+    version1->SetName("NewName");
+    EXPECT_SUCCESS(versionManager.UpdateVersion(*version1)->GetResult());
+    auto queryResult = versionManager.GetVersionById(version1->GetId())->GetResult();
+    EXPECT_SUCCESS(queryResult);
+    version1 = queryResult.GetValue();
+    EXPECT_EQ("NewName", version1->GetName());
+    EXPECT_EQ(changeSet1, version1->GetChangeSetId());
+    EXPECT_EQ("Description", version1->GetDescription());
+    EXPECT_EQ("admin", version1->GetUserCreated());
+
+    versionToFail = VersionInfo(*version2);
+    EXPECT_EQ(Error::Id::UserDoesNotHavePermission, nonAdminVersionManager.UpdateVersion(versionToFail)->GetResult().GetError().GetId());
+    versionToFail.SetName("NewName");
+    EXPECT_EQ(Error::Id::VersionAlreadyExists, versionManager.UpdateVersion(versionToFail)->GetResult().GetError().GetId());
+    versionToFail.SetName("");
+    EXPECT_EQ(Error::Id::MissingRequiredProperties, versionManager.UpdateVersion(versionToFail)->GetResult().GetError().GetId());
+
+    version2->SetDescription("NewDescription");
+    EXPECT_SUCCESS(versionManager.UpdateVersion(*version2)->GetResult());
+    queryResult = nonAdminVersionManager.GetVersionById(version2->GetId())->GetResult();
+    EXPECT_SUCCESS(queryResult);
+    version2 = queryResult.GetValue();
+    EXPECT_EQ("Version2", version2->GetName());
+    EXPECT_EQ(changeSet2, version2->GetChangeSetId());
+    EXPECT_EQ("NewDescription", version2->GetDescription());
+    EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 2);
+    }

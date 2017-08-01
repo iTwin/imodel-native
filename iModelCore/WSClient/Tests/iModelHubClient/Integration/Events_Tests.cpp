@@ -9,6 +9,7 @@
 #include "IntegrationTestsHelper.h"
 #include <WebServices/iModelHub/Client/Client.h>
 #include <WebServices/iModelHub/Client/Configuration.h>
+#include <WebServices/iModelHub/Client/iModelConnection.h>
 #include <Bentley/BeTest.h>
 #include <Bentley/BeThread.h>
 
@@ -118,6 +119,7 @@ TEST_F(EventTests, SingleCallbackTest)
     eventTypes.insert(Event::EventType::LockEvent);
     eventTypes.insert(Event::EventType::ChangeSetPrePushEvent);
     eventTypes.insert(Event::EventType::ChangeSetPostPushEvent);
+    eventTypes.insert(Event::EventType::VersionEvent);
 
     //Subscribe, unsubscribe
     EventCallbackPtr callback1 = std::make_shared<EventCallback>([=](EventPtr event) {});
@@ -130,6 +132,7 @@ TEST_F(EventTests, SingleCallbackTest)
     static int lockEventCallbackNum = 0;
     static int changeSetPrePushEventCallbackNum = 0;
     static int changeSetPostPushEventCallbackNum = 0;
+    static int versionEventCallbackNum = 0;
 
     EventCallbackPtr callback = std::make_shared<EventCallback>([=](EventPtr event) {
         auto eventType = event->GetEventType();
@@ -142,6 +145,8 @@ TEST_F(EventTests, SingleCallbackTest)
             changeSetPrePushEventCallbackNum++;
         if (Event::EventType::ChangeSetPostPushEvent == eventType)
             changeSetPostPushEventCallbackNum++;
+        if (Event::EventType::VersionEvent == eventType)
+            versionEventCallbackNum++;
 
         callbackNum++;
         });
@@ -149,16 +154,26 @@ TEST_F(EventTests, SingleCallbackTest)
     //Test events callbacks
     EXPECT_SUCCESS(briefcase->SubscribeEventsCallback(&eventTypes, callback)->GetResult());
     CreateAndPushModel(briefcase);
+    auto changeSets = m_imodelConnection->GetAllChangeSets()->GetResult().GetValue();
+    EXPECT_FALSE(changeSets.empty());
+    auto versionManager = m_imodelConnection->GetVersionsManager();
+    VersionInfoPtr version = new VersionInfo("Name", "", changeSets.at(0)->GetId());
+    auto versionResult = versionManager.CreateVersion(*version)->GetResult();
+    EXPECT_SUCCESS(versionResult);
+    version = versionResult.GetValue();
+    version->SetName("NewName");
+    EXPECT_SUCCESS(versionManager.UpdateVersion(*version)->GetResult());
 
     BeThreadUtilities::BeSleep(3000);
 
     EXPECT_SUCCESS(briefcase->UnsubscribeEventsCallback(callback)->GetResult());
-    EXPECT_EQ(8, callbackNum);
+    EXPECT_EQ(10, callbackNum); 
 
     EXPECT_EQ(2, codeEventCallbackNum);
     EXPECT_EQ(4, lockEventCallbackNum);
     EXPECT_EQ(1, changeSetPrePushEventCallbackNum);
     EXPECT_EQ(1, changeSetPostPushEventCallbackNum);
+    EXPECT_EQ(2, versionEventCallbackNum);
     }
 
 //---------------------------------------------------------------------------------------
