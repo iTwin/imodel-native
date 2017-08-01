@@ -119,4 +119,10 @@
             <Class class="AlignmentStation"/>
         </Target>
     </ECRelationshipClass>
+    <ECEntityClass typeName="VerticalAlignmentViewDefinition" displayLabel="Vertical Alignment View Definition" description="A specialized view for vertical alignments.">
+      <BaseClass>bis:SpatialViewDefinition</BaseClass>
+      <ECCustomAttributes>
+        <ClassHasHandler xmlns="BisCore.01.00.00"/>
+      </ECCustomAttributes>
+    </ECEntityClass>
 </ECSchema>
