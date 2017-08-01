@@ -70,13 +70,6 @@ CachingDataSourceTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Any one of these tests seems to randomly crash or hang with no output or stack printed>
 
-# These DgnDb61-16Q4 tests crash on x64 and Android, ignore as DgnDbServer code is not used there. Should be fixed on BIM0200
-DgnDbServerEventParserTests.LockEventTests
-DgnDbServerEventParserTests.RevisionEventTests
-DgnDbServerEventParserTests.CodeEventTests
-DgnDbServerEventParserTests.LocksDeletedEventTests
-DgnDbServerEventParserTests.CodesDeletedEventTests
-
 #TFS 733272
 CachingDataSourceTests.GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes
 CachingDataSourceTests.GetFile_CalledMultipleTimes*
