@@ -4345,3 +4345,209 @@ BentleyStatus BRepUtil::Modify::ImprintBodyOnBody(IBRepEntityR targetEntity, IBR
     return ERROR;
 #endif
     }
+
+#if defined (BENTLEYCONFIG_PARASOLID)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus wireBodyFromOffsetEdgesOnPlanarFace(bvector<PK_BODY_t>& wireBodies, ISubEntityCR face, bvector<ISubEntityPtr>& edges, double distance)
+    {
+    if (0.0 == distance)
+        return ERROR;
+
+    DPoint3d    facePoint;
+    DVec3d      faceNormal;
+    PK_FACE_t   faceTag = PSolidSubEntity::GetSubEntityTag(face);
+
+    if (SUCCESS != PSolidUtil::GetPlanarFaceData(&facePoint, &faceNormal, faceTag))
+        return ERROR;
+
+    bvector<PK_CURVE_t> curves;
+    bvector<PK_INTERVAL_t> intervals;
+
+    for (ISubEntityPtr subEntityPtr : edges)
+        {
+        if (ISubEntity::SubEntityType::Edge != subEntityPtr->GetSubEntityType())
+            continue;
+
+        PK_EDGE_t edgeTag = PSolidSubEntity::GetSubEntityTag(*subEntityPtr);
+
+        if (0 == edgeTag)
+            continue;
+
+        PK_CURVE_t curveTag;
+
+        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag))
+            continue;
+
+        PK_INTERVAL_t interval;
+
+        if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
+            continue;
+
+        if (curves.empty()) // Determine sign of offset distance...
+            {
+            bvector<PK_FIN_t> edgeFins;
+
+            PSolidTopo::GetEdgeFins(edgeFins, edgeTag);
+            distance = fabs(distance);
+
+            for (PK_FIN_t edgeFin : edgeFins)
+                {
+                PK_FACE_t finFace;
+
+                if (SUCCESS != PK_FIN_ask_face(edgeFin, &finFace) || finFace != faceTag)
+                    continue;
+
+                PK_LOGICAL_t finPositive, curvePositive;
+                PK_CURVE_t   orientedCurve;
+
+                PK_FIN_is_positive(edgeFin, &finPositive);
+
+                if (SUCCESS == PK_FIN_ask_oriented_curve(edgeFin, &orientedCurve, &curvePositive) && finPositive == curvePositive)
+                    distance = -distance;
+                break;
+                }
+            }
+
+        curves.push_back(curveTag);
+        intervals.push_back(interval);
+        }
+
+    if (curves.empty())
+        return ERROR;
+
+    PK_BODY_t wireBody = PK_ENTITY_null;
+    int nNewEdges = 0;
+    int* edgeIndices = nullptr;
+    PK_EDGE_t* newEdges = nullptr;
+    PK_CURVE_make_wire_body_o_t wireOptions;
+
+    PK_CURVE_make_wire_body_o_m(wireOptions); 
+    wireOptions.want_indices = PK_LOGICAL_true;
+    wireOptions.want_edges = PK_LOGICAL_true;
+
+    if (SUCCESS != PK_CURVE_make_wire_body_2((int) curves.size(), &curves.front(), &intervals.front(), &wireOptions, &wireBody, &nNewEdges, &newEdges, &edgeIndices))
+        return ERROR;
+
+    PK_EDGE_t refEdge = newEdges[edgeIndices[0]];
+
+    PK_MEMORY_free(edgeIndices);
+    PK_MEMORY_free(newEdges);
+
+    int nNewWires = 0;
+    PK_BODY_t* newWires = nullptr;
+    PK_BODY_offset_planar_wire_o_t offsetOptions;
+    PK_TOPOL_track_r_t tracking;
+    PK_VECTOR_t vector;
+
+    PK_BODY_offset_planar_wire_o_m(offsetOptions);
+    offsetOptions.gap_fill = PK_BODY_owb_gap_fill_natural_c;
+    memset(&tracking, 0, sizeof(tracking));
+
+    faceNormal.GetComponents(vector.coord[0], vector.coord[1], vector.coord[2]);
+
+    Transform invTargetTransform, fwdTargetTransform = PSolidSubEntity::GetSubEntityTransform(face);
+    invTargetTransform.InverseOf(fwdTargetTransform);
+    invTargetTransform.ScaleDoubleArrayByXColumnMagnitude(&distance, 1);
+
+    if (SUCCESS != PK_BODY_offset_planar_wire(wireBody, distance, vector, refEdge, &offsetOptions, &nNewWires, &newWires, &tracking))
+        {
+        PK_ENTITY_delete(1, &wireBody);
+        return ERROR;
+        }
+
+    for (int i=0; i<nNewWires; i++)
+        wireBodies.push_back(newWires[i]);
+
+    PK_MEMORY_free(newWires);
+    PK_TOPOL_track_r_f(&tracking);
+    PK_ENTITY_delete(1, &wireBody);
+
+    return (wireBodies.empty() ? ERROR : SUCCESS);
+    }
+#endif
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::Modify::ImprintOffsetEdgesOnPlanarFace(ISubEntityPtr& face, bvector<ISubEntityPtr>& edges, double distance, bool extend)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bvector<PK_BODY_t> wireBodies;
+    
+    if (SUCCESS != wireBodyFromOffsetEdgesOnPlanarFace(wireBodies, *face, edges, distance))
+        return ERROR;
+
+    bvector<PK_CURVE_t>     offsetToolCurves;
+    bvector<PK_INTERVAL_t>  offsetToolIntervals;
+
+    for (PK_BODY_t wireBody : wireBodies)
+        getBodyCurves(offsetToolCurves, offsetToolIntervals, wireBody);
+
+    BentleyStatus status;
+    PK_MARK_t markTag = PK_ENTITY_null;
+
+    PK_MARK_create(&markTag);
+
+    if (SUCCESS != (status = PSolidUtil::ImprintCurves(PSolidSubEntity::GetSubEntityTag(*face), offsetToolCurves, offsetToolIntervals, nullptr, extend, true)))
+        {
+        PK_MARK_goto(markTag);
+        PK_ENTITY_delete((int) wireBodies.size(), &wireBodies.front());
+        }
+
+    PK_MARK_delete(markTag);
+
+    return status;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr BRepUtil::Create::OffsetEdgesOnPlanarFaceToCurveVector(ISubEntityCR face, bvector<ISubEntityPtr>& edges, double distance)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    bvector<PK_BODY_t> wireBodies;
+    
+    if (SUCCESS != wireBodyFromOffsetEdgesOnPlanarFace(wireBodies, face, edges, distance))
+        return nullptr;
+
+    CurveVectorPtr offsetCurves;
+    Transform entityTransform = PSolidSubEntity::GetSubEntityTransform(face);
+
+    for (PK_BODY_t wireBodyTag : wireBodies)
+        {
+        IBRepEntityPtr wireEntity = PSolidUtil::CreateNewEntity(wireBodyTag, entityTransform, true); // <- Will free body...
+
+        if (!wireEntity.IsValid())
+            continue;
+         
+        CurveVectorPtr wireCurve = BRepUtil::Create::BodyToCurveVector(*wireEntity);
+
+        if (!offsetCurves.IsValid())
+            {
+            offsetCurves = wireCurve;
+            continue;
+            }
+
+        if (CurveVector::BOUNDARY_TYPE_None != offsetCurves->GetBoundaryType())
+            {
+            CurveVectorPtr tmpCurves = CurveVector::Create(CurveVector::BOUNDARY_TYPE_None);
+
+            tmpCurves->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*offsetCurves));
+            offsetCurves = tmpCurves;
+            }
+
+        offsetCurves->push_back(ICurvePrimitive::CreateChildCurveVector_SwapFromSource(*wireCurve));
+        }
+
+    return offsetCurves;
+#else
+    return nullptr;
+#endif
+    }
+
+
