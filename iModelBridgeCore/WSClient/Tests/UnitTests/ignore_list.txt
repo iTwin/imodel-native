@@ -55,31 +55,29 @@ BeSQLiteDbTransactionHandlerTests.StartTransaction_TwoConnections_SecondConnecti
 # RANDOM crashes/hangs on PRG/FIREBUG (usually can be ran on DEV x64 builds with no problems)
 #--------------------------------------------------------------------------------
 
+#TFS 733253
 ChangeManagerTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Random crashes among at least half a dozen of these tests, no output or stack printed>
 
+#TFS 733265
 ChangeGraphTests.*
     # DgnDb61-16Q2, WinX86, DEBUG
     # <Random crashes among these tests, no output or stack printed>
 
+#TFS 733272
 CachingDataSourceTests.*
     # DgnDb61-16Q3, WinX64, DEBUG
     # <Any one of these tests seems to randomly crash or hang with no output or stack printed>
 
-# These DgnDb61-16Q4 tests crash on x64 and Android, ignore as DgnDbServer code is not used there. Should be fixed on BIM0200
-DgnDbServerEventParserTests.LockEventTests
-DgnDbServerEventParserTests.RevisionEventTests
-DgnDbServerEventParserTests.CodeEventTests
-DgnDbServerEventParserTests.LocksDeletedEventTests
-DgnDbServerEventParserTests.CodesDeletedEventTests
-
+#TFS 733272
 CachingDataSourceTests.GetFile_CalledMultipleTimesFirstCancelled_FirstCallbackIsCancelledSecondFinishes
 CachingDataSourceTests.GetFile_CalledMultipleTimes*
     # bim0200, NDEBUG, x64 and x86
     # The first hung on line 751 of the test body: while (!downloadStarted);
     # The rest seemed to randomly hang as well.
 
+#TFS 733272
 CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositorySchemaError
     # bim0200, NDEBUG, x86, random
     # Randomly crashes, no stack printed, test output:
@@ -89,6 +87,7 @@ CachingDataSourceTests.UpdateSchemas_InvalidSchemaGotFromServer_ReturnsRepositor
     # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - line 1, position 1
     # 2016-10-26 11:20:58,734 ERROR [0x00006d40] ECObjectsNative - XML Parsing error code 4 at line 1, column 1, parsing file 'file:/F:/Bim0200/out.ndebug/Winx86/Product/WSClient-Gtest/run/Temp/test_files_temporary/9381311e-1e83-4f0e-b0d4-5b5073dc6dfd/Foo.00.00.ecschema.xml'
 
+#TFS 733272
 CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
     # bim0200dev, DEBUG, x64, random
     # [ RUN      ] CachingDataSourceTests.GetRepositorySchemas_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
@@ -134,9 +133,11 @@ ConnectSignInManagerTests.GetAuthenticationHandler_UrlProvider*
 ConnectSignInManagerTests.GetAuthenticationHandler_TwoRequestsSentUsingDifferentAuthHandlersWithSameServer_TokenReusedForSecondRequest
     # bim0200dev, x86, DEBUG, CRASHES
 
+#TFS 733277
 PassportTests.*
     # bim0200dev, x86, DEBUG, CRASHES
 
+#TFS 733272
 CachingDataSourceTests.GetRepositorySchemaKeys_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
     # bim0200dev, x86, DEBUG
     # [ RUN      ] CachingDataSourceTests.GetRepositorySchemaKeys_CacheContainsNonRepositorySchema_ReturnsOnlyRepositorySchemas
