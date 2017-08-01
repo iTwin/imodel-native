@@ -2,9 +2,10 @@
 |
 |     $Source: PublicApi/RealityAdmin/RealityPlatformAdmins.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE

@@ -2,10 +2,10 @@
 |
 |     $Source: PublicApi/RealityAdmin/PointCloudVortex.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
+//__BENTLEY_INTERNAL_ONLY__
 #include "RealityDataHandler.h"
 
 BEGIN_BENTLEY_REALITYPLATFORM_NAMESPACE

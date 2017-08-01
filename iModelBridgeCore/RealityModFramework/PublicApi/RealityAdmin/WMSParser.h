@@ -2,9 +2,10 @@
 |
 |     $Source: PublicApi/RealityAdmin/WMSParser.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
+//__BENTLEY_INTERNAL_ONLY__
 #pragma once
 
 #include <Bentley/Bentley.h>

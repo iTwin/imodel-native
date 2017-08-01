@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-
+//__BENTLEY_INTERNAL_ONLY__
 #include <RealityPlatform/RealityPlatformAPI.h>
 #include <Bentley/Bentley.h>
 #include <BeJsonCpp/BeJsonUtilities.h>
