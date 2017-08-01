@@ -696,6 +696,17 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
     }
 
 //---------------------------------------------------------------------------------------
+//@bsimethod                                     Algirdas.Mikolinuas            07/2017
+//---------------------------------------------------------------------------------------
+DgnDbPtr Client::OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets)
+    {
+    bvector<DgnRevisionCP> changeSetsToMerge;
+    ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
+
+    return Dgn::DgnDb::OpenDgnDb(status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(changeSetsToMerge)));
+    }
+
+//---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             03/2016
 //---------------------------------------------------------------------------------------
 StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileName filePath, BeBriefcaseId briefcaseId, FileInfoCR fileInfo,
@@ -745,13 +756,9 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     if (mergeStatus == RevisionStatus::MergeSchemaChangesOnOpen)
         {
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets with DgnDb reopen.");
-
-        // Reload DB with upgrade options
-        bvector<DgnRevisionCP> changeSetsToMerge;
-        ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
         db->CloseDb();
 
-        db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, SchemaUpgradeOptions(changeSetsToMerge)));
+        db = OpenWithSchemaUpgrade(&status, filePath, changeSets);
         if (BeSQLite::DbResult::BE_SQLITE_OK != status)
             {
             StatusResult result = StatusResult::Error(Error(*db, status));

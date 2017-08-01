@@ -186,7 +186,7 @@
     </Part>
 
     <Part Name="iModelHubClient-Library" BentleyBuildMakeFile="iModelHubClientLib.mke"  ApiNumber="B02" ExcludePlatforms="Android*">
-        <SubPart PartName="WSClient-PublishedAPI" />
+        <SubPart PartName="WebServicesClient" />
         <SubPart PartName="DgnPlatformLib" PartFile="DgnPlatform" Repository="DgnPlatform" />
         <Bindings>
             <Libs>Delivery/$(libprefix)iModelHubClient$(libext)</Libs>

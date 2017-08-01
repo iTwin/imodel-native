@@ -56,6 +56,7 @@ namespace ServerSchema
         static Utf8CP EventSAS = "EventSAS";
         static Utf8CP EventSubscription = "EventSubscription";
         static Utf8CP UserDefinition = "UserDefinition";
+        static Utf8CP Version = "Version";
         }
     namespace Relationship
         {
@@ -123,6 +124,7 @@ namespace ServerSchema
         static Utf8CP ContainingChanges = "ContainingChanges";
         static Utf8CP UploadUrl = "UploadUrl";
         static Utf8CP DownloadUrl = "DownloadUrl";
+        static Utf8CP ChangeSetId = "ChangeSetId";
         }
     namespace ExtendedParameters
         {
