@@ -55,6 +55,8 @@ Error::Id Error::ErrorIdFromString(Utf8StringCR errorIdString)
         map["iModelHub.ProjectAssociationIsNotEnabled"]            = Id::ProjectAssociationIsNotEnabled;
         map["iModelHub.ProjectIdIsNotSpecified"]                   = Id::ProjectIdIsNotSpecified;
         map["iModelHub.FailedToGetProjectPermissions"]             = Id::FailedToGetProjectPermissions;
+        map["iModelHub.ChangeSetAlreadyHasVersion"]                = Id::ChangeSetAlreadyHasVersion;
+        map["iModelHub.VersionAlreadyExists"]                      = Id::VersionAlreadyExists;
         }
 
     auto it = map.find(errorIdString);
