@@ -317,6 +317,8 @@ struct IScalableMeshMesh : public RefCountedBase
 
 		virtual void _SetTransform(Transform newTransform) = 0;
 
+		virtual void _RemoveSlivers(double edgeLengthRatio) = 0;
+
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const = 0;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const = 0;
 
@@ -348,6 +350,8 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT DTMStatusInt GetBoundary(bvector<DPoint3d>& boundary);
 
 		BENTLEY_SM_EXPORT void SetTransform(Transform newTransform);
+
+		BENTLEY_SM_EXPORT void RemoveSlivers(double edgeLengthRatio=1e-6);
                 
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const;
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const;

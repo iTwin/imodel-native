@@ -574,6 +574,8 @@ class ScalableMeshMesh : public IScalableMeshMesh
 
 		virtual void _SetTransform(Transform myTransform);
 
+		virtual void _RemoveSlivers(double edgeLengthRatio) override;
+
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const override;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const override;
 
