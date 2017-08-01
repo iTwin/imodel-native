@@ -1323,7 +1323,12 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
         m_SMIndex->m_nMeshedNodes++;
         float progressForLevel = (float)m_SMIndex->m_nMeshedNodes / m_SMIndex->m_countsOfNodesAtLevel[m_nodeHeader.m_level];
 
-        if (m_SMIndex->m_progress != nullptr) m_SMIndex->m_progress->Progress() = progressForLevel;
+		if (m_SMIndex->m_progress != nullptr)
+		{
+			m_SMIndex->m_progress->Progress() = progressForLevel;
+			m_SMIndex->m_progress->UpdateListeners();
+		}
+
         //assert(this->m_nodeHeader.m_balanced == true);
         if (s_useThreadsInMeshing)
             {
@@ -1368,7 +1373,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Mesh()
         }
 
     if (m_nodeHeader.m_level == 0 && s_useThreadsInMeshing)
-        WaitForThreadStop();
+        WaitForThreadStop(m_SMIndex->m_progress.get());
     // Now filtering can be performed using the sub-nodes filtered data. This data
     // accessed using the HPMPooledVector interface the Node is a descendant of.
     // Do not hesitate to increase the HPMPooledVector interface if required.
@@ -1466,7 +1471,7 @@ template<class POINT, class EXTENT> void SMMeshIndexNode<POINT, EXTENT>::Stitch(
             }
         //don't return until all threads are done
         if (m_nodeHeader.m_level == 0 && nodesToStitch == 0 && s_useThreadsInStitching)
-            WaitForThreadStop();
+            WaitForThreadStop(m_SMIndex->m_progress.get());
        /* if (m_nodeHeader.m_level == 0 && pi_levelToStitch == 0)
             {
             m_nodeHeader.m_totalCountDefined = false;
@@ -5412,7 +5417,7 @@ template<class POINT, class EXTENT> void SMMeshIndex<POINT, EXTENT>::Stitch(int 
                     SetThreadAvailableAsync(threadId);
                     }, &nodesToStitch[0], &stitchedNodes, &stitchedMutex, nodesToStitch.size(), std::placeholders::_1));
 
-                WaitForThreadStop();
+                WaitForThreadStop(m_progress.get());
                 LightThreadPool::GetInstance()->m_nodeMap.clear();
                 for (auto& node : nodesToStitch)
                     {
