@@ -902,10 +902,10 @@ public:
     bool WantSurfacesOnly() const { return m_surfacesOnly; }
 
     //! Convert the geometry accumulated by this builder into a set of meshes.
-    DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance=0.001) const;
+    DGNPLATFORM_EXPORT MeshList ToMeshes(GeometryOptionsCR options, double tolerance) const;
 
     //! Populate a list of Graphic objects from the accumulated Geometry objects.
-    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, GeometryOptionsCR options,double tolerance=0.001) const;
+    DGNPLATFORM_EXPORT void SaveToGraphicList(bvector<Render::GraphicPtr>& graphics, GeometryOptionsCR options, double tolerance) const;
 
     //! Clear the geometry list and reinitialize for reuse. DisplayParamsCache contents are preserved.
     void ReInitialize(TransformCR transform=Transform::FromIdentity(), DgnElementId elemId=DgnElementId(), bool surfacesOnly=false)
@@ -1134,6 +1134,8 @@ protected:
     void _Reset() override { m_primitives.clear(); }
 
     void AddTriMesh(TriMeshArgsCR args);
+
+    double ComputeTolerance(GeometryAccumulatorR) const;
 public:
     PrimitiveBuilder(System& system, Render::GraphicBuilder::CreateParams const& params) : GeometryListBuilder(system, params) { }
 };

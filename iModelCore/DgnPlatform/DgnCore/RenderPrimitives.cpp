@@ -2494,8 +2494,9 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     {
     if (!accum.IsEmpty())
         {
+        double tolerance = ComputeTolerance(accum);
         GeometryOptions options;
-        accum.SaveToGraphicList(m_primitives, options);
+        accum.SaveToGraphicList(m_primitives, options, tolerance);
         }
 
     if (1 != m_primitives.size())
@@ -2504,6 +2505,46 @@ GraphicPtr PrimitiveBuilder::_FinishGraphic(GeometryAccumulatorR accum)
     GraphicPtr graphic = *m_primitives.begin();
     m_primitives.clear();
     return graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
+    {
+    auto const& params = GetCreateParams();
+    if (params.IsViewCoordinates())
+        return 0.25; // nice round locate circle...
+
+    auto vp = params.GetViewport();
+    if (nullptr == vp)
+        {
+        BeAssert(false && "No viewport supplied to GraphicBuilder::CreateParams - falling back to default coarse tolerance");
+        return 5.0;
+        }
+
+    BeAssert(!accum.IsEmpty());
+    DRange3d range = accum.GetGeometries().ComputeRange(); // NB: Already multiplied by transform...
+    TransformCR tf = GetLocalToWorldTransform();
+
+    double toleranceScale = 1.0;
+    if (!tf.IsIdentity())
+        {
+        // We facet before applying transform, therefore must apply scale to tolerance (see ACS triad for pathological case...)
+        RotMatrix rot;
+        tf.GetMatrix(rot);
+        rot.IsUniformScale(toleranceScale); // supplies max scale...return value not relevant.
+
+        BeAssert(toleranceScale > 0.0);
+        toleranceScale = toleranceScale > 0.0 ? 1.0/toleranceScale : 1.0;
+        }
+
+    DPoint3d pt = DPoint3d::FromInterpolate(range.low, 0.5, range.high);
+    double pixelSize = vp->GetPixelSizeAtPoint(&pt);
+    pixelSize *= toleranceScale;
+
+    constexpr double s_sizeToToleranceRatio = 0.5;
+    return pixelSize * s_sizeToToleranceRatio;
     }
 
 /*---------------------------------------------------------------------------------**//**

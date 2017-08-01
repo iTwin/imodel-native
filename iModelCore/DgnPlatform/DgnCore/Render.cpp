@@ -935,4 +935,3 @@ GraphicBuilder::CreateParams GraphicBuilder::CreateParams::View(DgnViewportR vp,
     return View(vp.GetViewController().GetDgnDb(), tf, &vp);
     }
 
-
