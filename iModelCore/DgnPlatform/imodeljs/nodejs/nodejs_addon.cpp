@@ -166,7 +166,10 @@ struct NodeAddonECDb : Nan::ObjectWrap
             {
             m_addon->m_ecdb = IModelJs::CreateECDb(m_status, m_errmsg, m_dbPathname);
             if (!m_addon->m_ecdb.IsValid())
+                {
+                m_addon->m_ecdb = nullptr;
                 Reject();
+                }
             }
         };
 
@@ -180,8 +183,11 @@ struct NodeAddonECDb : Nan::ObjectWrap
         void Execute() override
             {
             m_addon->m_ecdb = IModelJs::OpenECDb(m_status, m_errmsg, m_dbPathname, m_mode);
-            if (!m_addon->m_ecdb.IsValid())
+            if (!m_addon->m_ecdb.IsValid() || m_status != BE_SQLITE_OK)
+                {
+                m_addon->m_ecdb = nullptr;
                 Reject();
+                }
             }
 
         void _ResolvePromise(T_ResolverLocal &r) override { r->Resolve(v8::Integer::New(v8::Isolate::GetCurrent(), m_status)); }
@@ -273,17 +279,15 @@ struct NodeAddonECDb : Nan::ObjectWrap
             }
         };
 
-    struct ImportSchemaWorker : WorkerBase<BentleyStatus>
+    struct ImportSchemaWorker : WorkerBase<DbResult>
         {
         BeFileName m_schemaPathname; // input
 
-        ImportSchemaWorker(NodeAddonECDb *addon, Utf8CP schemaPathname) : WorkerBase(addon, BentleyStatus::SUCCESS), m_schemaPathname(schemaPathname, true) {}
+        ImportSchemaWorker(NodeAddonECDb *addon, Utf8CP schemaPathname) : WorkerBase(addon, BE_SQLITE_OK), m_schemaPathname(schemaPathname, true) {}
 
         void Execute() override
             {
             m_status = IModelJs::ImportSchema(m_errmsg, *m_addon->m_ecdb, m_schemaPathname);
-            if (m_status != SUCCESS)
-                Reject();
             }
 
         void _ResolvePromise(T_ResolverLocal &r) override { r->Resolve(v8::Integer::New(v8::Isolate::GetCurrent(), m_status)); }
@@ -311,8 +315,6 @@ struct NodeAddonECDb : Nan::ObjectWrap
         void Execute() override
             {
             m_status = IModelJs::InsertInstance(m_errmsg, m_insertedId, *m_addon->m_ecdb, m_jsonInstance);
-            if (m_status != SUCCESS)
-                Reject();
             }
 
         void _ResolvePromise(T_ResolverLocal& r) override { r->Resolve(Nan::New(m_insertedId.ToString().c_str()).ToLocalChecked()); }
@@ -339,8 +341,6 @@ struct NodeAddonECDb : Nan::ObjectWrap
         void Execute() override
             {
             m_status = IModelJs::UpdateInstance(m_errmsg, *m_addon->m_ecdb, m_jsonInstance);
-            if (m_status != SUCCESS)
-                Reject();
             }
 
         void _ResolvePromise(T_ResolverLocal &r) override { r->Resolve(v8::Integer::New(v8::Isolate::GetCurrent(), m_status)); }
@@ -380,8 +380,6 @@ struct NodeAddonECDb : Nan::ObjectWrap
         void Execute() override
             {
             m_status = IModelJs::ReadInstance(m_errmsg, m_jsonInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
-            if (BentleyStatus::SUCCESS != m_status)
-                Reject();
             }
 
         void _ResolvePromise(T_ResolverLocal& r) override { r->Resolve(Nan::New(m_jsonInstance.ToString().c_str()).ToLocalChecked()); }
@@ -409,8 +407,6 @@ struct NodeAddonECDb : Nan::ObjectWrap
         void Execute() override
             {
             m_status = IModelJs::DeleteInstance(m_errmsg, *m_addon->m_ecdb, m_jsonInstanceKey);
-            if (BentleyStatus::SUCCESS != m_status)
-                Reject();
             }
 
         void _ResolvePromise(T_ResolverLocal &r) override { r->Resolve(v8::Integer::New(v8::Isolate::GetCurrent(), m_status)); }

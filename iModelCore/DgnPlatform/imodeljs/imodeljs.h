@@ -60,7 +60,7 @@ struct IModelJs
 
     DGNPLATFORM_EXPORT static JsECDbPtr CreateECDb(BeSQLite::DbResult& dbres, Utf8StringR errmsg, BeFileNameCR pathname);
     DGNPLATFORM_EXPORT static JsECDbPtr OpenECDb(BeSQLite::DbResult& dbres, Utf8StringR errmsg, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
-    DGNPLATFORM_EXPORT static BentleyStatus ImportSchema(Utf8StringR errmsg, BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult ImportSchema(Utf8StringR errmsg, BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult InsertInstance(Utf8StringR errmsg, BeSQLite::EC::ECInstanceId& insertedId, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult UpdateInstance(Utf8StringR errmsg, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ReadInstance(Utf8StringR errmsg, JsonValueR jsonInstance, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);

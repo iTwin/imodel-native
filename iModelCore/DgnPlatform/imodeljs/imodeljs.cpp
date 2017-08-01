@@ -357,7 +357,7 @@ JsECDbPtr IModelJs::CreateECDb(DbResult &dbres, Utf8String &errmsg, BeFileNameCR
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-BentleyStatus IModelJs::ImportSchema(Utf8StringR errmsg, ECDbR ecdb, BeFileNameCR pathname)
+DbResult IModelJs::ImportSchema(Utf8StringR errmsg, ECDbR ecdb, BeFileNameCR pathname)
     {
     BeSystemMutexHolder threadSafeInScope;
 
@@ -365,7 +365,7 @@ BentleyStatus IModelJs::ImportSchema(Utf8StringR errmsg, ECDbR ecdb, BeFileNameC
         {
         errmsg = Utf8String(pathname);
         errmsg.append(" - not found.");
-        return BentleyStatus::ERROR;
+        return BE_SQLITE_NOTFOUND;
         }
 
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext(false /*=acceptLegacyImperfectLatestCompatibleMatch*/, true /*=includeFilesWithNoVerExt*/);
@@ -377,7 +377,7 @@ BentleyStatus IModelJs::ImportSchema(Utf8StringR errmsg, ECDbR ecdb, BeFileNameC
         {
         errmsg = Utf8String(pathname);
         errmsg.append(" - could not be read.");
-        return ERROR;
+        return BE_SQLITE_ERROR;
         }
 
     bvector<ECSchemaCP> schemas;
@@ -387,17 +387,17 @@ BentleyStatus IModelJs::ImportSchema(Utf8StringR errmsg, ECDbR ecdb, BeFileNameC
         {
         errmsg = Utf8String(pathname);
         errmsg.append(" - could not be imported");
-        return status;
+        return BE_SQLITE_ERROR;
         }
 
     DbResult result = ecdb.SaveChanges();
     if (result != BE_SQLITE_OK)
         {
         errmsg = "Could not save ECDb after importing schema";
-        return status;
+        return result;
         }
 
-    return SUCCESS;
+    return BE_SQLITE_OK;
     }
 
 //---------------------------------------------------------------------------------------
