@@ -35,8 +35,14 @@ namespace BuildingDomain
 		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( Dgn::FunctionalDomain::GetDomain() , Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
 			return BentleyStatus::ERROR;
 
-//		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::MechanicalFunctional::MechanicalFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-			//return BentleyStatus::ERROR;
+		if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::MechanicalFunctional::MechanicalFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+			return BentleyStatus::ERROR;
+
+        //if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( ConstraintModel::ConstraintModelDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        //    return BentleyStatus::ERROR;
+
+//        if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain( Grids::GridsDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+  //          return BentleyStatus::ERROR;
 
 		return BentleyStatus::SUCCESS;
 		}
@@ -97,6 +103,36 @@ namespace BuildingDomain
 		return model;
 
 		}
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+    Dgn::SpatialLocationModelPtr BuildingDomainUtilities::CreateBuildingSpatialLocationModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject)
+        {
+
+        if (!parentSubject.IsValid())
+            {
+            parentSubject = db.Elements().GetRootSubject();
+            }
+
+        // Create the partition and the BuildingPhysicalModel.
+
+        Utf8String phyModelCode = BuildSpatialLocationModelCode(modelCodeName);
+
+        Dgn::SpatialLocationPartitionCPtr partition = Dgn::SpatialLocationPartition::CreateAndInsert(*parentSubject, phyModelCode);
+
+        if (!partition.IsValid())
+            return nullptr;
+
+        Dgn::SpatialLocationModelPtr model = Dgn::SpatialLocationModel::Create (*partition);
+
+        if (Dgn::DgnDbStatus::Success != model->Insert())
+            return nullptr;
+
+        return model;
+
+        }
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
@@ -400,6 +436,15 @@ namespace BuildingDomain
 		{
 		return modelCodeName + ":Functional";
 		}
+
+    //---------------------------------------------------------------------------------------
+    // @bsimethod                                   Bentley.Systems
+    //---------------------------------------------------------------------------------------
+
+    Utf8String  BuildingDomainUtilities::BuildSpatialLocationModelCode(Utf8StringCR modelCodeName)
+        {
+        return modelCodeName + ":SpatialLocation";
+        }
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems

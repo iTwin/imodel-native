@@ -12,5 +12,5 @@
 #include "ArchitecturalPhysical\ArchitecturalPhysicalApi.h"
 #include "BuildingPhysical\BuildingPhysicalApi.h"
 #include "BuildingCommon\BuildingCommonApi.h"
-//#include "MechanicalFunctional\MechanicalFunctionalApi.h"
+#include "MechanicalFunctional\MechanicalFunctionalApi.h"
 #include "BuildingDomainUtilities.h"

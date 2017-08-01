@@ -8,6 +8,8 @@
 
 #include "stdafx.h"
 #include "ArchPhysCreater.h"
+#include <Grids\gridsApi.h>
+
 
 #define BUILDING_MODEL_NAME "SampleBuildingModel"
 #define USERLABEL_NAME  "UserLabel"
@@ -239,6 +241,7 @@ BentleyStatus ArchPhysCreator::DoUpdateSchema(Dgn::DgnDbPtr db)
 
 	BuildingPhysical::BuildingPhysicalModelCPtr model = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(BUILDING_MODEL_NAME, *db);
 
+
 	ECN::ECSchemaPtr dynSchema = BuildingDomain::BuildingDomainUtilities::GetUpdateableSchema (model);
 
 	if ( !dynSchema.IsValid() )
@@ -455,7 +458,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateTank( Dgn::DgnElementI
 
     // Create Tank Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Tank, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement( "ProcessEquipmentFunctional", "Tank", functionalModel);
     Utf8String shortCode;
     SetCodeFromParent1( shortCode, *functionalElement, parentElement, "T");
     PopulateElementProperties(functionalElement);
@@ -1013,6 +1016,10 @@ BentleyStatus ArchPhysCreator::DoCreate()
 
 	BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers();
 
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessEquipmentFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BentleyStatus::ERROR;
+
+
     Dgn::DgnDbPtr db = CreateDgnDb(GetOutputFileName());
     if (!db.IsValid())
         return BentleyStatus::ERROR;
@@ -1395,6 +1402,27 @@ BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysical
 			}
 	
 		}
+
+        Dgn::SpatialLocationModelCPtr spatialModel = BuildingDomain::BuildingDomainUtilities::CreateBuildingSpatialLocationModel(BUILDING_MODEL_NAME, physicalModel.GetDgnDb());
+        if (spatialModel.IsValid())
+            {
+            Grids::RadialGridPortion::CreateParams params(&(*spatialModel), 4, 2, PI/8, 10, 20, 20, true);
+
+            Grids::GridAxisMap grid;
+
+            BentleyStatus status = Grids::RadialGridPortion::CreateAndInsert(grid, params);
+
+            Grids::OrthogonalGridPortion::CreateParams params1(&(*spatialModel), 2, 2, 10, 15, 20, 20, DVec3d::From(0, 0, 10), DVec3d::From(10, 0, 0));
+
+            Grids::GridAxisMap grid2;
+
+            status = Grids::OrthogonalGridPortion::CreateAndInsert(grid2, params1);
+
+
+
+            }
+
+
 
 //    for (int i = 0; i < 100; i++)
 //        {

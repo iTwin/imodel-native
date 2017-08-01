@@ -6,6 +6,7 @@
 #pragma once
 
 #include <BuildingDomain/BuildingDomainApi.h>
+#include <Plant/CommonEquipmentFunctional.h>
 #include "Geometry.h"
 #include "DoorTools.h"
 

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="Functional" nameSpacePrefix="func" version="01.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+    <ECSchemaReference name="BisCore" version="01.00" prefix="bis"/>
+    <ECSchemaReference name="ECDbMap" version="02.00" prefix="ecdbmap"/>
+    <ECClass typeName="FunctionalElement" description="A Functional Element captures functional requirements that will ultimately be fulfilled by a Physical Element." displayLabel="Functional Element" isStruct="false" isCustomAttributeClass="false" isDomainClass="false">
+        <BaseClass>bis:RoleElement</BaseClass>
+        <ECCustomAttributes>
+            <ShareColumns xmlns="ECDbMap.02.00">
+                <ApplyToSubclassesOnly>True</ApplyToSubclassesOnly>
+                <SharedColumnCount>32</SharedColumnCount>
+            </ShareColumns>
+        </ECCustomAttributes>
+        <ECProperty propertyName="TypeDefinition" typeName="long" displayLabel="Type Definition"/>
+    </ECClass>
+    <ECRelationshipClass typeName="DrawingGraphicRepresentsFunctionalElement" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source cardinality="(0,N)" roleLabel="represents" polymorphic="true">
+            <Class class="bis:DrawingGraphic"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is represented by" polymorphic="true">
+            <Class class="FunctionalElement"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="FunctionalBreakdownElement" description="A Functional Breakdown is a 'folder' node in the functional hierarchy." displayLabel="Functional Breakdown" isStruct="false" isCustomAttributeClass="false" isDomainClass="false">
+        <BaseClass>FunctionalElement</BaseClass>
+        <BaseClass>bis:IParentElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FunctionalComponentElement" description="A Functional Component is a 'leaf' node in the functional hierarchy." displayLabel="Functional Component" isStruct="false" isCustomAttributeClass="false" isDomainClass="false">
+        <BaseClass>FunctionalElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FunctionalComposite" displayLabel="Functional Composite" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+        <BaseClass>FunctionalBreakdownElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FunctionalType" description="Defines a set of properties (the 'type') that can be associated with a Functional Element." displayLabel="Functional Type" isStruct="false" isCustomAttributeClass="false" isDomainClass="false">
+        <BaseClass>bis:TypeDefinitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECRelationshipClass typeName="FunctionalElementIsOfType" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
+        <ECCustomAttributes>
+            <ForeignKeyConstraint xmlns="ECDbMap.02.00"/>
+        </ECCustomAttributes>
+        <Source cardinality="(0,N)" roleLabel="is of" polymorphic="true">
+            <Class class="FunctionalElement"/>
+        </Source>
+        <Target cardinality="(0,1)" roleLabel="defines" polymorphic="true">
+            <Class class="FunctionalType"/>
+        </Target>
+    </ECRelationshipClass>
+    <ECClass typeName="FunctionalModel" description="A container for persisting Functional Elements." displayLabel="Functional Model" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+        <BaseClass>bis:RoleModel</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FunctionalPartition" description="A Functional Partition element is a key part of the DgnDb information hierarchy that is always parented to a Subject and broken down by a Functional Model." displayLabel="Functional Partition" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+        <BaseClass>bis:InformationPartitionElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECClass typeName="FunctionalPortion" description="A Functional Portion is a Functional Component that will be broken down in more detail in a separate (sub) Functional Model." displayLabel="Functional Portion" isStruct="false" isCustomAttributeClass="false" isDomainClass="true">
+        <BaseClass>FunctionalComponentElement</BaseClass>
+        <BaseClass>bis:IModellableElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00"/>
+        </ECCustomAttributes>
+    </ECClass>
+    <ECRelationshipClass typeName="PhysicalElementFulfillsFunction" isStruct="false" isCustomAttributeClass="false" isDomainClass="true" strength="referencing">
+        <BaseClass>bis:ElementRefersToElements</BaseClass>
+        <Source cardinality="(0,N)" roleLabel="fulfills" polymorphic="true">
+            <Class class="bis:PhysicalElement"/>
+        </Source>
+        <Target cardinality="(0,N)" roleLabel="is fulfilled by" polymorphic="true">
+            <Class class="FunctionalElement"/>
+        </Target>
+    </ECRelationshipClass>
+</ECSchema>

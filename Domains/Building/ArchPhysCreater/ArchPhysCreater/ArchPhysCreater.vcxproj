@@ -102,18 +102,18 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions);BENTLEY_WIN32;</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(OUTROOT)Winx64\BuildContexts\buildingDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\buildingDomains\VendorAPI</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(outRoot)winx64\Product\BuildingDomainSDK-Winx64\PublicApi;$(outRoot)winx64\Product\BuildingDomainSDK-Winx64\VendorApi</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OUTROOT)Winx64\BuildContexts\BuildingDomains\SubParts\Libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OUTROOT)Winx64\BuildContexts\BuildingDomains\SubParts\Libsx;$(outroot)winx64\product\BuildingDomainSDK-Winx64\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>GridElements.lib;BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;plantDomainHandler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /s /y $(outroot)winx64\BuildContexts\buildingDomains\SubParts\Assemblies\*  $(outdir)
-xcopy /y $(outroot)winx64\BuildContexts\buildingDomains\ECSchemas\Domain\* $(outdir)Assets\ECSchemas\Domain\
+xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\Assets\ECSchemas\Domain\* $(outdir)Assets\ECSchemas\Domain\
 xcopy /y $(srcRoot)DgnPlatform\ECSchemas\* $(outdir)Assets\ECSchemas\Dgn\
 xcopy /y $(srcRoot)ECDb\ECDb\ECSchemas\* $(outdir)Assets\ECSchemas\ECDb\
 xcopy /y $(outroot)\Winx64\BuildContexts\ECStandards\ECSchemas\Standard\* $(outdir)Assets\ECSchemas\standard\
@@ -122,7 +122,9 @@ xcopy /y $(outroot)\Winx64\BuildContexts\ECStandards\ECSchemas\Standard\LibraryU
 xcopy /y $(outroot)\Winx64\build\DgnPlatform\DgnPlatform_en.sqlang.db3 $(outdir)Assets\sqlang\
 xcopy /y  $(srcRoot)DgnPlatform\LastResortFonts\lastresortfonts $(outdir)Assets\
 xcopy /y $(srcRoot)DgnPlatform\ECSchemas\functional* $(outdir)Assets\ECSchemas\Domain\
-xcopy /y $(srcRoot)libsrc\icu4c\icudt58l.dat $(outdir)Assets\</Command>
+xcopy /y $(srcRoot)libsrc\icu4c\icudt58l.dat $(outdir)Assets\
+xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\lib\x64\PlantDomainHandler.dll $(outdir)
+xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\lib\x64\StructuralDomainB02.dll $(outdir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
