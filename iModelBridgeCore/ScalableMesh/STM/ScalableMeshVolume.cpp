@@ -1336,7 +1336,7 @@ double ScalableMeshVolume::_ComputeVolumeCutAndFillForTile(IScalableMeshMeshPtr 
         terrainMesh = builder->GetClientMeshPtr();
         if(!meshTransform.IsIdentity()) //Compute cut and fill in the destination coordinates, do not need to convert results afterwards.
             terrainMesh->Transform(meshTransform);
-#ifdef VANCOUVER_API // they don't have the fastCutFill operations yet
+#if 1 //def VANCOUVER_API // they don't have the fastCutFill operations yet
        PolyfaceQuery::ComputeCutAndFill(*terrainMesh, mesh, cutSections, fillSections);
 #ifdef SCALABLE_MESH_ATP
         if (cutSections.size() == 0 && fillSections.size() == 0)
