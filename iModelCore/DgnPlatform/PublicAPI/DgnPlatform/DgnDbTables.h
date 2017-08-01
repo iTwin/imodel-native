@@ -318,11 +318,12 @@ struct DgnModels : DgnDbTable
 private:
     friend struct DgnDb;
     friend struct DgnModel;
+    friend struct IModelJs;
     friend struct dgn_TxnTable::Model;
     typedef bmap<DgnModelId,DgnModelPtr> T_DgnModelMap;
     typedef bmap<DgnClassId, ECSqlClassInfo> T_ClassInfoMap;
 
-    mutable BeSQLite::BeDbMutex m_mutex;
+    mutable BeMutex m_mutex;
     T_DgnModelMap  m_models;
     T_ClassInfoMap m_classInfos;
 

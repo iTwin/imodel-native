@@ -293,6 +293,7 @@ public:
     DGNPLATFORM_EXPORT void WaitFor(ViewControllerCR);
 
     DGNPLATFORM_EXPORT bool IsIdle() const;
+    DGNPLATFORM_EXPORT void AbortAll();
 };
 
 END_BENTLEY_DGN_NAMESPACE
