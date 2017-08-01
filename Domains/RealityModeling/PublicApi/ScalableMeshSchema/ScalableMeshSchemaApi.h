@@ -28,5 +28,6 @@
 // Include from PublicApi
 //-----------------------------------------------------------------------------------------
 #include <ScalableMeshSchema\ScalableMeshDomain.h>
-#include <ScalableMeshSchema\ScalableMeshHandler.h>
 
+//__PUBLISH_SECTION_END__
+#include <ScalableMeshSchema\ScalableMeshHandler.h>
