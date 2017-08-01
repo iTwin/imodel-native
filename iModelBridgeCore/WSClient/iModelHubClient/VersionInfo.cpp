@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <WebServices/iModelHub/Client/Versioninfo.h>
+#include <WebServices/iModelHub/Client/VersionInfo.h>
 #include "Utils.h"
 
 USING_NAMESPACE_BENTLEY_IMODELHUB
