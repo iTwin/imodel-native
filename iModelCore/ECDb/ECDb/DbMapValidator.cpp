@@ -805,10 +805,7 @@ BentleyStatus DbMapValidator::ValidateRelationshipClassEndTableMap(RelationshipC
         return ERROR;
         }
 
-
-
-
-    const std::vector<DbTable const*> otherEndTables = RelationshipClassEndTableMap::PartitionView::GetOtherEndTables(relMap);
+    const std::vector<DbTable const*> otherEndTables = ForeignKeyPartitionView::GetOtherEndTables(m_dbMap.GetECDb(), relMap.GetRelationshipClass(), relMap.GetMapStrategy().GetStrategy());
     if (otherEndTables.size() > 1)
         {
         Utf8String tableStr;

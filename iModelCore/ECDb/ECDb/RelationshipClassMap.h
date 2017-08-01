@@ -69,60 +69,7 @@ typedef RelationshipClassMap const& RelationshipClassMapCR;
 struct RelationshipClassEndTableMap final : RelationshipClassMap
     {
     friend struct ClassMapFactory;
-    struct Partition : NonCopyableClass
-        {
-        private:
-            const DbColumn &m_ecInstanceId, &m_ecClassId, &m_sourceId, *m_sourceClassId, &m_targetId, *m_targetClassId;
-            uint64_t m_hashCode;
-
-        private:
-            static  uint64_t QuickHash64(Utf8CP str, uint64_t mix = 0);
-            Partition(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const* sourceClassId, DbColumn const& targetId, DbColumn const* targetClassId);
-
-        public:
-            ~Partition(){}
-            DbTable const& GetTable() const { return m_ecInstanceId.GetTable(); }
-            DbColumn const& GetECInstanceId() const { return m_ecInstanceId; }
-            DbColumn const& GetECClassId() const { return m_ecClassId; }
-            DbColumn const& GetSourceECInstanceId() const { return m_sourceId; }
-            DbColumn const* GetSourceECClassId() const { return m_sourceClassId; }
-            DbColumn const& GetTargetECInstanceId() const { return m_targetId; }
-            DbColumn const* GetTargetECClassId() const { return m_targetClassId; }
-            DbColumn const& GetConstraintECInstanceId(ECN::ECRelationshipEnd end) const { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECInstanceId() : GetTargetECInstanceId();}
-            DbColumn const* GetConstraintECClassId(ECN::ECRelationshipEnd end) const { return end == ECN::ECRelationshipEnd::ECRelationshipEnd_Source ? GetSourceECClassId() : GetTargetECClassId(); }
-            uint64_t GetHashCode() const { return m_hashCode; }
-            bool CanQuery() const { return GetTable().GetType() != DbTable::Type::Virtual && GetTargetECClassId() != nullptr && GetSourceECClassId() != nullptr; }
-            static std::unique_ptr<Partition> Create(DbColumn const& ecInstanceId, DbColumn const& ecClassId, DbColumn const& sourceId, DbColumn const* sourceClassId, DbColumn const& targetId, DbColumn const* targetClassId, ECN::ECRelationshipEnd fromEnd);
-        };
-
-    struct PartitionView : NonCopyableClass
-        {
-        private:
-            RelationshipClassEndTableMap const& m_relationshipMap;
-            struct ComparePartition { bool operator()(std::unique_ptr<Partition> const& lhs, std::unique_ptr<Partition> const& rhs) const { return lhs->GetHashCode() < rhs->GetHashCode(); } };
-            std::map <DbTableId, std::set <std::unique_ptr<Partition>, ComparePartition>> m_partitionMap;
-            bool m_loadedPartitions;
-            
-            BentleyStatus InsertPartition(std::unique_ptr<Partition> partition, bool assertAndFailOnDuplicatePartition);
-            BentleyStatus ResurrectPartition(std::vector<DbTable const*> const& tables, DbColumn const& navId, DbColumn const& navRelECClassId);
-            BentleyStatus Load();
-            ECN::ECRelationshipEnd GetToEnd() const;
-            ECN::ECRelationshipEnd GetFromEnd() const;
-            PartitionView(RelationshipClassEndTableMap const& relationshipMap);
-            BentleyStatus AddDefaultPartition();
-        public:
-            const std::vector<DbTable const*> GetTables(bool skipVirtualPartition) const;
-            const std::map<DbTable const*, std::vector<Partition const*>> GetPartitionMap() const;
-            const std::vector<Partition const*> GetPartitions(bool skipVirtualPartition) const;
-            const std::vector<Partition const*> GetPartitions(DbTable const& toEnd, bool skipVirtualPartition) const;
-            static std::unique_ptr<PartitionView> Create(RelationshipClassEndTableMap const& relationMap);
-            std::vector<Partition const*> GetPhysicalPartitions() const;
-            static std::vector<DbTable const*> GetOtherEndTables(RelationshipClassEndTableMap const&);
-        };
-
     private:
-        mutable std::unique_ptr<PartitionView> m_partitionCollection;
-
         RelationshipClassEndTableMap(ECDb const& ecdb, ECN::ECClassCR relClass, MapStrategyExtendedInfo const& mapStrategy) : RelationshipClassMap(ecdb, Type::RelationshipEndTable, relClass, mapStrategy) {}
         ClassMappingStatus _Map(ClassMappingContext&) override;
         BentleyStatus _Load(ClassMapLoadContext&, DbClassMapLoadContext const&) override;
@@ -133,8 +80,6 @@ struct RelationshipClassEndTableMap final : RelationshipClassMap
         ~RelationshipClassEndTableMap() {}
         ECN::ECRelationshipEnd GetForeignEnd() const;
         ECN::ECRelationshipEnd GetReferencedEnd() const;
-        PartitionView const& GetPartitionView() const;
-        void ResetPartitionCache() const { m_partitionCollection = nullptr; }
     };
 
 /*==========================================================================
