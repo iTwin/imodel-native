@@ -186,7 +186,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             bvector<Utf8String> nodeResources;
             nodeName = node.get("id", "").asCString();
 
-            NodePtr nodeptr  = new Node(GetRootR(), this);
+            NodePtr nodeptr  = new Node(GetTriMeshRootR(), this);
 
             if (!nodeptr->ReadHeader(node, nodeName, nodeResources))
                 return ERROR;
@@ -286,7 +286,7 @@ BentleyStatus Node::DoRead(StreamBuffer& in, SceneR scene, Dgn::Render::SystemP 
             auto texture = renderTextures.find(texName);
             trimesh.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
-            ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(trimesh, renderSys));
+            ((Node*)m_children[nodeId->second].get())->GetGeometry().push_front(scene._CreateGeometry(trimesh, renderSys));
             }
         }
 

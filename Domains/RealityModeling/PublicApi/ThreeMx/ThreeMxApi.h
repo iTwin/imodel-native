@@ -12,7 +12,6 @@
 #include <DgnPlatform/TileTree.h>
 #include <DgnPlatform/MeshTile.h>
 #include <DgnPlatform/ModelSpatialClassifier.h>
-#include <forward_list>
 
 #define BEGIN_BENTLEY_THREEMX_NAMESPACE      BEGIN_BENTLEY_NAMESPACE namespace ThreeMx {
 #define END_BENTLEY_THREEMX_NAMESPACE        } END_BENTLEY_NAMESPACE
@@ -30,39 +29,13 @@
 
 BEGIN_BENTLEY_THREEMX_NAMESPACE
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Node)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ThreeMxModel)
 
-DEFINE_REF_COUNTED_PTR(Geometry)
 DEFINE_REF_COUNTED_PTR(Node)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(ThreeMxModel)
-
-//=======================================================================================
-//! A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
-// @bsiclass                                                    Keith.Bentley   06/16
-//=======================================================================================
-struct Geometry : RefCountedBase, NonCopyableClass
-{
-protected:
-    bvector<FPoint3d> m_points;
-    bvector<FPoint3d> m_normals;
-    bvector<FPoint2d> m_textureUV;
-    bvector<int32_t> m_indices;
-    Dgn::Render::GraphicPtr m_graphic;
-
-public:
-    Geometry() {}
-    THREEMX_EXPORT Geometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const&, SceneR, Dgn::Render::SystemP renderSys);
-    PolyfaceHeaderPtr GetPolyface() const;
-    void GetGraphics(Dgn::TileTree::DrawGraphicsR);
-    void Pick(Dgn::TileTree::PickArgsR);
-    void ClearGraphic() {m_graphic = nullptr;}
-    bvector<FPoint3d> const& GetPoints() const {return m_points;}
-    bool IsEmpty() const {return m_points.empty();}
-};
 
 /*=================================================================================**//**
 * Data about the 3mx scene read from the scene (.3mx) file. It holds the filename of the "root node" (relative to the location of the scene file.)
@@ -96,11 +69,10 @@ struct SceneInfo
 *
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
-struct Node : Dgn::TileTree::Tile
+struct Node : Dgn::TileTree::TriMeshTree::Tile
 {
-    DEFINE_T_SUPER(Dgn::TileTree::Tile);
+    DEFINE_T_SUPER(Dgn::TileTree::TriMeshTree::Tile);
     friend struct Scene;
-    typedef std::forward_list<GeometryPtr> GeometryList;
 
     //=======================================================================================
     // @bsiclass                                                    Mathieu.Marchand  11/2016
@@ -112,10 +84,6 @@ struct Node : Dgn::TileTree::Tile
         };
 
 private:
-    double m_maxDiameter; // maximum diameter
-    double m_factor=0.5;  // by default, 1/2 of diameter
-
-    GeometryList m_geometry;
     Utf8String m_childPath;     // this is the name of the file (relative to path of this node) to load the children of this node.
 
     bool ReadHeader(JsonValueCR pt, Utf8String&, bvector<Utf8String>& nodeResources);
@@ -126,41 +94,31 @@ private:
     //! Called when tile data is required. The loader will be added to the IOPool and will execute asynchronously.
     Dgn::TileTree::TileLoaderPtr _CreateTileLoader(Dgn::TileTree::TileLoadStatePtr, Dgn::Render::SystemP renderSys) override;
 
-    void _DrawGraphics(Dgn::TileTree::DrawArgsR, int depth) const override;
-    void _GetGraphics(Dgn::TileTree::DrawGraphicsR, int depth) const override;
-    void _PickGraphics(Dgn::TileTree::PickArgsR args, int depth) const override;
     Utf8String _GetTileCacheKey() const override {return GetChildFile();}
-
+    bool _WantDebugRangeGraphics() const override;
 public:
-    Node(Dgn::TileTree::RootR root, NodeP parent) : Dgn::TileTree::Tile(root, parent), m_maxDiameter(0.0) {}
+    Node(Dgn::TileTree::TriMeshTree::Root& root, NodeP parent) : T_Super(root, parent) {}
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
-    void ClearGeometry() {m_geometry.clear();}
-    ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
-    double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
     void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
-    void _UnloadChildren(BeTimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
     Dgn::ElementAlignedBox3d ComputeRange();
-    GeometryList& GetGeometry() {return m_geometry;}
 };
 
 /*=================================================================================**//**
 //! A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
 // @bsiclass                                                    Keith.Bentley   03/16
 +===============+===============+===============+===============+===============+======*/
-struct Scene : Dgn::TileTree::Root
+struct Scene : Dgn::TileTree::TriMeshTree::Root
 {
-    DEFINE_T_SUPER(Dgn::TileTree::Root);
+    DEFINE_T_SUPER(Dgn::TileTree::TriMeshTree::Root);
     friend struct Node;
-    friend struct Geometry;
     friend struct ThreeMxModel;
 
 private:
     Utf8String  m_sceneFile;
     SceneInfo   m_sceneInfo;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
-    virtual GeometryPtr _CreateGeometry(Dgn::Render::IGraphicBuilder::TriMeshArgs const& args, Dgn::Render::SystemP renderSys) {return new Geometry(args, *this, renderSys);}
-    virtual Dgn::Render::TexturePtr _CreateTexture(Dgn::Render::ImageSourceCR source, Dgn::Render::Image::Format targetFormat, Dgn::Render::Image::BottomUp bottomUp, Dgn::Render::SystemP renderSys) const {return renderSys ? renderSys->_CreateTexture(source, targetFormat, bottomUp) : nullptr;}
+
     THREEMX_EXPORT Dgn::ProgressiveTaskPtr _CreateProgressiveTask(Dgn::TileTree::DrawArgsR, Dgn::TileTree::TileLoadStatePtr) override;
     Utf8CP _GetName() const override {return "3MX";}
     

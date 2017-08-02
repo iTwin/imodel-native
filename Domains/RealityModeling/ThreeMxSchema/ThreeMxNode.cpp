@@ -23,48 +23,6 @@ Utf8String Node::GetChildFile() const
     return parentPath.substr(0, parentPath.find_last_of("/")) + "/" + m_childPath;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* Draw this node. 
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Node::_DrawGraphics(DrawArgsR args, int depth) const
-    {
-    static bool s_debugRange = false;
-    if (s_debugRange)
-        {
-        GraphicParams params;
-        params.SetLineColor(ColorDef::Red());
-
-        Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic();
-        graphic->ActivateGraphicParams(params);
-        graphic->AddRangeBox(m_range);
-        args.m_graphics.m_graphics.Add(*graphic);
-        }
-    _GetGraphics (args.m_graphics, depth);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Draw this node. 
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Node::_GetGraphics(DrawGraphicsR args, int depth) const
-    {
-    for (auto geom : m_geometry)
-        geom->GetGraphics(args);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Node::_PickGraphics(PickArgsR args, int depth) const
-    {
-    if (!m_geometry.empty()) // if we have geometry, draw it now
-        {
-        for (auto geom : m_geometry)
-            geom->Pick(args);
-        }
-    }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
@@ -74,74 +32,11 @@ TileLoaderPtr Node::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Syste
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Create a PolyfaceHeader from a Geometry
-    * @bsimethod                                    Keith.Bentley                   05/16
+* @bsimethod                                                    Paul.Connelly   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr Geometry::GetPolyface() const
+bool Node::_WantDebugRangeGraphics() const
     {
-    IGraphicBuilder::TriMeshArgs trimesh;
-    trimesh.m_numIndices = (int32_t) m_indices.size();
-    trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
-    trimesh.m_numPoints = (int32_t) m_points.size();
-    trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
-    trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
-    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();;
-
-    return trimesh.ToPolyface();
+    static bool s_debugRange = false;
+    return s_debugRange;
     }
 
-/*-----------------------------------------------------------------------------------**//**
-* Construct a Geometry from a TriMeshArgs and a Scene. The scene is necessary to get the Render::System, and this
-* Geometry is only valid for that Render::System
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Geometry::Geometry(IGraphicBuilder::TriMeshArgs const& args, SceneR scene, Dgn::Render::SystemP renderSys)
-    {
-    // After we create a Render::Graphic, we only need the points/indices/normals for picking.
-    // To save memory, only store them if the model is locatable.
-    if (scene.IsPickable())
-        {
-        m_indices.resize(args.m_numIndices);
-        memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
-
-        m_points.resize(args.m_numPoints);
-        memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
-
-        if (nullptr != args.m_normals)
-            {
-            m_normals.resize(args.m_numPoints);
-            memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
-            }
-        }
-
-    if (nullptr == renderSys|| !args.m_texture.IsValid())
-        return;
-
-    auto graphic = renderSys->_CreateGraphic(Graphic::CreateParams());
-    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-    graphic->AddTriMesh(args);
-    graphic->Close();
-
-    m_graphic = graphic;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Geometry::GetGraphics(DrawGraphicsR args)
-    {
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Geometry::Pick(PickArgsR args)
-    {
-    if (m_indices.empty())
-        return;
-
-    auto graphic = args.m_context.CreateGraphic(Graphic::CreateParams(nullptr, args.m_location));
-    graphic->AddPolyface(*GetPolyface());
-    }
