@@ -216,7 +216,7 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     RoadRailCategoryModel::SetUp(dgndb);
 
-    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), "Roads-Rail Physical");
+    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), GetDefaultPhysicalPartitionName());
     if (DgnDbStatus::Success != status)
         {
         BeAssert(false);
