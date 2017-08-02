@@ -479,7 +479,7 @@
 
     <xs:complexType name="ContentRelatedPropertiesDef">
         <xs:sequence>
-            <xs:element name="ContentRelatedProperties" type="ContentRelatedPropertiesDef" maxOccurs="unbounded" minOccurs="0" />
+            <xs:element name="RelatedProperties" type="ContentRelatedPropertiesDef" maxOccurs="unbounded" minOccurs="0" />
         </xs:sequence>
         <xs:attribute default="Both" name="RequiredDirection">
             <xs:simpleType>
