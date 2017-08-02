@@ -616,6 +616,7 @@ protected:
     ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
     double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
     void _UnloadChildren(BeTimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
+    void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
 
     DGNPLATFORM_EXPORT void _DrawGraphics(DrawArgsR, int depth) const override;
     DGNPLATFORM_EXPORT void _GetGraphics(DrawGraphicsR, int depth) const override;
