@@ -21,6 +21,8 @@
 #include <BeHttp/AuthenticationHandler.h>
 #include <WebServices/iModelHub/Client/BriefcaseInfo.h>
 #include <WebServices/iModelHub/Client/ChangeSetInfo.h>
+#include <WebServices/iModelHub/Client/UserInfoManager.h>
+#include <WebServices/iModelHub/Client/VersionsManager.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
@@ -145,6 +147,8 @@ private:
     EventSubscriptionPtr       m_eventSubscription;
     AzureServiceBusSASDTOPtr   m_eventSAS;
     EventManagerPtr            m_eventManagerPtr;
+    UserInfoManager            m_userInfoManager;
+    VersionsManager            m_versionsManager;
 
     iModelConnection(iModelInfoCR iModel, CredentialsCR credentials, ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler);
 
@@ -399,6 +403,10 @@ public:
     //!< Returns iModel information for this connection.
     iModelInfoCR GetiModelInfo() const { return m_iModelInfo; }
 
+    //! Gets UserInfoManager
+	//! @return UserInfo manager
+    IMODELHUBCLIENT_EXPORT UserInfoManagerCR GetUserInfoManager() const { return m_userInfoManager; }
+
     //!< Gets RepositoryClient.
     //! @return Returns repository client
     //! @private
@@ -408,6 +416,10 @@ public:
     //! @param[in] client
     //! @private
     void SetRepositoryClient(IWSRepositoryClientPtr client) { m_wsRepositoryClient = client; }
+
+    //! Gets VersionsManager
+	//! @return Versions manager
+    IMODELHUBCLIENT_EXPORT VersionsManagerCR GetVersionsManager() const { return m_versionsManager; }
 
     //! Receive Events from EventService
     //! @param[in] longPolling
