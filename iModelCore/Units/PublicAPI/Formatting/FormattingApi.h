@@ -124,7 +124,8 @@ private:
     Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
     Utf8CP              m_uomSeparator;          // default separator between the number and UOM
-    size_t              m_minWIdth;              // the minimum width of the field. It will be taken into account
+    Utf8Char            m_stopSeparator;         // default separator between parts of the stopping format
+    int                 m_minWIdth;              // the minimum width of the field. It will be taken into account
                                                  // only if the overall length (width) of the text representing integer
                                                  // a number of or integer part of a real is shorter and needs to be augmented by
                                                  // insignificant zeroes. Blanks are not considered because aligning text
@@ -145,14 +146,14 @@ public:
         m_roundFactor(other->m_roundFactor), m_presentationType(other->m_presentationType),
         m_signOption(other->m_signOption), m_formatTraits(other->m_formatTraits), m_decPrecision(other->m_decPrecision),
         m_fractPrecision(other->m_fractPrecision), m_decimalSeparator(other->m_decimalSeparator),
-        m_thousandsSeparator(other->m_thousandsSeparator), m_barType(other->m_barType), 
-        m_uomSeparator(other->m_uomSeparator), m_minWIdth(other->m_minWIdth){}
+        m_thousandsSeparator(other->m_thousandsSeparator), m_barType(other->m_barType), m_uomSeparator(other->m_uomSeparator),
+        m_stopSeparator(other->m_stopSeparator), m_minWIdth(other->m_minWIdth){}
     NumericFormatSpec(NumericFormatSpecCR other) :
         m_roundFactor(other.m_roundFactor), m_presentationType(other.m_presentationType),
         m_signOption(other.m_signOption), m_formatTraits(other.m_formatTraits), m_decPrecision(other.m_decPrecision),
         m_fractPrecision(other.m_fractPrecision), m_decimalSeparator(other.m_decimalSeparator),
-        m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), 
-        m_uomSeparator(other.m_uomSeparator), m_minWIdth(other.m_minWIdth) {}
+        m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), m_uomSeparator(other.m_uomSeparator),
+        m_stopSeparator(other.m_stopSeparator), m_minWIdth(other.m_minWIdth) {}
     UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
@@ -193,15 +194,17 @@ public:
     void SetPresentationType(PresentationType type) { m_presentationType = type; }
     PresentationType GetPresentationType() const { return m_presentationType; }
     void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
-    int SetMinWidth(size_t wid) { m_minWIdth = wid; }
-    int GetMinWidth() { m_minWIdth; }
+    int SetMinWidth(int wid) { return m_minWIdth = wid; }
+    int GetMinWidth() { return m_minWIdth; }
     ShowSignOption GetSignOption() const { return m_signOption; }
     Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
     Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
     Utf8Char SetThousandSeparator(char sep) { return m_thousandsSeparator = sep; }
     Utf8Char GetThousandSeparator() const { return m_thousandsSeparator; }
     Utf8CP   SetUomSeparator(Utf8CP sep) { return m_uomSeparator = sep; }
-    Utf8CP   GetUomSeparator(Utf8CP sep) { return (nullptr == sep)?  m_uomSeparator: sep; }
+    Utf8CP   GetUomSeparator(Utf8CP def=nullptr) { return (nullptr == def)?  m_uomSeparator: def; }
+    Utf8Char SetStopSeparator(Utf8Char sep) { return m_stopSeparator = sep; }
+    Utf8Char GetStopSeparator() const { return m_stopSeparator; }
     FractionBarType  GetFractionalBarType() const { return m_barType; }
     UNITS_EXPORT static double RoundDouble(double dval, double roundTo);
     UNITS_EXPORT static bool AcceptableDifference(double dval1, double dval2, double maxDiff); 
@@ -210,6 +213,7 @@ public:
     
     UNITS_EXPORT int FormatInteger (int n, Utf8P bufOut, int bufLen);
     UNITS_EXPORT int static FormatIntegerSimple (int n, Utf8P bufOut, int bufLen, bool showSign, bool extraZero);
+    UNITS_EXPORT Utf8String FormatIntegerToString(int n, int minSize, bool padSpace) const;
     UNITS_EXPORT size_t FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen, int prec = -1, double round = -1.0) const;
     
     UNITS_EXPORT static Utf8String StdFormatDouble(Utf8CP stdName, double dval, int prec = -1, double round = -1.0);

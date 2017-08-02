@@ -86,8 +86,12 @@ TEST(FormattingTest, Preliminary)
     else
         LOG.info("Test Data File is not available");
 
-   
-   
+    LOG.info("Stopping Signsatures");
+    FormattingTestFixture::ShowSignature("1+52.17", 100);
+    FormattingTestFixture::ShowSignature("1+152.17", 100);
+    FormattingTestFixture::ShowSignature("1*52.17", 100);
+
+    FormattingTestFixture::ShowSignature("1/52.17", 100);
     if(nullptr == upx)
         { 
         upx = new UnitProxySet(4);
@@ -108,6 +112,23 @@ TEST(FormattingTest, Preliminary)
     LOG.infov("Compare address %x %x repet %d", upFT, upFT1, repc);
 
     NumericFormatSpec numFmt = NumericFormatSpec();
+
+
+    LOG.infov("%s", NumericFormatSpec::StdFormatDouble("stop100-2", 1517.23).c_str());
+    LOG.infov("%s", NumericFormatSpec::StdFormatDouble("stop1000-2", 1517.23).c_str());
+    LOG.infov("%s", NumericFormatSpec::StdFormatDouble("stop100-2-4", 1517.23).c_str());
+    LOG.infov("%s", NumericFormatSpec::StdFormatDouble("stop1000-2-4", 1517.23).c_str());
+    LOG.infov("%s", NumericFormatSpec::StdFormatDouble("stop100-2-4", 12.23).c_str());
+    LOG.infov("%s", NumericFormatSpec::StdFormatDouble("stop100-2-4", 3.17).c_str());
+
+    LOG.infov("152 = %s", numFmt.FormatIntegerToString(152, 0, false));
+    LOG.infov("152 = %s", numFmt.FormatIntegerToString(152, 5, false));
+    LOG.infov("152 = %s", numFmt.FormatIntegerToString(-152, 4, false));
+    LOG.infov("0 = %s", numFmt.FormatIntegerToString(0, 4, false));
+    numFmt.SetSignOption(Formatting::ShowSignOption::SignAlways);
+
+    LOG.infov("152 = %s", numFmt.FormatIntegerToString(152, 5, false));
+
     //LOG.infov("UNI: |%s|", uni);
     //LOG.infov("ASCIIMap %s (len %d)", FormatConstant::ASCIImap(), strlen(FormatConstant::ASCIImap()));
 
@@ -119,8 +140,8 @@ TEST(FormattingTest, Preliminary)
         }*/
     Utf8P bufStop = (Utf8P)alloca(128);
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
-    NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex());
-    NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+    NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+    NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
 
     nfst1000.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
     nfst100.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);

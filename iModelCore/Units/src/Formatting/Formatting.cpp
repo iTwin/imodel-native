@@ -67,6 +67,7 @@ void NumericFormatSpec::DefaultInit(size_t precision)
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
+    m_stopSeparator = '+';
     m_minWIdth = 0;
     }
 //----------------------------------------------------------------------------------------
@@ -95,6 +96,7 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
     m_uomSeparator = FormatConstant::BlankString();
+    m_stopSeparator = '+';
     m_minWIdth = 0;
     }
 
@@ -481,6 +483,48 @@ int NumericFormatSpec::FormatIntegerSimple (int n, Utf8P bufOut, int bufLen, boo
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 07/17
+//---------------------------------------------------------------------------------------
+Utf8String NumericFormatSpec::FormatIntegerToString(int n, int minSize, bool padSpace) const
+    {
+    const int bufLen = 64;  // this's overkill, but does not hurt
+    char dig[bufLen+2];
+    char str[bufLen+2];
+    char sign = '+';
+    memset(dig, 0, sizeof(dig));
+    if (minSize > bufLen)
+        minSize = bufLen;
+    int rem;
+    if (n < 0)
+        {
+        sign = '-';
+        n = -n;
+        }
+    int tmp = n;
+    int i = 0;
+    do {
+        rem = tmp / 10;
+        dig[i++] = '0' + (char)(tmp - rem * 10);
+        tmp = rem;
+        } while (rem > 0);
+    int extraZ = minSize - i;
+    int k = 0;
+    if (IsSignAlways() || (IsOnlyNegative() && sign == '-'))
+        str[k++] = sign;
+    while (extraZ > 0 && k < bufLen)
+        {
+        str[k++] = '0';
+        extraZ--;
+        }
+    while (i > 0 && k < bufLen)
+        {
+        str[k++] = (char)dig[--i];
+        str[k] = '\0';
+        }
+    return Utf8String(str);
+     }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
 int NumericFormatSpec::TrimTrailingZeroes(Utf8P buf, int index) const
@@ -684,47 +728,55 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         memcpy(buf, locBuf, ind);
         POP_MSVC_IGNORE
         }
-    else if (stops)
+    else if (stops) // we assume that stopping value is always positive 
         {
-        double denom = (m_presentationType == PresentationType::Stop100) ? 100.0 : 1000.0;
-        double hiPart;
-        double fract = modf(dval / denom, &hiPart);
-        double midPart; // = dval - hiPart * denom;
-        double tmp = dval - hiPart * denom;
-        double fractPart = modf(tmp, &midPart);
-        int aft = (int)(fractPart * 100.0+0.5);
-        Utf8PrintfString strValue("%d+%04d.%d", (int)hiPart, (int)midPart, aft);
-
-        fract += 0.0001;
-        midPart += 0.0001;
-
-        //FractionalNumeric fn = FractionalNumeric(dval, m_fractPrecision);
-        //fn.FormTextParts(true);
-        //size_t locBufL = sizeof(locBuf);
-        //if (!fn.IsZero())
-        //    {
-        //    if (m_signOption == ShowSignOption::SignAlways ||
-        //        ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
-        //        locBuf[ind++] = sign;
-        //    }
-        //ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetIntegralText());
-        //if (fn.HasFractionPart())
-        //    {
-        //    if (ind < locBufL)
-        //        ind = Utils::AppendText(locBuf, locBufL, ind, " ");
-        //    if (ind < locBufL)
-        //        ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorText());
-        //    if (ind < locBufL)
-        //        ind = Utils::AppendText(locBuf, locBufL, ind, "/");
-        //    if (ind < locBufL)
-        //        ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorText());
-        //    }
-        //ind++;
-        //if (ind > bufLen)
-        //    ind = bufLen;
-        //PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
-        //    memcpy(buf, locBuf, ind);
-        //POP_MSVC_IGNORE
+        int denom = (m_presentationType == PresentationType::Stop100) ? 100 : 1000;
+        int tval = static_cast<int>(dval); // this is the integer part only
+        int hiPart = tval / denom;
+        int loPart = tval - hiPart * denom;
+        fract = modf(dval, &ival);
+        int frPart = (int)(0.5 + fract * GetDecimalPrecisionFactor());
+        size_t k = 0;
+        if (hiPart > 0)
+            {
+            Utf8String hiS = FormatIntegerToString(hiPart, 0, false);
+            memcpy(locBuf, hiS.c_str(), hiS.length());
+            k += hiS.length();
+            }
+        else
+            locBuf[k++] = '0';
+        
+        locBuf[k++] = GetStopSeparator();
+        Utf8String loS = FormatIntegerToString(loPart, m_minWIdth, false);
+        memcpy(&locBuf[k], loS.c_str(), loS.length());
+        k += loS.length();
+        if (frPart > 0)
+            {
+            Utf8String frS = FormatIntegerToString(frPart, 0, false);
+            locBuf[k++] = GetDecimalSeparator();
+            memcpy(&locBuf[k], frS.c_str(), frS.length());
+            k += frS.length();
+            }
+        else if (IsKeepTrailingZeroes())
+            {
+            int aft = GetDecimalPrecisionIndex();
+            if (aft > 0)
+                {
+                locBuf[k++] = GetDecimalSeparator();
+                while (aft > 0)
+                    {
+                    locBuf[k++] = '0';
+                    }
+                }
+            else if(IsKeepDecimalPoint())
+                locBuf[k++] = GetDecimalSeparator();
+            }
+        locBuf[k++] = '\0';
+        if (k > bufLen)
+            k = bufLen;
+        PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
+            memcpy(buf, locBuf, k);
+        POP_MSVC_IGNORE
         }
 
     return ind;
@@ -1353,6 +1405,37 @@ void StdFormatSet::StdInit()
     AddFormat("Real3U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 3), "real3u");
     AddFormat("Real4U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 4), "real4u");
     AddFormat("Real6U", new NumericFormatSpec(PresentationType::Decimal, ShowSignOption::OnlyNegative, traitsU, 6), "real6u");
+
+    NumericFormatSpec stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2);
+    AddFormat("Stop100-2u", stop, "stop100-2u");
+    stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traitsU, 2);
+    stop.SetMinWidth(4);
+    AddFormat("Stop100-2-4u", stop, "stop100-2-4u");
+
+    stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traitsU, 2);
+    stop.SetMinWidth(4);
+    AddFormat("Stop1000-2-4u", stop, "stop1000-2-4u");
+
+    stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traitsU, 2);
+    AddFormat("Stop1000-2u", stop, "stop1000-2u");
+
+    //=========================== Stoppers w/o units
+    stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, 2);
+    AddFormat("Stop100-2", stop, "stop100-2");
+    stop = new NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetMinWidth(4);
+    AddFormat("Stop100-2-4", stop, "stop100-2-4");
+
+    stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, 2);
+    stop.SetMinWidth(4);
+    AddFormat("Stop1000-2-4", stop, "stop1000-2-4");
+
+    stop = new NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, 2);
+    AddFormat("Stop1000-2", stop, "stop1000-2");
+
+
+
+
 
     //AddFormat("RoadStatF", new NumericFormatSpec(PresentationType::Station100, ShowSignOption::OnlyNegative, traits, 2), "rsf2");
     //AddFormat("RoadStatM", new NumericFormatSpec(PresentationType::Station1000, ShowSignOption::OnlyNegative, traits, 2), "rsm2");
