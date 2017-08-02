@@ -877,6 +877,7 @@ protected:
     ChildTiles const* _GetChildren(bool) const override {return IsReady() ? &m_children : nullptr;}
     double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
     void _UnloadChildren(BeTimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
+    void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
 
     DGNPLATFORM_EXPORT SelectParent _SelectTiles(bvector<TileTree::TileCPtr>&, DrawArgsR) const override;
     DGNPLATFORM_EXPORT void _DrawGraphics(DrawArgsR) const override;
