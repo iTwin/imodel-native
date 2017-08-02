@@ -11,6 +11,7 @@
 #include "Utils.h"
 #include "Logging.h"
 #include <WebServices/iModelHub/Client/BreakHelper.h>
+#include <WebServices/iModelHub/Client/UserInfoManager.h>
 #include "Events/EventManager.h"
 #include "PredownloadManager.h"
 #include <WebServices/iModelHub/Events/ChangeSetPostPushEvent.h>
@@ -44,6 +45,8 @@ IHttpHandlerPtr            customHandler
     wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
 
     m_wsRepositoryClient = wsRepositoryClient;
+    m_versionsManager = VersionsManager(m_wsRepositoryClient);
+    m_userInfoManager = UserInfoManager(m_wsRepositoryClient);
     }
 
 //---------------------------------------------------------------------------------------

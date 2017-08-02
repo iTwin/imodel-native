@@ -55,6 +55,8 @@ public:
         ProjectAssociationIsNotEnabled,
         ProjectIdIsNotSpecified,
         FailedToGetProjectPermissions,
+        ChangeSetAlreadyHasVersion,
+        VersionAlreadyExists,
 
         //Long Running Processes Errors
         FileIsNotYetInitialized = 100,
