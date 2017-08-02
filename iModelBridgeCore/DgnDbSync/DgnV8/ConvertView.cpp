@@ -335,7 +335,7 @@ ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefini
         {
         auto env = dstyle3d->GetEnvironmentDisplay();
         env.m_skybox.m_enabled = converter.GetConfig().GetOptionValueBool("SkyBox", true);
-        env.m_groundPlane.m_enabled = converter.GetConfig().GetOptionValueBool("GroundPlane", true);
+        env.m_groundPlane.m_enabled = converter.GetConfig().GetOptionValueBool("GroundPlane", false);
         dstyle3d->SetEnvironmentDisplay(env);
         }
 
