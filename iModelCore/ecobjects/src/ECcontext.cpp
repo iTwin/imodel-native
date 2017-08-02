@@ -418,6 +418,7 @@ ECSchemaPtr         ECSchemaReadContext::LocateConversionSchemaFor(Utf8CP schema
     ECSchemaPtr conversionSchema;
     if (m_conversionSchemas.IsValid())
         {
+        m_conversionSchemas->SetSkipValidation(GetSkipValidation());
         Utf8String conversionSchemaName(schemaName);
         conversionSchemaName += "_V3Conversion";
         SchemaKey key(conversionSchemaName.c_str(), versionRead, versionMinor);

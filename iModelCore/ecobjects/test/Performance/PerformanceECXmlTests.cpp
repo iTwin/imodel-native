@@ -9,7 +9,8 @@
 #include "PerformanceTestFixture.h"
 
 #include <Bentley/BeTimeUtilities.h>
-using namespace BentleyApi::ECN;
+
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
@@ -33,7 +34,7 @@ struct PerformanceTestsECXml : PerformanceTestFixture
 
         serializationTimer.Start ();
         //printf ("Attach to profiler for writing schema...\r\n"); getchar ();
-        SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXml);
+        SchemaWriteStatus status2 = schema->WriteToXmlString (ecSchemaXml, ECVersion::V3_0);
         //printf ("Detach from profiler...\r\n"); getchar ();
         serializationTimer.Stop ();
         EXPECT_EQ (SchemaWriteStatus::Success, status2);

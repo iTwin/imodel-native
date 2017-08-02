@@ -9,12 +9,28 @@
 #include "../TestFixture/TestFixture.h"
 #include "BeXml/BeXml.h"
 
-using namespace BentleyApi::ECN;
-using namespace std;
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
-struct SchemaDeserializationConversionTest : ECTestFixture { };
+struct SchemaDeserializationConversionTest : ECTestFixture 
+    {
+    void TestRoleLabelAttribute(ECVersion ecVersion, bool useEmptyString);
+    void TestInheritedRoleLabelAttribute(ECVersion ecVersion, bool noRoleLabel, Utf8CP roleLabel = "");
+
+    void ValidateRoundTripLatestSerialization(ECSchemaPtr schema)
+        {
+        Utf8String schemaString;
+        SchemaWriteStatus writeStatus = schema->WriteToXmlString(schemaString);
+        ASSERT_EQ(SchemaWriteStatus::Success, writeStatus) << "Failed to serialize schema";
+
+        ECSchemaPtr deserializedSchema;
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+        SchemaReadStatus readStatus = ECSchema::ReadFromXmlString(deserializedSchema, schemaString.c_str(), *schemaContext);
+        ASSERT_EQ(SchemaReadStatus::Success, readStatus) << "Failed to deserialize schema";
+        ASSERT_TRUE(deserializedSchema->IsECVersion(ECVersion::Latest));
+        }
+    };
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    08/2016
@@ -251,115 +267,184 @@ TEST_F(SchemaDeserializationConversionTest, TestPolymorphicAttribute)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    09/2016
+// @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationConversionTest, TestRoleLabelAttribute)
+void SchemaDeserializationConversionTest::TestRoleLabelAttribute(ECVersion ecVersion, bool useEmptyString)
     {
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "   <ECClass typeName='A' isDomainClass='true'></ECClass>"
-        "   <ECClass typeName='B' isDomainClass='true'></ECClass>"
-        "   <ECRelationshipClass typeName='ARelB' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
-        "       <Source cardinality='(1,1)' polymorphic='True'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target cardinality='(1,1)' polymorphic='True'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
+    Utf8CP schemaXml;
+    if (ECVersion::V2_0 == ecVersion)
+        schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+            <ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>
+                <ECClass typeName='A' isDomainClass='true'></ECClass>
+                <ECClass typeName='B' isDomainClass='true'></ECClass>
+                <ECRelationshipClass typeName='ARelB' isDomainClass="true" strength='referencing' strengthDirection='forward'>
+                    <Source cardinality='(1,1)' polymorphic='True' %s >
+                        <Class class='A' />
+                    </Source>
+                    <Target cardinality="(1,1)" polymorphic='True' %s >
+                        <Class class="B" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+    else
+        schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+            <ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                <ECEntityClass typeName='A'></ECEntityClass>
+                <ECEntityClass typeName='B'></ECEntityClass>
+                <ECRelationshipClass typeName='ARelB' strength='referencing' strengthDirection='forward'>
+                    <Source multiplicity='(1..1)' polymorphic='True' %s >
+                        <Class class='A' />
+                    </Source>
+                    <Target multiplicity="(1..1)" polymorphic='True' %s >
+                        <Class class="B" />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+
+    Utf8CP roleLabelString = (useEmptyString) ? "roleLabel=''" : "";
+
+    Utf8String formattedSchemaXml;
+    formattedSchemaXml.Sprintf(schemaXml, roleLabelString, roleLabelString);
 
     ECSchemaPtr schema;
     ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *schemaContext);
 
-    ECRelationshipClassCP relClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
-    EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("ARelB", relClass->GetSource().GetRoleLabel().c_str());
-    EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("ARelB (Reversed)", relClass->GetTarget().GetRoleLabel().c_str());
-    }
-    {
-    Utf8CP schemaXml2 = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema2' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "   <ECClass typeName='A' isDomainClass='true'></ECClass>"
-        "   <ECClass typeName='B' isDomainClass='true'></ECClass>"
-        "   <ECRelationshipClass typeName='ARelB' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
-        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='' >"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='' >"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaPtr schema2;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema2, schemaXml2, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema2.IsValid());
-    ASSERT_TRUE(schema2->IsECVersion(ECVersion::V3_1));
-
-    ECRelationshipClassCP relClass = schema2->GetClassCP("ARelB")->GetRelationshipClassCP();
-    EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("ARelB", relClass->GetSource().GetRoleLabel().c_str());
-    EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("ARelB (Reversed)", relClass->GetTarget().GetRoleLabel().c_str());
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    09/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationConversionTest, TestInheritedRoleLabelAttribute)
-    {
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "   <ECClass typeName='A' isDomainClass='true'></ECClass>"
-        "   <ECClass typeName='B' isDomainClass='true'>"
-        "       <BaseClass>C</BaseClass>"
-        "   </ECClass>"
-        "   <ECClass typeName='C' isDomainClass='true'></ECClass>"
-        "   <ECRelationshipClass typeName='ARelC' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
-        "       <Source cardinality='(1,1)' polymorphic='True' roleLabel='testSource'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target cardinality='(1,1)' polymorphic='True' roleLabel='testTarget'>"
-        "           <Class class='C' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "   <ECRelationshipClass typeName='ARelB' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
-        "       <BaseClass>ARelC</BaseClass>"
-        "       <Source cardinality='(1,1)' polymorphic='True'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target cardinality='(1,1)' polymorphic='True'>"
-        "           <Class class='B' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Failed to deserialize an EC" << ECSchema::GetECVersionString(ecVersion) << " schema";
     ASSERT_TRUE(schema.IsValid());
     ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
 
     ECRelationshipClassCP relClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
     EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefined());
-    EXPECT_FALSE(relClass->GetSource().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testSource", relClass->GetSource().GetRoleLabel().c_str());
+    EXPECT_STREQ("ARelB", relClass->GetSource().GetRoleLabel().c_str());
     EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefined());
-    EXPECT_FALSE(relClass->GetTarget().IsRoleLabelDefinedLocally());
-    EXPECT_STREQ("testTarget", relClass->GetTarget().GetRoleLabel().c_str());
+    EXPECT_STREQ("ARelB (Reversed)", relClass->GetTarget().GetRoleLabel().c_str());
+
+    ValidateRoundTripLatestSerialization(schema);
     }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationConversionTest, TestRoleLabelAttribute)
+    {
+    TestRoleLabelAttribute(ECVersion::V2_0, false);
+    TestRoleLabelAttribute(ECVersion::V2_0, true);
+    TestRoleLabelAttribute(ECVersion::V3_0, false);
+    TestRoleLabelAttribute(ECVersion::V3_0, true);
+    }
+
+void SchemaDeserializationConversionTest::TestInheritedRoleLabelAttribute(ECVersion ecVersion, bool noRoleLabel, Utf8CP roleLabel)
+    {
+    Utf8CP schemaXml;
+    if (ECVersion::V2_0 == ecVersion)
+        schemaXml = R"xml(<?xml version="1.0" encoding='UTF-8'?>
+            <ECSchema schemaName="testSchema" version="01.00" nameSpacePrefix="ts" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.2.0">
+                <ECClass typeName="A" isDomainClass="true"/>
+                <ECClass typeName="B" isDomainClass="true">
+                    <BaseClass>C</BaseClass>
+                </ECClass>
+                <ECClass typeName="C" isDomainClass="true"/>
+                <ECRelationshipClass typeName="ARelC" isDomainClass="false" strength="referencing" strengthDirection="forward">
+                    <Source cardinality='(1,1)' polymorphic='True' %s>
+                        <Class class='A' />
+                    </Source>
+                    <Target cardinality='(1,1)' polymorphic='True' %s>
+                        <Class class='C' />
+                    </Target>
+                </ECRelationshipClass>
+                <ECRelationshipClass typeName='ARelB' isDomainClass='false' strength='referencing' strengthDirection='forward'>
+                    <BaseClass>ARelC</BaseClass>
+                    <Source cardinality='(1,1)' polymorphic='True'>
+                        <Class class='A' />
+                    </Source>
+                    <Target cardinality='(1,1)' polymorphic='True'>
+                        <Class class='B' />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+    else
+        schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
+            <ECSchema schemaName='testSchema' version='01.00' namespacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>
+                <ECEntityClass typeName='A'/>
+                <ECEntityClass typeName='B'>
+                    <BaseClass>C</BaseClass>
+                </ECEntityClass>
+                <ECEntityClass typeName='C'/>
+                <ECRelationshipClass typeName='ARelC' strength='referencing' strengthDirection='forward'>
+                    <Source multiplicity='(1..1)' polymorphic='True' %s>
+                        <Class class='A' />
+                    </Source>
+                    <Target multiplicity='(1..1)' polymorphic='True' %s>
+                        <Class class='C' />
+                    </Target>
+                </ECRelationshipClass>
+                <ECRelationshipClass typeName='ARelB' strength='referencing' strengthDirection='forward'>
+                    <BaseClass>ARelC</BaseClass>
+                    <Source multiplicity='(1..1)' polymorphic='True'>
+                        <Class class='A' />
+                    </Source>
+                    <Target multiplicity='(1..1)' polymorphic='True'>
+                        <Class class='B' />
+                    </Target>
+                </ECRelationshipClass>
+            </ECSchema>)xml";
+
+    Utf8String roleLabelString;
+    if (!noRoleLabel)
+        {
+        roleLabelString = "roleLabel='";
+        roleLabelString += roleLabel;
+        roleLabelString += "'";
+        }
+    else
+        roleLabelString = roleLabel;
+
+    Utf8String formattedSchemaXml;
+    formattedSchemaXml.Sprintf(schemaXml, roleLabelString.c_str(), roleLabelString.c_str());
+
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, formattedSchemaXml.c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status) << "Failed schema:\n" << formattedSchemaXml.c_str();
+    ASSERT_TRUE(schema.IsValid());
+    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1));
+
+    ECRelationshipClassCP relClass = schema->GetClassCP("ARelB")->GetRelationshipClassCP();
+    EXPECT_TRUE(relClass->GetSource().IsRoleLabelDefined());
+
+    Utf8CP testSourceRoleLabel;
+    if (noRoleLabel || Utf8String::IsNullOrEmpty(roleLabel))
+        testSourceRoleLabel = "ARelB";
+    else
+        testSourceRoleLabel = roleLabel;
+
+    EXPECT_STREQ(testSourceRoleLabel, relClass->GetSource().GetRoleLabel().c_str());
+
+    EXPECT_TRUE(relClass->GetTarget().IsRoleLabelDefined());
+
+    Utf8CP testTargetRoleLabel;
+    if (noRoleLabel || Utf8String::IsNullOrEmpty(roleLabel))
+        testTargetRoleLabel = "ARelB (Reversed)";
+    else
+        testTargetRoleLabel = roleLabel;
+
+    EXPECT_STREQ(testTargetRoleLabel, relClass->GetTarget().GetRoleLabel().c_str());
+
+    ValidateRoundTripLatestSerialization(schema);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaDeserializationConversionTest, TestInheritedRoleLabelAttribute)
+    {
+    TestInheritedRoleLabelAttribute(ECVersion::V2_0, true);
+    TestInheritedRoleLabelAttribute(ECVersion::V2_0, false);
+    TestInheritedRoleLabelAttribute(ECVersion::V2_0, false, "testRoleLabel");
+    TestInheritedRoleLabelAttribute(ECVersion::V3_0, true); // no roleLabel
+    TestInheritedRoleLabelAttribute(ECVersion::V3_0, false); // empty roleLabel
+    TestInheritedRoleLabelAttribute(ECVersion::V3_0, false, "testRoleLabel");
     }
 
 //---------------------------------------------------------------------------------------
@@ -571,60 +656,6 @@ TEST_F(SchemaDeserializationConversionTest, TestAbstractConstraintAttribute)
 
     EXPECT_TRUE(schema->Validate()) << "The schema should now validate successfully.";
     EXPECT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should now validate to EC3.1";
-    }
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Caleb.Shafer    10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaDeserializationConversionTest, TestInheritedAbstractConstraintAttribute)
-    {
-    {
-    Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
-        "<ECSchema schemaName='testSchema' version='01.00' nameSpacePrefix='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.2.0'>"
-        "   <ECClass typeName='A' isDomainClass='true'/>"
-        "   <ECClass typeName='B' isDomainClass='true'/>"
-        "   <ECClass typeName='C' isDomainClass='true'>"
-        "       <BaseClass>B</BaseClass>"
-        "   </ECClass>"
-        "   <ECClass typeName='D' isDomainClass='true'>"
-        "       <BaseClass>C</BaseClass>"
-        "       <BaseClass>E</BaseClass>"
-        "   </ECClass>"
-        "   <ECClass typeName='E' isDomainClass='true'>"
-        "       <BaseClass>B</BaseClass>"
-        "   </ECClass>"
-        "   <ECRelationshipClass typeName='DerivedTestRel' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
-        "       <BaseClass>TestRel</BaseClass>"
-        "       <Source cardinality='(1,1)' polymorphic='True'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target cardinality='(1,1)' polymorphic='True'>"
-        "           <Class class='D' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "   <ECRelationshipClass typeName='TestRel' isDomainClass='false' strength='referencing' strengthDirection='forward'>"
-        "       <Source cardinality='(1,1)' polymorphic='True'>"
-        "           <Class class='A' />"
-        "       </Source>"
-        "       <Target cardinality='(1,1)' polymorphic='True'>"
-        "           <Class class='C' />"
-        "           <Class class='E' />"
-        "       </Target>"
-        "   </ECRelationshipClass>"
-        "</ECSchema>";
-
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(schema, schemaXml, *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-    ASSERT_TRUE(schema.IsValid());
-    ASSERT_TRUE(schema->IsECVersion(ECVersion::V3_1)) << "The schema should be a valid 3.1 schema because there is a shared base class between all of the Target constraint classes";
-
-    EXPECT_STREQ("A", schema->GetClassCP("TestRel")->GetRelationshipClassCP()->GetSource().GetAbstractConstraint()->GetName().c_str()) << "The Source Constraint's Abstract Constraint attribute should be implicitly set to A.";
-    EXPECT_STREQ("B", schema->GetClassCP("TestRel")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target Constraint's Abstract Constraint attribute should have been automatically set to B because it is a common base class of the constraint classes.";
-
-    EXPECT_STREQ("B", schema->GetClassCP("DerivedTestRel")->GetRelationshipClassCP()->GetTarget().GetAbstractConstraint()->GetName().c_str()) << "The Target Constraint's Abstract Constraint attribute should be inherited.";
     }
     }
 

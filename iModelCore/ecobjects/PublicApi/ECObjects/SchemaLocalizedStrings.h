@@ -47,6 +47,8 @@ public:
     ECOBJECTS_EXPORT Utf8StringCR GetEnumerationDescription(ECEnumerationCR ecEnumeration, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantityDisplayLabel(KindOfQuantityCR kindOfQuantity, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetKindOfQuantityDescription(KindOfQuantityCR kindOfQuantity, Utf8StringCR invariantDescription) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetPropertyCategoryDisplayLabel(PropertyCategoryCR propertyCategory, Utf8StringCR invariantDisplayLabel) const;
+    ECOBJECTS_EXPORT Utf8StringCR GetPropertyCategoryDescription(PropertyCategoryCR propertyCategory, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDisplayLabel(ECPropertyCP ecProperty, Utf8StringCR invariantDisplayLabel) const;
     ECOBJECTS_EXPORT Utf8StringCR GetPropertyDescription(ECPropertyCP ecProperty, Utf8StringCR invariantDescription) const;
     ECOBJECTS_EXPORT Utf8StringCR GetEnumeratorDisplayLabel(ECEnumeratorCR ecEnumerator, Utf8StringCR invariantDisplayLabel) const;

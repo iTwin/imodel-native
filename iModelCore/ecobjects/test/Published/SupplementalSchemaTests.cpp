@@ -8,8 +8,11 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
+USING_NAMESPACE_BENTLEY_EC
+
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-using namespace BentleyApi::ECN;
+
+struct SupplementalDeserializationTests : ECTestFixture {};
 
 struct SchemaHolderTestFixture : ECTestFixture
     {
@@ -1299,12 +1302,27 @@ TEST_F(SupplementedSchemaBuilderTests, SupplementingWithInheritance)
     }
 #endif
 
-TEST(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented2)
+TEST_F(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented2)
     {
     ECSchemaPtr testSchema;
     ECSchemaReadContextPtr   schemaContext;
     schemaContext = ECSchemaReadContext::CreateContext();
     schemaContext->AddSchemaPath(ECTestFixture::GetTestDataPath(L"").c_str());
+    SchemaKey key("MasterSchema", 1, 0);
+    testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
+    EXPECT_TRUE(testSchema->IsSupplemented());
+    }
+
+TEST_F(SupplementalDeserializationTests, VerifyDeserializedSchemaIsSupplemented)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext();
+    schemaContext->AddSchemaLocater (*schemaLocater);
     SchemaKey key("MasterSchema", 1, 0);
     testSchema = schemaContext->LocateSchema(key, SchemaMatchType::Latest);
     EXPECT_TRUE(testSchema->IsSupplemented());

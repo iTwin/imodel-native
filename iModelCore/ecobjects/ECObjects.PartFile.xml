@@ -90,13 +90,9 @@
     -->
 
     <Part Name="TestDependencies" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/prewire.mke">
-        <SubPart PartName="GeomlibsSerialization" PartFile="geomlibs" Repository="GeomLibs" />
         <SubPart PartName="ECObjectsTestsBasicDependencies"/>
         <SubPart PartName="ECObjectsTestsSeedData"/>
         <SubPart PartName="Logging" />
-        <!-- 
-        <SubPart PartName="ECObjectsTestLoggingConfig"/>
-        -->
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList" ProductSubDirectory="ECObjects" SubPartDirectory="UnitTests/ECObjects">Delivery/UnitTests/ignore_list.txt</Files>
         </Bindings>
@@ -109,38 +105,15 @@
         </Bindings>
     </Part>
 
-    <Part Name="PublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
-        <SubPart PartName="NonPublishedTests"/>
+    <Part Name="UnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Published -dIsPublished=1">
+        <SubPart PartName="TestDependencies"/>
+        <SubPart PartName="TestFixture"/>
         <SubPart PartName="PublishedApi"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Published" SourceName="Delivery/UnitTests/Objects/Published"/>
         </Bindings>
     </Part>
 
-    <Part Name="NonPublishedTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublished">
-        <SubPart PartName="TestDependencies"/>
-        <SubPart PartName="TestFixture"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/NonPublished" SourceName="Delivery/UnitTests/Objects/NonPublished"/>
-        </Bindings>
-    </Part>
-<!--
-    <Part Name="ScenarioTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Scenario -dIsPublished=1">
-        <SubPart PartName="TestDependencies"/>
-        <SubPart PartName="TestFixture"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/Scenario" SourceName="Delivery/UnitTests/Objects/Scenario"/>
-        </Bindings>
-    </Part>
-    
-    <Part Name="ECObjectsNonPublishedScenarioTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=NonPublishedScenario">
-        <SubPart PartName="TestDependencies"/>
-        <SubPart PartName="TestFixture"/>
-        <Bindings>
-            <Directory ProductDirectoryName="UnitTests-Objects" ProductSubDirectory="ECObjects/NonPublishedScenario" SourceName="Delivery/UnitTests/Objects/NonPublishedScenario"/>
-        </Bindings>
-    </Part>
--->
     <Part Name="PerformanceTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=Performance">
         <SubPart PartName="TestDependencies"/>
         <SubPart PartName="TestFixture"/>
@@ -151,12 +124,7 @@
 
     <!-- This part is the default test collection. It is included in MobileDgn's aggregate test collection. -->
     <Part Name="Tests" DeferType="BuildUnitTests">
-        <SubPart PartName="PublishedTests" />
-        <SubPart PartName="NonPublishedTests" />
-        <!--    
-        <SubPart PartName="ScenarioTests" />
-        <SubPart PartName="NonPublishedScenarioTests" />
-        -->
+        <SubPart PartName="UnitTests" />
     </Part>
 
     <!-- Define a gtest program to run the tests. The Gtest and RunGtest parts are included in MobileDgn's Gtest-Aggregator and RunGtest-MobileDgnTests parts -->
@@ -314,6 +282,9 @@
         </Bindings>
     </Part>
 
+    <!-- *************** -->
+    <!-- **** Tools **** -->
+    <!-- *************** -->
     <Part Name="SchemaConverter" BentleyBuildMakeFile="tools/SchemaConverter/SchemaConverter.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
         <Bindings>

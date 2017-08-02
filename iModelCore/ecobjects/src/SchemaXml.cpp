@@ -43,11 +43,13 @@ struct SchemaXmlReaderImpl
         virtual SchemaReadStatus ReadClassContentsFromXml(ECSchemaPtr& schemaOut, ClassDeserializationVector&  classes) = 0;
         SchemaReadStatus ReadEnumerationsFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
         SchemaReadStatus ReadKindOfQuantitiesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
+        SchemaReadStatus ReadPropertyCategoriesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode);
         
         void PopulateSchemaElementOrder(ECSchemaElementsOrder& elementOrder, BeXmlNodeR schemaNode);
         virtual bool IsECClassElementNode(BeXmlNodeR schemaNode);
         virtual bool IsECEnumerationElementNode(BeXmlNodeR schemaNode);
         virtual bool IsKindOfQuantityElementNode(BeXmlNodeR schemaNode);
+        virtual bool IsPropertyCategoryElementNode(BeXmlNodeR schemaNode);
     };
 
 //---------------------------------------------------------------------------------------
@@ -384,6 +386,14 @@ bool SchemaXmlReaderImpl::IsECEnumerationElementNode(BeXmlNodeR elementNode)
 bool SchemaXmlReaderImpl::IsKindOfQuantityElementNode(BeXmlNodeR elementNode)
     {
     return 0 == strcmp(KIND_OF_QUANTITY_ELEMENT, elementNode.GetName());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                  
+//---------------+---------------+---------------+---------------+---------------+-------
+bool SchemaXmlReaderImpl::IsPropertyCategoryElementNode(BeXmlNodeR elementNode)
+    {
+    return 0 == strcmp(PROPERTY_CATEGORY_ELEMENT, elementNode.GetName());
     }
 
 //---------------------------------------------------------------------------------------
@@ -785,6 +795,48 @@ SchemaReadStatus SchemaXmlReaderImpl::ReadKindOfQuantitiesFromXml(ECSchemaPtr& s
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaReadStatus SchemaXmlReaderImpl::ReadPropertyCategoriesFromXml(ECSchemaPtr& schemaOut, BeXmlNodeR schemaNode)
+    {
+    SchemaReadStatus status = SchemaReadStatus::Success;
+
+    for (BeXmlNodeP candidateNode = schemaNode.GetFirstChild(); nullptr != candidateNode; candidateNode = candidateNode->GetNextSibling())
+        {
+        if (!IsPropertyCategoryElementNode(*candidateNode))
+            {
+            continue; //node is not relevant
+            }
+
+        PropertyCategoryP propertyCategory = new PropertyCategory(*schemaOut);
+        status = propertyCategory->ReadXml(*candidateNode, m_schemaContext);
+        if (SchemaReadStatus::Success != status)
+            {
+            delete propertyCategory;
+            return status;
+            }
+
+        ECObjectsStatus addStatus = schemaOut->AddPropertyCategory(propertyCategory);
+
+        if (addStatus == ECObjectsStatus::NamedItemAlreadyExists)
+            {
+            LOG.errorv("Duplicate kind of quantity node for %s in schema %s.", propertyCategory->GetName().c_str(), schemaOut->GetFullSchemaName().c_str());
+            delete propertyCategory;
+            propertyCategory = nullptr;
+            return SchemaReadStatus::DuplicateTypeName;
+            }
+
+        if (ECObjectsStatus::Success != addStatus)
+            {
+            delete propertyCategory;
+            propertyCategory = nullptr;
+            return SchemaReadStatus::InvalidECSchemaXml;
+            }
+        }
+    return status;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            10/2015
 //---------------+---------------+---------------+---------------+---------------+-------
 SchemaXmlReader::SchemaXmlReader(ECSchemaReadContextR context, BeXmlDomR xmlDom) : m_schemaContext(context), m_xmlDom(xmlDom)
@@ -964,6 +1016,18 @@ SchemaReadStatus SchemaXmlReader::Deserialize(ECSchemaPtr& schemaOut, uint32_t c
 
     readingKindOfQuantities.Stop();
     LOG.tracev("Reading kind of quantity elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingKindOfQuantities.GetElapsedSeconds());
+
+    StopWatch readingPropertyCategories("Reading property category", true);
+    status = reader->ReadPropertyCategoriesFromXml(schemaOut, *schemaNode);
+
+    if (SchemaReadStatus::Success != status)
+        {
+        delete reader; reader = nullptr;
+        return status;
+        }
+
+    readingPropertyCategories.Stop();
+    LOG.tracev("Reading property category elements for %s took %.4lf seconds\n", schemaOut->GetFullSchemaName().c_str(), readingPropertyCategories.GetElapsedSeconds());
 
     // NEEDSWORK ECClass inheritance (base classes, properties & relationship endpoints)
     StopWatch readingClassContents("Reading class contents", true);
@@ -1151,6 +1215,20 @@ SchemaWriteStatus SchemaXmlWriter::WriteKindOfQuantity(KindOfQuantityCR kindOfQu
     return kindOfQuantity.WriteXml(m_xmlWriter, m_ecXmlVersion);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+SchemaWriteStatus SchemaXmlWriter::WritePropertyCategory(PropertyCategoryCR propertyCategory)
+    {
+    SchemaWriteStatus status = SchemaWriteStatus::Success;
+    // don't write any elements that aren't in the schema we're writing.
+    if (&(propertyCategory.GetSchema()) != &m_ecSchema)
+        return status;
+
+    //WriteCustomAttributeDependencies(ecEnumeration);
+    return propertyCategory.WriteXml(m_xmlWriter, m_ecXmlVersion);
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1253,6 +1331,12 @@ SchemaWriteStatus SchemaXmlWriter::Serialize(bool utf16)
                 {
                 WriteKindOfQuantity(*kindOfQuantity);
                 }
+            }
+        else if (elementType == ECSchemaElementType::PropertyCategory)
+            {
+            PropertyCategoryCP propertyCategory = m_ecSchema.GetPropertyCategoryCP(elementName);
+            if (nullptr != propertyCategory)
+                WritePropertyCategory(*propertyCategory);
             }
         }
 

@@ -105,9 +105,8 @@ struct EntityValidator : IECClassValidator
 
 struct RelationshipValidator : IECClassValidator
     {
-    // Relationship strength and local definition validation
     ECObjectsStatus Validate(ECClassCR ecClass) const override;
-    bool CanValidate(ECClassCR ecClass) const override {return ecClass.IsRelationshipClass();}
+    bool CanValidate(ECClassCR ecClass) const override { return ecClass.IsRelationshipClass(); }
     ECObjectsStatus CheckLocalDefinitions(ECRelationshipConstraintCR constraint, Utf8String constraintType) const;
     };
 

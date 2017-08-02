@@ -1,8 +1,8 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/NonPublished/ECExpressionTests.cpp $
+|     $Source: test/Published/ECExpressionTests.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include "../ECObjectsTestPCH.h"
@@ -17,11 +17,10 @@
 #define EXPECT_ERROR(EXPR) EXPECT_FALSE(ExpressionStatus::Success == (EXPR))
 #define EXPECT_NOT_NULL(EXPR) EXPECT_FALSE(NULL == (EXPR))
 #define EXPECT_NULL(EXPR) EXPECT_TRUE(NULL == (EXPR))
-using namespace BentleyApi::ECN;
+
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-
-using namespace std;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/12

@@ -54,7 +54,6 @@ ECObjectsHeaders    =           $(ecobjectsPublicAPISrc)ECObjects.h \
                                 $(ecobjectsPublicAPISrc)CalculatedProperty.h \
                                 $(ecobjectsPublicAPISrc)StandardCustomAttributeHelper.h \
                                 $(baseDir)DateTimeInfoAccessor.h \
-                                $(ecobjectsPublicAPISrc)ECDiff.h \
                                 $(ecobjectsPublicAPISrc)SchemaLocalizedStrings.h \
                                 $(ecobjectsPublicAPISrc)SchemaResourceKeyHelper.h \
                                 $(ecobjectsPublicAPISrc)ECJsonUtilities.h \
@@ -120,6 +119,8 @@ $(o)ECEnumeration$(oext)                                   : $(baseDir)ECEnumera
 
 $(o)KindOfQuantity$(oext)                                  : $(baseDir)KindOfQuantity.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
+$(o)PropertyCategory$(oext)                                : $(baseDir)PropertyCategory.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
+
 $(o)ECProperty$(oext)                                      : $(baseDir)ECProperty.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)ECInstance$(oext)                                      : $(baseDir)ECInstance.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
@@ -157,8 +158,6 @@ $(o)DateTimeInfoAccessor$(oext)                            : $(baseDir)DateTimeI
 $(o)StandardCustomAttributeHelper$(oext)                   : $(baseDir)StandardCustomAttributeHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)PresentationMetadataHelper$(oext)                      : $(baseDir)PresentationMetadataHelper.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
-
-$(o)ECDiff$(oext)                                          : $(baseDir)ECDiff.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 
 $(o)SchemaLocalizedStrings$(oext)                          : $(baseDir)SchemaLocalizedStrings.cpp $(ECObjectsHeaders) ${MultiCompileDepends}
 

@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/NonPublished/CalculatedPropertyTests.cpp $
+|     $Source: test/Published/CalculatedPropertyTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,10 +13,10 @@
 #include <ECObjects/ECValue.h>
 
 #define EXPECT_SUCCESS(EXPR) EXPECT_TRUE(ECObjectsStatus::Success == EXPR)
-using namespace BentleyApi::ECN;
+
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
-using namespace std;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                                    Paul.Connelly   08/12

@@ -332,7 +332,7 @@ public:
     //! @param[in]  propertyAccessString Name of the property to retrieve
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     //!<@private
-    ECOBJECTS_EXPORT ECObjectsStatus    GetValueOrAdhoc (ECValueR v, Utf8CP propertyAccessString) const;
+    ECOBJECTS_EXPORT ECObjectsStatus    GetValueOrAdHoc (ECValueR v, Utf8CP propertyAccessString) const;
     //! Gets the value stored in the specified ECProperty
     //! @param[out] v                       If successful, will contain the value of the property
     //! @param[in]  propertyAccessString    Name of the property to retrieve
@@ -362,7 +362,7 @@ public:
     //! @param[in]  v                    The value to set onto the property
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     //!<@private
-    ECOBJECTS_EXPORT ECObjectsStatus    SetValueOrAdhoc (Utf8CP propertyAccessString, ECValueCR v);
+    ECOBJECTS_EXPORT ECObjectsStatus    SetValueOrAdHoc (Utf8CP propertyAccessString, ECValueCR v);
     //! Sets the value for the specified property
     //! @param[in]  propertyAccessString The name of the property to set the value of
     //! @param[in]  v                    The value to set onto the property
@@ -393,7 +393,7 @@ public:
     //! @param[in]  v                       The value to set onto the property
     //! @returns ECObjectsStatus::Success if successful, otherwise an error code indicating the failure
     //!<@private
-    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValueOrAdhoc (Utf8CP propertyAccessString, ECValueCR v);    
+    ECOBJECTS_EXPORT ECObjectsStatus    ChangeValueOrAdHoc (Utf8CP propertyAccessString, ECValueCR v);    
     //! Change the value for the specified property
     //! @param[in]  propertyAccessString    The name of the property to set the value of
     //! @param[in]  v                       The value to set onto the property
@@ -480,7 +480,7 @@ public:
     //! @param[in] accessString The access string to the property to check the read-only state for
     //! @returns true if the property is read-only
     //!<@private
-    ECOBJECTS_EXPORT bool               IsPropertyOrAdhocReadOnly (Utf8CP accessString) const;
+    ECOBJECTS_EXPORT bool               IsPropertyOrAdHocReadOnly (Utf8CP accessString) const;
 
     //! Given the propertyIndex (into the ClassLayout) of a property, returns whether that property is readonly
     //! @param[in] propertyIndex    Index into the ClassLayout indicating which property to check

@@ -8,7 +8,7 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 
-using namespace ECN;
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
@@ -27,6 +27,32 @@ struct  Struct2
     Struct1*        nestedArray;
     uint32_t        arraySize;
     };
+
+struct InstanceTests;
+struct CompressInstanceTests;
+struct PropertyTests;
+struct StringEncodingTests;
+struct PropertyIndexTests : ECTestFixture{};
+
+Utf8Char s_schemaXml[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+                "<ECSchema schemaName=\"TestSchema\" nameSpacePrefix=\"test\" version=\"01.01\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+                "    <ECSchemaReference name=\"Bentley_Standard_CustomAttributes\" version=\"01.06\" prefix=\"besc\" />"
+                "    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
+                "        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"TestClass\" isDomainClass=\"True\">"
+                "        <ECArrayProperty propertyName=\"StringArray\" typeName=\"string\" />"
+                "        <ECProperty propertyName=\"String\" typeName=\"string\" />"
+                "        <ECStructProperty propertyName=\"Struct\" typeName=\"Manufacturer\" />"
+                "        <ECArrayProperty propertyName=\"StructArray\" typeName=\"Manufacturer\" isStruct=\"True\" />"
+                "    </ECClass>"
+                "    <ECClass typeName=\"TestUtf8Class\" isDomainClass=\"True\">"
+                "        <ECCustomAttributes>"
+                "            <PersistStringsAsUtf8 xmlns=\"Bentley_Standard_CustomAttributes.01.00\" />"
+                "        </ECCustomAttributes>"
+                "        <ECProperty propertyName=\"String\" typeName=\"string\" />"
+                "    </ECClass>"
+                "</ECSchema>";
 
 
 /*---------------------------------------------------------------------------------**//**
@@ -76,6 +102,298 @@ struct InstanceTests : ECTestFixture
     };
 
 struct PropertyTests : InstanceTests {};
+
+/*---------------------------------------------------------------------------------**//**
+* @bsistruct                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+struct StringEncodingTests : ECTestFixture
+    {
+    ECSchemaPtr         m_schema;
+
+    StringEncodingTests() : ECTestFixture()
+        {
+        ECSchemaReadContextPtr  schemaContext = ECSchemaReadContext::CreateContext();
+        ECSchemaPtr schema;
+        EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, s_schemaXml, *schemaContext));  
+        }
+
+    void TearDown() override
+        {
+        // Resetting string encoding to the anticipated default
+        // The static variable does not get cleaned after the test fixture is finished so need to manually reset it.
+        ECDBuffer::SetDefaultStringEncoding(ECDBuffer::StringEncoding::StringEncoding_Utf8);
+        }
+
+    struct          Utf16String
+        {
+    private:
+        Utf16Buffer         m_utf16;
+    public:
+        Utf16String (WCharCP wc)
+            {
+            BeStringUtilities::WCharToUtf16 (m_utf16, wc);
+            }
+
+        Utf16CP c_str() const   { return &m_utf16[0]; }
+        };
+
+    void            Compare (ECValueCR v1, ECValueCR v2, bool expectMatch)
+        {
+        EXPECT_EQ (expectMatch, v1.Equals (v2)) << v1.ToString().c_str() << "\n" << v2.ToString().c_str();
+        EXPECT_EQ (expectMatch, v2.Equals (v1)) << v1.ToString().c_str() << "\n" << v2.ToString().c_str();
+        }
+
+    template<bool expectMatch> void Compare (WCharCP wc, Utf8CP u8, Utf16CP u16)
+        {
+        ECValue vw (wc), v8 (u8), v16 (u16);
+        Compare (vw, v8, expectMatch);
+        Compare (vw, v16, expectMatch);
+        Compare (v8, v16, expectMatch);
+        }
+
+    void                            Convert (ECValueCR v, WCharCP str)
+        {
+        WCharCP wc = v.GetWCharCP();
+        EXPECT_EQ (0, wcscmp (wc, str));
+        Utf8CP u8 = v.GetUtf8CP();
+        EXPECT_TRUE (0 == Utf8String (str).compare (u8));
+        Utf16CP u16 = v.GetUtf16CP();
+        EXPECT_EQ (0, BeStringUtilities::CompareUtf16WChar (u16, str));
+        }
+
+    StandaloneECInstancePtr CreateInstance (Utf8CP classname, ECDBuffer::StringEncoding encoding)
+        {
+        // Note setting the global default string encoding isn't a typical workflow.
+        // We do it here so we can test instances with different encodings.
+        ECDBuffer::SetDefaultStringEncoding (encoding);
+        ECClassP ecClass = m_schema->GetClassP (classname);
+        return ecClass->GetDefaultStandaloneEnabler()->CreateInstance();
+        }
+    
+    StandaloneECInstancePtr CreatePrimaryInstance (ECDBuffer::StringEncoding encoding, Utf8CP strVal)
+        {
+        StandaloneECInstancePtr instance = CreateInstance ("TestClass", encoding);
+        ECValue v (strVal);
+        EXPECT_EQ (ECObjectsStatus::Success, instance->SetValue ("String", v));
+        EXPECT_EQ (ECObjectsStatus::Success, instance->SetValue ("Struct.Name", v));
+        EXPECT_EQ (ECObjectsStatus::Success, instance->AddArrayElements ("StringArray", 5));
+        for (uint32_t i = 0; i < 3; i++)
+            EXPECT_EQ (ECObjectsStatus::Success, instance->SetValue ("StringArray", v, i));
+
+        EXPECT_EQ (encoding, instance->GetStringEncoding());
+        return instance;
+        }
+
+    StandaloneECInstancePtr CreateStructInstance (ECDBuffer::StringEncoding encoding, Utf8CP name, IECInstanceR parent)
+        {
+        ECValue v;
+        EXPECT_EQ (ECObjectsStatus::Success, parent.GetValue (v, "StructArray"));
+        EXPECT_EQ (ECObjectsStatus::Success, parent.AddArrayElements ("StructArray", 1));
+
+        StandaloneECInstancePtr instance = CreateInstance ("Manufacturer", encoding);
+        EXPECT_EQ (ECObjectsStatus::Success, instance->SetValue ("Name", ECValue (name)));
+
+        ECValue structV;
+        structV.SetStruct (instance.get());
+        EXPECT_EQ (ECObjectsStatus::Success, parent.SetValue ("StructArray", structV, v.GetArrayInfo().GetCount()));
+        EXPECT_EQ (encoding, instance->GetStringEncoding());
+        return instance;
+        }
+
+    bool                    CompareInstances (ECValuesCollectionCR aVals, StandaloneECInstancePtr b, bool outputDifferences = false)
+        {
+        for (ECPropertyValueCR aVal: aVals)
+            {
+            ECValueCR aV = aVal.GetValue();
+            ECValue bV;
+            EXPECT_EQ (ECObjectsStatus::Success, b->GetValueUsingAccessor (bV, aVal.GetValueAccessor()));
+            if (aVal.HasChildValues())
+                {
+                if (!CompareInstances (*aVal.GetChildValues(), b))
+                    return false;
+                }
+            else if (!bV.Equals (aV))
+                {
+                if (outputDifferences)
+                    printf ("%s differs: %s vs. %s\n", aVal.GetValueAccessor().GetAccessString(), aV.ToString().c_str(), bV.ToString().c_str());
+
+                return false;
+                }
+            }
+            
+        return true;
+        }
+
+    template <bool expectMatch>
+    void                    CompareInstances (StandaloneECInstancePtr a, StandaloneECInstancePtr b)
+        {
+        ECValuesCollectionPtr aVals = ECValuesCollection::Create (*a);
+        EXPECT_EQ (expectMatch, CompareInstances (*aVals, b, expectMatch));
+        }
+    };
+
+struct CompressInstanceTests : ECTestFixture
+    {
+    ECSchemaPtr m_schema;
+    Utf8CP kitchenSinkSchemaXML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+        "<ECSchema schemaName=\"KitchenSink\" nameSpacePrefix=\"test\" version=\"1.0\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
+        "    <ECClass typeName=\"Manufacturer\" isStruct=\"True\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"Name\" typeName=\"string\" />"
+        "        <ECProperty propertyName=\"AccountNo\" typeName=\"int\" />"
+        "    </ECClass>"
+        "    <ECClass typeName=\"Complicated\" isStruct=\"True\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"ExtName\" typeName=\"string\" />"
+        "        <ECStructProperty propertyName=\"ExtStruct\" typeName=\"Manufacturer\" />"
+        "        <ECArrayProperty propertyName=\"ExtStructs\" typeName=\"Manufacturer\" />"
+        "    </ECClass>"
+
+        "    <ECClass typeName=\"FixedSizeArrayTester\" isStruct=\"True\" isDomainClass=\"True\">"
+        "        <ECArrayProperty propertyName=\"FixedString5\"     typeName=\"string\"            minOccurs=\"5\"  maxOccurs=\"5\" />"
+        "        <ECArrayProperty propertyName=\"FixedInt5\"        typeName=\"int\"               minOccurs=\"5\"  maxOccurs=\"5\" />"
+        "        <ECArrayProperty propertyName=\"Manufacturer5\"    typeName=\"Manufacturer\"      minOccurs=\"5\"  maxOccurs=\"5\" />"
+        "    </ECClass>"
+
+        "    <ECClass typeName=\"KitchenSink\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"myString\" typeName=\"string\" />"
+        "        <ECArrayProperty propertyName=\"myStringArray\" typeName=\"string\" />"
+        "        <ECProperty propertyName=\"myInt\" typeName=\"int\" />"
+        "        <ECArrayProperty propertyName=\"myIntArray\" typeName=\"int\" />"
+        "        <ECProperty propertyName=\"my3dPoint\"     typeName=\"point3d\" />"
+        "        <ECArrayProperty propertyName=\"my3dPointArray\" typeName=\"point3d\"/>"
+        "        <ECProperty propertyName=\"myDate\" typeName=\"dateTime\"  />"
+        "        <ECArrayProperty propertyName=\"myDateArray\" typeName=\"dateTime\" />"
+        "        <ECProperty propertyName=\"myLong\" typeName=\"long\" />"
+        "        <ECArrayProperty propertyName=\"myLongArray\" typeName=\"long\" />"
+        "        <ECProperty propertyName=\"myDouble\" typeName=\"double\" />"
+        "        <ECArrayProperty propertyName=\"myDoubleArray\" typeName=\"double\" />"
+        "        <ECProperty propertyName=\"myBool\" typeName=\"boolean\"  />"
+        "        <ECArrayProperty propertyName=\"myBoolArray\" typeName=\"boolean\" />"
+        "        <ECProperty propertyName=\"my2dPoint\" typeName=\"point2d\" />"
+        "        <ECArrayProperty propertyName=\"my2dPointArray\" typeName=\"point2d\" />"
+        "        <ECStructProperty propertyName=\"myManufacturerStruct\" typeName=\"Manufacturer\" />"
+        "        <ECArrayProperty propertyName=\"myManufacturerStructArray\" typeName=\"Manufacturer\"/>"
+        "        <ECStructProperty propertyName=\"myComplicated\" typeName=\"Complicated\" />"
+        "    </ECClass>"
+        "    <ECClass typeName=\"PointArrayTest\" isStruct=\"True\" isDomainClass=\"True\">"
+        "        <ECProperty propertyName=\"myString\" typeName=\"string\" />"
+        "        <ECProperty propertyName=\"myInt\" typeName=\"int\" />"
+        "        <ECArrayProperty propertyName=\"my3dPointArray\" typeName=\"point3d\"/>"
+        "    </ECClass>"
+        "</ECSchema>";
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void ReadKitchenSinkSchemaFromXml ()
+        {
+        ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext (false);
+        EXPECT_EQ (SchemaReadStatus::Success, ECSchema::ReadFromXmlString (m_schema, kitchenSinkSchemaXML, *schemaContext));
+        EXPECT_TRUE (m_schema.IsValid ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void VerifyArrayInfo (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t count, bool isFixedCount)
+        {
+        v.Clear ();
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
+        EXPECT_EQ (count, v.GetArrayInfo ().GetCount ());
+        EXPECT_EQ (isFixedCount, v.GetArrayInfo ().IsFixedCount ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void VerifyIsNullArrayElements (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t start, uint32_t count, bool isNull)
+        {
+        for (uint32_t i = start; i < start + count; i++)
+            {
+            v.Clear ();
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, i));
+            EXPECT_TRUE (isNull == v.IsNull ());
+            }
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void VerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, bool useIndex, uint32_t index, Utf8CP value)
+        {
+        v.Clear ();
+        if (useIndex)
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, index));
+        else
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
+        EXPECT_STREQ (value, v.GetUtf8CP ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void VerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
+        {
+        return VerifyString (instance, v, accessString, false, 0, value);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void SetAndVerifyString (IECInstanceR instance, ECValueR v, Utf8CP accessString, Utf8CP value)
+        {
+        v.SetUtf8CP (value);
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
+        VerifyString (instance, v, accessString, value);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void VerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, bool useIndex, uint32_t index, uint32_t value)
+        {
+        v.Clear ();
+        if (useIndex)
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString, index));
+        else
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (v, accessString));
+        EXPECT_EQ (value, v.GetInteger ());
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void VerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
+        {
+        return VerifyInteger (instance, v, accessString, false, 0, value);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void SetAndVerifyInteger (IECInstanceR instance, ECValueR v, Utf8CP accessString, uint32_t value)
+        {
+        v.SetInteger (value);
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.SetValue (accessString, v));
+        VerifyInteger (instance, v, accessString, value);
+        }
+
+    /*---------------------------------------------------------------------------------**//**
+    * @bsimethod
+    +---------------+---------------+---------------+---------------+---------------+------*/
+    void validateArrayCount (ECN::StandaloneECInstanceCR instance, Utf8CP propertyName, uint32_t expectedCount)
+        {
+        ECValue varray;
+        EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (varray, propertyName));
+        uint32_t count = varray.GetArrayInfo ().GetCount ();
+        EXPECT_TRUE (count == expectedCount);
+
+        ECValue ventry;
+        for (uint32_t i = 0; i < count; i++)
+            {
+            EXPECT_TRUE (ECObjectsStatus::Success == instance.GetValue (ventry, propertyName, i));
+            }
+        }
+    };
 
 /*---------------------------------------------------------------------------------**//**
 * @bsistruct                                               Raimondas.Rimkus   02/2013
@@ -354,6 +672,282 @@ TEST_F (PropertyTests, GetValueFromInstance)
     ECValueAccessorCR accessor = propValue->GetValueAccessor ();
     EXPECT_STREQ (accessor.GetAccessString (), "Property_1");
     EXPECT_FALSE (propValue->HasChildValues ());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (StringEncodingTests, TestComparisons)
+    {
+    WCharCP wc = L"Testing";
+    Compare<true> (wc, Utf8String(wc).c_str(), Utf16String(wc).c_str());
+    Compare<false> (wc, Utf8String ("abcdefg").c_str(), Utf16String(L"blarg").c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (StringEncodingTests, TestConversions)
+    {
+    WCharCP wc = L"Testing";
+    Convert (ECValue (wc), wc);
+
+    Utf8String u8 (wc);
+    ECValue v8 (u8.c_str());
+    Convert (v8, wc);
+
+    Utf16String u16 (wc);
+    ECValue v16 (u16.c_str());
+    Convert (v16, wc);
+
+    Convert (ECValue (wc, false), wc);
+    Convert (ECValue (u8.c_str(), false), wc);
+    Convert (ECValue (u16.c_str(), false), wc);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (StringEncodingTests, CompareBuffersWithDifferentEncodings)
+    {
+    StandaloneECInstancePtr a = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf8, "testing"),
+                            b = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf16, "no match");
+    CompareInstances<false> (a, b);
+
+    b = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf16, "testing");
+    CompareInstances<true> (a, b);
+
+    // create a struct array instance with a different encoding than it's parent instance. Useful? not really. But nothing prohibits it.
+    StandaloneECInstancePtr structA0 = CreateStructInstance (ECDBuffer::StringEncoding_Utf16, "child", *a),
+                            structA1 = CreateStructInstance (ECDBuffer::StringEncoding_Utf8, "child", *a),
+                            structB0 = CreateStructInstance (ECDBuffer::StringEncoding_Utf16, "child", *b),
+                            structB1 = CreateStructInstance (ECDBuffer::StringEncoding_Utf8, "child", *b);
+
+    CompareInstances<true> (structA0, structB0);
+    CompareInstances<true> (structA0, structA1);
+    CompareInstances<true> (structA1, structB0);
+    CompareInstances<true> (a, b);
+
+    structB1->SetValue ("Name", ECValue ("grandkid"));
+    ECValue structV;
+    structV.SetStruct (structB1.get());
+    b->SetValue ("StructArray", structV, 1);
+    CompareInstances<false> (structB1, structB0);
+    CompareInstances<false> (structB1, structA1);
+    CompareInstances<false> (a, b);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/12
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (StringEncodingTests, CopyBuffersWithDifferentEncodings)
+    {
+    // a and b use different encodings
+    StandaloneECInstancePtr a = CreatePrimaryInstance (ECDBuffer::StringEncoding_Utf8, "slartibartfast");
+    ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
+    StandaloneECInstancePtr b = m_schema->GetClassP ("TestClass")->GetDefaultStandaloneEnabler()->CreateInstance();
+
+    EXPECT_EQ (ECDBuffer::StringEncoding_Utf16, b->GetStringEncoding());
+
+    // Copying instances copies the entire buffer - including the encoding flag and the strings in their original encodings.
+    EXPECT_EQ (ECObjectsStatus::Success, b->CopyValues (*a));
+
+    // a and b should now have the same encoding
+    EXPECT_EQ (ECDBuffer::StringEncoding_Utf8, b->GetStringEncoding());
+
+    CompareInstances<true> (a, b);
+
+    b->SetValue ("Struct.Name", ECValue ("finnegan"));
+    CompareInstances<false> (a, b);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* If the ECClass has the custom attribute "PersistStringsAsUtf8", instances will always
+* use Utf-8 encoding.
+* @bsimethod                                                    Paul.Connelly   05/13
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F (StringEncodingTests, ForceUtf8)
+    {
+    ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
+    StandaloneECInstancePtr a = m_schema->GetClassP ("TestUtf8Class")->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_EQ (ECDBuffer::StringEncoding_Utf8, a->GetStringEncoding());
+
+    ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf8);
+    StandaloneECInstancePtr b = m_schema->GetClassP ("TestUtf8Class")->GetDefaultStandaloneEnabler()->CreateInstance();
+    EXPECT_EQ (ECDBuffer::StringEncoding_Utf8, b->GetStringEncoding());
+
+    ECDBuffer::SetDefaultStringEncoding (ECDBuffer::StringEncoding_Utf16);
+    }
+
+TEST_F (CompressInstanceTests, CheckVariableSizedPropertyAfterCallingCompress)
+    {
+    ReadKitchenSinkSchemaFromXml ();
+    ECClassP ecClass = m_schema->GetClassP ("KitchenSink");
+    ASSERT_TRUE (NULL != ecClass);
+
+    StandaloneECEnablerPtr enabler = ecClass->GetDefaultStandaloneEnabler ();
+    ECN::StandaloneECInstancePtr instance = enabler->CreateInstance ();
+
+    int        inCount = 100;
+    double     inLength = 432.178;
+    bool       inTest = true;
+
+    ASSERT_EQ (ECObjectsStatus::Success, instance->SetValue ("myInt", ECValue (inCount)));
+    ASSERT_EQ (ECObjectsStatus::Success, instance->SetValue ("myString", ECValue ("Test")));
+    ASSERT_EQ (ECObjectsStatus::Success, instance->SetValue ("myDouble", ECValue (inLength)));
+    ASSERT_EQ (ECObjectsStatus::Success, instance->SetValue ("myBool", ECValue (inTest)));
+
+    ECValue ecValue;
+
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myInt"));
+    EXPECT_TRUE (ecValue.GetInteger () == inCount);
+
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myString"));
+    EXPECT_STREQ (ecValue.GetUtf8CP (), "Test");
+
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myDouble"));
+    EXPECT_TRUE (ecValue.GetDouble () == inLength);
+
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myBool"));
+    EXPECT_TRUE (ecValue.GetBoolean () == inTest);
+
+    instance->Compress ();
+
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myInt"));
+    EXPECT_TRUE (ecValue.GetInteger () == inCount);
+
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myString"));
+    EXPECT_STREQ (ecValue.GetUtf8CP (), "Test");
+
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myDouble"));
+    EXPECT_TRUE (ecValue.GetDouble () == inLength);
+
+    EXPECT_TRUE (ECObjectsStatus::Success == instance->GetValue (ecValue, "myBool"));
+    EXPECT_TRUE (ecValue.GetBoolean () == inTest);
+
+    // define struct array
+    StandaloneECEnablerPtr manufacturerEnabler = instance->GetEnablerR ().GetEnablerForStructArrayMember (m_schema->GetSchemaKey (), "Manufacturer");
+    EXPECT_TRUE (manufacturerEnabler.IsValid ());
+
+    ECValue v;
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->AddArrayElements ("myManufacturerStructArray", 4));
+    instance->Compress ();
+    VerifyArrayInfo (*instance, v, "myManufacturerStructArray", 4, false);
+    instance->Compress ();
+    VerifyIsNullArrayElements (*instance, v, "myManufacturerStructArray", 0, 4, true);
+
+    IECInstancePtr manufInst = manufacturerEnabler->CreateInstance ().get ();
+
+    SetAndVerifyString (*manufInst, v, "Name", "Nissan");
+    instance->Compress ();
+    SetAndVerifyInteger (*manufInst, v, "AccountNo", 3475);
+    instance->Compress ();
+    v.SetStruct (manufInst.get ());
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("myManufacturerStructArray", v, 0));
+
+    manufInst = manufacturerEnabler->CreateInstance ().get ();
+    SetAndVerifyString (*manufInst, v, "Name", "Kia");
+    SetAndVerifyInteger (*manufInst, v, "AccountNo", 1791);
+    v.SetStruct (manufInst.get ());
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("myManufacturerStructArray", v, 1));
+
+    manufInst = manufacturerEnabler->CreateInstance ().get ();
+    SetAndVerifyString (*manufInst, v, "Name", "Honda");
+    SetAndVerifyInteger (*manufInst, v, "AccountNo", 1592);
+    v.SetStruct (manufInst.get ());
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("myManufacturerStructArray", v, 2));
+
+    manufInst = manufacturerEnabler->CreateInstance ().get ();
+    SetAndVerifyString (*manufInst, v, "Name", "Chevy");
+    SetAndVerifyInteger (*manufInst, v, "AccountNo", 19341);
+    v.SetStruct (manufInst.get ());
+    ASSERT_TRUE (ECObjectsStatus::Success == instance->SetValue ("myManufacturerStructArray", v, 3));
+    instance->Compress ();
+    VerifyIsNullArrayElements (*instance, v, "myManufacturerStructArray", 0, 4, false);
+
+    // remove struct array element
+    instance->RemoveArrayElement ("myManufacturerStructArray", 2);
+    instance->Compress ();
+    validateArrayCount (*instance, "myManufacturerStructArray", 3);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   10/14
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PropertyIndexTests, FlatteningIterator)
+    {
+    static const PrimitiveType testTypes[] = {PRIMITIVETYPE_Integer, PRIMITIVETYPE_String};
+    for (size_t typeIndex = 0; typeIndex < _countof(testTypes); typeIndex++)
+        {
+        auto primType = testTypes[typeIndex];
+        // Create an ECClass with nested structs like so:
+        //  1
+        //  2
+        //      3
+        //      4
+        //          5
+        //  6 { empty struct }
+        //  7
+        //      8
+        //  9
+        ECSchemaPtr schema;
+        ECSchema::CreateSchema(schema, "Schema", "ts", 1, 0, 0);
+        PrimitiveECPropertyP primProp;
+        StructECPropertyP structProp;
+
+        ECStructClassP s4;
+        schema->CreateStructClass(s4, "S4");
+        EXPECT_EQ(ECObjectsStatus::Success, s4->CreatePrimitiveProperty(primProp, "P5", primType));
+
+        ECStructClassP s2;
+        schema->CreateStructClass(s2, "S2");
+        EXPECT_EQ(ECObjectsStatus::Success, s2->CreatePrimitiveProperty(primProp, "P3", primType));
+        EXPECT_EQ(ECObjectsStatus::Success, s2->CreateStructProperty(structProp, "P4", *s4));
+
+        ECStructClassP s6;
+        schema->CreateStructClass(s6, "S6");
+
+        ECStructClassP s7;
+        schema->CreateStructClass(s7, "S7");
+        EXPECT_EQ(ECObjectsStatus::Success, s7->CreatePrimitiveProperty(primProp, "P8", primType));
+
+        ECEntityClassP ecClass;
+        schema->CreateEntityClass(ecClass, "MyClass");
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreatePrimitiveProperty(primProp, "P1", primType));
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreateStructProperty(structProp, "P2", *s2));
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreateStructProperty(structProp, "P6", *s6));
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreateStructProperty(structProp, "P7", *s7));
+        EXPECT_EQ(ECObjectsStatus::Success, ecClass->CreatePrimitiveProperty(primProp, "P9", primType));
+
+        // Expect property indices returned using depth-first traversal of struct members
+        // Expect indices of struct properties are not returned
+        // Note that order in which property indices are assigned and returned depends on fixed-sized vs variable-sized property types.
+        Utf8CP expect[] = {"P1", "P2.P3", "P2.P4.P5", "P7.P8", "P9"};
+
+        auto const& enabler = *ecClass->GetDefaultStandaloneEnabler();
+        uint32_t propIdx;
+        bset<Utf8CP> matched;
+        for (PropertyIndexFlatteningIterator iter(enabler); iter.GetCurrent(propIdx); iter.MoveNext())
+            {
+            Utf8CP accessString = nullptr;
+            EXPECT_EQ(ECObjectsStatus::Success, enabler.GetAccessString(accessString, propIdx));
+            bool foundMatch = false;
+            for (size_t i = 0; i < _countof(expect); i++)
+                {
+                if (0 == strcmp(expect[i], accessString))
+                    {
+                    EXPECT_TRUE(matched.end() == matched.find(expect[i]));
+                    matched.insert(expect[i]);
+                    foundMatch = true;
+                    break;
+                    }
+                }
+
+            EXPECT_TRUE(foundMatch);
+            }
+
+        EXPECT_EQ(matched.size(), _countof(expect));
+        }
     }
 
 END_BENTLEY_ECN_TEST_NAMESPACE

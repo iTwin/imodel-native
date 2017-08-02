@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: test/NonPublished/PresentationRulesTests.cpp $
+|     $Source: test/Published/PresentationRulesTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -8,7 +8,8 @@
 #include "../ECObjectsTestPCH.h"
 #include "../TestFixture/TestFixture.h"
 #include <ECPresentationRules/PresentationRules.h>
-using namespace BentleyApi::ECN;
+
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
@@ -833,6 +834,51 @@ TEST_F(PresentationRulesTests, TestPropertiesDisplaySpecificationWriteToXml)
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Aidas.Vaiksnoras                08/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PresentationRulesTests, ReadCheckBoxRuleFromXml)
+    {
+        Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
+        "  <PresentationRuleSet"
+        "    RuleSetId=\"Items\""
+        "    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\""
+        "    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
+        "    <CheckBoxRule Condition=\"conditionexpresion\" Priority=\"1\" OnlyIfNotHandled=\"true\" PropertyName=\"checkBoxProperty\" UseInversedPropertyValue=\"false\" DefaultValue=\"true\" IsEnabled=\"isEnabledExpression\"/>"
+        "  </PresentationRuleSet>";
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString(ruleSetXmlString);
+    ASSERT_FALSE(ruleSet.IsNull());
+    ASSERT_EQ(1, ruleSet->GetCheckBoxRules().size());
+    EXPECT_STREQ("conditionexpresion", ruleSet->GetCheckBoxRules()[0]->GetCondition().c_str());
+    EXPECT_TRUE(ruleSet->GetCheckBoxRules()[0]->GetOnlyIfNotHandled());
+    EXPECT_STREQ("checkBoxProperty", ruleSet->GetCheckBoxRules()[0]->GetPropertyName().c_str());
+    EXPECT_FALSE(ruleSet->GetCheckBoxRules()[0]->GetUseInversedPropertyValue());
+    EXPECT_TRUE(ruleSet->GetCheckBoxRules()[0]->GetDefaultValue());
+    EXPECT_STREQ("isEnabledExpression", ruleSet->GetCheckBoxRules()[0]->GetIsEnabled().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                     Aidas.Vaiksnoras                08/2017
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(PresentationRulesTests, WriteCheckBoxRuleToXml)
+    {
+    //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
+    ASSERT_TRUE(nullptr != ruleSet.get());
+
+    CheckBoxRuleP checkBoxRule = new CheckBoxRule("conditionexpresion", 9, true, "checkBoxProperty", false, true, "isEnabledExpression");
+    ruleSet->AddPresentationRule(*checkBoxRule);
+    ASSERT_TRUE(nullptr != checkBoxRule);
+
+    //Serialize RuleSet to string and deserialize from the same string.
+    Utf8String serializedRuleSet = ruleSet->WriteToXmlString();
+    Utf8String expectedRuleSet = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<PresentationRuleSet RuleSetId=\"TestRuleSet\" SupportedSchemas=\"\" IsSupplemental=\"true\" SupplementationPurpose=\"\" VersionMajor=\"2\" VersionMinor=\"1\" PreferredImage=\"\" IsSearchEnabled=\"true\" SearchClasses=\"\" ExtendedData=\"\">"
+            "<CheckBoxRule Priority=\"9\" PropertyName=\"checkBoxProperty\" UseInversedPropertyValue=\"false\" DefaultValue=\"true\" IsEnabled=\"isEnabledExpression\" Condition=\"conditionexpresion\" OnlyIfNotHandled=\"true\"/>"
+        "</PresentationRuleSet>";
+    EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Saulius.Skliutas                07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -890,5 +936,4 @@ TEST_F(PresentationRulesTests, TestPropertyEditorsSpecificationWriteToXml)
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
     }
-
 END_BENTLEY_ECN_TEST_NAMESPACE
