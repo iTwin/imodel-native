@@ -117,6 +117,13 @@ TEST(FormattingTest, Preliminary)
         LOG.infov("[%03d] %c 0x%x", n, *p, n + 0x20);
         n++;
         }*/
+    Utf8P bufStop = (Utf8P)alloca(128);
+    FormatTraits traits = FormatConstant::DefaultFormatTraits();
+    NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+    NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::SignAlways, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+
+    nfst1000.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
+    nfst100.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
 
     LOG.infov("NUNFU = %d", FormatConstant::SpecialtyMap("NUNFU"));
     LOG.infov("NUNU = %d", FormatConstant::SpecialtyMap("NUNU"));

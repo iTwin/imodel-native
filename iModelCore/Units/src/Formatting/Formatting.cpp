@@ -57,17 +57,17 @@ BEGIN_BENTLEY_FORMATTING_NAMESPACE
 //void NumericFormatSpec::DefaultInit(Utf8CP name, size_t precision)
 void NumericFormatSpec::DefaultInit(size_t precision)
     {
-    //m_name = name;
-    m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
-    //m_minTreshold = FormatConstant::FPV_MinTreshold();
+    m_roundFactor = 0.0;
     m_presentationType = FormatConstant::DefaultPresentaitonType();
     m_signOption = FormatConstant::DefaultSignOption();
+    m_formatTraits = FormatConstant::DefaultFormatTraits();
+    m_decPrecision = Utils::DecimalPrecisionByIndex(precision);
     m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
+    m_barType = FractionBarType::None;
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
-    m_formatTraits = FormatConstant::DefaultFormatTraits();
-    m_barType = FractionBarType::None;
     m_uomSeparator = FormatConstant::BlankString();
+    m_minWIdth = 0;
     }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
@@ -75,14 +75,14 @@ void NumericFormatSpec::DefaultInit(size_t precision)
 //void NumericFormatSpec::Init(Utf8CP name, PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
 void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, size_t precision)
     {
-    //m_name = name;
+    m_roundFactor = 0.0;
     m_presentationType = presType;
     m_signOption = signOpt;
     m_formatTraits = formatTraits;
     if (PresentationType::Fractional == m_presentationType)
         {
-        m_fractPrecision = Utils::FractionalPrecisionByDenominator(precision);
         m_decPrecision = FormatConstant::DefaultDecimalPrecision();
+        m_fractPrecision = Utils::FractionalPrecisionByDenominator(precision);
         m_barType = FractionBarType::Diagonal;
         }
     else
@@ -91,16 +91,13 @@ void NumericFormatSpec::Init(PresentationType presType, ShowSignOption signOpt, 
         m_fractPrecision = FormatConstant::DefaultFractionalPrecision();
         m_barType = FractionBarType::None;
         }
-    //m_minTreshold = FormatConstant::FPV_MinTreshold();
+
     m_decimalSeparator = FormatConstant::FPV_DecimalSeparator();
     m_thousandsSeparator = FormatConstant::FPV_ThousandSeparator();
-    m_roundFactor = 0.0;
+    m_uomSeparator = FormatConstant::BlankString();
+    m_minWIdth = 0;
     }
 
-//void NumericFormatSpec::SetAlias(Utf8CP alias)
-//    { 
-//    m_alias = alias;
-//    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //----------------------------------------------------------------------------------------
@@ -563,7 +560,7 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
     bool sci = (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm);
     bool decimal = (sci || m_presentationType == PresentationType::Decimal);
     bool fractional = (!decimal && m_presentationType == PresentationType::Fractional);
-   // bool stops = (m_presentationType == PresentationType::Stop100 || m_presentationType == PresentationType::Stop1000);
+    bool stops = (m_presentationType == PresentationType::Stop100 || m_presentationType == PresentationType::Stop1000);
 
     if (IsApplyRounding() || !FormatConstant::IsIgnored(round))
         dval = RoundDouble(dval, EffectiveRoundFactor(round));
@@ -687,42 +684,48 @@ size_t NumericFormatSpec::FormatDoubleBuf(double dval, Utf8P buf, size_t bufLen,
         memcpy(buf, locBuf, ind);
         POP_MSVC_IGNORE
         }
-    //else if (stops)
-    //    {
-    //    double denom = (m_presentationType == PresentationType::Stop100) ? 100.0 : 1000.0;
-    //    double hiPart;
-    //    double fract = modf(dval / denom, &hiPart);
-    //    double lowPart = dval - hiPart * denom;
+    else if (stops)
+        {
+        double denom = (m_presentationType == PresentationType::Stop100) ? 100.0 : 1000.0;
+        double hiPart;
+        double fract = modf(dval / denom, &hiPart);
+        double midPart; // = dval - hiPart * denom;
+        double tmp = dval - hiPart * denom;
+        double fractPart = modf(tmp, &midPart);
+        int aft = (int)(fractPart * 100.0+0.5);
+        Utf8PrintfString strValue("%d+%04d.%d", (int)hiPart, (int)midPart, aft);
 
+        fract += 0.0001;
+        midPart += 0.0001;
 
-    //    FractionalNumeric fn = FractionalNumeric(dval, m_fractPrecision);
-    //    fn.FormTextParts(true);
-    //    size_t locBufL = sizeof(locBuf);
-    //    if (!fn.IsZero())
-    //        {
-    //        if (m_signOption == ShowSignOption::SignAlways ||
-    //            ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
-    //            locBuf[ind++] = sign;
-    //        }
-    //    ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetIntegralText());
-    //    if (fn.HasFractionPart())
-    //        {
-    //        if (ind < locBufL)
-    //            ind = Utils::AppendText(locBuf, locBufL, ind, " ");
-    //        if (ind < locBufL)
-    //            ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorText());
-    //        if (ind < locBufL)
-    //            ind = Utils::AppendText(locBuf, locBufL, ind, "/");
-    //        if (ind < locBufL)
-    //            ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorText());
-    //        }
-    //    ind++;
-    //    if (ind > bufLen)
-    //        ind = bufLen;
-    //    PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
-    //        memcpy(buf, locBuf, ind);
-    //    POP_MSVC_IGNORE
-    //    }
+        //FractionalNumeric fn = FractionalNumeric(dval, m_fractPrecision);
+        //fn.FormTextParts(true);
+        //size_t locBufL = sizeof(locBuf);
+        //if (!fn.IsZero())
+        //    {
+        //    if (m_signOption == ShowSignOption::SignAlways ||
+        //        ((m_signOption == ShowSignOption::OnlyNegative || m_signOption == ShowSignOption::NegativeParentheses) && sign != '+'))
+        //        locBuf[ind++] = sign;
+        //    }
+        //ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetIntegralText());
+        //if (fn.HasFractionPart())
+        //    {
+        //    if (ind < locBufL)
+        //        ind = Utils::AppendText(locBuf, locBufL, ind, " ");
+        //    if (ind < locBufL)
+        //        ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetNumeratorText());
+        //    if (ind < locBufL)
+        //        ind = Utils::AppendText(locBuf, locBufL, ind, "/");
+        //    if (ind < locBufL)
+        //        ind = Utils::AppendText(locBuf, locBufL, ind, fn.GetDenominatorText());
+        //    }
+        //ind++;
+        //if (ind > bufLen)
+        //    ind = bufLen;
+        //PUSH_MSVC_IGNORE(6385 6386) // Static analysis thinks that ind can exceed buflen
+        //    memcpy(buf, locBuf, ind);
+        //POP_MSVC_IGNORE
+        }
 
     return ind;
     }

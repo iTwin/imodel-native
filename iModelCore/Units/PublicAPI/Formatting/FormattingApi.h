@@ -119,10 +119,16 @@ private:
     FormatTraits        m_formatTraits;          // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
     DecimalPrecision    m_decPrecision;          // Precision0...12
     FractionalPrecision m_fractPrecision;
+    FractionBarType     m_barType;               // oblique, horizontal, diagonal
+
     Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
     Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
     Utf8CP              m_uomSeparator;          // default separator between the number and UOM
-    FractionBarType     m_barType;
+    size_t              m_minWIdth;              // the minimum width of the field. It will be taken into account
+                                                 // only if the overall length (width) of the text representing integer
+                                                 // a number of or integer part of a real is shorter and needs to be augmented by
+                                                 // insignificant zeroes. Blanks are not considered because aligning text
+                                                 // with the boundaries of a virtual box is the responsibility of annotation layer
 
     double EffectiveRoundFactor(double rnd) const { return FormatConstant::IsIgnored(rnd) ? m_roundFactor : rnd; }
   
@@ -139,12 +145,14 @@ public:
         m_roundFactor(other->m_roundFactor), m_presentationType(other->m_presentationType),
         m_signOption(other->m_signOption), m_formatTraits(other->m_formatTraits), m_decPrecision(other->m_decPrecision),
         m_fractPrecision(other->m_fractPrecision), m_decimalSeparator(other->m_decimalSeparator),
-        m_thousandsSeparator(other->m_thousandsSeparator), m_barType(other->m_barType), m_uomSeparator(other->m_uomSeparator){}
+        m_thousandsSeparator(other->m_thousandsSeparator), m_barType(other->m_barType), 
+        m_uomSeparator(other->m_uomSeparator), m_minWIdth(other->m_minWIdth){}
     NumericFormatSpec(NumericFormatSpecCR other) :
         m_roundFactor(other.m_roundFactor), m_presentationType(other.m_presentationType),
         m_signOption(other.m_signOption), m_formatTraits(other.m_formatTraits), m_decPrecision(other.m_decPrecision),
         m_fractPrecision(other.m_fractPrecision), m_decimalSeparator(other.m_decimalSeparator),
-        m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), m_uomSeparator(other.m_uomSeparator) {}
+        m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), 
+        m_uomSeparator(other.m_uomSeparator), m_minWIdth(other.m_minWIdth) {}
     UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
@@ -173,8 +181,6 @@ public:
     bool IsSignAlways() const { return (m_signOption == ShowSignOption::SignAlways); }
     bool IsFractional() const { return m_presentationType == PresentationType::Fractional; }
     bool IsScientific() const { return (m_presentationType == PresentationType::Scientific || m_presentationType == PresentationType::ScientificNorm); }
-    UNITS_EXPORT void SetAlias(Utf8CP alias);
-    //Utf8String GetAlias() const { return m_alias; }
     void SetDecimalPrecision(DecimalPrecision prec) { m_decPrecision = prec; }
     DecimalPrecision GetDecimalPrecision() const { return m_decPrecision; }
     UNITS_EXPORT int GetDecimalPrecisionIndex(int prec) const;
@@ -187,6 +193,8 @@ public:
     void SetPresentationType(PresentationType type) { m_presentationType = type; }
     PresentationType GetPresentationType() const { return m_presentationType; }
     void SetSignOption(ShowSignOption opt) { m_signOption = opt; }
+    int SetMinWidth(size_t wid) { m_minWIdth = wid; }
+    int GetMinWidth() { m_minWIdth; }
     ShowSignOption GetSignOption() const { return m_signOption; }
     Utf8Char SetDecimalSeparator(Utf8Char sep) { return m_decimalSeparator = sep; }
     Utf8Char GetDecimalSeparator() const { return m_decimalSeparator; }
