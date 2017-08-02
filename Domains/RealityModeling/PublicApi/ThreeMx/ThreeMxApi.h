@@ -29,12 +29,10 @@
 
 BEGIN_BENTLEY_THREEMX_NAMESPACE
 
-DEFINE_POINTER_SUFFIX_TYPEDEFS(Geometry)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Node)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(Scene)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(ThreeMxModel)
 
-DEFINE_REF_COUNTED_PTR(Geometry)
 DEFINE_REF_COUNTED_PTR(Node)
 DEFINE_REF_COUNTED_PTR(Scene)
 DEFINE_REF_COUNTED_PTR(ThreeMxModel)
@@ -102,6 +100,7 @@ public:
     Node(Dgn::TileTree::TriMeshTree::Root& root, NodeP parent) : Dgn::TileTree::TriMeshTree::Tile(root, parent) { }
     Utf8String GetFilePath(SceneR) const;
     bool _HasChildren() const override {return !m_childPath.empty();}
+    void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
     Dgn::ElementAlignedBox3d ComputeRange();
 };
 
