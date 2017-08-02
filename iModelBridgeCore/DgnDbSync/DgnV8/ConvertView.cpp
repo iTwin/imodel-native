@@ -648,7 +648,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     // Keep a map between V8 views and DgnDb views. This is needed to set the display on/off for external models in DgnDb.
     m_viewNumberMap.insert({view->GetViewId(), viewInfo.GetViewNumber()});
-
+    if (!viewId.IsValid())
+        viewId = view->GetViewId();
     return BSISUCCESS;
     }
 
