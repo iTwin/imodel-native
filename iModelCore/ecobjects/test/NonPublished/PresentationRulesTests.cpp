@@ -832,4 +832,63 @@ TEST_F(PresentationRulesTests, TestPropertiesDisplaySpecificationWriteToXml)
         "</PresentationRuleSet>";
     EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRulesTests, TestPropertyEditorsSpecificationLoadingFromXml)
+    {
+    Utf8CP ruleSetXmlString = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<PresentationRuleSet RuleSetId=\"TestRuleSet\""
+        "    xmlns:xsi = \"http://www.w3.org/2001/XMLSchema-instance\""
+        "    xsi:noNamespaceSchemaLocation=\"PresentationRuleSetSchema.xsd\">"
+        "    <ContentRule>"
+        "      <ContentInstancesOfSpecificClasses ClassNames=\"DisplayedClass\">"
+        "        <PropertyEditors>"
+        "           <Editor PropertyName=\"TestProperty\" EditorName=\"TestEditor\"/>"
+        "        </PropertyEditors>"      
+        "      </ContentInstancesOfSpecificClasses>"
+        "    </ContentRule>"
+        "</PresentationRuleSet>";
+
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::ReadFromXmlString(ruleSetXmlString);
+    ASSERT_FALSE(ruleSet.IsNull());
+    ASSERT_EQ(1, ruleSet->GetContentRules().size());
+    ASSERT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications().size());
+    ASSERT_EQ(1, ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetPropertyEditors().size());
+    EXPECT_STREQ("TestProperty", ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetPropertyEditors()[0]->GetPropertyName().c_str());
+    EXPECT_STREQ("TestEditor", ruleSet->GetContentRules()[0]->GetSpecifications()[0]->GetPropertyEditors()[0]->GetEditorName().c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Saulius.Skliutas                07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PresentationRulesTests, TestPropertyEditorsSpecificationWriteToXml)
+    {
+    //Create PresentationRuleSet and rules usin non-default values, to make sure it saves and loads XML correctly.
+    PresentationRuleSetPtr ruleSet = PresentationRuleSet::CreateInstance("TestRuleSet", 2, 1, true, "", "", "", true);
+    ASSERT_TRUE(nullptr != ruleSet.get());
+
+    ContentRuleP content = new ContentRule("", 1, false);
+    ruleSet->AddPresentationRule(*content);
+    ASSERT_TRUE(nullptr != content);
+    ContentInstancesOfSpecificClassesSpecificationP specification = new ContentInstancesOfSpecificClassesSpecification(1, "", "DisplayedClass", false);
+    specification->GetPropertyEditorsR().push_back(new PropertyEditorsSpecification("Property1", "Editor1"));
+    content->GetSpecificationsR().push_back(specification);
+
+    //Serialize RuleSet to string and deserialize from the same string.
+    Utf8String serializedRuleSet = ruleSet->WriteToXmlString();
+    Utf8String expectedRuleSet = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<PresentationRuleSet RuleSetId=\"TestRuleSet\" SupportedSchemas=\"\" IsSupplemental=\"true\" SupplementationPurpose=\"\" VersionMajor=\"2\" VersionMinor=\"1\" PreferredImage=\"\" IsSearchEnabled=\"true\" SearchClasses=\"\" ExtendedData=\"\">"
+            "<ContentRule Priority=\"1\" CustomControl=\"\" Condition=\"\" OnlyIfNotHandled=\"false\">"
+                "<ContentInstancesOfSpecificClasses Priority=\"1\" ShowImages=\"false\" ClassNames=\"DisplayedClass\" ArePolymorphic=\"false\" InstanceFilter=\"\">"
+                    "<PropertyEditors>"
+                        "<Editor PropertyName=\"Property1\" EditorName=\"Editor1\"/>"
+                    "</PropertyEditors>"
+                "</ContentInstancesOfSpecificClasses>"
+            "</ContentRule>"
+        "</PresentationRuleSet>";
+    EXPECT_STREQ(expectedRuleSet.c_str(), serializedRuleSet.c_str());
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

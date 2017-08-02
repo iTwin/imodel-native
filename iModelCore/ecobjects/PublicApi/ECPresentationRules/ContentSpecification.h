@@ -17,6 +17,7 @@ typedef bvector<RelatedPropertiesSpecificationP>    RelatedPropertiesSpecificati
 typedef bvector<DisplayRelatedItemsSpecificationP>  DisplayRelatedItemsSpecificationList;
 typedef bvector<PropertiesDisplaySpecificationP>    PropertiesDisplaySpecificationList;
 typedef bvector<CalculatedPropertiesSpecificationP> CalculatedPropertiesSpecificationList;
+typedef bvector<PropertyEditorsSpecificationP>      PropertyEditorsSpecificationList;
 
 /*---------------------------------------------------------------------------------**//**
 Base class for all ContentSpecifications.
@@ -31,6 +32,7 @@ private:
     PropertiesDisplaySpecificationList    m_propertiesDisplaySpecification;
     CalculatedPropertiesSpecificationList m_calculatedPropertiesSpecification;
     DisplayRelatedItemsSpecificationList m_displayRelatedItemsSpecification;
+    PropertyEditorsSpecificationList     m_propertyEditorsSpecification;
 
 protected:
     //! Constructor. It is used to initialize the rule with default settings.
@@ -96,6 +98,12 @@ public:
 
     //! Additional calculated properties included in the content
     CalculatedPropertiesSpecificationList& GetCalculatedPropertiesR() {return m_calculatedPropertiesSpecification;}
+
+    //! Custom editors for properties
+    PropertyEditorsSpecificationList const& GetPropertyEditors() const { return m_propertyEditorsSpecification; }
+
+    //! Custom editors for properties
+    PropertyEditorsSpecificationList& GetPropertyEditorsR() { return m_propertyEditorsSpecification; }
 
     //! Include related items with current instances when display commands are executed.
     ECOBJECTS_EXPORT DisplayRelatedItemsSpecificationList const& GetDisplayRelatedItems(void) const;    

@@ -100,6 +100,7 @@
     <ClCompile Include="presentation\PresentationRules\PresentationRule.cpp" />
     <ClCompile Include="presentation\PresentationRules\PresentationRuleSet.cpp" />
     <ClCompile Include="presentation\PresentationRules\PropertiesDisplaySpecification.cpp" />
+    <ClCompile Include="presentation\PresentationRules\PropertyEditorsSpecification.cpp" />
     <ClCompile Include="presentation\PresentationRules\RelatedInstanceNodesSpecification.cpp" />
     <ClCompile Include="presentation\PresentationRules\RelatedPropertiesSpecification.cpp" />
     <ClCompile Include="presentation\PresentationRules\RenameNodeRule.cpp" />
@@ -171,6 +172,7 @@
     <ClInclude Include="..\PublicApi\EcPresentationRules\PresentationRules.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\PresentationRuleSet.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\PresentationRulesTypes.h" />
+    <ClInclude Include="..\PublicApi\ECPresentationRules\PropertyEditorsSpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\RelatedInstanceNodesSpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\RelatedInstanceSpecification.h" />
     <ClInclude Include="..\PublicApi\EcPresentationRules\RelatedPropertiesSpecification.h" />

@@ -25,6 +25,7 @@ struct ContentModifier : PresentationKey
         RelatedPropertiesSpecificationList      m_relatedProperties;
         PropertiesDisplaySpecificationList      m_propertiesDisplaySpecification;
         CalculatedPropertiesSpecificationList   m_calculatedProperties;
+        PropertyEditorsSpecificationList        m_propertyEditors;
 
     protected:
         //! Returns XmlElement name that is used to read/save this rule information.
@@ -72,6 +73,12 @@ struct ContentModifier : PresentationKey
 
         //! Returns calculated properties
         ECOBJECTS_EXPORT CalculatedPropertiesSpecificationList& GetCalculatedPropertiesR();
+
+        //! Returns property editors
+        ECOBJECTS_EXPORT PropertyEditorsSpecificationList const& GetPropertyEditors() const;
+
+        //! Returns property editors
+        ECOBJECTS_EXPORT PropertyEditorsSpecificationList& GetPropertyEditorsR();
     };
 
 END_BENTLEY_ECOBJECT_NAMESPACE

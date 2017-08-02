@@ -221,6 +221,7 @@
                     <xs:element name="DisplayedProperties" type="DisplayedPropertiesDef" />
                 </xs:choice>
                 <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="PropertyEditors" type="PropertyEditorsDef" minOccurs="0" maxOccurs="1"/>
             </xs:sequence>
             <xs:attribute name="SchemaName" type="xs:string" use="required"/>
             <xs:attribute name="ClassName" type="xs:string" use="required"/>
@@ -439,6 +440,7 @@
                 <xs:element name="DisplayedProperties" type="DisplayedPropertiesDef" />
             </xs:choice>
             <xs:element name="CalculatedProperties" type="CalculatedPropertiesDef" minOccurs="0" maxOccurs="1"/>
+            <xs:element name="PropertyEditors" type="PropertyEditorsDef" minOccurs="0" maxOccurs="1"/>
         </xs:sequence>
     </xs:complexType>
     
@@ -530,6 +532,17 @@
         <xs:choice minOccurs="0" maxOccurs="unbounded">
             <xs:element name="Property" type="CalculatedPropertyDef" />
         </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="PropertyEditorsDef">
+      <xs:choice minOccurs="0" maxOccurs="unbounded">
+        <xs:element name="Editor" type="PropertyEditorDef" />
+      </xs:choice>
+    </xs:complexType>
+
+    <xs:complexType name="PropertyEditorDef">
+      <xs:attribute name="PropertyName" type="xs:string"/>
+      <xs:attribute name="EditorName" type="xs:string"/>
     </xs:complexType>
 
     <xs:complexType name="CalculatedPropertyDef" mixed="true">
