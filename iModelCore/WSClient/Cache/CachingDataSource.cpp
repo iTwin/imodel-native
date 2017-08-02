@@ -168,8 +168,9 @@ ICancellationTokenPtr ct
         }
 
     auto openResult = std::make_shared<OpenResult>();
+    auto ds = std::shared_ptr<CachingDataSource>();
 
-    return cacheAccessThread->ExecuteAsync([=]
+    return cacheAccessThread->ExecuteAsync([=] () mutable
         {
         if (ct->IsCanceled())
             {
@@ -213,7 +214,7 @@ ICancellationTokenPtr ct
         auto cacheTransactionManager = std::make_shared<CacheTransactionManager>(std::move(cache), cacheAccessThread);
         auto infoStore = std::make_shared<RepositoryInfoStore>(cacheTransactionManager.get(), client, cacheAccessThread);
 
-        auto ds = std::shared_ptr<CachingDataSource>(new CachingDataSource(
+        ds = std::shared_ptr<CachingDataSource>(new CachingDataSource(
             client,
             cacheTransactionManager,
             infoStore,
@@ -254,7 +255,7 @@ ICancellationTokenPtr ct
             openResult->SetSuccess(ds);
             });
         })
-            ->Then<OpenResult>([=]
+            ->Then<OpenResult>(cacheAccessThread, [=]
             {
             if (openResult->IsSuccess())
                 {
@@ -274,6 +275,16 @@ ICancellationTokenPtr ct
                 LOG.errorv("CachingDataSource::OpenOrCreate() error: %s %s",
                     openResult->GetError().GetMessage().c_str(),
                     openResult->GetError().GetDescription().c_str());
+
+                // Force close cache
+                if (nullptr != ds)
+                    {
+                    auto txn = ds->StartCacheTransaction();
+                    IDataSourceCache& cache = txn.GetCache();
+                    txn.Commit();
+                    if (cache.GetECDb().IsDbOpen())
+                        cache.Close();
+                    }
                 }
 
             return *openResult;
