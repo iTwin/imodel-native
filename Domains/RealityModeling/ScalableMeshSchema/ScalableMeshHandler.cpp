@@ -34,7 +34,7 @@ USING_NAMESPACE_TILETREE
 #define PRINT_MSG(...) printf(__VA_ARGS__);
 #else
 #define PRINT_MSG_IF(condition, ...)
-#define PRINT_MSG(...) 
+#define PRINT_MSG(...)
 #endif
 
 //----------------------------------------------------------------------------------------
@@ -145,37 +145,37 @@ bool ScalableMeshModel::_UnregisterTilesChangedEventListener(ITerrainTileChanged
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-#define QUERY_ID 0 
+#define QUERY_ID 0
 
 static double s_minScreenPixelsPerPoint = 1000;
 
 bool IsWireframeRendering(ViewContextCR viewContext)
-    {    
+    {
 
     // Check context render mode
     switch (viewContext.GetViewFlags().GetRenderMode())
-        {        
-        case Render::RenderMode::SmoothShade:        
+        {
+        case Render::RenderMode::SmoothShade:
             return false;
-                       
-        case Render::RenderMode::Wireframe:        
+
+        case Render::RenderMode::Wireframe:
         case Render::RenderMode::HiddenLine:
-        case Render::RenderMode::SolidFill:        
+        case Render::RenderMode::SolidFill:
             return true;
         }
-        BeAssert(!"Unknown render mode");
-        return true;
+    BeAssert(!"Unknown render mode");
+    return true;
     }
 
 
 static Byte s_transparency = 100;
 
 void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
-                              bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,                              
-                              Dgn::RenderContextR                         context,
-                              const DMatrix4d&                            storageToUors,
-                              ScalableMeshDisplayCacheManager*            mgr)
-    {    
+        bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
+        Dgn::RenderContextR                         context,
+        const DMatrix4d&                            storageToUors,
+        ScalableMeshDisplayCacheManager*            mgr)
+    {
 #if 0 //NEEDS_WORK_SM_TEMP_OUT
 
 #ifdef PRINT_SMDISPLAY_MSG
@@ -183,89 +183,89 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 #endif
 
     static size_t s_callCount = 0;
-                      
+
     bvector<IScalableMeshCachedDisplayNodePtr> requestedNodes;
     bvector<IScalableMeshCachedDisplayNodePtr> nodesWithoutQvElem;
 
-    Render::GraphicBranch graphics; 
-    
+    Render::GraphicBranch graphics;
+
     if (overviewMeshNodes.size() > 0)
         {
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < overviewMeshNodes.size(); nodeInd++)
-            {                       
+            {
             /*
-            if (context.CheckStop())
-                break;                           
-                */
-            
-            
+               if (context.CheckStop())
+               break;
+               */
+
+
             //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
             //assert(overviewMeshNodes[nodeInd]->IsHeaderLoaded() && overviewMeshNodes[nodeInd]->IsMeshLoaded());
             /*
-            if (!meshNodes[nodeInd]->IsHeaderLoaded() || !meshNodes[nodeInd]->IsMeshLoaded())
-                requestedNodes.push_back(meshNodes[nodeInd]);
-            else
-            */            
-            
+               if (!meshNodes[nodeInd]->IsHeaderLoaded() || !meshNodes[nodeInd]->IsMeshLoaded())
+               requestedNodes.push_back(meshNodes[nodeInd]);
+               else
+               */
+
                 {
                 /*
-                ElemMatSymbP matSymbP = context.GetElemMatSymb();
+                   ElemMatSymbP matSymbP = context.GetElemMatSymb();
 
-                matSymbP->Init();
-                ColorDef white(0xff, 0xff, 0xff);
-                ColorDef green(0, 0x77, 0);
-                matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);
-                matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);                
-                matSymbP->SetFillTransparency(s_transparency);
-                matSymbP->SetLineTransparency(s_transparency);
+                   matSymbP->Init();
+                   ColorDef white(0xff, 0xff, 0xff);
+                   ColorDef green(0, 0x77, 0);
+                   matSymbP->SetLineColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);
+                   matSymbP->SetFillColor(overviewMeshNodes[nodeInd]->IsTextured() ? white : green);
+                   matSymbP->SetFillTransparency(s_transparency);
+                   matSymbP->SetLineTransparency(s_transparency);
 
-                matSymbP->SetIsFilled(false);
-                context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
-                context.GetIDrawGeom().ActivateMatSymb(matSymbP);
-                */
+                   matSymbP->SetIsFilled(false);
+                   context.ResetContextOverrides(); // If not reset, last drawn override is applyed to dtm (Selected/Hide preview)
+                   context.GetIDrawGeom().ActivateMatSymb(matSymbP);
+                   */
                 }
 
-            
-            SmCachedDisplayMesh* cachedMesh = 0;                        
+
+            SmCachedDisplayMesh* cachedMesh = 0;
 
             if (SUCCESS == overviewMeshNodes[nodeInd]->GetCachedMesh(cachedMesh))
-                {                
+                {
                 graphics.Add(*cachedMesh->m_graphic);
                 }
             else
-                {                    
+                {
                 /*NEEDS_WORK_SM : Not support yet.
-                __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId());
+                  __int64 meshId = GetMeshId(overviewMeshNodes[nodeInd]->GetNodeId());
 
-                qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
-                */
+                  qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());
+                  */
                 assert(!"Should not get here");
                 }
             }
         }
 
 
-     if (meshNodes.size() > 0)
+    if (meshNodes.size() > 0)
         {
         //NEEDS_WORK_SM : If kept needs clean up
         for (size_t nodeInd = 0; nodeInd < meshNodes.size(); nodeInd++)
-            {                      
+            {
             /*
-            if (context.CheckStop())
-                break;            
-                */
-            
+               if (context.CheckStop())
+               break;
+               */
+
             //NEEDS_WORK_SM_PROGRESSIVE : IsMeshLoaded trigger load header.
             //assert(meshNodes[nodeInd]->IsHeaderLoaded() && meshNodes[nodeInd]->IsMeshLoaded());
             /*
-            if (!meshNodes[nodeInd]->IsHeaderLoaded() || !meshNodes[nodeInd]->IsMeshLoaded())
-                requestedNodes.push_back(meshNodes[nodeInd]);
-            else
-            */            
-          
+               if (!meshNodes[nodeInd]->IsHeaderLoaded() || !meshNodes[nodeInd]->IsMeshLoaded())
+               requestedNodes.push_back(meshNodes[nodeInd]);
+               else
+               */
+
             SmCachedDisplayMesh* cachedMesh = 0;
-                        
+
             if (SUCCESS == meshNodes[nodeInd]->GetCachedMesh(cachedMesh))
                 {
                 graphics.Add(*cachedMesh->m_graphic);
@@ -274,26 +274,25 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                 {
                 assert(!"Should not occur");
                 /*NEEDS_WORK_SM : Not support yet.
-                __int64 meshId = GetMeshId(meshNodes[nodeInd]->GetNodeId());
-                qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());                            
-                */
-                }                                                     
-            }    
+                  __int64 meshId = GetMeshId(meshNodes[nodeInd]->GetNodeId());
+                  qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());
+                  */
+                }
+            }
         }
 
     if (graphics.m_entries.empty())
         return;
-        
+
     Transform storageToUorsTransform;
     storageToUorsTransform.InitFrom(storageToUors);
     //context.PushTransform(storageToUorsTransform);
 
-    auto group = context.CreateBranch(Render::Graphic::CreateParams(nullptr, storageToUorsTransform), graphics);    
-    context.OutputGraphic(*group, nullptr);    
+    auto group = context.CreateBranch(Render::Graphic::CreateParams(nullptr, storageToUorsTransform), graphics);
+    context.OutputGraphic(*group, nullptr);
 
 #endif
     }
-
 
 //========================================================================================
 // @bsiclass                                                        Mathieu.St-Pierre     02/2016
@@ -301,133 +300,129 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 static bool s_drawInProcess = true;
 
 struct ScalableMeshProgressiveTask : ProgressiveTask
-    {
-    
+{
 protected:
-        
-    IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;        
+    IScalableMeshProgressiveQueryEnginePtr  m_progressiveQueryEngine;
     ScalableMeshDrawingInfoPtr              m_currentDrawingInfoPtr;
-    const DMatrix4d&                        m_storageToUorsTransfo;    
+    const DMatrix4d&                        m_storageToUorsTransfo;
     IScalableMeshDisplayCacheManager*       m_displayNodesCache;
     uint64_t                                m_nextShow;
 
     ScalableMeshProgressiveTask (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
-                                 ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                                    DMatrix4d&                              storageToUorsTransfo,
-                                     IScalableMeshDisplayCacheManagerPtr& cacheManager)
-    : m_storageToUorsTransfo(storageToUorsTransfo)
-        {    
+            ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr,
+            DMatrix4d&                              storageToUorsTransfo,
+            IScalableMeshDisplayCacheManagerPtr& cacheManager)
+        : m_storageToUorsTransfo(storageToUorsTransfo)
+        {
         m_progressiveQueryEngine = progressiveQueryEngine;
-        m_currentDrawingInfoPtr = currentDrawingInfoPtr;        
+        m_currentDrawingInfoPtr = currentDrawingInfoPtr;
         m_nextShow = 0;
         m_displayNodesCache = cacheManager.get();
         }
 
 public:
-
     virtual bool _WantTimeoutSet(uint32_t& limit)   {return false; }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                      Mathieu.St-Pierre     02/2016
-//----------------------------------------------------------------------------------------
-ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& wantShow)
-    {   
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                                      Mathieu.St-Pierre     02/2016
+    //----------------------------------------------------------------------------------------
+    ProgressiveTask::Completion _DoProgressive(RenderListContext& context, WantShow& wantShow)
+        {
 #if 0 //NEEDS_WORK_SM_TEMP_OUT
-    uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
+        uint64_t now = BeTimeUtilities::QueryMillisecondsCounter();
 
-    if (m_currentDrawingInfoPtr->m_overviewNodes.size() > 0)
-        {                    
-        int queryId = m_currentDrawingInfoPtr->m_currentQuery;
-
-        if (m_progressiveQueryEngine->IsQueryComplete(queryId))
+        if (m_currentDrawingInfoPtr->m_overviewNodes.size() > 0)
             {
-            m_currentDrawingInfoPtr->m_meshNodes.clear();
-            StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+            int queryId = m_currentDrawingInfoPtr->m_currentQuery;
 
-            assert(m_currentDrawingInfoPtr->m_overviewNodes.size() == 0 || m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
+            if (m_progressiveQueryEngine->IsQueryComplete(queryId))
+                {
+                m_currentDrawingInfoPtr->m_meshNodes.clear();
+                StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
 
-            m_currentDrawingInfoPtr->m_overviewNodes.clear();
+                assert(m_currentDrawingInfoPtr->m_overviewNodes.size() == 0 || m_currentDrawingInfoPtr->m_meshNodes.size() > 0);
 
-            assert(status == SUCCESS);
+                m_currentDrawingInfoPtr->m_overviewNodes.clear();
 
-            //completionStatus = Completion::HealRequired; 
+                assert(status == SUCCESS);
 
-#ifdef PRINT_SMDISPLAY_MSG        
-            PRINT_MSG("Heal required  meshNode : %I64u overviewMeshNode : %I64u \n", m_currentDrawingInfoPtr->m_meshNodes.size(), m_currentDrawingInfoPtr->m_overviewNodes.size());       
+                //completionStatus = Completion::HealRequired;
+
+#ifdef PRINT_SMDISPLAY_MSG
+                PRINT_MSG("Heal required  meshNode : %I64u overviewMeshNode : %I64u \n", m_currentDrawingInfoPtr->m_meshNodes.size(), m_currentDrawingInfoPtr->m_overviewNodes.size());
 #endif
+                }
+            else
+                {
+                m_currentDrawingInfoPtr->m_meshNodes.clear();
+                StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
+                assert(status == SUCCESS);
+
+                m_currentDrawingInfoPtr->m_overviewNodes.clear();
+                status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
+                assert(status == SUCCESS);
+
+                if (s_drawInProcess)
+                    ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);
+                }
             }
         else
-            {                                       
-            m_currentDrawingInfoPtr->m_meshNodes.clear();
-            StatusInt status = m_progressiveQueryEngine->GetRequiredNodes(m_currentDrawingInfoPtr->m_meshNodes, queryId);
-            assert(status == SUCCESS);                                  
-
-            m_currentDrawingInfoPtr->m_overviewNodes.clear();
-            status = m_progressiveQueryEngine->GetOverviewNodes(m_currentDrawingInfoPtr->m_overviewNodes, queryId);
-            assert(status == SUCCESS);                                  
-                                    
-            if (s_drawInProcess)
-                ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                                                      
+            {
+            context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
+            return Completion::Finished;
             }
-        }
-    else
-        {
-        context.GetViewport()->SetNeedsHeal(); // unfortunately the newly drawn tiles may be obscured by lower resolution ones
-        return Completion::Finished;
-        }     
-    
-    if (now > m_nextShow)
-        {
-        m_nextShow = now + 1000; // once per second
-        wantShow = WantShow::Yes;
-        }
-           
+
+        if (now > m_nextShow)
+            {
+            m_nextShow = now + 1000; // once per second
+            wantShow = WantShow::Yes;
+            }
+
 #endif
-    return Completion::Aborted;    
-    }
+        return Completion::Aborted;
+        }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                               Mathieu.St-Pierre      02/2016
-//----------------------------------------------------------------------------------------
-static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
-                      ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr, 
-                      DMatrix4d&                              storageToUorsTransfo, 
-                      TerrainContextR                            context,
-                      IScalableMeshDisplayCacheManagerPtr& cacheManager)
-    {
-/*
-    context.GetViewport()->ScheduleTerrainProgressiveTask (*new ScalableMeshProgressiveTask(progressiveQueryEngine,
-                                                                                            currentDrawingInfoPtr,
-                                                                                                        storageToUorsTransfo,
-                                                                                                        cacheManager));
-*/
-    }
-
-};  
+    //----------------------------------------------------------------------------------------
+    // @bsimethod                                               Mathieu.St-Pierre      02/2016
+    //----------------------------------------------------------------------------------------
+    static void Schedule (IScalableMeshProgressiveQueryEnginePtr& progressiveQueryEngine,
+            ScalableMeshDrawingInfoPtr&             currentDrawingInfoPtr,
+            DMatrix4d&                              storageToUorsTransfo,
+            TerrainContextR                            context,
+            IScalableMeshDisplayCacheManagerPtr& cacheManager)
+        {
+        /*
+           context.GetViewport()->ScheduleTerrainProgressiveTask (*new ScalableMeshProgressiveTask(progressiveQueryEngine,
+           currentDrawingInfoPtr,
+           storageToUorsTransfo,
+           cacheManager));
+           */
+        }
+};
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  4/2015
 //----------------------------------------------------------------------------------------
-bool ShouldDrawInContext (ViewContextR context) 
+bool ShouldDrawInContext (ViewContextR context)
     {
     /*
-    switch (context.GetDrawPurpose())
-        {
-        case DrawPurpose::Hilite:
-        case DrawPurpose::Unhilite:
-        case DrawPurpose::ChangedPre:       // Erase, rely on Healing.
-        case DrawPurpose::RestoredPre:      // Erase, rely on Healing.
-        case DrawPurpose::Pick:
-        case DrawPurpose::Flash:
-        case DrawPurpose::CaptureGeometry:
-        case DrawPurpose::FenceAccept:
-        case DrawPurpose::RegionFlood:
-        case DrawPurpose::FitView:
-        case DrawPurpose::ExportVisibleEdges:
-        case DrawPurpose::ModelFacet:
-            return false;
-        }
-        */
+       switch (context.GetDrawPurpose())
+       {
+       case DrawPurpose::Hilite:
+       case DrawPurpose::Unhilite:
+       case DrawPurpose::ChangedPre:       // Erase, rely on Healing.
+       case DrawPurpose::RestoredPre:      // Erase, rely on Healing.
+       case DrawPurpose::Pick:
+       case DrawPurpose::Flash:
+       case DrawPurpose::CaptureGeometry:
+       case DrawPurpose::FenceAccept:
+       case DrawPurpose::RegionFlood:
+       case DrawPurpose::FitView:
+       case DrawPurpose::ExportVisibleEdges:
+       case DrawPurpose::ModelFacet:
+       return false;
+       }
+       */
 
     return true;
     }
@@ -435,97 +430,22 @@ bool ShouldDrawInContext (ViewContextR context)
 static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
-
-//SMGeometry
-/*-----------------------------------------------------------------------------------**//**
-* Construct a Geometry from a TriMeshArgs and a Scene. The scene is necessary to get the Render::System, and this
-* Geometry is only valid for that Render::System
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-SMGeometry::SMGeometry(IGraphicBuilder::TriMeshArgs const& args, SMSceneR scene, Dgn::Render::SystemP renderSys)
-{
-    // After we create a Render::Graphic, we only need the points/indices/normals for picking.
-    // To save memory, only store them if the model is locatable.
-    if (scene.IsPickable())
-    {
-        m_indices.resize(args.m_numIndices);
-        memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
-
-        m_points.resize(args.m_numPoints);
-        memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
-
-        if (nullptr != args.m_normals)
-        {
-            m_normals.resize(args.m_numPoints);
-            memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
-        }
-    }
-
-    if (nullptr == renderSys /*|| !args.m_texture.IsValid()*/)
-        return;
-
-    m_texture = args.m_texture;
-
-    auto graphic = renderSys->_CreateGraphic(Graphic::CreateParams());
-    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-    graphic->AddTriMesh(args);
-    graphic->Close();
-    
-    m_graphic = graphic;
-}
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SMGeometry::GetGraphics(DrawGraphicsR args)
-    {
-    if (m_graphic.IsValid())
-        args.m_graphics.Add(*m_graphic);
-    }
+ * @bsimethod                                                    Paul.Connelly   07/17
+ +---------------+---------------+---------------+---------------+---------------+------*/
+SMGeometry::SMGeometry(CreateParams const& params, SMSceneR scene, Dgn::Render::SystemP sys) : Dgn::TileTree::TriMeshTree::TriMesh(params, scene, sys) { }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SMGeometry::Pick(PickArgsR args)
-    {
-    if (m_indices.empty())
-        return;
-
-    auto graphic = args.m_context.CreateGraphic(Graphic::CreateParams(nullptr, args.m_location));
-    graphic->AddPolyface(*GetPolyface());
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* Create a PolyfaceHeader from a Geometry
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr SMGeometry::GetPolyface() const
-    {
-    IGraphicBuilder::TriMeshArgs trimesh;
-    trimesh.m_numIndices = (int32_t)m_indices.size();
-    trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
-    trimesh.m_numPoints = (int32_t)m_points.size();
-    trimesh.m_points = m_points.empty() ? nullptr : &m_points.front();
-    trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
-    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();;
-
-    return trimesh.ToPolyface();
-    }
-
-
-//SMLoader
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
 SMNode::SMLoader::SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
-: TileLoader("", tile, loads, tile._GetTileCacheKey(), renderSys) 
-    { 
-    //assert(renderSys != nullptr); 
+    : TileLoader("", tile, loads, tile._GetTileCacheKey(), renderSys)
+    {
+    //assert(renderSys != nullptr);
 
     if (renderSys == nullptr)
         m_renderSys = m_tile->GetRoot().GetRenderSystem();
     }
-
 
 //SMNode
 //----------------------------------------------------------------------------------------
@@ -537,97 +457,75 @@ TileLoaderPtr SMNode::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Sys
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Draw this node.
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
+ * @bsimethod                                                    Paul.Connelly   07/17
+ +---------------+---------------+---------------+---------------+---------------+------*/
+bool SMNode::_WantDebugRangeGraphics() const
     {
     static bool s_debugRange = true;
-    if (s_debugRange)
-        {
-        GraphicParams params;
-        params.SetLineColor(ColorDef::Red());
+    return s_debugRange;
+    }
 
-        Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic();
-        graphic->ActivateGraphicParams(params);
-        graphic->AddRangeBox(m_range);
-        args.m_graphics.m_graphics.Add(*graphic);
+/*---------------------------------------------------------------------------------**//**
+ * Draw this node.
+ * @bsimethod                                    Keith.Bentley                   05/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
+void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
+    {
+    static bool s_debugTexture = false;
+    if (!s_debugTexture)
+        {
+        T_Super::_DrawGraphics(args, depth);
+        return;
         }
 
-    static bool s_debugTexture = false;
+    if (_WantDebugRangeGraphics())
+        AddDebugRangeGraphics(args);
 
-    if (!s_debugTexture)
-        _GetGraphics(args.m_graphics, depth);
-    else
-        {        
-        for (auto& geom : m_geometry)
-            {
-            Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic();
+    for (auto& mesh : m_meshes)
+        {
+        Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic();
 
-            IGraphicBuilder::TileCorners corners;
+        IGraphicBuilder::TileCorners corners;
 
-            DPoint3d rangeCorners[8];
-        
-            m_range.Get8Corners(rangeCorners);
+        DPoint3d rangeCorners[8];
 
-            memcpy(&corners.m_pts[0], &rangeCorners[4], sizeof(DPoint3d));
-            memcpy(&corners.m_pts[1], &rangeCorners[5], sizeof(DPoint3d));
-            memcpy(&corners.m_pts[2], &rangeCorners[6], sizeof(DPoint3d));
-            memcpy(&corners.m_pts[3], &rangeCorners[7], sizeof(DPoint3d));
-            
+        m_range.Get8Corners(rangeCorners);
 
-            GraphicParams params;
-            params.SetLineColor(ColorDef::Blue());
-            graphic->ActivateGraphicParams(params);
-            graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
-            graphic->AddTile(*geom->m_texture, corners);
+        memcpy(&corners.m_pts[0], &rangeCorners[4], sizeof(DPoint3d));
+        memcpy(&corners.m_pts[1], &rangeCorners[5], sizeof(DPoint3d));
+        memcpy(&corners.m_pts[2], &rangeCorners[6], sizeof(DPoint3d));
+        memcpy(&corners.m_pts[3], &rangeCorners[7], sizeof(DPoint3d));
 
-            auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
-            BeAssert(SUCCESS == stat);
-            UNUSED_VARIABLE(stat);
-                                    
-            args.m_graphics.m_graphics.Add(*graphic);            
-            }
+        auto& geom = static_cast<SMGeometry&>(*mesh);
+
+        GraphicParams params;
+        params.SetLineColor(ColorDef::Blue());
+        graphic->ActivateGraphicParams(params);
+        graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
+        graphic->AddTile(*geom.m_texture, corners);
+
+        auto stat = graphic->Close(); // explicitly close the Graphic. This potentially blocks waiting for QV from other threads
+        BeAssert(SUCCESS == stat);
+        UNUSED_VARIABLE(stat);
+
+        args.m_graphics.m_graphics.Add(*graphic);
         }
     }
 
 /*---------------------------------------------------------------------------------**//**
-* Draw this node.
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SMNode::_GetGraphics(DrawGraphicsR args, int depth) const
+ * Draw this node.
+ * @bsimethod                                    Keith.Bentley                   05/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String SMNode::_GetTileCacheKey() const
     {
-    for (auto geom : m_geometry)
-        geom->GetGraphics(args);
-    }   
-
-/*---------------------------------------------------------------------------------**//**
-* Draw this node.
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String SMNode::_GetTileCacheKey() const 
-    {
-    std::stringstream stream;    
+    std::stringstream stream;
     stream << m_scalableMeshNodePtr->GetNodeId();
     return Utf8String(stream.str().c_str());
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-void SMNode::_PickGraphics(PickArgsR args, int depth) const
-    {
-    if (!m_geometry.empty()) // if we have geometry, draw it now
-        {
-        for (auto geom : m_geometry)
-            geom->Pick(args);
-        }
-    }
-       
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+ * @bsimethod                                    Keith.Bentley                   05/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
     {
     BeAssert(!IsReady());
@@ -645,28 +543,26 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+ * @bsimethod                                    Keith.Bentley                   05/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNode::ReadHeader(DPoint3d& centroid)
-    {    
+    {
     m_range.low = m_scalableMeshNodePtr->GetContentExtent().low;
     m_range.high = m_scalableMeshNodePtr->GetContentExtent().high;
 
-
     m_range.low.Subtract(centroid);
-    m_range.high.Subtract(centroid);    
+    m_range.high.Subtract(centroid);
 
-        
-/*
-    JsonValueCR val = pt["maxScreenDiameter"];
-    if (val.empty())
-    {
-        LOG_ERROR("Cannot find \"maxScreenDiameter\" entry");
-        return false;
-    }
+    /*
+       JsonValueCR val = pt["maxScreenDiameter"];
+       if (val.empty())
+       {
+       LOG_ERROR("Cannot find \"maxScreenDiameter\" entry");
+       return false;
+       }
 
-    m_maxDiameter = val.asDouble();
-*/
+       m_maxDiameter = val.asDouble();
+       */
 
     float geometricResolution;
     float textureResolution;
@@ -675,28 +571,27 @@ bool SMNode::ReadHeader(DPoint3d& centroid)
 
     m_maxDiameter = 1000 / std::min(geometricResolution, textureResolution);
 
-/*
-    if (!readVectorEntry(pt, "resources", nodeResources))
-    {
-        LOG_ERROR("Cannot find \"resources\" entry");
-        return false;
-    }
+    /*
+       if (!readVectorEntry(pt, "resources", nodeResources))
+       {
+       LOG_ERROR("Cannot find \"resources\" entry");
+       return false;
+       }
 
-    bvector<Utf8String> children;
-    if (!readVectorEntry(pt, "children", children))
-        return false;
+       bvector<Utf8String> children;
+       if (!readVectorEntry(pt, "children", children))
+       return false;
 
-    BeAssert(children.size() <= 1);
+       BeAssert(children.size() <= 1);
 
-    if (1 == children.size())
-        m_childPath = children[0];
+       if (1 == children.size())
+       m_childPath = children[0];
 
-    if (m_parent)
-        m_parent->ExtendRange(m_range);
-*/
+       if (m_parent)
+       m_parent->ExtendRange(m_range);
+       */
     return true;
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
@@ -704,9 +599,9 @@ bool SMNode::ReadHeader(DPoint3d& centroid)
 static bool s_applyTexture = true;
 
 BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
-    {    
+    {
     //BeAssert(IsQueued() || ((m_parent != nullptr) && (m_parent->GetLoadStatus() == LoadStatus::Loading)));
-    
+
     m_loadStatus.store(LoadStatus::Loading);
 
     BeAssert(m_children.empty());
@@ -721,7 +616,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     if (!ReadHeader(centroid))
         return ERROR;
 
-#if 0 
+#if 0
     bmap<Utf8String, int> textureIds, nodeIds;
     bmap<Utf8String, Utf8String> geometryNodeCorrespondence;
     int nodeCount = 0;
@@ -729,46 +624,46 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     uint32_t magicSize = (uint32_t)GetMagicString().size();
     ByteCP currPos = in.GetCurrent();
     if (!in.Advance(magicSize))
-    {
+        {
         LOG_ERROR("Can't read magic number");
         return ERROR;
-    }
+        }
 
     Utf8String magicNumber((Utf8CP)currPos, (Utf8CP)in.GetCurrent());
     if (magicNumber != GetMagicString())
-    {
+        {
         LOG_ERROR("wrong magic number");
         return ERROR;
-    }
+        }
 
     uint32_t infoSize;
     if (!CtmContext::ReadBytes(in, &infoSize, 4))
-    {
+        {
         LOG_ERROR("Can't read size");
         return ERROR;
-    }
+        }
 
     Utf8P infoStr = (Utf8P)in.GetCurrent();
     Json::Value pt;
     Json::Reader reader;
     if (!reader.parse(infoStr, infoStr + infoSize, pt))
-    {
+        {
         LOG_ERROR("Cannot parse info: ");
         return ERROR;
-    }
+        }
 
     int version = pt.get("version", 0).asInt();
     if (version != 1)
-    {
+        {
         LOG_ERROR("Unsupported version");
         return ERROR;
-    }
+        }
 
     JsonValueCR nodes = pt["nodes"];
     if (!nodes.empty())
-    {
-        for (JsonValueCR node : nodes)
         {
+        for (JsonValueCR node : nodes)
+            {
             Utf8String nodeName;
             bvector<Utf8String> nodeResources;
             nodeName = node.get("id", "").asCString();
@@ -783,8 +678,8 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
                 geometryNodeCorrespondence[nodeResources[i]] = nodeName;
 
             m_children.push_back(nodeptr);
+            }
         }
-    }
 
     Utf8String resourceType, resourceFormat, resourceName;
     uint32_t resourceSize;
@@ -796,7 +691,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     bmap<Utf8String, Dgn::Render::TexturePtr> renderTextures;
     for (JsonValueCR resource : resources)
-    {
+        {
         resourceType = resource.get("type", "").asCString();
         resourceFormat = resource.get("format", "").asCString();
         resourceName = resource.get("id", "").asCString();
@@ -806,23 +701,23 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         offset += resourceSize;
 
         if (resourceType == "textureBuffer" && resourceFormat == "jpg" && !resourceName.empty() && resourceSize > 0)
-        {
+            {
             in.SetPos(thisOffset);
             ByteCP buffer = in.GetCurrent();
             if (!in.Advance(resourceSize))
-            {
+                {
                 LOG_ERROR("Cannot read texture data");
                 return ERROR;
-            }
+                }
 
             ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
             renderTextures[resourceName] = scene._CreateTexture(jpeg, Image::Format::Rgb, Image::BottomUp::Yes, renderSys);
+            }
         }
-    }
 
     offset = (uint32_t)GetMagicString().size() + 4 + infoSize;
     for (JsonValueCR resource : resources)
-    {
+        {
         resourceType = resource.get("type", "").asCString();
         resourceFormat = resource.get("format", "").asCString();
         resourceName = resource.get("id", "").asCString();
@@ -832,27 +727,27 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         offset += resourceSize;
 
         if (resourceType == "geometryBuffer" && resourceFormat == "ctm" && !resourceName.empty() && resourceSize > 0)
-        {
-            if (geometryNodeCorrespondence.find(resourceName) == geometryNodeCorrespondence.end())
             {
+            if (geometryNodeCorrespondence.find(resourceName) == geometryNodeCorrespondence.end())
+                {
                 LOG_ERROR("Geometry is not referenced by any node");
                 return ERROR;
-            }
+                }
 
             Utf8String nodeName = geometryNodeCorrespondence[resourceName];
             auto nodeId = nodeIds.find(nodeName);
             if (nodeId == nodeIds.end())
-            {
+                {
                 LOG_ERROR("Node name is unknown");
                 return ERROR;
-            }
+                }
 
             CtmContext ctm(in, thisOffset);
             if (CTM_NONE != ctm.GetError())
-            {
+                {
                 LOG_ERROR("CTM read error: %s", ctmErrorString(ctm.GetError()));
                 return ERROR;
-            }
+                }
 
             uint32_t textureCoordsArrays = ctm.GetInteger(CTM_UV_MAP_COUNT);
             if (textureCoordsArrays != 1)
@@ -874,54 +769,53 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
             trimesh.m_texture = (texture == renderTextures.end()) ? nullptr : texture->second;
 
             ((Node*)m_children[nodeId->second].get())->m_geometry.push_front(scene._CreateGeometry(trimesh, renderSys));
+            }
         }
-    }
 #endif
-    
+
     bvector<IScalableMeshNodePtr> childrenNodes(m_scalableMeshNodePtr->GetChildrenNodes());
 
     for (auto& childNode : childrenNodes)
         {
-        SMNodePtr nodeptr = new SMNode(GetRootR(), this, childNode);
+        SMNodePtr nodeptr = new SMNode(GetTriMeshRootR(), this, childNode);
 
-/*
-        if (!nodeptr->ReadHeader(centroid))
-            return ERROR;
-*/
+        /*
+           if (!nodeptr->ReadHeader(centroid))
+           return ERROR;
+           */
 
         if (loadChildren)
-            {            
-            nodeptr->Read3SMTile(in, scene, renderSys, false);            
+            {
+            nodeptr->Read3SMTile(in, scene, renderSys, false);
             }
 
         m_children.push_back(nodeptr);
         }
-        
+
     IScalableMeshMeshFlagsPtr loadFlagsPtr(IScalableMeshMeshFlags::Create(true, false));
-    IScalableMeshMeshPtr smMeshPtr(m_scalableMeshNodePtr->GetMesh(loadFlagsPtr));    
+    IScalableMeshMeshPtr smMeshPtr(m_scalableMeshNodePtr->GetMesh(loadFlagsPtr));
 
     if (!smMeshPtr.IsValid())
         return SUCCESS;
-            
-    const PolyfaceQuery* polyfaceQuery(smMeshPtr->GetPolyfaceQuery());    
-    
+
+    const PolyfaceQuery* polyfaceQuery(smMeshPtr->GetPolyfaceQuery());
+
     Render::IGraphicBuilder::TriMeshArgs trimesh;
 
     trimesh.m_numPoints = polyfaceQuery->GetPointIndexCount(); //smMeshPtr->GetNbPoints();
     FPoint3d* points = new FPoint3d[trimesh.m_numPoints];
-                
+
     for (size_t pointInd = 0; pointInd < trimesh.m_numPoints; pointInd++)
         {
-
         points[pointInd].x = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].x - centroid.x;
         points[pointInd].y = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].y - centroid.y;
         points[pointInd].z = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].z - centroid.z;
 
-/*
-        points[pointInd].x = (float)polyfaceQuery->GetPointCP()[pointInd].x;
-        points[pointInd].y = (float)polyfaceQuery->GetPointCP()[pointInd].y;
-        points[pointInd].z = (float)polyfaceQuery->GetPointCP()[pointInd].z;
-*/
+        /*
+           points[pointInd].x = (float)polyfaceQuery->GetPointCP()[pointInd].x;
+           points[pointInd].y = (float)polyfaceQuery->GetPointCP()[pointInd].y;
+           points[pointInd].z = (float)polyfaceQuery->GetPointCP()[pointInd].z;
+           */
         }
 
     trimesh.m_points = points;
@@ -930,16 +824,16 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     int* vertIndex = new int[trimesh.m_numIndices];
 
     _fPoint2d* textureUv;
-    
+
     textureUv = new _fPoint2d[trimesh.m_numIndices];
 
     for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
         {
         vertIndex[faceVerticeInd] = faceVerticeInd; //polyfaceQuery->GetPointIndexCP()[faceVerticeInd] - 1;
         }
-            
+
     for (size_t paramInd = 0; paramInd < polyfaceQuery->GetPointIndexCount(); paramInd++)
-        {        
+        {
         const DPoint2d* uv = &polyfaceQuery->GetParamCP()[polyfaceQuery->GetParamIndexCP()[paramInd] - 1];
         textureUv[paramInd].x = uv->x;
         textureUv[paramInd].y = uv->y;
@@ -947,32 +841,29 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     trimesh.m_vertIndex = vertIndex;
 
-if (s_applyTexture && renderSys != nullptr)
-{
-    trimesh.m_textureUV = textureUv;
+    if (s_applyTexture && renderSys != nullptr)
+        {
+        trimesh.m_textureUV = textureUv;
 
-    //IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
+        //IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
 
-    IScalableMeshTexturePtr compressedTexturePtr(m_scalableMeshNodePtr->GetTextureCompressed());
-    Image jpegImage(Image::FromJpeg(compressedTexturePtr->GetData(), compressedTexturePtr->GetSize(), Image::Format::Rgb));
-    //ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
+        IScalableMeshTexturePtr compressedTexturePtr(m_scalableMeshNodePtr->GetTextureCompressed());
+        Image jpegImage(Image::FromJpeg(compressedTexturePtr->GetData(), compressedTexturePtr->GetSize(), Image::Format::Rgb));
+        //ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
 
-    ImageSource imageSource(jpegImage, ImageSource::Format::Jpeg);
+        ImageSource imageSource(jpegImage, ImageSource::Format::Jpeg);
 
-    trimesh.m_texture =  renderSys->_CreateTexture(imageSource, Image::Format::Rgb, Image::BottomUp::Yes);                    
-}
+        trimesh.m_texture =  renderSys->_CreateTexture(imageSource, Image::Format::Rgb, Image::BottomUp::Yes);
+        }
 
-    m_geometry.push_front(scene._CreateGeometry(trimesh, renderSys));
-    assert(!m_geometry.empty());
+    m_meshes.push_front(scene._CreateGeometry(trimesh, renderSys));
+    assert(!m_meshes.empty());
 
     delete [] trimesh.m_points;
     delete [] trimesh.m_vertIndex;
     delete [] trimesh.m_textureUV;
-    
-    
 
-        
-#if 0 
+#if 0
     Render::IGraphicBuilder::TriMeshArgs trimesh;
     trimesh.m_numPoints = scalableMesh->GetNbPoints();
     trimesh.m_points = ctm.GetFloatArray(CTM_VERTICES);
@@ -982,24 +873,16 @@ if (s_applyTexture && renderSys != nullptr)
     trimesh.m_textureUV = (FPoint2d const*)ctm.GetFloatArray(CTM_UV_MAP_1);
 #endif
 
-
-    
-
     //BENTLEY_SM_EXPORT IScalableMeshTexturePtr GetTexture() const;
-
-
-
 
     return SUCCESS;
     }
-
-
 
 //=======================================================================================
 // @bsiclass                                                    Keith.Bentley   04/16
 //=======================================================================================
 struct ScalableMeshProgressive : ProgressiveTask
-    {
+{
     SMSceneR m_scene;
     DrawArgs::MissingNodes m_missing;
     BeTimePoint m_nextShow;
@@ -1009,11 +892,11 @@ struct ScalableMeshProgressive : ProgressiveTask
     ScalableMeshProgressive(SMSceneR scene, DrawArgs::MissingNodes& nodes, TileLoadStatePtr loads, ClipVectorCP clip) : m_scene(scene), m_missing(std::move(nodes)), m_loads(loads), m_clip(clip) {}
     ~ScalableMeshProgressive() {if (nullptr != m_loads) m_loads->SetCanceled();}
     Completion _DoProgressive(RenderListContext& context, WantShow&) override;
-    };
+};
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+ * @bsimethod                                    Keith.Bentley                   04/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion ScalableMeshProgressive::_DoProgressive(RenderListContext& context, WantShow& wantShow)
     {
     auto now = BeTimePoint::Now();
@@ -1031,7 +914,7 @@ ProgressiveTask::Completion ScalableMeshProgressive::_DoProgressive(RenderListCo
         }
 
     args.RequestMissingTiles(m_scene, m_loads);
-    args.DrawGraphics();     // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context 
+    args.DrawGraphics();     // the nodes that newly arrived are in the GraphicBranch in the DrawArgs. Add them to the context
 
     m_missing.swap(args.m_missing); // swap the list of missing tiles we were waiting for with those that are still missing.
 
@@ -1052,20 +935,17 @@ ProgressiveTask::Completion ScalableMeshProgressive::_DoProgressive(RenderListCo
     return Completion::Aborted;
     }
 
-
-//SMScene
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
+ * @bsimethod                                    Keith.Bentley                   01/17
+ +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTaskPtr SMScene::_CreateProgressiveTask(DrawArgsR args, TileLoadStatePtr loads)
-    {    
-    return new ScalableMeshProgressive(*this, args.m_missing, loads, args.m_clip);        
+    {
+    return new ScalableMeshProgressive(*this, args.m_missing, loads, args.m_clip);
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+ * @bsimethod                                    Keith.Bentley                   08/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
     {
     auto result = _RequestTile(node, nullptr);
@@ -1073,21 +953,20 @@ BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
     return result.isReady() ? SUCCESS : ERROR;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+ * @bsimethod                                    Keith.Bentley                   05/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadScene()
-{
+    {
     /*
-    if (SUCCESS != ReadSceneFile())
-        return ERROR;
-    */
+       if (SUCCESS != ReadSceneFile())
+       return ERROR;
+       */
 
     if (!m_smPtr.IsValid())
-        return ERROR;    
+        return ERROR;
 
-    //CreateCache(m_sceneInfo.m_sceneName.c_str(), 1024 * 1024 * 1024); // 1 GB    
+    //CreateCache(m_sceneInfo.m_sceneName.c_str(), 1024 * 1024 * 1024); // 1 GB
 
     IScalableMeshNodePtr smNode(m_smPtr->GetRootNode());
     SMNode* root = new SMNode(*this, nullptr, smNode);
@@ -1097,14 +976,14 @@ BentleyStatus SMScene::LoadScene()
     auto result = _RequestTile(*root, nullptr, GetRenderSystem());
     result.wait(BeDuration::Seconds(2)); // only wait for 2 seconds
     return result.isReady() ? SUCCESS : ERROR;
-}
+    }
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                      Ray.Bentley     09/2015
 //----------------------------------------------------------------------------------------
 BentleyStatus SMScene::LocateFromSRS()
-{
-#if 0 
+    {
+#if 0
     DgnGCSPtr bimGCS = m_db.GeoLocation().GetDgnGCS();
     if (!bimGCS.IsValid())
         return ERROR; // BIM is not geolocated, can't use geolocation in 3mx scene
@@ -1122,7 +1001,7 @@ BentleyStatus SMScene::LocateFromSRS()
     if (1 == sscanf(m_sceneInfo.m_reprojectionSystem.c_str(), "EPSG:%d", &epsgCode))
         status = threeMxGCS->InitFromEPSGCode(&warning, &warningMsg, epsgCode);
     else if (2 == sscanf(m_sceneInfo.m_reprojectionSystem.c_str(), "ENU:%lf,%lf", &latitude, &longitude))
-    {
+        {
         // ENU specification does not impose any projection method so we use the first azimuthal available using values that will
         // mimic the intent (North is Y positive, no offset)
         // Note that we could have injected the origin here but keeping it in the transform as for other GCS specs
@@ -1130,15 +1009,15 @@ BentleyStatus SMScene::LocateFromSRS()
             status = threeMxGCS->InitAzimuthalEqualArea(&warningMsg, L"WGS84", L"METER", longitude, latitude, 0.0, 1.0, 0.0, 0.0, 1);
         else
             status = ERROR;
-    }
+        }
     else
         status = threeMxGCS->InitFromWellKnownText(&warning, &warningMsg, DgnGCS::wktFlavorEPSG, WString(m_sceneInfo.m_reprojectionSystem.c_str(), false).c_str());
 
     if (SUCCESS != status)
-    {
+        {
         BeAssert(false && warningMsg.c_str());
         return ERROR;
-    }
+        }
 
     // Compute a linear transform that approximates the reprojection transformation at the origin.
     Transform localTransform;
@@ -1146,43 +1025,39 @@ BentleyStatus SMScene::LocateFromSRS()
 
     // 0 == SUCCESS, 1 == Warning, 2 == Severe Warning,  Negative values are severe errors.
     if (status == 0 || status == 1)
-    {
+        {
         m_location = localTransform;
         return SUCCESS;
-    }
+        }
 #endif
 
     return ERROR;
-}
-
+    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   04/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+ * @bsimethod                                    Keith.Bentley                   04/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
 #if 0
 BentleyStatus Scene::ReadSceneFile()
-{
+    {
     StreamBuffer rootStream;
 
     if (IsHttp())
-    {
+        {
         TileTree::HttpDataQuery query(m_sceneFile, nullptr);
         query.Perform().wait();
 
         rootStream = std::move(query.GetData());
-    }
+        }
     else
-    {
+        {
         TileTree::FileDataQuery query(m_sceneFile, nullptr);
         rootStream = std::move(query.Perform().get());
-    }
+        }
 
     return rootStream.HasData() ? m_sceneInfo.Read(rootStream) : ERROR;
-}
+    }
 #endif
-
-
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  12/2016
@@ -1206,7 +1081,6 @@ IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEng
     return m_progressiveQueryEngine;
     }
 
-
 void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
     {
     if (m_scene.IsValid() && (nullptr == renderSys || m_scene->GetRenderSystem() == renderSys))
@@ -1219,11 +1093,11 @@ void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
     m_scene = new SMScene(m_dgndb, m_smPtr, location, sceneFile.c_str(), renderSys);
     m_scene->SetPickable(true);
     if (SUCCESS != m_scene->LoadScene())
-        m_scene = nullptr;    
+        m_scene = nullptr;
     }
 
 void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
-    {        
+    {
     Load(&context.GetTargetR().GetSystem());
 
     if (m_scene.IsValid())
@@ -1234,7 +1108,6 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
         m_scene->DrawInView(context, m_scene->GetLocation(), clip.get());
         }
 
-
 #if 0 //NEEDS_WORK_SM_TEMP_OUT
     if (m_smPtr == 0 && !m_tryOpen)
         {
@@ -1244,34 +1117,34 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
 
         if (BeFileName::DoesPathExist(smFileName.c_str()))
             {
-            const_cast<ScalableMeshModel*>(this)->OpenFile(smFileName, GetDgnDb()); 
+            const_cast<ScalableMeshModel*>(this)->OpenFile(smFileName, GetDgnDb());
             }
-        
+
         (static_cast<ScalableMeshDisplayCacheManager*>(m_displayNodesCache.get()))->SetRenderSys(&context.GetTargetR().GetSystem());
 
         m_tryOpen = true;
         }
 
-    
+
 
     if (!ShouldDrawInContext(context) || NULL == context.GetViewport() || !m_smPtr.IsValid())
         return;
-         
+
     ScalableMeshDrawingInfoPtr nextDrawingInfoPtr(new ScalableMeshDrawingInfo(&context));
     nextDrawingInfoPtr->m_currentQuery = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);
     if ((m_currentDrawingInfoPtr != nullptr) &&
-        (m_currentDrawingInfoPtr->GetDrawPurpose() != DrawPurpose::Dynamics))
+            (m_currentDrawingInfoPtr->GetDrawPurpose() != DrawPurpose::Dynamics))
         {
         //If the m_dtmPtr equals 0 it could mean that the last data request to the STM was cancelled, so start a new request even
         //if the view has not changed.
-        if (m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false && !m_forceRedraw)                
+        if (m_currentDrawingInfoPtr->HasAppearanceChanged(nextDrawingInfoPtr) == false && !m_forceRedraw)
             {
             //assert((m_currentDrawingInfoPtr->m_overviewNodes.size() == 0) && (m_currentDrawingInfoPtr->m_meshNodes.size() > 0));
 
-            ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
-            return;                        
-            }   
-        }        
+            ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);
+            return;
+            }
+        }
     BentleyStatus status;
 
     status = GetProgressiveQueryEngine()->StopQuery(/*nextDrawingInfoPtr->GetViewNumber()*/nextDrawingInfoPtr->m_currentQuery);
@@ -1281,28 +1154,28 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
         }
     assert(status == SUCCESS);
 
-    m_forceRedraw = false;                                   
+    m_forceRedraw = false;
     m_currentDrawingInfoPtr = nextDrawingInfoPtr;
 
     // Need to get the fence info.
     /*
-    DTMDrawingInfo drawingInfo;
-    DTMElementDisplayHandler::GetDTMDrawingInfo(drawingInfo, m_DTMDataRef->GetElement(), m_DTMDataRef, context);
+       DTMDrawingInfo drawingInfo;
+       DTMElementDisplayHandler::GetDTMDrawingInfo(drawingInfo, m_DTMDataRef->GetElement(), m_DTMDataRef, context);
 
-    if (!drawingInfo.IsVisible ())
-        {
-        return;
-        }
-        */
+       if (!drawingInfo.IsVisible ())
+       {
+       return;
+       }
+       */
 
     DMatrix4d localToView(context.GetViewport()->GetWorldToViewMap()->M0);
-                                   
-    bsiDMatrix4d_multiply(&localToView, &localToView, &m_storageToUorsTransfo);              
+
+    bsiDMatrix4d_multiply(&localToView, &localToView, &m_storageToUorsTransfo);
 
     //DPoint3d viewBox[8];
 
     //NEEDS_WORK_SM : Remove from query
-    //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);        
+    //GetViewBoxFromContext(viewBox, _countof(viewBox), context, drawingInfo);
     DMatrix4d rootToStorage;
 
     //Convert the view box in storage.
@@ -1311,59 +1184,59 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
     BeAssert(inverted != 0);
 
     /*
-    bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray(&rootToStorage, viewBox, viewBox, 8);
-    */
-    
+       bsiDMatrix4d_multiplyAndRenormalizeDPoint3dArray(&rootToStorage, viewBox, viewBox, 8);
+       */
+
     status = SUCCESS;
-            
+
     IScalableMeshViewDependentMeshQueryParamsPtr viewDependentQueryParams(IScalableMeshViewDependentMeshQueryParams::CreateParams());
 
     viewDependentQueryParams->SetMinScreenPixelsPerPoint(s_minScreenPixelsPerPoint);
-                
-    ClipVectorPtr frustumClipVector;    
+
+    ClipVectorPtr frustumClipVector;
     Render::FrustumPlanes frustumPlanes(context.GetFrustumPlanes());
 
     assert(frustumPlanes.IsValid());
 
-    ClipPlaneSet clipPlaneSet(frustumPlanes.m_planes, 6);    
+    ClipPlaneSet clipPlaneSet(frustumPlanes.m_planes, 6);
     ClipVector::AppendPlanes(frustumClipVector, clipPlaneSet);
-                
+
     //NEEDS_WORK_SM : Need to keep only SetViewBox or SetViewClipVector for visibility
     //viewDependentQueryParams->SetViewBox(viewBox);
-    viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);    
+    viewDependentQueryParams->SetRootToViewMatrix(localToView.coff);
 
     //NEEDS_WORK_SM : Needed?
     /*
-    if (s_progressiveDraw)
-        {
-        viewDependentQueryParams->SetProgressiveDisplay(true);
-        viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
-        }            
-        */
-        
-    Transform rootToStorageTransform; 
-    bool result = rootToStorageTransform.InitFrom (rootToStorage); 
+       if (s_progressiveDraw)
+       {
+       viewDependentQueryParams->SetProgressiveDisplay(true);
+       viewDependentQueryParams->SetStopQueryCallback(CheckStopQueryCallback);
+       }
+       */
+
+    Transform rootToStorageTransform;
+    bool result = rootToStorageTransform.InitFrom (rootToStorage);
     assert(result == true);
 
     frustumClipVector->TransformInPlace(rootToStorageTransform);
-    
+
     viewDependentQueryParams->SetViewClipVector(frustumClipVector);
-                          
+
     m_currentDrawingInfoPtr->m_overviewNodes.clear();
-    int queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();                 
+    int queryId = (int)((GetModelId().GetValue() - GetModelId().GetBriefcaseId().GetValue()) & 0xFFFF);//nextDrawingInfoPtr->GetViewNumber();
     m_currentDrawingInfoPtr->m_currentQuery = queryId;
     bvector<bool> clips;
     /*NEEDS_WORK_SM : Get clips
-    m_DTMDataRef->GetVisibleClips(clips);
-    */
+      m_DTMDataRef->GetVisibleClips(clips);
+      */
 
     status = GetProgressiveQueryEngine()->StartQuery(queryId,
-                                                      viewDependentQueryParams, 
-                                                      m_currentDrawingInfoPtr->m_meshNodes, 
-                                                  !IsWireframeRendering(context) && s_loadTexture, 
-                                                      clips,
-                                                  &m_currentDrawingInfoPtr->GetLocalToViewTransform(), 
-                                                  &nextDrawingInfoPtr->GetLocalToViewTransform()); 
+            viewDependentQueryParams,
+            m_currentDrawingInfoPtr->m_meshNodes,
+            !IsWireframeRendering(context) && s_loadTexture,
+            clips,
+            &m_currentDrawingInfoPtr->GetLocalToViewTransform(),
+            &nextDrawingInfoPtr->GetLocalToViewTransform());
 
     assert(status == SUCCESS);
 
@@ -1377,16 +1250,16 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
         }
 
 
-        if (!m_isProgressiveDisplayOn)
+    if (!m_isProgressiveDisplayOn)
+        {
+        while (!GetProgressiveQueryEngine()->IsQueryComplete(terrainQueryId))
             {
-            while (!GetProgressiveQueryEngine()->IsQueryComplete(terrainQueryId))
-                {
-                BeThreadUtilities::BeSleep (200);
-                }
+            BeThreadUtilities::BeSleep (200);
             }
+        }
 
     bool needProgressive;
-    
+
     if (GetProgressiveQueryEngine()->IsQueryComplete(queryId))
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
@@ -1404,7 +1277,7 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
         m_forceRedraw = false;
         }
     else
-        {  
+        {
         bvector<IScalableMeshNodePtr> nodes;
         for (auto& nodeP : m_currentDrawingInfoPtr->m_meshNodes) nodes.push_back(nodeP.get());
         m_smPtr->SetCurrentlyViewedNodes(nodes);
@@ -1417,20 +1290,20 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
         assert(status == SUCCESS);
 
         needProgressive = true;
-        }                         
+        }
 
-    ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);                              
+    ProgressiveDrawMeshNode2(m_currentDrawingInfoPtr->m_meshNodes, m_currentDrawingInfoPtr->m_overviewNodes, context, m_storageToUorsTransfo);
 
     if (needProgressive)
         {
         ScalableMeshProgressiveTask::Schedule(m_progressiveQueryEngine, m_currentDrawingInfoPtr, m_storageToUorsTransfo, context, m_displayNodesCache);
         }
 #endif
-    }                 
+    }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+ * @bsimethod                                    Keith.Bentley                   05/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshModel::_PickTerrainGraphics(Dgn::PickContextR context) const
     {
     if (!m_scene.IsValid())
@@ -1444,10 +1317,10 @@ void ScalableMeshModel::_PickTerrainGraphics(Dgn::PickContextR context) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   05/16
-+---------------+---------------+---------------+---------------+---------------+------*/
+ * @bsimethod                                    Keith.Bentley                   05/16
+ +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshModel::_OnFitView(FitContextR context)
-    {    
+    {
     Load(nullptr);
     if (!m_scene.IsValid())
         return;
@@ -1467,16 +1340,16 @@ void ScalableMeshModel::GetAllScalableMeshes(BentleyApi::Dgn::DgnDbCR dgnDb, bve
         }
     }
 
-#if 0 
+#if 0
 
 struct  ScalableMeshTileNode : ModelTileNode
-    {
+{
     IScalableMeshNodePtr    m_node;
     Transform               m_transform;
 
     ScalableMeshTileNode(DgnModelCR model, IScalableMeshNodePtr& node, DRange3d transformedRange, TransformCR transform, size_t siblingIndex, TileNodeP parent) :
         m_node(node), m_transform(transform), ModelTileNode(model, transformedRange, node->GetLevel(), siblingIndex, transformedRange.XLength()* transformedRange.YLength() / node->GetPointCount(), parent)
-        {}
+    {}
 
 
     virtual TileMeshList _GenerateMeshes(TileGeometryCacheR geometryCache, double tolerance, TileGeometry::NormalMode normalMode = TileGeometry::NormalMode::CurvedSurfacesOnly, bool twoSidedTriangles = false) const override
@@ -1525,7 +1398,7 @@ struct  ScalableMeshTileNode : ModelTileNode
         return tileMeshes;
         }
 
-    };  //  ScalableMeshTileNode
+};  //  ScalableMeshTileNode
 
 #endif
 
@@ -1545,18 +1418,18 @@ void ScalableMeshModel::MakeTileSubTree(TileNodePtr& rootTile, IScalableMeshNode
         }
     }
 
-#if 0 
-TileGeneratorStatus ScalableMeshModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) 
+#if 0
+TileGeneratorStatus ScalableMeshModel::_GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter)
     {
     assert(!"Not implemented yet");
-    
+
     return TileGeneratorStatus::Aborted;
     }
 #endif
 
 //NEEDS_WORK_SM : Should be at application level
 void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& dgnDbFileName)
-    {    
+    {
     //smtFileName = params.m_dgndb.GetFileName().GetDirectoryName();
 
     smtFileName = dgnDbFileName.GetDirectoryName();
@@ -1564,57 +1437,56 @@ void GetScalableMeshTerrainFileName(BeFileName& smtFileName, const BeFileName& d
     smtFileName.AppendString(L"\\terrain.stm");
     }
 
-
 //=======================================================================================
 //! Helper class used to kept pointers with a DgnDb in-memory
 //=======================================================================================
 struct ScalableMeshTerrainModelAppData : Db::AppData
-    {
+{
     static Key DataKey;
 
     ScalableMeshModel*  m_smTerrainPhysicalModelP;
     bool                m_modelSearched;
 
-    ScalableMeshTerrainModelAppData () 
+    ScalableMeshTerrainModelAppData ()
         {
         m_smTerrainPhysicalModelP = 0;
         m_modelSearched = false;
         }
     virtual ~ScalableMeshTerrainModelAppData () {}
 
-     ScalableMeshModel* GetModel(DgnDbCR db)
+    ScalableMeshModel* GetModel(DgnDbCR db)
         {
         if (m_modelSearched == false)
             {
-            //NEEDS_WORK_SM : Not yet done. 
+            //NEEDS_WORK_SM : Not yet done.
             /*
-            BeSQLite::EC::ECSqlStatement stmt;
-            if (BeSQLite::EC::ECSqlStatus::Success != stmt.Prepare(dgnDb, "SELECT ECInstanceId FROM ScalableMeshModel.ScalableMesh;"))
-                return nullptr;
+               BeSQLite::EC::ECSqlStatement stmt;
+               if (BeSQLite::EC::ECSqlStatus::Success != stmt.Prepare(dgnDb, "SELECT ECInstanceId FROM ScalableMeshModel.ScalableMesh;"))
+               return nullptr;
 
-            if (BeSQLite::BE_SQLITE_ROW != stmt.Step()) return nullptr;
-            DgnModelId smModelID = DgnModelId(stmt.GetValueUInt64(0));
-            DgnModelPtr dgnModel = dgnDb.Models().FindModel(smModelID);
+               if (BeSQLite::BE_SQLITE_ROW != stmt.Step()) return nullptr;
+               DgnModelId smModelID = DgnModelId(stmt.GetValueUInt64(0));
+               DgnModelPtr dgnModel = dgnDb.Models().FindModel(smModelID);
 
-            if (dgnModel.get() == 0)
-                {
-                dgnModel = dgnDb.Models().GetModel(smModelID);
-                }
+               if (dgnModel.get() == 0)
+               {
+               dgnModel = dgnDb.Models().GetModel(smModelID);
+               }
 
-            if (dgnModel.get() != 0)
-                {
-                assert(dynamic_cast<ScalableMeshModel*>(dgnModel.get()) != 0);
+               if (dgnModel.get() != 0)
+               {
+               assert(dynamic_cast<ScalableMeshModel*>(dgnModel.get()) != 0);
 
-                return static_cast<ScalableMeshModel*>(dgnModel.get());
-                }
-                */        
+               return static_cast<ScalableMeshModel*>(dgnModel.get());
+               }
+               */
 
             m_modelSearched = true;
             }
 
         return m_smTerrainPhysicalModelP;
         }
-    
+
     static ScalableMeshTerrainModelAppData* Get (DgnDbCR dgnDb)
         {
         ScalableMeshTerrainModelAppData* appData = dynamic_cast<ScalableMeshTerrainModelAppData*>(dgnDb.FindAppData (ScalableMeshTerrainModelAppData::DataKey));
@@ -1628,10 +1500,10 @@ struct ScalableMeshTerrainModelAppData : Db::AppData
         }
 
     static void Delete (DgnDbCR dgnDb)
-        {        
-        dgnDb.DropAppData (ScalableMeshTerrainModelAppData::DataKey);        
-        }    
-    };
+        {
+        dgnDb.DropAppData (ScalableMeshTerrainModelAppData::DataKey);
+        }
+};
 
 Db::AppData::Key ScalableMeshTerrainModelAppData::DataKey;
 
@@ -1641,14 +1513,14 @@ Db::AppData::Key ScalableMeshTerrainModelAppData::DataKey;
 ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params)
     : T_Super(params)
     {
-    m_tryOpen = false;               
+    m_tryOpen = false;
     m_forceRedraw = false;
     m_isProgressiveDisplayOn = true;
     m_isInsertingClips = false;
 
-   // ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
-   // appData->m_smTerrainPhysicalModelP = this;
-   // appData->m_modelSearched = true;
+    // ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
+    // appData->m_smTerrainPhysicalModelP = this;
+    // appData->m_modelSearched = true;
     }
 
 //----------------------------------------------------------------------------------------
@@ -1656,12 +1528,15 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
 //----------------------------------------------------------------------------------------
 ScalableMeshModel::~ScalableMeshModel()
     {
-    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get())
+        m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+
     if (nullptr != m_currentDrawingInfoPtr.get())
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         }
+
     ScalableMeshTerrainModelAppData::Delete (GetDgnDb());
     //ClearProgressiveQueriesInfo();
     }
@@ -1669,8 +1544,8 @@ ScalableMeshModel::~ScalableMeshModel()
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
-void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject) 
-    {    
+void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
+    {
     assert(m_smPtr == nullptr);
     m_path = smFilename;
 
@@ -1689,24 +1564,24 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     assert(m_smPtr != 0);
     if (m_smPtr->IsTerrain())
         {
-         ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
-         if (appData->m_smTerrainPhysicalModelP == nullptr)
-             {
-             appData->m_smTerrainPhysicalModelP = this;
-             appData->m_modelSearched = true;
-             }
+        ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(m_dgndb);
+        if (appData->m_smTerrainPhysicalModelP == nullptr)
+            {
+            appData->m_smTerrainPhysicalModelP = this;
+            appData->m_modelSearched = true;
+            }
         }
-    
+
     const GeoCoords::GCS& gcs(m_smPtr->GetGCS());
 
     DPoint3d scale;
     scale.x = 1;
     scale.y = 1;
     scale.z = 1;
-    
+
     if (gcs.HasGeoRef())
         {
-        DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));        
+        DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));
         dgnGcsPtr->UorsFromCartesian(scale, scale);
 
         DgnGCSPtr projGCS = dgnProject.GeoLocation().GetDgnGCS();
@@ -1732,23 +1607,22 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         if (dgnProject.GeoLocation().GetDgnGCS()!=nullptr)
             dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
         }
-           
+
     DPoint3d translation = {0,0,0};
-    
-    m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);                
-    
+
+    m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);
+
     // NEEDS_WORK_SM
-/*
-    BeFileName dbFileName(dgnProject.GetDbFileName());
-    BeFileName basePath = dbFileName.GetDirectoryName();        
-    T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);    
-*/
+    /*
+       BeFileName dbFileName(dgnProject.GetDbFileName());
+       BeFileName basePath = dbFileName.GetDirectoryName();
+       T_HOST.GetPointCloudAdmin()._CreateLocalFileId(m_properties.m_fileId, smFilename, basePath);
+       */
 
     m_properties.m_fileId = smFilename.GetNameUtf8();
-    
+
     //m_properties.m_fileId = smFilename.GetNameUtf8();
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
@@ -1759,7 +1633,7 @@ ScalableMeshModelP ScalableMeshModel::CreateModel(BentleyApi::Dgn::DgnDbR dgnDb)
     BeAssert(classId.IsValid());
 
     ScalableMeshModelP model = new ScalableMeshModel(DgnModel::CreateParams(dgnDb, classId, dgnDb.Elements().GetRootSubjectId()/*, DgnModel::CreateModelCode("terrain")*/));
-    
+
     BeFileName terrainDefaultFileName(ScalableMeshModel::GetTerrainModelPath(dgnDb));
     model->Insert();
     model->OpenFile(terrainDefaultFileName, dgnDb);
@@ -1784,15 +1658,13 @@ Transform ScalableMeshModel::GetUorsToStorage()
     return t;
     }
 
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
 IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb)
-    {   
+    {
     return ScalableMeshTerrainModelAppData::Get(dgnDb)->GetModel(dgnDb);
     }
-
 
 BeFileName ScalableMeshModel::GetPath()
     {
@@ -1806,7 +1678,7 @@ IScalableMesh* ScalableMeshModel::GetScalableMesh()
     {
     return m_smPtr.get();
     }
-    
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -1857,7 +1729,7 @@ void ScalableMeshModel::SetActiveClipSets(bset<uint64_t>& activeClips, bset<uint
     m_activeClips = activeClips;
     bvector<uint64_t> clipIds;
     for (auto& clip: previouslyActiveClips)
-       clipIds.push_back(clip);
+        clipIds.push_back(clip);
     GetProgressiveQueryEngine()->SetActiveClips(activeClips, m_smPtr);
     GetProgressiveQueryEngine()->ClearCaching(clipIds, m_smPtr);
     m_forceRedraw = true;
@@ -1885,22 +1757,23 @@ void ScalableMeshModel::SetProgressiveDisplay(bool isProgressiveDisplayOn)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::GetClipSetIds(bvector<uint64_t>& allShownIds)
     {
-    if (m_smPtr.get() != nullptr) m_smPtr->GetAllClipIds(allShownIds);
+    if (m_smPtr.get() != nullptr)
+        m_smPtr->GetAllClipIds(allShownIds);
     }
 
 IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile)
-    {    
-    /*    
-    BeFileName smtFileName;
-    GetScalableMeshTerrainFileName(smtFileName, db.GetFileName());
-    
-    if (!smtFileName.GetDirectoryName().DoesPathExist())
-        BeFileName::CreateNewDirectory(smtFileName.GetDirectoryName().c_str());
-        */
+    {
+    /*
+       BeFileName smtFileName;
+       GetScalableMeshTerrainFileName(smtFileName, db.GetFileName());
+
+       if (!smtFileName.GetDirectoryName().DoesPathExist())
+       BeFileName::CreateNewDirectory(smtFileName.GetDirectoryName().c_str());
+       */
     Utf8String nameToSet = modelName;
     DgnClassId classId(db.Schemas().GetClassId("ScalableMesh", "ScalableMeshModel"));
-    BeAssert(classId.IsValid());        
-         
+    BeAssert(classId.IsValid());
+
     ScalableMeshTerrainModelAppData* appData(ScalableMeshTerrainModelAppData::Get(db));
 
     if (appData->m_smTerrainPhysicalModelP != nullptr)
@@ -1912,12 +1785,12 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
     model->Insert();
 
     if (openFile)
-        { 
+        {
         model->OpenFile(smFilename, db);
         }
     else
         {
-        model->SetFileNameProperty(smFilename);        
+        model->SetFileNameProperty(smFilename);
         }
 
     model->Update();
@@ -1936,16 +1809,16 @@ IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8S
         {
         nameToSet = Utf8String(smFilename.GetFileNameWithoutExtension().c_str());
         /*
-        DgnCode newModelCode(model->GetCode().GetAuthority(), nameToSet, NULL);
-        model->SetCode(newModelCode);
-*/
+           DgnCode newModelCode(model->GetCode().GetAuthority(), nameToSet, NULL);
+           model->SetCode(newModelCode);
+           */
         model->Update();
         }
 
     db.SaveChanges();
-    
 
-    return model.get();    
+
+    return model.get();
     }
 
 //----------------------------------------------------------------------------------------
@@ -1982,10 +1855,9 @@ void ScalableMeshModel::_OnSaveJsonProperties()
     Json::Value val;
 
     m_properties.ToJson(val);
-            
+
     SetJsonProperties(json_scalablemesh(), val);
     }
-
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.St-Pierre  03/2016
@@ -1993,9 +1865,9 @@ void ScalableMeshModel::_OnSaveJsonProperties()
 void ScalableMeshModel::_OnLoadedJsonProperties()
     {
     T_Super::_OnLoadedJsonProperties();
-        
+
     Json::Value val(GetJsonProperties(json_scalablemesh()));
-        
+
     m_properties.FromJson(val);
 
     if (m_smPtr == 0 && !m_tryOpen)
@@ -2004,7 +1876,7 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
         BeFileName smFileName;
         smFileName.AppendString(fileNameW.c_str());
         //BeFileName smFileName;
-        
+
         //NEEDS_WORK_SM : Doesn't work with URL
         if (true /*BeFileName::DoesPathExist(smFileName.c_str())*/)
             {
@@ -2015,5 +1887,5 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
         }
     }
 
-
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
+
