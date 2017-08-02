@@ -2319,12 +2319,12 @@ TEST_F(iModelManagerTests, QueryUsersInfoTest)
     auto userInfoResult = m_connection->GetUserInfoManager().QueryUsersInfo()->GetResult();
     EXPECT_SUCCESS(userInfoResult);
 
-    auto wantedId = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned();
+    auto wantedUserId = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned();
     bool success = false;
 
     for (auto userInfo : userInfoResult.GetValue())
         {
-        if (userInfo->GetId() == wantedId)
+        if (userInfo->GetId() == wantedUserId)
             success = true;
         }
 
@@ -2340,9 +2340,9 @@ TEST_F(iModelManagerTests, QueryUserInfoTest)
     auto userInfoResult = m_connection->GetUserInfoManager().QueryUserInfoById(m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned())->GetResult();
     EXPECT_SUCCESS(userInfoResult);
 
-    auto wantedId = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned();
+    auto wantedUserId = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue()->GetUserOwned();
 
-    EXPECT_EQ(wantedId, userInfoResult.GetValue()->GetId());
+    EXPECT_EQ(wantedUserId, userInfoResult.GetValue()->GetId());
     }
 
 //---------------------------------------------------------------------------------------
