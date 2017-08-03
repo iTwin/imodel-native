@@ -1096,7 +1096,9 @@ void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
         DRange3d range3D(m_smPtr->GetRootNode()->GetContentExtent());    
         DPoint3d centroid;
         centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
-        location = Transform::From(centroid.x, centroid.y, centroid.z);
+
+        DPoint3d go = m_dgndb.GeoLocation().GetGlobalOrigin();
+        location = Transform::From(centroid.x + go.x, centroid.y + go.y, centroid.z + go.z);                                    
         }
     else
         { 
