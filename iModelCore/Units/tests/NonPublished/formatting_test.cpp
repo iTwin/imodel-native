@@ -111,7 +111,7 @@ TEST(FormattingTest, Preliminary)
     LOG.infov("%s %s %s  Reset:%d", nameFT, nameIN, nameCM, upx->GetResetCount());
     LOG.infov("Compare address %x %x repet %d", upFT, upFT1, repc);
 
-    NumericFormatSpec numFmt = NumericFormatSpec();
+    /*NumericFormatSpec numFmt = NumericFormatSpec();
 
 
     LOG.infov("%s", NumericFormatSpec::StdFormatDouble("stop100-2", 1517.23).c_str());
@@ -121,14 +121,14 @@ TEST(FormattingTest, Preliminary)
     LOG.infov("%s", NumericFormatSpec::StdFormatDouble("stop100-2-4", 12.23).c_str());
     LOG.infov("%s", NumericFormatSpec::StdFormatDouble("stop100-2-4", 3.17).c_str());
 
-    LOG.infov("152 = %s", numFmt.FormatIntegerToString(152, 0, false));
-    LOG.infov("152 = %s", numFmt.FormatIntegerToString(152, 5, false));
-    LOG.infov("152 = %s", numFmt.FormatIntegerToString(-152, 4, false));
-    LOG.infov("0 = %s", numFmt.FormatIntegerToString(0, 4, false));
+    LOG.infov("152 = %s", numFmt.FormatIntegerToString(152, 0, false).c_str());
+    LOG.infov("152 = %s", numFmt.FormatIntegerToString(152, 5, false).c_str());
+    LOG.infov("152 = %s", numFmt.FormatIntegerToString(-152, 4, false).c_str());
+    LOG.infov("0 = %s", numFmt.FormatIntegerToString(0, 4, false).c_str());
     numFmt.SetSignOption(Formatting::ShowSignOption::SignAlways);
 
     LOG.infov("152 = %s", numFmt.FormatIntegerToString(152, 5, false));
-
+*/
     //LOG.infov("UNI: |%s|", uni);
     //LOG.infov("ASCIIMap %s (len %d)", FormatConstant::ASCIImap(), strlen(FormatConstant::ASCIImap()));
 
