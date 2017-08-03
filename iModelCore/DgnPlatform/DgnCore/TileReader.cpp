@@ -454,7 +454,7 @@ void    CopyAndIncrement(void* out, void const*& in, size_t size)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus ReadPolylines(bvector<MeshPolyline>& polylines, Json::Value value, Utf8CP name)
+BentleyStatus ReadPolylines(bvector<MeshPolyline>& polylines, Json::Value value, Utf8CP name, bool disjoint)
     {
     void const*     pData;
     size_t          count, byteLength;
@@ -490,7 +490,8 @@ BentleyStatus ReadPolylines(bvector<MeshPolyline>& polylines, Json::Value value,
             {
             CopyAndIncrement(indices.data(), pData, nIndices * sizeof(uint32_t));
             }
-        if (indices.size() < 2)
+
+        if (!disjoint && indices.size() < 2)
             {
             BeAssert(false);
             continue;
@@ -498,6 +499,7 @@ BentleyStatus ReadPolylines(bvector<MeshPolyline>& polylines, Json::Value value,
 
         polylines.push_back(MeshPolyline(startDistance, rangeCenter, std::move(indices)));
         }
+
     return SUCCESS;
     }
 
@@ -523,7 +525,7 @@ MeshEdgesPtr ReadMeshEdges(Json::Value const& primitiveValue)
         memcpy (meshEdges->m_silhouette.data(), indices.data(), indices.size() * sizeof(uint32_t));
         }
    
-    ReadPolylines(meshEdges->m_polylines, edgesValue, "polylines");
+    ReadPolylines(meshEdges->m_polylines, edgesValue, "polylines", false);
 
     return meshEdges;
     }
@@ -599,7 +601,7 @@ MeshPtr ReadMeshPrimitive(Json::Value const& primitiveValue, FeatureTableP featu
         case Mesh::PrimitiveType::Polyline:
         case Mesh::PrimitiveType::Point:
             {
-            if (SUCCESS != ReadPolylines(mesh->PolylinesR(), primitiveValue, "indices"))
+            if (SUCCESS != ReadPolylines(mesh->PolylinesR(), primitiveValue, "indices", Mesh::PrimitiveType::Point == primitiveType))
                 {
                 BeAssert(false);
                 return nullptr;
