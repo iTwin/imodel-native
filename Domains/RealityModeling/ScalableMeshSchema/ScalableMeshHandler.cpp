@@ -13,6 +13,7 @@
 #include "ScalableMeshDisplayCacheManager.h"
 #include <ScalableMesh\GeoCoords\GCS.h>
 #include <DgnPlatform\LinkElement.h>
+#include <DgnPlatform\DgnGeoCoord.h>
 
 
 USING_NAMESPACE_BENTLEY_DGN
@@ -545,13 +546,14 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                    Keith.Bentley                   05/16
  +---------------+---------------+---------------+---------------+---------------+------*/
-bool SMNode::ReadHeader(DPoint3d& centroid)
+
+bool SMNode::ReadHeader(Transform& locationTransform)
     {
     m_range.low = m_scalableMeshNodePtr->GetContentExtent().low;
     m_range.high = m_scalableMeshNodePtr->GetContentExtent().high;
 
-    m_range.low.Subtract(centroid);
-    m_range.high.Subtract(centroid);
+    locationTransform.Multiply(m_range.low);
+    locationTransform.Multiply(m_range.high);
 
     /*
        JsonValueCR val = pt["maxScreenDiameter"];
@@ -568,8 +570,10 @@ bool SMNode::ReadHeader(DPoint3d& centroid)
     float textureResolution;
 
     m_scalableMeshNodePtr->GetResolutions(geometricResolution, textureResolution);
-
-    m_maxDiameter = 1000 / std::min(geometricResolution, textureResolution);
+        
+    m_maxDiameter = m_range.low.Distance(m_range.high) / std::min(geometricResolution, textureResolution);
+	
+	//m_maxDiameter = 1000 / std::min(geometricResolution, textureResolution);
 
     /*
        if (!readVectorEntry(pt, "resources", nodeResources))
@@ -609,11 +613,10 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     DRange3d range3D(scene.m_smPtr->GetRootNode()->GetContentExtent());
     //DRange3d range3D(m_scalableMeshNodePtr->GetContentExtent());
 
-    DPoint3d centroid;
-    centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
-    //centroid = DPoint3d::From(0, 0, 0);
 
-    if (!ReadHeader(centroid))
+    Transform toFloatTransform(scene.GetToFloatTransform());
+
+    if (!ReadHeader(toFloatTransform))
         return ERROR;
 
 #if 0
@@ -807,9 +810,12 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     for (size_t pointInd = 0; pointInd < trimesh.m_numPoints; pointInd++)
         {
-        points[pointInd].x = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].x - centroid.x;
-        points[pointInd].y = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].y - centroid.y;
-        points[pointInd].z = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].z - centroid.z;
+        DPoint3d resultPts;
+        toFloatTransform.Multiply(resultPts, polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1]);
+        
+        points[pointInd].x = (float)resultPts.x;
+        points[pointInd].y = (float)resultPts.y;
+        points[pointInd].z = (float)resultPts.z;
 
         /*
            points[pointInd].x = (float)polyfaceQuery->GetPointCP()[pointInd].x;
@@ -1089,7 +1095,8 @@ void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
     // if we ask for the model with a different Render::System, we just throw the old one away.
     Utf8String sceneFile;
 
-    Transform  location;
+    Transform location;
+    Transform toFloatTransform;
 
     if (m_smPtr.IsValid())
         {
@@ -1098,14 +1105,43 @@ void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
         centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
 
         DPoint3d go = m_dgndb.GeoLocation().GetGlobalOrigin();
-        location = Transform::From(centroid.x + go.x, centroid.y + go.y, centroid.z + go.z);                                    
+
+        GeoCoords::GCS gcs(m_smPtr->GetGCS());
+        DgnGCSPtr  smGCS = DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), m_dgndb);
+
+        DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
+        smGCS->UorsFromCartesian(scale, scale);
+        scale.DifferenceOf(scale, go);
+
+        smGCS->UorsFromCartesian(centroid, centroid);
+
+        toFloatTransform = Transform::FromRowValues(scale.x, 0, 0, -(centroid.x - go.x),
+                                                    0, scale.y, 0, -(centroid.y - go.y),
+                                                    0, 0, scale.z, -(centroid.z - go.z));
+
+
+        
+/*
+        computedTransform = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
+                                                     0, scale.y, 0, globalOrigin.y,
+                                                     0, 0, scale.z, globalOrigin.z);
+*/
+
+        scale = DPoint3d::FromXYZ(1, 1, 1);
+
+        location = Transform::FromRowValues(scale.x, 0, 0, centroid.x,
+                                                     0, scale.y, 0, centroid.y,
+                                                     0, 0, scale.z, centroid.z);
+
+        //location = Transform::From(centroid.x + go.x, centroid.y + go.y, centroid.z + go.z);                                    
         }
     else
         { 
         location = Transform::FromIdentity();
+        toFloatTransform = Transform::FromIdentity();
         }
 
-    m_scene = new SMScene(m_dgndb, m_smPtr, location, sceneFile.c_str(), renderSys);
+    m_scene = new SMScene(m_dgndb, m_smPtr, location, toFloatTransform, sceneFile.c_str(), renderSys);
     m_scene->SetPickable(true);
     if (SUCCESS != m_scene->LoadScene())
         m_scene = nullptr;

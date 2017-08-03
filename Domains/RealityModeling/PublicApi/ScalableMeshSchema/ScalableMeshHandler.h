@@ -124,7 +124,7 @@ struct SMNode : Dgn::TileTree::TriMeshTree::Tile
 private:
     IScalableMeshNodePtr m_scalableMeshNodePtr;
 
-    bool ReadHeader(DPoint3d& centroid);
+    bool ReadHeader(Transform& locationTransform);
     BentleyStatus Read3SMTile(Dgn::TileTree::StreamBuffer&, SMSceneR, Dgn::Render::SystemP renderSys, bool loadChildren);
     BentleyStatus DoRead(Dgn::TileTree::StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren);
 
@@ -153,6 +153,7 @@ struct SMScene : Dgn::TileTree::TriMeshTree::Root
 
 private:
     IScalableMeshPtr m_smPtr;
+    Transform        m_toFloatTransform; 
 
     //SceneInfo   m_sceneInfo;
     BentleyStatus LocateFromSRS(); // compute location transform from spatial reference system in the sceneinfo
@@ -161,13 +162,15 @@ private:
     Utf8CP _GetName() const override { return "3SM"; }
 
 public:
-    SMScene(Dgn::DgnDbR db, IScalableMeshPtr& smPtr, TransformCR location, Utf8CP sceneFile, Dgn::Render::SystemP system) : T_Super(db, location, sceneFile, system), m_smPtr(smPtr) {}
+    SMScene(Dgn::DgnDbR db, IScalableMeshPtr& smPtr, TransformCR location, TransformCR toFloatTransform, Utf8CP sceneFile, Dgn::Render::SystemP system) : T_Super(db, location, sceneFile, system), m_smPtr(smPtr), m_toFloatTransform(toFloatTransform) {}
 
     ~SMScene() { ClearAllTiles(); }
 
     //SceneInfo const& GetSceneInfo() const { return m_sceneInfo; }
     BentleyStatus LoadNodeSynchronous(SMNodeR);
     BentleyStatus LoadScene(); // synchronous
+
+    Transform GetToFloatTransform() { return m_toFloatTransform;}
 
     SCALABLEMESH_SCHEMA_EXPORT BentleyStatus ReadSceneFile(); //!< Read the scene file synchronously
 };
