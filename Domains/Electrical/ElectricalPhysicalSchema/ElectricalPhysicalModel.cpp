@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Electrical/ElectricalPhysicalSchema/ElectricalPhysicalModel.cpp $
+|     $Source: ElectricalPhysicalSchema/ElectricalPhysicalModel.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -13,14 +13,13 @@ BEGIN_BENTLEY_NAMESPACE
 namespace ElectricalPhysical
 	{
 
-	HANDLER_DEFINE_MEMBERS(ElectricalTypeDefinitionModelHandler)
 	HANDLER_DEFINE_MEMBERS(ElectricalPhysicalModelHandler)
-
+	HANDLER_DEFINE_MEMBERS(ElectricalTypeDefinitionModelHandler)
 
 	//---------------------------------------------------------------------------------------
 	// @bsimethod                                   Bentley.Systems
 	//---------------------------------------------------------------------------------------
-		ElectricalPhysicalModelPtr ElectricalPhysicalModel::Create(Dgn::PhysicalPartitionCR partition)
+	ElectricalPhysicalModelPtr ElectricalPhysicalModel::Create(Dgn::PhysicalPartitionCR partition)
 		{
 		Dgn::DgnDbR db = partition.GetDgnDb();
 		Dgn::DgnElementId modeledElementId = partition.GetElementId();
@@ -43,9 +42,6 @@ namespace ElectricalPhysical
 	//---------------------------------------------------------------------------------------
 	Dgn::DgnDbStatus ElectricalPhysicalModel::_OnInsertElement(Dgn::DgnElementR element)
 		{
-	  //  if (nullptr == dynamic_cast<ArchitecturalBaseElementCP>(&element))
-	  //      return DgnDbStatus::WrongElement;
-
 		return T_Super::_OnInsertElement(element);
 		}
 
@@ -75,9 +71,6 @@ namespace ElectricalPhysical
 	//---------------------------------------------------------------------------------------
 	Dgn::DgnDbStatus ElectricalTypeDefinitionModel::_OnInsertElement(Dgn::DgnElementR element)
 		{
-	    //  if (nullptr == dynamic_cast<DoorTypeCP>(&element))
-	    //      return DgnDbStatus::WrongElement;
-
 		return T_Super::_OnInsertElement(element);
 		}
 

@@ -1,6 +1,6 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: Electrical/Electrical.mke $
+#     $Source: Electrical.mke $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
@@ -10,16 +10,8 @@
 CompileOptionsMki   = $(SrcRoot)DgnDomains/Electrical/ElectricalCompileOptions.mki
 %include $(CompileOptionsMki)
 
-
-ArchPhysSrc       = $(_MakeFilePath)ArchitecturalPhysicalschema/
-ArchPhysPublicApi = $(ArchPhysSrc)PublicAPI/ArchitecturalPhysical/
-
 ElectricalPhysSrc       = $(_MakeFilePath)ElectricalPhysicalschema/
 ElectricalPhysPublicApi = $(ElectricalPhysSrc)PublicAPI/ElectricalPhysical/
-
-BldgCmnSrc        = $(_MakeFilePath)BuildingCommonschema/
-BldgCmnPublicApi  = $(BldgCmnSrc)PublicAPI/BuildingCommon/
-
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -28,10 +20,6 @@ appSrc              = $(_MakeFilePath)
 appPublicApi        = $(appSrc)PublicAPI/$(appName)/
 MultiCompileDepends = $(_MakeFileSpec) \
                       $(appSrc)ElectricalDomainInternal.h \
-                 
-#                      $(ArchPhysPublicApi)ArchitecturalPhysicalApi.h \
-#                      $(BldgPhysPublicApi)BuildingPhysicalApi.h \
-#                      $(BldgCmnPublicApi)BuildingCommonApi.h \
 
 always:
     !~@mkdir $(o)
@@ -60,17 +48,9 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 %include MultiCppCompileRule.mki
 
-# $(o)ArchitecturalPhysicalDomain$(oext) : $(ArchPhysSrc)ArchitecturalPhysicalDomain.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)ArchitecturalPhysicalDomain.h
-
-# $(o)BuildingCommonDomain$(oext) : $(BldgCmnSrc)BuildingCommonDomain.cpp ${MultiCompileDepends} $(BldgCmnPublicApi)BuildingCommonDomain.h
-
 $(o)ElectricalPhysicalDomain$(oext) : $(ElectricalPhysSrc)ElectricalPhysicalDomain.cpp ${MultiCompileDepends} $(ElectricalPhysPublicApi)ElectricalPhysicalDomain.h
 
 $(o)Device$(oext) : $(ElectricalPhysSrc)Device.cpp ${MultiCompileDepends} $(ElectricalPhysPublicApi)Device.h
-
-#$(o)Window$(oext) : $(ArchPhysSrc)Window.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)Window.h
-
-#$(o)Wall$(oext) : $(ArchPhysSrc)Wall.cpp ${MultiCompileDepends} $(ArchPhysPublicApi)wall.h
 
 $(o)ElectricalPhysicalModel$(oext) : $(ElectricalPhysSrc)ElectricalPhysicalModel.cpp ${MultiCompileDepends} $(ElectricalPhysPublicApi)ElectricalPhysicalModel.h
 
@@ -105,8 +85,6 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatfo
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(libext)
-#LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BuildingCommon$(libext)
-
 
 
 %include $(sharedMki)linkLibrary.mki

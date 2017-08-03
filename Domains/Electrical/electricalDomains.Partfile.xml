@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="ElectricalDomains" >
+		<SubPart PartName="ElectricalDomain"/>
+    </Part>
+
+    
+    <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
+    <Part Name="ElectricalDomainsWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
+        <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
+        <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
+        <SubPart PartName="ElectricalDomains"/>
+    </Part>
+    
+
+    <Part Name="ElectricalDomain" BentleyBuildMakeFile="Electrical.mke" ApiNumber="B02">
+        <SubPart PartName="ElectricalPhysicalPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+
+        <Bindings>
+            <Libs>Delivery/$(libprefix)ElectricalDomain$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)ElectricalDomain$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="Libs" >
+                Delivery/$(libprefix)ElectricalDomain$(libext)
+                Delivery/$(shlibprefix)ElectricalDomain$(ApiNumber)$(shlibext)
+            </Files>
+        </Bindings>
+    </Part>
+
+
+    <Part Name="ElectricalPhysicalPublicAPI" BentleyBuildMakeFile="Electrical.prewire.mke" ApiNumber="B02">
+        <Bindings>
+            <PublicAPI Domain="ElectricalDomain"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/ElectricalPhysical.ecschema.xml
+            </Files>
+        </Bindings>
+    </Part>
+    
+</BuildContext>

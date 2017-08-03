@@ -1,10 +1,9 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Electrical/ElectricalDomainInternal.h $
+|     $Source: ElectricalDomainInternal.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "ElectricalDomain\ElectricalDomainApi.h"
+#include "ElectricalDomainInternal.h"
 
- 

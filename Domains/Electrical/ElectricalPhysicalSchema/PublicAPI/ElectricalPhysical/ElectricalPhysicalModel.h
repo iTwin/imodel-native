@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: Electrical/ElectricalPhysicalSchema/PublicAPI/ElectricalPhysical/ElectricalPhysicalModel.h $
+|     $Source: ElectricalPhysicalSchema/PublicAPI/ElectricalPhysical/ElectricalPhysicalModel.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
