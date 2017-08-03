@@ -315,6 +315,8 @@ struct NodeAddonECDb : Nan::ObjectWrap
         void Execute() override
             {
             m_status = IModelJs::InsertInstance(m_errmsg, m_insertedId, *m_addon->m_ecdb, m_jsonInstance);
+            if (m_status != BE_SQLITE_OK)
+                Reject();
             }
 
         void _ResolvePromise(T_ResolverLocal& r) override { r->Resolve(Nan::New(m_insertedId.ToString().c_str()).ToLocalChecked()); }
@@ -341,6 +343,8 @@ struct NodeAddonECDb : Nan::ObjectWrap
         void Execute() override
             {
             m_status = IModelJs::UpdateInstance(m_errmsg, *m_addon->m_ecdb, m_jsonInstance);
+            if (m_status != BE_SQLITE_OK)
+                Reject();
             }
 
         void _ResolvePromise(T_ResolverLocal &r) override { r->Resolve(v8::Integer::New(v8::Isolate::GetCurrent(), m_status)); }
@@ -380,6 +384,8 @@ struct NodeAddonECDb : Nan::ObjectWrap
         void Execute() override
             {
             m_status = IModelJs::ReadInstance(m_errmsg, m_jsonInstance, *m_addon->m_ecdb, m_jsonInstanceKey);
+            if (m_status != BE_SQLITE_OK)
+                Reject();
             }
 
         void _ResolvePromise(T_ResolverLocal& r) override { r->Resolve(Nan::New(m_jsonInstance.ToString().c_str()).ToLocalChecked()); }
@@ -407,6 +413,8 @@ struct NodeAddonECDb : Nan::ObjectWrap
         void Execute() override
             {
             m_status = IModelJs::DeleteInstance(m_errmsg, *m_addon->m_ecdb, m_jsonInstanceKey);
+            if (m_status != BE_SQLITE_OK)
+                Reject();
             }
 
         void _ResolvePromise(T_ResolverLocal &r) override { r->Resolve(v8::Integer::New(v8::Isolate::GetCurrent(), m_status)); }
@@ -439,6 +447,50 @@ struct NodeAddonECDb : Nan::ObjectWrap
             }
 
         void _ResolvePromise(T_ResolverLocal &r) override { r->Resolve(v8::Boolean::New(v8::Isolate::GetCurrent(), m_containsInstance)); }
+        };
+
+    struct ExecuteQueryWorker : WorkerBase<DbResult>
+        {
+        Utf8String m_ecsql;
+        Json::Value m_rowsJson;  // output
+
+        ExecuteQueryWorker(NodeAddonECDb* db, Utf8CP ecsql) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue) {}
+
+        static NAN_METHOD(Start)
+            {
+            Nan::HandleScope scope;
+            NodeAddonECDb* db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
+
+            if (!db->m_ecdb.IsValid() || !db->m_ecdb->IsDbOpen())
+                return Nan::ThrowTypeError("ECDb must be open to complete this operation");
+
+            REQUIRE_ARGUMENT_STRING(0, ecsql, "Argument 0 must be an ECSql string");
+            (new ExecuteQueryWorker(db, *ecsql))->ScheduleAndReturnPromise(info);
+            }
+
+        void Execute() override
+            {
+            JsECDbR ecdb = *m_addon->m_ecdb;
+            BeSqliteDbMutexHolder serializeAccess(ecdb); // hold mutex, so that we have a chance to get last ECDb error message
+
+            CachedECSqlStatementPtr stmt = ecdb.GetPreparedECSqlStatement(m_ecsql.c_str());
+            if (!stmt.IsValid())
+                {
+                m_errmsg = IModelJs::GetLastEcdbIssue();
+                m_status = BE_SQLITE_ERROR;
+                Reject();
+                }
+
+            m_status = IModelJs::ExecuteQuery(m_errmsg, m_rowsJson, *stmt);
+            if (m_status != BE_SQLITE_DONE)
+                Reject();
+            }
+
+        void _ResolvePromise(T_ResolverLocal& r) override
+            {
+            auto json = Json::FastWriter::ToString(m_rowsJson);
+            r->Resolve(Nan::New(json.c_str()).ToLocalChecked());
+            }
         };
 
 private:
@@ -485,6 +537,7 @@ public:
         Nan::SetPrototypeMethod(t, "updateInstance", UpdateInstanceWorker::Start);
         Nan::SetPrototypeMethod(t, "deleteInstance", DeleteInstanceWorker::Start);
         Nan::SetPrototypeMethod(t, "containsInstance", ContainsInstanceWorker::Start);
+        Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);
 
         Nan::SetAccessor(t->InstanceTemplate(), Nan::New("IsDbOpen").ToLocalChecked(), OpenGetter);
 
@@ -707,6 +760,51 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             }
         };
 
+    //=======================================================================================
+    //  Execute a query and return all rows, if any
+    //! @bsiclass
+    //=======================================================================================
+    struct ExecuteQueryWorker : WorkerBase<DbResult>
+        {
+        Utf8String m_ecsql;
+        Json::Value m_rowsJson;  // output
+
+        ExecuteQueryWorker(NodeAddonDgnDb* db, Utf8CP ecsql) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue) {}
+
+        static NAN_METHOD(Start)
+            {
+            Nan::HandleScope scope;
+            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+            DGNDB_MUST_BE_OPEN(db);
+            REQUIRE_ARGUMENT_STRING(0, ecsql, "Argument 0 must be an ECSql string");
+            (new ExecuteQueryWorker(db, *ecsql))->ScheduleAndReturnPromise(info);
+            }
+
+        void Execute() override
+            {
+            DgnDbR dgndb = GetDgnDb();
+            BeSqliteDbMutexHolder serializeAccess(dgndb); // hold mutex, so that we have a chance to get last ECDb error message
+
+            CachedECSqlStatementPtr stmt = dgndb.GetPreparedECSqlStatement(m_ecsql.c_str());
+            if (!stmt.IsValid())
+                {
+                m_errmsg = IModelJs::GetLastEcdbIssue();
+                m_status = BE_SQLITE_ERROR;
+                Reject();
+                }
+
+            m_status = IModelJs::ExecuteQuery(m_errmsg, m_rowsJson, *stmt);
+            if (m_status != BE_SQLITE_DONE)
+                Reject();
+            }
+
+        void _ResolvePromise(T_ResolverLocal& r) override
+            {
+            auto json = Json::FastWriter::ToString(m_rowsJson);
+            r->Resolve(Nan::New(json.c_str()).ToLocalChecked());
+            }
+        };
+
     //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
     void AddRef() { this->Ref(); }
 
@@ -754,6 +852,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
+        Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);
 
         Nan::SetAccessor(t->InstanceTemplate(), Nan::New("IsDbOpen").ToLocalChecked(), OpenGetter);
 
@@ -763,176 +862,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                  Nan::GetFunction(t).ToLocalChecked());
         }
 
-};
-
-//=======================================================================================
-// Projects ECSqlStatement into JS using V8 API and defines a number of methods
-// that are implemented as libuv async tasks.
-// @bsiclass
-//=======================================================================================
-struct NodeAddonECSqlStatement : Nan::ObjectWrap
-{
-    NodeAddonDgnDb* m_db;
-    CachedECSqlStatementPtr m_statement;
-
-    DgnDbR GetDgnDb() { return *m_db->m_dgndb; }
-
-    static Nan::Persistent<FunctionTemplate> s_constructor_template;
-
-    //=======================================================================================
-    // Base class for helper classes that implement ECSqlStatement methods.
-    //! @bsiclass
-    //=======================================================================================
-    struct WorkerBase : DgnDbPromiseAsyncWorkerBase<DbResult>
-        {
-        NodeAddonECSqlStatement* m_stmt;    // input
-
-        WorkerBase(NodeAddonECSqlStatement* s) : DgnDbPromiseAsyncWorkerBase<DbResult>(BE_SQLITE_OK), m_stmt(s) { m_stmt->AddRef(); }
-        ~WorkerBase() { m_stmt->Release(); }
-
-        DgnDbR GetDgnDb() { return m_stmt->GetDgnDb(); }
-        };
-
-    //=======================================================================================
-    //  Get a prepared ECSqlStatement
-    //! @bsiclass
-    //=======================================================================================
-    struct PrepareWorker : WorkerBase
-        {
-        Utf8String m_ecsql;                 // input
-
-        PrepareWorker(NodeAddonECSqlStatement* stmt_, Utf8CP ecsql) : WorkerBase(stmt_), m_ecsql(ecsql) {}
-
-        static NAN_METHOD(Start)
-            {
-            Nan::HandleScope scope;
-            NodeAddonECSqlStatement* stmt = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
-            REQUIRE_ARGUMENT_STRING(0, ecsql, "Argument 0 must be a string containing the ECSql statement to prepare");
-            (new PrepareWorker(stmt, *ecsql))->ScheduleAndReturnPromise(info);
-            }
-
-        void Execute() override
-            {
-            if (BSISUCCESS != IModelJs::GetCachedECSqlStatement(m_status, m_errmsg, m_stmt->m_statement, GetDgnDb(), m_ecsql.c_str()))
-                {
-                m_status = DbResult::BE_SQLITE_ERROR;
-                Reject();
-                }
-            }
-
-        void _ResolvePromise(T_ResolverLocal& r) override { r->Resolve(m_stmt->handle()); }
-        };
-
-    //=======================================================================================
-    //  Step a prepared statement and return the first row, if any
-    //! @bsiclass
-    //=======================================================================================
-    struct StepOnceWorker : WorkerBase
-        {
-        Json::Value m_rowJson;              // ouput
-
-        StepOnceWorker(NodeAddonECSqlStatement* s) : WorkerBase(s), m_rowJson(Json::objectValue) {}
-
-        static NAN_METHOD(Start)
-            {
-            Nan::HandleScope scope;
-            NodeAddonECSqlStatement* stmt = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
-            if (info.Length() != 0)
-                return Nan::ThrowTypeError("no arguments expected");
-            if (!stmt->m_statement.IsValid())
-                return Nan::ThrowError("Statement is not valid");
-            (new StepOnceWorker(stmt))->ScheduleAndReturnPromise(info);
-            }
-
-        void Execute() override
-            {
-            if (BSISUCCESS != IModelJs::StepStatementOnce(m_status, m_errmsg, m_rowJson, GetDgnDb(), *m_stmt->m_statement))
-                Reject();
-            }
-
-        void _ResolvePromise(T_ResolverLocal& r) override
-            {
-            auto json = Json::FastWriter::ToString(m_rowJson);
-            r->Resolve(Nan::New(json.c_str()).ToLocalChecked());
-            }
-        };
-
-    //=======================================================================================
-    //  Step a prepared statement and return all rows, if any
-    //! @bsiclass
-    //=======================================================================================
-    struct StepAllWorker : WorkerBase
-        {
-        Json::Value m_rowsJson;             // ouput
-
-        StepAllWorker(NodeAddonECSqlStatement* s) : WorkerBase(s), m_rowsJson(Json::arrayValue) {}
-
-        static NAN_METHOD(Start)
-            {
-            Nan::HandleScope scope;
-            NodeAddonECSqlStatement* stmt = Nan::ObjectWrap::Unwrap<NodeAddonECSqlStatement>(info.This());
-            if (info.Length() != 0)
-                return Nan::ThrowTypeError("no arguments expected");
-            if (!stmt->m_statement.IsValid())
-                return Nan::ThrowError("Statement is not valid");
-            (new StepAllWorker(stmt))->ScheduleAndReturnPromise(info);
-            }
-
-        void Execute() override
-            {
-            if (BSISUCCESS != IModelJs::StepStatementAll(m_status, m_errmsg, m_rowsJson, GetDgnDb(), *m_stmt->m_statement))
-                Reject();
-            }
-
-        void _ResolvePromise(T_ResolverLocal& r) override
-            {
-            auto json = Json::FastWriter::ToString(m_rowsJson);
-            r->Resolve(Nan::New(json.c_str()).ToLocalChecked());
-            }
-        };
-
-
-    //  Add a reference to this wrapper object, keeping it and its peer JS object alive.
-    void AddRef() { this->Ref(); }
-
-    //  Relase reference to this wrapper object and its peer JS object
-    void Release() { this->Unref(); }
-
-    // Construct the native wrapper object
-    NodeAddonECSqlStatement(NodeAddonDgnDb* db_) : Nan::ObjectWrap(), m_db(db_) { m_db->AddRef(); }
-
-    // Destruct the wrapper object, releasing its reference to the DgnDb wrapper object (and its JS obj)
-    ~NodeAddonECSqlStatement() { m_db->Release(); }
-
-    //  Create a native wrapper object that is linked to a new JS object
-    static NAN_METHOD(New)
-        {
-        if (!info.IsConstructCall())
-            return Nan::ThrowTypeError("Use the new operator to create new ECSqlStatement objects");
-
-        REQUIRE_ARGUMENT_OBJ(0, NodeAddonDgnDb, db, "Argument 0 must be DgnDb object");
-        NodeAddonECSqlStatement* stmt = new NodeAddonECSqlStatement(db);
-        stmt->Wrap(info.This());
-        info.GetReturnValue().Set(info.This());
-        }
-
-    //  Project the ECSqlStatement class into JS
-    static void Init(v8::Local<v8::Object> target)
-        {
-        Nan::HandleScope scope;
-
-        Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
-
-        t->InstanceTemplate()->SetInternalFieldCount(1);
-        t->SetClassName(Nan::New("ECSqlStatement").ToLocalChecked());
-
-        Nan::SetPrototypeMethod(t, "prepare", PrepareWorker::Start);
-        Nan::SetPrototypeMethod(t, "step_once", StepOnceWorker::Start);
-        Nan::SetPrototypeMethod(t, "step_all", StepAllWorker::Start);
-
-        s_constructor_template.Reset(t);
-        Nan::Set(target, Nan::New("ECSqlStatement").ToLocalChecked(), Nan::GetFunction(t).ToLocalChecked());
-        }
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -950,11 +879,9 @@ static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object>
     IModelJs::Initialize(addondir);
     NodeAddonDgnDb::Init(target);
     NodeAddonECDb::Init(target);
-    NodeAddonECSqlStatement::Init(target);
     }
 
 Nan::Persistent<FunctionTemplate> NodeAddonDgnDb::s_constructor_template;
 Nan::Persistent<FunctionTemplate> NodeAddonECDb::s_constructor_template;
-Nan::Persistent<FunctionTemplate> NodeAddonECSqlStatement::s_constructor_template;
 
 NODE_MODULE(IModelJs, registerModule)

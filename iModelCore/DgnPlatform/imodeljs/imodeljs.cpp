@@ -75,6 +75,29 @@ END_UNNAMED_NAMESPACE
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
+JsECDb::JsECDb() : m_ecsqlCache(50, "ECDb")
+    {}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+void JsECDb::_OnDbClose()
+    {
+    m_ecsqlCache.Empty();
+    T_Super::_OnDbClose();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+CachedECSqlStatementPtr JsECDb::GetPreparedECSqlStatement(Utf8CP ecsql) const
+    {
+    return m_ecsqlCache.GetPreparedStatement(*this, ecsql, nullptr);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
 void IModelJs::InitLogging()
     {
 #if defined(BENTLEYCONFIG_OS_WINDOWS) && !defined(BENTLEYCONFIG_OS_WINRT)
@@ -239,6 +262,9 @@ void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
 
         switch (typedesc.GetPrimitiveType())
             {
+            case ECN::PRIMITIVETYPE_Boolean:
+                rowJson[name] = Json::Value(value.GetBoolean());
+                break;
             case ECN::PRIMITIVETYPE_Long:
                 rowJson[name] = value.GetUInt64();
                 break;
@@ -272,6 +298,7 @@ void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
             case ECN::PRIMITIVETYPE_DateTime:
                 rowJson[name] = Json::Value(value.GetDateTime().ToString().c_str());          // *** WIP_NODE_ADDON
                 break;
+
             default: 
                 {
                 BeAssert(false && "TBD");
@@ -295,6 +322,30 @@ void IModelJs::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesColle
         else 
             ECUtils::ConvertECValueToJson(pvalue, prop.GetValue());
         }
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+BeSQLite::DbResult IModelJs::ExecuteQuery(Utf8StringR errmsg, JsonValueR results, ECSqlStatement& stmt)
+    {
+    DbResult result;
+    results = Json::arrayValue;
+
+    while (BE_SQLITE_ROW == (result = stmt.Step()))
+        {
+        Json::Value row(Json::objectValue);
+        IModelJs::GetRowAsJson(row, stmt);
+        results.append(row);
+        }
+
+    if (BE_SQLITE_DONE != result)
+        {
+        errmsg = GetLastEcdbIssue();
+        return result;
+        }
+
+    return result;
     }
 
 //---------------------------------------------------------------------------------------
@@ -385,8 +436,7 @@ DbResult IModelJs::ImportSchema(Utf8StringR errmsg, ECDbR ecdb, BeFileNameCR pat
     BentleyStatus status = ecdb.Schemas().ImportSchemas(schemas);
     if (status != SUCCESS)
         {
-        errmsg = Utf8String(pathname);
-        errmsg.append(" - could not be imported");
+        errmsg = IModelJs::GetLastEcdbIssue();
         return BE_SQLITE_ERROR;
         }
 
@@ -453,10 +503,19 @@ ECInstanceId IModelJs::GetInstanceIdFromInstance(Utf8StringR errmsg, ECDbCR ecdb
         return ECInstanceId();
         }
 
-    ECInstanceId instanceId = ECInstanceId(BeStringUtilities::ParseUInt64(jsonInstance["$ECInstanceId"].asCString()));
-    if (!instanceId.IsValid())
+    uint64_t id;
+    BentleyStatus status = BeStringUtilities::ParseUInt64(id, jsonInstance["$ECInstanceId"].asCString());
+    if (status != SUCCESS)
         {
         errmsg = "Could not parse the instance id from $ECInstanceId: ";
+        errmsg.append(jsonInstance["$ECInstanceId"].asCString());
+        return ECInstanceId();
+        }
+
+    ECInstanceId instanceId = ECInstanceId(id);
+    if (!instanceId.IsValid())
+        {
+        errmsg = "Cannot read an instance with an invalid $ECInstanceId: ";
         errmsg.append(jsonInstance["$ECInstanceId"].asCString());
         return ECInstanceId();
         }
@@ -483,6 +542,7 @@ DbResult IModelJs::InsertInstance(Utf8StringR errmsg, ECInstanceId& insertedId, 
         return result;
         }
     insertedId = instanceKey.GetInstanceId();
+    BeAssert(insertedId.IsValid());
 
     return BE_SQLITE_OK;
     }
@@ -566,8 +626,10 @@ DbResult IModelJs::DeleteInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR i
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
 // static
-DbResult IModelJs::ContainsInstance(Utf8StringR errmsg, bool& containsInstance, ECDbCR ecdb, JsonValueCR instanceKey)
+DbResult IModelJs::ContainsInstance(Utf8StringR errmsg, bool& containsInstance, JsECDbR ecdb, JsonValueCR instanceKey)
     {
+    BeSqliteDbMutexHolder serializeAccess(ecdb); // hold mutex, so that I have a chance to get last ECDb error message
+
     if (!instanceKey.isMember("$ECClassKey"))
         {
         errmsg = "Could not determine the class. The JSON instance must include a valid $ECClassKey member";
@@ -586,16 +648,16 @@ DbResult IModelJs::ContainsInstance(Utf8StringR errmsg, bool& containsInstance, 
         return BE_SQLITE_ERROR;
 
     Utf8PrintfString ecsql("SELECT NULL FROM %s WHERE ECInstanceId=?", classKey.c_str());
-    ECSqlStatement stmt;
-    if (ECSqlStatus::Success != stmt.Prepare(ecdb, ecsql.c_str()))
+    CachedECSqlStatementPtr stmt = ecdb.GetPreparedECSqlStatement(ecsql.c_str());
+    if (!stmt.IsValid())
         {
         errmsg = IModelJs::GetLastEcdbIssue();
         return BE_SQLITE_ERROR;
         }
 
-    stmt.BindId(1, instanceId);
+    stmt->BindId(1, instanceId);
 
-    DbResult result = stmt.Step();
+    DbResult result = stmt->Step();
 
     if (result != BE_SQLITE_ROW && result != BE_SQLITE_DONE)
         {
