@@ -1441,6 +1441,8 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
         
         if (projGCS.IsValid() && !projGCS->IsEquivalent(*dgnGcsPtr))
             {
+            dgnGcsPtr->SetReprojectElevation(true);            
+
             DRange3d smExtent, smExtentUors;
             m_smPtr->GetRange(smExtent);
             Transform trans;
