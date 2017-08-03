@@ -1,7 +1,6 @@
-#pragma once
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/PublicAPI/Licensing/Utils/InMemoryJsonLocalState.h $
+|     $Source: LicensingCrossPlatform/Licensing/PolicyToken.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,25 +9,28 @@
 //__PUBLISH_SECTION_START__
 
 #include <Licensing/Licensing.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
+
+#include <Licensing/Utils/JWToken.h>
+
+#include <json\json.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct InMemoryJsonLocalState : IJsonLocalState
+struct PolicyToken
 {
 private:
-    bmap<Utf8String, Utf8String> m_state;
+    Json::Value m_policy;
 
-protected:
-    LICENSING_EXPORT virtual void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value);
-
-    LICENSING_EXPORT virtual Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const;
+private:
+    PolicyToken(JsonValueCR policy);
 
 public:
-    virtual ~InMemoryJsonLocalState() {};
+    LICENSING_EXPORT static std::shared_ptr<PolicyToken> Create(std::shared_ptr<JWToken> jwToken);
+
+    LICENSING_EXPORT JsonValueCR GetQualifier(Utf8StringCR qualifierName) const;
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

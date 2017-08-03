@@ -24,7 +24,19 @@
     <ClCompile Include="Published\UsageDbTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Published\SCVWritterTests.cpp">
+    <ClCompile Include="Published\PolicyTokenTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Utils\DelayedExecutorTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Utils\JWTokenTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Utils\SCVWritterTests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Published\Utils\UrlSafeBase64UtilitiesTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -38,7 +50,19 @@
     <ClInclude Include="Published\UsageDbTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Published\SCVWritterTests.h">
+    <ClInclude Include="Published\PolicyTokenTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\Utils\UrlSafeBase64UtilitiesTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\Utils\DelayedExecutorTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\Utils\JWTokenTests.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Published\Utils\SCVWritterTests.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

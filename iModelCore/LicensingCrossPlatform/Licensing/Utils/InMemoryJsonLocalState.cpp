@@ -18,18 +18,18 @@ Utf8String GetKey(Utf8CP nameSpace, Utf8CP key)
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 void InMemoryJsonLocalState::_SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value)
-{
-m_state[GetKey(nameSpace, key)] = value;
-}
+    {
+    m_state[GetKey(nameSpace, key)] = value;
+    }
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String InMemoryJsonLocalState::_GetValue(Utf8CP nameSpace, Utf8CP key) const
-{
-auto it = m_state.find(GetKey(nameSpace, key));
-if (it == m_state.end())
-    return nullptr;
+    {
+    auto it = m_state.find(GetKey(nameSpace, key));
+    if (it == m_state.end())
+        return nullptr;
 
-return it->second;
-}
+    return it->second;
+    }

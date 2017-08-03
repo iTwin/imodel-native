@@ -23,8 +23,6 @@ private:
     std::stringstream m_sstr;
 
 public:
-    LICENSING_EXPORT SCVWritter();
-
     template <typename T>
     void AddValue(T t)
         {
@@ -50,7 +48,7 @@ public:
 
     LICENSING_EXPORT Utf8String ToString();
 
-    LICENSING_EXPORT BentleyStatus SCVWritter::WriteToFile(BeFileNameCR filePath);
+    LICENSING_EXPORT BentleyStatus WriteToFile(BeFileNameCR filePath);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

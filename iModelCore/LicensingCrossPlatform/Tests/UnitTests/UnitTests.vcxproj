@@ -8,15 +8,23 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Published\ClientTests.cpp" />
-    <ClCompile Include="Published\SCVWritterTests.cpp" />
+    <ClCompile Include="Published\PolicyTokenTests.cpp" />
     <ClCompile Include="Published\TestsHelper.cpp" />
     <ClCompile Include="Published\UsageDbTests.cpp" />
+    <ClCompile Include="Published\Utils\DelayedExecutorTests.cpp" />
+    <ClCompile Include="Published\Utils\JWTokenTests.cpp" />
+    <ClCompile Include="Published\Utils\SCVWritterTests.cpp" />
+    <ClCompile Include="Published\Utils\UrlSafeBase64UtilitiesTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Published\ClientTests.h" />
-    <ClInclude Include="Published\SCVWritterTests.h" />
+    <ClInclude Include="Published\PolicyTokenTests.h" />
     <ClInclude Include="Published\TestsHelper.h" />
     <ClInclude Include="Published\UsageDbTests.h" />
+    <ClInclude Include="Published\Utils\DelayedExecutorTests.h" />
+    <ClInclude Include="Published\Utils\JWTokenTests.h" />
+    <ClInclude Include="Published\Utils\SCVWritterTests.h" />
+    <ClInclude Include="Published\Utils\UrlSafeBase64UtilitiesTests.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BuildTests.mke" />
@@ -25,10 +33,14 @@
   <ItemGroup>
     <Text Include="ignore_list.txt" />
   </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{CF6DF431-C978-46EC-8E32-A409994F676D}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>LicensingUnitTests</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -47,7 +59,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <NMakeBuildCommandLine>bb $(BB2N0) -ax64 -r licensing -f LicensingCrossPlatform -p Licensing-Gtest re Licensing UnitTests Gtest</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -ax64 -r licensing -f LicensingCrossPlatform -p Licensing-Gtest re Licensing-Gtest -s</NMakeReBuildCommandLine>
+    <NMakeReBuildCommandLine>bb $(XXXXX) -ax64 -r licensing -f LicensingCrossPlatform -p Licensing-Gtest re Licensing-Gtest -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb $(BB2N0) -ax64 -r licensing -f LicensingCrossPlatform -p Licensing-Gtest re Licensing UnitTests Gtest -c</NMakeCleanCommandLine>
     <NMakePreprocessorDefinitions>_DEBUG;BENTLEY_WIN32;USE_GTEST;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
     <NMakeOutput>$(OutRoot)Winx64\Product\Licensing-Gtest\LicensingTest.exe</NMakeOutput>

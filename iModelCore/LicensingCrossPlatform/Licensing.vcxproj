@@ -8,16 +8,28 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Licensing\Client.cpp" />
+    <ClCompile Include="Licensing\ClientImpl.cpp" />
+    <ClCompile Include="Licensing\PolicyToken.cpp" />
     <ClCompile Include="Licensing\UsageDb.cpp" />
+    <ClCompile Include="Licensing\Utils\DelayedExecutor.cpp" />
     <ClCompile Include="Licensing\Utils\InMemoryJsonLocalState.cpp" />
+    <ClCompile Include="Licensing\Utils\JWToken.cpp" />
     <ClCompile Include="Licensing\Utils\SCVWritter.cpp" />
+    <ClCompile Include="Licensing\Utils\UrlSafeBase64Utilities.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Licensing\ClientImpl.h" />
+    <ClInclude Include="Licensing\Logging.h" />
+    <ClInclude Include="Licensing\PolicyToken.h" />
     <ClInclude Include="Licensing\UsageDb.h" />
     <ClInclude Include="PublicAPI\Licensing\Client.h" />
     <ClInclude Include="PublicAPI\Licensing\Licensing.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\DelayedExecutor.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\InMemoryJsonLocalState.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\JWToken.h" />
     <ClInclude Include="PublicAPI\Licensing\Utils\SCVWritter.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\TimeRetriever.h" />
+    <ClInclude Include="PublicAPI\Licensing\Utils\UrlSafeBase64Utilities.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="DeliverPublicAPI.mke" />
@@ -26,6 +38,9 @@
     <None Include="Licensing.VC.db" />
     <None Include="LicensingCompileOptions.mki" />
   </ItemGroup>
+  <PropertyGroup>
+    <ShowAllFiles>true</ShowAllFiles>
+  </PropertyGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{D553727E-7978-4194-A322-4C2B946EA25C}</ProjectGuid>
     <Keyword>MakeFileProj</Keyword>
@@ -50,7 +65,7 @@
     <NMakeOutput>
     </NMakeOutput>
     <NMakePreprocessorDefinitions>DEBUG;BENTLEY_WIN32;$(NMakePreprocessorDefinitions);</NMakePreprocessorDefinitions>
-    <NMakeBuildCommandLine>bb -v4 -ax64 -r licensing -f LicensingCrossPlatform -p Licensing re Licensing</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing -s</NMakeReBuildCommandLine>
     <NMakeCleanCommandLine>bb -v4 -ax64 -r Licensing -f LicensingCrossPlatform -p Licensing re Licensing -c</NMakeCleanCommandLine>
     <NMakeIncludeSearchPath>$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>

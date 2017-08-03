@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/Tests/UnitTests/Published/SCVWritterTests.cpp $
+|     $Source: LicensingCrossPlatform/Tests/UnitTests/Published/Utils/SCVWritterTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

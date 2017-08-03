@@ -6,30 +6,54 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <Licensing/Client.h>
+#include "ClientImpl.h"
 
-#include <WebServices/Configuration/UrlProvider.h>
-#include <Licensing/Utils/InMemoryJsonLocalState.h>
-
-USING_NAMESPACE_BENTLEY_WEBSERVICES
 USING_NAMESPACE_BENTLEY_LICENSING
 
 /*--------------------------------------------------------------------------------------+
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-Client::Client()
+Client::Client
+(
+BeFileNameCR dbPath, 
+std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+ClientInfoPtr clientInfo,
+const ConnectSignInManager::UserInfo& userInfo,
+IHttpHandlerPtr httpHandler,
+uint64_t heartbeatInterval
+)
     {
+    m_impl = std::make_unique<ClientImpl>(dbPath, authenticationProvider, clientInfo, userInfo, httpHandler, heartbeatInterval);
     }
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod                              
+* @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Client::TestMethod()
+ClientPtr Client::Create
+(
+BeFileNameCR dbPath, 
+std::shared_ptr<IConnectAuthenticationProvider> authenticationProvider,
+ClientInfoPtr clientInfo,
+const ConnectSignInManager::UserInfo& userInfo,
+IHttpHandlerPtr httpHandler,
+uint64_t heartbeatInterval
+)
     {
-    // Just a test code.
-    InMemoryJsonLocalState* localState = new InMemoryJsonLocalState();
-    UrlProvider::Initialize(UrlProvider::Environment::Dev, UrlProvider::DefaultTimeout, localState);
+    return std::shared_ptr<Client>(new Client(dbPath, authenticationProvider, clientInfo, userInfo, httpHandler, heartbeatInterval));
+    }
+   
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Client::StartApplication()
+    {
+    return m_impl->StartApplication();
+    }
 
-    auto url = UrlProvider::Urls::UsageLoggingServices.Get();
-
-    return SUCCESS;
+/*--------------------------------------------------------------------------------------+
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus Client::StopApplication()
+    {
+    return m_impl->StopApplication();
     }

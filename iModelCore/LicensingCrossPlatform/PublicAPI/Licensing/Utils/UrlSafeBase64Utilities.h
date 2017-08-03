@@ -1,7 +1,6 @@
-#pragma once
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: LicensingCrossPlatform/PublicAPI/Licensing/Utils/InMemoryJsonLocalState.h $
+|     $Source: LicensingCrossPlatform/PublicAPI/Licensing/Utils/UrlSafeBase64Utilities.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -10,25 +9,18 @@
 //__PUBLISH_SECTION_START__
 
 #include <Licensing/Licensing.h>
-#include <BeJsonCpp/BeJsonUtilities.h>
+
+#include <Bentley/WString.h>
 
 BEGIN_BENTLEY_LICENSING_NAMESPACE
 
 /*--------------------------------------------------------------------------------------+
 * @bsiclass
 +---------------+---------------+---------------+---------------+---------------+------*/
-struct InMemoryJsonLocalState : IJsonLocalState
+struct UrlSafeBase64Utilities
 {
-private:
-    bmap<Utf8String, Utf8String> m_state;
-
-protected:
-    LICENSING_EXPORT virtual void _SaveValue(Utf8CP nameSpace, Utf8CP key, Utf8StringCR value);
-
-    LICENSING_EXPORT virtual Utf8String _GetValue(Utf8CP nameSpace, Utf8CP key) const;
-
 public:
-    virtual ~InMemoryJsonLocalState() {};
+    LICENSING_EXPORT static Utf8String ToBase64(Utf8StringCR urlSafeBase64);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE

@@ -24,23 +24,29 @@ struct UsageDb
 private:
 	Db m_db;
 
+private:
 	BentleyStatus OpenDb(BeFileNameCR filePath);
 
 	BentleyStatus CreateDb(BeFileNameCR filePath);
     BentleyStatus SetUpTables();
 
-public:
-	LICENSING_EXPORT UsageDb();
+    int64_t GetLastRowId();
 
+public:
 	LICENSING_EXPORT BentleyStatus OpenOrCreate(BeFileNameCR filePath);
 
     LICENSING_EXPORT void Close();
 
+    LICENSING_EXPORT bool IsDbOpen();
 
+    LICENSING_EXPORT BentleyStatus InsertNewRecord(int64_t startTime, int64_t endTime);
 
+    LICENSING_EXPORT int64_t GetLastRecordEndTime();
+    LICENSING_EXPORT BentleyStatus UpdateLastRecordEndTime(int64_t unixMilis);
 
-    LICENSING_EXPORT BentleyStatus TestInsert();
-    LICENSING_EXPORT int GetTestRecordCount();
+    LICENSING_EXPORT int64_t GetRecordCount();
+
+    LICENSING_EXPORT BentleyStatus WriteUsageToSCVFile(BeFileNameCR path);
 };
 
 END_BENTLEY_LICENSING_NAMESPACE
