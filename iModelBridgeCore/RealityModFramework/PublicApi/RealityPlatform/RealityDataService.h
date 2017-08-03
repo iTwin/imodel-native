@@ -710,6 +710,9 @@ struct RealityDataServiceTransfer : public CurlConstructor
     //! Returns full size of upload
     REALITYDATAPLATFORM_EXPORT uint64_t GetFullTransferSize() { return m_fullTransferSize; }
 
+    //! Gets the RealityDataID that designates the container with which the data is transfered
+    REALITYDATAPLATFORM_EXPORT Utf8StringCR GetRealityDataId() { return m_id; }
+
 protected:
     REALITYDATAPLATFORM_EXPORT virtual bool UpdateTransferAmount(int64_t transferedAmount);
     void SetupCurlforFile(RealityDataUrl* upload, bool verifyPeer);
