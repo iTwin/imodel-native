@@ -32,15 +32,28 @@ $(BuildContext)PublicAPI/iModelJs : $(baseDir)PublicAPI/iModelJs
 #--------------------------------------------------------------------------------------
 #   Compile source
 #--------------------------------------------------------------------------------------
-MultiCompileDepends = $(_MakeFileSpec) $(publicApiSourceDr)iModelJs.h $(baseDir)iModelJsInternal.h $(baseDir)App/iModelJsAppInternal.h
+MultiCompileDepends = $(_MakeFileSpec) $(publicApiSourceDr)iModelJs.h \
+                                       $(publicApiSourceDr)iModelJsServicesTier.h \
+                                       $(publicApiSourceDr)iModelJsUtilities.h \
+                                       $(baseDir)iModelJsInternal.h
 
 %include MultiCppCompileRule.mki
 
-$(o)Host$(oext) : $(baseDir)App/Host.cpp ${MultiCompileDepends}
+$(o)ServicesTierHost$(oext) : $(baseDir)ServicesTierHost.cpp ${MultiCompileDepends}
 
-$(o)WebSocketTransport$(oext) : $(baseDir)App/WebSocketTransport.cpp ${MultiCompileDepends}
+$(o)ServicesTierScripts$(oext) : $(baseDir)ServicesTierScripts.cpp ${MultiCompileDepends}
 
-$(o)WindowsDesktopAppHost$(oext) : $(baseDir)App/WindowsDesktopAppHost.cpp ${MultiCompileDepends}
+$(o)ServicesTierUvHost$(oext) : $(baseDir)ServicesTierUvHost.cpp ${MultiCompileDepends}
+
+$(o)ServicesTierNodeHost$(oext) : $(baseDir)ServicesTierNodeHost.cpp ${MultiCompileDepends}
+
+$(o)Utilities$(oext) : $(baseDir)Utilities.cpp ${MultiCompileDepends}
+
+$(o)ServicesTierEnvironment$(oext) : $(baseDir)ServicesTierEnvironment.cpp ${MultiCompileDepends}
+
+$(o)ServicesTierExtension$(oext) : $(baseDir)ServicesTierExtension.cpp ${MultiCompileDepends}
+
+$(o)ServicesTierUtilities$(oext) : $(baseDir)ServicesTierUtilities.cpp ${MultiCompileDepends}
 
 %include MultiCppCompileGo.mki
 
@@ -58,5 +71,14 @@ DLM_NOENTRY                 = 1
 DLM_CONTEXT_LOCATION        = $(BuildContext)Delivery/
 DLM_LIB_CONTEXT_LOCATION    = $(BuildContext)Delivery/
 DLM_CREATE_LIB_CONTEXT_LINK = 1
+
+ContextLibPrefix = $(BuildContext)SubParts/Libs/$(libprefix)
+
+LINKER_LIBRARIES + $(ContextLibPrefix)libuv$(stlibext)
+
+%if $(TARGET_PLATFORM) == "Windows"
+    LINKER_LIBRARIES + $(ContextLibPrefix)v8$(stlibext) $(ContextLibPrefix)v8_libbase$(stlibext) $(ContextLibPrefix)v8_libplatform$(stlibext)
+    LINKER_LIBRARIES + advapi32.lib iphlpapi.lib psapi.lib shell32.lib user32.lib userenv.lib ws2_32.lib
+%endif
 
 %include $(sharedMki)linkLibrary.mki

@@ -1,14 +1,11 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: iModelJsInternal.h $
+|     $Source: ServicesTierNodeHost.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__BENTLEY_INTERNAL_ONLY__
-#pragma once
+#include "iModelJsInternal.h"
 
-#include <Bentley/BeAssert.h>
-#include <Bentley/BeThread.h>
-#include <iModelJs/iModelJs.h>
-#include <iModelJs/iModelJsServicesTier.h>
+BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
+END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE

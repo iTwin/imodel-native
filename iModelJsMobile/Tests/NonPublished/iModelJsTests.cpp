@@ -1,12 +1,10 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: App/iModelJsAppInternal.h $
+|  $Source: Tests/NonPublished/iModelJsTests.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-//__BENTLEY_INTERNAL_ONLY__
-#pragma once
+#include "../Environment/PublicAPI/TestEnvironment.h"
 
-#include "../iModelJsInternal.h"
-#include <iModelJs/iModelJsApp.h>
+USING_IMODELJS_UNIT_TESTS_NAMESPACE

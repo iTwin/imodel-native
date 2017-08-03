@@ -10,9 +10,11 @@
 
 #include <Bentley/Bentley.h>
 #include <Bentley/RefCounted.h>
+#include <Bentley/WString.h>
 
 #define BEGIN_BENTLEY_IMODELJS_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace iModelJs {
 #define END_BENTLEY_IMODELJS_NAMESPACE    } END_BENTLEY_NAMESPACE
+#define USING_IMODELJS_NAMESPACE          using namespace BentleyApi::iModelJs;
 
 #ifdef __IMODELJS_BUILD__
     #define IMODELJS_EXPORT EXPORT_ATTRIBUTE
@@ -25,5 +27,7 @@
 
 #define IMODELJS_REF_COUNTED_PTR(_sname_) \
     BEGIN_BENTLEY_IMODELJS_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_IMODELJS_NAMESPACE
+
+#include <iModelJs/iModelJsUtilities.h>
 
 //__PUBLISH_SECTION_END__

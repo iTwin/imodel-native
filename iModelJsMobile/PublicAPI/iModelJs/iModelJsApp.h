@@ -9,7 +9,6 @@
 //__PUBLISH_SECTION_START__
 
 #include <iModelJs/iModelJs.h>
-#include <websocketpp/server.hpp>
 
 /** @namespace BentleyApi::iModelJs::App The iModel.js application framework. */
 #define BEGIN_BENTLEY_IMODELJS_APP_NAMESPACE  BEGIN_BENTLEY_IMODELJS_NAMESPACE namespace App {
@@ -21,43 +20,52 @@
 #define IMODELJS_APP_REF_COUNTED_PTR(_sname_) \
     BEGIN_BENTLEY_IMODELJS_APP_NAMESPACE struct _sname_; DEFINE_REF_COUNTED_PTR(_sname_) END_BENTLEY_IMODELJS_APP_NAMESPACE
 
-IMODELJS_APP_TYPEDEFS (Activity)
-IMODELJS_APP_TYPEDEFS (Application)
-IMODELJS_APP_TYPEDEFS (Delegate)
-IMODELJS_APP_TYPEDEFS (Environment)
-IMODELJS_APP_TYPEDEFS (NodeEnvironment)
-IMODELJS_APP_TYPEDEFS (WebEnvironment)
-IMODELJS_APP_TYPEDEFS (WebWorkerEnvironment)
-IMODELJS_APP_TYPEDEFS (WebBrowserEnvironment)
-IMODELJS_APP_TYPEDEFS (ElectronEnvironment)
-IMODELJS_APP_TYPEDEFS (WebViewEnvironment)
-IMODELJS_APP_TYPEDEFS (AndroidWebViewEnvironment)
-IMODELJS_APP_TYPEDEFS (iOSWebViewEnvironment)
-IMODELJS_APP_TYPEDEFS (UwpWebViewEnvironment)
-IMODELJS_APP_TYPEDEFS (EmbeddedEnvironment)
-IMODELJS_APP_TYPEDEFS (V8Environment)
-IMODELJS_APP_TYPEDEFS (ChakraEnvironment)
-IMODELJS_APP_TYPEDEFS (JscEnvironment)
-IMODELJS_APP_TYPEDEFS (History)
-IMODELJS_APP_TYPEDEFS (Host)
-IMODELJS_APP_TYPEDEFS (InteractiveHost)
-IMODELJS_APP_TYPEDEFS (WebBrowserHost)
-IMODELJS_APP_TYPEDEFS (MobileAppHost)
-IMODELJS_APP_TYPEDEFS (iOSAppHost)
-IMODELJS_APP_TYPEDEFS (AndroidAppHost)
-IMODELJS_APP_TYPEDEFS (UwpAppHost)
-IMODELJS_APP_TYPEDEFS (DesktopAppHost)
-IMODELJS_APP_TYPEDEFS (WindowsDesktopAppHost)
-IMODELJS_APP_TYPEDEFS (MacDesktopAppHost)
-IMODELJS_APP_TYPEDEFS (ServerHost)
-IMODELJS_APP_TYPEDEFS (WindowsServerHost)
-IMODELJS_APP_TYPEDEFS (LinuxServerHost)
-IMODELJS_APP_TYPEDEFS (Service)
-IMODELJS_APP_TYPEDEFS (Session)
-IMODELJS_APP_TYPEDEFS (Transport)
-IMODELJS_APP_TYPEDEFS (WebSocketsTransport)
-
 BEGIN_BENTLEY_IMODELJS_APP_NAMESPACE
+
+
+
+
+
+#ifdef WIP
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //=======================================================================================
 //! A collection of application functionality in an environment.
@@ -92,12 +100,42 @@ struct Delegate
 struct Environment
     {
 private:
+    static EnvironmentP s_instance;
+
+    bool m_initialized;
+    bool m_terminated;
+
     Environment (EnvironmentCR other) = delete;
     EnvironmentR operator= (EnvironmentCR other) = delete;
     Environment (Environment&& other) = delete;
 
 protected:
-    IMODELJS_EXPORT Environment() { ; }
+    IMODELJS_EXPORT Environment();
+
+    IMODELJS_EXPORT virtual void OnInitialized() { ; }
+    IMODELJS_EXPORT virtual void OnTerminated() { ; }
+
+public:
+    IMODELJS_EXPORT static EnvironmentR GetInstance();
+
+    IMODELJS_EXPORT virtual ~Environment();
+
+    IMODELJS_EXPORT bool IsInitialized() const { return m_initialized; }
+    IMODELJS_EXPORT bool IsTerminated() const { return m_terminated; }
+
+    IMODELJS_EXPORT void Initialize();
+    IMODELJS_EXPORT void Terminate();
+    };
+
+//=======================================================================================
+//! An environment where the libuv framework is available.
+// @bsiclass                                                    Steve.Wilson   6/17
+//=======================================================================================
+template <typename T>
+struct ILibuvEnvironment : public T
+    {
+protected:
+    ILibuvEnvironment() { ; }
     };
 
 //=======================================================================================
@@ -105,17 +143,19 @@ protected:
 // @bsiclass                                                    Steve.Wilson   6/17
 //=======================================================================================
 template <typename T>
-struct INodeEnvironment : public T
+struct INodeEnvironment : public ILibuvEnvironment<T>
     {
 protected:
     INodeEnvironment() { ; }
     };
 
+typedef INodeEnvironment<Environment> NodeEnvironmentSuper_T;
+
 //=======================================================================================
 //! The environment delivered by Node.js on a server host.
 // @bsiclass                                                    Steve.Wilson   6/17
 //=======================================================================================
-struct NodeEnvironment : public INodeEnvironment<Environment>
+struct NodeEnvironment : public NodeEnvironmentSuper_T
     {
     };
 
@@ -130,11 +170,13 @@ protected:
     IWebEnvironment() { ; }
     };
 
+typedef IWebEnvironment<Environment> WebEnvironmentSuper_T;
+
 //=======================================================================================
 //! An environment where web rendering technologies like HTML, CSS, and WebGL are available.
 // @bsiclass                                                    Steve.Wilson   6/17
 //=======================================================================================
-struct WebEnvironment : public IWebEnvironment<Environment>
+struct WebEnvironment : public WebEnvironmentSuper_T
     {
 protected:
     IMODELJS_EXPORT WebEnvironment() { ; }
@@ -144,7 +186,7 @@ protected:
 //! An environment where Web Workers technology is available.
 // @bsiclass                                                    Steve.Wilson   6/17
 //=======================================================================================
-struct WebWorkersEnvironment : public IWebEnvironment<Environment>
+struct WebWorkersEnvironment : public WebEnvironmentSuper_T
     {
     WebWorkersEnvironment() = delete;
     };
@@ -158,11 +200,13 @@ struct WebBrowserEnvironment : public WebEnvironment
     WebBrowserEnvironment() = delete;
     };
 
+typedef INodeEnvironment<WebEnvironment> ElectronEnvironmentSuper_T;
+
 //=======================================================================================
 //! The environment delivered by the Electron framework on a desktop app host.
 // @bsiclass                                                    Steve.Wilson   6/17
 //=======================================================================================
-struct ElectronEnvironment : public INodeEnvironment<WebEnvironment>
+struct ElectronEnvironment : public ElectronEnvironmentSuper_T
     {
     };
 
@@ -200,14 +244,61 @@ struct UwpWebViewEnvironment : public WebViewEnvironment
     {
     };
 
+typedef ILibuvEnvironment<Environment> EmbeddedEnvironmentSuper_T;
+
 //=======================================================================================
 //! An environment delivered by an embedded instance of a JavaScript runtime.
 // @bsiclass                                                    Steve.Wilson   6/17
 //=======================================================================================
-struct EmbeddedEnvironment : public Environment
+struct EmbeddedEnvironment : public EmbeddedEnvironmentSuper_T
     {
+public:
+    DEFINE_POINTER_SUFFIX_TYPEDEFS (Message)
+    DEFINE_REF_COUNTED_PTR (Message)
+
+    //=======================================================================================
+    // @bsiclass                                                    Steve.Wilson   6/17
+    //=======================================================================================
+    struct Message : public RefCountedBase
+        {
+        friend struct EmbeddedEnvironment;
+
+    private:
+        static void CallbackHandler (uv_async_t* handle);
+        static void CloseHandler (uv_handle_t* handle);
+
+        uv_async_t* m_handle;
+
+    protected:
+        IMODELJS_EXPORT Message();
+
+        IMODELJS_EXPORT virtual void Callback (uv_async_t* handle) = 0;
+
+    public:
+        IMODELJS_EXPORT virtual ~Message();
+        };
+
+private:
+    static void ThreadEntry (void* arg);
+    static void IdleHandler (uv_idle_t* handle);
+    static void LocalHandleCloseHandler (uv_handle_t* handle);
+
+    uv_thread_t m_thread;
+    
+    void RunThread();
+    void HandleUvIdleCallback (uv_idle_t* handle);
+
 protected:
-    IMODELJS_EXPORT EmbeddedEnvironment() { ; }
+    IMODELJS_EXPORT EmbeddedEnvironment();
+
+    IMODELJS_EXPORT void OnInitialized() override;
+    IMODELJS_EXPORT void OnTerminated() override;
+
+    IMODELJS_EXPORT virtual void OnStart() { ; }
+    IMODELJS_EXPORT virtual void OnStop() { ; }
+
+public:
+    IMODELJS_EXPORT void Post (MessagePtr message);
     };
 
 //=======================================================================================
@@ -216,6 +307,20 @@ protected:
 //=======================================================================================
 struct V8Environment : public EmbeddedEnvironment
     {
+private:
+    v8::Isolate* m_isolate;
+    v8::Locker* m_locker;
+    v8::Persistent<v8::Context> m_context;
+
+protected:
+    IMODELJS_EXPORT void OnStart() override;
+    IMODELJS_EXPORT void OnStop() override;
+
+public:
+    IMODELJS_EXPORT V8Environment();
+
+    IMODELJS_EXPORT v8::Isolate* GetJsIsolate() const { return m_isolate; }
+    IMODELJS_EXPORT v8::Persistent<v8::Context> const& GetJsContext() const { return m_context; }
     };
 
 //=======================================================================================
@@ -252,6 +357,9 @@ struct Host
 private:
     static HostP s_instance;
 
+    bool m_initialized;
+    bool m_terminated;
+
     Host (HostCR other) = delete;
     HostR operator= (HostCR other) = delete;
     Host (Host&& other) = delete;
@@ -259,10 +367,19 @@ private:
 protected:
     IMODELJS_EXPORT Host();
 
+    IMODELJS_EXPORT virtual void OnInitialized() { ; }
+    IMODELJS_EXPORT virtual void OnTerminated() { ; }
+
 public:
     IMODELJS_EXPORT static HostR GetInstance();
 
-    IMODELJS_EXPORT ~Host();
+    IMODELJS_EXPORT virtual ~Host();
+
+    IMODELJS_EXPORT bool IsInitialized() const { return m_initialized; }
+    IMODELJS_EXPORT bool IsTerminated() const { return m_terminated; }
+
+    IMODELJS_EXPORT void Initialize();
+    IMODELJS_EXPORT void Terminate();
     };
 
 //=======================================================================================
@@ -406,8 +523,87 @@ protected:
 struct WebSocketsTransport : public Transport
     {
 public:
+    typedef websocketpp::server<websocketpp::config::core> websocketpp_server_t;
+
+private:
+    uv_tcp_t m_listener;
+    websocketpp_server_t m_server;
+    
+    static void ListenerHandler (uv_stream_t* stream, int status);
+    
+    void HandleUvListenerCallback (uv_stream_t* stream, int status);
+    
+public:
     IMODELJS_EXPORT WebSocketsTransport();
     };
+
+//=======================================================================================
+//! A mechanism for exchanging data between environments.
+// @bsiclass                                                    Steve.Wilson   6/17
+//=======================================================================================
+struct Connection : public RefCountedBase
+    {
+protected:
+    IMODELJS_EXPORT Connection() { ; }
+    };
+
+//=======================================================================================
+//! A transport that uses WebSockets technology.
+// @bsiclass                                                    Steve.Wilson   6/17
+//=======================================================================================
+struct WebSocketsConnection : public Connection
+    {
+public:
+    typedef websocketpp::connection<websocketpp::config::core> websocketpp_connection_t;
+
+private:
+    struct Relay : public std::streambuf
+        {
+    private:
+        WebSocketsConnectionR m_connection;
+
+    protected:
+        std::streamsize xsputn (const char_type* s, std::streamsize count) override;
+
+    public:
+        Relay (WebSocketsConnectionR connection) : m_connection (connection) { ; }
+        };
+
+    struct Forwarder
+        {
+    private:
+        WebSocketsConnectionR m_connection;
+
+    public:
+        Forwarder (WebSocketsConnectionR connection) : m_connection (connection) { ; }
+
+        void operator() (websocketpp::connection_hdl handle);
+        void operator() (websocketpp::connection_hdl handle, WebSocketsTransport::websocketpp_server_t::message_ptr message);
+        };
+
+    WebSocketsTransportR m_transport;
+    uv_tcp_t m_connection;
+    std::shared_ptr<websocketpp_connection_t> m_wsConnection;
+    Relay m_outputRelay;
+    std::ostream m_output;
+
+    static void ConnectionAllocHandler (uv_handle_t* handle, size_t suggestedSize, uv_buf_t* buf);
+    static void ClientConnectionHandleCloseHandler (uv_handle_t* handle);
+    static void ConnectionReadHandler (uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
+    static void ConnectionWriteHandler (uv_write_t* req, int status);
+
+    void HandleUvConnectionReadCallback (uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf);
+    void HandleUvConnectionAllocCallback (uv_handle_t* handle, size_t suggestedSize, uv_buf_t* buf);
+    void HandleUvConnectionWriteCallback (uv_write_t* req, int status);
+    void HandleWebsocketppOpenCallback (websocketpp::connection_hdl handle);
+    void HandleWebsocketppMessageCallback (websocketpp::connection_hdl handle, WebSocketsTransport::websocketpp_server_t::message_ptr message);
+    void Write (const std::streambuf::char_type* s, std::streamsize count);
+
+public:
+    IMODELJS_EXPORT WebSocketsConnection (WebSocketsTransportR transport, std::shared_ptr<websocketpp_connection_t> const& wsConnection, uv_stream_t* stream);
+    };
+
+#endif
 
 END_BENTLEY_IMODELJS_APP_NAMESPACE
 

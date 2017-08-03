@@ -1,0 +1,49 @@
+#----------------------------------------------------------------------------------------
+#
+#  $Source: Tests/BuildTests.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#----------------------------------------------------------------------------------------
+ENABLE_CPP_CX_EXTENSIONS = 1
+
+%include mdl.mki
+
+%ifndef TestDir
+    %error must define TestDir
+%endif
+
+baseDir = $(_MakeFilePath)
+
+# Compile and Link the unit tests
+BEGTEST_NAME  = $(TestDir)iModelJs
+BEGTEST_INPUT = $(baseDir)$(TestDir)/
+BEGTEST_IGNORE= $(baseDir)ignore_list.txt
+BEGTEST_OUTPUT=$(OutputRootDir)build/iModelJs/UnitTests/
+o = $(BEGTEST_OUTPUT)$(BEGTEST_NAME)/
+
+%ifdef UsePublishedApi
+    BEGTEST_API = $(BuildContext)SubParts/PublishedApi/iModelJs/
+%endif
+
+%ifdef AdditionalTestsList
+    BEGTEST_ADDITIONAL_UNITTESTS_LIST_DIR=$(BuildContext)SubParts/${AdditionalTestsList}
+%endif
+
+%include $(SrcRoot)bsicommon/sharedmki/DetectAndCompileUnitTests.mki
+
+# Deliver 
+$(BuildContext)Delivery/UnitTests/Objects/$(TestDir) : ${o}
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+%ifdef DeliverUnitTestsList
+    %ifnofile $(o)UnitTests.list.h
+        always:
+            >$(o)UnitTests.list.h
+            \/\/not available for gtest
+            <
+    %endif
+
+    $(BuildContext)Delivery/UnitTests/Objects/$(TestDir)/UnitTests.list.h : $(o)UnitTests.list.h
+        $(LinkFirstDepToFirstTargetAsDirectory)
+%endif

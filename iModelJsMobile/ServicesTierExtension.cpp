@@ -1,20 +1,20 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: App/WindowsDesktopAppHost.cpp $
+|     $Source: ServicesTierExtension.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "iModelJsAppInternal.h"
+#include "iModelJsInternal.h"
 
-BEGIN_BENTLEY_IMODELJS_APP_NAMESPACE
+BEGIN_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                   Steve.Wilson                    6/17
+// @bsimethod                                Steve.Wilson                    7/2017
 //---------------------------------------------------------------------------------------
-WindowsDesktopAppHost::WindowsDesktopAppHost()
+void Extension::Install (InstallCallback_T const& callback)
     {
-    ;
+    Host::DispatchExtensionCallback (callback);
     }
 
-END_BENTLEY_IMODELJS_APP_NAMESPACE
+END_BENTLEY_IMODELJS_SERVICES_TIER_NAMESPACE
