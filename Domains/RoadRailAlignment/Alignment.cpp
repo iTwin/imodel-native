@@ -301,6 +301,7 @@ AlignmentCPtr Alignment::InsertWithMainPair(AlignmentPairCR alignmentPair, DgnDb
     if (retVal.IsValid())
         {
         auto horizAlignmPtr = HorizontalAlignment::Create(*this, *alignmentPair.HorizontalCurveVector());
+        horizAlignmPtr->GenerateElementGeom();
         if (horizAlignmPtr->Insert(stat).IsNull())
             return nullptr;
 
@@ -312,6 +313,7 @@ AlignmentCPtr Alignment::InsertWithMainPair(AlignmentPairCR alignmentPair, DgnDb
                 return nullptr;
 
             auto verticalAlignmPtr = VerticalAlignment::Create(*verticalModelPtr, *alignmentPair.VerticalCurveVector());
+            verticalAlignmPtr->GenerateElementGeom();
             if (verticalAlignmPtr->InsertAsMainVertical(stat).IsNull())
                 return nullptr;
             }
@@ -493,6 +495,22 @@ DgnDbStatus HorizontalAlignment::GenerateElementGeom()
         return DgnDbStatus::NoGeometry;
 
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+AlignmentCPtr HorizontalAlignment::QueryAlignment() const
+    {
+    auto stmtPtr = GetDgnDb().GetCachedStatement("SELECT SourceECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToHorizontal)
+        " WHERE TargetECInstanceId = ?");
+    BeAssert(stmtPtr.IsValid());
+
+    stmtPtr->BindId(1, GetElementId());
+    if (DbResult::BE_SQLITE_ROW != stmtPtr->Step())
+        return nullptr;
+
+    return Alignment::Get(GetDgnDb(), stmtPtr->GetValueId<DgnElementId>(0));
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -120,6 +120,8 @@ public:
     ROADRAILALIGNMENT_EXPORT void SetGeometry(CurveVectorR);
     ROADRAILALIGNMENT_EXPORT Dgn::DgnDbStatus GenerateElementGeom();
 
+    ROADRAILALIGNMENT_EXPORT AlignmentCPtr QueryAlignment() const;
+
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr Insert(Dgn::DgnDbStatus* stat = nullptr);
     ROADRAILALIGNMENT_EXPORT HorizontalAlignmentCPtr Update(Dgn::DgnDbStatus* stat = nullptr) { return GetDgnDb().Elements().Update<HorizontalAlignment>(*this, stat); }
 }; // HorizontalAlignment

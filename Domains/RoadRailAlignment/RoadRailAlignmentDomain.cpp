@@ -62,7 +62,7 @@ void RoadRailAlignmentDomain::_OnSchemaImported(DgnDbR dgndb) const
     {
     AlignmentCategoryModel::SetUp(dgndb);
 
-    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), "Alignments");
+    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), GetDefaultPartitionName());
     if (DgnDbStatus::Success != status)
         {
         BeAssert(false);
