@@ -2522,7 +2522,7 @@ double PrimitiveBuilder::ComputeTolerance(GeometryAccumulatorR accum) const
         }
     else if (nullptr == params.GetViewport())
         {
-        BeAssert(false && "No viewport supplied to GraphicBuilder::CreateParams - falling back to default coarse tolerance");
+        BeAssert(!accum.GetGeometries().ContainsCurves() && "No viewport supplied to GraphicBuilder::CreateParams - falling back to default coarse tolerance");
         tolerance = 20.0;
         }
     else
