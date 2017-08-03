@@ -16,6 +16,15 @@ HANDLER_DEFINE_MEMBERS(VerticalAlignmentViewDefinitionHandler)
 //---------------------------------------------------------------------------------------
 void VerticalAlignmentViewDefinition::_AdjustAspectRatio(double windowAspect)
     {
+    static bool s_useSuper = true;
+    if (s_useSuper)
+        {
+        T_Super::_AdjustAspectRatio(windowAspect);
+        return;
+        }
+
+    //&&AG needswork. Platform only calls this code when Fitting the view, but not when changing the aspect ratio skew
+    // In that last case, it is handled by the DgnViewport::_AdjustAspectRatio code.
     DVec3d extents = GetExtents();
     const double viewAspect = extents.x / extents.y;
 
@@ -25,7 +34,8 @@ void VerticalAlignmentViewDefinition::_AdjustAspectRatio(double windowAspect)
         return;
     
     const DVec3d oldDelta = extents;
-    extents.y = extents.x / windowAspect;
+    if (viewAspect > windowAspect)
+        extents.y = extents.x / windowAspect;
 
     DPoint3d origin = GetOrigin();
     DPoint3d newOrigin;
@@ -64,7 +74,8 @@ DgnDbStatus VerticalAlignmentViewDefinition::_OnUpdate(DgnElementCR original)
 // @bsimethod                           Alexandre.Gagnon                        08/2017
 //---------------------------------------------------------------------------------------
 VerticalAlignmentViewDefinition::VerticalAlignmentViewDefinition(SpatialViewDefinitionR def):
-    T_Super(*def.GetDefinitionModel(), def.GetName(), def.GetCategorySelector(), def.GetDisplayStyle3d(), def.GetModelSelector())
+    T_Super(*def.GetDefinitionModel(), def.GetName(), def.GetCategorySelector(), def.GetDisplayStyle3d(), def.GetModelSelector()),
+    m_allowRotation(true)
     {
     m_elementId = DgnElementId(static_cast<uint64_t>(1));
     m_classId = QueryClassId(def.GetDgnDb());
