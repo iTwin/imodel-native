@@ -1088,7 +1088,20 @@ void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
 
     // if we ask for the model with a different Render::System, we just throw the old one away.
     Utf8String sceneFile;
-    Transform  location(Transform::FromIdentity());
+
+    Transform  location;
+
+    if (m_smPtr.IsValid())
+        {
+        DRange3d range3D(m_smPtr->GetRootNode()->GetContentExtent());    
+        DPoint3d centroid;
+        centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
+        location = Transform::From(centroid.x, centroid.y, centroid.z);
+        }
+    else
+        { 
+        location = Transform::FromIdentity();
+        }
 
     m_scene = new SMScene(m_dgndb, m_smPtr, location, sceneFile.c_str(), renderSys);
     m_scene->SetPickable(true);
