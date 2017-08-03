@@ -989,3 +989,120 @@ ProgressiveTaskPtr QuadTree::Root::_CreateProgressiveTask(DrawArgs& args, TileLo
     {
     return new QuadTree::ProgressiveTask(*this, args.m_missing, loads);
     }
+
+/*---------------------------------------------------------------------------------**//**
+* Create a PolyfaceHeader from a Geometry
+    * @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr TriMeshTree::TriMesh::GetPolyface() const
+    {
+    IGraphicBuilder::TriMeshArgs trimesh;
+    trimesh.m_numIndices = (int32_t) m_indices.size();
+    trimesh.m_vertIndex = m_indices.empty() ? nullptr : &m_indices.front();
+    trimesh.m_numPoints = (int32_t) m_points.size();
+    trimesh.m_points  = m_points.empty() ? nullptr : &m_points.front();
+    trimesh.m_normals = m_normals.empty() ? nullptr : &m_normals.front();
+    trimesh.m_textureUV = m_textureUV.empty() ? nullptr : &m_textureUV.front();;
+
+    return trimesh.ToPolyface();
+    }
+
+/*-----------------------------------------------------------------------------------**//**
+* Construct a Geometry from a CreateParams and a Scene. The scene is necessary to get the Render::System, and this
+* Geometry is only valid for that Render::System
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+TriMeshTree::TriMesh::TriMesh(CreateParams const& args, RootR root, Dgn::Render::SystemP renderSys)
+    {
+    // After we create a Render::Graphic, we only need the points/indices/normals for picking.
+    // To save memory, only store them if the model is locatable.
+    if (root.IsPickable())
+        {
+        m_indices.resize(args.m_numIndices);
+        memcpy(&m_indices.front(), args.m_vertIndex, args.m_numIndices * sizeof(int32_t));
+
+        m_points.resize(args.m_numPoints);
+        memcpy(&m_points.front(), args.m_points, args.m_numPoints * sizeof(FPoint3d));
+
+        if (nullptr != args.m_normals)
+            {
+            m_normals.resize(args.m_numPoints);
+            memcpy(&m_normals.front(), args.m_normals, args.m_numPoints * sizeof(FPoint3d));
+            }
+        }
+
+    if (nullptr == renderSys|| !args.m_texture.IsValid())
+        return;
+
+    auto graphic = renderSys->_CreateGraphic(Graphic::CreateParams());
+    graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);
+    graphic->AddTriMesh(args);
+    graphic->Close();
+
+    m_graphic = graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::TriMesh::GetGraphics(DrawGraphicsR args)
+    {
+    if (m_graphic.IsValid())
+        args.m_graphics.Add(*m_graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   05/16
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::TriMesh::Pick(PickArgsR args)
+    {
+    if (m_indices.empty())
+        return;
+
+    auto graphic = args.m_context.CreateGraphic(Graphic::CreateParams(nullptr, args.m_location));
+    graphic->AddPolyface(*GetPolyface());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Tile::AddDebugRangeGraphics(DrawArgsR args) const
+    {
+    GraphicParams params;
+    params.SetLineColor(ColorDef::Red());
+
+    Render::GraphicBuilderPtr graphic = args.m_context.CreateGraphic();
+    graphic->ActivateGraphicParams(params);
+    graphic->AddRangeBox(m_range);
+    args.m_graphics.m_graphics.Add(*graphic);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Tile::_DrawGraphics(DrawArgsR args, int depth) const
+    {
+    if (_WantDebugRangeGraphics())
+        AddDebugRangeGraphics(args);
+
+    _GetGraphics(args.m_graphics, depth);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Tile::_PickGraphics(PickArgsR args, int depth) const
+    {
+    for (auto mesh : m_meshes)
+        mesh->Pick(args);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void TriMeshTree::Tile::_GetGraphics(DrawGraphicsR args, int depth) const
+    {
+    for (auto mesh : m_meshes)
+        mesh->GetGraphics(args);
+    }
+

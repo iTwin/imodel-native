@@ -494,6 +494,13 @@ struct Create
     //! @return nullptr if supplied entity was not a wire or single face planar sheet body that could be represented as a CurveVector. 
     DGNPLATFORM_EXPORT static CurveVectorPtr BodyToCurveVector(IBRepEntityCR entity);
 
+    //! Represent edges with the given offset distance on the supplied planar face as a CurveVector.
+    //! @param[in] face The target face sub-entity to offset the edges onto.
+    //! @param[in] edges The list of edges to offset with the first edge used as the reference edge for the offset distance. Edges that don't surround the target face are ignored.
+    //! @param[in] distance The offset distance.
+    //! @return nullptr if edge offset could not be created.
+    DGNPLATFORM_EXPORT static CurveVectorPtr OffsetEdgesOnPlanarFaceToCurveVector(ISubEntityCR face, bvector<ISubEntityPtr>& edges, double distance);
+
     //! Create a sheet body suitable for the BooleanCut operation from an open profile.
     //! @param[out] out The new sheet body.
     //! @param[in] curve The curve vector to create a body from. Closed regions are also supported and will just be handled by BodyFromVector.
@@ -806,6 +813,14 @@ struct Modify
     //! @param[in] extend Whether to extend a tool surface to ensure that it splits the face on the target.
     //! @return SUCCESS if imprint created.
     DGNPLATFORM_EXPORT static BentleyStatus ImprintBodyOnBody(IBRepEntityR target, IBRepEntityCR tool, bool extend = true); 
+
+    //! Modify a planar face of a body by imprinting edges with the supplied offset distance.
+    //! @param[in,out] face The target face sub-entity to imprint.
+    //! @param[in] edges The list of edges to imprint with the first edge used as the reference edge for the offset distance. Edges that don't surround the target face are ignored.
+    //! @param[in] distance The offset distance.
+    //! @param[in] extend Whether to extend edges that don't form a closed loop to ensure that they splits the face.
+    //! @return SUCCESS if face imprint created.
+    DGNPLATFORM_EXPORT static BentleyStatus ImprintOffsetEdgesOnPlanarFace(ISubEntityPtr& face, bvector<ISubEntityPtr>& edges, double distance, bool extend = true);
     };
 
 //! Support for persistent topological ids on faces, edges, and vertices.
