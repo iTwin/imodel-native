@@ -115,6 +115,166 @@ static int DynamicFeaturesBrowsingCallbackForwarderDelegate
     return forwarder->CallBack(featureType, featureTag, featureId, tPoint, nPoint);
     }
 
+ref class WaterAnalysisResultPoint;
+ref class WaterAnalysisResultStream;
+ref class WaterAnalysisResultPond;
+
+public ref class WaterAnalysisResultItem
+    {
+    private:
+        WaterAnalysisResultItemP m_native;
+    internal:
+        WaterAnalysisResultItem(WaterAnalysisResultItemR native) : m_native(&native)
+            {
+            m_native->AddRef();
+            }
+        static WaterAnalysisResultItem^ Create(WaterAnalysisResultItemR item);
+    public:
+        !WaterAnalysisResultItem()
+            {
+            if (m_native)
+                {
+                m_native->Release();
+                m_native = nullptr;
+                }
+            }
+        ~WaterAnalysisResultItem()
+            {
+            WaterAnalysisResultItem::!WaterAnalysisResultItem();
+            }
+        virtual WaterAnalysisResultPoint^ AsPoint() { return nullptr; }
+        virtual WaterAnalysisResultStream^ AsStream() { return nullptr; }
+        virtual WaterAnalysisResultPond^ AsPond() { return nullptr; }
+
+        property double WaterVolume
+            {
+            double get()
+                {
+                return m_native->GetWaterVolume();
+                }
+            }
+    };
+
+public ref class WaterAnalysisResultPoint : public WaterAnalysisResultItem
+    {
+    public:
+        enum class PointType
+            {
+            Start,
+            Low,
+            Exit
+            };
+
+    private:
+    WaterAnalysisResultPointP m_point;
+    internal:
+    WaterAnalysisResultPoint(WaterAnalysisResultPointR native) : WaterAnalysisResultItem(native), m_point (&native)
+        { }
+    public:
+        virtual WaterAnalysisResultPoint^ AsPoint() override { return this; }
+
+        property BGEO::DPoint3d Point
+            {
+            BGEO::DPoint3d get()
+                {
+                DPoint3d pt = m_point->GetPoint();
+                return BGEO::DPoint3d(pt.x, pt.y, pt.z);
+                }
+            }
+        property PointType Type
+            {
+            PointType get()
+                {
+                return (PointType)m_point->GetType();
+                }
+            }
+    };
+
+public ref class WaterAnalysisResultStream : public WaterAnalysisResultItem
+    {
+    private:
+        WaterAnalysisResultStreamP m_stream;
+    internal:
+        WaterAnalysisResultStream(WaterAnalysisResultStreamR native) : WaterAnalysisResultItem(native), m_stream(&native)
+            { }
+    public:
+        virtual WaterAnalysisResultStream^ AsStream() override { return this; }
+
+        property BGEO::CurveVector^ Geometry
+            {
+            BGEO::CurveVector^ get()
+                {
+                CurveVectorCR geometry = m_stream->GetGeometry();
+
+                return BGEO::CurveVector::CreateFromNative((System::IntPtr)const_cast<void*>((const void*)&geometry));
+                }
+            }
+    };
+
+public ref class WaterAnalysisResultPond : public WaterAnalysisResultItem
+    {
+    private:
+        WaterAnalysisResultPondP m_pond;
+    internal:
+        WaterAnalysisResultPond(WaterAnalysisResultPondR native) : WaterAnalysisResultItem(native), m_pond (&native)
+            { }
+    public:
+        virtual WaterAnalysisResultPond^ AsPond() override { return this; }
+
+        property BGEO::CurveVector^ Geometry
+            {
+            BGEO::CurveVector^ get()
+                {
+                CurveVectorCR geometry = m_pond->GetGeometry();
+
+                return BGEO::CurveVector::CreateFromNative((System::IntPtr)const_cast<void*>((const void*)&geometry));
+                }
+            }
+
+        property bool IsFull
+            {
+            bool get()
+                {
+                return m_pond->IsFull();
+                }
+            }
+    };
+
+WaterAnalysisResultItem^ WaterAnalysisResultItem::Create(WaterAnalysisResultItemR item)
+    {
+    if (nullptr != item.AsPoint())
+        return gcnew WaterAnalysisResultPoint(*item.AsPoint());
+    if (nullptr != item.AsStream())
+        return gcnew WaterAnalysisResultStream(*item.AsStream());
+    if (nullptr != item.AsPond())
+        return gcnew WaterAnalysisResultPond(*item.AsPond());
+    return nullptr;
+    }
+
+public ref class WaterAnalysisResult : public System::Collections::Generic::IEnumerable<WaterAnalysisResultItem^>
+    {
+    private:
+
+    System::Collections::Generic::List<WaterAnalysisResultItem^>^ m_items = gcnew System::Collections::Generic::List<WaterAnalysisResultItem^>();
+internal:
+    WaterAnalysisResult(WaterAnalysisResultR results)
+        {
+        for (auto&& item : results)
+            m_items->Add(WaterAnalysisResultItem::Create(*item));
+        }
+    protected:
+    // Inherited via IEnumerable
+    virtual System::Collections::IEnumerator ^ GetEnumerator2() sealed = System::Collections::IEnumerable::GetEnumerator
+        {
+        return m_items->GetEnumerator();
+        }
+    public:
+        virtual System::Collections::Generic::IEnumerator<Bentley::TerrainModelNET::WaterAnalysisResultItem ^> ^ GetEnumerator() sealed
+        {
+        return m_items->GetEnumerator();
+        }
+    };
+
 public ref class WaterAnalysis
     {
     public: enum class ZeroSlopeTraceOption
@@ -124,27 +284,27 @@ public ref class WaterAnalysis
         Pond = 2,
         };
     private:
-    DrainageTracer* m_drainageTracer;
+    TerrainModel::WaterAnalysis* m_analysis;
     DTM^ m_dtm;
     private:
-        WaterAnalysis(DrainageTracer* drainageTracer)
+        WaterAnalysis(TerrainModel::WaterAnalysis* analysis)
             {
-            m_drainageTracer = drainageTracer;
-            m_drainageTracer->AddRef();
+            m_analysis = analysis;
+            m_analysis->AddRef();
             }
     public:
         WaterAnalysis(DTM^ dtm) : m_dtm(dtm)
             {
-            auto drainageTracer = DrainageTracer::Create(*dtm->Handle);
-            m_drainageTracer = drainageTracer.get();
-            m_drainageTracer->AddRef();
+            auto analysis = TerrainModel::WaterAnalysis::Create(*dtm->Handle);
+            m_analysis = analysis.get();
+            m_analysis->AddRef();
             }
         !WaterAnalysis()
             {
-            if (m_drainageTracer)
+            if (m_analysis)
                 {
-                m_drainageTracer->Release();
-                m_drainageTracer = nullptr;
+                m_analysis->Release();
+                m_analysis = nullptr;
                 }
             }
         ~WaterAnalysis()
@@ -152,9 +312,13 @@ public ref class WaterAnalysis
             WaterAnalysis::!WaterAnalysis();
             }
 
+        WaterAnalysisResult^ GetResult()
+            {
+            return gcnew WaterAnalysisResult(*m_analysis->GetResult());
+            }
         WaterAnalysis^ Clone()
             {
-            auto drainageTracer = m_drainageTracer->Clone();
+            auto drainageTracer = m_analysis->Clone();
             return gcnew WaterAnalysis(drainageTracer.get());
             }
 
@@ -163,7 +327,7 @@ public ref class WaterAnalysis
             DPoint3d pt;
             DTMHelpers::Copy (pt, startPt);
 
-            m_drainageTracer->DoTrace(pt);
+            m_analysis->DoTrace(pt);
             }
 
         void AddWaterVolume(BGEO::DPoint3d startPt, double volume)
@@ -171,25 +335,24 @@ public ref class WaterAnalysis
             DPoint3d pt;
             DTMHelpers::Copy (pt, startPt);
 
-            m_drainageTracer->AddWaterVolume(pt, volume);
+            m_analysis->AddWaterVolume(pt, volume);
             }
 
         void DoTraceCallback(DynamicFeaturesBrowsingDelegate^ hdlP, System::Object^ oArg)
             {
             DTMDynamicFeaturesBrowsingCallbackForwarder forwarder (m_dtm, hdlP, oArg);
-            m_drainageTracer->DoTraceCallback(&DynamicFeaturesBrowsingCallbackForwarderDelegate, &forwarder);
+            m_analysis->DoTraceCallback(&DynamicFeaturesBrowsingCallbackForwarderDelegate, &forwarder);
             }
-
 
         property double PondElevationTolerance
             {
             double get()
                 {
-                return m_drainageTracer->GetPondElevationTolerance();
+                return m_analysis->GetPondElevationTolerance();
                 }
             void set(double value)
                 {
-                m_drainageTracer->SetPondElevationTolerance(value);
+                m_analysis->SetPondElevationTolerance(value);
                 }
             }
 
@@ -197,11 +360,11 @@ public ref class WaterAnalysis
             {
             double get()
                 {
-                return m_drainageTracer->GetPondVolumeTolerance();
+                return m_analysis->GetPondVolumeTolerance();
                 }
             void set(double value)
                 {
-                m_drainageTracer->SetPondVolumeTolerance(value);
+                m_analysis->SetPondVolumeTolerance(value);
                 }
             }
 
@@ -209,11 +372,11 @@ public ref class WaterAnalysis
             {
             double get()
                 {
-                return m_drainageTracer->GetMinimumDepth();
+                return m_analysis->GetMinimumDepth();
                 }
             void set(double value)
                 {
-                m_drainageTracer->SetMinimumDepth(value);
+                m_analysis->SetMinimumDepth(value);
                 }
             }
 
@@ -221,15 +384,13 @@ public ref class WaterAnalysis
             {
             WaterAnalysis::ZeroSlopeTraceOption get()
                 {
-                return (ZeroSlopeTraceOption)m_drainageTracer->GetZeroSlopeOption();
+                return (ZeroSlopeTraceOption)m_analysis->GetZeroSlopeOption();
                 }
             void set(WaterAnalysis::ZeroSlopeTraceOption value)
                 {
-                m_drainageTracer->SetZeroSlopeOption((Bentley::TerrainModel::ZeroSlopeTraceOption)value);
+                m_analysis->SetZeroSlopeOption((Bentley::TerrainModel::ZeroSlopeTraceOption)value);
                 }
             }
-
-
     };
 
 END_BENTLEY_TERRAINMODELNET_NAMESPACE
