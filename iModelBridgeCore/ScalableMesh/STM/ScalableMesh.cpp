@@ -3055,6 +3055,8 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
         DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
         if (smGCS != nullptr && !targetCS->IsEquivalent(*smGCS))
             {
+            smGCS->SetReprojectElevation(true);
+
             DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
             smGCS->UorsFromCartesian(scale, scale);
             scale.DifferenceOf(scale, globalOrigin);            
