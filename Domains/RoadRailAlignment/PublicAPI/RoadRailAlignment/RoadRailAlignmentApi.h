@@ -76,6 +76,7 @@ END_BENTLEY_ROADRAILALIGNMENT_NAMESPACE
 #define BRRA_CLASS_HorizontalAlignmentModel                         "HorizontalAlignmentModel"
 #define BRRA_CLASS_VerticalAlignment                                "VerticalAlignment"
 #define BRRA_CLASS_VerticalAlignmentModel                           "VerticalAlignmentModel"
+#define BRRA_CLASS_VerticalAlignmentViewDefinition                  "VerticalAlignmentViewDefinition"
 
 
 // Relationships
@@ -157,6 +158,7 @@ ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentsPortion)
 ROADRAILALIGNMENT_TYPEDEFS(HorizontalAlignmentModel)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignment)
 ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignmentModel)
+ROADRAILALIGNMENT_TYPEDEFS(VerticalAlignmentViewDefinition)
 ROADRAILALIGNMENT_TYPEDEFS(DividedRoadAlignmentPairEditor)
 ROADRAILALIGNMENT_TYPEDEFS(StationRange)
 ROADRAILALIGNMENT_TYPEDEFS(StationRangeEdit)
@@ -175,6 +177,7 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentsPortion)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(HorizontalAlignmentModel)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignment)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignmentModel)
+ROADRAILALIGNMENT_REFCOUNTED_PTR(VerticalAlignmentViewDefinition)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(DividedRoadAlignmentPairEditor)
 ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadAlignmentPairEditor)
 
@@ -192,5 +195,6 @@ ROADRAILALIGNMENT_REFCOUNTED_PTR(RoadAlignmentPairEditor)
 #include "AlignmentReferent.h"
 #include "AlignmentCategory.h"
 #include "RoadRailAlignmentDomain.h"
+#include "VerticalAlignmentViewDefinition.h"
 #include "GeometryDebug.h"
 #include "GeometryHelper.h"

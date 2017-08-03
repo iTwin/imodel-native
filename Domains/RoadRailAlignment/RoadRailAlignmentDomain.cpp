@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <RoadRailAlignmentInternal.h>
+#include "RoadRailAlignmentInternal.h"
 
 DOMAIN_DEFINE_MEMBERS(RoadRailAlignmentDomain)
 
@@ -24,6 +24,7 @@ RoadRailAlignmentDomain::RoadRailAlignmentDomain() : DgnDomain(BRRA_SCHEMA_NAME,
     RegisterHandler(AlignmentStationHandler::GetHandler());
     RegisterHandler(VerticalAlignmentModelHandler::GetHandler());
     RegisterHandler(VerticalAlignmentHandler::GetHandler());    
+    RegisterHandler(VerticalAlignmentViewDefinitionHandler::GetHandler());
     }
 
 /*---------------------------------------------------------------------------------**//**
