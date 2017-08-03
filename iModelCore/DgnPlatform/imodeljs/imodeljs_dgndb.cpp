@@ -84,7 +84,7 @@ static void getArrayECPropertyMetaData(JsonValueR json, ECN::ArrayECPropertyCR a
 //---------------------------------------------------------------------------------------
 static void getPrimitiveArrayECPropertyMetaData(JsonValueR parentJson, ECN::PrimitiveArrayECPropertyCR arrayProp)
     {
-    auto& json = parentJson["primitveArrayECProperty"];
+    auto& json = parentJson["primitiveArrayECProperty"];
     getArrayECPropertyMetaData(json, arrayProp);
     json["type"] = arrayProp.GetTypeName();
     SET_IF_NOT_EMPTY_STR(json["extendedType"], arrayProp.GetExtendedTypeName());
