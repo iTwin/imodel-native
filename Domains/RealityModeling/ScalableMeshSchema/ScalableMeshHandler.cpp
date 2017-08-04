@@ -393,8 +393,10 @@ void SMNode::_DrawGraphics(Dgn::TileTree::DrawArgsR args) const
         graphic->AddTile(*geom.m_texture, corners);
 
         args.m_graphics.Add(*graphic->Finish());
+        }
     }
- * Draw this node.
+
+/*---------------------------------------------------------------------------------**//**
  * @bsimethod                                    Keith.Bentley                   05/16
  +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SMNode::_GetTileCacheKey() const
@@ -426,14 +428,13 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                    Keith.Bentley                   05/16
  +---------------+---------------+---------------+---------------+---------------+------*/
-
 bool SMNode::ReadHeader(Transform& locationTransform)
     {
     m_range.low = m_scalableMeshNodePtr->GetContentExtent().low;
     m_range.high = m_scalableMeshNodePtr->GetContentExtent().high;
 
-    m_range.low.Subtract(centroid);
-    m_range.high.Subtract(centroid);
+    locationTransform.Multiply(m_range.low);
+    locationTransform.Multiply(m_range.high);
     /*
        JsonValueCR val = pt["maxScreenDiameter"];
        if (val.empty())
@@ -906,13 +907,56 @@ IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEng
 TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
     {
     Utf8String sceneFile;
-    Transform  location(Transform::FromIdentity());
+    Transform location(Transform::FromIdentity());
+    Transform toFloatTransform;
 
-    SMScenePtr scene = new SMScene(m_dgndb, m_smPtr, location, sceneFile.c_str(), system);
+    if (m_smPtr.IsValid())
+        {
+        DRange3d range3D(m_smPtr->GetRootNode()->GetContentExtent());    
+        DPoint3d centroid;
+        centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
+
+        DPoint3d go = m_dgndb.GeoLocation().GetGlobalOrigin();
+
+        GeoCoords::GCS gcs(m_smPtr->GetGCS());
+        DgnGCSPtr  smGCS = DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), m_dgndb);
+
+        DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
+        smGCS->UorsFromCartesian(scale, scale);
+        scale.DifferenceOf(scale, go);
+
+        smGCS->UorsFromCartesian(centroid, centroid);
+
+        toFloatTransform = Transform::FromRowValues(scale.x, 0, 0, -(centroid.x - go.x),
+                                                    0, scale.y, 0, -(centroid.y - go.y),
+                                                    0, 0, scale.z, -(centroid.z - go.z));
+
+
+        
+/*
+        computedTransform = Transform::FromRowValues(scale.x, 0, 0, globalOrigin.x,
+                                                     0, scale.y, 0, globalOrigin.y,
+                                                     0, 0, scale.z, globalOrigin.z);
+*/
+
+        scale = DPoint3d::FromXYZ(1, 1, 1);
+
+        location = Transform::FromRowValues(scale.x, 0, 0, centroid.x,
+                                                     0, scale.y, 0, centroid.y,
+                                                     0, 0, scale.z, centroid.z);
+
+        //location = Transform::From(centroid.x + go.x, centroid.y + go.y, centroid.z + go.z);                                    
+        }
+    else
+        { 
+        location = Transform::FromIdentity();
+        toFloatTransform = Transform::FromIdentity();
+        }
+
+    SMScenePtr scene = new SMScene(m_dgndb, m_smPtr, location, toFloatTransform, sceneFile.c_str(), system);
     scene->SetPickable(true);
     if (SUCCESS != scene->LoadScene())
         return nullptr;
-
 
     return scene.get();
     }
