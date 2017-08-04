@@ -95,7 +95,7 @@ struct SMGeometry : Dgn::TileTree::TriMeshTree::TriMesh
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   07/17
+// @bsistruct                                                   Mathieu.St-Pierre  08/17
 //=======================================================================================
 struct SMNode : Dgn::TileTree::TriMeshTree::Tile
 {
@@ -138,7 +138,10 @@ public:
     SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) : T_Super(root, parent), m_scalableMeshNodePtr(smNodePtr) {}
     Utf8String GetFilePath(SMSceneR) const;
 
-    bool _HasChildren() const override { return m_scalableMeshNodePtr->GetChildrenNodes().size() > 0; }
+    bool _HasChildren() const override { return m_scalableMeshNodePtr->GetChildrenNodes().size() > 0 || !IsReady(); }
+    ChildTiles const* _GetChildren(bool load) const override; 
+
+
     Dgn::ElementAlignedBox3d ComputeRange();
 };
 

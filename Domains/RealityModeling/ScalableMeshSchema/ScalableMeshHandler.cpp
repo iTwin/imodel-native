@@ -467,6 +467,42 @@ bool SMNode::_WantDebugRangeGraphics() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::ChildTiles const* SMNode::_GetChildren(bool load) const
+    { 
+    return __super::_GetChildren(load);
+/*
+    if (!IsReady())
+        return nullptr;
+
+    if (m_children.size() == 0)
+        return nullptr;
+
+    if (!m_children[0]->IsReady())
+        return nullptr;
+
+    return &m_children;
+*/
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+/*
+bool SMNode::IsNotLoaded() const
+    { 
+    if (m_loadStatus.load() == LoadStatus::NotLoaded)
+        return true;
+    
+    if (m_children.size() > 0 && m_children[0].GetLoadStatus() == == LoadStatus::NotLoaded)
+        return true;
+
+    return false;
+    }
+*/
+
+/*---------------------------------------------------------------------------------**//**
  * Draw this node.
  * @bsimethod                                    Keith.Bentley                   05/16
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -531,6 +567,20 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
     {
     BeAssert(!IsReady());
 
+#if 0
+    //Just need to load the children
+    if (m_children.size() > 0)
+        {
+        for (auto& child : m_children)
+            {                     
+            ((SMNode*)&child)->Read3SMTile(in, scene, renderSys, false);
+            }
+
+        SetIsReady();
+        return SUCCESS;
+        }
+#endif
+
     if (SUCCESS != DoRead(in, scene, renderSys, loadChildren))
         {
         SetNotFound();
@@ -539,13 +589,17 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
         }
 
     // only after we've successfully read the entire node, mark it as ready so other threads can look at its child nodes.
-    SetIsReady();
+    //if (loadChildren)
+        SetIsReady();
+
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                    Keith.Bentley                   05/16
  +---------------+---------------+---------------+---------------+---------------+------*/
+static double s_maxDiamFactor = 10;
+static double s_constantFactor = 100;
 
 bool SMNode::ReadHeader(Transform& locationTransform)
     {
@@ -571,7 +625,8 @@ bool SMNode::ReadHeader(Transform& locationTransform)
 
     m_scalableMeshNodePtr->GetResolutions(geometricResolution, textureResolution);
         
-    m_maxDiameter = m_range.low.Distance(m_range.high) / std::min(geometricResolution, textureResolution);
+    //m_maxDiameter = m_range.low.Distance(m_range.high) / std::min(geometricResolution, textureResolution) / s_maxDiamFactor;
+    m_maxDiameter = s_constantFactor / std::min(geometricResolution, textureResolution);
 	
 	//m_maxDiameter = 1000 / std::min(geometricResolution, textureResolution);
 
@@ -777,7 +832,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 #endif
 
     bvector<IScalableMeshNodePtr> childrenNodes(m_scalableMeshNodePtr->GetChildrenNodes());
-
+    
     for (auto& childNode : childrenNodes)
         {
         SMNodePtr nodeptr = new SMNode(GetTriMeshRootR(), this, childNode);
@@ -786,11 +841,12 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
            if (!nodeptr->ReadHeader(centroid))
            return ERROR;
            */
-
+/*
         if (loadChildren)
             {
             nodeptr->Read3SMTile(in, scene, renderSys, false);
             }
+*/
 
         m_children.push_back(nodeptr);
         }
@@ -836,7 +892,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
         {
         vertIndex[faceVerticeInd] = faceVerticeInd; //polyfaceQuery->GetPointIndexCP()[faceVerticeInd] - 1;
-        }
+        }  
 
     for (size_t paramInd = 0; paramInd < polyfaceQuery->GetPointIndexCount(); paramInd++)
         {
