@@ -317,6 +317,9 @@ AlignmentCPtr Alignment::InsertWithMainPair(AlignmentPairCR alignmentPair, DgnDb
             if (verticalAlignmPtr->InsertAsMainVertical(stat).IsNull())
                 return nullptr;
             }
+
+        GenerateAprox3dGeom();
+        retVal = Update();
         }
 
     return retVal;
