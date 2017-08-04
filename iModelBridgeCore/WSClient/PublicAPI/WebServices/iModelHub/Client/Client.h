@@ -23,8 +23,10 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(Client);
 DEFINE_TASK_TYPEDEFS(bvector<iModelInfoPtr>, iModels);
 DEFINE_TASK_TYPEDEFS(BriefcasePtr, Briefcase);
 DEFINE_TASK_TYPEDEFS(iModelManagerPtr, iModelManager);
+DEFINE_TASK_TYPEDEFS(BeFileName, BeFileName);
 
 typedef std::function<BeFileName(BeFileName, BeSQLite::BeBriefcaseId, iModelInfoCR, FileInfoCR)> BriefcaseFileNameCallback;
+typedef std::function<BeFileName(iModelInfoCR, FileInfoCR)> LocalBriefcaseFileNameCallBack;
 
 //=======================================================================================
 //! Client of DgnDbServer.
@@ -43,6 +45,8 @@ private:
     IHttpHandlerPtr             m_customHandler;
     iModelAdmin                 m_iModelAdmin;
 
+    static StatusResult MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath);
+
     Client(ClientInfoPtr clientInfo, IHttpHandlerPtr customHandler) : 
         m_clientInfo(clientInfo), m_customHandler(customHandler), m_projectId(""), m_iModelAdmin(this) {}
 
@@ -53,6 +57,9 @@ private:
                                                       ICancellationTokenPtr cancellationToken) const;
     iModelConnectionResult CreateiModelConnection(iModelInfoCR iModelInfo) const { return iModelConnection::Create(iModelInfo, m_credentials, m_clientInfo, m_customHandler); }
     IWSRepositoryClientPtr CreateProjectConnection() const;
+
+    BeFileNameTaskPtr DownloadLocalBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallBack const & fileNameCallBack, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const;
+
 
 public:
     //! Set custom handler.
@@ -229,6 +236,36 @@ public:
     //! @param[in] changeSets ChangeSets to merge.
     //! @return Returns a shared pointer to opened DgnDb instance.
     IMODELHUBCLIENT_EXPORT static DgnDbPtr OpenWithSchemaUpgrade(BeSQLite::DbResult* status, BeFileName filePath, ChangeSets changeSets);
+
+
+    //! Dowloads local briefcase updated to specified version. This briefcase can be used as standalone file and cannot be opened with function OpenBriefcase
+    //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
+    //! @param[in] versionId version id briefcase should be updated to.
+    //! @param[in] fileNameCallBack Callback function, that takes and iModel info and file info as arguments and returns full filename.
+    //! @param[in] callback Download progress callback.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has breifcase file path as the result.
+    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadLocalBriefcaseUpdatedToVersion(iModelInfoCR iModelInfo, Utf8String versionId, LocalBriefcaseFileNameCallBack const& fileNameCallBack,
+                                                                                    Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Dowloads local briefcase updated to specified ChangeSet. This briefcase can be used as standalone file and cannot be opened with function OpenBriefcase
+    //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
+    //! @param[in] changeSetId Information about versions briefcase should contain.
+    //! @param[in] fileNameCallBack Callback function, that takes and iModel info and file info as arguments and returns full filename.
+    //! @param[in] callback Download progress callback.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has breifcase file path as the result.
+    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadLocalBriefcaseUpdatedToChangeSet(iModelInfoCR iModelInfo, Utf8String changeSetId, LocalBriefcaseFileNameCallBack const& fileNameCallBack,
+                                                                                      Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Dowloads local briefcase from server with version applied. This briefcase can be used as standalone file and cannot be opened with function OpenBriefcase
+    //! @param[in] iModelInfo Information of iModel to be acquired. This value should be returned by the server. See Client::GetiModels and Client::CreateNewiModel.
+    //! @param[in] fileNameCallBack Callback function, that takes and iModel info and file info as arguments and returns full filename.
+    //! @param[in] callback Download progress callback.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has briefcase info as the result.
+    IMODELHUBCLIENT_EXPORT BeFileNameTaskPtr DownloadLocalBriefcase(iModelInfoCR iModelInfo, LocalBriefcaseFileNameCallBack const& fileNameCallBack,
+                                                                    Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

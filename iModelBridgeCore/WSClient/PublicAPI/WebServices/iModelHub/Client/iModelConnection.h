@@ -133,6 +133,8 @@ private:
     friend struct iModelManager;
     friend struct PredownloadManager;
     friend struct EventManager;
+	//WIP remove then relationship to get changeSets implemented
+    friend struct VersionsManager;
 	
     static PredownloadManagerPtr s_preDownloadManager;
     bool m_subscribedForPreDownload = false;
@@ -481,6 +483,11 @@ public:
     //! @param[in] cancellationToken
     //! @return Asynchronous task that has the collection of file information as the result.
     IMODELHUBCLIENT_EXPORT FileTaskPtr GetSeedFileById(BeSQLite::BeGuidCR fileId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns latest seed file puted on server.
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that has the file information as the result.
+    IMODELHUBCLIENT_EXPORT FileTaskPtr GetLatestSeedFile(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Download a copy of the seed file from the iModel
     //! @param[in] localFile Location where the downloaded file should be placed.
