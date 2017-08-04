@@ -8,6 +8,7 @@
 #include "IntegrationTestsHelper.h"
 #include "IntegrationTestsBase.h"
 #include <WebServices/iModelHub/Client/Client.h>
+#include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/iModelHub/Client/Configuration.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
@@ -18,6 +19,7 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define DEFAULT_LANGUAGE_CODE "en"
 #define EXPECT_STATUS(STAT, EXPR) EXPECT_EQ(RepositoryStatus:: STAT, (EXPR))
 
@@ -219,54 +221,6 @@ struct StubLocalState : public IJsonLocalState
     };
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas           05/2017
-//---------------------------------------------------------------------------------------
-bool SignInWithRetry(ConnectSignInManagerPtr manager, Credentials credentials, int retryCount)
-    {
-    SignInResult signInResult;
-
-    for (int i = 0; i <= retryCount; i++)
-        {
-        signInResult = manager->SignInWithCredentials(credentials)->GetResult();
-        if (signInResult.IsSuccess())
-            return true;
-        }
-
-    Utf8String errorMessage;
-    errorMessage.Sprintf("IMS signIn failed: %s", signInResult.GetError().GetMessage().c_str());
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_IMODELHUB)->error(errorMessage.c_str());
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis            07/2016
-//---------------------------------------------------------------------------------------
-Utf8String QueryProjectId(Utf8String projectNr, Credentials credentials)
-    {
-    UrlProvider::Initialize(IntegrationTestSettings::Instance().GetEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
-    Utf8String imodelId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
-
-    WebServices::ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo();
-    auto manager = ConnectSignInManager::Create(clientInfo, nullptr, StubLocalState::Instance());
-    if (!SignInWithRetry(manager, credentials, 1))
-        return nullptr;
-
-    auto authHandler = manager->GetAuthenticationHandler(UrlProvider::Urls::ConnectWsgGlobal.Get());
-    auto client = WSRepositoryClient::Create(UrlProvider::Urls::ConnectWsgGlobal.Get(), imodelId, clientInfo, nullptr, authHandler);
-
-    WSQuery query("GlobalSchema", "Project");
-    query.SetSelect("$id");
-    query.SetFilter(Utf8PrintfString("Active+eq+true+and+Number+eq+'%s'", projectNr.c_str()));
-
-    auto result = client->SendQueryRequest(query)->GetResult();
-    if (!result.IsSuccess())
-        return nullptr;
-
-    JsonValueCR instance = result.GetValue().GetJsonValue()["instances"][0];
-    return instance["instanceId"].asString();
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas             01/2016
 //---------------------------------------------------------------------------------------
 ClientPtr IntegrationTestsBase::SetUpClient (Utf8StringCR host, Credentials credentials, IHttpHandlerPtr customHandler)
@@ -276,18 +230,19 @@ ClientPtr IntegrationTestsBase::SetUpClient (Utf8StringCR host, Credentials cred
 
     if (IntegrationTestSettings::Instance().IsIms())
         {
-        AuthenticationHandlerPtr authHandler = nullptr;
-        Utf8String projectId;
         UrlProvider::Initialize(IntegrationTestSettings::Instance().GetEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
+        ClientHelper::Initialize(clientInfo, StubLocalState::Instance());
+
         auto manager = ConnectSignInManager::Create(clientInfo, customHandler, StubLocalState::Instance());
-        
-        if (SignInWithRetry(manager, credentials, 1))
-            authHandler = manager->GetAuthenticationHandler(host);
-        else
+        SignInResult signInResult = manager->SignInWithCredentials(credentials)->GetResult();
+        if (!signInResult.IsSuccess())
             return nullptr;
 
-        projectId = QueryProjectId(IntegrationTestSettings::Instance().GetProjectNr(), credentials);
-        client = Client::Create(clientInfo, authHandler);
+        auto clientHelper = ClientHelper::GetInstance();
+        client = clientHelper->SignInWithManager(manager, IntegrationTestSettings::Instance().GetEnvironment());
+
+        WSError wsError;
+        Utf8String projectId = clientHelper->QueryProjectId(&wsError, IntegrationTestSettings::Instance().GetProjectNr());
         client->SetProject(projectId);
         }
     else

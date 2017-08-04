@@ -57,6 +57,7 @@ namespace ServerSchema
         static Utf8CP EventSubscription = "EventSubscription";
         static Utf8CP UserDefinition = "UserDefinition";
         static Utf8CP Version = "Version";
+        static Utf8CP UserInfo = "UserInfo";
         }
     namespace Relationship
         {
@@ -125,6 +126,8 @@ namespace ServerSchema
         static Utf8CP UploadUrl = "UploadUrl";
         static Utf8CP DownloadUrl = "DownloadUrl";
         static Utf8CP ChangeSetId = "ChangeSetId";
+        static Utf8CP Surname = "Surname";
+        static Utf8CP Email = "Email";
         }
     namespace ExtendedParameters
         {
