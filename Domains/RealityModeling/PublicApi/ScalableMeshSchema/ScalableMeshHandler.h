@@ -114,7 +114,7 @@ struct SMNode : Dgn::TileTree::TriMeshTree::Tile
             return static_cast<SMNodeR>(*m_tile).Read3SMTile(m_tileBytes, (SMSceneR)m_tile->GetRootR(), GetRenderSystem(), true);
             };
 
-        virtual folly::Future<BentleyStatus> _GetFromSource() override
+        folly::Future<BentleyStatus> _GetFromSource() override
             {
             //ScalableMesh has his own loader
             return SUCCESS;
@@ -178,7 +178,7 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ScalableMeshModel : IMeshSpatialModel //, Dgn::Render::IGenerateMeshTiles
+struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetPublishedTilesetURL
 {
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
@@ -220,30 +220,31 @@ protected:
 
     Properties      m_properties;
 
-    virtual void _OnSaveJsonProperties() override;
-    virtual void _OnLoadedJsonProperties() override;
+    void _OnSaveJsonProperties() override;
+    void _OnLoadedJsonProperties() override;
+    Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 
     virtual bool _IsMultiResolution() const { return true; };
-    virtual BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const override;
+    BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const override;
 
-    virtual BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
-    virtual BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
+    BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
+    BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
 
-    virtual BentleyStatus _ReloadClipMask(const BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) override;
-    virtual BentleyStatus _ReloadAllClipMasks() override;
-    virtual BentleyStatus _StartClipMaskBulkInsert() override;
-    virtual BentleyStatus _StopClipMaskBulkInsert() override;
-    virtual BentleyStatus _CreateIterator(ITerrainTileIteratorPtr& iterator) override;
-    virtual TerrainModel::IDTM* _GetDTM(ScalableMesh::DTMAnalysisType type) override;
-    virtual void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
-    virtual bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
+    BentleyStatus _ReloadClipMask(const BentleyApi::Dgn::DgnElementId& clipMaskElementId, bool isNew) override;
+    BentleyStatus _ReloadAllClipMasks() override;
+    BentleyStatus _StartClipMaskBulkInsert() override;
+    BentleyStatus _StopClipMaskBulkInsert() override;
+    BentleyStatus _CreateIterator(ITerrainTileIteratorPtr& iterator) override;
+    TerrainModel::IDTM* _GetDTM(ScalableMesh::DTMAnalysisType type) override;
+    void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
+    bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
 
     SCALABLEMESH_SCHEMA_EXPORT void _AddTerrainGraphics(TerrainContextR context) const override;
     SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
     SCALABLEMESH_SCHEMA_EXPORT void _OnFitView(FitContextR context) override;
 
 public:
-    //virtual TileGeneratorStatus _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) override;
+    Utf8String _GetPublishedTilesetURL() const override { return Utf8String(GetPath()); }
 
     //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
     ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params);
@@ -256,7 +257,7 @@ public:
 
     void SetFileNameProperty(BeFileNameCR smFilename);
 
-    SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
+    BeFileName GetPath() const { return m_path; }
 
     //! A DgnDb can have only one terrain.
     SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);

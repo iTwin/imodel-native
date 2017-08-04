@@ -47,6 +47,15 @@ AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     return m_range;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
+    {
+    // ###TODO_SCALABLE_MESH: Possibly need to apply transform...
+    return _GetRange();
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Elenie.Godzaridis     2/2016
 //----------------------------------------------------------------------------------------
@@ -1715,11 +1724,6 @@ Transform ScalableMeshModel::GetUorsToStorage()
 IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb)
     {
     return ScalableMeshTerrainModelAppData::Get(dgnDb)->GetModel(dgnDb);
-    }
-
-BeFileName ScalableMeshModel::GetPath()
-    {
-    return m_path;
     }
 
 //----------------------------------------------------------------------------------------
