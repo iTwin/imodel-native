@@ -15,6 +15,7 @@
 #include <Bentley/Tasks/CancellationToken.h>
 #include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/RealityDataCache.h>
+#include <forward_list>
 
 #define BEGIN_TILETREE_NAMESPACE    BEGIN_BENTLEY_DGN_NAMESPACE namespace TileTree {
 #define END_TILETREE_NAMESPACE      } END_BENTLEY_DGN_NAMESPACE
@@ -819,7 +820,6 @@ protected:
     bvector<FPoint2d> m_textureUV;
     bvector<int32_t> m_indices;
     bvector<Render::GraphicPtr> m_graphics;
-
     DGNPLATFORM_EXPORT Render::TriMeshArgs CreateTriMeshArgs(Render::TextureP texture, FPoint2d const* textureUV) const;
 public:
     DGNPLATFORM_EXPORT TriMesh(CreateParams const&, RootR, Render::SystemP renderSys);
@@ -851,6 +851,7 @@ protected:
 
     virtual TriMeshPtr _CreateGeometry(TriMesh::CreateParams const& args, Render::SystemP system) {return new TriMesh(args, *this, system);}
     virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr; }
+        {return renderSys ? renderSys->_CreateTexture(source, targetFormat, bottomUp) : nullptr;}
 };
 
 //=======================================================================================
@@ -868,7 +869,8 @@ protected:
 
     TriMeshList m_meshes;
 
-    Tile(Root& root, Tile const* parent, double maxDiameter=0.0) : TileTree::Tile(root, parent), m_maxDiameter(maxDiameter) { }
+    Tile(Root& root, Tile const* parent, double maxDiameter=0.0) : T_Super(root, parent), m_maxDiameter(maxDiameter) { }
+
     virtual bool _WantDebugRangeGraphics() const { return false; }
     DGNPLATFORM_EXPORT void AddDebugRangeGraphics(DrawArgsR args) const;
 

@@ -3272,6 +3272,50 @@ TEST_F(CodesManagerTest, PlantScenario)
         }
     }
 
+/*---------------------------------------------------------------------------------**//**
+* Code value uniqueness constraint uses COLLATE NOCASE, which means case-insensitive strictly for
+* the ASCII uppercase characters A-Z.
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, Collation)
+    {
+    DgnDbPtr pDb = SetupDb(L"CodeCollationTest.bim", BeBriefcaseId(2));
+    DgnDbR db = *pDb;
+    IBriefcaseManagerR mgr = db.BriefcaseManager();
+
+    DgnCode abc = MakeStyleCode("abc", db);
+    DgnCodeSet req;
+    req.insert(abc);
+    EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
+
+    DgnCode ABC = MakeStyleCode("ABC", db);
+    EXPECT_TRUE(ABC == abc);
+    EXPECT_TRUE(abc == ABC);
+    EXPECT_FALSE(ABC < abc);
+    EXPECT_FALSE(abc < ABC);
+    EXPECT_FALSE(ABC != abc);
+    EXPECT_FALSE(abc != ABC);
+
+    EXPECT_TRUE(IsCodeReserved(mgr, ABC));
+
+    req.clear();
+    req.insert(ABC);
+    EXPECT_EQ(1, req.size());
+    req.insert(abc);
+    EXPECT_EQ(1, req.size());
+
+    EXPECT_EQ(DgnDbStatus::Success, InsertStyle("ABC", db));
+    db.SaveChanges();
+
+    ExpectState(MakeReserved(abc, db), db);
+    ExpectState(MakeReserved(ABC, db), db);
+
+    EXPECT_EQ(DgnDbStatus::DuplicateCode, InsertStyle("abc", db, false));
+
+    EXPECT_TRUE(db.Elements().QueryElementIdByCode(abc).IsValid());
+    EXPECT_TRUE(db.Elements().QueryElementIdByCode(ABC).IsValid());
+    }
+
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
 //=======================================================================================

@@ -379,8 +379,6 @@ $(CoreObjs)imodeljs$(oext) :                        $(imodeljsDir)imodeljs.cpp $
 
 $(CoreObjs)imodeljs_dgndb$(oext) :                  $(imodeljsDir)imodeljs_dgndb.cpp $(imodeljsDir)imodeljs.h ${MultiCompileDepends} 
 
-$(CoreObjs)imodeljs_statement$(oext) :              $(imodeljsDir)imodeljs_statement.cpp $(imodeljsDir)imodeljs.h ${MultiCompileDepends} 
-
 #----------------------------------------------------------------------
 #   DgnBRep
 #----------------------------------------------------------------------

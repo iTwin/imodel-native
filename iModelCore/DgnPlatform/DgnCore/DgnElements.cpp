@@ -1050,7 +1050,11 @@ DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(
     m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), m_parentRelClassId(params.m_parentId.IsValid() ? params.m_parentRelClassId : DgnClassId()),
     m_userLabel(params.m_userLabel), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0), m_structInstances(nullptr)
     {
-    ++GetDgnDb().Elements().m_tree->m_totals.m_extant;
+#if !defined (NDEBUG)    
+    auto& elements = GetDgnDb().Elements();
+    BeMutexHolder lock(elements.GetMutex());
+    ++elements.m_tree->m_totals.m_extant;  // only for detecting leaks
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1064,7 +1068,11 @@ DgnElement::~DgnElement()
     if (nullptr != m_ecPropertyData)
         bentleyAllocator_free(m_ecPropertyData);
 
-    --GetDgnDb().Elements().m_tree->m_totals.m_extant;
+#if !defined (NDEBUG)    
+    auto& elements = GetDgnDb().Elements();
+    BeMutexHolder lock(elements.GetMutex());
+    --elements.m_tree->m_totals.m_extant;
+#endif
     }
 
 DgnElements::Totals const& DgnElements::GetTotals() const {return m_tree->m_totals;}
