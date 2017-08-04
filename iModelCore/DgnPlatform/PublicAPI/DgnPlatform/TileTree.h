@@ -851,7 +851,6 @@ protected:
 
     virtual TriMeshPtr _CreateGeometry(TriMesh::CreateParams const& args, Render::SystemP system) {return new TriMesh(args, *this, system);}
     virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::BottomUp bottomUp) const {return m_renderSystem ? m_renderSystem->_CreateTexture(source, bottomUp) : nullptr; }
-        {return renderSys ? renderSys->_CreateTexture(source, targetFormat, bottomUp) : nullptr;}
 };
 
 //=======================================================================================

@@ -1647,16 +1647,6 @@ Render::TriMeshArgs TriMeshTree::TriMesh::CreateTriMeshArgs(TextureP texture, FP
     return trimesh;
     }
 
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   01/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-ProgressiveTaskPtr QuadTree::Root::_CreateProgressiveTask(DrawArgs& args, TileLoadStatePtr loads)
-    {
-    return new QuadTree::ProgressiveTask(*this, args.m_missing, loads);
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * Create a PolyfaceHeader from a Geometry
     * @bsimethod                                    Keith.Bentley                   05/16
