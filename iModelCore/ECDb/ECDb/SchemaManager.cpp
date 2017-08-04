@@ -12,6 +12,105 @@ USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
 
+
+struct SchemaDependencyManager sealed
+    {
+    private:
+        typedef bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> SchemaMap;
+        typedef bset<ECN::SchemaKey, SchemaKeyLessThan<SchemaMatchType::Exact>> SchemaSet;
+        static void FindAllSchemasInGraph(ECN::ECSchemaCP schema, SchemaMap& schemaMap)
+            {
+            if (schemaMap.find(schema->GetSchemaKey()) != schemaMap.end())
+                return;
+
+            schemaMap[schema->GetSchemaKey()] = schema;
+            for (const auto& entry : schema->GetReferencedSchemas())
+                FindAllSchemasInGraph(entry.second.get(), schemaMap);
+            }
+        static SchemaMap FindAllSchemasInGraph(ECN::ECSchemaCR schema, bool includeThisSchema)
+            {
+            SchemaMap schemaMap;
+            if (includeThisSchema)
+                schemaMap[schema.GetSchemaKey()] = &schema;
+
+            for (const auto& entry : schema.GetReferencedSchemas())
+                FindAllSchemasInGraph(entry.second.get(), schemaMap);
+
+            return schemaMap;
+            }
+        static bvector<ECN::ECSchemaCP> GetLayer(bvector<ECN::ECSchemaCP> const& schemas, bvector<ECN::ECSchemaCP> const& referencedBy)
+            {
+            bvector<ECN::ECSchemaCP> list;
+            SchemaMap map;
+            if (referencedBy.empty())
+                {
+                for (auto schema : schemas)
+                    if (map.find(schema->GetSchemaKey()) == map.end())
+                        map[schema->GetSchemaKey()] = schema;
+
+                for (auto schema : schemas)
+                    for (const auto& ref : FindAllSchemasInGraph(*schema, false))
+                        {
+                        auto itor = map.find(ref.first);
+                        if (map.end() != itor)
+                            map.erase(itor);
+                        }
+                }
+            else
+                {
+                for (auto schema : referencedBy)
+                    for (const auto& ref : schema->GetReferencedSchemas())
+                        if (map.end() == map.find(ref.first))
+                            map[ref.first] = ref.second.get();
+
+
+                for (auto const& entry : map)
+                    for (const auto& ref : FindAllSchemasInGraph(*entry.second, false))
+                        {
+                        auto itor = map.find(ref.first);
+                        if (map.end() != itor)
+                            map.erase(itor);
+                        }
+                }
+
+            for (const auto& ref : map)
+                list.push_back(ref.second);
+
+            return list;
+            }
+    public:
+        static bvector<ECN::ECSchemaCP> FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const& schemas)
+            {
+            SchemaMap map;
+            for (ECN::ECSchemaCP schema : schemas)
+                for (const auto& entry : FindAllSchemasInGraph(*schema, true))
+                    if (map.find(entry.first) == map.end())
+                        map[entry.first] = entry.second;
+
+            bvector<ECN::ECSchemaCP> temp;
+            for (const auto& entry : map)
+                temp.push_back(entry.second);
+
+            return temp;
+            }
+        static bvector<ECN::ECSchemaCP> Sort(bvector<ECN::ECSchemaCP> const& schemas)
+            {
+            bvector<ECN::ECSchemaCP> sortedList;
+            bvector<ECN::ECSchemaCP> temp;
+            do
+                {
+                temp = GetLayer(schemas, temp);
+                std::reverse(temp.begin(), temp.end());
+                for (ECN::ECSchemaCP t : temp)
+                    sortedList.push_back(t);
+
+                } while (!temp.empty());
+
+                std::reverse(sortedList.begin(), sortedList.end());
+                return sortedList;
+            }
+
+    };
 //******************************** SchemaManager ****************************************
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -222,8 +321,8 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECSchemaCP> const& schemas) const
     {
-    bvector<ECSchemaCP> schemasToImport;
-    for (ECSchemaCP schema : schemas)
+    bvector<ECSchemaCP> schemasToImport = SchemaDependencyManager::FindAllSchemasInGraph(schemas);
+    for (ECSchemaCP schema : schemasToImport)
         {
         if (schema == nullptr)
             {
@@ -248,8 +347,6 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
                 return ERROR;
                 }
             }
-
-        BuildDependencyOrderedSchemaList(schemasToImport, schema);
         }
 
     PERFLOG_START("ECDb", "Schema import> Schema supplementation");
@@ -271,6 +368,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
             primarySchemas.push_back(schema);
         }
 
+    schemasToImport.clear();
     if (!suppSchemas.empty())
         {
         for (ECSchemaCP primarySchema : primarySchemas)
@@ -306,14 +404,9 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
     PERFLOG_FINISH("ECDb", "Schema import> Schema supplementation");
 
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
-    bvector<ECSchemaCP> primarySchemasOrderedByDependencies;
-    for (ECSchemaCP schema : primarySchemas)
-        BuildDependencyOrderedSchemaList(primarySchemasOrderedByDependencies, schema);
-
+    bvector<ECSchemaCP> primarySchemasOrderedByDependencies = SchemaDependencyManager::Sort(primarySchemas);
     primarySchemas.clear(); // Just make sure no one tries to use it anymore
-    
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
-
     SchemaWriter schemaWriter(m_ecdb, context);
     return schemaWriter.ImportSchemas(schemasToMap, primarySchemasOrderedByDependencies);
     }
