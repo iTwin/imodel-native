@@ -744,7 +744,7 @@
 
   <ProductDirectoryList ListName="iModelJsNodeAddon">
     <!-- NB: Keep this version number consistent with nodejs:node-gyp -->
-    <ProductDirectory Name="nodejs_ver" Path="v7.10"/>
+    <ProductDirectory Name="nodejs_ver" Path="v8.2"/>
     <ProductDirectory Name="Assemblies" Path="" RelativeTo="nodejs_ver"/>
     <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
     <ProductDirectory Name="iModelJsNode_node_module" Path="" RelativeTo="nodejs_ver"/>
