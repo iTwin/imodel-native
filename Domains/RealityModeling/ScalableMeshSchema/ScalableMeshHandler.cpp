@@ -13,6 +13,7 @@
 #include "ScalableMeshDisplayCacheManager.h"
 #include <ScalableMesh\GeoCoords\GCS.h>
 #include <DgnPlatform\LinkElement.h>
+#include <DgnPlatform\DgnGeoCoord.h>
 
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_SQLITE
@@ -324,7 +325,6 @@ static bool s_waitQueryComplete = false;
  +---------------+---------------+---------------+---------------+---------------+------*/
 SMGeometry::SMGeometry(CreateParams const& params, SMSceneR scene, Dgn::Render::SystemP sys) : Dgn::TileTree::TriMeshTree::TriMesh(params, scene, sys) { }
 
-//SMLoader
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  11/2016
 //----------------------------------------------------------------------------------------
@@ -393,10 +393,7 @@ void SMNode::_DrawGraphics(Dgn::TileTree::DrawArgsR args) const
         graphic->AddTile(*geom.m_texture, corners);
 
         args.m_graphics.Add(*graphic->Finish());
-        }
     }
-
-/*---------------------------------------------------------------------------------**//**
  * Draw this node.
  * @bsimethod                                    Keith.Bentley                   05/16
  +---------------+---------------+---------------+---------------+---------------+------*/
@@ -429,14 +426,14 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                    Keith.Bentley                   05/16
  +---------------+---------------+---------------+---------------+---------------+------*/
-bool SMNode::ReadHeader(DPoint3d& centroid)
+
+bool SMNode::ReadHeader(Transform& locationTransform)
     {
     m_range.low = m_scalableMeshNodePtr->GetContentExtent().low;
     m_range.high = m_scalableMeshNodePtr->GetContentExtent().high;
 
     m_range.low.Subtract(centroid);
     m_range.high.Subtract(centroid);
-
     /*
        JsonValueCR val = pt["maxScreenDiameter"];
        if (val.empty())
@@ -452,8 +449,10 @@ bool SMNode::ReadHeader(DPoint3d& centroid)
     float textureResolution;
 
     m_scalableMeshNodePtr->GetResolutions(geometricResolution, textureResolution);
-
-    m_maxDiameter = 1000 / std::min(geometricResolution, textureResolution);
+        
+    m_maxDiameter = m_range.low.Distance(m_range.high) / std::min(geometricResolution, textureResolution);
+	
+	//m_maxDiameter = 1000 / std::min(geometricResolution, textureResolution);
 
     /*
        if (!readVectorEntry(pt, "resources", nodeResources))
@@ -493,11 +492,10 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     DRange3d range3D(scene.m_smPtr->GetRootNode()->GetContentExtent());
     //DRange3d range3D(m_scalableMeshNodePtr->GetContentExtent());
 
-    DPoint3d centroid;
-    centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
-    //centroid = DPoint3d::From(0, 0, 0);
 
-    if (!ReadHeader(centroid))
+    Transform toFloatTransform(scene.GetToFloatTransform());
+
+    if (!ReadHeader(toFloatTransform))
         return ERROR;
 
 #if 0
@@ -691,10 +689,12 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 
     for (size_t pointInd = 0; pointInd < trimesh.m_numPoints; pointInd++)
         {
-
-        points[pointInd].x = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].x - centroid.x;
-        points[pointInd].y = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].y - centroid.y;
-        points[pointInd].z = (float)polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1].z - centroid.z;
+        DPoint3d resultPts;
+        toFloatTransform.Multiply(resultPts, polyfaceQuery->GetPointCP()[polyfaceQuery->GetPointIndexCP()[pointInd] - 1]);
+        
+        points[pointInd].x = (float)resultPts.x;
+        points[pointInd].y = (float)resultPts.y;
+        points[pointInd].z = (float)resultPts.z;
 
         /*
            points[pointInd].x = (float)polyfaceQuery->GetPointCP()[pointInd].x;
@@ -718,7 +718,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
         }
 
     for (size_t paramInd = 0; paramInd < polyfaceQuery->GetPointIndexCount(); paramInd++)
-        {        
+        {
         const DPoint2d* uv = &polyfaceQuery->GetParamCP()[polyfaceQuery->GetParamIndexCP()[paramInd] - 1];
         textureUv[paramInd].x = uv->x;
         textureUv[paramInd].y = uv->y;
@@ -913,6 +913,7 @@ TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
     if (SUCCESS != scene->LoadScene())
         return nullptr;
 
+
     return scene.get();
     }
 
@@ -945,7 +946,7 @@ void ScalableMeshModel::_PickTerrainGraphics(Dgn::PickContextR context) const
  * @bsimethod                                    Keith.Bentley                   05/16
  +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshModel::_OnFitView(FitContextR context)
-    {    
+    {
     auto scene = Load(nullptr);
     if (nullptr == scene)
         return;
@@ -1151,12 +1152,15 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
 //----------------------------------------------------------------------------------------
 ScalableMeshModel::~ScalableMeshModel()
     {
-    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get()) m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+    if (nullptr != m_progressiveQueryEngine.get() && nullptr != m_currentDrawingInfoPtr.get())
+        m_progressiveQueryEngine->StopQuery(m_currentDrawingInfoPtr->m_currentQuery);
+
     if (nullptr != m_currentDrawingInfoPtr.get())
         {
         m_currentDrawingInfoPtr->m_meshNodes.clear();
         m_currentDrawingInfoPtr->m_overviewNodes.clear();
         }
+
     ScalableMeshTerrainModelAppData::Delete (GetDgnDb());
     //ClearProgressiveQueriesInfo();
     }
@@ -1377,7 +1381,8 @@ void ScalableMeshModel::SetProgressiveDisplay(bool isProgressiveDisplayOn)
 //----------------------------------------------------------------------------------------
 void ScalableMeshModel::GetClipSetIds(bvector<uint64_t>& allShownIds)
     {
-    if (m_smPtr.get() != nullptr) m_smPtr->GetAllClipIds(allShownIds);
+    if (m_smPtr.get() != nullptr)
+        m_smPtr->GetAllClipIds(allShownIds);
     }
 
 IMeshSpatialModelP ScalableMeshModelHandler::AttachTerrainModel(DgnDb& db, Utf8StringCR modelName, BeFileNameCR smFilename, RepositoryLinkCR modeledElement, bool openFile)
@@ -1506,3 +1511,4 @@ void ScalableMeshModel::_OnLoadedJsonProperties()
     }
 
 HANDLER_DEFINE_MEMBERS(ScalableMeshModelHandler)
+
