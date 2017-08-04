@@ -3442,6 +3442,13 @@ BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, bool asClassifier)
     {
+    if (!asClassifier)
+        {
+        auto urlIter = m_directUrls.find(modelId);
+        if (m_directUrls.end() != urlIter)
+            return urlIter->second;
+        }
+
     WString         modelRootName = TileUtil::GetRootNameForModel(modelId, asClassifier);
     BeFileName      tilesetFileName (nullptr, m_rootName.c_str(), modelRootName.c_str(), s_metadataExtension);
     auto            utf8FileName = tilesetFileName.GetNameUtf8();

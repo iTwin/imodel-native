@@ -1775,8 +1775,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     {
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
+
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
-    auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
+    auto                getTileTree = nullptr == generateMeshTiles ? dynamic_cast<IGetTileTreeForPublishing*>(&model) : nullptr;
+    auto                getPublishedURL = nullptr == generateMeshTiles && nullptr == getTileTree ? dynamic_cast<IGetPublishedTilesetURLP>(&model) : nullptr;
+
     GeometricModelCP    geometricModel = model.ToGeometricModel();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
@@ -1792,7 +1795,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-    if (nullptr != getTileTree)
+    if (nullptr != getPublishedURL)
+        {
+        return collector._AcceptPublishedTilesetURL(model, *getPublishedURL);
+        }
+    else if (nullptr != getTileTree)
         {
         return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
         }

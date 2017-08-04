@@ -111,6 +111,27 @@ TileGeneratorStatus TilesetPublisher::_AcceptTile(TileNodeCR tile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeneratorStatus TilesetPublisher::_AcceptPublishedTilesetURL(DgnModelCR model, IGetPublishedTilesetURLCR getUrl)
+    {
+    auto geomModel = model.ToGeometricModel();
+    if (nullptr == geomModel)
+        return TileGeneratorStatus::NoGeometry;
+
+    Utf8String url = getUrl._GetPublishedTilesetURL();
+    if (url.empty())
+        return TileGeneratorStatus::NoGeometry;
+
+    AxisAlignedBox3d modelRange = geomModel->QueryModelRange();
+
+    BeMutexHolder lock(m_mutex);
+    m_directUrls.Insert(model.GetModelId(), url);
+    m_modelRanges[model.GetModelId()] = modelRange;
+    return TileGeneratorStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, DPoint3dCR groundPoint)

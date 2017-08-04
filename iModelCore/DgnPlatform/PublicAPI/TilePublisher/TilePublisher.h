@@ -270,6 +270,7 @@ protected:
     TextureMode                                 m_textureMode;
     bool                                        m_publishAsClassifier;
     bmap<DgnModelId, ModelSpatialClassifiers>   m_classifierMap;
+    bmap<DgnModelId, Utf8String>                m_directUrls;
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
 
