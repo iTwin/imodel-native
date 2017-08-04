@@ -2,7 +2,7 @@
 |
 |     $Source: Tasks/AsyncError.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -12,24 +12,10 @@
 USING_NAMESPACE_BENTLEY_TASKS
 
 /*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-AsyncError::AsyncError ()
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-AsyncError::AsyncError (Utf8StringCR message) :
-m_message (message)
-    {
-    }
-
-/*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    11/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncError::AsyncError (Utf8StringCR message, Utf8StringCR description) :
+std::runtime_error(message.c_str()),
 m_message (message),
 m_description (description)
     {
