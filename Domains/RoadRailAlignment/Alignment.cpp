@@ -502,7 +502,7 @@ DgnDbStatus HorizontalAlignment::GenerateElementGeom()
 +---------------+---------------+---------------+---------------+---------------+------*/
 AlignmentCPtr HorizontalAlignment::QueryAlignment() const
     {
-    auto stmtPtr = GetDgnDb().GetCachedStatement("SELECT SourceECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToHorizontal)
+    auto stmtPtr = GetDgnDb().GetPreparedECSqlStatement("SELECT SourceECInstanceId FROM " BRRA_SCHEMA(BRRA_REL_AlignmentRefersToHorizontal)
         " WHERE TargetECInstanceId = ?");
     BeAssert(stmtPtr.IsValid());
 

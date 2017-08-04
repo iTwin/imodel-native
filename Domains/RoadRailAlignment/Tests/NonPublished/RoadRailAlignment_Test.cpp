@@ -24,6 +24,7 @@ TEST_F(RoadRailAlignmentTests, BasicAlignmentTest)
     ASSERT_EQ(DgnDbStatus::Success, horizAlignmPtr->GenerateElementGeom());
     ASSERT_TRUE(horizAlignmPtr->Insert().IsValid());
     ASSERT_TRUE(horizAlignmPtr->GetGeometry().IsOpenPath());
+    ASSERT_EQ(alignmentPtr->GetElementId(), horizAlignmPtr->QueryAlignment()->GetElementId());
 
     // Create Vertical
     auto verticalModelPtr = VerticalAlignmentModel::Create(VerticalAlignmentModel::CreateParams(*projectPtr, alignmentPtr->GetElementId()));
