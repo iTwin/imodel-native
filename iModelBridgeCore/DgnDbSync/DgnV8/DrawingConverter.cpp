@@ -466,7 +466,15 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
     for (auto attachmentId : SheetGetAttachmentsToBeUnnested(sheetModel))
         {
         auto attachment = DgnV8Api::DgnAttachment::FindByElementId(&sheetModel, attachmentId);
-        attachment->MoveNestedAttachmentsToParent(99, vg.get());
+        if (nullptr == attachment)
+            {
+            BeAssert(false);
+            continue;
+            }
+        if (0 != attachment->MoveNestedAttachmentsToParent(-1, vg.get()))
+            {
+            BeAssert(false);
+            }
         }
 
     //  Transform sheet-sheet attachments into sheet->drawing attachments.
