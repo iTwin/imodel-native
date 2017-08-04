@@ -1593,6 +1593,7 @@ void Converter::OnCreateComplete()
 
 
     GenerateThumbnails();
+    GetDgnDb().SaveSettings();
     }
 
 /*---------------------------------------------------------------------------------**//**

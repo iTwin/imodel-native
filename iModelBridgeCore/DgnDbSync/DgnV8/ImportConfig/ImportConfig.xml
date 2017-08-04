@@ -51,7 +51,7 @@
         <OptionBool name="SaveAllDrawings" value="false"/>          <!-- if true, all drawings in input set are preserved, otherwise only from root file  -->
         <OptionBool name="CreateECClassViews" value="false"/>       <!-- if true, creates views in the .bim to visualize the ECClasses  -->
         <OptionBool name="SkyBox" value="true"/>                    <!-- if true, add skybox to spatial views -->
-        <OptionBool name="GroundPlane" value="true"/>               <!-- if true, add ground plane to spatial views -->
+        <OptionBool name="GroundPlane" value="false"/>              <!-- if true, add ground plane to spatial views -->
         <OptionDouble name="ThumbnailTimeout" value="30"/>          <!-- number of seconds to wait for each thumbnail to be generated -->
         <OptionBool name="AutoDetectMixinParams" value="true"/>     <!-- if true, schemas will be automatically searched for mixin conversion parameters -->
     </Options>

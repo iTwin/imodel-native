@@ -335,7 +335,7 @@ ViewDefinitionPtr SpatialViewFactory::_MakeView(Converter& converter, ViewDefini
         {
         auto env = dstyle3d->GetEnvironmentDisplay();
         env.m_skybox.m_enabled = converter.GetConfig().GetOptionValueBool("SkyBox", true);
-        env.m_groundPlane.m_enabled = converter.GetConfig().GetOptionValueBool("GroundPlane", true);
+        env.m_groundPlane.m_enabled = converter.GetConfig().GetOptionValueBool("GroundPlane", false);
         dstyle3d->SetEnvironmentDisplay(env);
         }
 
@@ -648,7 +648,8 @@ BentleyStatus Converter::ConvertView(DgnViewId& viewId, DgnV8ViewInfoCR viewInfo
 
     // Keep a map between V8 views and DgnDb views. This is needed to set the display on/off for external models in DgnDb.
     m_viewNumberMap.insert({view->GetViewId(), viewInfo.GetViewNumber()});
-
+    if (!viewId.IsValid())
+        viewId = view->GetViewId();
     return BSISUCCESS;
     }
 
