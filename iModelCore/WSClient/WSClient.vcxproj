@@ -187,6 +187,8 @@
     <ClCompile Include="iModelHubClient\Events\ChangeSetPrePushEvent.cpp" />
     <ClCompile Include="iModelHubClient\Events\ChangeSetPostPushEvent.cpp" />
     <ClCompile Include="iModelHubClient\Events\VersionEvent.cpp" />
+    <ClCompile Include="iModelHubClient\UserInfo.cpp" />
+    <ClCompile Include="iModelHubClient\UserInfoManager.cpp" />
     <ClCompile Include="iModelHubClient\Utils.cpp" />
     <ClCompile Include="iModelHubClient\FileInfo.cpp" />
     <ClCompile Include="iModelHubClient\Logging.cpp" />
@@ -278,12 +280,14 @@
     <ClInclude Include="ConnectC\CWSCCBuffer.h" />
     <ClInclude Include="ConnectC\CWSCCBufferGen.h" />
     <ClInclude Include="ConnectC\IMSSearch\IMSSearchBuffer.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\UserInfoManager.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\CodeAdmin.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BreakHelper.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\BriefcaseInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\iModelAdmin.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\Configuration.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\ChangeSetInfo.h" />
+    <ClInclude Include="PublicAPI\WebServices\iModelHub\Client\UserInfo.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\CodeEvent.h" />
     <ClInclude Include="PublicAPI\WebServices\iModelHub\Events\DeletedEvent.h" />
     <ClInclude Include="iModelHubClient\Events\EventManager.h" />

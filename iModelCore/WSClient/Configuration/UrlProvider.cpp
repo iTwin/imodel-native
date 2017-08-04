@@ -198,6 +198,14 @@ const UrlProvider::UrlDescriptor UrlProvider::Urls::UsageLoggingServicesLocation
     &s_urlRegistry
 );
 
+const UrlProvider::UrlDescriptor UrlProvider::Urls::EntitlementPolicyService(
+    "EntitlementPolicyService.Url",
+    "https://dev-ulas-eus2-sfc01.bentley.com/v1/policyservice/api",
+    "https://qa-ulas-eus2-sfc01.bentley.com/v1/policyservice/api",
+    "https://entitlement-search.bentley.com/PolicyService/api",
+    &s_urlRegistry
+);
+
 const UrlProvider::UrlDescriptor UrlProvider::Urls::ConnectXmpp(
     "BeXMPP",
     "dev-xmppcollab-eus.cloudapp.net",
