@@ -50,11 +50,7 @@ SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Su
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_DrawDecorations(DecorateContextR context)
     {
-// Decorators on QV with opengles draw without a depth buffer, which makes ground plane useless.
-// This check should be removed on the tiles (non-QV) branch. WIP_Paul
-#if !defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)
     DrawGroundPlane(context);
-#endif
 
     if (m_copyrightMsgs.empty())
         return;
