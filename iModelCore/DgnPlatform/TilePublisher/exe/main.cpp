@@ -364,9 +364,9 @@ int wmain(int ac, wchar_t const** av)
     Host host;
     DgnPlatformLib::Initialize(host, false);
 
-    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
-    DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::Yes, DgnDomain::Readonly::No);
+    DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
+    DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
+    DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
                                                                                   
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
