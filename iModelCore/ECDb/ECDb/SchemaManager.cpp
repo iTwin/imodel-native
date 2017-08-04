@@ -38,7 +38,7 @@ struct SchemaDependencyManager sealed
 
             return schemaMap;
             }
-        static bvector<ECN::ECSchemaCP> GetLayer(bvector<ECN::ECSchemaCP> const& schemas, bvector<ECN::ECSchemaCP> const& referencedBy)
+        static bvector<ECN::ECSchemaCP> GetNextLayer(bvector<ECN::ECSchemaCP> const& schemas, bvector<ECN::ECSchemaCP> const& referencedBy)
             {
             bvector<ECN::ECSchemaCP> list;
             SchemaMap map;
@@ -78,6 +78,7 @@ struct SchemaDependencyManager sealed
 
             return list;
             }
+
     public:
         static bvector<ECN::ECSchemaCP> FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const& schemas)
             {
@@ -96,21 +97,21 @@ struct SchemaDependencyManager sealed
         static bvector<ECN::ECSchemaCP> Sort(bvector<ECN::ECSchemaCP> const& schemas)
             {
             bvector<ECN::ECSchemaCP> sortedList;
-            bvector<ECN::ECSchemaCP> temp;
+            bvector<ECN::ECSchemaCP> layer;
             do
                 {
-                temp = GetLayer(schemas, temp);
-                std::reverse(temp.begin(), temp.end());
-                for (ECN::ECSchemaCP t : temp)
-                    sortedList.push_back(t);
+                layer = GetNextLayer(schemas, layer);
+                std::reverse(layer.begin(), layer.end());
+                for (ECN::ECSchemaCP schema : layer)
+                    sortedList.push_back(schema);
 
-                } while (!temp.empty());
+                } while (!layer.empty());
 
                 std::reverse(sortedList.begin(), sortedList.end());
                 return sortedList;
             }
-
     };
+
 //******************************** SchemaManager ****************************************
 /*---------------------------------------------------------------------------------------
 * @bsimethod                                                    Affan.Khan        05/2012
@@ -166,84 +167,6 @@ bvector<ECSchemaCP> SchemaManager::GetSchemas(bool loadSchemaEntities) const
 
     return schemas;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* Returns true if thisSchema directly references possiblyReferencedSchema
-* @bsimethod                                 Ramanujam.Raman                05/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-bool DirectlyReferences(ECSchemaCP thisSchema, ECSchemaCP possiblyReferencedSchema)
-    {
-    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (it->second.get() == possiblyReferencedSchema)
-            return true;
-        }
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                    Casey.Mullen      01/2013
-//---------------------------------------------------------------------------------------
-bool DependsOn(ECSchemaCP thisSchema, ECSchemaCP possibleDependency)
-    {
-    if (DirectlyReferences(thisSchema, possibleDependency))
-        return true;
-
-    SupplementalSchemaMetaDataPtr metaData;
-    if (SupplementalSchemaMetaData::TryGetFromSchema(metaData, *possibleDependency)
-        && metaData.IsValid()
-        && metaData->IsForPrimarySchema(thisSchema->GetName(), 0, 0, SchemaMatchType::Latest))
-        {
-        return true; // possibleDependency supplements thisSchema. possibleDependency must be imported before thisSchema
-        }
-
-    // Maybe possibleDependency supplements one of my references?
-    ECSchemaReferenceListCR referencedSchemas = thisSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator it = referencedSchemas.begin(); it != referencedSchemas.end(); ++it)
-        {
-        if (DependsOn(it->second.get(), possibleDependency))
-            return true;
-        }
-
-    return false;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void InsertSchemaInDependencyOrderedList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema)
-    {
-    if (std::find(schemas.begin(), schemas.end(), insertSchema) != schemas.end())
-        return; // This (and its referenced ECSchemas) are already in the list
-
-    bvector<ECSchemaCP>::reverse_iterator rit;
-    for (rit = schemas.rbegin(); rit < schemas.rend(); ++rit)
-        {
-        if (DependsOn(insertSchema, *rit))
-            {
-            schemas.insert(rit.base(), insertSchema); // insert right after the referenced schema in the list
-            return;
-            }
-        }
-
-    schemas.insert(schemas.begin(), insertSchema); // insert at the beginning
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                 Ramanujam.Raman                07/2012
-+---------------+---------------+---------------+---------------+---------------+------*/
-void BuildDependencyOrderedSchemaList(bvector<ECSchemaCP>& schemas, ECSchemaCP insertSchema)
-    {
-    InsertSchemaInDependencyOrderedList(schemas, insertSchema);
-    ECSchemaReferenceListCR referencedSchemas = insertSchema->GetReferencedSchemas();
-    for (ECSchemaReferenceList::const_iterator iter = referencedSchemas.begin(); iter != referencedSchemas.end(); ++iter)
-        {
-        ECSchemaR referencedSchema = *iter->second.get();
-        InsertSchemaInDependencyOrderedList(schemas, &referencedSchema);
-        }
-    }
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                     06/2012
 //+---------------+---------------+---------------+---------------+---------------+------
