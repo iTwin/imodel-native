@@ -84,7 +84,7 @@ public:
 
 //=======================================================================================
 //! A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
-// @bsiclass                                                    Keith.Bentley   06/16
+// @bsiclass                                                    Mathieu.St-Pierre  08/17
 //=======================================================================================
 struct SMGeometry : Dgn::TileTree::TriMeshTree::TriMesh
 {
@@ -103,7 +103,7 @@ struct SMNode : Dgn::TileTree::TriMeshTree::Tile
     friend struct SMScene;
 
     //=======================================================================================
-    // @bsiclass                                                    Mathieu.Marchand  11/2016
+    // @bsiclass                                                    Mathieu.St-Pierre  08/17
     //=======================================================================================
     struct SMLoader : Dgn::TileTree::TileLoader
     {
@@ -147,7 +147,7 @@ public:
 
 /*=================================================================================**//**
 //! A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
-// @bsiclass                                                    Keith.Bentley   03/16
+// @bsiclass                                                    Mathieu.St-Pierre  08/17
 +===============+===============+===============+===============+===============+======*/
 struct SMScene : Dgn::TileTree::TriMeshTree::Root
 {

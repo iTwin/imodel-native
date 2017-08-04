@@ -432,12 +432,12 @@ static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                                    Paul.Connelly   07/17
+ * @bsimethod                                                    Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 SMGeometry::SMGeometry(CreateParams const& params, SMSceneR scene, Dgn::Render::SystemP sys) : Dgn::TileTree::TriMeshTree::TriMesh(params, scene, sys) { }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  11/2016
+// @bsimethod                                                   Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 SMNode::SMLoader::SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     : TileLoader("", tile, loads, tile._GetTileCacheKey(), renderSys)
@@ -450,7 +450,7 @@ SMNode::SMLoader::SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadSta
 
 //SMNode
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  11/2016
+// @bsimethod                                                   Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 TileLoaderPtr SMNode::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     {
@@ -458,7 +458,7 @@ TileLoaderPtr SMNode::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Sys
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                                    Paul.Connelly   07/17
+ * @bsimethod                                                    Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNode::_WantDebugRangeGraphics() const
     {
@@ -467,7 +467,7 @@ bool SMNode::_WantDebugRangeGraphics() const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
+* @bsimethod                                                    Mathieu.St-Pierre  08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::ChildTiles const* SMNode::_GetChildren(bool load) const
     { 
@@ -487,7 +487,7 @@ Tile::ChildTiles const* SMNode::_GetChildren(bool load) const
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   07/17
+* @bsimethod                                                    Mathieu.St-Pierre  08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 /*
 bool SMNode::IsNotLoaded() const
@@ -504,7 +504,7 @@ bool SMNode::IsNotLoaded() const
 
 /*---------------------------------------------------------------------------------**//**
  * Draw this node.
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                    Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
     {
@@ -551,7 +551,7 @@ void SMNode::_DrawGraphics(DrawArgsR args, int depth) const
 
 /*---------------------------------------------------------------------------------**//**
  * Draw this node.
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SMNode::_GetTileCacheKey() const
     {
@@ -561,7 +561,7 @@ Utf8String SMNode::_GetTileCacheKey() const
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
     {
@@ -596,7 +596,7 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 static double s_maxDiamFactor = 10;
 static double s_constantFactor = 100;
@@ -653,7 +653,7 @@ bool SMNode::ReadHeader(Transform& locationTransform)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
+// @bsimethod                                                    Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 static bool s_applyTexture = true;
 
@@ -941,7 +941,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     }
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   04/16
+// @bsiclass                                                    Mathieu.St-Pierre  08/17
 //=======================================================================================
 struct ScalableMeshProgressive : ProgressiveTask
 {
@@ -957,7 +957,7 @@ struct ScalableMeshProgressive : ProgressiveTask
 };
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   04/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTask::Completion ScalableMeshProgressive::_DoProgressive(RenderListContext& context, WantShow& wantShow)
     {
@@ -998,7 +998,7 @@ ProgressiveTask::Completion ScalableMeshProgressive::_DoProgressive(RenderListCo
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   01/17
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 ProgressiveTaskPtr SMScene::_CreateProgressiveTask(DrawArgsR args, TileLoadStatePtr loads)
     {
@@ -1006,7 +1006,7 @@ ProgressiveTaskPtr SMScene::_CreateProgressiveTask(DrawArgsR args, TileLoadState
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   08/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
     {
@@ -1016,7 +1016,7 @@ BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadScene()
     {
@@ -1041,7 +1041,7 @@ BentleyStatus SMScene::LoadScene()
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
+// @bsimethod                                                      Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 BentleyStatus SMScene::LocateFromSRS()
     {
@@ -1097,7 +1097,7 @@ BentleyStatus SMScene::LocateFromSRS()
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   04/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 #if 0
 BentleyStatus Scene::ReadSceneFile()
@@ -1409,7 +1409,7 @@ void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshModel::_PickTerrainGraphics(Dgn::PickContextR context) const
     {
@@ -1424,7 +1424,7 @@ void ScalableMeshModel::_PickTerrainGraphics(Dgn::PickContextR context) const
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshModel::_OnFitView(FitContextR context)
     {
