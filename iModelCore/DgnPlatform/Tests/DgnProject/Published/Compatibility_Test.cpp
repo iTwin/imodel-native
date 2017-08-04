@@ -136,9 +136,9 @@ TEST_F(CompatibilityTests, ModifyCurrent)
 // This unit test runs the "Modify" and "Insert" tests using the current DgnPlatform against saved baselines of the DgnDb file format.
 // @bsimethod                                   Shaun.Sewall                    04/2017
 //---------------------------------------------------------------------------------------
-TEST_F(CompatibilityTests, ModifyBaseline) // Must disable this test in the "Holdouts" branch
+TEST_F(CompatibilityTests, ModifyBaseline)
     {
-    SetUpFromBaselineCopy("2-0-1-53", TEST_NAME, BE_SQLITE_OK);
+    SetUpFromBaselineCopy("2-0-1-62", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size());
@@ -925,7 +925,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
         for (ECClassP Class : DerivedClasses)
             {
-            if (Class->GetName() != BIS_CLASS_Category && Class->GetName() != BIS_CLASS_Texture  && Class->GetName() != BIS_CLASS_ViewDefinition && Class->GetName() != BIS_CLASS_SubCategory && Class->GetName() != BIS_CLASS_InformationPartitionElement)
+            if (Class->GetName() != BIS_CLASS_Category && Class->GetName() != BIS_CLASS_Texture  && Class->GetName() != BIS_CLASS_ViewDefinition && Class->GetName() != BIS_CLASS_SubCategory && Class->GetName() != BIS_CLASS_GeometryPart && Class->GetName() != BIS_CLASS_InformationPartitionElement)
                 {
                 List.push_back(Class);
                 if (Class != nullptr)
@@ -1493,9 +1493,9 @@ TEST_F(ECInstancesCompatibility, InstancesCompatibilitySeed)
 // @bsimethod                                      Maha Nasir                  04/17
 // Reads and verifies the Instances from the preserved Bim
 //+---------------+---------------+---------------+---------------+---------------+------------
-TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
+TEST_F(ECInstancesCompatibility, ReadInstances)
     {
-    SetUpDbFromBaselineCopy("2-0-1-53", TEST_NAME, BE_SQLITE_OK);
+    SetUpDbFromBaselineCopy("2-0-1-62", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db= GetDgnDb();
 
@@ -1522,7 +1522,7 @@ TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
 //+---------------+---------------+---------------+---------------+---------------+------------
 TEST_F(ECInstancesCompatibility, UpdateInstances)
     {
-    SetUpDbFromBaselineCopy("2-0-1-53", TEST_NAME, BE_SQLITE_OK);
+    SetUpDbFromBaselineCopy("2-0-1-62", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db = GetDgnDb();
 
@@ -1539,13 +1539,13 @@ TEST_F(ECInstancesCompatibility, UpdateInstances)
         if (elementId.GetValue() != 1099511627800 && elementId.GetValue() != 1099511627818)
             {
             ASSERT_TRUE(db.IsDbOpen());
-            ASSERT_TRUE(elementId.IsValid());
+            ASSERT_TRUE(elementId.IsValid()) << "Invalid ElementId:" << elementId.GetValue();
 
             DgnElementPtr ele = db.Elements().GetForEdit<DgnElement>(elementId);
             ASSERT_TRUE(ele.IsValid());
             ele->SetUserLabel("Updated");
 
-            ASSERT_TRUE(ele->Update().IsValid());
+            ASSERT_EQ(true, ele->Update().IsValid()) << "Update failed for elementId:" << ele->GetElementId().GetValue();
             ASSERT_STREQ("Updated", ele->GetUserLabel());
             i++;
             }
