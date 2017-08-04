@@ -210,18 +210,10 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject, 
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      09/2016
+* @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
+void createCodeSpecs(DgnDbR dgndb)
     {
-    RoadRailCategoryModel::SetUp(dgndb);
-
-    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), GetDefaultPhysicalPartitionName());
-    if (DgnDbStatus::Success != status)
-        {
-        BeAssert(false);
-        }
-
     auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadTravelway);
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
@@ -261,4 +253,198 @@ void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
         codeSpecPtr->Insert();
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      09/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+void RoadRailPhysicalDomain::_OnSchemaImported(DgnDbR dgndb) const
+    {
+    RoadRailCategoryModel::SetUp(dgndb);
+
+    DgnDbStatus status = SetUpModelHierarchy(*dgndb.Elements().GetRootSubject(), GetDefaultPhysicalPartitionName());
+    if (DgnDbStatus::Success != status)
+        {
+        BeAssert(false);
+        }
+
+    createCodeSpecs(dgndb);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+CategorySelectorPtr getSpatialCategorySelector(DefinitionModelR model)
+    {
+    Utf8String selectorName = "Default Spatial Road/Rail Categories";
+    auto selectorId = model.GetDgnDb().Elements().QueryElementIdByCode(CategorySelector::CreateCode(model, selectorName));
+    auto selectorPtr = model.GetDgnDb().Elements().GetForEdit<CategorySelector>(selectorId);
+    if (selectorPtr.IsValid())
+        return selectorPtr;
+
+    selectorPtr = new CategorySelector(model, selectorName);
+    selectorPtr->AddCategory(AlignmentCategory::Get(model.GetDgnDb()));
+    selectorPtr->AddCategory(RoadRailCategory::GetRoad(model.GetDgnDb()));
+    return selectorPtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+CategorySelectorPtr getDrawingCategorySelector(DefinitionModelR model)
+    {
+    Utf8String selectorName = "Default Drawing Road/Rail Categories";
+    auto selectorId = model.GetDgnDb().Elements().QueryElementIdByCode(CategorySelector::CreateCode(model, selectorName));
+    auto selectorPtr = model.GetDgnDb().Elements().GetForEdit<CategorySelector>(selectorId);
+    if (selectorPtr.IsValid())
+        return selectorPtr;
+
+    selectorPtr = new CategorySelector(model, selectorName);
+    selectorPtr->AddCategory(AlignmentCategory::GetHorizontal(model.GetDgnDb()));
+    selectorPtr->AddCategory(AlignmentCategory::GetVertical(model.GetDgnDb()));
+    return selectorPtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+ModelSelectorPtr getModelSelector(DefinitionModelR definitionModel, Utf8StringCR name)
+    {
+    return new ModelSelector(definitionModel, name);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DisplayStyle2dPtr getDisplayStyle2d(Dgn::DefinitionModelR model)
+    {
+    Utf8String styleName = "Default 2D Style - Road/Rail";
+    auto styleId = model.GetDgnDb().Elements().QueryElementIdByCode(DisplayStyle2d::CreateCode(model, styleName));
+    auto stylePtr = model.GetDgnDb().Elements().GetForEdit<DisplayStyle2d>(styleId);
+    if (stylePtr.IsValid())
+        return stylePtr;
+
+    stylePtr = new DisplayStyle2d(model, styleName);
+    stylePtr->SetBackgroundColor(ColorDef::White());
+    return stylePtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   BentleySystems
+//---------------------------------------------------------------------------------------
+DisplayStyle3dPtr getDisplayStyle3d(DefinitionModelR model)
+    {
+    Utf8String styleName = "Default 3D Style - Road/Rail";
+    auto styleId = model.GetDgnDb().Elements().QueryElementIdByCode(DisplayStyle3d::CreateCode(model, styleName));
+    auto stylePtr = model.GetDgnDb().Elements().GetForEdit<DisplayStyle3d>(styleId);
+    if (stylePtr.IsValid())
+        return stylePtr;
+
+    stylePtr = new DisplayStyle3d(model, "Default 3D Style - Road/Rail");
+    stylePtr->SetBackgroundColor(ColorDef::White());
+    Render::ViewFlags viewFlags = stylePtr->GetViewFlags();
+    viewFlags.SetRenderMode(Render::RenderMode::SmoothShade);
+    stylePtr->SetViewFlags(viewFlags);
+    return stylePtr;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus create3dView(DefinitionModelR model, Utf8CP viewName,
+    CategorySelectorR categorySelector, ModelSelectorR modelSelector, DisplayStyle3dR displayStyle)
+    {
+    DgnDbR db = model.GetDgnDb();
+
+    OrthographicViewDefinition view(model, viewName, categorySelector, displayStyle, modelSelector);
+
+    DgnViewId viewId;
+    DgnViewId existingViewId = ViewDefinition::QueryViewId(db, view.GetCode());
+    if (existingViewId.IsValid())
+        viewId = existingViewId;
+    else
+        {
+        view.SetStandardViewRotation(StandardView::Top);
+        view.LookAtVolume(db.GeoLocation().GetProjectExtents());
+
+        if (!view.Insert().IsValid())
+            return BentleyStatus::ERROR;
+
+        viewId = view.GetViewId();
+        }
+
+    if (!viewId.IsValid())
+        return BentleyStatus::ERROR;
+
+    DgnViewId defaultViewId;
+    if (db.QueryProperty(&defaultViewId, sizeof(defaultViewId), DgnViewProperty::DefaultView()) != BeSQLite::DbResult::BE_SQLITE_ROW)
+        db.SaveProperty(DgnViewProperty::DefaultView(), &viewId, (uint32_t) sizeof(viewId));
+
+    return BentleyStatus::SUCCESS;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+BentleyStatus create2dView(DefinitionModelR model, Utf8CP viewName,
+    CategorySelectorR categorySelector, DgnModelId modelToDisplay, DisplayStyle2dR displayStyle)
+    {
+    DgnDbR db = model.GetDgnDb();
+
+    DrawingViewDefinition view(model, viewName, modelToDisplay, categorySelector, displayStyle);
+
+    DgnViewId viewId;
+    DgnViewId existingViewId = ViewDefinition::QueryViewId(db, view.GetCode());
+    if (existingViewId.IsValid())
+        viewId = existingViewId;
+    else
+        {
+        view.SetStandardViewRotation(StandardView::Top);
+        view.LookAtVolume(db.GeoLocation().GetProjectExtents());
+
+        if (!view.Insert().IsValid())
+            return BentleyStatus::ERROR;
+
+        viewId = view.GetViewId();
+        }
+
+    if (!viewId.IsValid())
+        return BentleyStatus::ERROR;
+
+    return BentleyStatus::SUCCESS;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject)
+    {
+    auto& dgnDb = subject.GetDgnDb();
+
+    auto alignmentModelPtr =
+        AlignmentModel::Query(subject, RoadRailAlignmentDomain::GetDefaultPartitionName());
+    auto physicalModelPtr = RoadRailPhysicalDomain::QueryPhysicalModel(subject,
+        RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
+
+    Utf8String subjectName = subject.GetCode().GetValue();
+
+#ifndef NDEBUG
+    Utf8String view2dName = "2D - " + subjectName;
+    auto displayStyle2dPtr = getDisplayStyle2d(dgnDb.GetDictionaryModel());
+    auto drawingCategorySelectorPtr = getDrawingCategorySelector(dgnDb.GetDictionaryModel());
+    create2dView(dgnDb.GetDictionaryModel(), view2dName.c_str(), *drawingCategorySelectorPtr,
+        HorizontalAlignmentModel::QueryBreakDownModelId(*alignmentModelPtr), *displayStyle2dPtr);
+#endif
+
+    auto displayStyle3dPtr = getDisplayStyle3d(dgnDb.GetDictionaryModel());
+    auto spatialCategorySelectorPtr = getSpatialCategorySelector(dgnDb.GetDictionaryModel());
+    auto model3dSelectorPtr = getModelSelector(dgnDb.GetDictionaryModel(), subjectName);
+    model3dSelectorPtr->AddModel(alignmentModelPtr->GetModelId());
+    model3dSelectorPtr->AddModel(physicalModelPtr->GetModelId());
+
+    Utf8String view3dName = subjectName;
+    create3dView(dgnDb.GetDictionaryModel(), view3dName.c_str(),
+        *spatialCategorySelectorPtr, *model3dSelectorPtr, *displayStyle3dPtr);
+
+    return DgnDbStatus::Success;
     }
