@@ -11,106 +11,118 @@
 USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_SQLITE_EC_NAMESPACE
+typedef bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> SchemaMap;
+typedef bset<ECN::SchemaKey, SchemaKeyLessThan<SchemaMatchType::Exact>> SchemaSet;
 
-
-struct SchemaDependencyManager sealed
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void FindAllSchemasInGraph(ECN::ECSchemaCP schema, SchemaMap& schemaMap)
     {
-    private:
-        typedef bmap<ECN::SchemaKey, ECN::ECSchemaCP, SchemaKeyLessThan<SchemaMatchType::Exact>> SchemaMap;
-        typedef bset<ECN::SchemaKey, SchemaKeyLessThan<SchemaMatchType::Exact>> SchemaSet;
-        static void FindAllSchemasInGraph(ECN::ECSchemaCP schema, SchemaMap& schemaMap)
-            {
-            if (schemaMap.find(schema->GetSchemaKey()) != schemaMap.end())
-                return;
+    if (schemaMap.find(schema->GetSchemaKey()) != schemaMap.end())
+        return;
 
-            schemaMap[schema->GetSchemaKey()] = schema;
-            for (const auto& entry : schema->GetReferencedSchemas())
-                FindAllSchemasInGraph(entry.second.get(), schemaMap);
-            }
-        static SchemaMap FindAllSchemasInGraph(ECN::ECSchemaCR schema, bool includeThisSchema)
-            {
-            SchemaMap schemaMap;
-            if (includeThisSchema)
-                schemaMap[schema.GetSchemaKey()] = &schema;
+    schemaMap[schema->GetSchemaKey()] = schema;
+    for (const auto& entry : schema->GetReferencedSchemas())
+        FindAllSchemasInGraph(entry.second.get(), schemaMap);
+    }
 
-            for (const auto& entry : schema.GetReferencedSchemas())
-                FindAllSchemasInGraph(entry.second.get(), schemaMap);
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+SchemaMap FindAllSchemasInGraph(ECN::ECSchemaCR schema, bool includeThisSchema)
+    {
+    SchemaMap schemaMap;
+    if (includeThisSchema)
+        schemaMap[schema.GetSchemaKey()] = &schema;
 
-            return schemaMap;
-            }
-        static bvector<ECN::ECSchemaCP> GetNextLayer(bvector<ECN::ECSchemaCP> const& schemas, bvector<ECN::ECSchemaCP> const& referencedBy)
-            {
-            bvector<ECN::ECSchemaCP> list;
-            SchemaMap map;
-            if (referencedBy.empty())
+    for (const auto& entry : schema.GetReferencedSchemas())
+        FindAllSchemasInGraph(entry.second.get(), schemaMap);
+
+    return schemaMap;
+    }
+
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ECN::ECSchemaCP> GetNextLayer(bvector<ECN::ECSchemaCP> const& schemas, bvector<ECN::ECSchemaCP> const& referencedBy)
+    {
+    bvector<ECN::ECSchemaCP> list;
+    SchemaMap map;
+    if (referencedBy.empty())
+        {
+        for (auto schema : schemas)
+            if (map.find(schema->GetSchemaKey()) == map.end())
+                map[schema->GetSchemaKey()] = schema;
+
+        for (auto schema : schemas)
+            for (const auto& ref : FindAllSchemasInGraph(*schema, false))
                 {
-                for (auto schema : schemas)
-                    if (map.find(schema->GetSchemaKey()) == map.end())
-                        map[schema->GetSchemaKey()] = schema;
-
-                for (auto schema : schemas)
-                    for (const auto& ref : FindAllSchemasInGraph(*schema, false))
-                        {
-                        auto itor = map.find(ref.first);
-                        if (map.end() != itor)
-                            map.erase(itor);
-                        }
+                auto itor = map.find(ref.first);
+                if (map.end() != itor)
+                    map.erase(itor);
                 }
-            else
+        }
+    else
+        {
+        for (auto schema : referencedBy)
+            for (const auto& ref : schema->GetReferencedSchemas())
+                if (map.end() == map.find(ref.first))
+                    map[ref.first] = ref.second.get();
+
+
+        for (auto const& entry : map)
+            for (const auto& ref : FindAllSchemasInGraph(*entry.second, false))
                 {
-                for (auto schema : referencedBy)
-                    for (const auto& ref : schema->GetReferencedSchemas())
-                        if (map.end() == map.find(ref.first))
-                            map[ref.first] = ref.second.get();
-
-
-                for (auto const& entry : map)
-                    for (const auto& ref : FindAllSchemasInGraph(*entry.second, false))
-                        {
-                        auto itor = map.find(ref.first);
-                        if (map.end() != itor)
-                            map.erase(itor);
-                        }
+                auto itor = map.find(ref.first);
+                if (map.end() != itor)
+                    map.erase(itor);
                 }
+        }
 
-            for (const auto& ref : map)
-                list.push_back(ref.second);
+    for (const auto& ref : map)
+        list.push_back(ref.second);
 
-            return list;
-            }
+    return list;
+    }
 
-    public:
-        static bvector<ECN::ECSchemaCP> FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const& schemas)
-            {
-            SchemaMap map;
-            for (ECN::ECSchemaCP schema : schemas)
-                for (const auto& entry : FindAllSchemasInGraph(*schema, true))
-                    if (map.find(entry.first) == map.end())
-                        map[entry.first] = entry.second;
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ECN::ECSchemaCP> FindAllSchemasInGraph(bvector<ECN::ECSchemaCP> const& schemas)
+    {
+    SchemaMap map;
+    for (ECN::ECSchemaCP schema : schemas)
+        for (const auto& entry : FindAllSchemasInGraph(*schema, true))
+            if (map.find(entry.first) == map.end())
+                map[entry.first] = entry.second;
 
-            bvector<ECN::ECSchemaCP> temp;
-            for (const auto& entry : map)
-                temp.push_back(entry.second);
+    bvector<ECN::ECSchemaCP> temp;
+    for (const auto& entry : map)
+        temp.push_back(entry.second);
 
-            return temp;
-            }
-        static bvector<ECN::ECSchemaCP> Sort(bvector<ECN::ECSchemaCP> const& schemas)
-            {
-            bvector<ECN::ECSchemaCP> sortedList;
-            bvector<ECN::ECSchemaCP> layer;
-            do
-                {
-                layer = GetNextLayer(schemas, layer);
-                std::reverse(layer.begin(), layer.end());
-                for (ECN::ECSchemaCP schema : layer)
-                    sortedList.push_back(schema);
+    return temp;
+    }
 
-                } while (!layer.empty());
+/*---------------------------------------------------------------------------------------
+* @bsimethod                                                    Affan.Khan        06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bvector<ECN::ECSchemaCP> Sort(bvector<ECN::ECSchemaCP> const& schemas)
+    {
+    bvector<ECN::ECSchemaCP> sortedList;
+    bvector<ECN::ECSchemaCP> layer;
+    do
+        {
+        layer = GetNextLayer(schemas, layer);
+        std::reverse(layer.begin(), layer.end());
+        for (ECN::ECSchemaCP schema : layer)
+            sortedList.push_back(schema);
 
-                std::reverse(sortedList.begin(), sortedList.end());
-                return sortedList;
-            }
-    };
+        } while (!layer.empty());
+
+        std::reverse(sortedList.begin(), sortedList.end());
+        return sortedList;
+    }
 
 //******************************** SchemaManager ****************************************
 /*---------------------------------------------------------------------------------------
@@ -244,7 +256,7 @@ BentleyStatus SchemaManager::DoImportSchemas(SchemaImportContext& ctx, bvector<E
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvector<ECN::ECSchemaCP>& schemasToMap, bvector<ECSchemaCP> const& schemas) const
     {
-    bvector<ECSchemaCP> schemasToImport = SchemaDependencyManager::FindAllSchemasInGraph(schemas);
+    bvector<ECSchemaCP> schemasToImport = FindAllSchemasInGraph(schemas);
     for (ECSchemaCP schema : schemasToImport)
         {
         if (schema == nullptr)
@@ -327,7 +339,7 @@ BentleyStatus SchemaManager::PersistSchemas(SchemaImportContext& context, bvecto
     PERFLOG_FINISH("ECDb", "Schema import> Schema supplementation");
 
     // The dependency order may have *changed* due to supplementation adding new ECSchema references! Re-sort them.
-    bvector<ECSchemaCP> primarySchemasOrderedByDependencies = SchemaDependencyManager::Sort(primarySchemas);
+    bvector<ECSchemaCP> primarySchemasOrderedByDependencies = Sort(primarySchemas);
     primarySchemas.clear(); // Just make sure no one tries to use it anymore
     ECDbExpressionSymbolContext symbolsContext(m_ecdb);
     SchemaWriter schemaWriter(m_ecdb, context);
