@@ -57,6 +57,16 @@ AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
     if (m_smPtr.IsNull())
         {
         BeAssert(false && "You need to initialize m_smPtr during V8 conversion so we can get the 3sm model range");
+
+        if (!m_tryOpen)
+            {
+            // HACK. Somebody else needs to fix this.
+            WString fileNameW(((this)->m_properties).m_fileId.c_str(), true);
+            BeFileName smFileName;
+            smFileName.AppendString(fileNameW.c_str());
+            const_cast<ScalableMeshModel&>(*this).OpenFile(smFileName, GetDgnDb());
+            m_tryOpen = true;
+            }
         }
 
     return _GetRange();
