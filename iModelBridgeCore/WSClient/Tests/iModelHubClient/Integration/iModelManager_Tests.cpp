@@ -2413,6 +2413,7 @@ TEST_F(iModelManagerTests, VersionsTest)
     auto nonAdminVersionManager = nonAdminConnection->GetVersionsManager();
     
     auto briefcase = AcquireBriefcase();
+    auto briefcaseInfo = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue();
 
     //push some ChangeSets for Versions
     CreateModel("Model1", briefcase->GetDgnDb());
@@ -2434,7 +2435,7 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_SUCCESS(result);
     version1 = result.GetValue();
     EXPECT_NE("", version1->GetId());
-    EXPECT_EQ("admin", version1->GetUserCreated());
+    EXPECT_EQ(briefcaseInfo->GetUserOwned(), version1->GetUserCreated());
     EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 1);
 
     auto versionToFail = VersionInfo(nullptr, nullptr, changeSet2);
@@ -2469,7 +2470,7 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_EQ("NewName", version1->GetName());
     EXPECT_EQ(changeSet1, version1->GetChangeSetId());
     EXPECT_EQ("Description", version1->GetDescription());
-    EXPECT_EQ("admin", version1->GetUserCreated());
+    EXPECT_EQ(briefcaseInfo->GetUserOwned(), version1->GetUserCreated());
 
     versionToFail = VersionInfo(*version2);
     EXPECT_EQ(Error::Id::UserDoesNotHavePermission, nonAdminVersionManager.UpdateVersion(versionToFail)->GetResult().GetError().GetId());

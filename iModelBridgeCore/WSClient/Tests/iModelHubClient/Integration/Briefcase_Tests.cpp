@@ -596,7 +596,7 @@ TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToVersion)
     EXPECT_TRUE(dbPath.DoesPathExist());
     EXPECT_TRUE(dbPath.IsFileReadOnly());
 
-    DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
     EXPECT_TRUE(db.IsValid());
 
     auto briefcaseResult = m_client->OpenBriefcase(db, false)->GetResult();
@@ -630,7 +630,7 @@ TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToChangeSet)
     EXPECT_TRUE(dbPath.DoesPathExist());
     EXPECT_TRUE(dbPath.IsFileReadOnly());
 
-    auto db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    auto db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
     EXPECT_TRUE(db.IsValid());
 
     auto briefcaseResult = m_client->OpenBriefcase(db, false)->GetResult();
@@ -662,7 +662,7 @@ TEST_F(BriefcaseTests, DownloadLocalBriefcase)
     EXPECT_TRUE(dbPath.DoesPathExist());
     EXPECT_TRUE(dbPath.IsFileReadOnly());
 
-    auto db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    auto db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::Readonly));
     EXPECT_TRUE(db.IsValid());
 
     auto briefcaseResult = m_client->OpenBriefcase(db, false)->GetResult();
