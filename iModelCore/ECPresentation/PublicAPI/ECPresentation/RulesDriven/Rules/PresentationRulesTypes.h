@@ -50,6 +50,7 @@ EC_TYPEDEFS (ECPropertyValueQuerySpecification);
 EC_TYPEDEFS (ContentSpecification);
 EC_TYPEDEFS (RelatedPropertiesSpecification);
 EC_TYPEDEFS (PropertiesDisplaySpecification);
+EC_TYPEDEFS (PropertyEditorsSpecification);
 EC_TYPEDEFS (CalculatedPropertiesSpecification);
 EC_TYPEDEFS (ContentInstancesOfSpecificClassesSpecification);
 EC_TYPEDEFS (ContentRelatedInstancesSpecification);
