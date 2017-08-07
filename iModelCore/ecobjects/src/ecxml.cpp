@@ -325,38 +325,55 @@ bool TestValue(CustomAttributeContainerType compareType, CustomAttributeContaine
 Utf8String ECXml::ContainerTypeToString(CustomAttributeContainerType containerType)
     {
     Utf8String str;
+
+    if (TestValue(CustomAttributeContainerType::Any, containerType))
+        {
+        str = "Any";
+        return str;
+        }
+
     if (TestValue(CustomAttributeContainerType::Schema, containerType))
         SetOrAppendValue(str, "Schema");
-    if (TestValue(CustomAttributeContainerType::EntityClass, containerType))
-        SetOrAppendValue(str, "EntityClass");
-    if (TestValue(CustomAttributeContainerType::CustomAttributeClass, containerType))
-        SetOrAppendValue(str, "CustomAttributeClass");
-    if (TestValue(CustomAttributeContainerType::StructClass, containerType))
-        SetOrAppendValue(str, "StructClass");
-    if (TestValue(CustomAttributeContainerType::RelationshipClass, containerType))
-        SetOrAppendValue(str, "RelationshipClass");
+
     if (TestValue(CustomAttributeContainerType::AnyClass, containerType))
         SetOrAppendValue(str, "AnyClass");
-    if (TestValue(CustomAttributeContainerType::PrimitiveProperty, containerType))
-        SetOrAppendValue(str, "PrimitiveProperty");
-    if (TestValue(CustomAttributeContainerType::StructProperty, containerType))
-        SetOrAppendValue(str, "StructProperty");
-    if (TestValue(CustomAttributeContainerType::PrimitiveArrayProperty, containerType))
-        SetOrAppendValue(str, "ArrayProperty");
-    if (TestValue(CustomAttributeContainerType::StructArrayProperty, containerType))
-        SetOrAppendValue(str, "StructArrayProperty");
-    if (TestValue(CustomAttributeContainerType::NavigationProperty, containerType))
-        SetOrAppendValue(str, "NavigationProperty");
+    else
+        {
+        if (TestValue(CustomAttributeContainerType::EntityClass, containerType))
+            SetOrAppendValue(str, "EntityClass");
+        if (TestValue(CustomAttributeContainerType::CustomAttributeClass, containerType))
+            SetOrAppendValue(str, "CustomAttributeClass");
+        if (TestValue(CustomAttributeContainerType::StructClass, containerType))
+            SetOrAppendValue(str, "StructClass");
+        if (TestValue(CustomAttributeContainerType::RelationshipClass, containerType))
+            SetOrAppendValue(str, "RelationshipClass");
+        }
+
     if (TestValue(CustomAttributeContainerType::AnyProperty, containerType))
         SetOrAppendValue(str, "AnyProperty");
-    if (TestValue(CustomAttributeContainerType::SourceRelationshipConstraint, containerType))
-        SetOrAppendValue(str, "SourceRelationshipConstraint");
-    if (TestValue(CustomAttributeContainerType::TargetRelationshipConstraint, containerType))
-        SetOrAppendValue(str, "TargetRelationshipConstraint");
+    else
+        {
+        if (TestValue(CustomAttributeContainerType::PrimitiveProperty, containerType))
+            SetOrAppendValue(str, "PrimitiveProperty");
+        if (TestValue(CustomAttributeContainerType::StructProperty, containerType))
+            SetOrAppendValue(str, "StructProperty");
+        if (TestValue(CustomAttributeContainerType::PrimitiveArrayProperty, containerType))
+            SetOrAppendValue(str, "ArrayProperty");
+        if (TestValue(CustomAttributeContainerType::StructArrayProperty, containerType))
+            SetOrAppendValue(str, "StructArrayProperty");
+        if (TestValue(CustomAttributeContainerType::NavigationProperty, containerType))
+            SetOrAppendValue(str, "NavigationProperty");
+        }
+
     if (TestValue(CustomAttributeContainerType::AnyRelationshipConstraint, containerType))
         SetOrAppendValue(str, "AnyRelationshipConstraint");
-    if (TestValue(CustomAttributeContainerType::Any, containerType))
-        str = "Any";
+    else
+        {
+        if (TestValue(CustomAttributeContainerType::SourceRelationshipConstraint, containerType))
+            SetOrAppendValue(str, "SourceRelationshipConstraint");
+        if (TestValue(CustomAttributeContainerType::TargetRelationshipConstraint, containerType))
+            SetOrAppendValue(str, "TargetRelationshipConstraint");
+        }
 
     return str;
     }
