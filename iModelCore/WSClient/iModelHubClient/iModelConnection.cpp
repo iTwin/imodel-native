@@ -45,7 +45,7 @@ IHttpHandlerPtr            customHandler
     wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
 
     m_wsRepositoryClient = wsRepositoryClient;
-    m_versionsManager = VersionsManager(m_wsRepositoryClient);
+    m_versionsManager = VersionsManager(m_wsRepositoryClient, this);
     m_userInfoManager = UserInfoManager(m_wsRepositoryClient);
     }
 
@@ -2484,6 +2484,26 @@ FileTaskPtr iModelConnection::GetSeedFileById(BeGuidCR fileId, ICancellationToke
     query.SetFilter(filter);
 
     return SeedFilesQuery(query, cancellationToken)->Then<FileResult>([=](FilesResult filesResult)
+        {
+        if (!filesResult.IsSuccess())
+            return FileResult::Error(filesResult.GetError());
+
+        return FileResult::Success(*filesResult.GetValue().begin());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+FileTaskPtr iModelConnection::GetLatestSeedFile(ICancellationTokenPtr cancellationToken) const
+    {
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::File);
+    Utf8String orderByClouse;
+    orderByClouse.Sprintf("%s+%s", ServerSchema::Property::Index, "desc");
+    query.SetOrderBy(orderByClouse);
+    query.SetTop(1);
+
+    return SeedFilesQuery(query, cancellationToken)->Then<FileResult>([=] (FilesResult filesResult)
         {
         if (!filesResult.IsSuccess())
             return FileResult::Error(filesResult.GetError());

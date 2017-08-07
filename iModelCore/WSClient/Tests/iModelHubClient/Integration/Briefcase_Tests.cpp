@@ -559,3 +559,116 @@ TEST_F(BriefcaseTests, PreDownloadManyBriefcases)
         Configuration::SetPredownloadChangeSetsEnabled(false);
         }
     }
+
+TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToVersion)
+    {
+    //create changeSets
+    IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 7);
+    auto changeSetsResult = m_imodelConnection->GetAllChangeSets()->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    auto changeSets = changeSetsResult.GetValue();
+
+    auto versionManager = m_imodelConnection->GetVersionsManager();
+    VersionInfoPtr version1 = new VersionInfo("Version1", "Description", changeSets.at(2)->GetId());
+    auto versionResult = versionManager.CreateVersion(*version1)->GetResult();
+    EXPECT_SUCCESS(versionResult);
+
+    VersionInfoPtr version2 = new VersionInfo("Version2", "Description", changeSets.at(4)->GetId());
+    versionResult = versionManager.CreateVersion(*version2)->GetResult();
+    EXPECT_SUCCESS(versionResult);
+    version2 = versionResult.GetValue();
+
+    VersionInfoPtr version3 = new VersionInfo("Version3", "Description", changeSets.at(6)->GetId());
+    versionResult = versionManager.CreateVersion(*version3)->GetResult();
+    EXPECT_SUCCESS(versionResult);
+
+    auto acquireResult = m_client->DownloadLocalBriefcaseUpdatedToVersion(*m_imodel, version2->GetId(), [=] (iModelInfo imodelInfo, FileInfo fileInfo)
+        {
+        BeFileName filePath = m_pHost->GetOutputDirectory();
+        filePath.AppendToPath(BeFileName(imodelInfo.GetId()));
+        filePath.AppendToPath(BeFileName(version2->GetId()));
+        filePath.AppendToPath(BeFileName(fileInfo.GetFileName()));
+        return filePath;
+        })->GetResult();
+    EXPECT_SUCCESS(acquireResult);
+
+    BeFileName dbPath = acquireResult.GetValue();
+    EXPECT_TRUE(dbPath.DoesPathExist());
+    EXPECT_TRUE(dbPath.IsFileReadOnly());
+
+    DgnDbPtr db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    EXPECT_TRUE(db.IsValid());
+
+    auto briefcaseResult = m_client->OpenBriefcase(db, false)->GetResult();
+    EXPECT_EQ(Error::Id::FileIsNotBriefcase, briefcaseResult.GetError().GetId());
+    EXPECT_EQ(version2->GetChangeSetId(), db->Revisions().GetParentRevisionId());
+
+    PhysicalPartitionPtr partition = CreateModeledElement("TestModel", *db);
+    EXPECT_FALSE(partition->Insert().IsValid());
+    }
+
+TEST_F(BriefcaseTests, DownloadLocalBriefcaseUpdatedToChangeSet)
+    {
+    //create changeSets
+    IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 4);
+    auto changeSetsResult = m_imodelConnection->GetAllChangeSets()->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    auto changeSets = changeSetsResult.GetValue();
+
+    auto briefcaseChangeSet = changeSets.at(1)->GetId();
+    auto acquireResult = m_client->DownloadLocalBriefcaseUpdatedToChangeSet(*m_imodel, briefcaseChangeSet, [=] (iModelInfo imodelInfo, FileInfo fileInfo)
+        {
+        BeFileName filePath = m_pHost->GetOutputDirectory();
+        filePath.AppendToPath(BeFileName(imodelInfo.GetId()));
+        filePath.AppendToPath(BeFileName(briefcaseChangeSet));
+        filePath.AppendToPath(BeFileName(fileInfo.GetFileName()));
+        return filePath;
+        })->GetResult();
+    EXPECT_SUCCESS(acquireResult);
+
+    auto dbPath = acquireResult.GetValue();
+    EXPECT_TRUE(dbPath.DoesPathExist());
+    EXPECT_TRUE(dbPath.IsFileReadOnly());
+
+    auto db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    EXPECT_TRUE(db.IsValid());
+
+    auto briefcaseResult = m_client->OpenBriefcase(db, false)->GetResult();
+    EXPECT_EQ(Error::Id::FileIsNotBriefcase, briefcaseResult.GetError().GetId());
+    EXPECT_EQ(briefcaseChangeSet, db->Revisions().GetParentRevisionId());
+
+    PhysicalPartitionPtr partition = CreateModeledElement("TestModel", *db);
+    EXPECT_FALSE(partition->Insert().IsValid());
+    }
+
+TEST_F(BriefcaseTests, DownloadLocalBriefcase)
+    {
+    //create changeSets
+    IntegrationTestsBase::InitializeWithChangeSets(*m_client, *m_imodel, 4);
+    auto changeSetsResult = m_imodelConnection->GetAllChangeSets()->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    auto changeSets = changeSetsResult.GetValue();
+
+    auto acquireResult = m_client->DownloadLocalBriefcase(*m_imodel, [=] (iModelInfo imodelInfo, FileInfo fileInfo)
+        {
+        BeFileName filePath = m_pHost->GetOutputDirectory();
+        filePath.AppendToPath(BeFileName(imodelInfo.GetId()));
+        filePath.AppendToPath(BeFileName(fileInfo.GetFileName()));
+        return filePath;
+        })->GetResult();
+    EXPECT_SUCCESS(acquireResult);
+
+    auto dbPath = acquireResult.GetValue();
+    EXPECT_TRUE(dbPath.DoesPathExist());
+    EXPECT_TRUE(dbPath.IsFileReadOnly());
+
+    auto db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
+    EXPECT_TRUE(db.IsValid());
+
+    auto briefcaseResult = m_client->OpenBriefcase(db, false)->GetResult();
+    EXPECT_EQ(Error::Id::FileIsNotBriefcase, briefcaseResult.GetError().GetId());
+    EXPECT_EQ(changeSets.at(3)->GetId(), db->Revisions().GetParentRevisionId());
+
+    PhysicalPartitionPtr partition = CreateModeledElement("TestModel", *db);
+    EXPECT_FALSE(partition->Insert().IsValid());
+    }

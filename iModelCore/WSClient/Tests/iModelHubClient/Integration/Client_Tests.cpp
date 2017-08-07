@@ -277,6 +277,10 @@ TEST_F(ClientTests, ReplaceSeedFile)
     EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo, true, CreateProgressCallback())->GetResult());
     CheckProgressNotified();
 
+    auto seedFileResult = imodelConnection->GetLatestSeedFile()->GetResult();
+    EXPECT_SUCCESS(seedFileResult);
+    EXPECT_EQ(secondGuid, seedFileResult.GetValue()->GetFileId());
+
     // Replace seed file without sending a lock request first
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
     BeSQLite::BeGuid thirdGuid;
@@ -288,6 +292,10 @@ TEST_F(ClientTests, ReplaceSeedFile)
     EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo, true, CreateProgressCallback())->GetResult());
     CheckProgressNotified();
     db->CloseDb();
+
+    seedFileResult = imodelConnection->GetLatestSeedFile()->GetResult();
+    EXPECT_SUCCESS(seedFileResult);
+    EXPECT_EQ(thirdGuid, seedFileResult.GetValue()->GetFileId());
     
     // Acquire first briefcase
     auto newBriefcase = IntegrationTestsBase::AcquireBriefcase(*m_client, *imodelInfoPtr);
