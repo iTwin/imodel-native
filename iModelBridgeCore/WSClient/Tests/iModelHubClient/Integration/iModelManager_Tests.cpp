@@ -2208,7 +2208,7 @@ TEST_F(iModelManagerTests, ModifySchema)
     EXPECT_EQ(Error::Id::MergeSchemaChangesOnOpen, pushResult.GetError().GetId());
     
     // Reload DB with upgrade options
-    auto changeSets = briefcase2->GetiModelConnection().DownloadChangeSetsAfterId(briefcase2->GetLastChangeSetPulled(), briefcase2->GetDgnDb().GetDbGuid())->GetResult().GetValue();
+    auto changeSets = briefcase2->GetiModelConnection().DownloadChangeSetsAfterId(briefcase2->GetLastChangeSetPulled(), briefcase2->GetDgnDb().GetDbGuid(), CreateProgressCallback())->GetResult().GetValue();
     bvector<DgnRevisionCP> changeSetsToMerge;
     ConvertToChangeSetPointersVector(changeSets, changeSetsToMerge);
     auto filePath = db2.GetFileName();
@@ -2357,7 +2357,6 @@ TEST_F(iModelManagerTests, QueryInvalidUserInfoTest)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas        07/2017
 //---------------------------------------------------------------------------------------
-/* WIP - uncomment with next DgnClientSDK build
 TEST_F(iModelManagerTests, CodeIdsTest)
     {
     //Prapare imodel and acquire briefcases
@@ -2365,6 +2364,8 @@ TEST_F(iModelManagerTests, CodeIdsTest)
     DgnDbR db1 = briefcase1->GetDgnDb();
 
     CodeSpecPtr codeSpec1 = CodeSpec::Create(db1, "CodeSpec1");
+    ASSERT_TRUE(codeSpec1.IsValid());
+    db1.CodeSpecs().Insert(*codeSpec1);
     auto partition1_1 = CreateAndInsertModeledElement("Model1-1", db1);
     db1.SaveChanges();
 
@@ -2394,10 +2395,9 @@ TEST_F(iModelManagerTests, CodeIdsTest)
     auto code2Result = *codeStatesIterator;
 
     // Check if scope requirements were properly parsed
-    EXPECT_EQ(DgnCode::ScopeRequirement::ElementId, code1Result.GetScopeRequirement());
-    EXPECT_EQ(DgnCode::ScopeRequirement::FederationGuid, code2Result.GetScopeRequirement());
+    EXPECT_EQ(code1.GetScopeString(), code1Result.GetScopeString());
+    EXPECT_EQ(code2.GetScopeString(), code2Result.GetScopeString());
     }
-*/
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Viktorija.Adomauskaite           07/2017

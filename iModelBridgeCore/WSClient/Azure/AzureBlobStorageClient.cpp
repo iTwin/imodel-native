@@ -42,16 +42,24 @@ void SetCommonRequestOptions
 (
 Http::RequestR                    request,
 Http::Request::RetryOption        retryOption,
-uint32_t                        transferType,
+uint32_t                          transferType,
 Http::Request::ProgressCallbackCR progressCallback,
-ICancellationTokenPtr           ct
+ICancellationTokenPtr             ct
 )
     {
     request.SetRetryOptions(retryOption, 0);
     request.SetConnectionTimeoutSeconds(AzureBlobStorageClient::Timeout::Connection::Default);
     request.SetTransferTimeoutSeconds(transferType);
     request.SetCancellationToken(ct);
-    request.SetUploadProgressCallback(progressCallback);
+
+    if (AzureBlobStorageClient::Timeout::Transfer::FileDownload == transferType)
+        {
+        request.SetDownloadProgressCallback(progressCallback);
+        }
+    else if (AzureBlobStorageClient::Timeout::Transfer::Upload == transferType)
+        {
+        request.SetUploadProgressCallback(progressCallback);
+        }
     }
 
 /*--------------------------------------------------------------------------------------+

@@ -71,11 +71,12 @@ struct BriefcaseTests: public IntegrationTestsBase
 
 TEST_F(BriefcaseTests, SuccessfulAcquireBriefcase)
     {
-    auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
 
     EXPECT_SUCCESS(result);
     auto dbPath = result.GetValue()->GetLocalPath();
     EXPECT_TRUE(dbPath.DoesPathExist());
+    CheckProgressNotified();
     }
 
 TEST_F(BriefcaseTests, UnsuccessfulAcquireBriefcase)
@@ -84,10 +85,11 @@ TEST_F(BriefcaseTests, UnsuccessfulAcquireBriefcase)
     auto imodel = CreateNewiModel(*m_client, "BriefcaseTest");
     auto deleteResult = m_client->DeleteiModel(*imodel)->GetResult();
     EXPECT_SUCCESS(deleteResult);
-    auto result = m_client->AcquireBriefcase(*imodel, m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto result = m_client->AcquireBriefcase(*imodel, m_pHost->GetOutputDirectory(), false, CreateProgressCallback())->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::iModelDoesNotExist, result.GetError().GetId());
+    CheckNoProgress();
     }
 
 TEST_F(BriefcaseTests, UnauthorizedAcquireBriefcase)
@@ -96,10 +98,11 @@ TEST_F(BriefcaseTests, UnauthorizedAcquireBriefcase)
         return;
 
     auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetWrongPassword());
-    auto result = badClient->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto result = badClient->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::LoginFailed, result.GetError().GetId());
+    CheckNoProgress();
     }
 
 TEST_F(BriefcaseTests, AcquireAfterQuerying)
@@ -107,15 +110,16 @@ TEST_F(BriefcaseTests, AcquireAfterQuerying)
     auto imodelResult = m_client->GetiModelById(m_imodel->GetId())->GetResult();
     EXPECT_SUCCESS(imodelResult);
 
-    auto result = m_client->AcquireBriefcaseToDir(*imodelResult.GetValue(), m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto result = m_client->AcquireBriefcaseToDir(*imodelResult.GetValue(), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
-
+    CheckProgressNotified();
 
     auto imodelResult2 = m_client->GetiModelByName(m_imodel->GetName())->GetResult();
     EXPECT_SUCCESS(imodelResult2);
 
-    auto result2 = m_client->AcquireBriefcaseToDir(*imodelResult2.GetValue(), m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto result2 = m_client->AcquireBriefcaseToDir(*imodelResult2.GetValue(), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result2);
+    CheckProgressNotified();
     }
 
 TEST_F(BriefcaseTests, AcquireBriefcaseId)
@@ -136,18 +140,20 @@ TEST_F(BriefcaseTests, AcquireBriefcaseId)
 TEST_F(BriefcaseTests, SuccessfulAbandonBriefcase)
     {
     //Acquire first briefcase
-    auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
 
     EXPECT_SUCCESS(result);
     auto dbPath = result.GetValue()->GetLocalPath();
     EXPECT_TRUE(dbPath.DoesPathExist());
+    CheckProgressNotified();
 
     //Acquire second briefcase
-    auto result2 = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto result2 = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
 
     EXPECT_SUCCESS(result2);
     dbPath = result2.GetValue()->GetLocalPath();
     EXPECT_TRUE(dbPath.DoesPathExist());
+    CheckProgressNotified();
 
     //Abandon briefcase that doesn exists
     auto result3 = m_client->AbandonBriefcase(*m_imodel, BeSQLite::BeBriefcaseId(100))->GetResult();
@@ -171,18 +177,20 @@ TEST_F(BriefcaseTests, SuccessfulAbandonOtherUserBriefcase)
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
     //User A acquires a briefcase
-    auto briefcaseA = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto briefcaseA = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
 
     EXPECT_SUCCESS(briefcaseA);
     auto dbPath = briefcaseA.GetValue()->GetLocalPath();
     EXPECT_TRUE(dbPath.DoesPathExist());
+    CheckProgressNotified();
 
     //User B acquires a briefcases
-    auto briefcaseB = nonAdminClient->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto briefcaseB = nonAdminClient->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
 
     EXPECT_SUCCESS(briefcaseB);
     dbPath = briefcaseB.GetValue()->GetLocalPath();
     EXPECT_TRUE(dbPath.DoesPathExist());
+    CheckProgressNotified();
 
     //User B should NOT be able to abandon user's A briefcase
     auto result = nonAdminClient->AbandonBriefcase(*m_imodel, briefcaseA.GetValue()->GetId())->GetResult();
@@ -208,12 +216,13 @@ TEST_F(BriefcaseTests, SuccessfulOpenBriefcase)
     {
     DgnDbPtr db = OpenBriefcaseFile();
 
-    auto result = m_client->OpenBriefcase(db, false)->GetResult();
+    auto result = m_client->OpenBriefcase(db, false, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
 
     EXPECT_TRUE(db->GetBriefcaseId().IsValid());
     EXPECT_FALSE(db->GetBriefcaseId().IsStandaloneId());
     EXPECT_FALSE(db->GetBriefcaseId().IsMasterId());
+    CheckNoProgress();
 
     // We randomly were getting ASSERTION FAILURE (0): id==GetThreadId(). It was because the last db pointer was released during closing OpenBriefcase async task
     // and not from this test since test is short and it ends before async task ends. Async task starts closing only after we get result from it.
@@ -235,9 +244,10 @@ TEST_F(BriefcaseTests, UnauthorizedOpenBriefcase)
 
     auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetWrongPassword());
 
-    auto result = badClient->OpenBriefcase(db, false)->GetResult();
+    auto result = badClient->OpenBriefcase(db, false, CreateProgressCallback())->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::LoginFailed, result.GetError().GetId());
+    CheckNoProgress();
 
     DeleteiModel(*m_client, *m_imodel);
     m_imodel = nullptr;
@@ -250,7 +260,7 @@ TEST_F(BriefcaseTests, SuccessfulAcquireBriefcaseWithoutMerge)
     {
     InitializeWithChangeSets();
 
-    auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false)->GetResult();
+    auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
 
     auto dbPath = result.GetValue()->GetLocalPath();
@@ -258,8 +268,9 @@ TEST_F(BriefcaseTests, SuccessfulAcquireBriefcaseWithoutMerge)
 
     auto db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(db.IsValid());
-    auto briefcaseResult = m_client->OpenBriefcase(db, false)->GetResult();
+    auto briefcaseResult = m_client->OpenBriefcase(db, false, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(briefcaseResult);
+    CheckNoProgress();
 
     DeleteiModel(*m_client, *m_imodel);
     m_imodel = nullptr;
@@ -271,11 +282,13 @@ TEST_F(BriefcaseTests, SuccessfulAcquireBriefcaseWithoutMerge)
 TEST_F(BriefcaseTests, SuccessfulAcquireAndMergeBriefcase)
     {
     InitializeWithChangeSets();
+    // TFS#735814 CreateProgressCallback()
     auto result = m_client->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), true)->GetResult();
 
     EXPECT_SUCCESS(result);
     auto dbPath = result.GetValue()->GetLocalPath();
     EXPECT_TRUE(dbPath.DoesPathExist());
+    // TFS#735814 CheckProgressNotified();
 
     auto db = DgnDb::OpenDgnDb(nullptr, dbPath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(db.IsValid());
@@ -295,8 +308,10 @@ TEST_F(BriefcaseTests, SuccessfulOpenAndMergeBriefcase)
     InitializeWithChangeSets();
     DgnDbPtr db = OpenBriefcaseFile();
 
+    // TFS#735814 CreateProgressCallback()
     auto result = m_client->OpenBriefcase(db, true)->GetResult();
     EXPECT_SUCCESS(result);
+    // TFS#735814 CheckProgressNotified();
 
     Utf8String lastChangeSetId = db->Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId.empty());
@@ -308,13 +323,15 @@ TEST_F(BriefcaseTests, OpenSeedFileAsBriefcase)
     DgnDbPtr db = CreateTestDb("BriefcaseTest");
     EXPECT_TRUE(db.IsValid());
 
-    auto createResult = m_client->CreateNewiModel(*db)->GetResult();
+    auto createResult = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
+    CheckProgressNotified();
 
-    auto result = m_client->OpenBriefcase(db, false)->GetResult();
+    auto result = m_client->OpenBriefcase(db, false, CreateProgressCallback())->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::FileIsNotBriefcase, result.GetError().GetId());
     DeleteiModel(*m_client, *createResult.GetValue());
+    CheckNoProgress();
     }
 
 TEST_F(BriefcaseTests, PullAndMerge)
@@ -327,11 +344,12 @@ TEST_F(BriefcaseTests, PullAndMerge)
     auto upToDateResult = briefcase->IsBriefcaseUpToDate()->GetResult();
     EXPECT_SUCCESS(upToDateResult);
     EXPECT_FALSE(upToDateResult.GetValue());
-
         {
+        // TFS#735814 CreateProgressCallback()
         auto result = briefcase->PullAndMerge()->GetResult();
         EXPECT_SUCCESS(result);
         EXPECT_EQ(2, result.GetValue().size());
+        // TFS#735814 CheckProgressNotified();
 
         lastChangeSetId = db.Revisions().GetParentRevisionId();
         EXPECT_FALSE(lastChangeSetId.empty());
@@ -368,8 +386,9 @@ TEST_F(BriefcaseTests, Push)
     BeSQLite::DbResult saveResult = db.SaveChanges();
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, saveResult);
 
-    auto result = briefcase->PullMergeAndPush()->GetResult();
+    auto result = briefcase->PullMergeAndPush(nullptr, false, nullptr, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
+    CheckProgressNotified();
 
     Utf8String lastChangeSetId = db.Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId.empty());
@@ -388,8 +407,9 @@ TEST_F(BriefcaseTests, PullMergeAndPush)
     BeSQLite::DbResult saveResult = db.SaveChanges();
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, saveResult);
 
-    auto result = briefcase->PullMergeAndPush()->GetResult();
+    auto result = briefcase->PullMergeAndPush(nullptr, false, nullptr, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
+    CheckProgressNotified();
 
     lastChangeSetId = db.Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId.empty());
@@ -402,16 +422,18 @@ TEST_F(BriefcaseTests, TwoPulls)
     DgnDbR db = briefcase->GetDgnDb();
 
     Utf8String lastChangeSetId = db.Revisions().GetParentRevisionId();
-    auto result = briefcase->PullAndMerge()->GetResult();
+    auto result = briefcase->PullAndMerge(CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
+    CheckProgressNotified();
 
     lastChangeSetId = db.Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId.empty());
 
     InitializeWithChangeSets();
-
+    // TFS#735814 CreateProgressCallback()
     result = briefcase->PullAndMerge()->GetResult();
     EXPECT_SUCCESS(result);
+    // TFS#735814 CheckProgressNotified();
 
     Utf8String lastChangeSetId2 = db.Revisions().GetParentRevisionId();
     EXPECT_FALSE(lastChangeSetId2.empty());
