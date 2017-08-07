@@ -93,8 +93,9 @@ TEST_F(ClientTests, SuccessfulCreateiModel)
     {
     auto db = CreateTestDb();
 
-    auto createResult = m_client->CreateNewiModel(*db)->GetResult();
+    auto createResult = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
+    CheckProgressNotified();
 
     auto result = m_client->GetiModels()->GetResult();
     EXPECT_SUCCESS(result);
@@ -109,24 +110,63 @@ TEST_F(ClientTests, UnauthorizedCreateiModel)
 
     m_client = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
-    auto result = m_client->CreateNewiModel(*db)->GetResult();
+    auto result = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::UserDoesNotHavePermission, result.GetError().GetId());
+    CheckNoProgress();
     }
 
 TEST_F(ClientTests, RepeatedCreateiModel)
     {
     auto db = CreateTestDb();
 
-    auto result = m_client->CreateNewiModel(*db)->GetResult();
+    auto result = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
+    CheckProgressNotified();
     auto imodel = result.GetValue();
     ConnectToiModel(*m_client, imodel);
 
-    result = m_client->CreateNewiModel(*db)->GetResult();
+    result = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
     EXPECT_FALSE(result.IsSuccess());
+    CheckNoProgress();
     EXPECT_EQ(Error::Id::iModelAlreadyExists, result.GetError().GetId());
     DeleteiModel(*m_client, *imodel);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             08/2017
+//---------------------------------------------------------------------------------------
+TEST_F(ClientTests, CancelCreateiModel)
+    {
+    auto db = CreateTestDb();
+
+    // Act
+    SimpleCancellationTokenPtr cancellationToken = SimpleCancellationToken::Create();
+    auto createiModelTask = m_client->CreateNewiModel(*db, true, nullptr, cancellationToken);
+    createiModelTask->Execute();
+    cancellationToken->SetCanceled();
+    createiModelTask->Wait();
+
+    // Assert
+    auto cancelledResult = createiModelTask->GetResult();
+    EXPECT_FALSE(cancelledResult.IsSuccess());
+
+    // Cleanup
+    Utf8String name;
+    db->QueryProperty(name, BeSQLite::PropertySpec("Name", "dgn_Proj"));
+    if (name.empty())
+        BeStringUtilities::WCharToUtf8(name, db->GetFileName().GetFileNameWithoutExtension().c_str());
+    
+    auto iModelToDeleteResult = m_client->GetiModelByName(name)->GetResult();
+    if (iModelToDeleteResult.IsSuccess())
+        {
+        auto iModelToDeletePtr = iModelToDeleteResult.GetValue();
+        EXPECT_FALSE(iModelToDeletePtr.IsValid());
+        if (iModelToDeletePtr.IsValid())
+            {
+            DeleteiModel(*m_client, *iModelToDeletePtr);
+            }
+        }
     }
 
 TEST_F(ClientTests, UnsuccessfulCreateiModel)
@@ -135,10 +175,11 @@ TEST_F(ClientTests, UnsuccessfulCreateiModel)
 
     m_client = SetUpClient(IntegrationTestSettings::Instance().GetInvalidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials());
 
-    auto result = m_client->CreateNewiModel(*db)->GetResult();
+    auto result = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
 
     EXPECT_FALSE(result.IsSuccess());
     EXPECT_EQ(Error::Id::WebServicesError, result.GetError().GetId());
+    CheckNoProgress();
     }
 
 TEST_F(ClientTests, SuccessfulGetiModels)
@@ -194,8 +235,9 @@ TEST_F (ClientTests, SuccessfulCreateiModelWithASpaceInName)
     {
     auto db = IntegrationTestsBase::CreateTestDb("Client Test");
 
-    auto createResult = m_client->CreateNewiModel(*db)->GetResult();
+    auto createResult = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
+    CheckProgressNotified();
 
     auto result = m_client->GetiModels ()->GetResult ();
     EXPECT_SUCCESS(result);
@@ -208,8 +250,9 @@ TEST_F(ClientTests, ReplaceSeedFile)
     // Create imodel and get a connection to it
     auto db = CreateTestDb();
     auto firstGuid = db->GetDbGuid();
-    auto createResult = m_client->CreateNewiModel(*db)->GetResult();
+    auto createResult = m_client->CreateNewiModel(*db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
+    CheckProgressNotified();
     auto imodelInfoPtr = createResult.GetValue();
     auto connectionResult = m_client->ConnectToiModel(createResult.GetValue()->GetId())->GetResult();
     EXPECT_SUCCESS(connectionResult);
@@ -219,9 +262,10 @@ TEST_F(ClientTests, ReplaceSeedFile)
     auto fileName = db->GetFileName();
     FileInfoPtr fileInfo = FileInfo::Create(*db, "Replacement description0");
     EXPECT_SUCCESS(imodelConnection->LockiModel()->GetResult());
-    auto uploadResult = imodelConnection->UploadNewSeedFile(fileName, *fileInfo)->GetResult();
+    auto uploadResult = imodelConnection->UploadNewSeedFile(fileName, *fileInfo, true, CreateProgressCallback())->GetResult();
     EXPECT_FALSE(uploadResult.IsSuccess());
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
+    CheckNoProgress();
 
     // Replace seed file sending lock imodel request first
     BeSQLite::BeGuid secondGuid;
@@ -230,7 +274,8 @@ TEST_F(ClientTests, ReplaceSeedFile)
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
     fileInfo = FileInfo::Create(*db, "Replacement description1");
     EXPECT_SUCCESS(imodelConnection->LockiModel()->GetResult());
-    EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo)->GetResult());
+    EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo, true, CreateProgressCallback())->GetResult());
+    CheckProgressNotified();
 
     // Replace seed file without sending a lock request first
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
@@ -240,7 +285,8 @@ TEST_F(ClientTests, ReplaceSeedFile)
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, db->SaveChanges());
     fileInfo = FileInfo::Create(*db, "Replacement description2");
     EXPECT_SUCCESS(imodelConnection->LockiModel()->GetResult());
-    EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo)->GetResult());
+    EXPECT_SUCCESS(imodelConnection->UploadNewSeedFile(fileName, *fileInfo, true, CreateProgressCallback())->GetResult());
+    CheckProgressNotified();
     db->CloseDb();
     
     // Acquire first briefcase
@@ -248,17 +294,20 @@ TEST_F(ClientTests, ReplaceSeedFile)
     DgnDbR newdb = newBriefcase->GetDgnDb();
     auto model1 = CreateModel("Model1", newdb);
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, newdb.SaveChanges());
-    auto pushResult = newBriefcase->PullMergeAndPush()->GetResult();
+    auto pushResult = newBriefcase->PullMergeAndPush(nullptr, false, nullptr, CreateProgressCallback())->GetResult();
+    CheckProgressNotified();
     EXPECT_SUCCESS(pushResult);
 
     // Acquire one more briefcase
     auto newBriefcase2 = IntegrationTestsBase::AcquireBriefcase(*m_client, *imodelInfoPtr);
-    pushResult = newBriefcase2->PullAndMerge()->GetResult();
+    pushResult = newBriefcase2->PullAndMerge(CreateProgressCallback())->GetResult();
+
     DgnDbR newdb2 = newBriefcase2->GetDgnDb();
     auto model2 = CreateModel("Model2", newdb2);
     EXPECT_EQ(BeSQLite::DbResult::BE_SQLITE_OK, newdb2.SaveChanges());
-    pushResult = newBriefcase2->PullMergeAndPush()->GetResult();
+    pushResult = newBriefcase2->PullMergeAndPush(nullptr, false, nullptr, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(pushResult);
+    CheckProgressNotified();
 
     DeleteiModel(*m_client, *createResult.GetValue());
     }
@@ -286,15 +335,17 @@ TEST_F(ClientTests, DownloadArchivedFiles)
     
     // Download old seed file
     BeFileName originalFilePath = IntegrationTestsBase::LocalPath("OriginalFile");
-    auto downloadResult = imodelConnection->DownloadSeedFile(originalFilePath, originalFile->GetFileId().ToString())->GetResult();
+    auto downloadResult = imodelConnection->DownloadSeedFile(originalFilePath, originalFile->GetFileId().ToString(), CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(downloadResult);
+    CheckProgressNotified();
     DgnDbPtr originalDb = DgnDb::OpenDgnDb(nullptr, originalFilePath, DgnDb::OpenParams(DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(originalDb.IsValid());
     EXPECT_EQ(originalGuid, originalDb->GetDbGuid());
 
     // Download available changeSets
-    auto changeSetsResult = imodelConnection->DownloadChangeSetsAfterId("", originalGuid)->GetResult();
+    auto changeSetsResult = imodelConnection->DownloadChangeSetsAfterId("", originalGuid, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(changeSetsResult);
+    CheckProgressNotified();
     auto changeSets = changeSetsResult.GetValue();
     EXPECT_EQ(2, changeSets.size());
 
@@ -308,4 +359,35 @@ TEST_F(ClientTests, DownloadArchivedFiles)
         RevisionStatus status = originalDb->Revisions().MergeRevision(*changeSet);
         EXPECT_EQ(RevisionStatus::Success, status);
         }
+    originalDb->CloseDb();
+
+    DeleteiModel(*m_client, *imodelInfo);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             08/2017
+//---------------------------------------------------------------------------------------
+TEST_F(ClientTests, CancelDownloadChangeSets)
+    {
+    // Create imodel and get a connection to it
+    auto db = CreateTestDb();
+    iModelInfoPtr imodelInfo = IntegrationTestsBase::CreateNewiModelFromDb(*m_client, *db);
+    iModelConnectionPtr imodelConnection = IntegrationTestsBase::ConnectToiModel(*m_client, imodelInfo);
+    BeSQLite::BeGuid originalGuid = db->GetDbGuid();
+
+    IntegrationTestsBase::InitializeWithChangeSets(*m_client, *imodelInfo, 5);
+
+    // Act
+    SimpleCancellationTokenPtr cancellationToken = SimpleCancellationToken::Create();
+    auto changeSetsTask = imodelConnection->DownloadChangeSetsAfterId("", originalGuid, CreateProgressCallback(), cancellationToken);
+    changeSetsTask->Execute();
+    cancellationToken->SetCanceled();
+
+    changeSetsTask->Wait();
+    
+    EXPECT_TRUE(changeSetsTask->IsCompleted());
+    EXPECT_FALSE(changeSetsTask->GetResult().IsSuccess());
+
+    CheckNoProgress();
+    DeleteiModel(*m_client, *imodelInfo);
     }

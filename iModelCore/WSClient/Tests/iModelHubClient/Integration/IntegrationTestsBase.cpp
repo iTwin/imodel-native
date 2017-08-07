@@ -23,6 +23,9 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define DEFAULT_LANGUAGE_CODE "en"
 #define EXPECT_STATUS(STAT, EXPR) EXPECT_EQ(RepositoryStatus:: STAT, (EXPR))
 
+double IntegrationTestsBase::s_lastProgressBytesTransfered = 0;
+double IntegrationTestsBase::s_lastProgressBytesTotal = 0;
+
 L10N::SqlangFiles GetSqlangFiles(BeFileNameCR assets)
     {
     BeFileName sdkSqlangPath(assets);
@@ -55,6 +58,45 @@ void IntegrationTestsBase::SetUp()
     Initialize(m_pHost);
     CreateInitialSeedDb();
     Configuration::SetPredownloadChangeSetsEnabled(false);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             08/2017
+//---------------------------------------------------------------------------------------
+Request::ProgressCallback IntegrationTestsBase::CreateProgressCallback()
+    {
+    s_lastProgressBytesTransfered = 0;
+    s_lastProgressBytesTotal = 0;
+
+    return [](double bytesTransfered, double bytesTotal)
+        {
+        EXPECT_GE(bytesTransfered, s_lastProgressBytesTransfered);
+        if (s_lastProgressBytesTotal > 0)
+            {
+            EXPECT_EQ(bytesTotal, s_lastProgressBytesTotal);
+            }
+        
+        s_lastProgressBytesTransfered = bytesTransfered;
+        s_lastProgressBytesTotal = bytesTotal;
+        };
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             08/2017
+//---------------------------------------------------------------------------------------
+void IntegrationTestsBase::CheckProgressNotified()
+    {
+    EXPECT_GT(s_lastProgressBytesTotal, 0);
+    EXPECT_LE(s_lastProgressBytesTransfered, s_lastProgressBytesTotal);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             08/2017
+//---------------------------------------------------------------------------------------
+void IntegrationTestsBase::CheckNoProgress()
+    {
+    EXPECT_EQ(s_lastProgressBytesTransfered, 0);
+    EXPECT_EQ(s_lastProgressBytesTotal, 0);
     }
 
 void IntegrationTestsBase::TearDown()
@@ -286,7 +328,7 @@ iModelInfoPtr IntegrationTestsBase::CreateNewiModel (ClientCR client, Utf8String
 iModelInfoPtr IntegrationTestsBase::CreateNewiModelFromDb(ClientCR client, DgnDbR db)
     {
     //Upload the seed file to the server
-    auto createResult = client.CreateNewiModel(db)->GetResult();
+    auto createResult = client.CreateNewiModel(db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
     return createResult.GetValue();
     }
@@ -307,7 +349,7 @@ iModelConnectionPtr IntegrationTestsBase::ConnectToiModel(ClientCR client, iMode
 //---------------------------------------------------------------------------------------
 BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfoCR imodelInfo, bool pull)
     {
-    auto acquireResult = client.AcquireBriefcaseToDir (imodelInfo, m_pHost->GetOutputDirectory(), pull)->GetResult ();
+    auto acquireResult = client.AcquireBriefcaseToDir (imodelInfo, m_pHost->GetOutputDirectory(), pull, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult ();
     EXPECT_SUCCESS(acquireResult);
 
     BeFileName dbPath = acquireResult.GetValue ()->GetLocalPath();
@@ -316,7 +358,7 @@ BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfo
     DgnDbPtr db = DgnDb::OpenDgnDb (nullptr, dbPath, DgnDb::OpenParams (DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(db.IsValid());
 
-    auto briefcaseResult = client.OpenBriefcase(db, false)->GetResult();
+    auto briefcaseResult = client.OpenBriefcase(db, false, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(briefcaseResult);
 
     return briefcaseResult.GetValue();
