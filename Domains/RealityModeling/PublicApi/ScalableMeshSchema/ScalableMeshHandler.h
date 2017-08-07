@@ -84,7 +84,7 @@ public:
 
 //=======================================================================================
 //! A mesh and a Render::Graphic to draw it. Both are optional - we don't need the mesh except for picking, and sometimes we create Geometry objects for exporting (in which case we don't need the Graphic).
-// @bsiclass                                                    Keith.Bentley   06/16
+// @bsiclass                                                    Mathieu.St-Pierre  08/17
 //=======================================================================================
 struct SMGeometry : Dgn::TileTree::TriMeshTree::TriMesh
 {
@@ -95,7 +95,7 @@ struct SMGeometry : Dgn::TileTree::TriMeshTree::TriMesh
 };
 
 //=======================================================================================
-// @bsistruct                                                   Paul.Connelly   07/17
+// @bsistruct                                                   Mathieu.St-Pierre  08/17
 //=======================================================================================
 struct SMNode : Dgn::TileTree::TriMeshTree::Tile
 {
@@ -103,7 +103,7 @@ struct SMNode : Dgn::TileTree::TriMeshTree::Tile
     friend struct SMScene;
 
     //=======================================================================================
-    // @bsiclass                                                    Mathieu.Marchand  11/2016
+    // @bsiclass                                                    Mathieu.St-Pierre  08/17
     //=======================================================================================
     struct SMLoader : Dgn::TileTree::TileLoader
     {
@@ -138,13 +138,16 @@ public:
     SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) : T_Super(root, parent), m_scalableMeshNodePtr(smNodePtr) {}
     Utf8String GetFilePath(SMSceneR) const;
 
-    bool _HasChildren() const override { return m_scalableMeshNodePtr->GetChildrenNodes().size() > 0; }
+    bool _HasChildren() const override { return m_scalableMeshNodePtr->GetChildrenNodes().size() > 0 || !IsReady(); }
+    ChildTiles const* _GetChildren(bool load) const override; 
+
+
     Dgn::ElementAlignedBox3d ComputeRange();
 };
 
 /*=================================================================================**//**
 //! A 3mx scene, constructed for a single Render::System. The graphics held by this scene are only useful for that Render::System.
-// @bsiclass                                                    Keith.Bentley   03/16
+// @bsiclass                                                    Mathieu.St-Pierre  08/17
 +===============+===============+===============+===============+===============+======*/
 struct SMScene : Dgn::TileTree::TriMeshTree::Root
 {
