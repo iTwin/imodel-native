@@ -178,7 +178,7 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetPublishedTilesetURL
+struct ScalableMeshModel : IMeshSpatialModel, Dgn::Render::IGetPublishedTilesetInfo
 {
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
@@ -222,10 +222,10 @@ protected:
 
     void _OnSaveJsonProperties() override;
     void _OnLoadedJsonProperties() override;
-    Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 
     virtual bool _IsMultiResolution() const { return true; };
     BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const override;
+    SCALABLEMESH_SCHEMA_EXPORT BentleyApi::Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 
     BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
     BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
@@ -244,7 +244,7 @@ protected:
     SCALABLEMESH_SCHEMA_EXPORT void _OnFitView(FitContextR context) override;
 
 public:
-    Utf8String _GetPublishedTilesetURL() const override { return Utf8String(GetPath()); }
+    Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo() override;
 
     //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
     ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params);

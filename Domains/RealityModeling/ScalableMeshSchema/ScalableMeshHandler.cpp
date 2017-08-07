@@ -43,7 +43,9 @@ USING_NAMESPACE_TILETREE
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     {
-    if (m_smPtr.IsValid()) m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
+    if (m_smPtr.IsValid())
+        m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
+
     return m_range;
     }
 
@@ -52,8 +54,23 @@ AxisAlignedBox3d ScalableMeshModel::_GetRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
     {
-    // ###TODO_SCALABLE_MESH: Possibly need to apply transform...
+    if (m_smPtr.IsNull())
+        {
+        BeAssert(false && "You need to initialize m_smPtr during V8 conversion so we can get the 3sm model range");
+        }
+
     return _GetRange();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PublishedTilesetInfo ScalableMeshModel::_GetPublishedTilesetInfo()
+    {
+    if (m_smPtr.IsNull())
+        return PublishedTilesetInfo();
+
+    return PublishedTilesetInfo(Utf8String(GetPath()), _GetRange());
     }
 
 //----------------------------------------------------------------------------------------
