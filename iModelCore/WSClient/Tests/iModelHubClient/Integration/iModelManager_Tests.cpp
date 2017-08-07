@@ -2487,7 +2487,7 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_EQ("Version2", version2->GetName());
     EXPECT_EQ(changeSet2, version2->GetChangeSetId());
     EXPECT_EQ("NewDescription", version2->GetDescription());
-    EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 2);
+    EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 3);
 
 	//test get changeSets
     auto changeSetsResult = versionManager.GetVersionChangeSets(version1->GetId())->GetResult();
