@@ -45,10 +45,7 @@ public:
     
     REALITYPACKAGE_EXPORT WString ToString() const;
 
-    //! Return NULL is a parsing error occurs
-    static BoundingPolygonPtr FromString(WStringCR);
-
-    //! Return NULL is a parsing error occurs
+    //! Return nullptr if a parsing error occurs
     static BoundingPolygonPtr FromString(Utf8StringCR);
 
 private:

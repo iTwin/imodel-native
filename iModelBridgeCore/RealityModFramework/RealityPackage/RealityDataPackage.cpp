@@ -122,47 +122,6 @@ WString BoundingPolygon::ToString() const
     return result;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  3/2015
-//----------------------------------------------------------------------------------------
-BoundingPolygonPtr BoundingPolygon::FromString(WStringCR polygonStr) 
-    {
-    bvector<GeoPoint2d> points;
-
-    WStringTokenizer tokenizer(polygonStr, SPACE_DELIMITER_U);
-    
-    while(tokenizer.HasValue())
-        {
-        GeoPoint2d point;
-        if(!tokenizer.Get(point.longitude) || !tokenizer.Get(point.latitude) || !RealityDataSerializer::IsValidLongLat(point.longitude, point.latitude))
-            {
-            BeDataAssert(!"Invalid polygon data");
-            points.clear(); // incomplete x-y sequence.
-            break;
-            }
-        
-        points.push_back(point);
-        }
-
-    if(points.size() > 2)
-        {
-        if(AlmostEqual(points[0], points[points.size()-1]))
-            {
-            points[points.size()-1] = points[0];  // Explicitly assign the last for bitwise equality.
-            }
-        else
-            {
-            points.push_back(points[0]);    // add closure point.
-            }    
-
-    // &&AR TO DO We should definitely validate to check if the polygon autocrosses or is autocontiguous.
-
-        return new BoundingPolygon(points); // >>> Use std::move on 'points'.
-        }
-    
-    return NULL;    // invalid polygon string.
-    }
-
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    6/2016
 //-------------------------------------------------------------------------------------
@@ -201,7 +160,7 @@ BoundingPolygonPtr BoundingPolygon::FromString(Utf8StringCR polygonStr)
         return new BoundingPolygon(points); // >>> Use std::move on 'points'.
         }
 
-    return NULL;    // invalid polygon string.
+    return nullptr;    // invalid polygon string.
     }
 
 //=======================================================================================

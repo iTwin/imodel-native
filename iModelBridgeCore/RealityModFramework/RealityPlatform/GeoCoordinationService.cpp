@@ -154,6 +154,9 @@ void GeoCoordinationServicePagedRequest::SortBy(GeoCoordinationField field, bool
             case GeoCoordinationField::Footprint:
                 order.append("Footprint");
                 break;
+            case GeoCoordinationField::Name:
+                order.append("Name");
+                break;
             case GeoCoordinationField::Description:
                 order.append("Description");
                 break;
