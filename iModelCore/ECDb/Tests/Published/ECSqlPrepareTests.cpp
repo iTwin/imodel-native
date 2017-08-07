@@ -57,6 +57,11 @@ TEST_F(ECSqlSelectPrepareTests, Alias)
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp.I FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId"));
     ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT PStructProp.PStructProp FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId"));
     ASSERT_EQ(ECSqlStatus::InvalidECSql, Prepare("SELECT PStructProp.i FROM ecsql.PSA, (SELECT ECInstanceId, I, PStructProp FROM ecsql.PSA) PStructProp WHERE PSA.ECInstanceId=PStructProp.ECInstanceId"));
+    //EH TFS#521392 
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM meta.ECClassDef this WHERE ECInstanceId IN (SELECT Class.Id FROM meta.ECPropertyDef WHERE Class.Id = this.ECInstanceId)"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId FROM meta.ECClassDef this WHERE ECInstanceId = (SELECT Class.Id FROM meta.ECPropertyDef WHERE Class.Id = this.ECInstanceId)"));
+    ASSERT_EQ(ECSqlStatus::Success, Prepare("SELECT ECInstanceId, (SELECT Class.Id FROM meta.ECPropertyDef WHERE Class.Id = this.ECInstanceId) FROM meta.ECClassDef this"));
+
     }
 
 //---------------------------------------------------------------------------------------

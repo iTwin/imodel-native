@@ -272,7 +272,7 @@ ForeignKeyPartitionView::ForeignKeyPartitionView(ECDbCR ecdb, ECN::ECRelationshi
 //---------------------------------------------------------------------------------------
 BentleyStatus ForeignKeyPartitionView::GetMapStrategy(MapStrategy &mapStrategy, ECDbCR ecdb, ECN::ECRelationshipClassCR rel)
     {
-    CachedStatementPtr stmt = ecdb.GetCachedStatement("SELECT [MapStrategy] FROM [ec_ClassMap] WHERE [ClassId]=?");
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement("SELECT [MapStrategy] FROM [ec_ClassMap] WHERE [ClassId]=?");
     stmt->BindId(1, rel.GetId());
     if (stmt->Step() == BE_SQLITE_DONE)
         return ERROR;
@@ -384,7 +384,7 @@ std::unique_ptr<ForeignKeyPartitionView> ForeignKeyPartitionView::Create(ECDbCR 
         "WHERE  [P].[NavigationRelationshipClassId] = ? ORDER BY [T].[Id], [PM].[ClassId], [PropertyMapKind]; ";
 
     DbSchema const& dbSchema = ecdb.Schemas().GetDbMap().GetDbSchema();
-    CachedStatementPtr stmt = ecdb.GetCachedStatement(sql);
+    CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(sql);
     PRECONDITION(stmt != nullptr, nullptr);
 
     stmt->BindId(1, GetRootClass(relationship).GetId());
@@ -462,7 +462,7 @@ std::vector<DbTable const*> ForeignKeyPartitionView::GetOtherEndTables(ECDbCR ec
     std::vector<DbTable const*> nvlist;
     if (otherEndConstraint.GetIsPolymorphic())
         {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement(
+        CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(
             "SELECT DISTINCT [CHT].[TableId] "
             "FROM   [ec_RelationshipConstraintClass] [RCC] "
             "       INNER JOIN [ec_RelationshipConstraint] [RC] ON [RC].[Id] = [RCC].[ConstraintId] "
@@ -492,7 +492,7 @@ std::vector<DbTable const*> ForeignKeyPartitionView::GetOtherEndTables(ECDbCR ec
         }
     else
         {
-        CachedStatementPtr stmt = ecdb.GetCachedStatement(
+        CachedStatementPtr stmt = ecdb.GetImpl().GetCachedSqliteStatement(
             "SELECT DISTINCT [CHT].[TableId] "
             "FROM   [ec_RelationshipConstraintClass] [RCC] "
             "       INNER JOIN [ec_RelationshipConstraint] [RC] ON [RC].[Id] = [RCC].[ConstraintId] "
@@ -1177,7 +1177,7 @@ BentleyStatus DbMappingManager::Classes::TryDetermineRelationshipMappingType(Rel
     const ECRelatedInstanceDirection navPropDir = fkEnd == ECRelationshipEnd::ECRelationshipEnd_Target ? ECRelatedInstanceDirection::Backward : ECRelatedInstanceDirection::Forward;
 
     //finally check whether the relationship requires a nav prop. If it does but doesn't have one, we also fall back to a link table
-    CachedStatementPtr stmt = ctx.GetECDb().GetCachedStatement("SELECT ClassId, Name FROM ec_Property WHERE NavigationRelationshipClassId=? AND NavigationDirection=? ORDER BY ClassId");
+    CachedStatementPtr stmt = ctx.GetECDb().GetImpl().GetCachedSqliteStatement("SELECT ClassId, Name FROM ec_Property WHERE NavigationRelationshipClassId=? AND NavigationDirection=? ORDER BY ClassId");
     if (stmt == nullptr)
         return ERROR;
 
