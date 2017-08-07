@@ -10,6 +10,8 @@
 #include <PointCloud/PointCloudApi.h>
 #include <TilePublisher/CesiumPublisher.h>
 #include <Raster/RasterApi.h>
+#include <ScalableMeshSchema/ScalableMeshSchemaApi.h>
+#include <ScalableMesh/ScalableMeshLib.h>
 
 #if defined(TILE_PUBLISHER_PROFILE)
 #include <conio.h>
@@ -344,6 +346,44 @@ public:
     Host() { BeAssertFunctions::SetBeAssertHandler(&Host::OnAssert); }
 };
 
+//=======================================================================================
+// Do-nothing boilerplate...
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct SMHost : ScalableMesh::ScalableMeshLib::Host
+{
+    template<typename T> static T GetUselessValue() { T t; return t; }
+    static Utf8String GetUselessString() { return GetUselessValue<Utf8String>(); }
+    template<typename T, typename F> static T& GetUselessAdmin(F f) { return *new T(f); }
+
+    SMHost() { }
+    ScalableMesh::ScalableMeshAdmin& _SupplyScalableMeshAdmin() override
+        {
+        struct SMAdmin : public ScalableMesh::ScalableMeshAdmin
+        {
+            IScalableMeshTextureGeneratorPtr _GetTextureGenerator() override { return GetUselessValue<IScalableMeshTextureGeneratorPtr>(); }
+            bool _CanImportPODfile() const override { return false; }
+        };
+
+        return *new SMAdmin;
+        }
+
+    ScalableMesh::WsgTokenAdmin& _SupplyWsgTokenAdmin() override
+        {
+        return GetUselessAdmin<ScalableMesh::WsgTokenAdmin>([]() { return GetUselessString(); });
+        }
+
+    ScalableMesh::SASTokenAdmin& _SupplySASTokenAdmin()
+        {
+        return GetUselessAdmin<ScalableMesh::SASTokenAdmin>([](Utf8StringCR) { return GetUselessString(); });
+        }
+
+    ScalableMesh::SSLCertificateAdmin& _SupplySSLCertificateAdmin() override
+        {
+        return GetUselessAdmin<ScalableMesh::SSLCertificateAdmin>([]() { return GetUselessString(); });
+        }
+};
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -367,6 +407,8 @@ int wmain(int ac, wchar_t const** av)
     DgnDomains::RegisterDomain(ThreeMx::ThreeMxDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
     DgnDomains::RegisterDomain(PointCloud::PointCloudDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
     DgnDomains::RegisterDomain(Raster::RasterDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
+    DgnDomains::RegisterDomain(ScalableMeshSchema::ScalableMeshDomain::GetDomain(), DgnDomain::Required::No, DgnDomain::Readonly::Yes);
+    ScalableMesh::ScalableMeshLib::Initialize(*new SMHost());
                                                                                   
     DgnDbPtr db = createParams.OpenDgnDb();
     if (db.IsNull())
