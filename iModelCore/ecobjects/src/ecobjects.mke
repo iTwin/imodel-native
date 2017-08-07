@@ -92,6 +92,7 @@ ECPresentationRulesHeaders =    $(ecpresentationRulesPublicAPISrc)PresentationRu
                                 $(ecpresentationRulesPublicAPISrc)RelatedInstanceSpecification.h \
                                 $(ecpresentationRulesPublicAPISrc)CustomizationRules.h \
                                 $(ecpresentationRulesPublicAPISrc)ContentModifier.h \
+                                $(ecpresentationRulesPublicAPISrc)PropertyEditorsSpecification.h \
                                 $(ECPresentationHeaders)
 
 
@@ -233,6 +234,8 @@ $(o)RelatedInstanceSpecification$(oext)                    : $(baseDir)presentat
 $(o)CommonTools$(oext)                                     : $(baseDir)presentation/PresentationRules/CommonTools.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 $(o)ContentModifier$(oext)                                 : $(baseDir)presentation/PresentationRules/ContentModifier.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
+
+$(o)PropertyEditorsSpecification$(oext)                    : $(baseDir)presentation/PresentationRules/PropertyEditorsSpecification.cpp $(ECPresentationRulesHeaders) ${MultiCompileDepends}
 
 # ECUnits
 

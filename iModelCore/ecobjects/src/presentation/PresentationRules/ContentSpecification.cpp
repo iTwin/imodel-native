@@ -36,6 +36,7 @@ ContentSpecification::ContentSpecification(ContentSpecificationCR other)
     CommonTools::CopyRules(m_propertiesDisplaySpecification, other.m_propertiesDisplaySpecification);
     CommonTools::CopyRules(m_displayRelatedItemsSpecification, other.m_displayRelatedItemsSpecification);
     CommonTools::CopyRules(m_calculatedPropertiesSpecification, other.m_calculatedPropertiesSpecification);
+    CommonTools::CopyRules(m_propertyEditorsSpecification, other.m_propertyEditorsSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -47,6 +48,7 @@ ContentSpecification::~ContentSpecification ()
     CommonTools::FreePresentationRules (m_propertiesDisplaySpecification);
     CommonTools::FreePresentationRules (m_displayRelatedItemsSpecification);
     CommonTools::FreePresentationRules (m_calculatedPropertiesSpecification);
+    CommonTools::FreePresentationRules (m_propertyEditorsSpecification);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -68,6 +70,9 @@ bool ContentSpecification::ReadXml (BeXmlNodeP xmlNode)
     BeXmlNodeP xmlPropertyNode = xmlNode->SelectSingleNode(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
     if (xmlPropertyNode)
         CommonTools::LoadSpecificationsFromXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList> (xmlPropertyNode, m_calculatedPropertiesSpecification, CALCULATED_PROPERTIES_SPECIFICATION_XML_CHILD_NAME);
+    xmlPropertyNode = xmlNode->SelectSingleNode(PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME);
+    if (xmlPropertyNode)
+        CommonTools::LoadSpecificationsFromXmlNode<PropertyEditorsSpecification, PropertyEditorsSpecificationList>(xmlPropertyNode, m_propertyEditorsSpecification, PROPERTY_EDITORS_SPECIFICATION_XML_CHILD_NAME);
 
     return _ReadXml (xmlNode);
     }
@@ -89,6 +94,11 @@ void ContentSpecification::WriteXml (BeXmlNodeP parentXmlNode) const
         {
         BeXmlNodeP calculatedPropertiesNode = specificationNode->AddEmptyElement(CALCULATED_PROPERTIES_SPECIFICATION_XML_NODE_NAME);
         CommonTools::WriteRulesToXmlNode<CalculatedPropertiesSpecification, CalculatedPropertiesSpecificationList>(calculatedPropertiesNode, m_calculatedPropertiesSpecification);
+        }
+    if (!m_propertyEditorsSpecification.empty())
+        {
+        BeXmlNodeP propertyEditorsNode = specificationNode->AddEmptyElement(PROPERTY_EDITORS_SPECIFICATION_XML_NODE_NAME);
+        CommonTools::WriteRulesToXmlNode<PropertyEditorsSpecification, PropertyEditorsSpecificationList>(propertyEditorsNode, m_propertyEditorsSpecification);
         }
 
     //Make sure we call protected override

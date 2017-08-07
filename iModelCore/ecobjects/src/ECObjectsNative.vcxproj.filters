@@ -231,6 +231,9 @@
     <ClCompile Include="presentation\PresentationRules\ContentModifier.cpp">
       <Filter>ECPresentationRules\Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="presentation\PresentationRules\PropertyEditorsSpecification.cpp">
+      <Filter>ECPresentationRules\Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ECObjectsPch.h">
@@ -444,6 +447,9 @@
       <Filter>ECPresentationRules\Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\PublicApi\ECPresentationRules\ContentModifier.h">
+      <Filter>ECPresentationRules\Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\PublicApi\ECPresentationRules\PropertyEditorsSpecification.h">
       <Filter>ECPresentationRules\Header Files</Filter>
     </ClInclude>
   </ItemGroup>
