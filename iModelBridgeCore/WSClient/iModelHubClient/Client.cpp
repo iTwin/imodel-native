@@ -751,13 +751,24 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterOpenBriefcaseForMerge);
 #endif
     ChangeSets changeSets = pullTask->GetResult().GetValue();
-    RevisionStatus mergeStatus = ValidateChangeSets(changeSets, *db);
 
+    return MergeChangeSetsIntoDgnDb(db, changeSets, filePath);
+    }
+	
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Viktorija.Adomauskaite             10/2015
+//---------------------------------------------------------------------------------------
+StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets changeSets, BeFileNameCR filePath)
+    {
+    const Utf8String methodName = "Client::MergeChangeSetsIntoDgnDb";
+
+    RevisionStatus mergeStatus = ValidateChangeSets(changeSets, *db);
     if (mergeStatus == RevisionStatus::MergeSchemaChangesOnOpen)
         {
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Merging changeSets with DgnDb reopen.");
         db->CloseDb();
 
+        BeSQLite::DbResult status;
         db = OpenWithSchemaUpgrade(&status, filePath, changeSets);
         if (BeSQLite::DbResult::BE_SQLITE_OK != status)
             {
@@ -984,4 +995,190 @@ iModelManagerTaskPtr Client::CreateiModelManager(iModelInfoCR iModelInfo, FileIn
                 return *finalResult;
                 });
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Viktorija.Adomauskaite             10/2015
+//---------------------------------------------------------------------------------------
+BeFileNameTaskPtr Client::DownloadLocalBriefcaseUpdatedToVersion(iModelInfoCR iModelInfo, Utf8String versionId, LocalBriefcaseFileNameCallBack const & fileNameCallBack, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::DownloadLocalBriefcaseWithVersionOnTip";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    //double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    if (iModelInfo.GetId().empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel id.");
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(Error::Id::InvalidiModelId));
+        }
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to iModel %s.", iModelInfo.GetName().c_str());
+
+    auto connectionResult = CreateiModelConnection(iModelInfo);
+    if (!connectionResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(connectionResult.GetError()));
+        }
+
+    iModelConnectionPtr connection = connectionResult.GetValue();
+    auto versionManager = connection->GetVersionsManager();
+    ChangeSetsInfoResult result = versionManager.GetVersionChangeSets(versionId, cancellationToken)->GetResult();
+    if (!result.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result.GetError()));
+        }
+
+    return DownloadLocalBriefcaseInternal(connection, iModelInfo, result.GetValue(), fileNameCallBack, callback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Viktorija.Adomauskaite             10/2015
+//---------------------------------------------------------------------------------------
+BeFileNameTaskPtr Client::DownloadLocalBriefcaseUpdatedToChangeSet(iModelInfoCR iModelInfo, Utf8String changeSetId, LocalBriefcaseFileNameCallBack const & fileNameCallBack, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::DownloadLocalBriefcaseWithChangeSetOnTip";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    //double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    if (iModelInfo.GetId().empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel id.");
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(Error::Id::InvalidiModelId));
+        }
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to iModel %s.", iModelInfo.GetName().c_str());
+
+    auto connectionResult = CreateiModelConnection(iModelInfo);
+    if (!connectionResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(connectionResult.GetError()));
+        }
+
+    iModelConnectionPtr connection = connectionResult.GetValue();
+
+    auto result = connection->GetChangeSetById(changeSetId, cancellationToken)->GetResult();
+    if (!result.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        ChangeSetsInfoResult::Error(result.GetError());
+        }
+
+    uint64_t changeSetIndex = result.GetValue()->GetIndex();
+
+    Utf8String filter;
+    filter.Sprintf("%s+le+%I64d", ServerSchema::Property::Index, changeSetIndex);
+
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
+    query.SetFilter(filter);
+
+    auto changeSetsResult = connection->ChangeSetsFromQueryInternal(query, false, cancellationToken)->GetResult();
+
+    return DownloadLocalBriefcaseInternal(connection, iModelInfo, changeSetsResult.GetValue(), fileNameCallBack, callback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Viktorija.Adomauskaite             10/2015
+//---------------------------------------------------------------------------------------
+BeFileNameTaskPtr Client::DownloadLocalBriefcase(iModelInfoCR iModelInfo, LocalBriefcaseFileNameCallBack const & fileNameCallBack, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::DownloadLocalBriefcase";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    //double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    if (iModelInfo.GetId().empty())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Invalid iModel id.");
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(Error::Id::InvalidiModelId));
+        }
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Connecting to iModel %s.", iModelInfo.GetName().c_str());
+
+    auto connectionResult = CreateiModelConnection(iModelInfo);
+    if (!connectionResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, connectionResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(connectionResult.GetError()));
+        }
+
+    iModelConnectionPtr connection = connectionResult.GetValue();
+    ChangeSetsInfoResult result = connection->GetAllChangeSets()->GetResult();
+    if (!result.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result.GetError()));
+        }
+
+    return DownloadLocalBriefcaseInternal(connection, iModelInfo, result.GetValue(), fileNameCallBack, callback, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Viktorija.Adomauskaite             10/2015
+//---------------------------------------------------------------------------------------
+BeFileNameTaskPtr Client::DownloadLocalBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallBack const & fileNameCallBack, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::DownloadLocalBriefcaseInternal";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+    //double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
+
+    auto SeedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
+    if (!SeedFileInfoResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, SeedFileInfoResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(SeedFileInfoResult.GetError()));
+        }
+
+    BeFileName filePath = fileNameCallBack(iModelInfo, *SeedFileInfoResult.GetValue());
+    if (filePath.DoesPathExist())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File already exists.");
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(Error::Id::FileAlreadyExists));
+        }
+    if (!filePath.GetDirectoryName().DoesPathExist())
+        {
+        BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
+        }
+
+    auto SeedFileResult = connection->DownloadSeedFile(filePath, SeedFileInfoResult.GetValue()->GetFileId().ToString(), callback, cancellationToken)->GetResult();
+    if (!SeedFileResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, SeedFileResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(SeedFileResult.GetError()));
+        }
+
+    auto briefcaseId = BeBriefcaseId(BeBriefcaseId::Standalone());
+    auto result = connection->WriteBriefcaseIdIntoFile(filePath, briefcaseId);
+    if (!result.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result.GetError()));
+        }
+
+    auto changeSetsResult = connection->DownloadChangeSetsInternal(changeSetsToMerge, callback, cancellationToken)->GetResult();
+    if (!changeSetsResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(changeSetsResult.GetError()));
+        }
+
+    BeSQLite::DbResult status;
+    Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
+    if (BeSQLite::DbResult::BE_SQLITE_OK != status)
+        {
+        StatusResult result = StatusResult::Error(Error(*db, status));
+        if (!result.IsSuccess())
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result));
+        }
+
+    auto margeStatus = MergeChangeSetsIntoDgnDb(db, changeSetsResult.GetValue(), filePath);
+    if (!margeStatus.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, margeStatus.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(margeStatus.GetError()));
+        }
+
+    BeFileName::SetFileReadOnly(filePath, true);
+
+    return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Success(filePath));
+    }
+
 

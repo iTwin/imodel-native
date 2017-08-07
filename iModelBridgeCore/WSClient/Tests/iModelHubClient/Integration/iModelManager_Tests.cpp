@@ -2422,6 +2422,10 @@ TEST_F(iModelManagerTests, VersionsTest)
     CreateModel("Model2", briefcase->GetDgnDb());
     briefcase->GetDgnDb().SaveChanges();
     auto changeSet2 = PushPendingChanges(*briefcase);
+	
+    CreateModel("Model3", briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+    auto changeSet3 = PushPendingChanges(*briefcase);
 
     //test create version
     EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 0);
@@ -2449,6 +2453,12 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_SUCCESS(result);
     version2 = result.GetValue();
     EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 2);
+	
+	VersionInfoPtr version3 = new VersionInfo("Version3", "Description", changeSet3);
+    result = versionManager.CreateVersion(*version3)->GetResult();
+    EXPECT_SUCCESS(result);
+    version3 = result.GetValue();
+	EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 3);
 
     //test update version
     version1->SetName("NewName");
@@ -2477,4 +2487,28 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_EQ(changeSet2, version2->GetChangeSetId());
     EXPECT_EQ("NewDescription", version2->GetDescription());
     EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 2);
+
+	//test get changeSets
+    auto changeSetsResult = versionManager.GetVersionChangeSets(version1->GetId())->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(1, changeSetsResult.GetValue().size());
+    EXPECT_EQ(changeSet1, changeSetsResult.GetValue().at(0)->GetId());
+
+    changeSetsResult = versionManager.GetVersionChangeSets(version2->GetId())->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(2, changeSetsResult.GetValue().size());
+    EXPECT_EQ(changeSet1, changeSetsResult.GetValue().at(0)->GetId());
+    EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(1)->GetId());
+
+    changeSetsResult = versionManager.GetChangeSetsBetweenVersions(version1->GetId(), version3->GetId())->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(2, changeSetsResult.GetValue().size());
+    EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(0)->GetId());
+    EXPECT_EQ(changeSet3, changeSetsResult.GetValue().at(1)->GetId());
+
+    changeSetsResult = versionManager.GetChangeSetsBetweenVersions(version3->GetId(), version1->GetId())->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(2, changeSetsResult.GetValue().size());
+    EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(0)->GetId());
+    EXPECT_EQ(changeSet3, changeSetsResult.GetValue().at(1)->GetId());
     }
