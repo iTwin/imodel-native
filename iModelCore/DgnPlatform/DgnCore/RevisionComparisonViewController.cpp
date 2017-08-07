@@ -105,7 +105,7 @@ void ComparisonSymbologyOverrides::GetUntouchedOverrides(Render::OvrGraphicParam
 Render::GraphicPtr  RevisionComparisonViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
     // Avoid letting user pick elements that are not being compared
-    if (!m_comparisonData->ContainsElement(source.ToElement()))
+    if (nullptr != context.GetIPickGeom() && !m_comparisonData->ContainsElement(source.ToElement()))
         return nullptr;
 
     return source.Stroke(context, pixelSize);
