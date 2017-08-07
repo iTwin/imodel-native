@@ -138,7 +138,7 @@ TEST_F(CompatibilityTests, ModifyCurrent)
 //---------------------------------------------------------------------------------------
 TEST_F(CompatibilityTests, ModifyBaseline) // Must disable this test in the "Holdouts" branch
     {
-    SetUpFromBaselineCopy("2-0-1-53", TEST_NAME, BE_SQLITE_OK);
+    SetUpFromBaselineCopy("2-0-1-60", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db = GetDgnDb();
     ASSERT_EQ(2, db.Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_Subject)).BuildIdSet<DgnElementId>().size());
@@ -1495,7 +1495,7 @@ TEST_F(ECInstancesCompatibility, InstancesCompatibilitySeed)
 //+---------------+---------------+---------------+---------------+---------------+------------
 TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
     {
-    SetUpDbFromBaselineCopy("2-0-1-53", TEST_NAME, BE_SQLITE_OK);
+    SetUpDbFromBaselineCopy("2-0-1-60", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db= GetDgnDb();
 
@@ -1522,7 +1522,7 @@ TEST_F(ECInstancesCompatibility, ModifyPreservedBim)
 //+---------------+---------------+---------------+---------------+---------------+------------
 TEST_F(ECInstancesCompatibility, UpdateInstances)
     {
-    SetUpDbFromBaselineCopy("2-0-1-53", TEST_NAME, BE_SQLITE_OK);
+    SetUpDbFromBaselineCopy("2-0-1-60", TEST_NAME, BE_SQLITE_OK);
 
     DgnDbR db = GetDgnDb();
 
