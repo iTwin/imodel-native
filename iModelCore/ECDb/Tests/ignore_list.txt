@@ -21,5 +21,3 @@ ECSqlSelectPrepareTests.LikeOperator
 #TFS 516084
 SchemaRulesTestFixture.CircularStructReferences
 
-FileFormatCompatibilityTests.CompareDdl_NewFile
-
