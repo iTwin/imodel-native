@@ -218,6 +218,15 @@ public:
 //=======================================================================================
 struct PublisherContext : TileGenerator::ITileCollector
 {
+    struct ModelRange
+    {
+        DRange3d    m_range;
+        bool        m_isEcef;
+
+        ModelRange() : m_isEcef(false) { }
+        explicit ModelRange(DRange3dCR range, bool isEcef=false) : m_range(range), m_isEcef(isEcef) { }
+    };
+
     enum TextureMode
         {
         Embedded = 0,
@@ -263,7 +272,7 @@ protected:
     Transform                                   m_dbToTile;
     Transform                                   m_spatialToEcef;
     size_t                                      m_maxTilesetDepth;
-    bmap<DgnModelId, DRange3d>                  m_modelRanges;
+    bmap<DgnModelId, ModelRange>                m_modelRanges;
     BeMutex                                     m_mutex;
     bool                                        m_publishSurfacesOnly;
     TextureMode                                 m_textureMode;

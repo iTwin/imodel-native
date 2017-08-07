@@ -1778,7 +1778,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
     auto                getTileTree = nullptr == generateMeshTiles ? dynamic_cast<IGetTileTreeForPublishing*>(&model) : nullptr;
-    auto                getPublishedURL = nullptr == generateMeshTiles && nullptr == getTileTree ? dynamic_cast<IGetPublishedTilesetURLP>(&model) : nullptr;
+    auto                getPublishedURL = nullptr == generateMeshTiles && nullptr == getTileTree ? dynamic_cast<IGetPublishedTilesetInfoP>(&model) : nullptr;
 
     GeometricModelCP    geometricModel = model.ToGeometricModel();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
@@ -1797,7 +1797,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
 
     if (nullptr != getPublishedURL)
         {
-        return collector._AcceptPublishedTilesetURL(model, *getPublishedURL);
+        return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
         }
     else if (nullptr != getTileTree)
         {

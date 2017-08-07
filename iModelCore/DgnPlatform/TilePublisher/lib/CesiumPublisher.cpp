@@ -113,21 +113,16 @@ TileGeneratorStatus TilesetPublisher::_AcceptTile(TileNodeCR tile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileGeneratorStatus TilesetPublisher::_AcceptPublishedTilesetURL(DgnModelCR model, IGetPublishedTilesetURLCR getUrl)
+TileGeneratorStatus TilesetPublisher::_AcceptPublishedTilesetInfo(DgnModelCR model, IGetPublishedTilesetInfoR getUrl)
     {
-    auto geomModel = model.ToGeometricModel();
-    if (nullptr == geomModel)
+    PublishedTilesetInfo info = getUrl._GetPublishedTilesetInfo();
+    if (!info.IsValid())
         return TileGeneratorStatus::NoGeometry;
-
-    Utf8String url = getUrl._GetPublishedTilesetURL();
-    if (url.empty())
-        return TileGeneratorStatus::NoGeometry;
-
-    AxisAlignedBox3d modelRange = geomModel->QueryModelRange();
 
     BeMutexHolder lock(m_mutex);
-    m_directUrls.Insert(model.GetModelId(), url);
-    m_modelRanges[model.GetModelId()] = modelRange;
+    m_directUrls.Insert(model.GetModelId(), info.m_url);
+    m_modelRanges.Insert(model.GetModelId(), ModelRange(info.m_ecefRange, true));
+
     return TileGeneratorStatus::Success;
     }
 

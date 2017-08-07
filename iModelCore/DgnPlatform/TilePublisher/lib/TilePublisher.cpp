@@ -3306,7 +3306,7 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
         {
             {
             BeMutexHolder lock(m_mutex);
-            m_modelRanges[model.GetModelId()] = rootTile->GetTileRange();
+            m_modelRanges[model.GetModelId()] = ModelRange(rootTile->GetTileRange(), false);
             }
 
         WriteModelTileset(*rootTile);
@@ -3407,7 +3407,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     rootRange = DRange3d::NullRange();
     for (auto const& kvp : m_modelRanges)
-        rootRange.Extend(kvp.second);
+        {
+        // ###TODO: Invert if already ECEF...
+        rootRange.Extend(kvp.second.m_range);
+        }
 
     for (auto& modelId : viewedModels)
         {
@@ -3489,8 +3492,8 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             if (m_modelRanges.end() == modelRangeIter)
                 continue; // this model produced no tiles. ignore it.
 
-            DRange3d modelRange = modelRangeIter->second;
-            if (modelRange.IsNull())
+            ModelRange modelRange = modelRangeIter->second;
+            if (modelRange.m_range.IsNull())
                 {
                 BeAssert(false && "Null model range");
                 continue;
@@ -3504,15 +3507,22 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 
             if (nullptr != spatialModel)
                 {
-                m_spatialToEcef.Multiply(modelRange, modelRange);
-                modelJson["transform"] = TransformToJson(m_spatialToEcef);
+                if (modelRange.m_isEcef)
+                    {
+                    modelJson["transform"] = TransformToJson(Transform::FromIdentity());
+                    }
+                else
+                    {
+                    m_spatialToEcef.Multiply(modelRange.m_range, modelRange.m_range);
+                    modelJson["transform"] = TransformToJson(m_spatialToEcef);
+                    }
                 }
             else if (nullptr != sheetModel)
                 {
                 modelJson["attachedViews"] = GetViewAttachmentsJson(*sheetModel);
                 }
 
-            modelJson["extents"] = RangeToJson(modelRange);
+            modelJson["extents"] = RangeToJson(modelRange.m_range);
             modelJson["tilesetUrl"] = GetTilesetName(modelId, false);
 
 #ifdef PER_MODEL_CLASSIFIER
