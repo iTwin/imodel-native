@@ -24,18 +24,23 @@ struct UserInfoManager : RefCountedBase
 private:
     friend struct iModelConnection;
     WebServices::IWSRepositoryClientPtr m_repositoryClient;
-    UserInfoManager(WebServices::IWSRepositoryClientPtr wsRepositoryClient) : m_repositoryClient(wsRepositoryClient) {}
+    void InitializeUserCache(ICancellationTokenPtr cancellationToken = nullptr) const;
+    UserInfoManager(WebServices::IWSRepositoryClientPtr wsRepositoryClient) : m_repositoryClient(wsRepositoryClient) {};
     UserInfoManager() {};
-
 public:
     //! Returns all users info.
     //! @param[in] cancellationToken
-    IMODELHUBCLIENT_EXPORT UsersInfoTaskPtr QueryUsersInfo(ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT UsersInfoTaskPtr QueryAllUsersInfo(ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Returns user info by id.
     //! @param[in] userId
     //! @param[in] cancellationToken
     IMODELHUBCLIENT_EXPORT UserInfoTaskPtr QueryUserInfoById(Utf8StringCR userId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns multiple users info by ids.
+    //! @param[in] userIds
+    //! @param[in] cancellationToken
+    IMODELHUBCLIENT_EXPORT UsersInfoTaskPtr QueryUsersInfoByIds(bvector<Utf8String> userIds, ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE
