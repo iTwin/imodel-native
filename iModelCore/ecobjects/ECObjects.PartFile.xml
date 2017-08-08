@@ -304,6 +304,16 @@
             </Files>
         </Bindings>
     </Part>
+
+    <Part Name="SchemaRoundtrip" BentleyBuildMakeFile="tools/SchemaRoundtrip/SchemaRoundtrip.mke" ExcludePlatforms="Android*,Linux*,iOS*">
+        <SubPart PartName="ECObjectsNative" />
+        <Bindings>
+            <Files ProductDirectoryName="SchemaRoundtripExe">
+                Delivery/SchemaRoundtrip.exe
+                Delivery/SchemaRoundtrip.logging.config.xml
+            </Files>
+        </Bindings>
+    </Part>
     
     <Part Name="SchemaValidator" BentleyBuildMakeFile="tools/SchemaValidator/SchemaValidator.mke" ExcludePlatforms="Android*,Linux*,iOS*">
         <SubPart PartName="ECObjectsNative" />
@@ -349,6 +359,10 @@
         <ProductDirectory Name="SchemaResourceGeneratorExe"     Path=""/>
     </ProductDirectoryList>
 
+    <ProductDirectoryList ListName="SchemaRoundtrip">
+        <ProductDirectory Name="SchemaRoundtripExe"     Path=""/>
+    </ProductDirectoryList>
+
     <ProductDirectoryList ListName="SchemaValidator">
         <ProductDirectory Name="SchemaValidatorExe" Path=""/>
     </ProductDirectoryList>  
@@ -356,11 +370,13 @@
     <Product Name="ECObjectsTools">
         <SubPart PartName="SchemaConverter" />
         <SubPart PartName="SchemaResourceGenerator" />
+        <SubPart PartName="SchemaRoundtrip" />
         <SubPart PartName="SchemaValidator"/>
         <SubProduct ProductName="ECObjects"/>
         <Directories DirectoryListName="ECObjects" />
         <Directories DirectoryListName="SchemaConverter" />
         <Directories DirectoryListName="SchemaResourceGenerator" />
+        <Directories DirectoryListName="SchemaRoundtrip" />
         <Directories DirectoryListName="SchemaValidator" />
     </Product>
     
