@@ -2,7 +2,7 @@
 |
 |     $Source: formats/TriangulationPreserver.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel/Formats/Formats.h>
@@ -59,8 +59,23 @@ void TriangulationPreserver::AddTriangle (int* ptNums, int numPoints)
         return;
 
     DPoint3d pts[3];
-    pts[0] = m_pts[GetLocalId (ptNums[0])];
+    int num = GetLocalId(ptNums[0]);
+    BeAssert(-1 != num);
+    if (-1 == num)
+        return;
+
+    pts[0] = m_pts[num];
+
+    num = GetLocalId(ptNums[1]);
+    BeAssert(-1 != num);
+    if (-1 == num)
+        return;
     pts[1] = m_pts[GetLocalId (ptNums[1])];
+
+    num = GetLocalId(ptNums[2]);
+    BeAssert(-1 != num);
+    if (-1 == num)
+        return;
     pts[2] = m_pts[GetLocalId (ptNums[2])];
 
     int side = bcdtmMath_sideOf(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
