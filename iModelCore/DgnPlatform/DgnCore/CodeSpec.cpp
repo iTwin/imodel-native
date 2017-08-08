@@ -580,7 +580,7 @@ Json::Value DgnCode::ToJson2() const
     {
     Json::Value val;
     val[json_spec()] = m_specId.ToString(BeInt64Id::UseHex::Yes);
-	val[json_scope()] = m_scope;
+    val[json_scope()] = m_scope;
     val[json_value()] = m_value;
     return val;
     }
