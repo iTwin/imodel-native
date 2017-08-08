@@ -234,7 +234,7 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
             fclose(m_xyzFile);
             }
 
-        void SetReprojGCS(GeoCoordinates::GeoCoordInterpretation geocoordInterpretation, BaseGCSPtr& sourceGcs, BaseGCSPtr& destinationGcs)
+        void SetReprojGCS(GeoCoordInterpretation geocoordInterpretation, BaseGCSPtr& sourceGcs, BaseGCSPtr& destinationGcs)
             {
             m_geocoordInterpretation = geocoordInterpretation;
             m_sourceGcs = sourceGcs;
@@ -637,7 +637,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
         {
         BaseGCSPtr sourceGcs(BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr()));
 
-        auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
+        auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordInterpretation::XYZ : GeoCoordInterpretation::Cartesian;
 
         smPtsProviderCreator = ScalableMeshPointsProviderCreator::Create(m_scalableMesh, sourceGcs, m_destinationGcs, coordInterp);
         }
@@ -667,7 +667,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
 
     if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && !m_scalableMesh->IsCesium3DTiles())
         {                 
-        auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordinates::GeoCoordInterpretation::XYZ : GeoCoordinates::GeoCoordInterpretation::Cartesian;
+        auto coordInterp = m_scalableMesh->IsCesium3DTiles() ? GeoCoordInterpretation::XYZ : GeoCoordInterpretation::Cartesian;
 
         BaseGCSPtr sourceGcs(BaseGCS::CreateGCS(*m_scalableMesh->GetGCS().GetGeoRef().GetBasePtr()));
         
