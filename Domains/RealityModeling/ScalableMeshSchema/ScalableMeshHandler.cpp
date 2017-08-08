@@ -881,7 +881,7 @@ void ScalableMeshModel::_AddGraphicsToScene(ViewContextR context)
         //BeFileName smFileName(((this)->m_properties).m_fileId);        
         T_HOST.GetPointCloudAdmin()._ResolveFileName(m_path, (((this)->m_properties).m_fileId), GetDgnDb());
 
-        if (BeFileName::DoesPathExist(m_path.c_str()))
+        if (BeFileName::DoesPathExist(m_path.c_str()) || BeFileName::IsUrl(m_path.c_str()))
             {
             OpenFile(m_path, GetDgnDb());
             }
@@ -1453,7 +1453,9 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
             extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
             Transform       approxTransform;
 
-            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, *projGCS);
+			auto coordInterp = m_smPtr->IsCesium3DTiles() ? Dgn::GeoCoordInterpretation::XYZ : Dgn::GeoCoordInterpretation::Cartesian;
+
+            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, *projGCS);
             if (0 == status || 1 == status || 25 == status)
                 {                
                 DRange3d smExtentInDestGCS1;
@@ -2318,7 +2320,7 @@ void ScalableMeshModel::_ReadJsonProperties(Json::Value const& v)
         //BeFileName smFileName(((this)->m_properties).m_fileId);        
         T_HOST.GetPointCloudAdmin()._ResolveFileName(m_path, (((this)->m_properties).m_fileId), GetDgnDb());
 
-        if (BeFileName::DoesPathExist(m_path.c_str()))
+        if (BeFileName::DoesPathExist(m_path.c_str()) || BeFileName::IsUrl(m_path.c_str()))
         {
             OpenFile(m_path, GetDgnDb());
         }
