@@ -516,11 +516,11 @@ struct ElementAlignedBox3d : BoundingBox3d
     explicit ElementAlignedBox3d(DRange3dCR range) {DRange3d::InitFrom(range.low, range.high);}
 
     double GetLeft() const {return low.x;}
-    double GetFront() const {return low.y;}
-    double GetBottom() const {return low.z;}
+    double GetBottom() const {return low.y;}
+    double GetFront() const {return low.z;}
     double GetRight() const {return high.x;}
-    double GetBack() const {return high.y;}
-    double GetTop() const {return high.z;}
+    double GetTop() const {return high.y;}
+    double GetBack() const {return high.z;}
     double GetWidth() const {return XLength();}
     double GetDepth() const {return YLength();}
     double GetHeight() const {return ZLength();}
