@@ -13,9 +13,7 @@
 namespace BEU = BentleyApi::Units;
 namespace BEF = BentleyApi::Formatting;
 
-BEGIN_BENTLEY_ECOBJECT_NAMESPACE
-
-#define LOG (*NativeLogging::LoggingManager::GetLogger (L"Format"))
+BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 TEST(ECQuantityFormattingTests, Preliminary)
     {
@@ -26,4 +24,4 @@ TEST(ECQuantityFormattingTests, Preliminary)
     LOG.infov("================  End of Quantity Formatting Log  ===========================");
     }
 
-END_BENTLEY_ECOBJECT_NAMESPACE
+END_BENTLEY_ECN_TEST_NAMESPACE

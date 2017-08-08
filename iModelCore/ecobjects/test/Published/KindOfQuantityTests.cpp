@@ -14,6 +14,47 @@ BEGIN_BENTLEY_ECN_TEST_NAMESPACE
 
 struct KindOfQuantityTest : ECTestFixture {};
 
+struct KindOfQuantityDeserializationTest : ECTestFixture {};
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Basanta.Kharel   12/2015
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP entityClass;
+    PrimitiveECPropertyP prop;
+    KindOfQuantityP koq;
+
+    ECSchema::CreateSchema(schema, "KindOfQuantitySchema", "koq", 5, 0, 6);
+
+    schema->CreateEntityClass(entityClass, "Class");
+    entityClass->CreatePrimitiveProperty(prop, "Property");
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
+    koq->SetPersistenceUnit("FT(real)");
+    prop->SetKindOfQuantity(koq);
+
+    Utf8String schemaXML;
+    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXML, ECVersion::V3_1));
+
+    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
+
+    ECSchemaPtr refSchema;
+    SchemaReadStatus status = ECSchema::ReadFromXmlString(refSchema, schemaXML.c_str(), *schemaContext);
+    ASSERT_EQ(SchemaReadStatus::Success, status);
+
+    ECClassCP entityClassDup = refSchema->GetClassCP("Class");
+    ASSERT_NE(entityClassDup, nullptr);
+    PrimitiveECPropertyCP property = entityClassDup->GetPropertyP("Property")->GetAsPrimitiveProperty();
+    ASSERT_NE(property, nullptr);
+
+    auto resultKindOfQuantity = property->GetKindOfQuantity();
+    ASSERT_NE(resultKindOfQuantity, nullptr);
+    EXPECT_STREQ("MyKindOfQuantity", resultKindOfQuantity->GetName().c_str());
+    EXPECT_STREQ("FT(DefaultReal)", resultKindOfQuantity->GetPersistenceUnit().ToText(false).c_str());
+    }
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -66,7 +107,6 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationUnits)
     ECSchemaPtr schema;
     ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
     ASSERT_TRUE(schema.IsValid());
-
     
     KindOfQuantityP kindOfQuantity;
 
@@ -94,7 +134,38 @@ TEST_F(KindOfQuantityTest, RemoveAllPresentationUnits)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityTest, TestEmptyOrMissingName)
+TEST_F(KindOfQuantityTest, TestIncompatiblePersistenceAndPresentationUnits)
+    {
+    ECSchemaPtr schema;
+    ASSERT_EQ(ECObjectsStatus::Success, ECSchema::CreateSchema(schema, "TestKoQSchema", "koq", 1, 0, 0));
+    ASSERT_TRUE(schema.IsValid());
+
+    KindOfQuantityP koq;
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
+    EXPECT_TRUE(koq->SetPersistenceUnit("M"));
+    EXPECT_FALSE(koq->AddPresentationUnit("MG")) << "The Unit MG is from the MASS Phenomenon which is different than the Persistence Unit.";
+
+    KindOfQuantityP koq2;
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq2, "MyKindOfQuantity2"));
+    EXPECT_TRUE(koq2->AddPresentationUnit("MG"));
+    EXPECT_FALSE(koq2->SetPersistenceUnit("M")) << "The Unit MG is from the MASS Phenomenon which is different than the Presentation Unit.";
+
+    KindOfQuantityP koq3;
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq3, "MyKindOfQuantity3"));
+    EXPECT_TRUE(koq3->AddPresentationUnit("M"));
+    EXPECT_TRUE(koq3->SetPersistenceUnit("CM"));
+    EXPECT_FALSE(koq3->AddPresentationUnit("MG")) << "The Unit MG is from the MASS Phenomenon which is different than the existing Presentation and Persistence Unit.";
+
+    KindOfQuantityP koq4;
+    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq4, "MyKindOfQuantity4"));
+    EXPECT_TRUE(koq4->AddPresentationUnit("MG"));
+    EXPECT_FALSE(koq4->AddPresentationUnit("M")) << "The Unit M is from the LENGTH Phenomenon which is different than the existing Presentation Unit.";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    06/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingName)
     {
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -123,7 +194,7 @@ TEST_F(KindOfQuantityTest, TestEmptyOrMissingName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityTest, TestEmptyOrMissingRelativeError)
+TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingRelativeError)
     {
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -152,7 +223,7 @@ TEST_F(KindOfQuantityTest, TestEmptyOrMissingRelativeError)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityTest, TestEmptyOrMissingPersistenceUnit)
+TEST_F(KindOfQuantityDeserializationTest, TestEmptyOrMissingPersistenceUnit)
     {
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
@@ -179,48 +250,44 @@ TEST_F(KindOfQuantityTest, TestEmptyOrMissingPersistenceUnit)
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                                    Basanta.Kharel   12/2015
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(KindOfQuantityTest, KindOfQuantityTestTest)
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(KindOfQuantityDeserializationTest, TestIncompatiblePersistenceAndPresentationUnits)
     {
-    ECSchemaPtr schema;
-    ECEntityClassP entityClass;
-    PrimitiveECPropertyP prop;
-    KindOfQuantityP koq;
-
-    ECSchema::CreateSchema(schema, "KindOfQuantitySchema", "koq", 5, 0, 6);
-
-    schema->CreateEntityClass(entityClass, "Class");
-    entityClass->CreatePrimitiveProperty(prop, "Property");
-
-    EXPECT_EQ(ECObjectsStatus::Success, schema->CreateKindOfQuantity(koq, "MyKindOfQuantity"));
-    koq->SetPersistenceUnit("FT(real)");
-    prop->SetKindOfQuantity(koq);
-
-    Utf8String schemaXML;
-    EXPECT_EQ(SchemaWriteStatus::Success, schema->WriteToXmlString(schemaXML, ECVersion::V3_1));
-
-    ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
-
-    ECSchemaPtr refSchema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlString(refSchema, schemaXML.c_str(), *schemaContext);
-    ASSERT_EQ(SchemaReadStatus::Success, status);
-
-    ECClassCP entityClassDup = refSchema->GetClassCP("Class");
-    ASSERT_NE(entityClassDup, nullptr);
-    PrimitiveECPropertyCP property = entityClassDup->GetPropertyP("Property")->GetAsPrimitiveProperty();
-    ASSERT_NE(property, nullptr);
-
-    auto resultKindOfQuantity = property->GetKindOfQuantity();
-    ASSERT_NE(resultKindOfQuantity, nullptr);
-    EXPECT_STREQ("MyKindOfQuantity", resultKindOfQuantity->GetName().c_str());
-    EXPECT_STREQ("FT(DefaultReal)", resultKindOfQuantity->GetPersistenceUnit().ToText(false).c_str());
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" relativeError="10e-3" persistenceUnit="LUX" presentationUnits="M" />
+        </ECSchema>)xml";
+    ECTestUtility::ExpectSchemaDeserializationFailure(schemaXml);
+    }
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+        <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+            <KindOfQuantity typeName="MyKindOfQuantity" relativeError="10e-3" persistenceUnit="M" presentationUnits="LUX"/>
+        </ECSchema>)xml";
+    ECTestUtility::ExpectSchemaDeserializationFailure(schemaXml);
+    }
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <KindOfQuantity typeName="MyKindOfQuantity" relativeError="10e-3" persistenceUnit="M" presentationUnits="CM;LUX"/>
+    </ECSchema>)xml";
+    ECTestUtility::ExpectSchemaDeserializationFailure(schemaXml);
+    }
+    {
+    Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
+    <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+        <KindOfQuantity typeName="MyKindOfQuantity" relativeError="10e-3" persistenceUnit="LUX" presentationUnits="CM;MM"/>
+    </ECSchema>)xml";
+    ECTestUtility::ExpectSchemaDeserializationFailure(schemaXml);
+    }
     }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityTest, ExpectSuccessWhenKindOfQuantityIsAppliedToStructAndStructArrayPropertes)
+TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenKindOfQuantityIsAppliedToStructAndStructArrayPropertes)
     {
     Utf8CP schemaXml = "<?xml version='1.0' encoding='UTF-8'?>"
         "<ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>"
@@ -258,7 +325,7 @@ TEST_F(KindOfQuantityTest, ExpectSuccessWhenKindOfQuantityIsAppliedToStructAndSt
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                    Caleb.Shafer    09/2016
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityTest, ExpectSuccessWhenKindOfQuantityInherited)
+TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenKindOfQuantityInherited)
     {
     Utf8CP schemaXml = R"xml(<?xml version='1.0' encoding='UTF-8'?>
         <ECSchema schemaName='testSchema' version='01.00' alias='ts' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.1'>
@@ -308,7 +375,7 @@ TEST_F(KindOfQuantityTest, ExpectSuccessWhenKindOfQuantityInherited)
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityTest, ExpectSuccessWhenDeserializingSchemaWithKindOfQuantityInReferencedFile)
+TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenDeserializingSchemaWithKindOfQuantityInReferencedFile)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
     WString seedPath(ECTestFixture::GetTestDataPath(L"").c_str());
@@ -338,7 +405,7 @@ TEST_F(KindOfQuantityTest, ExpectSuccessWhenDeserializingSchemaWithKindOfQuantit
 //---------------------------------------------------------------------------------------
 // @bsimethod
 //---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(KindOfQuantityTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingString)
+TEST_F(KindOfQuantityDeserializationTest, ExpectSuccessWhenRoundtripKindOfQuantityUsingString)
     {
     ECSchemaPtr schema;
     ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);

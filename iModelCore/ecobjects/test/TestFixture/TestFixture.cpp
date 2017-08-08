@@ -12,6 +12,7 @@
 #include "TestFixture.h"
 
 USING_NAMESPACE_BENTLEY_LOGGING
+USING_NAMESPACE_BENTLEY_EC
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
   
@@ -51,7 +52,7 @@ WString ECTestFixture::GetTempDataPath(WCharCP dataFile)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Bill.Steinbock                  02/2011
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  ECTestFixture::GetDateTime ()
+Utf8String ECTestFixture::GetDateTime ()
     {
     struct tm timeinfo;
     BeTimeUtilities::ConvertUnixMillisToTm (timeinfo, BeTimeUtilities::GetCurrentTimeAsUnixMillis());   // GMT
@@ -63,6 +64,28 @@ Utf8String  ECTestFixture::GetDateTime ()
     strftime(buff, sizeof(buff), "%H:%M:%S", &timeinfo);
     dateTime.append (buff);
     return dateTime.c_str();
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+void ECTestUtility::ExpectSchemaDeserializationFailure(Utf8CP schemaXml, SchemaReadStatus expectedError)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    EXPECT_EQ(expectedError, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+// static
+void ECTestUtility::AssertSchemaDeserializationFailure(Utf8CP schemaXml, SchemaReadStatus expectedError)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    ASSERT_EQ(expectedError, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
     }
     
 END_BENTLEY_ECN_TEST_NAMESPACE

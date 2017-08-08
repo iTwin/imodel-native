@@ -24,4 +24,10 @@ public:
     static Utf8String GetDateTime();
     };
 
+struct ECTestUtility
+    {
+    static void ExpectSchemaDeserializationFailure(Utf8CP schemaXml, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml);
+    static void AssertSchemaDeserializationFailure(Utf8CP schemaXml, ECN::SchemaReadStatus expectedError = ECN::SchemaReadStatus::InvalidECSchemaXml);
+    };
+
 END_BENTLEY_ECN_TEST_NAMESPACE

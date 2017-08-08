@@ -39,12 +39,18 @@ bool KindOfQuantity::Verify() const
     
     for (Formatting::FormatUnitSetCR presFUS : m_presentationFUS)
         {
-        if (!presFUS.HasProblem())
-            continue;
-
-        LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet has a problem: %s",
-                   GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
-        isValid = false;
+        if (presFUS.HasProblem())
+            {
+            LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet has a problem: %s",
+                GetFullName().c_str(), presFUS.GetProblemDescription().c_str());
+            isValid = false;
+            }
+        else if ((!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presFUS.GetUnit(), m_persistenceFUS.GetUnit())))
+            {
+            LOG.errorv("Validation Error - KindOfQuantity '%s' presentation FormatUnitSet conflicts with the persistence FormatUnitSet %s.",
+                GetFullName().c_str(), m_persistenceFUS.ToText(false).c_str());
+            isValid = false;
+            }
         }
 
     return isValid;
@@ -132,11 +138,24 @@ Utf8StringCR KindOfQuantity::GetDescription() const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                   Caleb.Shafer                08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+bool KindOfQuantity::SetPersistenceUnit(Formatting::FormatUnitSet persistenceFUS)
+    {
+    if (persistenceFUS.HasProblem() || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(persistenceFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
+        return false;
+
+    m_persistenceFUS = persistenceFUS;
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                06/2017
 //---------------+---------------+---------------+---------------+---------------+-------
 bool KindOfQuantity::AddPresentationUnit(Formatting::FormatUnitSet presentationFUS)
     {
-    if (presentationFUS.HasProblem())
+    if (presentationFUS.HasProblem() || (!m_persistenceFUS.HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), m_persistenceFUS.GetUnit()))
+        || (!GetDefaultPresentationUnit().HasProblem() && !Units::Unit::AreCompatible(presentationFUS.GetUnit(), GetDefaultPresentationUnit().GetUnit())))
         return false;
 
     m_presentationFUS.push_back(presentationFUS);

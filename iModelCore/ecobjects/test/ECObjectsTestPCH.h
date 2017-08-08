@@ -15,6 +15,8 @@
 #include <Bentley/BeFileName.h>
 #include <Logging/bentleylogging.h>
 
+#define LOG (*NativeLogging::LoggingManager::GetLogger (L"ECObjectsNative"))
+
 #define BEGIN_BENTLEY_ECN_TEST_NAMESPACE  BEGIN_BENTLEY_NAMESPACE namespace ECNTests {
 #define END_BENTLEY_ECN_TEST_NAMESPACE    } END_BENTLEY_NAMESPACE
 

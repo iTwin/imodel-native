@@ -1945,7 +1945,7 @@ struct KindOfQuantity : NonCopyableClass
         //! Sets the Unit of measurement used for persisting the information
         //! @param[in]  value  The new value to apply
         //! @returns true if the persistence FormatUnitSet is valid, false if not
-        bool SetPersistenceUnit(Formatting::FormatUnitSet value) { m_persistenceFUS = value; return !m_persistenceFUS.HasProblem(); }
+        ECOBJECTS_EXPORT bool SetPersistenceUnit(Formatting::FormatUnitSet value);
         //! Gets the Unit of measurement used for persisting the information
         Formatting::FormatUnitSetCR GetPersistenceUnit() const { return m_persistenceFUS; };
 
