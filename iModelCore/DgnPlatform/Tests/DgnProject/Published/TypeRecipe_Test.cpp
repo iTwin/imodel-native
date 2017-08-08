@@ -100,7 +100,7 @@ DrawingModelPtr TypeTests::InsertRectangleAndLinesTemplate2d(TemplateRecipe2dCR 
         return nullptr;
 
     const double width = 0.2;
-    Utf8PrintfString rectanglePartName("%s-Rectangle", recipe.GetCode().GetValueCP());
+    Utf8PrintfString rectanglePartName("%s-Rectangle", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr rectanglePart = InsertGeometryPart(*definitionModel, rectanglePartName, *ICurvePrimitive::CreateRectangle(-width/2, -width/2, width/2, width/2, 0), GEOMETRY2D);
     if (!rectanglePart.IsValid())
         return nullptr;
@@ -108,7 +108,7 @@ DrawingModelPtr TypeTests::InsertRectangleAndLinesTemplate2d(TemplateRecipe2dCR 
     bvector<DSegment3d> segments;
     segments.push_back(DSegment3d::From(DPoint2d::From(-width/2, -width/2), DPoint2d::From(width/2, width/2)));
     segments.push_back(DSegment3d::From(DPoint2d::From(-width/2, width/2), DPoint2d::From(width/2, -width/2)));
-    Utf8PrintfString linesPartName("%s-Lines", recipe.GetCode().GetValueCP());
+    Utf8PrintfString linesPartName("%s-Lines", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr linesPart = InsertGeometryPart(*definitionModel, linesPartName, *CurveVector::Create(segments), GEOMETRY2D);
     if (!linesPart.IsValid())
         return nullptr;
@@ -143,7 +143,7 @@ DrawingModelPtr TypeTests::InsertCircleAndCrossTemplate2d(TemplateRecipe2dCR rec
         return nullptr;
 
     const double radius = 1.0;
-    Utf8PrintfString circlePartName("%s-Circle", recipe.GetCode().GetValueCP());
+    Utf8PrintfString circlePartName("%s-Circle", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr circlePart = InsertGeometryPart(*definitionModel, circlePartName, DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), radius), GEOMETRY2D);
     if (!circlePart.IsValid())
         return nullptr;
@@ -151,7 +151,7 @@ DrawingModelPtr TypeTests::InsertCircleAndCrossTemplate2d(TemplateRecipe2dCR rec
     bvector<DSegment3d> segments;
     segments.push_back(DSegment3d::From(DPoint2d::From(-radius, 0), DPoint2d::From(radius, 0)));
     segments.push_back(DSegment3d::From(DPoint2d::From(0, -radius), DPoint2d::From(0, radius)));
-    Utf8PrintfString crossPartName("%s-Cross", recipe.GetCode().GetValueCP());
+    Utf8PrintfString crossPartName("%s-Cross", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr crossPart = InsertGeometryPart(*definitionModel, crossPartName, *CurveVector::Create(segments), GEOMETRY2D);
     if (!crossPart.IsValid())
         return nullptr;
@@ -191,7 +191,7 @@ DrawingModelPtr TypeTests::InsertCircleTemplate2d(TemplateRecipe2dCR recipe)
         return nullptr;
 
     const double radius = 1.0;
-    Utf8PrintfString circlePartName("%s-Circle", recipe.GetCode().GetValueCP());
+    Utf8PrintfString circlePartName("%s-Circle", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr circlePart = InsertGeometryPart(*definitionModel, circlePartName, DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), radius), GEOMETRY2D);
     if (!circlePart.IsValid())
         return nullptr;
@@ -220,7 +220,7 @@ DrawingModelPtr TypeTests::InsertTriangleTemplate2d(TemplateRecipe2dCR recipe)
         return nullptr;
 
     const double length = 1.0;
-    Utf8PrintfString trianglePartName("%s-Triangle", recipe.GetCode().GetValueCP());
+    Utf8PrintfString trianglePartName("%s-Triangle", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr trianglePart = InsertGeometryPart(*definitionModel, trianglePartName, *ICurvePrimitive::CreateRegularPolygonXY(DPoint3d::FromZero(), length, 3, true), GEOMETRY2D);
     if (!trianglePart.IsValid())
         return nullptr;
@@ -249,7 +249,7 @@ DrawingModelPtr TypeTests::InsertRectangleTemplate2d(TemplateRecipe2dCR recipe)
         return nullptr;
 
     const double width = 1.0;
-    Utf8PrintfString rectanglePartName("%s-Rectangle", recipe.GetCode().GetValueCP());
+    Utf8PrintfString rectanglePartName("%s-Rectangle", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr rectanglePart = InsertGeometryPart(*definitionModel, rectanglePartName, *ICurvePrimitive::CreateRectangle(-width/2, -width/2, width/2, width/2, 0), GEOMETRY2D);
     if (!rectanglePart.IsValid())
         return nullptr;
@@ -510,7 +510,7 @@ DgnDbStatus TypeTests::InstantiateTemplate3d(PhysicalModelR instanceModel, Physi
         if (!group.IsValid())
             return DgnDbStatus::BadRequest;
 
-        group->SetUserLabel(type.GetCode().GetValueCP()); // WIP: should be Propery in TemplateInstanceGroup subclass
+        group->SetUserLabel(type.GetCode().GetValueUtf8CP()); // WIP: should be Propery in TemplateInstanceGroup subclass
         if (!group->Insert().IsValid())
             return DgnDbStatus::BadRequest;
         }
@@ -652,7 +652,7 @@ PhysicalModelPtr TypeTests::InsertTorusPipeTemplate(TemplateRecipe3dCR recipe)
     if (!definitionModel.IsValid())
         return nullptr;
 
-    Utf8PrintfString torusPipePartName("%s-TorusPipe", recipe.GetCode().GetValueCP());
+    Utf8PrintfString torusPipePartName("%s-TorusPipe", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr torusPipePart = InsertGeometryPart(*definitionModel, torusPipePartName, DgnTorusPipeDetail(DEllipse3d::FromCenterRadiusXY(DPoint3d::FromZero(), 1.0), 0.1, CAPPED));
     if (!torusPipePart.IsValid())
         return nullptr;
@@ -682,14 +682,14 @@ PhysicalModelPtr TypeTests::InsertCubeAndCylindersTemplate(TemplateRecipe3dCR re
         return nullptr;
 
     const double cubeWidth = 1.0;
-    Utf8PrintfString cubePartName("%s-Cube", recipe.GetCode().GetValueCP());
+    Utf8PrintfString cubePartName("%s-Cube", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr cubePart = InsertGeometryPart(*definitionModel, cubePartName, DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(cubeWidth/2, cubeWidth/2, cubeWidth/2), DPoint3d::From(cubeWidth, cubeWidth, cubeWidth), CAPPED));
     if (!cubePart.IsValid())
         return nullptr;
 
     const double cylinderRadius = 0.05;
     const double cylinderHeight = 0.1;
-    Utf8PrintfString cylinderPartName("%s-Cylinder", recipe.GetCode().GetValueCP());
+    Utf8PrintfString cylinderPartName("%s-Cylinder", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr cylinderPart = InsertGeometryPart(*definitionModel, cylinderPartName, DgnConeDetail(DPoint3d::FromZero(), DPoint3d::From(0, 0, cylinderHeight), cylinderRadius, cylinderRadius, CAPPED));
     if (!cylinderPart.IsValid())
         return nullptr;
@@ -727,7 +727,7 @@ PhysicalModelPtr TypeTests::InsertThreeSpheresTemplate(TemplateRecipe3dCR recipe
         return nullptr;
 
     const double radius = 0.25;
-    Utf8PrintfString spherePartName("%s-Sphere", recipe.GetCode().GetValueCP());
+    Utf8PrintfString spherePartName("%s-Sphere", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr spherePart = InsertGeometryPart(*definitionModel, spherePartName, DgnSphereDetail(DPoint3d::FromZero(), radius));
     if (!spherePart.IsValid())
         return nullptr;
@@ -763,14 +763,14 @@ PhysicalModelPtr TypeTests::InsertSlabAndColumnsTemplate(TemplateRecipe3dCR reci
 
     const double slabWidth = 1.0;
     const double slabHeight = 0.1;
-    Utf8PrintfString slabPartName("%s-Slab", recipe.GetCode().GetValueCP());
+    Utf8PrintfString slabPartName("%s-Slab", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr slabPart = InsertGeometryPart(*definitionModel, slabPartName, DgnBoxDetail::InitFromCenterAndSize(DPoint3d::From(slabWidth/2, slabWidth/2, slabHeight/2), DPoint3d::From(slabWidth, slabWidth, slabHeight), CAPPED));
     if (!slabPart.IsValid())
         return nullptr;
 
     const double columnRadius = 0.1;
     const double columnHeight = 0.25;
-    Utf8PrintfString columnPartName("%s-Column", recipe.GetCode().GetValueCP());
+    Utf8PrintfString columnPartName("%s-Column", recipe.GetCode().GetValueUtf8CP());
     DgnGeometryPartCPtr columnPart = InsertGeometryPart(*definitionModel, columnPartName, DgnConeDetail(DPoint3d::FromZero(), DPoint3d::From(0, 0, columnHeight), columnRadius, columnRadius, CAPPED));
     if (!columnPart.IsValid())
         return nullptr;

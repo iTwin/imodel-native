@@ -723,11 +723,11 @@ RedlineViewDefinitionPtr RedlineViewDefinition::Create(DgnDbStatus* outCreateSta
         }
 
     DefinitionModelR dictionary = db.GetDictionaryModel();
-    RedlineViewDefinitionPtr view = new RedlineViewDefinition(dictionary, redline->GetCode().GetValue().c_str(), 
+    RedlineViewDefinitionPtr view = new RedlineViewDefinition(dictionary, redline->GetCode().GetValueUtf8().c_str(), 
                                                               model.GetModelId(), *new CategorySelector(dictionary, ""), *new DisplayStyle2d(dictionary));
 
     //  The view always has the same name as the redline and its model
-    DgnCode code = CreateCode(dictionary, redline->GetCode().GetValue());
+    DgnCode code = CreateCode(dictionary, redline->GetCode().GetValueUtf8());
     if (!view->IsValidCode(code))
         {
         createStatus = DgnDbStatus::InvalidName;
@@ -904,7 +904,7 @@ DocumentListModelPtr DgnMarkupProject::GetRedlineListModel()
     if (modelId.IsValid())
         return Models().Get<DocumentListModel>(modelId);
 
-    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), partitionCode.GetValueCP());
+    DocumentPartitionCPtr partition = DocumentPartition::CreateAndInsert(*Elements().GetRootSubject(), partitionCode.GetValueUtf8CP());
     return partition.IsValid() ? DocumentListModel::CreateAndInsert(*partition) : nullptr;
     }
 

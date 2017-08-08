@@ -480,6 +480,61 @@ DgnCode CodeSpec::CreateCode(BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8Char DgnCodeValue::Fold(Utf8Char ch)
+    {
+    constexpr Utf8Char foldDelta = 'a' - 'A';
+    if (ch >= 'A' && ch <= 'Z')
+        ch += foldDelta;
+
+    return ch;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCodeValue::CompareResult DgnCodeValue::Compare(Utf8Char lhs, Utf8Char rhs)
+    {
+    lhs = Fold(lhs);
+    rhs = Fold(rhs);
+    return lhs == rhs ? CompareResult::Equal : (lhs < rhs ? CompareResult::Less : CompareResult::Greater);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCodeValue::CompareResult DgnCodeValue::Compare(Utf8StringCR lhs, Utf8StringCR rhs)
+    {
+    size_t lhsSize = lhs.size(),
+           rhsSize = rhs.size(),
+           minSize = std::min(lhsSize, rhsSize);
+
+    for (size_t i = 0; i < minSize; i++)
+        {
+        CompareResult cmp = Compare(lhs[i], rhs[i]);
+        if (CompareResult::Equal != cmp)
+            return cmp;
+        }
+
+    return lhsSize == rhsSize ? CompareResult::Equal : (lhsSize < rhsSize ? CompareResult::Less : CompareResult::Greater);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DgnCodeValue::Equals(Utf8CP str) const
+    {
+    for (size_t i = 0; i < size(); i++)
+        {
+        if (0 == str[i] || CompareResult::Equal != Compare(m_value[i], str[i]))
+            return false;
+        }
+
+    return 0 == str[size()];
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnCode DgnCode::CreateEmpty()
@@ -547,9 +602,11 @@ bool DgnCode::operator<(DgnCodeCR rhs) const
     if (GetCodeSpecId().GetValueUnchecked() != rhs.GetCodeSpecId().GetValueUnchecked())
         return GetCodeSpecId().GetValueUnchecked() < rhs.GetCodeSpecId().GetValueUnchecked();
 
-    int cmp = GetValue().CompareTo(rhs.GetValue());
-    if (0 != cmp)
-        return cmp < 0;
+    switch (GetValue().CompareTo(rhs.GetValue()))
+        {
+        case DgnCodeValue::CompareResult::Less: return true;
+        case DgnCodeValue::CompareResult::Greater: return false;
+        }
 
     return GetScopeString().CompareTo(rhs.GetScopeString()) < 0;
     }
@@ -581,7 +638,7 @@ Json::Value DgnCode::ToJson2() const
     Json::Value val;
     val[json_spec()] = m_specId.ToString(BeInt64Id::UseHex::Yes);
     val[json_scope()] = m_scope;
-    val[json_value()] = m_value;
+    val[json_value()] = m_value.GetUtf8();
     return val;
     }
 

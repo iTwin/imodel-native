@@ -13,9 +13,6 @@ CompatibilityTests.ModifyBaseline
 ECInstancesCompatibility.ModifyPreservedBim
 ECInstancesCompatibility.UpdateInstances
 
-#TFS 734755
-CodesManagerTest.Collation
-
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
