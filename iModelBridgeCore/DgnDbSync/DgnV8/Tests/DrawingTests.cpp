@@ -23,6 +23,7 @@ void AddAttachment(BentleyApi::BeFileNameCR attachmentFileName, DgnV8ModelP v8mo
     Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(attachmentFileName.c_str());
     ASSERT_EQ( BentleyApi::SUCCESS, v8model->CreateDgnAttachment(attachment, *moniker, modelrefName, true));
     ASSERT_TRUE(nullptr != attachment);        
+        attachment->SetNestDepth(99);
     ASSERT_EQ( BentleyApi::SUCCESS, attachment->WriteToModel());
     }
 /*---------------------------------------------------------------------------------**//**
@@ -65,6 +66,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(m_v8FileName.c_str());
         DgnV8Api::DgnAttachment* attachment;
         ASSERT_EQ(BentleyApi::SUCCESS, drawingModel->CreateDgnAttachment(attachment, *moniker, threeDModel->GetModelName(), true));
+        attachment->SetNestDepth(99);
         ASSERT_EQ(BentleyApi::SUCCESS, attachment->WriteToModel());
         v8editor.Save();
 
@@ -126,6 +128,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(m_v8FileName.c_str());
         DgnV8Api::DgnAttachment* attachment;
         ASSERT_EQ(BentleyApi::SUCCESS, sheetModel->CreateDgnAttachment(attachment, *moniker, L"Drawing1", true));
+        attachment->SetNestDepth(99);
         ASSERT_EQ(BentleyApi::SUCCESS, attachment->WriteToModel());
         v8editor.Save();
 
@@ -898,6 +901,7 @@ TEST_F(DrawingTests, AttachNameViewtoSheet)
         Bentley::DgnDocumentMonikerPtr moniker = DgnV8Api::DgnDocumentMoniker::CreateFromFileName(m_v8FileName.c_str());
         ASSERT_EQ(BentleyApi::SUCCESS, SheetModel->CreateDgnAttachment(attachment, *moniker, threeDModel->GetModelName(), true));
         ASSERT_TRUE(nullptr != attachment);
+        attachment->SetNestDepth(99);
 
         DgnV8Api::NamedViewPtr    namedView;
         EXPECT_TRUE(DgnV8Api::NamedViewStatus::Success == DgnV8Api::NamedView::Create(namedView, *v8editor.m_file, L"Test View"));

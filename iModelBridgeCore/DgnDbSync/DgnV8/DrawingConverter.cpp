@@ -456,7 +456,12 @@ void            Converter::MakeAttachmentsMatchRootAnnotationScale(DgnModelRefR 
 bvector<DgnV8Api::ElementId> Converter::SheetGetAttachmentsToBeUnnested(DgnV8ModelR sheetModel)
     {
     bvector<DgnV8Api::ElementId> attachmentIds;
-    for (auto attachment : *sheetModel.GetDgnAttachmentsP())
+
+    auto attachments = sheetModel.GetDgnAttachmentsP();
+    if (nullptr == attachments)
+        return attachmentIds;
+
+    for (auto attachment : *attachments)
         {
         if (nullptr == attachment->GetDgnModelP())
             continue;
@@ -496,6 +501,8 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
 
     //  Transform sheet-sheet attachments into sheet->drawing attachments.
     auto attachments = GetAttachments(sheetModel);
+    if (nullptr == attachments)
+        return;
     for (auto attachment : *attachments)
         {
         if (!attachment->IsSheet())

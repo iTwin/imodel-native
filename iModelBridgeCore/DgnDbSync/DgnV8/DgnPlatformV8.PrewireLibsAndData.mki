@@ -198,7 +198,7 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcis.dll : $(DgnV8Sdk)Dlls/SPAXAcis.dll
 $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisBase.dll : $(DgnV8Sdk)Dlls/SPAXAcisBase.dll
     $(LinkFirstDepToFirstTarget)
 
-%if !defined(DGNV8_DGNPLATFORM_SDK)
+%if exists($(DgnV8Sdk)Dlls/SPAXAcisCompositeEntitiesDS.dll)
 $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisCompositeEntitiesDS.dll : $(DgnV8Sdk)Dlls/SPAXAcisCompositeEntitiesDS.dll
     $(LinkFirstDepToFirstTarget)
 %endif
