@@ -701,7 +701,9 @@ void RealityDataConsole::List()
     else
         m_serverNodes = NodeNavigator::GetInstance().GetChildNodes(m_server, RealityDataService::GetRepoName(), m_currentNode->node, nodeResponse);
 
-    if(nodeResponse.body.ContainsI("not listable"))
+    if (nodeResponse.body.ContainsI("InstanceNotFound"))
+        DisplayInfo("This entity seems to have been removed. Perhaps by another user\n", DisplayOption::Error);
+    else if (nodeResponse.body.ContainsI("not listable"))
         DisplayInfo("This entity is not listable\n", DisplayOption::Error);
     else
         {
