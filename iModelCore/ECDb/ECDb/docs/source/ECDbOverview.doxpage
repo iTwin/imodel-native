@@ -251,6 +251,8 @@
     - @b Modify 
         - @ref BentleyApi::ECN::ECClass::GetDescription "Description"
         - @ref BentleyApi::ECN::ECClass::GetDisplayLabel "DisplayLabel"
+        - @ref BentleyApi::ECN::ECClass::GetBaseClasses "BaseClasses"
+            - Only empty (with no properties) Mixin type @ref BentleyApi::ECN::ECEntityClass "EntityClass"  can be @b Added or @b Deleted from baseClass list
         - @ref BentleyApi::ECN::ECClassModifier "ECClassModifier"
             - from @b Sealed to @b None, but only if 
                 - the class is no ECRelationshipClass 
@@ -263,6 +265,7 @@
             - mapped to a shared column (see ShareColumns custom attribute in @ref ClassMapCustomAttributeDescription)
             - not used in an @ref BentleyApi::ECN::ECStructClass "ECStructClass"
             - not overridden
+            - @ref BentleyApi::ECN::NavigationECProperty cannot be deleted
     - @b CustomAttributes on the ECClass
         - @b Add, @b delete, @b modify
 
