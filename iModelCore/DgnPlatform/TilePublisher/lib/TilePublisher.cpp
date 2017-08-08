@@ -3016,9 +3016,21 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
 
+    // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
+    m_projectExtents = db.GeoLocation().ComputeProjectExtents();
+
+#if defined(WIP_MESHTILE_3SM)
+    m_isEcef = true; // ###TODO: Remove after YII...
+#else
+    m_isEcef = false;
+#endif
+
     // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
-    DPoint3d        origin = db.GeoLocation().GetProjectExtents().GetCenter();
-    m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
+    DPoint3d        origin = m_projectExtents.GetCenter();
+    if (m_isEcef)
+        m_dbToTile.InitIdentity();
+    else
+        m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
 
     DgnGCS*         dgnGCS = db.GeoLocation().GetDgnGCS();
     DPoint3d        ecfOrigin, ecfNorth;
@@ -3065,7 +3077,10 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     rMatrix.SetColumn (zVector, 2);
     rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
 
-    m_spatialToEcef =  Transform::From (rMatrix, ecfOrigin);
+    if (m_isEcef)
+        m_spatialToEcef.InitIdentity(); // ###TODO: ecfNorth...
+    else
+        m_spatialToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3709,7 +3724,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
-    AxisAlignedBox3d projectExtents = GetDgnDb().GeoLocation().GetProjectExtents();
+    AxisAlignedBox3d projectExtents = m_projectExtents;
     spatialTransform.Multiply(projectExtents, projectExtents);
     json["projectExtents"] = RangeToJson(projectExtents);
     json["projectTransform"] = TransformToJson(m_spatialToEcef);

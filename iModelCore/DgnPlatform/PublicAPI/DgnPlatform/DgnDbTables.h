@@ -661,6 +661,11 @@ public:
     DGNPLATFORM_EXPORT void InitializeProjectExtents();
 
     //! @private
+    //! Compute the project extents by querying the volume of all the spatial models. Should only be used after conversion from external formats.
+    //! ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
+    DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents() const;
+
+    //! @private
     //! Update the global origin. @note Changing global origin invalidates all existing xyz coordinates stored in the BIM.
     DGNPLATFORM_EXPORT void SetGlobalOrigin(DPoint3dCR origin);
 
