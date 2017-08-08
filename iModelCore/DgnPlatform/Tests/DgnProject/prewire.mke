@@ -30,6 +30,6 @@ $(BuildContext)Delivery/UnitTests/DgnPlatformTestDomain.h : $(DgnPlatformAPISrc)
 #------------------------------------------------------------------------------------------
 #   Deliver CompatibilityTestFiles for use by unit tests
 #------------------------------------------------------------------------------------------
-$(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/2-0-1-53/ : $(SrcRoot)CompatibilityTestFiles/2-0-1-53/
+$(BuildContext)Delivery/UnitTests/CompatibilityTestFiles/2-0-1-60/ : $(SrcRoot)CompatibilityTestFiles/2-0-1-60/
     $(LinkFirstDepToFirstTargetAsDirectory)
 

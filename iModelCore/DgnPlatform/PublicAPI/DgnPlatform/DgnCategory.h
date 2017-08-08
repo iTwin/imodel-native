@@ -45,7 +45,7 @@ public:
     BE_PROP_NAME(Description)
 
     BE_JSON_NAME(appearance)
-    BE_JSON_NAME(descr)
+    BE_JSON_NAME(description)
 
     //! The parameters that can determine how graphics on a SubCategory appear when drawn.
     //! @ingroup GROUP_DgnCategory

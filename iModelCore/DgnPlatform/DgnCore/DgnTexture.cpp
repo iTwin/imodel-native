@@ -62,6 +62,16 @@ DgnDbStatus DgnTexture::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, EC
     return DgnDbStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void DgnTexture::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+#if defined (TOFROM_JSON)
+#endif
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
