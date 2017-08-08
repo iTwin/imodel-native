@@ -1586,7 +1586,7 @@ public:
     static LineStyleElementPtr Create(DgnDbR db) { return new LineStyleElement(db); }
     LineStyleElementPtr CreateCopy() const { return MakeCopy<LineStyleElement>(); }
 
-    Utf8String GetName() const { return GetCode().GetValue(); }
+    Utf8String GetName() const { return GetCode().GetValue().GetUtf8(); }
     void SetName(Utf8CP value) { T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
     Utf8String GetDescription() const { return GetPropertyValueString(LINESTYLE_PROP_Description); }
     void SetDescription(Utf8CP value) { SetPropertyValue(LINESTYLE_PROP_Description, value); }

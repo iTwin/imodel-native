@@ -60,7 +60,7 @@ public:
     explicit DimensionStyle(CreateParams const& params) : T_Super(params) {}
     DimensionStylePtr CreateCopy() const {return MakeCopy<DimensionStyle>();}
 
-    Utf8String GetName() const {return GetCode().GetValue();}
+    Utf8String GetName() const {return GetCode().GetValueUtf8();}
     void SetName(Utf8CP value) {T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
 
     static DgnElementId QueryId(DgnDbR db, Utf8CP name) {return db.Elements().QueryElementIdByCode(CreateCode(db, name));}

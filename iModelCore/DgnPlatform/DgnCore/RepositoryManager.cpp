@@ -359,7 +359,7 @@ bool BriefcaseManagerBase::CreateCodesTable(Utf8CP tableName)
     {
     return BE_SQLITE_OK == m_localDb.CreateTable(tableName, CODE_CodeSpecId " INTEGER,"
                                                             CODE_Scope " TEXT,"
-                                                            CODE_Value " TEXT,"
+                                                            CODE_Value " TEXT COLLATE NOCASE,"
                                                             "PRIMARY KEY" CODE_Values);
     }
 
@@ -473,7 +473,7 @@ void BriefcaseManagerBase::InsertCodes(DgnCodeSet const& codes, TableType tableT
 
         stmt->BindId(CodeColumn::CodeSpec+1, code.GetCodeSpecId());
         stmt->BindText(CodeColumn::Scope+1, code.GetScopeString(), Statement::MakeCopy::No);
-        stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
+        stmt->BindText(CodeColumn::Value+1, code.GetValue().GetUtf8(), Statement::MakeCopy::No);
         stmt->Step();
         stmt->Reset();
         }
@@ -521,7 +521,7 @@ void BriefcaseManagerBase::Cull(DgnCodeSet& codes)
 
         stmt->BindId(CodeColumn::CodeSpec+1, code.GetCodeSpecId());
         stmt->BindText(CodeColumn::Scope+1, code.GetScopeString(), Statement::MakeCopy::No);
-        stmt->BindText(CodeColumn::Value+1, code.GetValue(), Statement::MakeCopy::No);
+        stmt->BindText(CodeColumn::Value+1, code.GetValueUtf8(), Statement::MakeCopy::No);
         if (BE_SQLITE_ROW == stmt->Step())
             iter = codes.erase(iter);
         else
@@ -2097,7 +2097,7 @@ void DgnCode::ToJson(JsonValueR value) const
     {
     RepositoryJson::BeInt64IdToJson(value[JSON_Id], m_specId);
     value[JSON_Scope] = m_scope;
-    value[JSON_Name] = m_value;
+    value[JSON_Name] = m_value.GetUtf8();
     }
 
 /*---------------------------------------------------------------------------------**//**

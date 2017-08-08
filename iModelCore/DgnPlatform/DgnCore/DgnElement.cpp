@@ -299,7 +299,7 @@ Utf8String DgnElement::_GetInfoString(Utf8CP delimiter) const
         {
         DgnCategoryCPtr category = DgnCategory::Get(GetDgnDb(), geom->GetCategoryId());
         if (category.IsValid())
-            out += DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()) + category->GetCode().GetValue() + delimiter;
+            out += DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()) + category->GetCode().GetValue().GetUtf8() + delimiter;
         }
 
     return out + DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()) + GetModel()->GetName();
@@ -1093,7 +1093,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     if (m_code.IsEmpty())
         statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue));
     else
-        statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
+        statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().GetUtf8().c_str(), IECSqlBinder::MakeCopy::No);
 
     statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeSpec), m_code.GetCodeSpecId());
     statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScopeElementId(GetDgnDb()));
@@ -2499,7 +2499,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeValue,
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetUtf8CP(el.GetCode().GetValue().c_str());
+            value.SetUtf8CP(el.GetCode().GetValueUtf8().c_str());
             return DgnDbStatus::Success;
             },
         

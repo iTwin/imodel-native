@@ -137,7 +137,7 @@ Utf8String DgnModel::GetName() const
     {
     // WIP: keep this method around to avoid having to change too much source code. Use the CodeValue of the modeled element as this model's name.
     DgnElementCPtr modeledElement = GetModeledElement();
-    return modeledElement.IsValid() ? modeledElement->GetCode().GetValue() : Utf8String();
+    return modeledElement.IsValid() ? modeledElement->GetCode().GetValue().GetUtf8() : Utf8String();
     }
 
 /*---------------------------------------------------------------------------------**//**

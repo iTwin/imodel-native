@@ -8,9 +8,6 @@ IndirectLocksTest.*
 
 BackwardsCompatibilityTests.OpenDgndbInCurrent # only ran by testing team after build for Compatibility Testing.
 
-#TFS 734755
-CodesManagerTest.Collation
-
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------

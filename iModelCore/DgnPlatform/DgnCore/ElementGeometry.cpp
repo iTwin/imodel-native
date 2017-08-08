@@ -2912,8 +2912,8 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
                 DgnSubCategoryId   subCategoryId((uint64_t)ppfb->subCategoryId());
                 DgnSubCategoryCPtr subCat = (subCategoryId.IsValid() ? DgnSubCategory::Get(db, subCategoryId) : nullptr);
 
-                if (subCat.IsValid() && nullptr != subCat->GetCode().GetValueCP())
-                    output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategory: %s - Id: %" PRIu64 "\n", subCat->GetCode().GetValueCP(), subCategoryId.GetValue()).c_str());
+                if (subCat.IsValid() && nullptr != subCat->GetCode().GetValueUtf8CP())
+                    output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategory: %s - Id: %" PRIu64 "\n", subCat->GetCode().GetValueUtf8CP(), subCategoryId.GetValue()).c_str());
                 else if (subCategoryId.IsValid())
                     output._DoOutputLine(Utf8PrintfString("OpCode::BasicSymbology - SubCategoryId: %" PRIu64 "\n", subCategoryId.GetValue()).c_str());
                 else
@@ -3237,7 +3237,7 @@ void GeometryStreamIO::Debug(IDebugOutput& output, GeometryStreamCR stream, DgnD
             if (!partGeometry.IsValid())
                 continue;
 
-            output._DoOutputLine(Utf8PrintfString("\n[--- Part: %s - Id: %" PRIu64 " ---]\n\n", partGeometry->GetCode().GetValueCP(), partId.GetValue()).c_str());
+            output._DoOutputLine(Utf8PrintfString("\n[--- Part: %s - Id: %" PRIu64 " ---]\n\n", partGeometry->GetCode().GetValueUtf8CP(), partId.GetValue()).c_str());
             GeometryStreamIO::Debug(output, partGeometry->GetGeometryStream(), db, true);
             }
         }

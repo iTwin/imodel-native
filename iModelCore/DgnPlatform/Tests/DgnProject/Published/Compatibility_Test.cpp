@@ -401,7 +401,7 @@ void CompatibilityTests::ModifyElementCode(DgnDbR db, DgnElementId elementId)
     ASSERT_TRUE(element.IsValid());
     ASSERT_FALSE(element->GetUserProperties(json_inserted()).isNull());
     DgnCode oldCode = element->GetCode();
-    DgnCode newCode(oldCode.GetCodeSpecId(), oldCode.GetScopeElementId(db), oldCode.GetValue() + "Updated");
+    DgnCode newCode(oldCode.GetCodeSpecId(), oldCode.GetScopeElementId(db), oldCode.GetValueUtf8() + "Updated");
     element->SetCode(newCode);
     element->SetUserProperties(json_updated(), DateTime::GetCurrentTime().ToString());
     ASSERT_TRUE(element->Update().IsValid());
@@ -1006,7 +1006,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                 ASSERT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("Category", ECN::ECValue(categoryId)));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(*m_db))));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP())));
 
                 //Creating Element of the specified instance
                 DgnElementPtr ele= createElement(ClassInstance);
@@ -1058,7 +1058,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(m_defaultModelId)));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(*m_db))));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP())));
                 ASSERT_EQ(ECN::ECObjectsStatus::Success, ClassInstance->SetValue("Category", ECN::ECValue(m_defaultCategoryId)));
 
                 //Creating Element of the specified instance
@@ -1133,7 +1133,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(drawingModel->GetModelId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(*m_db))));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP())));
 
                 //Creating Element of the specified instance
                 DgnElementPtr ele = createElement(ClassInstance);
@@ -1196,7 +1196,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
 
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(*m_db))));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP())));
 
                 //Creating Element of the specified instance
                 DgnElementPtr ele = createElement(ClassInstance);
@@ -1256,7 +1256,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(model_id)));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(*m_db))));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP())));
 
                 //Creating Element of the specified instance
                 DgnElementPtr ele = createElement(ClassInstance);
@@ -1309,7 +1309,7 @@ struct ECInstancesCompatibility : public DgnDbTestFixture
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Model", ECN::ECValue(DgnModel::RepositoryModelId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(*m_db))));
-                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
+                ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP())));
                 ASSERT_EQ(ECObjectsStatus::Success, ClassInstance->SetValue("Parent", ECN::ECValue(rootSubject->GetElementId())));
 
                 //Creating Element of the specified instance
