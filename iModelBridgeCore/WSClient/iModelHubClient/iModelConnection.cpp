@@ -44,9 +44,7 @@ IHttpHandlerPtr            customHandler
     wsRepositoryClient->SetCredentials(credentials);
     wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
 
-    m_wsRepositoryClient = wsRepositoryClient;
-    m_versionsManager = VersionsManager(m_wsRepositoryClient);
-    m_userInfoManager = UserInfoManager(m_wsRepositoryClient);
+    SetRepositoryClient(wsRepositoryClient);
     }
 
 //---------------------------------------------------------------------------------------
