@@ -49,6 +49,17 @@
     else {                                                                      \
         return Nan::ThrowTypeError(msg);                                        \
     }
+
+#define OPTIONAL_ARGUMENT_STRING(i, var, msg)                                   \
+    v8::Local<v8::String> localString;                                          \
+    if (info.Length() <= (i) || (info[i]->IsUndefined() || info[i]->IsNull()))  \
+        localString = v8::String::Empty(info.GetIsolate());                     \
+    else if (info[i]->IsString())                                               \
+        localString = info[i]->ToString();                                      \
+    else                                                                        \
+        return Nan::ThrowTypeError(msg);                                        \
+    Nan::Utf8String var(localString);
+
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DGN
@@ -451,10 +462,12 @@ struct NodeAddonECDb : Nan::ObjectWrap
 
     struct ExecuteQueryWorker : WorkerBase<DbResult>
         {
-        Utf8String m_ecsql;
+        Utf8String m_ecsql; // input
+        Json::Value m_bindings; // input
         Json::Value m_rowsJson;  // output
 
-        ExecuteQueryWorker(NodeAddonECDb* db, Utf8CP ecsql) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue) {}
+        ExecuteQueryWorker(NodeAddonECDb* db, Utf8CP ecsql, Utf8CP strBindings) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql), m_rowsJson(Json::arrayValue),
+            m_bindings(Utf8String::IsNullOrEmpty(strBindings) ? Json::nullValue : Json::Value::From(strBindings)) {}
 
         static NAN_METHOD(Start)
             {
@@ -465,7 +478,9 @@ struct NodeAddonECDb : Nan::ObjectWrap
                 return Nan::ThrowTypeError("ECDb must be open to complete this operation");
 
             REQUIRE_ARGUMENT_STRING(0, ecsql, "Argument 0 must be an ECSql string");
-            (new ExecuteQueryWorker(db, *ecsql))->ScheduleAndReturnPromise(info);
+            OPTIONAL_ARGUMENT_STRING(1, strBindings, "Argument 1 must be a JSON string specifying the bindings");
+
+            (new ExecuteQueryWorker(db, *ecsql, *strBindings))->ScheduleAndReturnPromise(info);
             }
 
         void Execute() override
@@ -481,7 +496,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
                 Reject();
                 }
 
-            m_status = IModelJs::ExecuteQuery(m_errmsg, m_rowsJson, *stmt);
+            m_status = IModelJs::ExecuteQuery(m_errmsg, m_rowsJson, *stmt, m_bindings);
             if (m_status != BE_SQLITE_DONE)
                 Reject();
             }
@@ -491,6 +506,50 @@ struct NodeAddonECDb : Nan::ObjectWrap
             auto json = Json::FastWriter::ToString(m_rowsJson);
             r->Resolve(Nan::New(json.c_str()).ToLocalChecked());
             }
+        };
+
+    struct ExecuteStatementWorker : WorkerBase<DbResult>
+        {
+        Utf8String m_ecsql;
+        Json::Value m_bindings;
+
+        ExecuteStatementWorker(NodeAddonECDb* db, Utf8CP ecsql, Utf8CP strBindings) : WorkerBase(db, BE_SQLITE_OK), m_ecsql(ecsql),
+            m_bindings(Utf8String::IsNullOrEmpty(strBindings) ? Json::nullValue : Json::Value::From(strBindings))
+            {}
+
+        static NAN_METHOD(Start)
+            {
+            Nan::HandleScope scope;
+            NodeAddonECDb* db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
+
+            if (!db->m_ecdb.IsValid() || !db->m_ecdb->IsDbOpen())
+                return Nan::ThrowTypeError("ECDb must be open to complete this operation");
+
+            REQUIRE_ARGUMENT_STRING(0, ecsql, "Argument 0 must be an ECSql string");
+            OPTIONAL_ARGUMENT_STRING(1, strBindings, "Argument 1 must be a JSON string specifying the bindings");
+
+            (new ExecuteStatementWorker(db, *ecsql, *strBindings))->ScheduleAndReturnPromise(info);
+            }
+
+        void Execute() override
+            {
+            JsECDbR ecdb = *m_addon->m_ecdb;
+            BeSqliteDbMutexHolder serializeAccess(ecdb); // hold mutex, so that we have a chance to get last ECDb error message
+
+            CachedECSqlStatementPtr stmt = ecdb.GetPreparedECSqlStatement(m_ecsql.c_str());
+            if (!stmt.IsValid())
+                {
+                m_errmsg = IModelJs::GetLastEcdbIssue();
+                m_status = BE_SQLITE_ERROR;
+                Reject();
+                }
+
+            m_status = IModelJs::ExecuteStatement(m_errmsg, *stmt, m_bindings);
+            if (m_status != BE_SQLITE_DONE)
+                Reject();
+            }
+
+        void _ResolvePromise(T_ResolverLocal &r) override { r->Resolve(v8::Integer::New(v8::Isolate::GetCurrent(), m_status)); }
         };
 
 private:
@@ -538,6 +597,7 @@ public:
         Nan::SetPrototypeMethod(t, "deleteInstance", DeleteInstanceWorker::Start);
         Nan::SetPrototypeMethod(t, "containsInstance", ContainsInstanceWorker::Start);
         Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);
+        Nan::SetPrototypeMethod(t, "executeStatement", ExecuteStatementWorker::Start);
 
         Nan::SetAccessor(t->InstanceTemplate(), Nan::New("IsDbOpen").ToLocalChecked(), OpenGetter);
 
@@ -793,7 +853,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 Reject();
                 }
 
-            m_status = IModelJs::ExecuteQuery(m_errmsg, m_rowsJson, *stmt);
+            m_status = IModelJs::ExecuteQuery(m_errmsg, m_rowsJson, *stmt, Json::nullValue);
             if (m_status != BE_SQLITE_DONE)
                 Reject();
             }

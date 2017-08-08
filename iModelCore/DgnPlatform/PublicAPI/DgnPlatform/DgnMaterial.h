@@ -93,7 +93,7 @@ public:
         {
         SetPaletteName(paletteName);
         if (parentMaterialId.IsValid())
-            m_parentRelClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_RenderMaterialOwnsRenderMaterials);
+            m_parent.m_relClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_RenderMaterialOwnsRenderMaterials);
         }
 
     RenderMaterialId GetMaterialId() const {return RenderMaterialId(GetElementId().GetValue());} //!< Returns the Id of this RenderMaterial.

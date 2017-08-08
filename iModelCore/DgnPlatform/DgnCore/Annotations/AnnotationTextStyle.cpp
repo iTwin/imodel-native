@@ -89,6 +89,17 @@ DgnDbStatus AnnotationTextStyle::_ReadSelectParams(BeSQLite::EC::ECSqlStatement&
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Jeff.Marker     11/2015
 //---------------------------------------------------------------------------------------
+void AnnotationTextStyle::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+#if defined (TOFROM_JSON)
+#endif
+    }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
 static DgnDbStatus bindParams(BeSQLite::EC::ECSqlStatement& stmt, AnnotationTextStyleCR style)
     {
     bvector<Byte> data;
