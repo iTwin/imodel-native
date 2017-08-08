@@ -11,7 +11,7 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include <GeometryUtils.h>
+#include <ConstraintSystem/ConstraintSystemApi.h>
 #include "PublicApi\GridArcSurface.h"
 #include "PublicApi\GridPlaneSurface.h"
 

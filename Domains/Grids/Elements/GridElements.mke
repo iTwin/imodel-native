@@ -10,17 +10,17 @@ CCompPDBName = $(AppName)
 
 o = $(OutputRootDir)build/ConceptBuilding/GridElements/
 
-dirToSearch = $(GridsPublicApi)
-%include cincapnd.mki
+#dirToSearch = $(GridsPublicApi)
+#%include cincapnd.mki
 
-dirToSearch = $(ConstraintModelPublicApi)
-%include cincapnd.mki
+#dirToSearch = $(ConstraintModelPublicApi)
+#%include cincapnd.mki
 
-dirToSearch = $(BuildingUtilsPublicApi)
-%include cincapnd.mki
+#dirToSearch = $(BuildingUtilsPublicApi)
+#%include cincapnd.mki
 
-dirToSearch = $(BuildingUnitsPublicApi)
-%include cincapnd.mki
+#dirToSearch = $(BuildingUnitsPublicApi)
+#%include cincapnd.mki
 
 nameToDefine = __GRIDELEMENTS_BUILD__
 %include cdefapnd.mki

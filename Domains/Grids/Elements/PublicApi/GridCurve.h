@@ -11,7 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include <GridsMacros.h>
+#include <Grids/Domain/GridsMacros.h>
 #include "IntersectionCurve.h"
 #include "GridSurface.h"
 

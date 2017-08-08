@@ -11,9 +11,9 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include <GridsMacros.h>
+#include <ConstraintSystem/ConstraintSystemApi.h>
+#include <Grids/Domain/GridsMacros.h>
 #include "GridSurface.h"
-#include <IConstrainable.h>
 
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (GridPlaneSurface)
 

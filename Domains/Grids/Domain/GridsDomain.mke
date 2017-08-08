@@ -15,17 +15,17 @@ CCompPDBName = $(AppName)
 
 o = $(OutputRootDir)build/ConceptBuilding/GridsDomain/
 
-dirToSearch = $(GridsPublicApi)
-%include cincapnd.mki
+#dirToSearch = $(GridsPublicApi)
+#%include cincapnd.mki
 
-dirToSearch = $(GridElementsPublicApi)
-%include cincapnd.mki
+#dirToSearch = $(GridElementsPublicApi)
+#%include cincapnd.mki
 
-dirToSearch = $(GridHandlersPublicApi)
-%include cincapnd.mki
+#dirToSearch = $(GridHandlersPublicApi)
+#%include cincapnd.mki
 
-dirToSearch = $(ConstraintModelPublicApi)
-%include cincapnd.mki
+#dirToSearch = $(ConstraintModelPublicApi)
+#%include cincapnd.mki
 
 nameToDefine = __GRIDSDOMAIN_BUILD__
 %include cdefapnd.mki

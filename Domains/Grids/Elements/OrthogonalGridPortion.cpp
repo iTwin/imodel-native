@@ -12,9 +12,8 @@
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
 #include "PublicApi\GridPlaneSurface.h"
-#include <DimensionHandler.h>
-#include <BuildingUtils.h>
-#include <GeometryUtils.h>
+//#include <DimensionHandler.h>
+#include <ConstraintSystem/ConstraintSystemApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN

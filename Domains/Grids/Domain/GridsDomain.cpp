@@ -5,14 +5,14 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "PublicApi/GridsDomain.h"
-#include <DrivingSurfaceHandler.h>
-#include <GridSurfaceHandler.h>
-#include <GridPlaneSurfaceHandler.h>
-#include <PortionHandlers.h>
-#include <IntersectionCurveHandlers.h>
-#include <GridArcSurfaceHandler.h>
-#include <GridSurfaceCreatesGridCurveHandler.h>
+#include <Grids/Domain/GridsDomain.h>
+#include <Grids/Handlers/DrivingSurfaceHandler.h>
+#include <Grids/Handlers/GridSurfaceHandler.h>
+#include <Grids/Handlers/GridPlaneSurfaceHandler.h>
+#include <Grids/Handlers/PortionHandlers.h>
+#include <Grids/Handlers/IntersectionCurveHandlers.h>
+#include <Grids/Handlers/GridArcSurfaceHandler.h>
+#include <Grids/Handlers/GridSurfaceCreatesGridCurveHandler.h>
 #include <DgnPlatform/DgnCategory.h>
 
 #define GRIDLINE_STYLE_NAME "GridlineStyle1"
