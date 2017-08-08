@@ -2215,6 +2215,7 @@ BentleyStatus  CreateMaterialJson(Json::Value& matJson, MeshCR mesh,  DisplayPar
         matJson["materialId"] = displayParams.GetMaterialId().GetValue();
 
     matJson["class"] = (uint16_t) displayParams.GetClass();
+    matJson["ignoreLighting"] = displayParams.IgnoresLighting();
 
     // GraphicsParams...
     matJson["fillColor"] = displayParams.GetFillColor();
