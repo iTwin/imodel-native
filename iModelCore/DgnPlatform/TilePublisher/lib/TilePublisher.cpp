@@ -59,7 +59,15 @@ Utf8String      getJsonString(Json::Value const& value)
 
     return string;
     }
-
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String PublishTileData::GetJsonString() const
+    {
+    // TFS#734860: Missing padding following feature table json in i3dm tiles...
+    return getJsonString(m_json);
+    }
 
 //=======================================================================================
 // We use a hierarchical batch table to organize features by element and subcategory,

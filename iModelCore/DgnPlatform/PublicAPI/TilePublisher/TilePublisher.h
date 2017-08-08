@@ -106,8 +106,7 @@ struct  PublishTileData
     void AddBinaryData(void const* data, size_t size);
     void PadBinaryDataToBoundary(size_t boundarySize);
     template<typename T> void AddBufferView(Utf8CP name, T const& bufferData);
-    Utf8String GetJsonString() const { return Json::FastWriter().write(m_json); }
-
+    Utf8String GetJsonString() const;
 };
 
 //=======================================================================================
