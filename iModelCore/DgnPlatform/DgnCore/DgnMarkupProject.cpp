@@ -91,6 +91,16 @@ DgnDbStatus MarkupExternalLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void MarkupExternalLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+#if defined (TOFROM_JSON)
+#endif
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    04/2016
 //---------------------------------------------------------------------------------------
 void MarkupExternalLink::_CopyFrom(DgnElementCR other)

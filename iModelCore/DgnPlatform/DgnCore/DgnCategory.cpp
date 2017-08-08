@@ -203,7 +203,7 @@ void DgnSubCategory::_ToJson(JsonValueR val, JsonValueCR opts) const
     T_Super::_ToJson(val, opts);
 
     val[json_appearance()] = m_data.m_appearance.ToJson();
-    val[json_descr()] = m_data.m_descr;
+    val[json_description()] = m_data.m_descr;
     }
 
 /*---------------------------------------------------------------------------------**//**
