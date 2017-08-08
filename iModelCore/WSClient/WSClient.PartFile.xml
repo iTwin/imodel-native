@@ -531,7 +531,7 @@
     
     <Part Name="UnitTests-Published" DeferType="BuildUnitTests" 
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
-        BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS"
+        BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS -dBUILD_AGGREGATE_TESTS"
         >
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
@@ -895,7 +895,11 @@
         <SubPart PartName="BeJsonCpp"                   PartFile="BeJsonCpp"        Repository="Libsrc-JsonCpp"/>
         <SubPart PartName="BeCurl"                      PartFile="BeCurl"           Repository="Libsrc-Curl"/>
         <SubPart PartName="BeJavaScript"                PartFile="BePortableUi"     Repository="BePortableUi"/>
-        <SubPart PartName="LoggingManagedInterop"       PartFile="LoggingSdk"       Repository="LoggingSdk"/>
+        <SubPart PartName="LoggingManagedInteropShim"/>
+    </Part>
+
+    <Part Name="LoggingManagedInteropShim" OnlyPlatforms="x64">
+        <SubPart PartName="LoggingManagedInterop" PartFile="LoggingSDK" Repository="LoggingSDK"/>
     </Part>
 
 </BuildContext>

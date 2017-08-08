@@ -120,3 +120,82 @@ StatusTaskPtr VersionsManager::UpdateVersion(VersionInfoCR version, ICancellatio
             }
         });
     }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Viktorija.Adomauskaite           02/2017
+//---------------------------------------------------------------------------------------
+ChangeSetsInfoTaskPtr VersionsManager::GetVersionChangeSets(Utf8String versionId, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "iModelConnection::GetVersionChangeSets";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    auto versionResult = GetVersionById(versionId, cancellationToken)->GetResult();
+    if (!versionResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, versionResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(versionResult.GetError()));
+        }
+
+    auto result = m_connection->GetChangeSetById(versionResult.GetValue()->GetChangeSetId())->GetResult();
+    if (!result.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(result.GetError()));
+        }
+
+    uint64_t changeSetIndex = result.GetValue()->GetIndex();
+
+    Utf8String filter;
+    filter.Sprintf("%s+le+%I64d", ServerSchema::Property::Index, changeSetIndex);
+
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
+    query.SetFilter(filter);
+
+    return m_connection->ChangeSetsFromQueryInternal(query, false, cancellationToken);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Viktorija.Adomauskaite           02/2017
+//---------------------------------------------------------------------------------------
+ChangeSetsInfoTaskPtr VersionsManager::GetChangeSetsBetweenVersions(Utf8String firstVersionId, Utf8String secondVersionId, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "iModelConnection::GetChangeSetsBetweenVersions";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    auto versionResult = GetVersionById(firstVersionId, cancellationToken)->GetResult();
+    if (!versionResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, versionResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(versionResult.GetError()));
+        }
+    std::deque<ObjectId> changeSetIds;
+    changeSetIds.push_back(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, versionResult.GetValue()->GetChangeSetId()));
+    versionResult = GetVersionById(secondVersionId, cancellationToken)->GetResult();
+    if (!versionResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, versionResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(versionResult.GetError()));
+        }
+    changeSetIds.push_back(ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet, versionResult.GetValue()->GetChangeSetId()));
+    auto query = m_connection->CreateChangeSetsByIdQuery(changeSetIds);
+
+    auto changeSetsQueryResult = m_connection->GetChangeSetsInternal(query, true, cancellationToken)->GetResult();
+    if (!changeSetsQueryResult.IsSuccess())
+        return CreateCompletedAsyncTask(ChangeSetsInfoResult::Error(changeSetsQueryResult.GetError()));
+
+    uint64_t changeSetIndex1 = 0;
+    uint64_t changeSetIndex2 = 0;
+    auto changeSets = changeSetsQueryResult.GetValue();
+    changeSetIndex1 = changeSets.at(0)->GetIndex();
+    changeSetIndex2 = changeSets.at(1)->GetIndex();
+
+    Utf8String filter;
+    filter.Sprintf("%s+gt+%I64d+and+(%s+le+%I64d)", ServerSchema::Property::Index,
+                   changeSetIndex1 < changeSetIndex2 ? changeSetIndex1 : changeSetIndex2,
+                   ServerSchema::Property::Index,
+                   changeSetIndex1 > changeSetIndex2 ? changeSetIndex1 : changeSetIndex2);
+    query = WSQuery(ServerSchema::Schema::iModel, ServerSchema::Class::ChangeSet);
+    query.SetFilter(filter);
+
+    return m_connection->ChangeSetsFromQueryInternal(query, false, cancellationToken);
+    }

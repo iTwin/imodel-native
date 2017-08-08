@@ -25,7 +25,13 @@ private:
     void CreateInitialSeedDb();
     void InitLogging();
 protected:
+    static double s_lastProgressBytesTransfered;
+    static double s_lastProgressBytesTotal;
     ScopediModelHubHost *m_pHost;
+
+    Request::ProgressCallback CreateProgressCallback();
+    void CheckProgressNotified();
+    void CheckNoProgress();
 public:
     virtual void SetUp() override;
     virtual void TearDown() override;

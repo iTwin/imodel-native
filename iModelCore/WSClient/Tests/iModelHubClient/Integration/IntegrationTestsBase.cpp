@@ -8,6 +8,7 @@
 #include "IntegrationTestsHelper.h"
 #include "IntegrationTestsBase.h"
 #include <WebServices/iModelHub/Client/Client.h>
+#include <WebServices/iModelHub/Client/ClientHelper.h>
 #include <WebServices/iModelHub/Client/Configuration.h>
 #include <WebServices/Configuration/UrlProvider.h>
 #include <WebServices/Connect/ConnectSignInManager.h>
@@ -18,8 +19,12 @@ USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_IMODELHUB
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_IMODELHUB_UNITTESTS
+USING_NAMESPACE_BENTLEY_WEBSERVICES
 #define DEFAULT_LANGUAGE_CODE "en"
 #define EXPECT_STATUS(STAT, EXPR) EXPECT_EQ(RepositoryStatus:: STAT, (EXPR))
+
+double IntegrationTestsBase::s_lastProgressBytesTransfered = 0;
+double IntegrationTestsBase::s_lastProgressBytesTotal = 0;
 
 L10N::SqlangFiles GetSqlangFiles(BeFileNameCR assets)
     {
@@ -53,6 +58,45 @@ void IntegrationTestsBase::SetUp()
     Initialize(m_pHost);
     CreateInitialSeedDb();
     Configuration::SetPredownloadChangeSetsEnabled(false);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             08/2017
+//---------------------------------------------------------------------------------------
+Request::ProgressCallback IntegrationTestsBase::CreateProgressCallback()
+    {
+    s_lastProgressBytesTransfered = 0;
+    s_lastProgressBytesTotal = 0;
+
+    return [](double bytesTransfered, double bytesTotal)
+        {
+        EXPECT_GE(bytesTransfered, s_lastProgressBytesTransfered);
+        if (s_lastProgressBytesTotal > 0)
+            {
+            EXPECT_EQ(bytesTotal, s_lastProgressBytesTotal);
+            }
+        
+        s_lastProgressBytesTransfered = bytesTransfered;
+        s_lastProgressBytesTotal = bytesTotal;
+        };
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             08/2017
+//---------------------------------------------------------------------------------------
+void IntegrationTestsBase::CheckProgressNotified()
+    {
+    EXPECT_GT(s_lastProgressBytesTotal, 0);
+    EXPECT_LE(s_lastProgressBytesTransfered, s_lastProgressBytesTotal);
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Algirdas.Mikoliunas             08/2017
+//---------------------------------------------------------------------------------------
+void IntegrationTestsBase::CheckNoProgress()
+    {
+    EXPECT_EQ(s_lastProgressBytesTransfered, 0);
+    EXPECT_EQ(s_lastProgressBytesTotal, 0);
     }
 
 void IntegrationTestsBase::TearDown()
@@ -219,54 +263,6 @@ struct StubLocalState : public IJsonLocalState
     };
 
 //---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas           05/2017
-//---------------------------------------------------------------------------------------
-bool SignInWithRetry(ConnectSignInManagerPtr manager, Credentials credentials, int retryCount)
-    {
-    SignInResult signInResult;
-
-    for (int i = 0; i <= retryCount; i++)
-        {
-        signInResult = manager->SignInWithCredentials(credentials)->GetResult();
-        if (signInResult.IsSuccess())
-            return true;
-        }
-
-    Utf8String errorMessage;
-    errorMessage.Sprintf("IMS signIn failed: %s", signInResult.GetError().GetMessage().c_str());
-    NativeLogging::LoggingManager::GetLogger(LOGGER_NAMESPACE_IMODELHUB)->error(errorMessage.c_str());
-    return false;
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Karolis.Dziedzelis            07/2016
-//---------------------------------------------------------------------------------------
-Utf8String QueryProjectId(Utf8String projectNr, Credentials credentials)
-    {
-    UrlProvider::Initialize(IntegrationTestSettings::Instance().GetEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
-    Utf8String imodelId = "BentleyCONNECT.Global--CONNECT.GLOBAL";
-
-    WebServices::ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo();
-    auto manager = ConnectSignInManager::Create(clientInfo, nullptr, StubLocalState::Instance());
-    if (!SignInWithRetry(manager, credentials, 1))
-        return nullptr;
-
-    auto authHandler = manager->GetAuthenticationHandler(UrlProvider::Urls::ConnectWsgGlobal.Get());
-    auto client = WSRepositoryClient::Create(UrlProvider::Urls::ConnectWsgGlobal.Get(), imodelId, clientInfo, nullptr, authHandler);
-
-    WSQuery query("GlobalSchema", "Project");
-    query.SetSelect("$id");
-    query.SetFilter(Utf8PrintfString("Active+eq+true+and+Number+eq+'%s'", projectNr.c_str()));
-
-    auto result = client->SendQueryRequest(query)->GetResult();
-    if (!result.IsSuccess())
-        return nullptr;
-
-    JsonValueCR instance = result.GetValue().GetJsonValue()["instances"][0];
-    return instance["instanceId"].asString();
-    }
-
-//---------------------------------------------------------------------------------------
 //@bsimethod                                     Eligijus.Mauragas             01/2016
 //---------------------------------------------------------------------------------------
 ClientPtr IntegrationTestsBase::SetUpClient (Utf8StringCR host, Credentials credentials, IHttpHandlerPtr customHandler)
@@ -276,18 +272,19 @@ ClientPtr IntegrationTestsBase::SetUpClient (Utf8StringCR host, Credentials cred
 
     if (IntegrationTestSettings::Instance().IsIms())
         {
-        AuthenticationHandlerPtr authHandler = nullptr;
-        Utf8String projectId;
         UrlProvider::Initialize(IntegrationTestSettings::Instance().GetEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
+        ClientHelper::Initialize(clientInfo, StubLocalState::Instance());
+
         auto manager = ConnectSignInManager::Create(clientInfo, customHandler, StubLocalState::Instance());
-        
-        if (SignInWithRetry(manager, credentials, 1))
-            authHandler = manager->GetAuthenticationHandler(host);
-        else
+        SignInResult signInResult = manager->SignInWithCredentials(credentials)->GetResult();
+        if (!signInResult.IsSuccess())
             return nullptr;
 
-        projectId = QueryProjectId(IntegrationTestSettings::Instance().GetProjectNr(), credentials);
-        client = Client::Create(clientInfo, authHandler);
+        auto clientHelper = ClientHelper::GetInstance();
+        client = clientHelper->SignInWithManager(manager, IntegrationTestSettings::Instance().GetEnvironment());
+
+        WSError wsError;
+        Utf8String projectId = clientHelper->QueryProjectId(&wsError, IntegrationTestSettings::Instance().GetProjectNr());
         client->SetProject(projectId);
         }
     else
@@ -331,7 +328,7 @@ iModelInfoPtr IntegrationTestsBase::CreateNewiModel (ClientCR client, Utf8String
 iModelInfoPtr IntegrationTestsBase::CreateNewiModelFromDb(ClientCR client, DgnDbR db)
     {
     //Upload the seed file to the server
-    auto createResult = client.CreateNewiModel(db)->GetResult();
+    auto createResult = client.CreateNewiModel(db, true, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(createResult);
     return createResult.GetValue();
     }
@@ -352,7 +349,7 @@ iModelConnectionPtr IntegrationTestsBase::ConnectToiModel(ClientCR client, iMode
 //---------------------------------------------------------------------------------------
 BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfoCR imodelInfo, bool pull)
     {
-    auto acquireResult = client.AcquireBriefcaseToDir (imodelInfo, m_pHost->GetOutputDirectory(), pull)->GetResult ();
+    auto acquireResult = client.AcquireBriefcaseToDir (imodelInfo, m_pHost->GetOutputDirectory(), pull, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult ();
     EXPECT_SUCCESS(acquireResult);
 
     BeFileName dbPath = acquireResult.GetValue ()->GetLocalPath();
@@ -361,7 +358,7 @@ BriefcasePtr IntegrationTestsBase::AcquireBriefcase (ClientCR client, iModelInfo
     DgnDbPtr db = DgnDb::OpenDgnDb (nullptr, dbPath, DgnDb::OpenParams (DgnDb::OpenMode::ReadWrite));
     EXPECT_TRUE(db.IsValid());
 
-    auto briefcaseResult = client.OpenBriefcase(db, false)->GetResult();
+    auto briefcaseResult = client.OpenBriefcase(db, false, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(briefcaseResult);
 
     return briefcaseResult.GetValue();
