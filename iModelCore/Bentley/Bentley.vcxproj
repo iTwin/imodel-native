@@ -30,7 +30,6 @@
     <ClInclude Include="PublicAPI\BentleyManagedUtil\ScopedDisposable.h" />
     <ClInclude Include="PublicAPI\BentleyManagedUtil\StringInterop.h" />
     <ClInclude Include="PublicAPI\Bentley\Base64Utilities.h" />
-    <ClInclude Include="PublicAPI\Bentley\IFileOpenProxy.h" />
     <ClInclude Include="PublicAPI\Bentley\BeAssert.h" />
     <ClInclude Include="PublicAPI\Bentley\BeAtomic.h" />
     <ClInclude Include="PublicAPI\Bentley\BeConsole.h" />
