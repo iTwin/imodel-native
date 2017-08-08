@@ -415,7 +415,12 @@ public:
     //! Sets RepositoryClient.
     //! @param[in] client
     //! @private
-    void SetRepositoryClient(IWSRepositoryClientPtr client) { m_wsRepositoryClient = client; }
+    void SetRepositoryClient(IWSRepositoryClientPtr client)
+        {
+        m_wsRepositoryClient = client;
+        m_userInfoManager = UserInfoManager(client);
+        m_versionsManager = VersionsManager(client);
+        }
 
     //! Gets VersionsManager
 	//! @return Versions manager
