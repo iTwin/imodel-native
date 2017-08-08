@@ -611,3 +611,11 @@ DgnProjectPackageTest.EnforceLinkTableFor11Relationship
 
 # Fails after the merge from bim0200holdouts
 CategoryTests.ValidateCategoryClass
+
+ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # bim0200, x64, NDEBUG
+    # [ RUN      ] ChangeSummaryTestFixture.ElementChildRelationshipChanges
+    # F:\Bim0200\src\DgnPlatform\Tests\DgnProject\Published\ChangeSummary_Test.cpp(648): error:       Expected: 3
+    # To be equal to: instance.MakeValueIterator().QueryCount()
+    #       Which is: 2
+    # [  FAILED  ] ChangeSummaryTestFixture.ElementChildRelationshipChanges (83 ms)
