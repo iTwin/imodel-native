@@ -194,6 +194,8 @@ private:
 
     //NEEDS_WORK_MS : Modify remove mutable
     mutable IScalableMeshPtr                m_smPtr;
+    Transform                               m_smToModelUorTransform;
+    Transform                               m_modelUorToSmTransform;
     mutable bool                            m_tryOpen;
     mutable BentleyApi::Dgn::AxisAlignedBox3d       m_range;
 
@@ -241,6 +243,7 @@ protected:
     TerrainModel::IDTM* _GetDTM(ScalableMesh::DTMAnalysisType type) override;
     void _RegisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
     bool _UnregisterTilesChangedEventListener(ITerrainTileChangedHandler* eventListener) override;
+
 
     SCALABLEMESH_SCHEMA_EXPORT void _AddTerrainGraphics(TerrainContextR context) const override;
     SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;

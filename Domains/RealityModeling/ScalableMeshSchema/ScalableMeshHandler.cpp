@@ -49,28 +49,6 @@ AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     return m_range;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
-    {
-    if (m_smPtr.IsNull())
-        {
-        BeAssert(false && "You need to initialize m_smPtr during V8 conversion so we can get the 3sm model range");
-
-        if (!m_tryOpen)
-            {
-            // HACK. Somebody else needs to fix this.
-            WString fileNameW(((this)->m_properties).m_fileId.c_str(), true);
-            BeFileName smFileName;
-            smFileName.AppendString(fileNameW.c_str());
-            const_cast<ScalableMeshModel&>(*this).OpenFile(smFileName, GetDgnDb());
-            m_tryOpen = true;
-            }
-        }
-
-    return _GetRange();
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/17
@@ -81,6 +59,25 @@ PublishedTilesetInfo ScalableMeshModel::_GetPublishedTilesetInfo()
         return PublishedTilesetInfo();
 
     return PublishedTilesetInfo(Utf8String(GetPath()), _GetRange());
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre     8/2017
+//----------------------------------------------------------------------------------------
+AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
+    {        
+    AxisAlignedBox3d range(DRange3d::NullRange());
+
+    if (m_smPtr.IsValid()) 
+        { 
+        m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(range));
+        Transform transform(m_smPtr->GetReprojectionTransform());
+
+        transform.Multiply(range, range);
+        }    
+    
+    return range;
     }
 
 //----------------------------------------------------------------------------------------
@@ -1721,15 +1718,18 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     scale.x = 1;
     scale.y = 1;
     scale.z = 1;
+    
+    DgnGCS* projGCS = dgnProject.GeoLocation().GetDgnGCS();
 
     if (gcs.HasGeoRef())
         {
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));
         dgnGcsPtr->UorsFromCartesian(scale, scale);
 
-        DgnGCSPtr projGCS = dgnProject.GeoLocation().GetDgnGCS();
-        if (projGCS.IsValid() && !projGCS->IsEquivalent(*dgnGcsPtr))
+        if (projGCS != nullptr && !projGCS->IsEquivalent(*dgnGcsPtr))
             {
+            dgnGcsPtr->SetReprojectElevation(true);
+
             DRange3d smExtent, smExtentUors;
             m_smPtr->GetRange(smExtent);
             Transform trans;
@@ -1740,20 +1740,44 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
             extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
             Transform       approxTransform;
 
-            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, *projGCS);
-            if (0 == status || 1 == status)
-                m_smPtr->SetReprojection(*projGCS, approxTransform);
+            auto coordInterp = m_smPtr->IsCesium3DTiles() ? Dgn::GeoCoordInterpretation::XYZ : Dgn::GeoCoordInterpretation::Cartesian;
+
+            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, *projGCS);
+            if (0 == status || 1 == status || 25 == status)
+                {
+                DRange3d smExtentInDestGCS1;
+                approxTransform.Multiply(smExtentInDestGCS1, smExtentUors);
+                m_smToModelUorTransform = Transform::FromProduct(approxTransform, trans);
+
+                DRange3d smExtentInDestGCS;
+                m_smToModelUorTransform.Multiply(smExtentInDestGCS, smExtent);
+                }
+            else
+                {
+                m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
+                }
+            }
+        else
+            {
+            m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
             }
         }
     else
         {
-        if (dgnProject.GeoLocation().GetDgnGCS()!=nullptr)
-            dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
+        dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
+        assert(scale.x == 1 && scale.y == 1 && scale.z == 1);
+        m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
         }
 
-    DPoint3d translation = {0,0,0};
+    m_smPtr->SetReprojection(*projGCS, m_smToModelUorTransform);
+
+    DPoint3d translation = { 0,0,0 };
 
     m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);
+
+    bool invertResult = m_modelUorToSmTransform.InverseOf(m_smToModelUorTransform);
+    assert(invertResult);
+
 
     // NEEDS_WORK_SM
     /*
