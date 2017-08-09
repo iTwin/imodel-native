@@ -19,5 +19,3 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 ECSqlSelectPrepareTests.LikeOperator
 
 
-FileFormatCompatibilityTests.CompareDdl_NewFile
-
