@@ -55,7 +55,6 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
         return SUCCESS;
 
     std::vector<ClassMapCP> baseClasses;
-
     for (ECClassCP baseClass : contextClass.GetBaseClasses())
         {
         ClassMap const* baseClassMap = ecdb.Schemas().GetDbMap().GetClassMap(*baseClass);
@@ -71,14 +70,6 @@ BentleyStatus ColumnMapContext::QueryInheritedColumnMaps(ColumnMaps& columnMaps,
 
         baseClasses.push_back(baseClassMap);
         }
-
-
-    if (baseClasses.size() > 1)
-        {
-        BeAssert(false && "Expecting zero or one base class");
-        return ERROR;
-        }
-
 
     for (ClassMap const* baseClassMap : baseClasses)
         if (Query(columnMaps, *baseClassMap, Filter::InheritedAndLocal, nullptr) != SUCCESS)

@@ -39,7 +39,6 @@ struct DbMap final : NonCopyableClass
         ClassMappingStatus AddClassMap(ClassMapPtr&) const;
         BentleyStatus GetRelationshipConstraintClassMaps(SchemaImportContext&, std::set<ClassMap const*>&, ECN::ECClassCR, bool recursive) const;
         static void GatherRootClasses(ECN::ECClassCR ecclass, std::set<ECN::ECClassCP>& doneList, std::set<ECN::ECClassCP>& rootClassSet, std::vector<ECN::ECClassCP>& rootClassList, std::vector<ECN::ECRelationshipClassCP>& rootRelationshipList, std::vector<ECN::ECEntityClassCP>& rootMixins);
-
     public:
         explicit DbMap(ECDbCR ecdb) : m_ecdb(ecdb), m_dbSchema(ecdb), m_lightweightCache(ecdb) {}
         ~DbMap() {}
