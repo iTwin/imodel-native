@@ -1,0 +1,13 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: StructuralCommon/StructuralCommon.prewire.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+$(targetAPIDir)StructuralCommon : $(_MakeFilePath)StructuralCommon/PublicAPI/StructuralCommon
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(targetSchemasDir)StructuralCommon.ecschema.xml : $(_MakeFilePath)StructuralCommon\StructuralCommon.ecschema.xml
+    $(LinkFirstDepToFirstTarget)

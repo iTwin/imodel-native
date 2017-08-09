@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/StructuralDomain/StructuralDomainApi.h $
+|     $Source: StructuralCommon/PublicAPI/StructuralCommon/StructuralCommonApi.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -9,6 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 
-#include "StructuralCommon\StructuralCommonApi.h"
-#include "StructuralPhysical\StructuralPhysicalApi.h"
-#include "StructuralDomainUtilities.h"
+#include "StructuralCommonDefinitions.h"
+#include "StructuralCommonDomain.h"
+#include "StructuralPhysicalModel.h"
+#include "StructuralTypeDefinitionModel.h"
