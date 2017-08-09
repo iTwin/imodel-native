@@ -7,11 +7,11 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <IntersectionCurve.h>
-#include <GridCurve.h>
-#include <GridLine.h>
-#include <GridArc.h>
-#include <GridSpline.h>
+#include <Grids/Elements/IntersectionCurve.h>
+#include <Grids/Elements/GridCurve.h>
+#include <Grids/Elements/GridLine.h>
+#include <Grids/Elements/GridArc.h>
+#include <Grids/Elements/GridSpline.h>
 #include <DgnPlatform/ElementHandler.h>
 #include <DgnPlatform/ViewController.h>
 

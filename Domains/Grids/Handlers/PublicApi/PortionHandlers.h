@@ -7,14 +7,14 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <SurfaceSet.h>
-#include <GridPortion.h>
-#include <OrthogonalGridPortion.h>
-#include <RadialGridPortion.h>
-#include <SketchGridPortion.h>
+#include <Grids/Elements/SurfaceSet.h>
+#include <Grids/Elements/GridPortion.h>
+#include <Grids/Elements/OrthogonalGridPortion.h>
+#include <Grids/Elements/RadialGridPortion.h>
+#include <Grids/Elements/SketchGridPortion.h>
 #include <DgnPlatform/ElementHandler.h>
 #include <DgnPlatform/ViewController.h>
-#include <GridSurface.h>
+#include <Grids/Elements/GridSurface.h>
 
 BEGIN_GRIDS_NAMESPACE
 

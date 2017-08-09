@@ -3,12 +3,11 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include <GeometryUtils.h>
-#include <BuildingUtils.h>
+#include <ConstraintSystem/ConstraintSystemApi.h>
 #include "PublicApi\GridArcSurface.h"
 #include "PublicApi\GridPlaneSurface.h"
-#include <UnitConverter.h>
-#include <DimensionHandler.h>
+#include <ConstraintSystem/ConstraintSystemApi.h>
+//#include <DimensionHandler.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN

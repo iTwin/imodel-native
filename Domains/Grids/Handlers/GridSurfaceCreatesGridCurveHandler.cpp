@@ -16,9 +16,9 @@
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/RangeIndex.h>
 #include <DgnPlatform/DgnBRep/PSolidUtil.h>
-#include <GeometryUtils.h>
-#include <GridCurve.h>
-#include <GridPlaneSurface.h>
+#include <ConstraintSystem/ConstraintSystemApi.h>
+#include <Grids/Elements/GridCurve.h>
+#include <Grids/Elements/GridPlaneSurface.h>
 
 USING_NAMESPACE_GRIDS
 USING_NAMESPACE_BENTLEY_DGN

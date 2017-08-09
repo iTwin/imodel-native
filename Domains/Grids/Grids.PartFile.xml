@@ -7,13 +7,21 @@
 
     <Part Name="GridsSchema" BentleyBuildMakeFile="Grids/GridsSchema.prewire.mke">
       <Bindings>
-        <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/Grids*.xml</Files>
+        <Files ProductDirectoryName="Assets"        ProductSubDirectory="ECSchemas/Domain">ECSchemas/Domain/Grids*.xml</Files>
+      </Bindings>
+    </Part>
+
+    <Part Name="GridsApi" BentleyBuildMakeFile="Grids/GridsApi.prewire.mke">
+      <Bindings>
+        <Directory SourceName="PublicApi/Grids" ProductDirectoryName="GridsIncludes" />
+        <PublicAPI Domain="Grids"/>
       </Bindings>
     </Part>
     
     <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke">
       <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
       <SubPart PartName="ConstraintModel" Repository="DgnDomains-ConstraintSystem" PartFile="ConstraintSystem" />
+      <SubPart PartName="GridsApi"/>
       <RequiredRepository>DgnDomains-ConstraintSystem</RequiredRepository>
       <Bindings>
         <Libs>Delivery/$(libprefix)GridElements$(libext)</Libs>
@@ -34,6 +42,7 @@
       <SubPart PartName="GridsDomain"/>
       <SubPart PartName="GridElements"/>
       <SubPart PartName="GridHandlers"/>
+      <SubPart PartName="GridsSchema"/>
     </Part>
 
     <Part Name="GridsDomain" BentleyBuildMakeFile="Grids/Domain/GridsDomain.mke">

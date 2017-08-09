@@ -10,7 +10,7 @@
 #include <DgnPlatform/ElementHandler.h>
 #include <DgnPlatform/ViewController.h>
 #include "GridSurfaceHandler.h"
-#include <GridArcSurface.h>
+#include <Grids/Elements/GridArcSurface.h>
 
 BEGIN_GRIDS_NAMESPACE
 

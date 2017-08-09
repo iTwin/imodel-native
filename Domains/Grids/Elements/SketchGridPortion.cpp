@@ -3,7 +3,8 @@
 #include <DgnPlatform/DgnCategory.h>
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
-#include <GeometryUtils.h>
+#include <ConstraintSystem/ConstraintSystemApi.h>
+
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN

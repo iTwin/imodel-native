@@ -13,8 +13,7 @@
 #include <DgnPlatform/ViewController.h>
 #include "PublicApi\GridPlaneSurface.h"
 #include "PublicApi\GridArcSurface.h"
-#include <GeometryUtils.h>
-#include <UnitConverter.h>
+#include <ConstraintSystem/ConstraintSystemApi.h>
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN

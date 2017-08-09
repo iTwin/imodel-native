@@ -11,7 +11,7 @@
 #include <DgnPlatform/Render.h>
 #include <DgnPlatform/ClipPrimitive.h>
 #include <DgnPlatform/DgnElement.h>
-#include "../../Domain/PublicApi/GridsMacros.h"
+#include <Grids/Domain/GridsMacros.h>
 
 GRIDS_REFCOUNTED_PTR_AND_TYPEDEFS (SurfaceSet)
 
