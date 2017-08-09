@@ -7,12 +7,13 @@
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
 
-HANDLER_DEFINE_MEMBERS(TypicalSectionPortionBreakDownModelHandler)
-HANDLER_DEFINE_MEMBERS(TypicalSectionPortionHandler)
-HANDLER_DEFINE_MEMBERS(TypicalSectionPortionElementHandler)
+HANDLER_DEFINE_MEMBERS(BufferDefinitionHandler)
 HANDLER_DEFINE_MEMBERS(EndConditionDefinitionHandler)
 HANDLER_DEFINE_MEMBERS(RoadTravelwayDefinitionHandler)
 HANDLER_DEFINE_MEMBERS(TravelwayDefinitionElementHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionPortionBreakDownModelHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionPortionHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionPortionElementHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
@@ -124,6 +125,35 @@ EndConditionDefinition::EndConditionDefinition(CreateParams const& params):
 EndConditionDefinitionCPtr EndConditionDefinition::Insert(TypicalSectionPortionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat)
     {
     auto retVal = GetDgnDb().Elements().Insert<EndConditionDefinition>(*this, stat);
+    if (retVal.IsNull())
+        return nullptr;
+
+    breakDownModelPtr = TypicalSectionPortionBreakDownModel::Create(TypicalSectionPortionBreakDownModel::CreateParams(GetDgnDb(), retVal->GetElementId()));
+
+    DgnDbStatus status;
+    if (DgnDbStatus::Success != (status = breakDownModelPtr->Insert()))
+        {
+        if (stat) *stat = status;
+        return nullptr;
+        }
+
+    return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BufferDefinition::BufferDefinition(CreateParams const& params):
+    T_Super(params)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      04/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BufferDefinitionCPtr BufferDefinition::Insert(TypicalSectionPortionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat)
+    {
+    auto retVal = GetDgnDb().Elements().Insert<BufferDefinition>(*this, stat);
     if (retVal.IsNull())
         return nullptr;
 

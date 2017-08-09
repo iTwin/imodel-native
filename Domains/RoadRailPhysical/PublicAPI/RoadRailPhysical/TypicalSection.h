@@ -131,7 +131,7 @@ public:
 }; // RoadTravelwayDefinition
 
 //=======================================================================================
-//! Base class for Travelway Definition Elements.
+//! EndCondition Definition Elements.
 //! @ingroup GROUP_RoadRailPhysical
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE EndConditionDefinition : TypicalSectionPortionElement
@@ -155,6 +155,30 @@ public:
     ROADRAILPHYSICAL_EXPORT EndConditionDefinitionCPtr Insert(TypicalSectionPortionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
 }; // EndConditionDefinition
 
+//=======================================================================================
+//! Buffer Definition Elements.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE BufferDefinition : TypicalSectionPortionElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_BufferDefinition, TypicalSectionPortionElement);
+friend struct BufferDefinitionHandler;
+
+protected:
+    //! @private
+    explicit BufferDefinition(CreateParams const& params);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(BufferDefinition)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(BufferDefinition)
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
+
+    ROADRAILPHYSICAL_EXPORT static BufferDefinitionPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR code);
+
+    ROADRAILPHYSICAL_EXPORT BufferDefinitionCPtr Insert(TypicalSectionPortionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
+}; // BufferDefinition
 
 //=================================================================================
 //! ElementHandler for TypicalSection Elements
@@ -175,7 +199,7 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortion, TypicalSectionP
 }; // TypicalSectionPortionElementHandler
 
 //=================================================================================
-//! ElementHandler for TypicalSection Elements
+//! ElementHandler for Travelway Definition Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE TravelwayDefinitionElementHandler : TypicalSectionPortionElementHandler
@@ -184,7 +208,7 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayDefinitionElement, TravelwayD
 }; // TravelwayDefinitionElementHandler
 
 //=================================================================================
-//! ElementHandler for TypicalSection Elements
+//! ElementHandler for Road-specific Travelway Definition Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RoadTravelwayDefinitionHandler : TravelwayDefinitionElementHandler
@@ -193,13 +217,22 @@ ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadTravelwayDefinition, RoadTravelway
 }; // RoadTravelwayDefinitionHandler
 
 //=================================================================================
-//! ElementHandler for TypicalSection Elements
+//! ElementHandler for EndCondition Definition Elements
 //! @ingroup GROUP_RoadRailPhysical
 //=================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE EndConditionDefinitionHandler : TypicalSectionPortionElementHandler
 {
 ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_EndConditionDefinition, EndConditionDefinition, EndConditionDefinitionHandler, TypicalSectionPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
 }; // EndConditionDefinitionHandler
+
+//=================================================================================
+//! ElementHandler for Buffer Definition Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE BufferDefinitionHandler : TypicalSectionPortionElementHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_BufferDefinition, BufferDefinition, BufferDefinitionHandler, TypicalSectionPortionElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // BufferDefinitionHandler
 
 //=======================================================================================
 //! The ModelHandler for TypicalSectionPortionBreakDownModel

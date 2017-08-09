@@ -73,6 +73,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Elements
 #define BRRP_CLASS_AlignmentIntersectionElement                     "AlignmentIntersectionElement"
+#define BRRP_CLASS_BufferDefinition                                 "BufferDefinition"
 #define BRRP_CLASS_DesignSpeed                                      "DesignSpeed"
 #define BRRP_CLASS_DesignSpeedDefinitionElement                     "DesignSpeedDefinitionElement"
 #define BRRP_CLASS_DesignSpeedDefinitionTable                       "DesignSpeedDefinitionTable"
@@ -189,6 +190,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 // Road & Rail shared
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(AlignmentIntersectionElement)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(BufferDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeed)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinitionElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinitionModel)
