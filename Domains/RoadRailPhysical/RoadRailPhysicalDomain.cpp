@@ -426,7 +426,7 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject)
     auto physicalModelPtr = RoadRailPhysicalDomain::QueryPhysicalModel(subject,
         RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
 
-    Utf8String subjectName = subject.GetCode().GetValue();
+    Utf8String subjectName = subject.GetCode().GetValueUtf8();
 
 #ifndef NDEBUG
     Utf8String view2dName = "2D - " + subjectName;
