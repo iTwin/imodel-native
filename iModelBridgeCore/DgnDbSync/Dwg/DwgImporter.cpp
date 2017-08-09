@@ -617,7 +617,7 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
         // modelspace or xref model
         SubjectCPtr             rootSubject = m_dgndb->Elements().GetRootSubject ();
         DgnCode                 partitionCode = PhysicalPartition::CreateUniqueCode (*rootSubject, modelName.c_str());
-        PhysicalPartitionCPtr   partition = PhysicalPartition::CreateAndInsert (*rootSubject, partitionCode.GetValueCP());
+        PhysicalPartitionCPtr   partition = PhysicalPartition::CreateAndInsert (*rootSubject, partitionCode.GetValueUtf8CP());
         if (partition.IsValid())
             modelElementId = partition->GetElementId();
         else
@@ -637,7 +637,7 @@ DgnElementId    DwgImporter::CreateModelElement (DwgDbBlockTableRecordCR block, 
         factory.CalculateSheetSize (sheetSize);
 
         DgnCode             sheetCode = Sheet::Element::CreateUniqueCode(*sheetListModel, modelName.c_str());
-        Sheet::ElementPtr   sheet = Sheet::Element::Create (*sheetListModel, scale, sheetSize, sheetCode.GetValueCP());
+        Sheet::ElementPtr   sheet = Sheet::Element::Create (*sheetListModel, scale, sheetSize, sheetCode.GetValueUtf8CP());
         if (!sheet.IsValid())
             return modelElementId;
 
@@ -1090,7 +1090,7 @@ SubjectCPtr DwgImporter::GetOrCreateModelSubject (SubjectCR parent, Utf8StringCR
     for (auto childid : parent.QueryChildren())
         {
         auto subj = GetDgnDb().Elements().Get<Subject>(childid);
-        if (subj.IsValid() && modelName.Equals(subj->GetCode().GetValueCP()) && (modelProps == subj->GetSubjectJsonProperties().GetMember(Subject::json_Model())))
+        if (subj.IsValid() && subj->GetCode().GetValue().Equals(modelName.c_str()) && (modelProps == subj->GetSubjectJsonProperties().GetMember(Subject::json_Model())))
             return subj;
         }
 

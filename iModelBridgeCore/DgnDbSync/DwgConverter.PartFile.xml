@@ -168,7 +168,7 @@
     </ProductDirectoryList>
 
 
-    <Part Name="Samples" OnlyPlatform="x64">
+    <Part Name="Samples" OnlyPlatforms="x64">
         <SubPart PartName="ImportXData" />
         <SubPart PartName="ListProperty" />
     </Part>
