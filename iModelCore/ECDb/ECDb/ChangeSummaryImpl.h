@@ -114,6 +114,7 @@ struct TableMap final : RefCounted<NonCopyableClass>
         TableClassMap const* GetTableClassMap(ECN::ECClassCR ecClass) const;
     };
 
+
 //=======================================================================================
 //! Information on mappings to a specific class within a table
 // @bsiclass                                              Ramanujam.Raman      07/2015
@@ -125,6 +126,9 @@ struct TableClassMap final : RefCounted<NonCopyableClass>
         ECN::ECClassId m_relationshipClassId;
         ColumnMap m_relationshipClassIdColumnMap;
         ColumnMap m_relatedInstanceIdColumnMap;
+        mutable bmap<ECN::ECRelationshipClassCP, DbColumn const*> m_foreignEndClassIdColumnMap;
+
+        DbColumn const* GetForeignEndClassIdColumn(ECDbCR ecdb, ECN::ECRelationshipClassCR relationshipClass) const;
         };
 
     private:
