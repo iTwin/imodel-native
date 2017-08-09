@@ -4,6 +4,7 @@
 #include <DgnPlatform/ElementGeometry.h>
 #include <DgnPlatform/ViewController.h>
 
+#define ELLIPSE_FROM_SINGLE_POINT_RADIUS 0.1 // 10cm
 
 BEGIN_GRIDS_NAMESPACE
 USING_NAMESPACE_BENTLEY_DGN
@@ -37,6 +38,16 @@ CurveVectorPtr  surfaceVector
     SetPlacement (newPlacement);
 
     Dgn::GeometryBuilderPtr builder = Dgn::GeometryBuilder::Create (*geomElem);
+
+    if (surfaceVector->size() == 1 &&
+        surfaceVector->at(0)->GetCurvePrimitiveType() == ICurvePrimitive::CurvePrimitiveType::CURVE_PRIMITIVE_TYPE_PointString)
+        {
+        ICurvePrimitivePtr primitive = surfaceVector->at(0);
+        bvector<DPoint3d> points = *primitive->GetPointStringCP();
+        DEllipse3d ellipse = DEllipse3d::FromCenterRadiusXY(points[0], ELLIPSE_FROM_SINGLE_POINT_RADIUS);
+        ICurvePrimitivePtr arc = ICurvePrimitive::CreateArc(ellipse);
+        surfaceVector = CurveVector::Create(arc, CurveVector::BoundaryType::BOUNDARY_TYPE_Outer);
+        }
 
     if (builder->Append (*surfaceVector, Dgn::GeometryBuilder::CoordSystem::World))
         {
