@@ -7,18 +7,17 @@
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
 
-HANDLER_DEFINE_MEMBERS(RoadDesignSpeedDefinitionModelHandler)
-HANDLER_DEFINE_MEMBERS(RoadDesignSpeedDefinitionTableHandler)
-HANDLER_DEFINE_MEMBERS(RoadDesignSpeedDefinitionTableModelHandler)
+HANDLER_DEFINE_MEMBERS(DesignSpeedDefinitionElementHandler)
+HANDLER_DEFINE_MEMBERS(DesignSpeedDefinitionModelHandler)
+HANDLER_DEFINE_MEMBERS(DesignSpeedDefinitionTableHandler)
+HANDLER_DEFINE_MEMBERS(DesignSpeedHandler)
 HANDLER_DEFINE_MEMBERS(RoadDesignSpeedDefinitionHandler)
-HANDLER_DEFINE_MEMBERS(RoadDesignSpeedHandler)
-HANDLER_DEFINE_MEMBERS(RoadDesignSpeedStandardsHandler)
 HANDLER_DEFINE_MEMBERS(RoadwayStandardsModelHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeedStandards::RoadDesignSpeedStandards(CreateParams const& params):
+DesignSpeedDefinitionTable::DesignSpeedDefinitionTable(CreateParams const& params):
     T_Super(params)
     {
     }
@@ -26,46 +25,7 @@ RoadDesignSpeedStandards::RoadDesignSpeedStandards(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeedStandardsPtr RoadDesignSpeedStandards::Create(RoadwayStandardsModelCR model)
-    {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new RoadDesignSpeedStandards(params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeedStandardsCPtr RoadDesignSpeedStandards::Insert(RoadDesignSpeedDefinitionTableModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat)
-    {
-    auto retVal = GetDgnDb().Elements().Insert<RoadDesignSpeedStandards>(*this, stat);
-    if (retVal.IsNull())
-        return nullptr;
-
-    breakDownModelPtr = RoadDesignSpeedDefinitionTableModel::Create(DgnModel::CreateParams(GetDgnDb(), RoadDesignSpeedDefinitionTableModel::QueryClassId(GetDgnDb()),
-        retVal->GetElementId()));
-
-    DgnDbStatus status;
-    if (DgnDbStatus::Success != (status = breakDownModelPtr->Insert()))
-        {
-        if (stat) *stat = status;
-        return nullptr;
-        }
-
-    return retVal;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeedDefinitionTable::RoadDesignSpeedDefinitionTable(CreateParams const& params):
-    T_Super(params)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeedDefinitionTable::RoadDesignSpeedDefinitionTable(CreateParams const& params, UnitSystem unitSystem) :
+DesignSpeedDefinitionTable::DesignSpeedDefinitionTable(CreateParams const& params, UnitSystem unitSystem) :
     T_Super(params)
     {
     SetPropertyValue("UnitSystem", static_cast<int32_t>(unitSystem));
@@ -74,30 +34,30 @@ RoadDesignSpeedDefinitionTable::RoadDesignSpeedDefinitionTable(CreateParams cons
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode RoadDesignSpeedDefinitionTable::CreateCode(DgnDbR dgndb, Utf8StringCR value)
+DgnCode DesignSpeedDefinitionTable::CreateCode(DgnDbR dgndb, Utf8StringCR value)
     {
-    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_RoadDesignSpeedDefinitionTable, value);
+    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_DesignSpeedDefinitionTable, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeedDefinitionTablePtr RoadDesignSpeedDefinitionTable::Create(RoadDesignSpeedDefinitionTableModelCR model, Utf8StringCR code, UnitSystem unitSystem)
+DesignSpeedDefinitionTablePtr DesignSpeedDefinitionTable::Create(DefinitionModelCR model, Utf8StringCR code, UnitSystem unitSystem)
     {
     CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model.GetDgnDb(), code));
-    return new RoadDesignSpeedDefinitionTable(params, unitSystem);
+    return new DesignSpeedDefinitionTable(params, unitSystem);
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeedDefinitionTableCPtr RoadDesignSpeedDefinitionTable::Insert(RoadDesignSpeedDefinitionModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat)
+DesignSpeedDefinitionTableCPtr DesignSpeedDefinitionTable::Insert(DesignSpeedDefinitionModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat)
     {
-    auto retVal = GetDgnDb().Elements().Insert<RoadDesignSpeedDefinitionTable>(*this, stat);
+    auto retVal = GetDgnDb().Elements().Insert<DesignSpeedDefinitionTable>(*this, stat);
     if (retVal.IsNull())
         return nullptr;
 
-    breakDownModelPtr = RoadDesignSpeedDefinitionModel::Create(DgnModel::CreateParams(GetDgnDb(), RoadDesignSpeedDefinitionModel::QueryClassId(GetDgnDb()),
+    breakDownModelPtr = DesignSpeedDefinitionModel::Create(DgnModel::CreateParams(GetDgnDb(), DesignSpeedDefinitionModel::QueryClassId(GetDgnDb()),
         retVal->GetElementId()));
 
     DgnDbStatus status;
@@ -108,6 +68,14 @@ RoadDesignSpeedDefinitionTableCPtr RoadDesignSpeedDefinitionTable::Insert(RoadDe
         }
 
     return retVal;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DesignSpeedDefinitionElement::DesignSpeedDefinitionElement(CreateParams const& params):
+    T_Super(params)
+    {
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -143,16 +111,16 @@ RoadDesignSpeedDefinition::RoadDesignSpeedDefinition(CreateParams const& params,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode RoadDesignSpeedDefinition::CreateCode(Dgn::DgnDbR dgndb, double speed, UnitSystem unitSystem)
+DgnCode DesignSpeedDefinitionElement::CreateCode(Dgn::DgnDbR dgndb, double speed, UnitSystem unitSystem)
     {
-    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_RoadDesignSpeedDefinition,
+    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_DesignSpeedDefinition,
         Utf8PrintfString("%.0f %s", speed, (unitSystem == UnitSystem::Metric) ? "Km/h" : "mph"));
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String RoadDesignSpeedDefinition::GetDefaultUserLabel(double speed, Dgn::UnitSystem unitSystem)
+Utf8String DesignSpeedDefinitionElement::GetDefaultUserLabel(double speed, Dgn::UnitSystem unitSystem)
     {
     if (unitSystem == UnitSystem::Metric)
         return Utf8PrintfString("%3.0f Km/h", speed);
@@ -163,7 +131,7 @@ Utf8String RoadDesignSpeedDefinition::GetDefaultUserLabel(double speed, Dgn::Uni
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeedDefinitionPtr RoadDesignSpeedDefinition::Create(RoadDesignSpeedDefinitionModelCR model, double designSpeed, double sideSlopeFrictionFactor,
+RoadDesignSpeedDefinitionPtr RoadDesignSpeedDefinition::Create(DesignSpeedDefinitionModelCR model, double designSpeed, double sideSlopeFrictionFactor,
     double maxTransitionRadius, double desirableSpiralLength, double type1CrestVertical, double type3SagVertical, double crestVerticalPsd, double averageRunningSpeed,
     double maximumRelativeGradient, double crestK_SSD, double sagK_SSD, double ignoreLength)
     {
@@ -182,7 +150,7 @@ RoadDesignSpeedDefinitionPtr RoadDesignSpeedDefinition::Create(RoadDesignSpeedDe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeed::RoadDesignSpeed(CreateParams const& params):
+DesignSpeed::DesignSpeed(CreateParams const& params):
     T_Super(params)
     {
     }
@@ -190,7 +158,7 @@ RoadDesignSpeed::RoadDesignSpeed(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeed::RoadDesignSpeed(CreateParams const& params, RoadDesignSpeedDefinitionCR designSpeedDef, double fromDistanceAlong, double toDistanceAlong):
+DesignSpeed::DesignSpeed(CreateParams const& params, DesignSpeedDefinitionElementCR designSpeedDef, double fromDistanceAlong, double toDistanceAlong):
     T_Super(params), ILinearlyLocatedSingleFromTo(fromDistanceAlong, toDistanceAlong)
     {
     SetDesignSpeedDefinition(designSpeedDef);
@@ -200,20 +168,20 @@ RoadDesignSpeed::RoadDesignSpeed(CreateParams const& params, RoadDesignSpeedDefi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadDesignSpeedPtr RoadDesignSpeed::Create(RoadwayCR roadway, RoadDesignSpeedDefinitionCR designSpeedDef, double fromDistanceAlong, double toDistanceAlong)
+DesignSpeedPtr DesignSpeed::Create(PathwayElementCR pathway, DesignSpeedDefinitionElementCR designSpeedDef, double fromDistanceAlong, double toDistanceAlong)
     {
-    if (!roadway.GetElementId().IsValid())
+    if (!pathway.GetElementId().IsValid())
         return nullptr;
 
-    auto alignmentId = roadway.GetAlignmentId();
+    auto alignmentId = pathway.GetAlignmentId();
     if (!alignmentId.IsValid())
         return nullptr;
 
-    CreateParams params(roadway.GetDgnDb(), roadway.GetModelId(), QueryClassId(roadway.GetDgnDb()));
-    params.SetParentId(roadway.GetElementId(),
-        DgnClassId(roadway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadwayOwnsDesignSpeeds)));
+    CreateParams params(pathway.GetDgnDb(), pathway.GetModelId(), QueryClassId(pathway.GetDgnDb()));
+    params.SetParentId(pathway.GetElementId(),
+        DgnClassId(pathway.GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_PathwayOwnsDesignSpeeds)));
 
-    auto retVal = new RoadDesignSpeed(params, designSpeedDef, fromDistanceAlong, toDistanceAlong);
+    auto retVal = new DesignSpeed(params, designSpeedDef, fromDistanceAlong, toDistanceAlong);
     retVal->_SetLinearElement(alignmentId);
     return retVal;
     }
@@ -221,8 +189,8 @@ RoadDesignSpeedPtr RoadDesignSpeed::Create(RoadwayCR roadway, RoadDesignSpeedDef
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void RoadDesignSpeed::SetDesignSpeedDefinition(RoadDesignSpeedDefinitionCR designSpeedDef)
+void DesignSpeed::SetDesignSpeedDefinition(DesignSpeedDefinitionElementCR designSpeedDef)
     { 
-    SetPropertyValue("RoadDesignSpeedDefinition", designSpeedDef.GetElementId(),
-        GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_RoadDesignSpeedRefersToDefinition));
+    SetPropertyValue("DesignSpeedDefinition", designSpeedDef.GetElementId(),
+        GetDgnDb().Schemas().GetClassId(BRRP_SCHEMA_NAME, BRRP_REL_DesignSpeedRefersToDefinition));
     }

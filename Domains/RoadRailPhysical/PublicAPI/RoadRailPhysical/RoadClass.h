@@ -14,44 +14,6 @@
 BEGIN_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 
 //=======================================================================================
-//! Represents a standardized set of Road-Class tables 
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadClassStandards : Dgn::DefinitionElement
-{
-DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_RoadClassStandards, Dgn::DefinitionElement);
-friend struct RoadClassStandardsHandler;
-
-protected:
-    ROADRAILPHYSICAL_EXPORT explicit RoadClassStandards(CreateParams const& params);
-
-public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadClassStandards)
-    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(RoadClassStandards)
-
-    ROADRAILPHYSICAL_EXPORT static RoadClassStandardsPtr Create(RoadwayStandardsModelCR model);
-
-    ROADRAILPHYSICAL_EXPORT RoadClassStandardsCPtr Insert(RoadClassDefinitionTableModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
-}; // RoadClassStandards
-
-//=======================================================================================
-//! Model for Road-Class Definition Table elements.
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadClassDefinitionTableModel : Dgn::DefinitionModel
-{
-DGNMODEL_DECLARE_MEMBERS(BRRP_CLASS_RoadClassDefinitionTableModel, Dgn::DefinitionModel);
-friend struct RoadClassDefinitionTableModelHandler;
-
-protected:
-    explicit RoadClassDefinitionTableModel(CreateParams const& params) : T_Super(params) { }
-
-public:
-    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(RoadClassDefinitionTableModel)
-
-    static RoadClassDefinitionTableModelCPtr Get(Dgn::DgnDbR db, Dgn::DgnModelId id) { return db.Models().Get< RoadClassDefinitionTableModel >(id); }
-    static RoadClassDefinitionTableModelPtr Create(CreateParams const& params) { return new RoadClassDefinitionTableModel(params); }
-}; // RoadClassDefinitionTableModel
-
-//=======================================================================================
 //! Represents a Road-Class table
 //=======================================================================================
 struct EXPORT_VTABLE_ATTRIBUTE RoadClassDefinitionTable : Dgn::DefinitionElement
@@ -67,7 +29,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(RoadClassDefinitionTable)
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
-    ROADRAILPHYSICAL_EXPORT static RoadClassDefinitionTablePtr Create(RoadClassDefinitionTableModelCR model, Utf8StringCR code);
+    ROADRAILPHYSICAL_EXPORT static RoadClassDefinitionTablePtr Create(Dgn::DefinitionModelCR model, Utf8StringCR code);
 
     ROADRAILPHYSICAL_EXPORT RoadClassDefinitionTableCPtr Insert(RoadClassDefinitionModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
 }; // RoadClassDefinitionTable
@@ -138,22 +100,6 @@ public:
     ROADRAILPHYSICAL_EXPORT static RoadClassPtr Create(RoadwayCR roadway, RoadClassDefinitionCR ClassDef, double fromDistanceAlong, double toDistanceAlong);
 }; // RoadClass
 
-
-//=======================================================================================
-//! ElementHandler for RoadClassStandards Elements
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadClassStandardsHandler : Dgn::dgn_ElementHandler::Definition
-{
-ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadClassStandards, RoadClassStandards, RoadClassStandardsHandler, Dgn::dgn_ElementHandler::Definition, ROADRAILPHYSICAL_EXPORT)
-}; // RoadClassStandardsHandler
-
-//=======================================================================================
-//! The ModelHandler for RoadClassStandards Models
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE RoadClassDefinitionTableModelHandler : Dgn::dgn_ModelHandler::Definition
-{
-MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_RoadClassDefinitionTableModel, RoadClassDefinitionTableModel, RoadClassDefinitionTableModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
-}; // RoadClassDefinitionTableModelHandler
 
 //=======================================================================================
 //! ElementHandler for RoadClassDefinitionTable Elements

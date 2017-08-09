@@ -7,15 +7,12 @@
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
 
-HANDLER_DEFINE_MEMBERS(TypicalSectionModelHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPortionBreakDownModelHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPortionHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPortionElementHandler)
 HANDLER_DEFINE_MEMBERS(EndConditionDefinitionHandler)
-HANDLER_DEFINE_MEMBERS(EndConditionDefinitionModelHandler)
 HANDLER_DEFINE_MEMBERS(RoadTravelwayDefinitionHandler)
 HANDLER_DEFINE_MEMBERS(TravelwayDefinitionElementHandler)
-HANDLER_DEFINE_MEMBERS(TravelwayDefinitionModelHandler)
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
@@ -36,7 +33,7 @@ TypicalSectionPortion::TypicalSectionPortion(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TypicalSectionPortionPtr TypicalSectionPortion::Create(TypicalSectionModelCR model, Utf8CP label)
+TypicalSectionPortionPtr TypicalSectionPortion::Create(DefinitionModelCR model, Utf8CP label)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
@@ -82,7 +79,7 @@ DgnCode RoadTravelwayDefinition::CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR valu
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      10/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadTravelwayDefinitionPtr RoadTravelwayDefinition::Create(TravelwayDefinitionModelCR model, Utf8StringCR code)
+RoadTravelwayDefinitionPtr RoadTravelwayDefinition::Create(DefinitionModelCR model, Utf8StringCR code)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;

@@ -327,14 +327,14 @@ RoadDesignSpeedDefinitionPtr RoadRailPhysicalTestsFixture::InsertRoadDesignSpeed
     RoadDesignSpeedDefinitionPtr designSpeedDefPtr;
 
     // Insert dummy design-speed definition
-    auto designSpeedTableModelId = QueryFirstModelIdOfType(db, RoadDesignSpeedDefinitionTableModel::QueryClassId(db));
-    if (!designSpeedTableModelId.IsValid())
+    auto roadwayStandardsModelId = QueryFirstModelIdOfType(db, RoadwayStandardsModel::QueryClassId(db));
+    if (!roadwayStandardsModelId.IsValid())
         return designSpeedDefPtr;
 
-    auto designSpeedTablePtr = RoadDesignSpeedDefinitionTable::Create(*RoadDesignSpeedDefinitionTableModel::Get(db, designSpeedTableModelId), "Dummy", UnitSystem::Metric);
+    auto designSpeedTablePtr = DesignSpeedDefinitionTable::Create(*RoadwayStandardsModel::Get(db, roadwayStandardsModelId), "Dummy", UnitSystem::Metric);
 
     DgnDbStatus status;
-    RoadDesignSpeedDefinitionModelPtr designSpeedDefModelPtr;
+    DesignSpeedDefinitionModelPtr designSpeedDefModelPtr;
     if (designSpeedTablePtr->Insert(designSpeedDefModelPtr, &status).IsNull())
         return designSpeedDefPtr;
 

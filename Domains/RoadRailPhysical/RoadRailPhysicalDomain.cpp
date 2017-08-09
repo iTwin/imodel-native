@@ -16,17 +16,13 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     {    
     RegisterHandler(RoadRailCategoryModelHandler::GetHandler());
 
-    RegisterHandler(TypicalSectionModelHandler::GetHandler());
     RegisterHandler(TypicalSectionPortionBreakDownModelHandler::GetHandler());
 
     RegisterHandler(TypicalSectionPortionElementHandler::GetHandler());
     RegisterHandler(TypicalSectionPortionHandler::GetHandler());
 
-    RegisterHandler(TravelwayDefinitionModelHandler::GetHandler());
     RegisterHandler(TravelwayDefinitionElementHandler::GetHandler());
     RegisterHandler(RoadTravelwayDefinitionHandler::GetHandler());
-
-    RegisterHandler(EndConditionDefinitionModelHandler::GetHandler());
     RegisterHandler(EndConditionDefinitionHandler::GetHandler());
 
     RegisterHandler(PathwayElementHandler::GetHandler());
@@ -36,20 +32,16 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(TravelwayIntersectionSegmentElementHandler::GetHandler());
     
     RegisterHandler(RoadwayStandardsModelHandler::GetHandler());
-
-    RegisterHandler(RoadClassStandardsHandler::GetHandler());
-    RegisterHandler(RoadClassDefinitionTableModelHandler::GetHandler());
     RegisterHandler(RoadClassDefinitionTableHandler::GetHandler());
     RegisterHandler(RoadClassDefinitionModelHandler::GetHandler());
     RegisterHandler(RoadClassDefinitionHandler::GetHandler());
     RegisterHandler(RoadClassHandler::GetHandler());
 
-    RegisterHandler(RoadDesignSpeedStandardsHandler::GetHandler());
-    RegisterHandler(RoadDesignSpeedDefinitionTableModelHandler::GetHandler());
-    RegisterHandler(RoadDesignSpeedDefinitionTableHandler::GetHandler());
-    RegisterHandler(RoadDesignSpeedDefinitionModelHandler::GetHandler());
+    RegisterHandler(DesignSpeedDefinitionTableHandler::GetHandler());
+    RegisterHandler(DesignSpeedDefinitionModelHandler::GetHandler());
+    RegisterHandler(DesignSpeedDefinitionElementHandler::GetHandler());
     RegisterHandler(RoadDesignSpeedDefinitionHandler::GetHandler());
-    RegisterHandler(RoadDesignSpeedHandler::GetHandler());
+    RegisterHandler(DesignSpeedHandler::GetHandler());
     
     RegisterHandler(RailwayHandler::GetHandler());
     RegisterHandler(RoadwayHandler::GetHandler());    
@@ -95,72 +87,6 @@ PhysicalModelPtr RoadRailPhysicalDomain::QueryPhysicalModel(Dgn::SubjectCR paren
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      10/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createTypicalSectionsPartition(SubjectCR subject)
-    {
-    DgnDbStatus status;
-
-    auto typicalSectionDefsPartitionPtr = DefinitionPartition::Create(subject, "Typical Sections");
-    if (typicalSectionDefsPartitionPtr->Insert(&status).IsNull())
-        return status;
-
-    auto typicalSectionDefModelPtr = TypicalSectionModel::Create(TypicalSectionModel::CreateParams(subject.GetDgnDb(), typicalSectionDefsPartitionPtr->GetElementId()));
-    if (DgnDbStatus::Success != (status = typicalSectionDefModelPtr->Insert()))
-        return status;
-
-    auto travelwayDefPortionPtr = TypicalSectionPortion::Create(*typicalSectionDefModelPtr, "Travelway Definitions");
-    if (travelwayDefPortionPtr->Insert(&status).IsNull())
-        return status;
-
-    auto travelwayDefModelPtr = TravelwayDefinitionModel::Create(TravelwayDefinitionModel::CreateParams(subject.GetDgnDb(), travelwayDefPortionPtr->GetElementId()));
-    if (DgnDbStatus::Success != (status = travelwayDefModelPtr->Insert()))
-        return status;
-
-    auto endCondDefPortionPtr = TypicalSectionPortion::Create(*typicalSectionDefModelPtr, "End-Condition Definitions");
-    if (endCondDefPortionPtr->Insert(&status).IsNull())
-        return status;
-
-    auto endCondDefModelPtr = EndConditionDefinitionModel::Create(EndConditionDefinitionModel::CreateParams(subject.GetDgnDb(), endCondDefPortionPtr->GetElementId()));
-    if (DgnDbStatus::Success != (status = endCondDefModelPtr->Insert()))
-        return status;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createRoadClassModelHierarchy(RoadwayStandardsModelCR roadwayStandardsModel)
-    {
-    DgnDbStatus status;
-
-    auto roadClassStandardsPtr = RoadClassStandards::Create(roadwayStandardsModel);
-
-    RoadClassDefinitionTableModelPtr roadClassDefTableModelPtr;
-    if (roadClassStandardsPtr->Insert(roadClassDefTableModelPtr, &status).IsNull())
-        return status;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus createRoadDesignSpeedModelHierarchy(RoadwayStandardsModelCR roadwayStandardsModel)
-    {
-    DgnDbStatus status;
-
-    auto designSpeedStandardsPtr = RoadDesignSpeedStandards::Create(roadwayStandardsModel);
-
-    RoadDesignSpeedDefinitionTableModelPtr designSpeedDefTableModelPtr;
-    if (designSpeedStandardsPtr->Insert(designSpeedDefTableModelPtr, &status).IsNull())
-        return status;
-
-    return status;
-    }
-
-/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus createRoadwayStandardsPartition(SubjectCR subject)
@@ -171,19 +97,10 @@ DgnDbStatus createRoadwayStandardsPartition(SubjectCR subject)
     if (roadwayStandardsPartitionPtr->Insert(&status).IsNull())
         return status;
 
-    auto& roadwayStandardsModelHandlerR = RoadwayStandardsModelHandler::GetHandler();
-    auto roadwayStandardsModelPtr = roadwayStandardsModelHandlerR.Create(DgnModel::CreateParams(subject.GetDgnDb(), RoadwayStandardsModel::QueryClassId(subject.GetDgnDb()),
-        roadwayStandardsPartitionPtr->GetElementId()));
+    auto roadwayStandardsModelPtr = RoadwayStandardsModel::Create(
+        RoadwayStandardsModel::CreateParams(subject.GetDgnDb(), roadwayStandardsPartitionPtr->GetElementId()));
 
     if (DgnDbStatus::Success != (status = roadwayStandardsModelPtr->Insert()))
-        return status;
-
-    if (DgnDbStatus::Success != (status = createRoadClassModelHierarchy(
-        *dynamic_cast<RoadwayStandardsModelCP>(roadwayStandardsModelPtr.get()))))
-        return status;
-
-    if (DgnDbStatus::Success != (status = createRoadDesignSpeedModelHierarchy(
-        *dynamic_cast<RoadwayStandardsModelCP>(roadwayStandardsModelPtr.get()))))
         return status;
 
     return status;
@@ -198,9 +115,6 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject, 
 
     if (DgnDbStatus::Success != (status = createRoadwayStandardsPartition(subject)))
 
-        return status;
-
-    if (DgnDbStatus::Success != (status = createTypicalSectionsPartition(subject)))
         return status;
 
     if (DgnDbStatus::Success != (status = createPhysicalPartition(subject, physicalPartitionName)))
@@ -238,7 +152,7 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadDesignSpeedDefinitionTable);
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinitionTable);
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
@@ -246,7 +160,7 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadDesignSpeedDefinition);
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinition);
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
@@ -426,10 +340,10 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject)
     auto physicalModelPtr = RoadRailPhysicalDomain::QueryPhysicalModel(subject,
         RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
 
-    Utf8String subjectName = subject.GetCode().GetValue();
+    auto& subjectName = subject.GetCode().GetValue();
 
 #ifndef NDEBUG
-    Utf8String view2dName = "2D - " + subjectName;
+    Utf8String view2dName = "2D - " + subjectName.GetUtf8();
     auto displayStyle2dPtr = getDisplayStyle2d(dgnDb.GetDictionaryModel());
     auto drawingCategorySelectorPtr = getDrawingCategorySelector(dgnDb.GetDictionaryModel());
     create2dView(dgnDb.GetDictionaryModel(), view2dName.c_str(), *drawingCategorySelectorPtr,
@@ -438,12 +352,12 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject)
 
     auto displayStyle3dPtr = getDisplayStyle3d(dgnDb.GetDictionaryModel());
     auto spatialCategorySelectorPtr = getSpatialCategorySelector(dgnDb.GetDictionaryModel());
-    auto model3dSelectorPtr = getModelSelector(dgnDb.GetDictionaryModel(), subjectName);
+    auto model3dSelectorPtr = getModelSelector(dgnDb.GetDictionaryModel(), subjectName.GetUtf8());
     model3dSelectorPtr->AddModel(alignmentModelPtr->GetModelId());
     model3dSelectorPtr->AddModel(physicalModelPtr->GetModelId());
 
-    Utf8String view3dName = subjectName;
-    create3dView(dgnDb.GetDictionaryModel(), view3dName.c_str(),
+    auto& view3dName = subjectName;
+    create3dView(dgnDb.GetDictionaryModel(), view3dName.GetUtf8CP(),
         *spatialCategorySelectorPtr, *model3dSelectorPtr, *displayStyle3dPtr);
 
     return DgnDbStatus::Success;

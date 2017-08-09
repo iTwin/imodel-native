@@ -9,49 +9,8 @@
 
 HANDLER_DEFINE_MEMBERS(RoadClassDefinitionModelHandler)
 HANDLER_DEFINE_MEMBERS(RoadClassDefinitionTableHandler)
-HANDLER_DEFINE_MEMBERS(RoadClassDefinitionTableModelHandler)
 HANDLER_DEFINE_MEMBERS(RoadClassDefinitionHandler)
 HANDLER_DEFINE_MEMBERS(RoadClassHandler)
-HANDLER_DEFINE_MEMBERS(RoadClassStandardsHandler)
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadClassStandards::RoadClassStandards(CreateParams const& params):
-    T_Super(params)
-    {
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadClassStandardsPtr RoadClassStandards::Create(RoadwayStandardsModelCR model)
-    {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
-    return new RoadClassStandards(params);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Diego.Diaz                      11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-RoadClassStandardsCPtr RoadClassStandards::Insert(RoadClassDefinitionTableModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat)
-    {
-    auto retVal = GetDgnDb().Elements().Insert<RoadClassStandards>(*this, stat);
-    if (retVal.IsNull())
-        return nullptr;
-
-    breakDownModelPtr = RoadClassDefinitionTableModel::Create(DgnModel::CreateParams(GetDgnDb(), RoadClassDefinitionTableModel::QueryClassId(GetDgnDb()),
-        retVal->GetElementId()));
-
-    DgnDbStatus status;
-    if (DgnDbStatus::Success != (status = breakDownModelPtr->Insert()))
-        {
-        if (stat) *stat = status;
-        return nullptr;
-        }
-
-    return retVal;
-    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
@@ -72,7 +31,7 @@ DgnCode RoadClassDefinitionTable::CreateCode(DgnDbR dgndb, Utf8StringCR value)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-RoadClassDefinitionTablePtr RoadClassDefinitionTable::Create(RoadClassDefinitionTableModelCR model, Utf8StringCR code)
+RoadClassDefinitionTablePtr RoadClassDefinitionTable::Create(DefinitionModelCR model, Utf8StringCR code)
     {
     CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model.GetDgnDb(), code));
     return new RoadClassDefinitionTable(params);

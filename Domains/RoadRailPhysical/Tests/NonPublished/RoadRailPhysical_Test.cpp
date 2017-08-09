@@ -35,9 +35,9 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
 #pragma endregion
 
 #pragma region Create Road Elements
-    DgnModelId travelwayDefModelId = QueryFirstModelIdOfType(*projectPtr, TravelwayDefinitionModel::QueryClassId(*projectPtr));
-    auto travelwayDefModelPtr = projectPtr->Models().Get<TravelwayDefinitionModel>(travelwayDefModelId);
-    auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*travelwayDefModelPtr, "2 lane");
+    DgnModelId roadwayStandardsModelId = QueryFirstModelIdOfType(*projectPtr, RoadwayStandardsModel::QueryClassId(*projectPtr));
+    auto roadwayStandardsModelPtr = RoadwayStandardsModel::Get(*projectPtr, roadwayStandardsModelId);
+    auto roadTravelwayDefPtr = RoadTravelwayDefinition::Create(*roadwayStandardsModelPtr, "2 lane");
 
     TypicalSectionPortionBreakDownModelPtr breakDownModelPtr;
     ASSERT_TRUE(roadTravelwayDefPtr->Insert(breakDownModelPtr).IsValid());
@@ -63,7 +63,7 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     ASSERT_EQ(alignmentPtr->GetElementId(), *linearElements.begin());
 
     auto designSpeedDefPtr = InsertRoadDesignSpeedDefinition(*projectPtr);
-    auto designSpeedPtr = RoadDesignSpeed::Create(*roadwayCPtr, *designSpeedDefPtr, 0, 150);
+    auto designSpeedPtr = DesignSpeed::Create(*roadwayCPtr, *designSpeedDefPtr, 0, 150);
     ASSERT_TRUE(designSpeedPtr->Insert().IsValid());
 
     // Create RoadSegment #1
