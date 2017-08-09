@@ -301,7 +301,7 @@ struct ChangeExtractor final : NonCopyableClass
         mutable TableMapByName m_tableMapByName; // TODO: REmove to ChangeIterator
         InstancesTable& m_instancesTable;
         ValuesTable& m_valuesTable;
-
+        std::map<ECN::ECClassId, std::unique_ptr<ForeignKeyPartitionView>> m_partitionViewCache;
         BentleyStatus FromChangeSet(IChangeSet& changeSet, ExtractOption extractOption);
 
         void GetRelEndInstanceKeys(ECInstanceKey& oldInstanceKey, ECInstanceKey& newInstanceKey, ChangeIterator::RowEntry const& rowEntry, RelationshipClassMapCR relClassMap, ECInstanceId relInstanceId, ECN::ECRelationshipEnd relEnd) const;

@@ -987,9 +987,15 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
     ECN::ECClassId thisEndClassId = rowEntry.GetPrimaryClass()->GetId();
     ECInstanceKey thisEndInstanceKey(thisEndClassId, relInstanceId);
     ECN::ECRelationshipEnd thisEnd = relClassMap->GetForeignEnd();
+    
+    auto itor = m_partitionViewCache.find(relClassMap->GetRelationshipClass().GetId());
+    if (itor == m_partitionViewCache.end())
+        itor = m_partitionViewCache.insert(
+            std::make_pair(
+                relClassMap->GetRelationshipClass().GetId(),
+                ForeignKeyPartitionView::CreateReadonly(m_ecdb, relClassMap->GetRelationshipClass()))).first;
 
-    // Setup other end of relationship
-    auto fkView = ForeignKeyPartitionView::CreateReadonly(m_ecdb, relClassMap->GetRelationshipClass());
+    ForeignKeyPartitionView* fkView = itor->second.get();
     ForeignKeyPartitionView::Partition const* firstPartition = fkView->GetPartitions(true, true).front();
     if (!firstPartition)
         return;
