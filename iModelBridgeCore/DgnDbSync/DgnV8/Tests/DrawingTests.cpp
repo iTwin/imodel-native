@@ -409,10 +409,13 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
         // Create a drawing1 model ...
         Bentley::DgnModelP drawingModel = v8editor.m_file->CreateNewModel(&modelStatus, L"Drawing1", DgnV8Api::DgnModelType::Normal, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.AddLine(nullptr, drawingModel, DPoint3d::From(0.1, 0.1, 0.1)); // note: must add at least one element to the drawing, or else the converter will notice that it is empty and not create an attachment to it from the sheet.
 
         // Create a drawing2 model ...
         Bentley::DgnModelP drawingModel2 = v8editor.m_file->CreateNewModel(&modelStatus, L"Drawing2", DgnV8Api::DgnModelType::Normal, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.AddLine(nullptr, drawingModel2, DPoint3d::From(0.1, 0.1, 0.1));
+
         DgnV8Api::DgnAttachment* attachment1 = NULL;
         // and attach the 3D model as a reference to the new drawing1 model
         AddAttachment(m_v8FileName, drawingModel, threeDModel->GetModelName(), attachment1);
@@ -455,7 +458,6 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
         v8editor.Save();
         // Put a line in the 2D model
         v8editor.AddLine(&eid, SheetModel, DPoint3d::From(0.1, 0.1, 0.1));
-        v8editor.AddLine(&eid);
         v8editor.Save();
         }
 
@@ -476,7 +478,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfSameStoredScale)
         Sheet::ModelPtr sheetModel = sheet->GetSub<Sheet::Model>();
         ASSERT_TRUE(sheetModel.IsValid());
         //Count elements on sheet 
-        countElements(*sheetModel, 4);
+        countElements(*sheetModel, 4); // 3 ViewAttachments + 1 line
         ASSERT_EQ(2,sheet->GetWidth());
         ASSERT_EQ(2,sheet->GetHeight());
         ASSERT_EQ(0.01,sheet->GetScale());
@@ -505,14 +507,17 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         // Create a drawing1 model ...
         Bentley::DgnModelP drawingModel = v8editor.m_file->CreateNewModel(&modelStatus, L"Drawing1", DgnV8Api::DgnModelType::Normal, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-
+        v8editor.AddLine(nullptr, drawingModel);    // note: must add at least one element to the drawing, or else the converter will notice that it is empty and not create an attachment to it from the sheet.
         // Create a drawing2 model ...
         Bentley::DgnModelP drawingModel2 = v8editor.m_file->CreateNewModel(&modelStatus, L"Drawing2", DgnV8Api::DgnModelType::Normal, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.AddLine(nullptr, drawingModel2);
 
         // Create a drawing3 model ...
         Bentley::DgnModelP drawingModel3 = v8editor.m_file->CreateNewModel(&modelStatus, L"Drawing3", DgnV8Api::DgnModelType::Normal, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
+        v8editor.AddLine(nullptr, drawingModel3);
+
         DgnV8Api::DgnAttachment* attachment1 = NULL;
         // and attach the 3D model as a reference to the new drawing1 model
         AddAttachment(m_v8FileName, drawingModel, threeDModel->GetModelName(),attachment1);
@@ -565,7 +570,6 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         SheetModel->SetModelInfo(*SheetModelifo);
         // Put a line in the 2D model
         v8editor.AddLine(&eid, SheetModel, DPoint3d::From(0.1, 0.1, 0.1));
-        v8editor.AddLine(&eid);
         // Create a SheetModel2 ...
         Bentley::DgnModelP SheetModel2 = v8editor.m_file->CreateNewModel(&modelStatus, L"sheet2", DgnV8Api::DgnModelType::Sheet, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
@@ -630,7 +634,7 @@ TEST_F(DrawingTests, SheetScale_WithMultiAttachmentOfDiffStoredScale)
         Sheet::ElementCPtr sheet1 = db->Elements().Get<Sheet::Element>(sheetmodel1->GetModeledElementId());
         ASSERT_TRUE(sheet1.IsValid());
         //Count elements on sheet 
-        countElements(*sheetmodel1, 6);
+        countElements(*sheetmodel1, 6); // 1 line + 3 drawing view attachments + 2 attachments of scale-specific copies of 3d model.
         ASSERT_EQ(2,sheet1->GetWidth());
         ASSERT_EQ(2,sheet1->GetHeight());
         //when no relationshipfound the scale should be 1
@@ -741,7 +745,9 @@ TEST_F(DrawingTests, BorderAttachmenttoSheet)
         // Create a drawing1 model ...
         Bentley::DgnModelP drawingModel = v8editor.m_file->CreateNewModel(&modelStatus, L"Drawing1", DgnV8Api::DgnModelType::Normal, /*is3D*/ false);
         EXPECT_TRUE(DgnV8Api::DGNMODEL_STATUS_Success == modelStatus);
-        // and attach the Drawing model as a reference to the default 3d model 
+        v8editor.AddLine(nullptr, drawingModel); // must put something in drawingmodel, or converter won't create an attachment of it to the sheet
+
+        // and attach the the default 3d model as a reference to drawingModel
         DgnV8Api::DgnAttachment* attachment = NULL;
         AddAttachment(m_v8FileName, drawingModel, threeDModel->GetModelName(), attachment);
         // Create a SheetModel2...
