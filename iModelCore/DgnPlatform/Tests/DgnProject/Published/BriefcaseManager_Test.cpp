@@ -283,7 +283,7 @@ DbResult RepositoryManager::CreateCodesTable()
     return m_db.CreateTable(TABLE_Codes,
             CODE_CodeSpec " INTEGER NOT NULL,"
             CODE_Scope " TEXT NOT NULL,"
-            CODE_Value " TEXT NOT NULL,"
+            CODE_Value " TEXT NOT NULL COLLATE NOCASE,"
             CODE_State " INTEGER,"
             CODE_Revision " TEXT,"
             CODE_Briefcase " INTEGER,"
@@ -712,7 +712,7 @@ void RepositoryManager::MarkDiscarded(DgnCodeInfoSet const& discarded)
         DgnCodeCR code = info.GetCode();
         stmt.BindId(1, code.GetCodeSpecId());
         stmt.BindText(2, code.GetScopeString(), Statement::MakeCopy::No);
-        stmt.BindText(3, code.GetValue(), Statement::MakeCopy::No);
+        stmt.BindText(3, code.GetValueUtf8(), Statement::MakeCopy::No);
         stmt.BindText(4, info.GetRevisionId(), Statement::MakeCopy::No);
 
         stmt.Step();
@@ -809,7 +809,7 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
         {
         insert.BindId(1, code.GetCodeSpecId());
         insert.BindText(2, code.GetScopeString(), Statement::MakeCopy::No);
-        insert.BindText(3, code.GetValue(), Statement::MakeCopy::No);
+        insert.BindText(3, code.GetValueUtf8(), Statement::MakeCopy::No);
         insert.BindInt(4, bcId);
         auto revIter = discarded.find(DgnCodeInfo(code));
         if (discarded.end() != revIter)
@@ -962,7 +962,7 @@ void RepositoryManager::MarkRevision(DgnCodeSet const& codes, bool discarded, Ut
         {
         stmt.BindId(1, code.GetCodeSpecId());
         stmt.BindText(2, code.GetScopeString(), Statement::MakeCopy::No);
-        stmt.BindText(3, code.GetValue(), Statement::MakeCopy::No);
+        stmt.BindText(3, code.GetValueUtf8(), Statement::MakeCopy::No);
         stmt.BindInt(4, static_cast<int>(discarded ? CodeState::Discarded : CodeState::Used));
         stmt.BindText(5, revId, Statement::MakeCopy::No);
 
@@ -2948,7 +2948,7 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     ExpectState(MakeReserved(MakeStyleCode("MyStyle", db), db), db);
 
     // An attempt to insert an element with the same code as an already-used code will fail
-    EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValue().c_str(), db, false));
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValueUtf8().c_str(), db, false));
 
     // Updating an element and changing its code will NOT reserve the new code if we haven't done so already
     auto pStyle = AnnotationTextStyle::Get(db, "MyStyle")->CreateCopy();
@@ -2965,7 +2965,7 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
 
     // Attempting to change code to an already-used code will fail on update
     pStyle = AnnotationTextStyle::Get(db, "MyRenamedStyle")->CreateCopy();
-    pStyle->SetName(existingStyleCode.GetValue().c_str());
+    pStyle->SetName(existingStyleCode.GetValueUtf8().c_str());
     EXPECT_TRUE(pStyle->DgnElement::Update(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
 

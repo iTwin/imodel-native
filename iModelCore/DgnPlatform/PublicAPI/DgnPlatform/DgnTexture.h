@@ -80,7 +80,7 @@ public:
     explicit DgnTexture(CreateParams const& params) : T_Super(params), m_data(params.m_data), m_descr(params.m_descr) {}
 
     DgnTextureId GetTextureId() const {return DgnTextureId(GetElementId().GetValue());} //!< The texture ID.
-    Utf8String GetTextureName() const {return GetCode().GetValue();} //!< The texture name
+    Utf8String GetTextureName() const {return GetCode().GetValue().GetUtf8();} //!< The texture name
 
     Render::ImageSourceCR GetImageSource() const {return m_data;} //!< The image source
     Render::ImageSourceCR GetImageSourceR() {return m_data;} //!< A writable reference to the image source

@@ -195,7 +195,7 @@ DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId sourc
     if (!destModel.IsValid())
         return DgnGeometryPartId();
 
-    DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(*destModel, sourceGeometryPart->GetCode().GetValue());
+    DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(*destModel, sourceGeometryPart->GetCode().GetValue().GetUtf8());
     if (!destGeometryPart.IsValid())
         return DgnGeometryPartId();
 

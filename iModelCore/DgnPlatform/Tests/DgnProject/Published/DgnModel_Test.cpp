@@ -582,7 +582,7 @@ TEST_F(DgnModelTests, CodeUniqueness)
     // Checking models are identifed by unique DgnCode 
     DgnElementId eleid=model1->GetModeledElementId();
     auto ele=m_db->Elements().GetElement(eleid)->CopyForEdit();
-    ASSERT_TRUE("Testcode1" == ele->GetCode().GetValue());
+    ASSERT_TRUE("Testcode1" == ele->GetCode().GetValueUtf8());
     DgnCode updatepartitionCode = InformationPartitionElement::CreateCode(*m_db->Elements().GetRootSubject(), "Testcode2");
     ele->SetCode(updatepartitionCode);
     ASSERT_TRUE(updatepartitionCode == ele->GetCode());
