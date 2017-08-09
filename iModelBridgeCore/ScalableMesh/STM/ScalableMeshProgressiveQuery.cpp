@@ -498,7 +498,7 @@ private:
             if ((meshNode->IsLoaded(displayCacheManagerPtr.get()) == false && meshNode->IsLoadedInVRAM(displayCacheManagerPtr.get()) == false) || !meshNode->IsClippingUpToDate() || !meshNode->HasCorrectClipping(clipVisibilities))
                 {
                 if (!meshNode->IsDataUpToDate()) meshNode->UpdateData();
-                meshNode->ApplyAllExistingClips();
+                meshNode->ApplyAllExistingClips(scalableMeshPtr->GetReprojectionTransform());
                 meshNode->RemoveDisplayDataFromCache();                    
                 meshNode->LoadMesh(false, clipVisibilities, displayCacheManagerPtr, loadTexture, scalableMeshPtr->ShouldInvertClips());
                 assert(meshNode->HasCorrectClipping(clipVisibilities));                 
@@ -976,9 +976,9 @@ void ScalableMeshProgressiveQueryEngine::UpdatePreloadOverview()
         //Empty node are never loaded
         if (node->IsLoaded() == false) continue;
         
-        if (!node->IsClippingUpToDate() || !node->HasCorrectClipping(m_activeClips))
+        if (!node->IsClippingUpToDate() || !node->HasCorrectClipping(m_activeClips) || node->HasInvertedClips() != m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips())
             {
-            node->ApplyAllExistingClips();
+            node->ApplyAllExistingClips(m_smOverviews[&node - &m_overviewNodes[0]]->GetReprojectionTransform());
             node->RemoveDisplayDataFromCache();                    
             node->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true, m_smOverviews[&node - &m_overviewNodes[0]]->ShouldInvertClips());
             assert(node->HasCorrectClipping(m_activeClips));                 
@@ -995,7 +995,7 @@ void ScalableMeshProgressiveQueryEngine::PreloadOverview(HFCPtr<SMPointIndexNode
     TRACEPOINT(THREAD_ID(), EventType::EVT_CREATE_DISPLAY_OVR_PRELOAD, node->GetBlockID().m_integerID, (uint64_t)-1, smNode->GetSingleTextureID(), -1, (uint64_t)meshNode.get(), -1)
 
 
-    meshNode->ApplyAllExistingClips();
+    meshNode->ApplyAllExistingClips(sMesh->GetReprojectionTransform());
     meshNode->RemoveDisplayDataFromCache();                    
     meshNode->LoadMesh(false, m_activeClips, m_displayCacheManagerPtr, true, sMesh->ShouldInvertClips());                               
     assert(meshNode->IsLoaded(m_displayCacheManagerPtr.get()) == false || meshNode->HasCorrectClipping(m_activeClips));
@@ -1163,6 +1163,9 @@ static double s_firstNodeSearchingDelay = (double)1 / 15 * CLOCKS_PER_SEC;
 #else
 static double s_firstNodeSearchingDelay = (double)1 / 10 * CLOCKS_PER_SEC;
 #endif
+
+
+
 //static int    s_nbIterClock;
 
 void FindOverview(bvector<IScalableMeshCachedDisplayNodePtr>& lowerResOverviewNodes, DRange3d& extentToCover, HFCPtr<SMPointIndexNode<DPoint3d, Extent3dType>>& node, bool loadTexture, const bset<uint64_t>& clipVisibilities, IScalableMeshPtr& scalableMeshPtr, IScalableMeshDisplayCacheManagerPtr& displayCacheManagerPtr)

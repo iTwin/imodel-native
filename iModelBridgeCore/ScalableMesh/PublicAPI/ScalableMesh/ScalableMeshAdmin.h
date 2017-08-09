@@ -8,6 +8,7 @@
 #pragma once
 #include <DgnPlatform/DgnPlatform.h>
 #include <ScalableMesh\IScalableMeshTextureGenerator.h>
+
 /*--------------------------------------------------------------------------------------+
 |   Header File Dependencies
 +--------------------------------------------------------------------------------------*/
@@ -56,10 +57,7 @@ struct ScalableMeshAdmin : DgnHost::IHostObject
             return 0;
             }
 
-        virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const
-            {
-            return ERROR;
-            }       
+		//virtual StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle) const;
     #endif
 };
 
@@ -111,6 +109,37 @@ struct SSLCertificateAdmin
             return m_getSSLCertificatePath();
             }
     };
+
+#ifdef VANCOUVER_API
+struct STMAdmin
+{
+private:
+	std::function<StatusInt(BENTLEY_NAMESPACE_NAME::WString&, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle&)> m_resolveFileName;
+
+public:
+	STMAdmin() 
+	    {
+		m_resolveFileName = [](BENTLEY_NAMESPACE_NAME::WString&, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle&)
+		    {
+			return ERROR;
+		};
+	    }
+	STMAdmin(std::function<StatusInt(BENTLEY_NAMESPACE_NAME::WString&, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle&)> NameResolver)
+		: m_resolveFileName(NameResolver)
+	{}
+
+	STMAdmin(const STMAdmin& myAdmin)
+	    {
+		m_resolveFileName = myAdmin.m_resolveFileName;
+	    }
+
+	StatusInt _ResolveMrDtmFileName(BENTLEY_NAMESPACE_NAME::WString& fileName, const BENTLEY_NAMESPACE_NAME::DgnPlatform::EditElementHandle& elHandle)
+	{
+		return m_resolveFileName(fileName, elHandle);
+	}
+};
+
+#endif
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE
 

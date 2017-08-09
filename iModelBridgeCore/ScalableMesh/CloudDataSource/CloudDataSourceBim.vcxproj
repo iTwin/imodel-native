@@ -154,10 +154,10 @@
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  CloudDataSource -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  CloudDataSource -r  ScalableMesh re  CloudDataSource  -c
-BentleyBuild.py -ax64 -p CloudDataSource -f  CloudDataSource -r  ScalableMesh re  CloudDataSource </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  CloudDataSource -r  ScalableMesh re  CloudDataSource  -c</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource </NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource -c
+BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource </NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine>BentleyBuild.py -ax64 -p CloudDataSource -f  ScalableMesh -r  ScalableMesh re  CloudDataSource  -c</NMakeCleanCommandLine>
     <OutDir>$(OutRoot)VS\$(Configuration)\</OutDir>
     <IntDir>$(OutRoot)VS\$(Configuration)\</IntDir>
     <BaseIntermediateOutputPath>$(OutRoot)VS\$(Configuration)\</BaseIntermediateOutputPath>

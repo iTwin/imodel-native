@@ -713,7 +713,15 @@ protected:
 public:
     DRange3dCR GetDgnRange() const { return m_dgnRange; }
     DRange3d GetTileRange() const { DRange3d range = m_dgnRange; m_transformFromDgn.Multiply(range, range); return range; }
-    DPoint3d GetTileCenter() const { DRange3d range = GetTileRange(); return DPoint3d::FromInterpolate (range.low, .5, range.high); }
+    DPoint3d GetTileCenter() const 
+        { 
+        //#define CESIUM_RTC_ZERO
+#ifdef CESIUM_RTC_ZERO
+        return DPoint3d::FromXYZ(0, 0, 0);
+#endif
+        DRange3d range = GetTileRange(); 
+        return DPoint3d::FromInterpolate (range.low, .5, range.high);
+        }
     size_t GetDepth() const { return m_depth; } //!< This node's depth from the root tile node
     size_t GetSiblingIndex() const { return m_siblingIndex; } //!< This node's order within its siblings at the same depth
     double GetTolerance() const { return m_tolerance; }

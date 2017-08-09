@@ -1709,7 +1709,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
     volatile bool dbg = false;
     if (dbg)
         {
-        WString nameBefore = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpreclipmeshregion_";
+        WString nameBefore = WString(L"C:\\work\\tmp\\") + L"fpreclipmeshregion_";
         nameBefore.append(to_wstring(clipVal).c_str());
         nameBefore.append(L".m");
         FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
@@ -1722,7 +1722,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
         fclose(meshBeforeClip);
         for (size_t j = 0; j < polygons.size(); ++j)
             {
-            WString namePoly = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpreclippolyreg_";
+            WString namePoly = WString(L"C:\\work\\tmp\\") + L"fpreclippolyreg_";
             namePoly.append(to_wstring(clipVal).c_str());
             namePoly.append(L"_");
             namePoly.append(to_wstring(j).c_str());
@@ -1755,7 +1755,7 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
 #if SM_TRACE_CLIPS_FULL
      if (dbg)
          {
-         WString nameBefore = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpostclipmeshregion_";
+         WString nameBefore = WString(L"C:\\work\\tmp\\") + L"fpostclipmeshregion_";
          nameBefore.append(to_wstring(clipVal).c_str());
          nameBefore.append(L".m");
          FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
@@ -1769,13 +1769,13 @@ bool GetRegionsFromClipPolys3D(bvector<bvector<PolyfaceHeaderPtr>>& polyfaces, b
 
          for (size_t i = 1; i < polyfaces.size(); ++i)
              {
-             WString nameBefore = WString(L"C:\\work\\2017q1\\spar\\clip\\") + L"fpostclipmeshregion_";
+             nameBefore = WString(L"C:\\work\\tmp\\") + L"fpostclipmeshregion_";
              nameBefore.append(to_wstring(clipVal).c_str());
              nameBefore.append(L"_");
              nameBefore.append(to_wstring(i).c_str());
              nameBefore.append(L".m");
-             FILE* meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
-             size_t count = polyfaces[i][0]->GetPointCount();
+             meshBeforeClip = _wfopen(nameBefore.c_str(), L"wb");
+             count = polyfaces[i][0]->GetPointCount();
              fwrite(&count, sizeof(size_t), 1, meshBeforeClip);
              fwrite(polyfaces[i][0]->GetPointCP(), sizeof(DPoint3d), count, meshBeforeClip);
              count = polyfaces[i][0]->GetPointIndexCount();

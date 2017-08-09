@@ -724,6 +724,11 @@ DTMStatusInt IScalableMeshMesh::GetBoundary(bvector<DPoint3d>& pts)
     return _GetBoundary(pts);
     }
 
+void IScalableMeshMesh::RemoveSlivers(double edgeLengthRatio)
+    {
+	return _RemoveSlivers(edgeLengthRatio);
+    }
+
 int IScalableMeshMesh::ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const
     {
     return _ProjectPolyLineOnMesh(endPt, projectedPoints, points, nPts, segment, triangle, startPt, lastEdge);
@@ -768,6 +773,11 @@ bool IScalableMeshMesh::CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d&
     {
     return _CutWithPlane(segmentList, cuttingPlane);
     }
+
+void IScalableMeshMesh::SetTransform(Transform myTransform) 
+{
+	return _SetTransform(myTransform);
+}
 
 void IScalableMeshMesh::WriteToFile(WString& filePath)
     {
@@ -1296,6 +1306,41 @@ int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFac
     return status;
     }
 
+void ScalableMeshMesh::_RemoveSlivers(double edgeLengthRatio)
+    {
+
+	bvector<int32_t> newIndices;
+	bmap<bpair<int, int>, size_t> edgeOccurrences;
+	for (int i = 0; i < m_nbFaceIndexes; i += 3)
+	    {
+		edgeOccurrences[make_bpair(std::min(m_faceIndexes[i], m_faceIndexes[i + 1]), std::max(m_faceIndexes[i], m_faceIndexes[i + 1]))]++;
+		edgeOccurrences[make_bpair(std::min(m_faceIndexes[i+2], m_faceIndexes[i + 1]), std::max(m_faceIndexes[i+2], m_faceIndexes[i + 1]))]++;
+		edgeOccurrences[make_bpair(std::min(m_faceIndexes[i], m_faceIndexes[i + 2]), std::max(m_faceIndexes[i], m_faceIndexes[i + 2]))]++;
+	    }
+
+	for (int i = 0; i < m_nbFaceIndexes; i += 3)
+	    {
+
+		if (edgeOccurrences[make_bpair(std::min(m_faceIndexes[i], m_faceIndexes[i + 1]), std::max(m_faceIndexes[i], m_faceIndexes[i + 1]))] == 1 ||
+			edgeOccurrences[make_bpair(std::min(m_faceIndexes[i + 2], m_faceIndexes[i + 1]), std::max(m_faceIndexes[i + 2], m_faceIndexes[i + 1]))] == 1 ||
+			edgeOccurrences[make_bpair(std::min(m_faceIndexes[i], m_faceIndexes[i + 2]), std::max(m_faceIndexes[i], m_faceIndexes[i + 2]))] == 1
+			)
+		    {
+			DPoint3d triangle[3] = { m_points[m_faceIndexes[i] - 1], m_points[m_faceIndexes[i + 1] - 1], m_points[m_faceIndexes[i + 2] - 1] };
+			double segLengths[3] = { DVec3d::FromStartEnd(triangle[0], triangle[1]).MagnitudeSquared(), DVec3d::FromStartEnd(triangle[1], triangle[2]).MagnitudeSquared(), DVec3d::FromStartEnd(triangle[0], triangle[2]).MagnitudeSquared() };
+			double minLength = std::min(segLengths[0], std::min(segLengths[1], segLengths[2]));
+			double maxLength = std::max(segLengths[0], std::max(segLengths[1], segLengths[2]));
+			if (minLength / maxLength <= edgeLengthRatio)
+				continue;
+		    }
+		newIndices.push_back(m_faceIndexes[i]);
+		newIndices.push_back(m_faceIndexes[i+1]);
+		newIndices.push_back(m_faceIndexes[i+2]);
+	    }
+	memcpy(m_faceIndexes, &newIndices[0], newIndices.size() * sizeof(int32_t));
+	m_nbFaceIndexes = (int)newIndices.size();
+    }
+
 int ScalableMeshMesh::_ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const
     {
     return ERROR;//not supported
@@ -1685,9 +1730,18 @@ bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DR
     return minParam < DBL_MAX;
     }
 
+void ScalableMeshMesh::_SetTransform(Transform tr)
+    {
+	m_transform = tr;
+	for (size_t i = 0; i < m_nbPoints; ++i)
+		m_transform.Multiply(m_points[i]);
+    }
+
 bool ScalableMeshMesh::_CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const
     {
     if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
+
+	//if (!m_transform.IsIdentity()) m_transform.Multiply(cuttingPlane);
     for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
         {
         DPoint3d pts[3];
@@ -2678,14 +2732,14 @@ void IScalableMeshNode::LoadNodeHeader() const
     return _LoadHeader();
     }
 
-void IScalableMeshNode::ApplyAllExistingClips() const
+void IScalableMeshNode::ApplyAllExistingClips(Transform tr) const
     {
-    return _ApplyAllExistingClips();
+    return _ApplyAllExistingClips(tr);
     }
 
-void     IScalableMeshNode::RefreshMergedClip() const
+void     IScalableMeshNode::RefreshMergedClip(Transform tr) const
     {
-    return _RefreshMergedClip();
+    return _RefreshMergedClip(tr);
     }
 
 bool     IScalableMeshNode::AddClip(uint64_t id, bool isVisible) const

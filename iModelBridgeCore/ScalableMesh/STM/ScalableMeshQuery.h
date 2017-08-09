@@ -554,6 +554,7 @@ class ScalableMeshMesh : public IScalableMeshMesh
     protected : 
         DPoint3d* m_points;
         size_t    m_nbPoints;
+		Transform m_transform;
 
         virtual const BENTLEY_NAMESPACE_NAME::PolyfaceQuery* _GetPolyfaceQuery() const override;
 
@@ -566,6 +567,10 @@ class ScalableMeshMesh : public IScalableMeshMesh
         virtual DTMStatusInt _GetAsBcDTM(BcDTMPtr& bcdtm)override;
 
         virtual DTMStatusInt _GetBoundary(bvector<DPoint3d>& boundary) override;
+
+		virtual void _SetTransform(Transform myTransform);
+
+		virtual void _RemoveSlivers(double edgeLengthRatio) override;
 
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const override;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const override;
@@ -1322,9 +1327,9 @@ template<class POINT> class ScalableMeshNode : public virtual IScalableMeshNode
 
         virtual IScalableMeshMeshPtr _GetMeshByParts(const bset<uint64_t>& clipsToShow) const override;
 
-        virtual void   _ApplyAllExistingClips() const override;
+        virtual void   _ApplyAllExistingClips(Transform tr) const override;
 
-        virtual void   _RefreshMergedClip() const override;
+        virtual void   _RefreshMergedClip(Transform tr) const override;
 
         virtual bool   _AddClip(uint64_t id, bool isVisible) const override;
 
@@ -1465,7 +1470,8 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bvector< RefCountedPtr<SMMemoryPoolGenericBlobItem<SmCachedDisplayTextureData>>> m_cachedDisplayTextureData;
             bvector<ClipVectorPtr>                                          m_clipVectors;            
             const IScalableMesh* m_scalableMeshP;
-
+			bool m_invertClips;
+			bool m_loadTexture;
 
 
     protected:         
@@ -1540,6 +1546,16 @@ template<class POINT> class ScalableMeshCachedDisplayNode : public virtual IScal
             bool HasCorrectClipping(const bset<uint64_t>& clipsToShow) const;
 
             void RemoveDisplayDataFromCache();
+
+			bool HasInvertedClips()
+			{
+				return m_invertClips;
+			}
+
+			bool ShouldLoadTexture()
+			{
+				return m_loadTexture;
+			}
           
 
             SmCachedDisplayTexture* GetCachedDisplayTextureForID(uint64_t textureID)

@@ -292,6 +292,7 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClInclude Include="AutomaticGroundDetection\TileLoaderQueue.h" />
     <ClInclude Include="GeneratorTextureProvider.h" />
     <ClInclude Include="GeoCoords\GCSWktParsing.h" />
+    <ClInclude Include="GeoCoords\ReprojectionUtils.h" />
     <ClInclude Include="GeoCoords\StdCpp.h" />
     <ClInclude Include="GeoCoords\TransfoModelAffine.hpp" />
     <ClInclude Include="GeoCoords\TransfoModelBase.h" />

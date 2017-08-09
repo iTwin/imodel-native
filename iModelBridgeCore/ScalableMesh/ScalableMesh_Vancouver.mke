@@ -494,7 +494,7 @@ LINKER_LIBRARIES_DELAYLOADED  = \
     $(ContextSubpartsLibs)BeCurl.lib \
 	$(ContextSubpartsLibs)acute3dio.lib \
 	$(ContextSubpartsLibs)PointCloud.lib \
-	$(ContextSubpartsLibs)freeimage.lib
+	$(ContextSubpartsLibs)freeimage.lib 
     
 #    $(ContextSubpartsLibs)cpprest120_2_6.lib \
 #    $(DgnPlatformV8LibDir)Bentley.lib \

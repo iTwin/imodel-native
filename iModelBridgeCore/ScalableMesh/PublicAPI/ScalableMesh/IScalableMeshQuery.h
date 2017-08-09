@@ -321,6 +321,10 @@ struct IScalableMeshMesh : public RefCountedBase
 
         virtual DTMStatusInt _GetBoundary(bvector<DPoint3d>& boundary) = 0;
 
+		virtual void _SetTransform(Transform newTransform) = 0;
+
+		virtual void _RemoveSlivers(double edgeLengthRatio) = 0;
+
         virtual bool _FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const = 0;
         virtual bool _FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const = 0;
 
@@ -350,6 +354,10 @@ struct IScalableMeshMesh : public RefCountedBase
         BENTLEY_SM_EXPORT DTMStatusInt GetAsBcDTM(BENTLEY_NAMESPACE_NAME::TerrainModel::BcDTMPtr& bcdtm);
 
         BENTLEY_SM_EXPORT DTMStatusInt GetBoundary(bvector<DPoint3d>& boundary);
+
+		BENTLEY_SM_EXPORT void SetTransform(Transform newTransform);
+
+		BENTLEY_SM_EXPORT void RemoveSlivers(double edgeLengthRatio=1e-6);
                 
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(int* outTriangle, DPoint3d& point, bool use2d = false) const;
         BENTLEY_SM_EXPORT bool FindTriangleForProjectedPoint(MTGNodeId& outTriangle, DPoint3d& point, bool use2d = false) const;
@@ -467,9 +475,9 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         virtual IScalableMeshNodePtr _GetParentNode() const = 0;
         
-        virtual void     _ApplyAllExistingClips() const = 0;
+        virtual void     _ApplyAllExistingClips(Transform tr) const = 0;
 
-        virtual void     _RefreshMergedClip() const = 0;
+        virtual void     _RefreshMergedClip(Transform tr) const = 0;
 
         virtual bool     _AddClip(uint64_t id, bool isVisible) const = 0;
 
@@ -546,9 +554,9 @@ struct IScalableMeshNode abstract: virtual public RefCountedBase
 
         BENTLEY_SM_EXPORT IScalableMeshNodePtr GetParentNode() const;
 
-        BENTLEY_SM_EXPORT void     ApplyAllExistingClips() const;
+        BENTLEY_SM_EXPORT void     ApplyAllExistingClips(Transform tr) const;
 
-        BENTLEY_SM_EXPORT void     RefreshMergedClip() const;
+        BENTLEY_SM_EXPORT void     RefreshMergedClip(Transform tr) const;
 
         BENTLEY_SM_EXPORT bool     AddClip(uint64_t id, bool isVisible=true) const;
 

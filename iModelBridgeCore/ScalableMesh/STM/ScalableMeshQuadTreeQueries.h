@@ -259,7 +259,7 @@ template<class POINT, class EXTENT> class ScalableMeshQuadTreeLevelMeshIndexQuer
         bool m_alwaysVisible;
         bool m_includeUnbalancedLeafs;
         bool m_ignoreFaceIndexes;
-        double m_pixelTolerance;
+        double m_pixelTolerance;        
 
     public:
 

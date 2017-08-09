@@ -1708,7 +1708,7 @@ inline void ApplyClipDiffSetToMesh(FloatXYZ*& points, size_t& nbPoints,
 
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr)
-    : ScalableMeshNode(nodePtr)
+    : ScalableMeshNode(nodePtr), m_invertClips(false), m_loadTexture(false)
 {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
@@ -1723,7 +1723,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, Transform reprojectionTransform)
-    : ScalableMeshNode(nodePtr)
+    : ScalableMeshNode(nodePtr), m_invertClips(false), m_loadTexture(false)
     {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);    
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
@@ -1739,7 +1739,7 @@ template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedD
     }
 
 template <class POINT> ScalableMeshCachedDisplayNode<POINT>::ScalableMeshCachedDisplayNode(HFCPtr<SMPointIndexNode<POINT, Extent3dType>>& nodePtr, const IScalableMesh* scalableMesh)
-    : ScalableMeshNode(nodePtr), m_scalableMeshP(scalableMesh)
+    : ScalableMeshNode(nodePtr), m_scalableMeshP(scalableMesh), m_invertClips(false), m_loadTexture(false)
 {
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
     m_cachedDisplayMeshData = meshNode->GetDisplayMeshes(true);
@@ -1783,7 +1783,7 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded() con
             return false;
         }    
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-    if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty()) return false;
+    if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty() && m_loadTexture) return false;
     return true;
     }
 
@@ -1805,7 +1805,7 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoaded( ISc
             return false;
         }
     auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);
-    if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty()) return false;
+    if (meshNode->IsTextured() && m_cachedDisplayTextureData.empty() && m_loadTexture) return false;
     return true;
     }
 
@@ -1837,7 +1837,7 @@ template < class POINT> bool ScalableMeshCachedDisplayNode<POINT>::IsLoadedInVRA
 
 template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClipping(const bset<uint64_t>& clipsToShow) const
     {
-    if (clipsToShow.empty() || m_node->GetNbPoints() == 0) return true;
+    if (m_node->GetNbPoints() == 0 || dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node)->m_nodeHeader.m_nbFaceIndexes == 0) return true;
 
     assert(IsLoaded() == true);
 
@@ -1849,7 +1849,8 @@ template <class POINT> bool ScalableMeshCachedDisplayNode<POINT>::HasCorrectClip
         const bvector<uint64_t>& clipsForMesh = const_cast<SmCachedDisplayMeshData&>(meshData).GetAppliedClips();
         appliedClips.insert(appliedClips.end(), clipsForMesh.begin(), clipsForMesh.end());
         }
-    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);                
+    auto meshNode = dynamic_pcast<SMMeshIndexNode<POINT, Extent3dType>, SMPointIndexNode<POINT, Extent3dType>>(m_node);    
+
     bvector<bool> appliedClipsVisible;
     appliedClipsVisible.resize(appliedClips.size(), false);        
     
@@ -2023,8 +2024,9 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
     assert(loadGraph == false);
     assert(displayCacheManagerPtr != 0);
 
-    LOAD_NODE
-            
+	LOAD_NODE
+
+		m_invertClips = shouldInvertClips;
     if (displayCacheManagerPtr != 0)                
         {        
         //NEEDS_WORK_SM_PROGRESSIF : Node header loaded unexpectingly
@@ -2064,6 +2066,7 @@ template <class POINT> void ScalableMeshCachedDisplayNode<POINT>::LoadMesh(bool 
             //SmCachedDisplayTexture* cachedDisplayTexture = 0;
             //size_t                  qvMemorySizeEstimate = 0;
             bool texLoaded = false;
+			m_loadTexture = loadTexture;
             if (loadTexture && meshNode->IsTextured())
                 {
                 //NEEDS_WORK_SM : Don't keep texture in memory.
@@ -2681,16 +2684,16 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     else return m_meshNode->IsClippingUpToDate();
     }
 
-template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips() const
+template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips(Transform tr) const
     {
        
-    _RefreshMergedClip();    
+    _RefreshMergedClip(tr);    
     }
 
-template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip() const
+template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip(Transform tr) const
     {
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->BuildSkirts();
-    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->ComputeMergedClips();
+    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->ComputeMergedClips(tr);
     }
 
 
@@ -2706,7 +2709,7 @@ template <class POINT> void ScalableMeshNode<POINT>::_UpdateData()
     LOAD_NODE
 
         dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->UpdateData();
-    _RefreshMergedClip(); //must recompute clip after data was updated
+    _RefreshMergedClip(Transform::FromIdentity()); //must recompute clip after data was updated
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_AddClip(uint64_t id, bool isVisible) const

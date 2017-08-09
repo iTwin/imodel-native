@@ -26,7 +26,11 @@
 #include "..\CGALEdgeCollapse.h"
 #undef static_assert
 #include <DgnPlatform/DgnPlatformApi.h>
-#include <DgnPlatform/DgnGeoCoord.h>
+#ifdef VANCOUVER_API
+#include <DgnGeoCoord\DgnGeoCoord.h>
+#else
+#include <DgnPlatform\DgnGeoCoord.h>
+#endif
 #include <json/json.h>
 #undef MAX
 
