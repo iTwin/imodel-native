@@ -197,10 +197,10 @@
   <Part Name="PointoolsVortexAPI_API_VS2012_x86" OnlyPlatforms="x86">
     <SubPart PartName="PointoolsVortexAPI_ReleaseNotes"/>
     <Bindings>
-      <Files Domain="PointoolsVortexAPI_DLL" ProductDirectoryName="PointoolsVortexAPI_VS2012_Src">
+      <Files ProductDirectoryName="PointoolsVortexAPI_VS2012_Src">
         VendorAPI/PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp
       </Files>
-      <Files Domain="PointoolsVortexAPI_DLL" ProductDirectoryName="PointoolsVortexAPI_VS2012_Include_PTAPI">
+      <Files ProductDirectoryName="PointoolsVortexAPI_VS2012_Include_PTAPI">
         VendorAPI/PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h  
         VendorAPI/PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_ResultCodes.h
       </Files>
@@ -214,10 +214,10 @@
   <Part Name="PointoolsVortexAPI_API_VS2012_x64" OnlyPlatforms="x64">
     <SubPart PartName="PointoolsVortexAPI_ReleaseNotes"/>
     <Bindings>
-      <Files Domain="PointoolsVortexAPI_DLL" ProductDirectoryName="PointoolsVortexAPI_VS2012_Src">
+      <Files ProductDirectoryName="PointoolsVortexAPI_VS2012_Src">
         VendorAPI/PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.cpp
       </Files>
-      <Files Domain="PointoolsVortexAPI_DLL" ProductDirectoryName="PointoolsVortexAPI_VS2012_Include_PTAPI">
+      <Files ProductDirectoryName="PointoolsVortexAPI_VS2012_Include_PTAPI">
         VendorAPI/PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_import.h  
         VendorAPI/PointoolsVortexAPI_DLL/PTAPI/PointoolsVortexAPI_ResultCodes.h
       </Files>
@@ -230,7 +230,7 @@
 
   <Part Name="PointoolsVortexAPI_Clash_API_VS2012">
     <Bindings>
-      <Files Domain="PointoolsVortexAPI_DLL" ProductDirectoryName="PointoolsVortexAPI_VS2012_Include_VortexObjects">
+      <Files ProductDirectoryName="PointoolsVortexAPI_VS2012_Include_VortexObjects">
         VendorAPI/PointoolsVortexAPI_DLL/VortexObjects/IClashNode.h
         VendorAPI/PointoolsVortexAPI_DLL/VortexObjects/IClashObject.h
         VendorAPI/PointoolsVortexAPI_DLL/VortexObjects/IClashObjectManager.h
@@ -242,7 +242,7 @@
   
   <Part Name="PointoolsVortexAPI_FeatureExtract_API_VS2012">
     <Bindings>
-      <Files Domain="PointoolsVortexAPI_FeatureExtract_DLL" ProductDirectoryName="PointoolsVortexAPI_VS2012_Include_FeatureExtract">
+      <Files ProductDirectoryName="PointoolsVortexAPI_VS2012_Include_FeatureExtract">
         VendorAPI/PointoolsVortexAPI_FeatureExtract_DLL/VortexFeatureExtract.h
         VendorAPI/PointoolsVortexAPI_FeatureExtract_DLL/VortexFeatureExtractAPI.h
         VendorAPI/PointoolsVortexAPI_FeatureExtract_DLL/GeomTypes.h
