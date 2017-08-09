@@ -18,17 +18,17 @@ BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 //=======================================================================================
 struct StructuralCommonDomain : Dgn::DgnDomain
     {
-    DOMAIN_DECLARE_MEMBERS(StructuralCommonDomain, STRUCTURAL_EXPORT)
+    DOMAIN_DECLARE_MEMBERS(StructuralCommonDomain, STRUCTURAL_DOMAIN_EXPORT)
 
     protected:
-        WCharCP _GetSchemaRelativePath() const override { return BENTLEY_STRUCTURAL_SCHEMA_PATH; }
+        WCharCP _GetSchemaRelativePath() const override { return BENTLEY_STRUCTURAL_COMMON_SCHEMA_PATH; }
         virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
         virtual void _OnDgnDbOpened(Dgn::DgnDbR) const override;
 
     public:
         StructuralCommonDomain();
-        STRUCTURAL_EXPORT static Dgn::CodeSpecId QueryStructuralCommonCodeSpecId(Dgn::DgnDbCR dgndb);
-        STRUCTURAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
+        STRUCTURAL_DOMAIN_EXPORT static Dgn::CodeSpecId QueryStructuralCommonCodeSpecId(Dgn::DgnDbCR dgndb);
+        STRUCTURAL_DOMAIN_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
     };
 
 

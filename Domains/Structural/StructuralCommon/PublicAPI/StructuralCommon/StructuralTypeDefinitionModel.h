@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "StructuralPhysicalDefinitions.h"
-
+#include <StructuralDomain\StructuralCommon\StructuralCommonDomain.h>
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
@@ -27,14 +26,14 @@ struct StructuralTypeDefinitionModel : Dgn::DefinitionModel
 
     protected:
         //! StructuralTypeDefinitionModel wants custom behavior when elements are inserted
-        STRUCTURAL_PHYSICAL_EXPORT virtual Dgn::DgnDbStatus _OnInsertElement(Dgn::DgnElementR) override;
+        STRUCTURAL_DOMAIN_EXPORT virtual Dgn::DgnDbStatus _OnInsertElement(Dgn::DgnElementR) override;
 
         //! StructuralTypeDefinitionModel constructor used by StructuralTypeDefinitionModelHandler
         explicit StructuralTypeDefinitionModel(CreateParams const& params) : T_Super(params) {}
 
     public:
         //! Uses to create (in memory) a new StructuralTypeDefinitionModel
-        STRUCTURAL_PHYSICAL_EXPORT static StructuralTypeDefinitionModelPtr Create(Dgn::DefinitionPartitionCR);
+        STRUCTURAL_DOMAIN_EXPORT static StructuralTypeDefinitionModelPtr Create(Dgn::DefinitionPartitionCR);
     };
 
 
@@ -48,7 +47,7 @@ struct StructuralTypeDefinitionModelHandler : Dgn::dgn_ModelHandler::Definition
     // Parameter 2) StructuralTypeDefinitionModel - the DgnModel subclass which provides the custom behavior for the ECEntityClass
     // Parameter 3) TStructuralTypeDefinitionModelHandler - the factory class that will create instances of StructuralTypeDefinitionModel
     // Parameter 4) Dgn::dgn_ModelHandler::Definition - the superclass of StructuralTypeDefinitionModelHandler
-    MODELHANDLER_DECLARE_MEMBERS(STRUCTURAL_COMMON_CLASS_StructuralTypeDefinitionModel, StructuralTypeDefinitionModel, StructuralTypeDefinitionModelHandler, Dgn::dgn_ModelHandler::Definition, STRUCTURAL_PHYSICAL_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(STRUCTURAL_COMMON_CLASS_StructuralTypeDefinitionModel, StructuralTypeDefinitionModel, StructuralTypeDefinitionModelHandler, Dgn::dgn_ModelHandler::Definition, STRUCTURAL_DOMAIN_EXPORT)
     };
 
 

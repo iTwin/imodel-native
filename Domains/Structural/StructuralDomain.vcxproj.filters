@@ -13,33 +13,74 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Mke">
+      <UniqueIdentifier>{7ce51174-8ca6-41f6-bfa1-5e12d2e867e6}</UniqueIdentifier>
+      <Extensions>*.mke;*.mki</Extensions>
+    </Filter>
+    <Filter Include="StructuralCommon">
+      <UniqueIdentifier>{50986354-3297-4bbe-a7c1-f4aa93e5997b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Schemas">
+      <UniqueIdentifier>{4fa80fe8-5e7a-4865-8e40-d0ee486fd6a9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="StructuralPhysical">
+      <UniqueIdentifier>{6646c568-d20a-486b-947a-94209b2db834}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="StructuralDomainInternal.h">
-      <Filter>Header Files</Filter>
+    <None Include="structural.mke">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="Structural.prewire.mke">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="StructuralCommon\StructuralCommon.prewire.mki">
+      <Filter>Mke</Filter>
+    </None>
+    <None Include="StructuralPhysical\StructuralPhysical.prewire.mki">
+      <Filter>Mke</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="StructuralDomains.Partfile.xml">
+      <Filter>Mke</Filter>
+    </Xml>
+    <Xml Include="StructuralPhysical\StructuralPhysical.ecschema.xml">
+      <Filter>Schemas</Filter>
+    </Xml>
+    <Xml Include="StructuralCommon\StructuralCommon.ecschema.xml">
+      <Filter>Schemas</Filter>
+    </Xml>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="StructuralCommon\StructuralCommonDomain.cpp">
+      <Filter>StructuralCommon</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralCommon\StructuralPhysicalModel.cpp">
+      <Filter>StructuralCommon</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralCommon\StructuralTypeDefinitionModel.cpp">
+      <Filter>StructuralCommon</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralPhysical\StructuralPhysicalDomain.cpp">
+      <Filter>StructuralPhysical</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h">
+      <Filter>StructuralCommon</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="StructuralDomainInternal.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralDomainUtilities.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="ConcreteSchema\ConcreteDomain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralMaterials\StructuralMaterialsDomain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralPhysicalSchema\StructuralPhysicalDomain.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralPhysicalSchema\StructuralPhysicalModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="StructuralPhysicalSchema\StructuralTypeDefinitionModel.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDefinitions.h">
+      <Filter>StructuralCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDomain.h">
+      <Filter>StructuralCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralPhysicalModel.h">
+      <Filter>StructuralCommon</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralTypeDefinitionModel.h">
+      <Filter>StructuralCommon</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -18,7 +18,7 @@ BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 //=======================================================================================
 struct StructuralPhysicalDomain : Dgn::DgnDomain
     {
-    DOMAIN_DECLARE_MEMBERS(StructuralPhysicalDomain, STRUCTURAL_EXPORT)
+    DOMAIN_DECLARE_MEMBERS(StructuralPhysicalDomain, STRUCTURAL_DOMAIN_EXPORT)
 
     protected:
         WCharCP _GetSchemaRelativePath() const override { return BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_PATH; }
@@ -27,8 +27,8 @@ struct StructuralPhysicalDomain : Dgn::DgnDomain
 
     public:
         StructuralPhysicalDomain();
-        STRUCTURAL_EXPORT static Dgn::CodeSpecId QueryStructuralPhysicalCodeSpecId(Dgn::DgnDbCR dgndb);
-        STRUCTURAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
+        STRUCTURAL_DOMAIN_EXPORT static Dgn::CodeSpecId QueryStructuralPhysicalCodeSpecId(Dgn::DgnDbCR dgndb);
+        STRUCTURAL_DOMAIN_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
     };
 
 

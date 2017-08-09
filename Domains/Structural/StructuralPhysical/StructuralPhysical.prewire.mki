@@ -6,10 +6,10 @@
 #
 #---------------------------------------------------------------------------------------+
 
-$(targetAPIDir)StructuralPhysical : $(_MakeFilePath)StructuralPhysicalSchema/PublicAPI/StructuralPhysical
+$(targetAPIDir)StructuralPhysical : $(_MakeFilePath)StructuralPhysical/PublicAPI/StructuralPhysical
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(targetSchemasDir)StructuralPhysical.ecschema.xml : $(_MakeFilePath)StructuralPhysicalSchema\EC3_Schemas\StructuralPhysical.ecschema.xml
+$(targetSchemasDir)StructuralPhysical.ecschema.xml : $(_MakeFilePath)StructuralPhysical\StructuralPhysical.ecschema.xml
     $(LinkFirstDepToFirstTarget)
 
     

@@ -7,8 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include "StructuralPhysicalDefinitions.h"
-
+#include "StructuralCommonDefinitions.h"
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
@@ -27,14 +26,14 @@ struct StructuralPhysicalModel : Dgn::PhysicalModel
 
     protected:
         //! StructuralPhysicalModel wants custom behavior when elements are inserted
-        STRUCTURAL_PHYSICAL_EXPORT virtual Dgn::DgnDbStatus _OnInsertElement(Dgn::DgnElementR) override;
+        STRUCTURAL_DOMAIN_EXPORT virtual Dgn::DgnDbStatus _OnInsertElement(Dgn::DgnElementR) override;
 
         //! StructuralPhysicalModel constructor used by StructuralPhysicalModelHandler
         explicit StructuralPhysicalModel(CreateParams const& params) : T_Super(params) {}
 
     public:
         //! Uses to create (in memory) a new StructuralPhysicalModel
-        STRUCTURAL_PHYSICAL_EXPORT static StructuralPhysicalModelPtr Create(Dgn::PhysicalPartitionCR);
+        STRUCTURAL_DOMAIN_EXPORT static StructuralPhysicalModelPtr Create(Dgn::PhysicalPartitionCR);
     };
 
 
@@ -48,7 +47,7 @@ struct StructuralPhysicalModelHandler : Dgn::dgn_ModelHandler::Physical
     // Parameter 2) StructuralPhysicalModel - the DgnModel subclass which provides the custom behavior for the ECEntityClass
     // Parameter 3) StructuralPhysicalModelHandler - the factory class that will create instances of StructuralPhysicalModel
     // Parameter 4) Dgn::dgn_ModelHandler::Physical - the superclass of StructuralPhysicalModelHandler
-    MODELHANDLER_DECLARE_MEMBERS(STRUCTURAL_COMMON_CLASS_StructuralPhysicalModel, StructuralPhysicalModel, StructuralPhysicalModelHandler, Dgn::dgn_ModelHandler::Physical, STRUCTURAL_PHYSICAL_EXPORT)
+    MODELHANDLER_DECLARE_MEMBERS(STRUCTURAL_COMMON_CLASS_StructuralPhysicalModel, StructuralPhysicalModel, StructuralPhysicalModelHandler, Dgn::dgn_ModelHandler::Physical, STRUCTURAL_DOMAIN_EXPORT)
     };
 
 

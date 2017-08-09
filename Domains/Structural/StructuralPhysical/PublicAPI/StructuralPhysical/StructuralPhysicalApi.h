@@ -11,3 +11,5 @@
 
 #include "StructuralPhysicalDefinitions.h"
 #include "StructuralPhysicalDomain.h"
+#include "StructuralElement.h"
+#include "StructuralMember.h"
