@@ -848,7 +848,7 @@
 
 <Part Name="Tools-AndroidShared" BentleyBuildMakeFile="mki/Android/nativeCodeTools.mke" OnlyPlatforms="Android*">
     <Bindings>
-        <Directory Required="False" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
+        <Directory Required="false" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
     </Bindings>
 </Part>
 
