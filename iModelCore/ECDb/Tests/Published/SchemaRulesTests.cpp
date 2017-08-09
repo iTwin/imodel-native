@@ -575,6 +575,45 @@ TEST_F(SchemaRulesTestFixture, CircularStructReferences)
     {
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECStructClass typeName="StructA" >
+                       <ECStructArrayProperty propertyName="B" typeName="StructB" />
+                     </ECStructClass>
+                    <ECStructClass typeName="StructB" >
+                       <ECStructArrayProperty propertyName="A" typeName="StructA" />
+                     </ECStructClass>
+                    <ECEntityClass typeName="Foo" >
+                       <ECStructProperty propertyName="A" typeName="StructA" />
+                       <ECStructProperty propertyName="B" typeName="StructB" />
+                     </ECEntityClass>
+                    </ECSchema>)xml"))) << "Circular references of two structs.";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECStructClass typeName="StructA" >
+                       <ECStructArrayProperty propertyName="B" typeName="StructB" />
+                     </ECStructClass>
+                    <ECStructClass typeName="StructB" >
+                       <ECStructArrayProperty propertyName="A" typeName="StructA" />
+                     </ECStructClass>
+                    <ECEntityClass typeName="Foo" >
+                       <ECStructArrayProperty propertyName="A" typeName="StructA" />
+                       <ECStructArrayProperty propertyName="B" typeName="StructB" />
+                     </ECEntityClass>
+                    </ECSchema>)xml"))) << "Circular references of two structs.";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECStructClass typeName="StructA" >
+                       <ECStructProperty propertyName="B" typeName="StructB" />
+                     </ECStructClass>
+                    <ECStructClass typeName="StructB" >
+                       <ECStructProperty propertyName="A" typeName="StructA" />
+                     </ECStructClass>
+                    <ECEntityClass typeName="Foo" >
+                       <ECStructArrayProperty propertyName="A" typeName="StructA" />
+                       <ECStructArrayProperty propertyName="B" typeName="StructB" />
+                     </ECEntityClass>
+                    </ECSchema>)xml"))) << "Circular references of two structs.";
+
+    ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECStructClass typeName="StructA" >
                        <ECStructProperty propertyName="B" typeName="StructB" />
                      </ECStructClass>
                     <ECStructClass typeName="StructB" >
@@ -587,6 +626,17 @@ TEST_F(SchemaRulesTestFixture, CircularStructReferences)
                     </ECSchema>)xml"))) << "Circular references of two structs.";
 
     ASSERT_EQ(ERROR, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+                    <ECStructClass typeName="StructA" >
+                       <ECStructProperty propertyName="A2" typeName="StructA" />
+                     </ECStructClass>
+                    <ECEntityClass typeName="Foo" >
+                       <ECStructProperty propertyName="A1" typeName="StructA" />
+                     </ECEntityClass>
+                    </ECSchema>)xml"))) << "Circular references of two structs.";
+
+
+    //Following is allowed given struct can only have value of struct specified. It does not have polymorphic behaviour
+    ASSERT_EQ(SUCCESS, TestHelper::RunSchemaImport(SchemaItem(R"xml(<ECSchema schemaName="TestSchema" alias="ts" version="1.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
                     <ECStructClass typeName="StructA" >
                        <ECStructProperty propertyName="B" typeName="StructB" />
                      </ECStructClass>
