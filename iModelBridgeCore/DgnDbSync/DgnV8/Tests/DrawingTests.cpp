@@ -184,7 +184,6 @@ TEST_F(DrawingTests, Basic3dAttachment)
         }
     
     DoUpdate(m_dgnDbFileName, m_v8FileName);
-    // ASSERT_TRUE(m_count == 0); *** WIP_SHEETS - when we compute proxy graphics, we end up changing the type-100's XAttribute linkages, which causes us to record a changed hash in syncinfo
 
     if (true)
         {
@@ -205,7 +204,7 @@ TEST_F(DrawingTests, Basic3dAttachment)
         }
 
     DoUpdate(m_dgnDbFileName, m_v8FileName);
-    ASSERT_TRUE(m_count >= 2) << "The line itself and the proxy graphics for the line must have been updated";
+    ASSERT_TRUE(m_count >= 1) << "The line itself is updated. Note that the converter does not generate proxy graphics, because the 3D attachment is not a section and is not clipped in 3D.";
     if (true)
         {
         DgnDbPtr db = OpenExistingDgnDb(m_dgnDbFileName);
