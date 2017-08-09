@@ -42,6 +42,9 @@ TEST_F(RoadRailPhysicalTests, BasicRoadwayTest)
     TypicalSectionPortionBreakDownModelPtr breakDownModelPtr;
     ASSERT_TRUE(roadTravelwayDefPtr->Insert(breakDownModelPtr).IsValid());
 
+    auto overallTypicalSectoinPtr = OverallTypicalSection::Create(*roadwayStandardsModelPtr, "rural 2 lanes");
+    ASSERT_TRUE(overallTypicalSectoinPtr->Insert().IsValid());
+
     DgnModelId physicalModelId = QueryFirstModelIdOfType(*projectPtr, 
         DgnClassId(projectPtr->Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_CLASS_PhysicalModel)));
     auto physicalModelPtr = projectPtr->Models().Get<PhysicalModel>(physicalModelId);

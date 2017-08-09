@@ -123,7 +123,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(RoadTravelwayDefinition)
 
     ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, Utf8StringCR value);
 
     ROADRAILPHYSICAL_EXPORT static RoadTravelwayDefinitionPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR code);
 
@@ -148,7 +148,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(EndConditionDefinition)
 
     ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, Utf8StringCR value);
 
     ROADRAILPHYSICAL_EXPORT static EndConditionDefinitionPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR code);
 
@@ -173,12 +173,43 @@ public:
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(BufferDefinition)
 
     ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, Utf8StringCR value);
 
     ROADRAILPHYSICAL_EXPORT static BufferDefinitionPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR code);
 
     ROADRAILPHYSICAL_EXPORT BufferDefinitionCPtr Insert(TypicalSectionPortionBreakDownModelPtr& breakDownModelPtr, Dgn::DgnDbStatus* stat = nullptr);
 }; // BufferDefinition
+
+//=======================================================================================
+//! Base class for Travelway Definition Elements.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE OverallTypicalSection : Dgn::DefinitionElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_OverallTypicalSection, Dgn::DefinitionElement);
+friend struct OverallTypicalSectionHandler;
+
+protected:
+    //! @private
+    explicit OverallTypicalSection(CreateParams const& params);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(OverallTypicalSection)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(OverallTypicalSection)
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, Utf8StringCR value);
+
+    ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR code);
+}; // OverallTypicalSection
+
+//=================================================================================
+//! ElementHandler for TypicalSection Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE OverallTypicalSectionHandler : Dgn::dgn_ElementHandler::Definition
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_OverallTypicalSection, OverallTypicalSection, OverallTypicalSectionHandler, Dgn::dgn_ElementHandler::Definition, ROADRAILPHYSICAL_EXPORT)
+}; // OverallTypicalSectionHandler
 
 //=================================================================================
 //! ElementHandler for TypicalSection Elements

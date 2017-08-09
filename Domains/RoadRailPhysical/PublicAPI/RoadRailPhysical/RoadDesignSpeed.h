@@ -66,7 +66,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(DesignSpeedDefinitionTable)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_UPDATE_METHODS(DesignSpeedDefinitionTable)
 
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR value);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, Utf8StringCR value);
     ROADRAILPHYSICAL_EXPORT static DesignSpeedDefinitionTablePtr Create(Dgn::DefinitionModelCR model, Utf8StringCR code, Dgn::UnitSystem unitSystem);
 
     Dgn::UnitSystem GetUnitSystem() const { return static_cast<Dgn::UnitSystem>(GetPropertyValueInt32("UnitSystem")); }
@@ -108,7 +108,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(DesignSpeedDefinitionElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(DesignSpeedDefinitionElement)
 
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, double speed, Dgn::UnitSystem unitSystem);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(Dgn::DefinitionModelCR scope, double speed, Dgn::UnitSystem unitSystem);
     ROADRAILPHYSICAL_EXPORT static Utf8String GetDefaultUserLabel(double speed, Dgn::UnitSystem unitSystem);
 }; // DesignSpeedDefinitionElement
 

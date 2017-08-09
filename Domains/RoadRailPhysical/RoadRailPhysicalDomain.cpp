@@ -21,6 +21,7 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(TypicalSectionPortionElementHandler::GetHandler());
     RegisterHandler(TypicalSectionPortionHandler::GetHandler());
 
+    RegisterHandler(OverallTypicalSectionHandler::GetHandler());
     RegisterHandler(TravelwayDefinitionElementHandler::GetHandler());
     RegisterHandler(RoadTravelwayDefinitionHandler::GetHandler());
     RegisterHandler(EndConditionDefinitionHandler::GetHandler());
@@ -129,7 +130,7 @@ DgnDbStatus RoadRailPhysicalDomain::SetUpModelHierarchy(Dgn::SubjectCR subject, 
 +---------------+---------------+---------------+---------------+---------------+------*/
 void createCodeSpecs(DgnDbR dgndb)
     {
-    auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadTravelway);
+    auto codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadTravelway, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
@@ -137,7 +138,7 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadClassDefinitionTable);
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_OverallTypicalSection, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
@@ -145,7 +146,7 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadClassDefinition);
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadClassDefinitionTable, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
@@ -153,7 +154,7 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinitionTable);
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_RoadClassDefinition, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {
@@ -161,7 +162,15 @@ void createCodeSpecs(DgnDbR dgndb)
         BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
         }
 
-    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinition);
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinitionTable, CodeScopeSpec::CreateModelScope());
+    BeAssert(codeSpecPtr.IsValid());
+    if (codeSpecPtr.IsValid())
+        {
+        codeSpecPtr->Insert();
+        BeAssert(codeSpecPtr->GetCodeSpecId().IsValid());
+        }
+
+    codeSpecPtr = CodeSpec::Create(dgndb, BRRP_CODESPEC_DesignSpeedDefinition, CodeScopeSpec::CreateModelScope());
     BeAssert(codeSpecPtr.IsValid());
     if (codeSpecPtr.IsValid())
         {

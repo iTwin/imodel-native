@@ -34,9 +34,9 @@ DesignSpeedDefinitionTable::DesignSpeedDefinitionTable(CreateParams const& param
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DesignSpeedDefinitionTable::CreateCode(DgnDbR dgndb, Utf8StringCR value)
+DgnCode DesignSpeedDefinitionTable::CreateCode(DefinitionModelCR scope, Utf8StringCR value)
     {
-    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_DesignSpeedDefinitionTable, value);
+    return CodeSpec::CreateCode(BRRP_CODESPEC_DesignSpeedDefinitionTable, scope, value);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -44,7 +44,7 @@ DgnCode DesignSpeedDefinitionTable::CreateCode(DgnDbR dgndb, Utf8StringCR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DesignSpeedDefinitionTablePtr DesignSpeedDefinitionTable::Create(DefinitionModelCR model, Utf8StringCR code, UnitSystem unitSystem)
     {
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model.GetDgnDb(), code));
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, code));
     return new DesignSpeedDefinitionTable(params, unitSystem);
     }
 
@@ -111,9 +111,9 @@ RoadDesignSpeedDefinition::RoadDesignSpeedDefinition(CreateParams const& params,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      11/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnCode DesignSpeedDefinitionElement::CreateCode(Dgn::DgnDbR dgndb, double speed, UnitSystem unitSystem)
+DgnCode DesignSpeedDefinitionElement::CreateCode(DefinitionModelCR scope, double speed, UnitSystem unitSystem)
     {
-    return CodeSpec::CreateCode(dgndb, BRRP_CODESPEC_DesignSpeedDefinition,
+    return CodeSpec::CreateCode(BRRP_CODESPEC_DesignSpeedDefinition, scope,
         Utf8PrintfString("%.0f %s", speed, (unitSystem == UnitSystem::Metric) ? "Km/h" : "mph"));
     }
 
@@ -137,7 +137,7 @@ RoadDesignSpeedDefinitionPtr RoadDesignSpeedDefinition::Create(DesignSpeedDefini
     {
     auto tableCPtr = model.GetModeledDesignSpeedDefinitionTable();
 
-    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model.GetDgnDb(), designSpeed, tableCPtr->GetUnitSystem()));
+    CreateParams params(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, designSpeed, tableCPtr->GetUnitSystem()));
 
     auto retVal = new RoadDesignSpeedDefinition(params, designSpeed, sideSlopeFrictionFactor, maxTransitionRadius, desirableSpiralLength, type1CrestVertical,
         type3SagVertical, crestVerticalPsd, averageRunningSpeed, maximumRelativeGradient, crestK_SSD, sagK_SSD, ignoreLength);

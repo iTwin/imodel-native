@@ -79,6 +79,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CLASS_DesignSpeedDefinitionTable                       "DesignSpeedDefinitionTable"
 #define BRRP_CLASS_EndConditionDefinition                           "EndConditionDefinition"
 #define BRRP_CLASS_LinearlyLocatedStatus                            "LinearlyLocatedStatus"
+#define BRRP_CLASS_OverallTypicalSection                            "OverallTypicalSection"
 #define BRRP_CLASS_PathwayElement                                   "PathwayElement"
 #define BRRP_CLASS_Railway                                          "Railway"
 #define BRRP_CLASS_RegularTravelwaySegment                          "RegularTravelwaySegment"
@@ -131,6 +132,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 //-----------------------------------------------------------------------------------------
 #define BRRP_CODESPEC_DesignSpeedDefinition                        "DesignSpeedDefinition"
 #define BRRP_CODESPEC_DesignSpeedDefinitionTable                   "DesignSpeedDefinitionTable"
+#define BRRP_CODESPEC_OverallTypicalSection                        "OverallTypicalSection"
 #define BRRP_CODESPEC_RoadClassDefinition                          "RoadClassDefinition"
 #define BRRP_CODESPEC_RoadClassDefinitionTable                     "RoadClassDefinitionTable"
 #define BRRP_CODESPEC_RoadTravelway                                "RoadTravelway"
@@ -197,6 +199,7 @@ ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinitionModel)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(DesignSpeedDefinitionTable)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(EndConditionDefinition)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(LinearlyLocatedStatus)
+ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(OverallTypicalSection)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(PathwayElement)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RegularTravelwaySegment)
 ROADRAILPHYSICAL_REFCOUNTED_PTR_AND_TYPEDEFS(RoadRailCategoryModel)
