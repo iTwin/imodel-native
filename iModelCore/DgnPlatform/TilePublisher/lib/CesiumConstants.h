@@ -10,7 +10,7 @@
 
 USING_NAMESPACE_BENTLEY
 
-Utf8Char s_viewerHtmlPrefix[] =
+static Utf8Char s_viewerHtmlPrefix[] =
 R"HTML(
 <!DOCTYPE html>
 <html lang="en">
@@ -44,7 +44,7 @@ var viewJsonUrl = ')HTML";
 
 // ...Insert URL to view JSON here...
 
-Utf8Char s_viewerHtmlSuffix[] =
+static Utf8Char s_viewerHtmlSuffix[] =
 R"HTML(';
 var viewer = new Bentley.TileSetViewer({ bimiumPath: './scripts/Bimium'});
 viewer.activate(viewJsonUrl);

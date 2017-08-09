@@ -11,7 +11,7 @@
 #include <TilePublisher/TilePublisher.h>
 
 #define USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUM using namespace BentleyApi::Dgn::TilePublish::Cesium;
-;
+
 BEGIN_BENTLEY_TILEPUBLISHER_NAMESPACE
 
 namespace Cesium

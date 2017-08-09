@@ -135,10 +135,10 @@ struct Context
     Transform                       m_transformFromDgn;
     TileGenerator::ITileCollector*  m_collector;
     double                          m_leafTolerance;
-    DgnModelP                       m_model;
+    GeometricModelP                 m_model;
     ClipVectorPtr                   m_clip;
 
-    Context(TileP outputTile, TileTree::TileP inputTile, TransformCR transformFromDgn, ClipVectorCP clip, TileGenerator::ITileCollector* collector, double leafTolerance, DgnModelP model) : 
+    Context(TileP outputTile, TileTree::TileP inputTile, TransformCR transformFromDgn, ClipVectorCP clip, TileGenerator::ITileCollector* collector, double leafTolerance, GeometricModelP model) : 
             m_outputTile(outputTile), m_inputTile(inputTile), m_transformFromDgn(transformFromDgn), m_collector(collector), m_leafTolerance(leafTolerance), m_model(model) { if (nullptr != clip) m_clip = clip->Clone(nullptr); }
 
     Context(TileP outputTile, TileTree::TileP inputTile, Context const& inContext) :

@@ -21,12 +21,60 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 #define BEGIN_TILEWRITER_NAMESPACE    BEGIN_BENTLEY_DGN_NAMESPACE namespace TileWriter {
 #define END_TILEWRITER_NAMESPACE      } END_BENTLEY_DGN_NAMESPACE
 
+
+static double s_minToleranceRatio = 512.0;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TileUtil::WriteJsonToFile (WCharCP fileName, Json::Value const& value)
+    {
+    BeFile          outputFile;
+
+    if (BeFileStatus::Success != outputFile.Create (fileName))
+        return ERROR;
+   
+    Utf8String  string = Json::FastWriter().write(value);
+
+    return BeFileStatus::Success == outputFile.Write (nullptr, string.data(), string.size()) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     11/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
+    {
+    Json::Reader    reader;
+    ByteStream      inputData;
+    BeFile          inputFile;
+
+    return BeFileStatus::Success == inputFile.Open (fileName, BeFileAccess::Read) &&
+           BeFileStatus::Success == inputFile.ReadEntireFile (inputData) &&
+           reader.parse ((char*) inputData.GetData(), (char*) (inputData.GetData() + inputData.GetSize()), value) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   11/16
++---------------+---------------+---------------+---------------+---------------+------*/
+WString TileUtil::GetRootNameForModel(DgnModelId modelId, bool asClassifier)
+    {
+    WString name = asClassifier ? L"Classifier" : L"Model";
+    name.append(1, '_');
+    WChar idBuf[17];
+    BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), modelId.GetValue(), HexFormatOptions::None);
+    name.append(idBuf);
+    return name;
+    }
+
+
+
 BEGIN_TILEWRITER_NAMESPACE
 
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(TileTexture)
 DEFINE_REF_COUNTED_PTR(TileTexture)
 
+#ifdef MATERIAL_WIP
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     11/2016
@@ -51,7 +99,6 @@ static void addTransparencyToTechnique (Json::Value& technique)
     techniqueFunctions["depthMask"] = "false";
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -70,6 +117,7 @@ static void appendProgramAttribute(Json::Value& program, Utf8CP attrName)
     {
     program["attributes"].append(attrName);
     }
+#endif
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
@@ -283,7 +331,7 @@ struct RenderSystem : Render::System
 
 };  // RenderSystem
 
-
+#ifdef MATERIAL_WIP
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   02/17
 //=======================================================================================
@@ -508,6 +556,7 @@ private:
     bool                    m_ignoreLighting;
 public:
 
+    MeshMaterial() TileMaterial(Utf8String("Material_")+suffix) { }
     bool HasTransparency() const { return m_hasAlpha; }
     bool IgnoresLighting() const { return m_ignoreLighting; }
     TileColorIndex::Dimension GetColorIndexDimension() const { return m_colorDimension; }
@@ -636,9 +685,24 @@ void AddTechniqueParameters(Json::Value& technique, Json::Value& program, Json::
         technique["uniforms"]["u_specularExponent"] = "specularExponent";
         }
     }
+};
+#else
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     04/2017
++===============+===============+===============+===============+===============+======*/
+struct MeshMaterial 
+{ 
+    Utf8String  m_name;
 
+    MeshMaterial (Utf8StringCR suffix) : m_name("Material_" + suffix) { }
+
+    bool IsTextured() const { return false; }
+    bool IgnoresLighting() const { return false; }
+    Utf8StringCR GetName() const { return m_name; }
 
 };
+#endif
+
 
 //=======================================================================================
 // We use a hierarchical batch table to organize features by element and subcategory,
@@ -1062,15 +1126,15 @@ auto BatchTableBuilder::QueryAssembly(DgnElementId childId) const -> Assembly
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/2016
 //=======================================================================================
-struct  Writer
+struct Writer
 {
     Json::Value         m_json;
     ByteStream          m_binaryData;
     StreamBufferR       m_buffer;
     RenderSystem        m_renderSystem;
-    DgnModelCR          m_model;
+    GeometricModelCR    m_model;
 
-    Writer(StreamBufferR buffer, DgnModelR model) : m_buffer(buffer), m_model(model) { }
+    Writer(StreamBufferR buffer, GeometricModelR model) : m_buffer(buffer), m_model(model) { }
 
     size_t BinaryDataSize() const { return m_binaryData.size(); }
     void const* BinaryData() const { return m_binaryData.data(); }
@@ -1487,7 +1551,7 @@ Utf8String AddTextureImage (TileTexture const& tileTexture, Utf8StringCR suffix)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String AddColorIndex(TileColorIndex& colorIndex, MeshCR mesh, Utf8StringCR suffix)
+Utf8String AddColorIndex(TileColorIndex& colorIndex, Utf8StringCR suffix)
     {
     Utf8String textureId("texture_"),
                imageId("image_"),
@@ -1528,19 +1592,19 @@ Utf8String AddColorIndex(TileColorIndex& colorIndex, MeshCR mesh, Utf8StringCR s
 
     return textureId;
     }
-
+#ifdef MATERIAL_WIP
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AddMaterialColor(Json::Value& matJson,  TileMaterial const& mat, DisplayParamsCR displayParams, MeshCR mesh, Utf8StringCR suffix)
+void    AddMaterialColor(Json::Value& matJson, TileMaterial const& mat, DisplayParamsCR displayParams, ColorTableCR colorTable, Utf8StringCR suffix)
     {
-    auto dim = TileColorIndex::CalcDimension(mesh.GetColorTable().GetNumIndices());
+    auto dim = TileColorIndex::CalcDimension(colorTable.GetNumIndices());
 
     if (TileColorIndex::Dimension::Zero != dim)
         {
-        TileColorIndex colorIndex(displayParams, mesh.GetColorTable());
+        TileColorIndex colorIndex(displayParams, colorTable);
 
-        matJson["values"]["tex"] = AddColorIndex(colorIndex, mesh, suffix);
+        matJson["values"]["tex"] = AddColorIndex(colorIndex, suffix);
 
         uint16_t width = colorIndex.GetWidth();
         double stepX = 1.0 / width;
@@ -1560,8 +1624,8 @@ void    AddMaterialColor(Json::Value& matJson,  TileMaterial const& mat, Display
         }
     else
         {
-        BeAssert(1 == mesh.GetColorTable().GetNumIndices() || (mat.OverridesRgb() && mat.OverridesAlpha()));
-        ColorDef baseDef(mesh.GetColorTable().begin()->first);
+        BeAssert(1 == colorTable.GetNumIndices() || (mat.OverridesRgb() && mat.OverridesAlpha()));
+        ColorDef baseDef(colorTable.begin()->first);
         RgbFactor rgb = mat.OverridesRgb() ? mat.GetRgbOverride() : RgbFactor::FromIntColor(baseDef.GetValue());
         double alpha = mat.OverridesAlpha() ? mat.GetAlphaOverride() : baseDef.GetAlpha()/255.0;
 
@@ -1667,6 +1731,7 @@ Utf8String AddMeshShaderTechnique(MeshMaterial const& mat, bool doBatchIds)
 
     return techniqueName;
     }
+#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -1858,16 +1923,12 @@ static Json::Value     CreateColorJson(RgbFactorCR color)
     return colorJson;
     }
 
-/*---------------------------------------------------------------------------------**//**
+ /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh, MeshMaterial const& meshMaterial, DisplayParamsCR displayParams, Utf8StringCR suffix) 
+BentleyStatus  CreateMeshMaterialJson(Json::Value& matJson, ColorTableCR colorTable, MeshMaterial const& meshMaterial, Utf8StringCR suffix) 
     {
-#ifdef NEEDS_WORK
-    if (nullptr != displayParams.GetMaterial())
-        matJson["name"] = displayParams.GetMaterial()->GetMaterialName().c_str();
-#endif
-
+#ifdef MATERIAL_WIP
     if (meshMaterial.IsTextured())
         {
         TileTexture const*  texture = static_cast<TileTexture const*> (displayParams.GetTexture());
@@ -1875,19 +1936,21 @@ BentleyStatus  CreateMeshMaterialJson(Json::Value& matJson, MeshCR mesh, MeshMat
         }
     else
         {
-        AddMaterialColor (matJson, meshMaterial, displayParams, mesh, suffix);
+        AddMaterialColor (matJson, meshMaterial, displayParams, colorTable, suffix);
         }
 
     matJson["technique"] = AddMeshShaderTechnique(meshMaterial, true).c_str();
 
-    if (!displayParams.IgnoresLighting())
+    if (!meshMaterial.IgnoresLighting())
         {
         matJson["values"]["specularExponent"] = meshMaterial.GetSpecularExponent();
         matJson["values"]["specularColor"] = CreateColorJson(meshMaterial.GetSpecularColor());
         }
     
+#endif
     return SUCCESS;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -1926,7 +1989,7 @@ Json::Value AddNormalPairs(OctEncodedNormalPairCP pairs, size_t numPairs, Utf8St
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, MeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr)
+BentleyStatus CreateTriMesh(Json::Value& primitiveJson, TriMeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr)
     {
     primitiveJson["mode"] = GLTF_TRIANGLES;
 
@@ -1954,7 +2017,7 @@ BentleyStatus CreateTriMesh(Json::Value& primitiveJson, MeshCR mesh, MeshArgs co
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual void AddTriMesh(Json::Value& primitivesNode, MeshArgs const& meshArgs, MeshCR mesh, size_t& index)
+void AddTriMesh(Json::Value& primitivesNode, TriMeshArgsCR meshArgs, ColorTableCR colorTable, MeshMaterial const& meshMaterial, size_t& index)
     {
     if (0 == meshArgs.m_numIndices)
         return;
@@ -1962,10 +2025,8 @@ virtual void AddTriMesh(Json::Value& primitivesNode, MeshArgs const& meshArgs, M
     Utf8String          idStr(std::to_string(index++).c_str());
     Json::Value         materialJson = Json::objectValue, primitiveJson = Json::objectValue;
 
-    MeshMaterial meshMaterial(mesh, m_model.Is3d(), idStr, m_model.GetDgnDb());
-    
-    if (SUCCESS == CreateMeshMaterialJson(materialJson, mesh, meshMaterial, mesh.GetDisplayParams(), idStr) &&
-        SUCCESS == CreateTriMesh(primitiveJson, mesh, meshArgs, meshMaterial, idStr))
+    if (SUCCESS == CreateMeshMaterialJson(materialJson, colorTable, meshMaterial, idStr) &&
+        SUCCESS == CreateTriMesh(primitiveJson, meshArgs, meshMaterial, idStr))
         {
         m_json["materials"][meshMaterial.GetName()] = materialJson;
         primitiveJson["material"] = meshMaterial.GetName();
@@ -2017,61 +2078,6 @@ Json::Value AddPolylines(PolylineList const& polylines, size_t maxIndex, Utf8Str
     return accessorId;
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
-    { 
-    GetMeshGraphicsArgs         graphicsArgs;
-    bvector<Render::GraphicPtr> graphics;
-
-    mesh.GetGraphics (graphics, m_renderSystem, graphicsArgs, m_model.GetDgnDb());
-
-    AddTriMesh(primitivesNode, graphicsArgs.m_meshArgs, mesh, index);
-//  AddPolyline(primitivesNode, graphicsArgs.m_polylineArgs, mesh, index);
-    return SUCCESS;
-    }
- 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                   Ray.Bentley     12/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
-    {
-    Json::Value     meshes     = Json::objectValue;
-    Json::Value     mesh       = Json::objectValue;
-    Json::Value     nodes      = Json::objectValue;
-    Json::Value     rootNode   = Json::objectValue;
-    Json::Value     primitives = Json::arrayValue;
-    Utf8String      meshName   = "Mesh";
-    size_t          primitiveIndex = 0;
-
-    for (auto& mesh : geometry.Meshes())
-        _AddMesh(primitives, *mesh, primitiveIndex);
-
-    mesh["primitives"] = primitives;
-    meshes[meshName] = mesh;
-    rootNode["meshes"].append (meshName);
-    nodes["rootNode"] = rootNode;
-    m_json["meshes"] = meshes;
-    m_json["nodes"]  = nodes;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void AddTile(TileTree::TileP tile)
-    {
-    folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
-        {                                
-        TileTree::TileLoadStatePtr          loadState;
-
-        return tile->GetRootR()._RequestTile(*tile, loadState, &m_renderSystem);
-        })
-    .then([=](BentleyStatus status)
-        {
-        });
-    }
-
 };  // Writer
 
            
@@ -2082,7 +2088,7 @@ struct GltfWriter : Writer
 {
 
 public:
-    GltfWriter(StreamBufferR streamBuffer, DgnModelR model) : Writer(streamBuffer, model) { }
+    GltfWriter(StreamBufferR streamBuffer, GeometricModelR model) : Writer(streamBuffer, model) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -2126,7 +2132,7 @@ struct DgnCacheTileWriter : GltfWriter
     DEFINE_T_SUPER(GltfWriter);
 
 public:
-    DgnCacheTileWriter(StreamBufferR streamBuffer, DgnModelR model) : GltfWriter(streamBuffer, model) { }
+    DgnCacheTileWriter(StreamBufferR streamBuffer, GeometricModelR model) : GltfWriter(streamBuffer, model) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -2251,7 +2257,28 @@ void AddFeatures (MeshCR mesh, Json::Value& primitiveJson, Utf8StringCR idStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
+void WriteFeatureTable(FeatureTableCR featureTable)
+    {
+    uint32_t      startPosition = m_buffer.GetSize();
+    m_buffer.Append((uint32_t) 0);              // Filled in below.
+
+    m_buffer.Append(featureTable.GetMaxFeatures());
+    m_buffer.Append((uint32_t) featureTable.size());
+    for (auto& feature : featureTable)
+        {
+        m_buffer.Append(feature.first.GetElementId().GetValue());
+        m_buffer.Append(feature.first.GetSubCategoryId().GetValue());
+        m_buffer.Append(static_cast<uint32_t> (feature.first.GetClass()));
+        m_buffer.Append(feature.second);
+        }
+    WriteLength(startPosition, startPosition);
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual BentleyStatus AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t& index)
     { 
     Utf8String          idStr(std::to_string(index++).c_str());
     Json::Value         materialJson = Json::objectValue, primitiveJson = Json::objectValue;
@@ -2285,25 +2312,30 @@ virtual BentleyStatus _AddMesh(Json::Value& primitivesNode, MeshCR mesh, size_t&
 
     return ERROR;
     }
+ 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
+* @bsimethod                                                   Ray.Bentley     12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-void WriteFeatureTable(FeatureTableCR featureTable)
+void AddMeshes(Render::Primitives::GeometryCollectionCR geometry)
     {
-    uint32_t      startPosition = m_buffer.GetSize();
-    m_buffer.Append((uint32_t) 0);              // Filled in below.
+    Json::Value     meshes     = Json::objectValue;
+    Json::Value     mesh       = Json::objectValue;
+    Json::Value     nodes      = Json::objectValue;
+    Json::Value     rootNode   = Json::objectValue;
+    Json::Value     primitives = Json::arrayValue;
+    Utf8String      meshName   = "Mesh";
+    size_t          primitiveIndex = 0;
 
-    m_buffer.Append(featureTable.GetMaxFeatures());
-    m_buffer.Append((uint32_t) featureTable.size());
-    for (auto& feature : featureTable)
-        {
-        m_buffer.Append(feature.first.GetElementId().GetValue());
-        m_buffer.Append(feature.first.GetSubCategoryId().GetValue());
-        m_buffer.Append(static_cast<uint32_t> (feature.first.GetClass()));
-        m_buffer.Append(feature.second);
-        }
-    WriteLength(startPosition, startPosition);
+    for (auto& mesh : geometry.Meshes())
+        AddMesh(primitives, *mesh, primitiveIndex);
+
+    mesh["primitives"] = primitives;
+    meshes[meshName] = mesh;
+    rootNode["meshes"].append (meshName);
+    nodes["rootNode"] = rootNode;
+    m_json["meshes"] = meshes;
+    m_json["nodes"]  = nodes;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -2350,7 +2382,7 @@ struct CesiumTileWriter : GltfWriter
 {
     StreamBuffer        m_streamBuffer;
 public:
-    CesiumTileWriter(DgnModelR model) : GltfWriter(m_streamBuffer, model) { }
+    CesiumTileWriter(GeometricModelR model) : GltfWriter(m_streamBuffer, model) { }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -2385,17 +2417,73 @@ BentleyStatus EndBatchedTable(uint32_t startPosition, uint32_t lengthDataPositio
     return SUCCESS;
     }
 
+};  // CesiumTileWriter
+
+//=======================================================================================
+// @bsistruct                                                   Ray.Bentley     06/2017
+//=======================================================================================
+struct CesiumTileWriterRenderSystem : RenderSystem
+{
+    mutable StreamBuffer        m_streamBuffer;
+    mutable GltfWriter          m_writer;
+    mutable Json::Value         m_primitives;
+    mutable DRange3d            m_range;
+
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
+* @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::WriteStatus WriteTile(TileTree::TileCR tile)
+CesiumTileWriterRenderSystem(GeometricModelR model) : m_writer(m_streamBuffer, model), m_range(DRange3d::NullRange())
     {
-    AddTile(const_cast<TileTree::TileP> (&tile));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override
+    {
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR triMesh, DgnDbR dgndb) const override 
+    {
+    ColorTable      colorTable;
+    size_t          index = (size_t) m_primitives.size();
+    Utf8String      idStr(std::to_string(index).c_str());
+    MeshMaterial    meshMaterial(idStr);
+
+    m_range.Extend(triMesh.m_pointParams.GetRange());
+    m_writer.AddTriMesh(m_primitives, triMesh, colorTable, meshMaterial,index); 
+
+    return nullptr;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileIO::WriteStatus WriteTile(PublishedTileR outputTile)
+    {
+    if (m_range.IsNull())
+        return TileIO::WriteStatus::NoGeometry;
+
+    m_writer.WriteGltf(m_range.LocalToGlobal(.5, .5, .5));
+
+    BeFile          outputFile;
+
+    if (BeFileStatus::Success != outputFile.Create (outputTile.GetFileName()) ||
+        BeFileStatus::Success != outputFile.Write (nullptr, m_streamBuffer.data(), m_streamBuffer.size()))
+        return TileIO::WriteStatus::UnableToOpenFile;
+   
+    outputFile.Close();
+    outputTile.SetPublishedRange(m_range);
 
     return TileIO::WriteStatus::Success;
     }
+        
+};  // CesiumTileWriterRenderSystem
 
-};  // CesiumTileWriter
 
 END_TILEWRITER_NAMESPACE
    
@@ -2403,23 +2491,167 @@ END_TILEWRITER_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileIO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid, bool isLeaf)
+BentleyStatus TileIO::WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, DPoint3dCR centroid, bool isLeaf)
     {
     return TileWriter::DgnCacheTileWriter(streamBuffer, model).WriteTile(contentRange, geometry, centroid, isLeaf);
+    }
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     04/2017
++===============+===============+===============+===============+===============+======*/
+struct Context
+{
+    TileTree::TilePtr   m_inputTile;
+    PublishedTilePtr    m_outputTile;
+    Transform           m_transformFromDgn;
+    ICesiumPublisherP   m_publisher;
+    double              m_leafTolerance;
+    GeometricModelP     m_model;
+    ClipVectorPtr       m_clip;
+
+    Context(TileTree::TileP inputTile, PublishedTileP outputTile, TransformCR transformFromDgn, ClipVectorCP clip, ICesiumPublisher* publisher, double leafTolerance, GeometricModelP model) : 
+            m_inputTile(inputTile), m_outputTile(outputTile), m_transformFromDgn(transformFromDgn), m_publisher(publisher), m_leafTolerance(leafTolerance), m_model(model) { if (nullptr != clip) m_clip = clip->Clone(nullptr); }
+
+    Context(TileTree::TileP inputTile, PublishedTileP outputTile, Context const& inContext) :
+            m_inputTile(inputTile), m_outputTile(outputTile), m_transformFromDgn(inContext.m_transformFromDgn), m_clip(inContext.m_clip), m_publisher(inContext.m_publisher), m_leafTolerance(inContext.m_leafTolerance), m_model(inContext.m_model) { }
+
+
+};
+
+typedef folly::Future<TileIO::WriteStatus> FutureWriteStatus;
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+PublishedTile::PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDirectory) : m_publishedRange(DRange3d::NullRange())
+    {
+    WString         name = WString(inputTile._GetTileCacheKey().c_str(), true);
+
+    name.ReplaceAll(L":", L"_");
+    name.ReplaceAll(L".", L"_");
+    name.ReplaceAll(L"/", L"_");
+
+    m_tileRange = inputTile.GetRange();
+    m_fileName = BeFileName (nullptr, outputDirectory.c_str(), name.c_str(), L".gltf");
+    m_tolerance = m_tileRange.DiagonalDistance() / s_minToleranceRatio;
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::WriteStatus TileIO::WriteCesiumTile(BeFileNameCR fileName, TileTree::TileCR tile, DgnModelR model)
+TileIO::WriteStatus writeCesiumTile(Context context)
     {
-    TileWriter::CesiumTileWriter    writer(model);
-    TileIO::WriteStatus             status = writer.WriteTile(tile);    
+    TileWriter::CesiumTileWriterRenderSystem*    renderSystem = new TileWriter::CesiumTileWriterRenderSystem(*context.m_model);
 
-    if (TileIO::WriteStatus::Success != status)
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
+        {                                
+        TileTree::TileLoadStatePtr      loadState;
+
+        return context.m_inputTile->GetRootR()._RequestTile(*context.m_inputTile, loadState, renderSystem);
+        })
+    .then([=](BentleyStatus status)
+        {
+        if (SUCCESS != status)
+            return TileIO::WriteStatus::UnableToLoadTile;
+        
+        TileIO::WriteStatus writeStatus = renderSystem->WriteTile(*context.m_outputTile);
+        delete renderSystem;
+        return writeStatus;
+        })
+    .then([=](TileIO::WriteStatus status)
+        {
         return status;
-
-    return TileIO::WriteStatus::Success;
+        }).get();
     }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+static FutureWriteStatus generateParentTile (Context context)
+    {
+    return folly::makeFuture (writeCesiumTile(context));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     04/2017 
++---------------+---------------+---------------+---------------+---------------+------*/
+static FutureWriteStatus generateChildTiles (TileIO::WriteStatus parentStatus, Context context)
+    {
+    double      parentTolerance = context.m_outputTile->GetTolerance();
+
+    if (parentTolerance < context.m_leafTolerance)
+        return folly::makeFuture(TileIO::WriteStatus::Success);
+
+    auto const& children = context.m_inputTile->_GetChildren(true);
+
+    if (nullptr == children || TileIO::WriteStatus::Success != parentStatus)
+        return folly::makeFuture(parentStatus);
+
+    std::vector<FutureWriteStatus> childFutures;
+
+    for (auto& child : *children)
+        {
+        PublishedTilePtr    publishedTile = new PublishedTile(*child, context.m_publisher->_GetOutputDirectory(*context.m_model));
+        Context             childContext(child.get(), publishedTile.get(), context);
+
+        context.m_outputTile->GetChildren().push_back(publishedTile);
+        auto childFuture = generateParentTile(childContext).then([=](FutureWriteStatus result) { return generateChildTiles(result.value(), childContext); });
+        childFutures.push_back(std::move(childFuture));
+        }
+
+    return folly::unorderedReduce(childFutures, TileIO::WriteStatus::Success, [=](TileIO::WriteStatus reduced, TileIO::WriteStatus next)
+        {
+        return TileIO::WriteStatus::Aborted == reduced || TileIO::WriteStatus::Aborted == next ? TileIO::WriteStatus::Aborted : TileIO::WriteStatus::Success;
+        });
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bewntley    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModelP model, TransformCR transformFromDgn, double leafTolerance)
+    {
+    TileWriter::RenderSystem    renderSystem;
+    TileTree::RootCPtr          tileRoot = model->GetTileTree(&renderSystem);
+    ClipVectorPtr               clip;
+    PublishedTilePtr            publishedRoot = new PublishedTile(*tileRoot->GetRootTile(), publisher->_GetOutputDirectory(*model));
+
+    if (!tileRoot.IsValid())
+        return folly::makeFuture(TileIO::WriteStatus::NoGeometry);
+
+    return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]()
+        {
+        return publisher->_BeginProcessModel(*model);
+        })
+    .then([=](TileIO::WriteStatus status)
+        {
+        if (TileIO::WriteStatus::Success != status)
+            return folly::makeFuture(status);
+
+        Transform           transformFromRoot = Transform::FromProduct(transformFromDgn, tileRoot->GetLocation());
+        TileTree::TilePtr   inputTile = tileRoot->GetRootTile();
+        Context             context(inputTile.get(), publishedRoot.get(), transformFromRoot, clip.get(), publisher, leafTolerance, model);
+                                                                                                                
+        return generateParentTile(context).then([=](FutureWriteStatus status) { return generateChildTiles(status.value(), context); });
+        })
+    .then([=](FutureWriteStatus status)
+        {
+        return folly::makeFuture(publisher->_EndProcessModel(*model, *publishedRoot, status.value()));   
+        });
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bewntley    08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TileIO::WriteStatus ICesiumPublisher::WriteCesiumTileset(ICesiumPublisher& publisher, GeometricModelCR model, TransformCR transformFromDgn, double leafTolerance)
+    {
+    return writeCesiumTileset(&publisher, const_cast<GeometricModelP> (&model), transformFromDgn, leafTolerance).get();
+    }
+
+
+
+
+
 

@@ -9,6 +9,7 @@
 #include <ThreeMx/ThreeMxApi.h>
 #include <PointCloud/PointCloudApi.h>
 #include <TilePublisher/CesiumPublisher.h>
+#include <TilePublisher/CesiumTilePublisher.h>
 #include <Raster/RasterApi.h>
 
 #if defined(TILE_PUBLISHER_PROFILE)
@@ -300,26 +301,6 @@ static void printUsage(WCharCP exePath)
         printf("  --%ls=|-%ls=\t(%ls)\t%ls\n", cmdArg.m_verbose, cmdArg.m_abbrev, cmdArg.m_required ? L"required" : L"optional", cmdArg.m_descr);
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   08/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-static void printStatus(PublisherContext::Status status)
-    {
-    static const Utf8CP s_msg[] =
-        {
-        "Publishing succeeded",
-        "No geometry to publish",
-        "Publishing aborted",
-        "Failed to write to base directory",
-        "Failed to create subdirectory",
-        "Failed to write scene",
-        "Failed to write node"
-        };
-
-    auto index = static_cast<uint32_t>(status);
-    Utf8CP msg = index < _countof(s_msg) ? s_msg[index] : "Unrecognized error";
-    printf("Result: %hs.\n", msg);
-    }
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   08/16
@@ -379,7 +360,12 @@ int wmain(int ac, wchar_t const** av)
 
     static size_t       s_maxTilesetDepth = 5;          // Limit depth of tileset to avoid lag on initial load (or browser crash) on large tilesets.
 
+//#define DIRECT_CESIUM_PUBLISH
+#ifdef DIRECT_CESIUM_PUBLISH
+    CesiumDirect::DirectPublisher publisher(*db, createParams, viewsToPublish, defaultView);
+#else
     TilesetPublisher publisher(*db, createParams, viewsToPublish, defaultView, s_maxTilesetDepth);
+#endif
 
     if (!createParams.GetOverwriteExistingOutputFile())
         {
@@ -398,7 +384,21 @@ int wmain(int ac, wchar_t const** av)
             createParams.GetViewName().c_str(), createParams.GetInputFileName().c_str(), publisher.GetOutputDirectory().c_str(), publisher.GetRootName().c_str(), publisher.GetDataDirectory().c_str());
             
     auto status = publisher.Publish (createParams);
-    printStatus(status);
+
+    static const Utf8CP s_msg[] =
+        {
+        "Publishing succeeded",
+        "No geometry to publish",
+        "Publishing aborted",
+        "Failed to write to base directory",
+        "Failed to create subdirectory",
+        "Failed to write scene",
+        "Failed to write node"
+        };
+
+    auto index = static_cast<uint32_t>(status);
+    Utf8CP msg = index < _countof(s_msg) ? s_msg[index] : "Unrecognized error";
+    printf("Result: %hs.\n", msg);
 
     return static_cast<int>(status);
     }
