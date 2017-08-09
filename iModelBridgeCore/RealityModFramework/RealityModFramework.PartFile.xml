@@ -314,10 +314,10 @@
     </Part>
     
     <Part Name="UsageDataExtractor" BMakeFile="RealityDbECPlugin\UsageDataExtractor\UsageDataExtractor.mke" OnlyPlatforms="x64">
+        <RequiredRepository>BCC-IdentityModel</RequiredRepository>
         <SubPart PartName="ConnectClientAPI" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
         <SubPart PartName="RequiredNugets" />
         <!--<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />-->
-        <RequiredRepository>BCC-IdentityModel</RequiredRepository>
         <Bindings>
             <Assemblies>Delivery/UsageDataExtractor.exe</Assemblies>    
             <Files ProductDirectoryName="Assemblies">Delivery/UsageDataExtractor.exe.config</Files>
@@ -325,8 +325,23 @@
     </Part>
     
     <Part Name="RealityDbECPluginNuGetPackages">
-        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>       
         
+        <!--<NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECAbstractUI</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECF</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECObjects</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPersistence</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPluginBuilder</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPresentation</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECSystem</NuGetPackage>-->
+        
+        <NuGetPackage targetFramework=".NETFramework4.0">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.SelectServer.SaaS.Client</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.Discovery.Buddi.Client</NuGetPackage>
+        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging</NuGetPackage>-->
+        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging.Core</NuGetPackage>-->
+
         <!--<SubPart PartName="LoggingManaged"  PartFile="LoggingSDK"   Repository="loggingsdk" />
         <SubPart PartName="Exceptions"           PartFile="platformtech"       Repository="platformtech" />
         <SubPart PartName="ExtensionDiscovery"   PartFile="platformtech"       Repository="platformtech" />
@@ -346,21 +361,6 @@
         <SubPart PartName="Common.Logging"          PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         <SubPart PartName="Common.Logging.core"     PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         
-        
-        <!--<NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECAbstractUI</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECF</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECObjects</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPersistence</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPluginBuilder</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPresentation</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECSystem</NuGetPackage>-->
-        
-        <NuGetPackage targetFramework=".NETFramework4.0">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.SelectServer.SaaS.Client</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.Discovery.Buddi.Client</NuGetPackage>
-        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging</NuGetPackage>-->
-        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging.Core</NuGetPackage>-->
         <Bindings>
             <Assemblies>NuGet\net40\Microsoft.WindowsAzure.Configuration.dll</Assemblies> 
             <Assemblies>NuGet\net45\Bentley.SelectServer.SaaS.Client.dll</Assemblies> 
