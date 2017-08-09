@@ -17,6 +17,7 @@ UNITS_TYPEDEFS(InverseUnit)
 UNITS_TYPEDEFS(Phenomenon)
 UNITS_TYPEDEFS(Expression)
 UNITS_TYPEDEFS(SpecificAccuracy)
+UNITS_TYPEDEFS(UnitSynonymMap)
 BEGIN_BENTLEY_UNITS_NAMESPACE
 
 enum class UnitsProblemCode
@@ -175,6 +176,23 @@ public:
     UNITS_EXPORT static bool AreCompatible(UnitCP unitA, UnitCP unitB);
     };
 
+struct UnitSynonymMap
+    {
+private:
+    UnitCP m_unit;
+    Utf8String m_synonym;
+
+
+    UNITS_EXPORT void Init(Utf8CP unitName, Utf8CP synonym);
+public:
+    UNITS_EXPORT UnitSynonymMap(Utf8CP unitName, Utf8CP synonym); 
+    //! two comma separated names. The first name must be a registered Unit name.
+    UNITS_EXPORT UnitSynonymMap(Utf8CP descriptor); 
+    bool IsMapEmpty() { return (nullptr == m_unit) && m_synonym.empty(); }
+    Utf8CP GetSynonym() { return m_synonym.c_str(); }
+    UnitCP GetUnit() { return m_unit; }
+    };
+
 struct Phenomenon final : UnitsSymbol
     {
 DEFINE_T_SUPER(UnitsSymbol)
@@ -184,6 +202,7 @@ friend struct Expression;
 
 private:
     bvector<UnitCP> m_units;
+    bvector<UnitSynonymMap> m_altNames;
 
     void AddUnit(UnitCR unit);
     Phenomenon(Utf8CP name, Utf8CP definition, Utf8Char baseSymbol, uint32_t id) : UnitsSymbol(name, definition, baseSymbol, id, 0.0, 0) {}
@@ -210,7 +229,9 @@ public:
     UNITS_EXPORT bool IsLength() const;
     UNITS_EXPORT bool IsTime() const;
     UNITS_EXPORT bool IsAngle() const;
-
+    UNITS_EXPORT UnitCP LookupUnit(Utf8CP unitName);
+    UNITS_EXPORT UnitCP FindSynonym(Utf8CP unitName);
+    UNITS_EXPORT void AddSynonym(Utf8CP unitName, Utf8CP synonym);
 };
 END_BENTLEY_UNITS_NAMESPACE
 /*__PUBLISH_SECTION_END__*/
