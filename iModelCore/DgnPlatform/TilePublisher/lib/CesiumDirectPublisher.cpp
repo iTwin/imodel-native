@@ -14,6 +14,7 @@ USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_DGN
 USING_NAMESPACE_BENTLEY_RENDER
 USING_NAMESPACE_TILETREE
+USING_NAMESPACE_TILEWRITER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER
 USING_NAMESPACE_BENTLEY_TILEPUBLISHER_CESIUMDIRECT
 
@@ -1019,7 +1020,7 @@ WString DirectPublisher::GetTileUrl(PublishedTileCR tile, GeometricModelCR model
 //! Generates the contents of a single model to a Cesium tileset
 // @bsistruct                                                   Ray.Bentley     08/2017
 //=======================================================================================
-struct TilesetGenerator : TileTree::ICesiumPublisher
+struct TilesetGenerator : ICesiumPublisher
 {
 
 protected:
