@@ -3492,7 +3492,7 @@ DgnDbStatus     DwgImporter::InsertResults (ElementImportResults& results)
     if (DgnDbStatus::DuplicateCode == status)
         {
         Utf8String  duplicateMessage;
-        duplicateMessage.Sprintf ("Duplicate element code '%s' ignored", code.GetValue().c_str());
+        duplicateMessage.Sprintf ("Duplicate element code '%s' ignored", code.GetValueUtf8().c_str());
         ReportIssue (IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str());
 
         DgnDbStatus setStatus = results.m_importedElement->SetCode (DgnCode::CreateEmpty());

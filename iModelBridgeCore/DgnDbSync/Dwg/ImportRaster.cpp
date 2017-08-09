@@ -202,7 +202,7 @@ BentleyStatus   DwgRasterImageExt::CreateRasterModel (BeFileNameCR rasterFilenam
     Utf8String  modelName = m_importer->ComputeModelName (proposedName, baseFilename, rasterFilename, idSuffix.c_str(), DgnClassId());
     DgnCode     linkCode = RepositoryLink::CreateUniqueCode (*m_importer->GetDgnDb().GetRealityDataSourcesModel(), modelName.c_str());
 
-    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*m_importer->GetDgnDb().GetRealityDataSourcesModel(), fileId.c_str(), linkCode.GetValueCP());
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*m_importer->GetDgnDb().GetRealityDataSourcesModel(), fileId.c_str(), linkCode.GetValueUtf8CP());
     if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
         return BSIERROR;
 
