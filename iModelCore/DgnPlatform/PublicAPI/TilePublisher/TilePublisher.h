@@ -385,7 +385,7 @@ private:
     void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes);
     void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
     void WriteGltf(std::FILE* outputFile, PublishTileData const& tileData);
-    void WriteVector(std::FILE* outputFile, PublishableTileGeometryR geometry);
+    void WriteClassifier(std::FILE* outputFile, PublishableTileGeometryR geometry);
 
     void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
     void AddDefaultScene (PublishTileData& tileData);

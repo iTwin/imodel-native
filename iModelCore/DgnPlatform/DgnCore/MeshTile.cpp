@@ -587,6 +587,15 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
         if (nullptr != triMesh.m_textureUV)
             m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
         }
+#define DEFAULT_ATTRIBUTE_VALUE 1
+#ifdef DEFAULT_ATTRIBUTE_VALUE
+        m_attributes.resize(triMesh.m_numPoints);
+
+        for (int32_t i=0; i<triMesh.m_numPoints; i++)
+            m_attributes[i] = DEFAULT_ATTRIBUTE_VALUE;
+
+        m_validIdsPresent = true;
+#endif
     
     for (int32_t i=0; i<triMesh.m_numIndices; i += 3)
         AddTriangle(TileTriangle(triMesh.m_vertIndex[i], triMesh.m_vertIndex[i+1], triMesh.m_vertIndex[i+2], false));
@@ -903,6 +912,7 @@ bool TileMeshBuilder::GetMaterial(RenderMaterialId materialId, DgnDbR dgnDb)
 void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
     auto const&         points = visitor.Point();
+    bool const*         visitorVisibility = visitor.GetVisibleCP();
     size_t              nTriangles = points.size() - 2;
 
     for (size_t iTriangle =0; iTriangle< nTriangles; iTriangle++)
@@ -916,8 +926,12 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId mat
                 return;
             }
 
-        TileTriangle            newTriangle(!visitor.GetTwoSided());
-        bvector<DPoint2d>       params = visitor.Param();
+        TileTriangle        newTriangle(!visitor.GetTwoSided());
+        bvector<DPoint2d>   params = visitor.Param();
+
+        newTriangle.m_edgeVisible[0] = (0 == iTriangle) ? visitorVisibility[0] : false;
+        newTriangle.m_edgeVisible[1] = visitorVisibility[iTriangle+1];
+        newTriangle.m_edgeVisible[2] = (iTriangle == nTriangles-1) ? visitorVisibility[iTriangle+2] : false;
 
         if (includeParams &&
             !params.empty() &&
