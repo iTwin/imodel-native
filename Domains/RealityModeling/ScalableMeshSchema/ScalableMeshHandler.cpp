@@ -937,18 +937,39 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     trimesh.m_vertIndex = vertIndex;
 
     if (s_applyTexture && renderSys != nullptr)
-        {
-        trimesh.m_textureUV = textureUv;
-
+        {        
         //IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
 
+#if 1 //NEEDS_WORK_SM GetTextureCompressed doesn't currently work for Cesium. 
+        IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
+
+        if (smTexturePtr.IsValid())
+            {
+            trimesh.m_textureUV = textureUv;
+            ByteStream imageBytes(smTexturePtr->GetSize());
+
+            size_t lineSize = smTexturePtr->GetDimension().x * 3;
+
+            for (size_t indY = 0; indY < smTexturePtr->GetDimension().y; indY++)
+                memcpy(imageBytes.GetDataP() + indY * lineSize, smTexturePtr->GetData() + (smTexturePtr->GetDimension().y - indY - 1) * lineSize, lineSize);
+                                                        
+            Image binaryImage(smTexturePtr->GetDimension().x, smTexturePtr->GetDimension().y, std::move(imageBytes), Image::Format::Rgb);
+
+            Render::Texture::CreateParams params;
+            params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
+            trimesh.m_texture = renderSys->_CreateTexture(binaryImage, params);
+            }
+#else
+
         IScalableMeshTexturePtr compressedTexturePtr(m_scalableMeshNodePtr->GetTextureCompressed());
-        Image jpegImage(Image::FromJpeg(compressedTexturePtr->GetData(), compressedTexturePtr->GetSize(), Image::Format::Rgb));
+        Image jpegImage(Image::FromJpeg(compressedTexturePtr->GetData(), compressedTexturePtr->GetSize(), Image::Format::Rgb));        
+        ImageSource imageSource(jpegImage, ImageSource::Format::Jpeg);        
+        trimesh.m_texture = renderSys->_CreateTexture(imageSource, Image::Format::Rgb, Image::BottomUp::Yes);
+        trimesh.m_textureUV = textureUv;
+#endif
         //ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-
-        ImageSource imageSource(jpegImage, ImageSource::Format::Jpeg);
-
-        trimesh.m_texture =  renderSys->_CreateTexture(imageSource, Image::Format::Rgb, Image::BottomUp::Yes);
+        
+                
         }
 
     m_meshes.push_front(scene._CreateGeometry(trimesh, renderSys));
