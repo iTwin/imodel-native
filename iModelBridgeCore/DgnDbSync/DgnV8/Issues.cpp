@@ -92,6 +92,20 @@ Utf8String Converter::IssueReporter::FmtModel(DgnV8ModelCR fm)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String Converter::IssueReporter::FmtModelRef(DgnModelRefCR r) 
+    {
+    auto a = r.AsDgnAttachmentCP();
+    if (nullptr != a)
+        return FmtAttachment(*a);
+    auto m = r.GetDgnModelP();
+    if (nullptr != m)
+        return FmtModel(*m);
+    return Utf8String(r.GetModelNameCP());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Sam.Wilson                      07/14
++---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String Converter::IssueReporter::FmtModel(DgnModelCR m) 
     {
     return Utf8PrintfString("%s (%lld)>", m.GetName().c_str(), m.GetModelId().GetValueUnchecked());
