@@ -1427,19 +1427,17 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
     FWriteValue(s_vectorVersion, outputFile);
     long    lengthDataPosition = ftell(outputFile);
     FWriteValue((uint32_t) 0, outputFile);    // Filled in below.
-    FWriteValue((uint32_t) featureTableStr.size(), outputFile);
-    FWriteValue((uint32_t) m_featureBinary.size(), outputFile);   // No binary feature data.
-    FWriteValue((uint32_t) batchTableStr.size(), outputFile);
-    FWriteValue((uint32_t) 0, outputFile);  // No binary batch data.
-    FWriteValue((uint32_t) 0, outputFile);  // No polygons indices.
-    FWriteValue((uint32_t) 0, outputFile);  // No polygon points.
-    FWriteValue((uint32_t) (2*m_polylinePositionsX.size()), outputFile);
-    FWriteValue((uint32_t) (2*m_pointPositionsX.size()), outputFile);
-    FWriteValue((uint32_t) m_meshIndices.size(), outputFile);
-    FWriteValue((uint32_t) m_meshPositions.size(), outputFile);
-    FWrite(featureTableStr, outputFile);
-    FWrite(m_featureBinary, outputFile);
-    FWrite(batchTableStr, outputFile);
+    FWriteValue((uint32_t) featureTableStr.size(), outputFile);                                                     // Feature table Json.
+    FWriteValue((uint32_t) m_featureBinary.size(), outputFile);                                                     // Feature Table binary.
+    FWriteValue((uint32_t) batchTableStr.size(), outputFile);                                                       // Batch table Json.
+    FWriteValue((uint32_t) 0, outputFile);                                                                          // No binary batch data.
+    FWriteValue((uint32_t) m_meshIndices.size() + m_polylineIndices.size());                                        // Indices byte length.
+    FWriteValue((uint32_t) m_meshPositions.size() + m_polylinePositionsX.size() + m_polylinePositionsY.size());     // Positions byte length.
+    FWriteValue((uint32_t) 0, outputFile);                                                                          // No polygons positions.
+    FWriteValue((uint32_t) m_pointPositionsX.size() + m_pointPositionsY.size());                                    // Point positions byte length.
+    FWrite(featureTableStr, outputFile);                                                                            // Feature table Json.
+    FWrite(m_featureBinary, outputFile);                                                                            // Feature table binary.
+    FWrite(batchTableStr, outputFile);                                                                              // Batch table Json.
     FWrite(m_polylineIndices, outputFile);
     FWrite(m_meshIndices, outputFile);
     FWrite(m_polylinePositionsX, outputFile);
