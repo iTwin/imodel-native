@@ -170,7 +170,7 @@ BentleyStatus ORDBridge::_ConvertToBim(SubjectCR jobSubject)
     UpdateProjectExtents(*alignmentModelPtr);
     UpdateProjectExtents(*physicalModelPtr);
 
-    RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(jobSubject);
+    RoadRailBim::RoadRailPhysicalDomain::SetUpDefaultViews(jobSubject, ORDBRIDGE_AlignmentModelName, ORDBRIDGE_PhysicalModelName);
 
     // Infer deletions
     changeDetectorPtr->_DeleteElementsNotSeen();
