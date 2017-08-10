@@ -41,14 +41,14 @@ DPoint3d Alignment::_ToDPoint3d(DistanceExpressionCR distanceExpression) const
     DPoint3d retVal;
     if (distanceExpression.GetLateralOffsetFromILinearElement().IsValid())
         {
-        retVal = mainPairPtr->GetPointFromStationAndOffset(
+        retVal = mainPairPtr->GetPointAtAndOffset(
             distanceExpression.GetDistanceAlongFromStart(), 
             distanceExpression.GetLateralOffsetFromILinearElement().Value());
-        retVal.z = mainPairPtr->GetVerticalElevationAtStation(distanceExpression.GetDistanceAlongFromStart());
+        retVal.z = mainPairPtr->GetVerticalElevationAt(distanceExpression.GetDistanceAlongFromStart());
         }
     else
         {
-        retVal = mainPairPtr->GetPointFromStationWithZ(distanceExpression.GetDistanceAlongFromStart());
+        retVal = mainPairPtr->GetPointAtWithZ(distanceExpression.GetDistanceAlongFromStart());
         }
 
     if (distanceExpression.GetVerticalOffsetFromILinearElement().IsValid())
@@ -66,7 +66,7 @@ DistanceExpression Alignment::_ToDistanceExpression(DPoint3dCR point) const
 
     double horizOffset;
     double distanceFromStart = mainPairPtr->HorizontalDistanceFromStart(point, &horizOffset);
-    double vertElev = mainPairPtr->GetVerticalElevationAtStation(distanceFromStart);
+    double vertElev = mainPairPtr->GetVerticalElevationAt(distanceFromStart);
     double vertOffset = (point.z - vertElev);
 
     return DistanceExpression(distanceFromStart, horizOffset, vertOffset);

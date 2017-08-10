@@ -2,7 +2,7 @@
 |
 |     $Source: AlignmentPair.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailAlignmentInternal.h>
@@ -293,7 +293,7 @@ bool AlignmentPair::ClosestPoint (DPoint3dR locationPoint, DPoint3dCR referenceP
         return false;
     locationPoint = location.point;
     double station = _DistanceFromStart(location);
-    locationPoint.z = GetVerticalElevationAtStation(station);
+    locationPoint.z = GetVerticalElevationAt(station);
     curveType = location.curve->GetCurvePrimitiveType();
     return true;
     }
@@ -370,7 +370,7 @@ void AlignmentPair::GetStartEnd (DPoint3dR startPt, DPoint3dR endPt) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AlignmentPair::GetStartAndEndStations (double& startStation, double& endStation) const
+void AlignmentPair::GetStartAndEndDistancesAlong(double& startStation, double& endStation) const
     {
     DPoint3d start, end;
     if (VerticalCurveVector().IsValid())
@@ -593,7 +593,7 @@ double AlignmentPair::LengthXY () const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d AlignmentPair::GetPointFromStation (double sta) const
+DPoint3d AlignmentPair::GetPointAt (double sta) const
     {
     if (sta > _HorizontalIndexVector ()->TotalPathLength ())
         sta = sta - mgds_fc_epsilon;
@@ -607,7 +607,7 @@ DPoint3d AlignmentPair::GetPointFromStation (double sta) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     10/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d AlignmentPair::GetPointFromStationAndOffset (double sta, double offset) const
+DPoint3d AlignmentPair::GetPointAtAndOffset (double sta, double offset) const
     {
     if (sta > _HorizontalIndexVector ()->TotalPathLength ())
         sta = sta - mgds_fc_epsilon;
@@ -632,7 +632,7 @@ DPoint3d AlignmentPair::GetPointFromStationAndOffset (double sta, double offset)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-double AlignmentPair::GetVerticalElevationAtStation (double sta) const
+double AlignmentPair::GetVerticalElevationAt (double sta) const
     {
     auto indexVector = _VerticalXIndexVector ();
     if (indexVector.IsNull())
@@ -654,16 +654,16 @@ double AlignmentPair::GetVerticalElevationAtStation (double sta) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-DPoint3d AlignmentPair::GetPointFromStationWithZ (double sta) const
+DPoint3d AlignmentPair::GetPointAtWithZ (double sta) const
     {
-    DPoint3d returnPoint = GetPointFromStation (sta);
-    returnPoint.z = GetVerticalElevationAtStation (sta);
+    DPoint3d returnPoint = GetPointAt (sta);
+    returnPoint.z = GetVerticalElevationAt (sta);
     return returnPoint;
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AlignmentPair::GetPointAndTangentFromStation (DPoint3dR point, DVec3dR tangent, double sta) const
+BentleyStatus AlignmentPair::GetPointAndTangentAt (DPoint3dR point, DVec3dR tangent, double sta) const
     {
     if (sta > _HorizontalIndexVector()->TotalPathLength ())
         sta = sta - mgds_fc_epsilon;
@@ -681,14 +681,14 @@ BentleyStatus AlignmentPair::GetPointAndTangentFromStation (DPoint3dR point, DVe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Scott.Devoe                     09/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AlignmentPair::GetPointAndTangentFromStationWithZ (DPoint3dR point, DVec3dR tangent, double sta) const
+BentleyStatus AlignmentPair::GetPointAndTangentAtWithZ (DPoint3dR point, DVec3dR tangent, double sta) const
     {
     auto verticalIndex = _VerticalXIndexVector ();
     if (verticalIndex.IsNull())
         return BSIERROR;
 
     BentleyStatus status = BSISUCCESS;
-    if (( status = GetPointAndTangentFromStation (point, tangent, sta) ) != BSISUCCESS)
+    if (( status = GetPointAndTangentAt (point, tangent, sta) ) != BSISUCCESS)
         {
         return status;
         }

@@ -2390,7 +2390,7 @@ bvector<DPoint3d> AlignmentPairEditor::CrestAndSagPointsXYZ (ZeroSlopePoints zsT
     bvector<DPoint3d> returnVector;
     for (int i = 0; i < vec.size (); i++)
         {
-        DPoint3d pt = GetPointFromStation (vec[i].x);
+        DPoint3d pt = GetPointAt (vec[i].x);
         pt.z = vec[i].z;
         returnVector.push_back (pt);
         }

@@ -2,7 +2,7 @@
 |
 |     $Source: RoadAlignmentPairEditor.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailAlignmentInternal.h>
@@ -117,9 +117,9 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtStartWithAuxili
         }
 
     DPoint3d testPt, testPtOnPrimary;
-    testPt = GetPointFromStationWithZ (3.0);
+    testPt = GetPointAtWithZ (3.0);
     double testStationOnPrimary = primaryRoad.HorizontalDistanceFromStart (testPt);
-    testPtOnPrimary = primaryRoad.GetPointFromStationWithZ (testStationOnPrimary);
+    testPtOnPrimary = primaryRoad.GetPointAtWithZ (testStationOnPrimary);
 
     AlignmentPairPtr newRoad = AlignmentPair::Create (newHZ, nullptr);
     double newLength = newRoad->LengthXY ();
@@ -134,9 +134,9 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtStartWithAuxili
 
     DPoint3d arcStartOnPrimary, arcEndOnSecondary;
     double arcStartStationOnPrimary = primaryRoad.HorizontalDistanceFromStart (arcStart);
-    arcStartOnPrimary = primaryRoad.GetPointFromStationWithZ (arcStartStationOnPrimary);
+    arcStartOnPrimary = primaryRoad.GetPointAtWithZ (arcStartStationOnPrimary);
     double arcEndStationOnSecondary = HorizontalDistanceFromStart (arcEnd);
-    arcEndOnSecondary = GetPointFromStationWithZ (arcEndStationOnSecondary);
+    arcEndOnSecondary = GetPointAtWithZ (arcEndStationOnSecondary);
     arcEndStationOnSecondary = newRoad->HorizontalDistanceFromStart (arcEnd);
     // compute starting z
     double startZ = arcStartOnPrimary.z - (arcStartOnPrimary.DistanceXY(arcStart)) * (( testPtOnPrimary.z - testPt.z ) / testPtOnPrimary.DistanceXY (testPt));
@@ -195,9 +195,9 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtEndWithAuxiliar
         }
 
     DPoint3d testPt, testPtOnPrimary;
-    testPt = GetPointFromStationWithZ (3.0);
+    testPt = GetPointAtWithZ (3.0);
     double testStationOnPrimary = primaryRoad.HorizontalDistanceFromStart (testPt);
-    testPtOnPrimary = primaryRoad.GetPointFromStationWithZ (testStationOnPrimary);
+    testPtOnPrimary = primaryRoad.GetPointAtWithZ (testStationOnPrimary);
 
     AlignmentPairPtr newRoad = AlignmentPair::Create (newHZ, nullptr);
     double newLength = newRoad->LengthXY ();
@@ -219,9 +219,9 @@ AlignmentPairPtr RoadAlignmentPairEditor::BuildRampApproachRoadAtEndWithAuxiliar
 
     DPoint3d arcEndOnPrimary, arcStartOnSecondary;
     double arcEndStationOnPrimary = primaryRoad.HorizontalDistanceFromStart (arcEnd);
-    arcEndOnPrimary = primaryRoad.GetPointFromStationWithZ (arcEndStationOnPrimary);
+    arcEndOnPrimary = primaryRoad.GetPointAtWithZ (arcEndStationOnPrimary);
     double arcStartStationOnSecondary = HorizontalDistanceFromStart (arcStart);
-    arcStartOnSecondary = GetPointFromStationWithZ (arcStartStationOnSecondary);
+    arcStartOnSecondary = GetPointAtWithZ (arcStartStationOnSecondary);
 //    arcStartStationOnSecondary = newRoad->HorizontalDistanceFromStart (arcStart);
 
     // compute ending z
@@ -354,8 +354,8 @@ bool DividedRoadAlignmentPairEditor::InitializeSettings (double fromSta, double 
     if (m_hasEndSplit)
         m_offsetEndStation = m_endSplitStation - m_transitionLength;
 
-    m_primaryRoad->GetPointAndTangentFromStation (m_startSplitPt, m_startSplitVec, m_startSplitStation);
-    m_primaryRoad->GetPointAndTangentFromStation (m_endSplitPt, m_endSplitVec, m_endSplitStation);
+    m_primaryRoad->GetPointAndTangentAt (m_startSplitPt, m_startSplitVec, m_startSplitStation);
+    m_primaryRoad->GetPointAndTangentAt (m_endSplitPt, m_endSplitVec, m_endSplitStation);
     m_endSplitVec.Negate ();
 
     return true;
@@ -373,7 +373,7 @@ CurveVectorPtr DividedRoadAlignmentPairEditor::AddStartDoubleCurve(CurveVectorP 
     DPoint3d start, end;
     offsetCurve->GetStartEnd (start, end);
     DVec3d startTan;
-    m_primaryRoad->GetPointAndTangentFromStation (end, startTan, m_offsetStartStation); // tangent will be same on offset
+    m_primaryRoad->GetPointAndTangentAt (end, startTan, m_offsetStartStation); // tangent will be same on offset
     startTan.Negate ();
 
     //! Creates a small segment before the double fillet so we're not tangent at the beginning of the alignment
@@ -408,7 +408,7 @@ CurveVectorPtr DividedRoadAlignmentPairEditor::AddEndDoubleCurve (CurveVectorP o
     DPoint3d start, end;
     offsetCurve->GetStartEnd (start, end);
     DVec3d endTan;
-    m_primaryRoad->GetPointAndTangentFromStation (start, endTan, m_offsetEndStation); // tangent will be same on offset
+    m_primaryRoad->GetPointAndTangentAt (start, endTan, m_offsetEndStation); // tangent will be same on offset
 
     //! Creates a small segment after the double fillet so we're not tangent at the end of the alignment
     DVec3d newEndSplitVec = m_endSplitVec;

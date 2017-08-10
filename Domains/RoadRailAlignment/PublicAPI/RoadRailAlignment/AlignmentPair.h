@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/RoadRailAlignment/AlignmentPair.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
@@ -43,7 +43,7 @@ protected:
 
     //! Return the distance along the alignment to the referencePoint
     double _DistanceFromStart(CurveLocationDetailCR location) const;
-    CurveVectorPtr _GetPartialAlignment(CurveVectorType cvType, double startStation, double endStation) const;
+    CurveVectorPtr _GetPartialAlignment(CurveVectorType cvType, double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
 protected:
     ROADRAILALIGNMENT_EXPORT AlignmentPair() { }
@@ -52,15 +52,15 @@ protected:
 public:
     //! Return the 3D start and end points of this alignment
     ROADRAILALIGNMENT_EXPORT void GetStartEnd(DPoint3dR startPt, DPoint3dR endPt) const;
-    ROADRAILALIGNMENT_EXPORT void GetStartAndEndStations(double& startStation, double& endStation) const;
+    ROADRAILALIGNMENT_EXPORT void GetStartAndEndDistancesAlong(double& startDistanceAlong, double& endDistanceAlong) const;
 
     ROADRAILALIGNMENT_EXPORT double LengthXY() const;
-    ROADRAILALIGNMENT_EXPORT DPoint3d GetPointFromStation(double sta) const;
-    ROADRAILALIGNMENT_EXPORT DPoint3d GetPointFromStationWithZ(double sta) const;
-    ROADRAILALIGNMENT_EXPORT BentleyStatus GetPointAndTangentFromStation(DPoint3dR point, DVec3dR tangent, double sta) const;
-    ROADRAILALIGNMENT_EXPORT BentleyStatus GetPointAndTangentFromStationWithZ(DPoint3dR point, DVec3dR tangent, double sta) const;
-    ROADRAILALIGNMENT_EXPORT DPoint3d GetPointFromStationAndOffset(double sta, double offset) const;
-    ROADRAILALIGNMENT_EXPORT double GetVerticalElevationAtStation(double sta) const;
+    ROADRAILALIGNMENT_EXPORT DPoint3d GetPointAt(double distanceAlongFromStart) const;
+    ROADRAILALIGNMENT_EXPORT DPoint3d GetPointAtWithZ(double distanceAlongFromStart) const;
+    ROADRAILALIGNMENT_EXPORT BentleyStatus GetPointAndTangentAt(DPoint3dR point, DVec3dR tangent, double distanceAlongFromStart) const;
+    ROADRAILALIGNMENT_EXPORT BentleyStatus GetPointAndTangentAtWithZ(DPoint3dR point, DVec3dR tangent, double distanceAlongFromStart) const;
+    ROADRAILALIGNMENT_EXPORT DPoint3d GetPointAtAndOffset(double distanceAlongFromStart, double offset) const;
+    ROADRAILALIGNMENT_EXPORT double GetVerticalElevationAt(double distanceAlongFromStart) const;
 
     //! Return a point on the alignment relative to the reference point if there is one
     ROADRAILALIGNMENT_EXPORT bool ClosestPoint(DPoint3dR locationPoint, DPoint3dCR referencePoint) const;
@@ -84,11 +84,11 @@ public:
 
     // partial alignments
     ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetPartialHorizontalAlignment(DPoint3dCR fromPt, DPoint3dCR toPt) const;
-    ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetPartialHorizontalAlignment(double startStation, double endStation) const;
-    ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetPartialVerticalAlignment(double startStation, double endStation) const;
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetPartialHorizontalAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
+    ROADRAILALIGNMENT_EXPORT CurveVectorPtr GetPartialVerticalAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
     ROADRAILALIGNMENT_EXPORT AlignmentPairPtr GetPartialAlignment(DPoint3dCR fromPt, DPoint3dCR toPt) const;
-    ROADRAILALIGNMENT_EXPORT virtual AlignmentPairPtr GetPartialAlignment(double startStation, double endStation) const;
+    ROADRAILALIGNMENT_EXPORT virtual AlignmentPairPtr GetPartialAlignment(double startDistanceAlongFromStart, double endDistanceAlongFromStart) const;
 
     ROADRAILALIGNMENT_EXPORT bvector<DPoint3d> GetStrokedAlignment() const;
 
@@ -101,10 +101,10 @@ public:
     ROADRAILALIGNMENT_EXPORT void UpdateHorizontalCurveVector(CurveVectorCP horizontalAlignment);
     ROADRAILALIGNMENT_EXPORT void UpdateVerticalCurveVector(CurveVectorCP verticalAlignment);
 
-    // Find intersection of two alignments in XY. Optionally returns station of the intersect. Also optionally locates the intersection
+    // Find intersection of two alignments in XY. Optionally returns distanceAlong of the intersect. Also optionally locates the intersection
     // closest to the given point if there are multiple intersects (otherwise it will return the first intersect it finds)
     ROADRAILALIGNMENT_EXPORT bool ComputeIntersectionWith(DPoint3dR result, AlignmentPairCP second, DPoint3dCP nearestToReference = nullptr,
-        double * primaryStation = nullptr, double * secondaryStation = nullptr);
+        double * primaryDistanceAlongFromStart = nullptr, double * secondaryDistanceAlongFromStart = nullptr);
 
 public:
     ROADRAILALIGNMENT_EXPORT static AlignmentPairPtr Create(CurveVectorCR horizontalAlignment, CurveVectorCP verticalAlignment);

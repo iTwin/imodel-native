@@ -226,7 +226,7 @@ size_t AlignmentIntersection::_ComputeExplicitIntersections (bvector<AlignmentIn
 
                 DPoint3d dummy;
                 DVec3d tangent;
-                m_secondaryRoad->GetPointAndTangentFromStation(dummy, tangent, info.m_secondaryStation);
+                m_secondaryRoad->GetPointAndTangentAt(dummy, tangent, info.m_secondaryStation);
                 // tangent is already normalized in this case
                 info.m_secondaryTangentAtIntersect = tangent;
                 }
@@ -280,7 +280,7 @@ size_t AlignmentIntersection::_ComputeExplicitIntersections (bvector<AlignmentIn
             info.m_secondaryStation = isSecStart ? 0.0 : m_secondaryRoad->LengthXY();
 
             DPoint3d dummy;
-            m_secondaryRoad->GetPointAndTangentFromStation(dummy, info.m_secondaryTangentAtIntersect, info.m_secondaryStation);
+            m_secondaryRoad->GetPointAndTangentAt(dummy, info.m_secondaryTangentAtIntersect, info.m_secondaryStation);
             potentialIntersections.push_back(info);
             }
         }
