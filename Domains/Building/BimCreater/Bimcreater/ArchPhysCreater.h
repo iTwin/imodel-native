@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: BimCreater/ArchPhysCreater/ArchPhysCreater.h $
+|     $Source: BimCreater/Bimcreater/ArchPhysCreater.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
