@@ -146,9 +146,9 @@
     <!-- ********************************************************************************************** -->
 
     <Part Name="PrewireForUnitTests" DeferType="BuildUnitTests" BentleyBuildMakeFile="Tests/DgnProject/prewire.mke">
+        <RequiredRepository>CompatibilityTestFiles-2-0-1-60</RequiredRepository>
         <SubPart PartName="DgnPlatformDLL"/>
         <SubPart PartName="DgnPlatformUnitTestHelpers"/>
-        <RequiredRepository>CompatibilityTestFiles-2-0-1-60</RequiredRepository>
         <Bindings>
             <Files     ProductDirectoryName="UnitTests-IgnoreList"   ProductSubDirectory="DgnPlatform" SubPartDirectory="UnitTests/DgnPlatform">Delivery/UnitTests/ignore_list.txt</Files>
             <Files     ProductDirectoryName="UnitTests-Assets"       ProductSubDirectory="ECSchemas"> Delivery/UnitTests/ECSchemas/*.xml</Files>
@@ -738,42 +738,85 @@
   <!-- //////////////////////////////////////////////////////////////////////////// -->
 
   <Product Name="iModelJsNodeAddon">
-    <SubPart PartName="iModelJsNodeAddonLib-Windows" LibType="Dynamic" />
-    <SubPart PartName="iModelJsNodeAddonLib-Unix" LibType="Static" />
-    <Directories DirectoryListName="iModelJsNodeAddon" />
+    <SubProduct ProductName="iModelJsNodeAddonStandalone" />
+    <SubProduct ProductName="iModelJsNodeAddonElectron" />
   </Product>
 
-  <ProductDirectoryList ListName="iModelJsNodeAddon">
-    <!-- NB: Keep this version number consistent with nodejs:node-gyp -->
-    <ProductDirectory Name="nodejs_ver" Path="v8.2"/>
-    <ProductDirectory Name="Assemblies" Path="" RelativeTo="nodejs_ver"/>
+  <Product Name="iModelJsNodeAddonStandalone">
+    <SubPart PartName="iModelJsNodeAddonLibStandalone-Windows" LibType="Dynamic" />
+    <SubPart PartName="iModelJsNodeAddonLibStandalone-Unix" LibType="Static" />
+    <Directories DirectoryListName="iModelJsNodeAddonStandaloneList" />
+    <Directories DirectoryListName="iModelJsNodeAddonCommonDeliveryList" />
+  </Product>
+
+  <Product Name="iModelJsNodeAddonElectron">
+    <SubPart PartName="iModelJsNodeAddonLibElectron-Windows" LibType="Dynamic" />
+    <Directories DirectoryListName="iModelJsNodeAddonElectronList" />
+    <Directories DirectoryListName="iModelJsNodeAddonCommonDeliveryList" />
+  </Product>
+
+  <ProductDirectoryList ListName="iModelJsNodeAddonStandaloneList">
+    <!-- NB: Keep this version number consistent with nodejs:node-gyp-standalone -->
+    <ProductDirectory Name="AddonDeliveryRoot" Path="N_8_2_1" />
+  </ProductDirectoryList>
+
+  <ProductDirectoryList ListName="iModelJsNodeAddonElectronList">
+    <!-- NB: Keep this version number consistent with nodejs:node-gyp-electron -->
+    <ProductDirectory Name="AddonDeliveryRoot" Path="E_1_6_11" />
+  </ProductDirectoryList>
+
+  <ProductDirectoryList ListName="iModelJsNodeAddonCommonDeliveryList">
+    <ProductDirectory Name="Assemblies" Path="" RelativeTo="AddonDeliveryRoot"/>
     <ProductDirectory Name="Assemblies" Deliver="false" LibType="Static"/>
-    <ProductDirectory Name="iModelJsNode_node_module" Path="" RelativeTo="nodejs_ver"/>
-    <ProductDirectory Name="iModelJsNode_node_module" Path="" RelativeTo="nodejs_ver" LibType="Static" />
-    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="nodejs_ver"/>
-    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="nodejs_ver" LibType="Static"/>
-    <ProductDirectory Name="VendorNotices"  RelativeTo="nodejs_ver" Path="Notices"/>
-    <ProductDirectory Name="VendorNotices"  RelativeTo="nodejs_ver" Path="Notices" LibType="static"/>
+    <ProductDirectory Name="iModelJsNode_node_module" Path="" RelativeTo="AddonDeliveryRoot"/>
+    <ProductDirectory Name="iModelJsNode_node_module" Path="" RelativeTo="AddonDeliveryRoot" LibType="Static" />
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonDeliveryRoot"/>
+    <ProductDirectory Name="Assets" Path="Assets" RelativeTo="AddonDeliveryRoot" LibType="Static"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="AddonDeliveryRoot" Path="Notices"/>
+    <ProductDirectory Name="VendorNotices"  RelativeTo="AddonDeliveryRoot" Path="Notices" LibType="static"/>
   </ProductDirectoryList>
 
   <!-- The purpose of these -Windows and -Unix part definitions is only to provide targets for the product's 
       SubParts, so that the product can build all static on Unix and all dynamic on Windows. -->
-  <Part Name="iModelJsNodeAddonLib-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
-    <SubPart PartName="iModelJsNodeAddonLib" />
+  <Part Name="iModelJsNodeAddonLibStandalone-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <SubPart PartName="node-gyp-standalone" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="iModelJsNodeAddonLibStandalone" />
   </Part>
 
-  <Part Name="iModelJsNodeAddonLib-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
-    <SubPart PartName="iModelJsNodeAddonLib" />
+  <Part Name="iModelJsNodeAddonLibStandalone-Unix" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic">
+    <SubPart PartName="node-gyp-standalone" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="iModelJsNodeAddonLibStandalone" />
+  </Part>
+
+  <Part Name="iModelJsNodeAddonLibElectron-Windows" OnlyPlatforms="x64" ExcludeLibType="Static">
+    <SubPart PartName="node-gyp-electron" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+    <SubPart PartName="iModelJsNodeAddonLibElectron" />
   </Part>
 
   <!-- This part builds our node native code addon -->
-  <Part Name="iModelJsNodeAddonLib" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke">
-    <SubPart PartName="node-gyp" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+  <Part Name="iModelJsNodeAddonLibCommon">
     <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+  </Part>
+
+  <!-- NB: Keep this version number consistent with nodejs:node-gyp-standalone -->
+  <Part Name="iModelJsNodeAddonLibStandalone" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_8_2_1" >
+    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module">
-        Delivery/iModelJsNode_node_module/imodeljs.node
+        Delivery/iModelJsNode_node_module/imodeljs_N_8_2_1.node
+      </Files>
+    </Bindings>
+  </Part>
+
+  <!-- NB: Keep this version number consistent with nodejs:node-gyp-electron -->
+  <Part Name="iModelJsNodeAddonLibElectron" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=E_1_6_11" >
+    <SubPart PartName="iModelJsNodeAddonLibCommon"/>
+
+    <Bindings>
+      <Files ProductDirectoryName="iModelJsNode_node_module">
+        Delivery/iModelJsNode_node_module/imodeljs_E_1_6_11.node
       </Files>
     </Bindings>
   </Part>
