@@ -1,13 +1,13 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: BimCreater/Bimcreater/ArchPhysCreater.cpp $
+|     $Source: BimCreater/Bimcreater/BimCreater.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 
 #include "stdafx.h"
-#include "ArchPhysCreater.h"
+#include "BimCreater.h"
 
 
 #define BUILDING_MODEL_NAME "SamplePlantModel"
@@ -17,7 +17,7 @@
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus ArchPhysCreator::PrintUsage(WCharCP exeName)
+BentleyStatus BimCreater::PrintUsage(WCharCP exeName)
     {
     fwprintf(stderr,
         L"\n"
@@ -37,7 +37,7 @@ BentleyStatus ArchPhysCreator::PrintUsage(WCharCP exeName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-WString ArchPhysCreator::GetArgValueW(WCharCP arg)
+WString BimCreater::GetArgValueW(WCharCP arg)
     {
     WString argValue(arg);
     argValue = argValue.substr(argValue.find_first_of('=', 0) + 1);
@@ -49,7 +49,7 @@ WString ArchPhysCreator::GetArgValueW(WCharCP arg)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BentleyStatus ArchPhysCreator::ParseCommandLine(int argc, WCharP argv[])
+BentleyStatus BimCreater::ParseCommandLine(int argc, WCharP argv[])
     {
     if (argc < 2)
         return PrintUsage(argv[0]);
@@ -101,7 +101,7 @@ BentleyStatus ArchPhysCreator::ParseCommandLine(int argc, WCharP argv[])
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-BeSQLite::L10N::SqlangFiles ArchPhysCreator::_SupplySqlangFiles()
+BeSQLite::L10N::SqlangFiles BimCreater::_SupplySqlangFiles()
     {
     BeFileName defaultSqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
     defaultSqlang.AppendToPath(L"sqlang/DgnPlatform_en.sqlang.db3");
@@ -111,7 +111,7 @@ BeSQLite::L10N::SqlangFiles ArchPhysCreator::_SupplySqlangFiles()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-Dgn::CategorySelectorPtr ArchPhysCreator::CreateCategorySelector(Dgn::DefinitionModelR model)
+Dgn::CategorySelectorPtr BimCreater::CreateCategorySelector(Dgn::DefinitionModelR model)
     {
     // A CategorySelector is a definition element that is normally shared by many ViewDefinitions.
     // To start off, we'll create a default selector that includes the one category that we use.
@@ -127,7 +127,7 @@ Dgn::CategorySelectorPtr ArchPhysCreator::CreateCategorySelector(Dgn::Definition
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-Dgn::ModelSelectorPtr ArchPhysCreator::CreateModelSelector(Dgn::DefinitionModelR definitionModel, Dgn::DgnModelR modelToSelect, Utf8CP name)
+Dgn::ModelSelectorPtr BimCreater::CreateModelSelector(Dgn::DefinitionModelR definitionModel, Dgn::DgnModelR modelToSelect, Utf8CP name)
     {
     // A ModelSelector is a definition element that is normally shared by many ViewDefinitions.
     // To start off, we'll create a default selector that includes the one model that we use.
@@ -141,7 +141,7 @@ Dgn::ModelSelectorPtr ArchPhysCreator::CreateModelSelector(Dgn::DefinitionModelR
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-Dgn::DisplayStyle3dPtr ArchPhysCreator::CreateDisplayStyle3d(Dgn::DefinitionModelR model)
+Dgn::DisplayStyle3dPtr BimCreater::CreateDisplayStyle3d(Dgn::DefinitionModelR model)
     {
     // DisplayStyle is a definition element that is potentially shared by many ViewDefinitions.
     // To start off, we'll create a style that can be used as a good default for 3D views.
@@ -160,7 +160,7 @@ Dgn::DisplayStyle3dPtr ArchPhysCreator::CreateDisplayStyle3d(Dgn::DefinitionMode
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   BentleySystems
 //---------------------------------------------------------------------------------------
-Dgn::DisplayStyle2dPtr ArchPhysCreator::CreateDisplayStyle2d(Dgn::DefinitionModelR model)
+Dgn::DisplayStyle2dPtr BimCreater::CreateDisplayStyle2d(Dgn::DefinitionModelR model)
 	{
 	// DisplayStyle is a definition element that is potentially shared by many ViewDefinitions.
 	// To start off, we'll create a style that can be used as a good default for 3D views.
@@ -179,7 +179,7 @@ Dgn::DisplayStyle2dPtr ArchPhysCreator::CreateDisplayStyle2d(Dgn::DefinitionMode
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::DgnDbPtr ArchPhysCreator::CreateDgnDb(BeFileNameCR outputFileName)
+Dgn::DgnDbPtr BimCreater::CreateDgnDb(BeFileNameCR outputFileName)
     {
     // Initialize parameters needed to create a DgnDb
     Dgn::CreateDgnDbParams createProjectParams;
@@ -203,7 +203,7 @@ Dgn::DgnDbPtr ArchPhysCreator::CreateDgnDb(BeFileNameCR outputFileName)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::DgnDbPtr ArchPhysCreator::OpenDgnDb(BeFileNameCR outputFileName)
+Dgn::DgnDbPtr BimCreater::OpenDgnDb(BeFileNameCR outputFileName)
 	{
 	// Initialize parameters needed to create a DgnDb
 	Dgn::DgnDb::OpenParams openParams(BeSQLite::Db::OpenMode::ReadWrite, BeSQLite::DefaultTxn::Yes, Dgn::SchemaUpgradeOptions::AllowedDomainUpgrades::CompatibleOnly );
@@ -229,7 +229,7 @@ template<class T, class U> RefCountedCPtr<T> const_pointer_cast(RefCountedCPtr<U
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-BentleyStatus ArchPhysCreator::DoUpdateSchema(Dgn::DgnDbPtr db)
+BentleyStatus BimCreater::DoUpdateSchema(Dgn::DgnDbPtr db)
 	{
 
 	//BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers();
@@ -266,7 +266,7 @@ BentleyStatus ArchPhysCreator::DoUpdateSchema(Dgn::DgnDbPtr db)
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalBreakdownElementPtr ArchPhysCreator::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel)
+Dgn::FunctionalBreakdownElementPtr BimCreater::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel)
     {
 
     // Create the functional Instance
@@ -314,7 +314,7 @@ Dgn::FunctionalBreakdownElementPtr ArchPhysCreator::CreatePipeRun(Dgn::DgnElemen
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::DrawingGraphicPtr ArchPhysCreator::CreateAnnotation(Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, Utf8StringCR text, Dgn::Placement2dCR placement)
+Dgn::DrawingGraphicPtr BimCreater::CreateAnnotation(Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, Utf8StringCR text, Dgn::Placement2dCR placement)
     {
     Dgn::DrawingGraphicPtr annotationGraphics = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
 
@@ -339,7 +339,7 @@ Dgn::DrawingGraphicPtr ArchPhysCreator::CreateAnnotation(Dgn::DgnCategoryId cate
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::DrawingGraphicPtr ArchPhysCreator::CreatePipeRunGraphics(Dgn::FunctionalBreakdownElementCPtr pipeRun, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count)
+Dgn::DrawingGraphicPtr BimCreater::CreatePipeRunGraphics(Dgn::FunctionalBreakdownElementCPtr pipeRun, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count)
     {
 
     // Now create each of the graphical line instances.
@@ -382,7 +382,7 @@ Dgn::DrawingGraphicPtr ArchPhysCreator::CreatePipeRunGraphics(Dgn::FunctionalBre
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateNozzle(Dgn::DgnElementId pipeRunId, Dgn::DgnElementId equipmentId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement, bool isVirtual)
+Dgn::FunctionalComponentElementPtr BimCreater::CreateNozzle(Dgn::DgnElementId pipeRunId, Dgn::DgnElementId equipmentId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement, bool isVirtual)
     {
 
     // Create Nozzle Functional Component
@@ -452,7 +452,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateNozzle(Dgn::DgnElement
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateTank( Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
+Dgn::FunctionalComponentElementPtr BimCreater::CreateTank( Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
     {
 
     // Create Tank Functional Component
@@ -503,7 +503,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateTank( Dgn::DgnElementI
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateRoundTank(Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
+Dgn::FunctionalComponentElementPtr BimCreater::CreateRoundTank(Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
     {
 
     // Create Tank Functional Component
@@ -557,7 +557,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateRoundTank(Dgn::DgnElem
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateVessel(Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
+Dgn::FunctionalComponentElementPtr BimCreater::CreateVessel(Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
     {
 
     // Create Tank Functional Component
@@ -613,7 +613,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateVessel(Dgn::DgnElement
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreatePump(Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
+Dgn::FunctionalComponentElementPtr BimCreater::CreatePump(Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement)
     {
 
     // Create Pump Functional Component
@@ -667,7 +667,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreatePump(Dgn::DgnElementId
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateReducer(Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Utf8StringCR reducerLabel)
+Dgn::FunctionalComponentElementPtr BimCreater::CreateReducer(Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Utf8StringCR reducerLabel)
     {
 
     Dgn::DrawingGraphicPtr reducerGraphic = BuildingDomain::BuildingDomainUtilities::CreateDrawingGraphic(BIS_ECSCHEMA_NAME, BIS_CLASS_DrawingGraphic, drawingModel, categoryId);
@@ -711,7 +711,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateReducer(Dgn::DgnCatego
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateGateValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement)
+Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement)
     {
 
     // Create the functional component for the Gate Valve
@@ -767,7 +767,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateGateValve(Dgn::DgnElem
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateThreeWayValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement)
+Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement)
     {
 
     // Create the functional component for the three way valve
@@ -817,7 +817,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateThreeWayValve(Dgn::Dgn
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::DrawingModelPtr ArchPhysCreator::CreatePidDrawings(Dgn::DocumentListModelR docListModel, Dgn::FunctionalModelR functionalModel, Utf8StringCR drawingCode, Dgn::DgnElementCPtr subUnit )
+Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docListModel, Dgn::FunctionalModelR functionalModel, Utf8StringCR drawingCode, Dgn::DgnElementCPtr subUnit )
 	{
 
 	// Create a drawing model
@@ -1010,7 +1010,7 @@ Dgn::DrawingModelPtr ArchPhysCreator::CreatePidDrawings(Dgn::DocumentListModelR 
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-BentleyStatus ArchPhysCreator::DoCreate()
+BentleyStatus BimCreater::DoCreate()
     {
 
 	BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers();
@@ -1114,7 +1114,7 @@ BentleyStatus ArchPhysCreator::DoCreate()
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::DgnViewId ArchPhysCreator::CreateView(Dgn::DefinitionModelR model, Utf8CP name, Dgn::CategorySelectorR categorySelector, Dgn::ModelSelectorR modelSelector, Dgn::DisplayStyle3dR displayStyle)
+Dgn::DgnViewId BimCreater::CreateView(Dgn::DefinitionModelR model, Utf8CP name, Dgn::CategorySelectorR categorySelector, Dgn::ModelSelectorR modelSelector, Dgn::DisplayStyle3dR displayStyle)
     {
     // CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
     // That is why they are inputs to this function. 
@@ -1138,7 +1138,7 @@ Dgn::DgnViewId ArchPhysCreator::CreateView(Dgn::DefinitionModelR model, Utf8CP n
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::DgnViewId ArchPhysCreator::CreateView2d(Dgn::DefinitionModelR model, Utf8CP name, Dgn::CategorySelectorR categorySelector, Dgn::DgnModelId baseModelId, Dgn::DisplayStyle2dR displayStyle)
+Dgn::DgnViewId BimCreater::CreateView2d(Dgn::DefinitionModelR model, Utf8CP name, Dgn::CategorySelectorR categorySelector, Dgn::DgnModelId baseModelId, Dgn::DisplayStyle2dR displayStyle)
 	{
 	// CategorySelector, ModelSelector, and DisplayStyle are definition elements that are normally shared by many ViewDefinitions.
 	// That is why they are inputs to this function. 
@@ -1173,7 +1173,7 @@ Dgn::DgnViewId ArchPhysCreator::CreateView2d(Dgn::DefinitionModelR model, Utf8CP
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-BentleyStatus ArchPhysCreator::PopulateInstanceProperties(ECN::IECInstancePtr instance)
+BentleyStatus BimCreater::PopulateInstanceProperties(ECN::IECInstancePtr instance)
     {
     ECN::ECClassCR ecClass = instance->GetClass();
 
@@ -1217,7 +1217,7 @@ BentleyStatus ArchPhysCreator::PopulateInstanceProperties(ECN::IECInstancePtr in
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-BentleyStatus ArchPhysCreator::PopulateElementProperties(Dgn::DgnElementPtr element)
+BentleyStatus BimCreater::PopulateElementProperties(Dgn::DgnElementPtr element)
     {
     ECN::ECClassCP ecClass = element->GetElementClass();
     int i = 0;
@@ -1260,7 +1260,7 @@ BentleyStatus ArchPhysCreator::PopulateElementProperties(Dgn::DgnElementPtr elem
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysicalModelR physicalModel, BuildingPhysical::BuildingTypeDefinitionModelR typeModel)
+BentleyStatus BimCreater::CreateBuilding(BuildingPhysical::BuildingPhysicalModelR physicalModel, BuildingPhysical::BuildingTypeDefinitionModelR typeModel)
     {
 
 	ECN::ECSchemaCP archSchema = physicalModel.GetDgnDb().Schemas().GetSchema(BENTLEY_ARCHITECTURAL_PHYSICAL_SCHEMA_NAME);
@@ -1546,7 +1546,7 @@ BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysical
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-//BentleyStatus ArchPhysCreator::SetCodeFromParent(Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR shortCode)
+//BentleyStatus BimCreater::SetCodeFromParent(Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR shortCode)
 //    {
 //
 //    Utf8String codeValue;
@@ -1572,7 +1572,7 @@ BentleyStatus ArchPhysCreator::CreateBuilding(BuildingPhysical::BuildingPhysical
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::DgnCode ArchPhysCreator::SetCodeFromParent1(Utf8StringR shortCode, Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR deviceCode)
+Dgn::DgnCode BimCreater::SetCodeFromParent1(Utf8StringR shortCode, Dgn::FunctionalElementR functionalElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR deviceCode)
     {
 
     int number;
@@ -1627,7 +1627,7 @@ Dgn::DgnCode ArchPhysCreator::SetCodeFromParent1(Utf8StringR shortCode, Dgn::Fun
 int wmain(int argc, WCharP argv[])
     {
 
-    ArchPhysCreator app;
+    BimCreater app;
     Dgn::DgnPlatformLib::Initialize(app, false);
 
     //if (BentleyStatus::SUCCESS != app.ParseCommandLine(argc, argv))

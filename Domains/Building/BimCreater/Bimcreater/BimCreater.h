@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: BimCreater/Bimcreater/ArchPhysCreater.h $
+|     $Source: BimCreater/Bimcreater/BimCreater.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
@@ -16,13 +16,13 @@
 //=======================================================================================
 // @bsiclass                                    BentleySystems 
 //=======================================================================================
-struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
+struct BimCreater : Dgn::DgnPlatformLib::Host
     {
     private:
         BeFileName m_outputFileName;
         bool m_overwriteExistingOutputFile = true;
 
-        virtual void _SupplyProductName(Utf8StringR name) override { name.assign("ArchPhysCreator"); }
+        virtual void _SupplyProductName(Utf8StringR name) override { name.assign("BimCreater"); }
         //__PUBLISH_SECTION_START__
         virtual IKnownLocationsAdmin& _SupplyIKnownLocationsAdmin() override { return *new   Dgn::KnownDesktopLocationsAdmin(); }
 
@@ -34,7 +34,7 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
 		Dgn::DisplayStyle2dPtr CreateDisplayStyle2d(Dgn::DefinitionModelR model);
 
     public:
-        ArchPhysCreator() {}
+        BimCreater() {}
 
         BeFileNameCR GetOutputFileName() { return m_outputFileName; }
         BentleyStatus PrintUsage(WCharCP exeName);

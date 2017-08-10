@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{20800D75-ED84-4263-95FE-66C95D10E578}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ArchPhysCreater</RootNamespace>
+    <RootNamespace>BimCreater</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -165,14 +165,14 @@ xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\lib\x64\StructuralDom
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ArchPhysCreater.h" />
+    <ClInclude Include="BimCreater.h" />
     <ClInclude Include="DoorTools.h" />
     <ClInclude Include="Geometry.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ArchPhysCreater.cpp" />
+    <ClCompile Include="BimCreater.cpp" />
     <ClCompile Include="DoorTools.cpp" />
     <ClCompile Include="Geometry.cpp" />
     <ClCompile Include="stdafx.cpp">
