@@ -74,6 +74,13 @@ protected:
     bool _SupportsCodeSpec(CodeSpecCR codeSpec) const override { return !codeSpec.IsNullCodeSpec(); }
     
 public:
+    BE_JSON_NAME(description)
+    BE_JSON_NAME(data)
+    BE_JSON_NAME(format)
+    BE_JSON_NAME(width)
+    BE_JSON_NAME(height)
+    BE_JSON_NAME(flags)
+
     static DgnTextureId ImportTexture(DgnImportContext& context, DgnTextureId source);
 
     //! Construct a new DgnTexture with the specified parameters

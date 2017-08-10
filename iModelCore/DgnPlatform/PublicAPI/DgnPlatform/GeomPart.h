@@ -57,6 +57,12 @@ protected:
     DgnGeometryPartCP _ToGeometryPart() const override final {return this;}
 
 public:
+    BE_PROP_NAME(BBoxLow)
+    BE_PROP_NAME(BBoxHigh)
+    BE_PROP_NAME(GeometryStream)
+    BE_JSON_NAME(bbox)
+    BE_JSON_NAME(geometryStream)
+
     //! Create a DgnGeometryPart
     //! @param[in] model Create the DgnGeometryPart in this model
     //! @param[in] name Optional. If name provided, create the DgnCode for the DgnGeometryPart using this name and the specified model as the uniqueness scope for the name

@@ -248,7 +248,8 @@ public:
 
     //! Construct a DgnCode scoped to an existing element.
     //! @note The best practice is to call CodeSpec::CreateCode rather than this constructor
-    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scope(scopeElementId.ToString(BeInt64Id::UseHex::Yes)), m_value(value) {}
+    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scope(scopeElementId.ToHexStr()), m_value(value) {}
+
     //! Construct a DgnCode scoped to an element that does not yet exist, but when it does exist it will have the specified FederationGuid. Typically used for reserving codes.
     DgnCode(CodeSpecId specId, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) : m_specId(specId), m_scope(scopeFederationGuid.ToString()), m_value(value) {}
 

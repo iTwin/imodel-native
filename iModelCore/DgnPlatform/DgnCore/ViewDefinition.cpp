@@ -321,8 +321,8 @@ DgnDbStatus ViewDefinition::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
 void ViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const 
     {
     T_Super::_ToJson(val, opts);
-    val[json_categorySelectorId()] = m_categorySelectorId.ToString(BeInt64Id::UseHex::Yes);
-    val[json_displayStyleId()] = m_displayStyleId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_categorySelectorId()] = m_categorySelectorId.ToHexStr();
+    val[json_displayStyleId()] = m_displayStyleId.ToHexStr();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -414,7 +414,7 @@ DgnDbStatus ViewDefinition2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 void ViewDefinition2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
     {
     T_Super::_ToJson(val, opts);
-    val[json_categorySelectorId()] = m_categorySelectorId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_categorySelectorId()] = m_categorySelectorId.ToHexStr();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -957,7 +957,7 @@ DgnDbStatus SpatialViewDefinition::_ReadSelectParams(BeSQLite::EC::ECSqlStatemen
 void SpatialViewDefinition::_ToJson(JsonValueR val, JsonValueCR opts) const 
     {
     T_Super::_ToJson(val, opts);
-    val[json_modelSelectorId()] = m_modelSelectorId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_modelSelectorId()] = m_modelSelectorId.ToHexStr();
     }
 
 /*---------------------------------------------------------------------------------**//**

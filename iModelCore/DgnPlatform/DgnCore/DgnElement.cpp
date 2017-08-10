@@ -1211,7 +1211,7 @@ DgnDbStatus DgnElement::_LoadFromDb()
 Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
     {
     Json::Value val;
-    val[json_id()] = m_id.ToString(BeInt64Id::UseHex::Yes);
+    val[json_id()] = m_id.ToHexStr();
     val[json_relClass()] = db.Schemas().GetClass(m_relClassId)->GetName();
     return val;
     }
@@ -1222,12 +1222,12 @@ Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
-    val[json_id()] = m_elementId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_id()] = m_elementId.ToHexStr();
 
     auto ecClass = GetElementClass();
     val[json_schemaName()] = ecClass->GetSchema().GetName();
     val[json_className()] = ecClass->GetName();
-    val[json_model()] = m_modelId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_model()] = m_modelId.ToHexStr();
     val[json_code()] = m_code.ToJson2();
 
     if (m_parent.IsValid())
@@ -3546,15 +3546,13 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
     {
     T_Super::_ToJson(val, opts);
-    val[json_category()] = m_categoryId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_category()] = m_categoryId.ToHexStr();
     
     if (opts["noGeometry"].asBool(false))
         return;
 
     // load geometry
-
-#if defined (TOFROM_JSON)
-#endif
+    val[json_geom()] = m_geom.ToBase64();
     }
 
 /*---------------------------------------------------------------------------------**//**
