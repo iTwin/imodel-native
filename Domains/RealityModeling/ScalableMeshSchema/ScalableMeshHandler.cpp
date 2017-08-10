@@ -1205,7 +1205,7 @@ void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
     // if we ask for the model with a different Render::System, we just throw the old one away.
     Utf8String sceneFile;
 
-    Transform location;
+    Transform toLocationTransform;
     Transform toFloatTransform;
 
     if (m_smPtr.IsValid())
@@ -1214,21 +1214,22 @@ void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
         DPoint3d centroid;
         centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
 
+#if 0 
         DPoint3d go = m_dgndb.GeoLocation().GetGlobalOrigin();
 
         GeoCoords::GCS gcs(m_smPtr->GetGCS());
         DgnGCSPtr  smGCS = DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), m_dgndb);
 
         DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
-        smGCS->UorsFromCartesian(scale, scale);
+        smGCS->UorsFromCartesian(scale, scale);        
+                    
         scale.DifferenceOf(scale, go);
 
-        smGCS->UorsFromCartesian(centroid, centroid);
+        smGCS->UorsFromCartesian(centroid, centroid);       
 
         toFloatTransform = Transform::FromRowValues(scale.x, 0, 0, -(centroid.x - go.x),
                                                     0, scale.y, 0, -(centroid.y - go.y),
                                                     0, 0, scale.z, -(centroid.z - go.z));
-
 
         
 /*
@@ -1244,14 +1245,28 @@ void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
                                                      0, 0, scale.z, centroid.z);
 
         //location = Transform::From(centroid.x + go.x, centroid.y + go.y, centroid.z + go.z);                                    
+#endif
+
+        m_smToModelUorTransform.Multiply(centroid, centroid);
+        
+        toFloatTransform = Transform::FromRowValues(1.0, 0, 0, -(centroid.x),
+                                                    0, 1.0, 0, -(centroid.y),
+                                                    0, 0, 1.0, -(centroid.z));
+
+        toLocationTransform = Transform::FromRowValues(1.0, 0, 0, (centroid.x),
+                                                       0, 1.0, 0, (centroid.y),
+                                                       0, 0, 1.0, (centroid.z));
+
+        toFloatTransform = Transform::FromProduct(toFloatTransform, m_smToModelUorTransform);
+        //toLocationTransform = Transform::FromProduct(toLocationTransform, m_smToModelUorTransform);
         }
     else
         { 
-        location = Transform::FromIdentity();
+        toLocationTransform = Transform::FromIdentity();
         toFloatTransform = Transform::FromIdentity();
         }
 
-    m_scene = new SMScene(m_dgndb, m_smPtr, location, toFloatTransform, sceneFile.c_str(), renderSys);
+    m_scene = new SMScene(m_dgndb, m_smPtr, toLocationTransform, toFloatTransform, sceneFile.c_str(), renderSys);
     m_scene->SetPickable(true);
     if (SUCCESS != m_scene->LoadScene())
         m_scene = nullptr;
