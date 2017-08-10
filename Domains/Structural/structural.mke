@@ -48,6 +48,8 @@ StructCommonPublicAPI   = $(StructCommon)PublicAPI/StructuralCommon/
 StructPhys            = $(_MakeFilePath)StructuralPhysical/
 StructPhysPublicAPI   = $(StructPhys)PublicAPI/StructuralPhysical/
 
+StructProfiles            = $(_MakeFilePath)StructuralProfiles/
+StructProfilesPublicAPI   = $(StructProfiles)PublicAPI/StructuralProfiles/
 
 #--------------------------------------------------------------------------------------
 #   Compile source
@@ -86,6 +88,23 @@ $(o)FoundationMember$(oext) : $(StructPhys)FoundationMember.cpp ${MultiCompileDe
 $(o)StripFooting$(oext) : $(StructPhys)StripFooting.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)StripFooting.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
 $(o)SpreadFooting$(oext) : $(StructPhys)SpreadFooting.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)SpreadFooting.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)StructuralProfilesDomain$(oext) : $(StructProfiles)StructuralProfilesDomain.cpp ${MultiCompileDepends} $(StructProfilesPublicAPI)StructuralProfilesDomain.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)Profile$(oext) : $(StructProfiles)Profile.cpp ${MultiCompileDepends} $(StructProfilesPublicAPI)Profile.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)ConstantProfile$(oext) : $(StructProfiles)ConstantProfile.cpp ${MultiCompileDepends} $(StructProfilesPublicAPI)ConstantProfile.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)BuiltUpProfile$(oext) : $(StructProfiles)BuiltUpProfile.cpp ${MultiCompileDepends} $(StructProfilesPublicAPI)BuiltUpProfile.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)ParametricProfile$(oext) : $(StructProfiles)ParametricProfile.cpp ${MultiCompileDepends} $(StructProfilesPublicAPI)ParametricProfile.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)PublishedProfile$(oext) : $(StructProfiles)PublishedProfile.cpp ${MultiCompileDepends} $(StructProfilesPublicAPI)PublishedProfile.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)VaryingProfile$(oext) : $(StructProfiles)VaryingProfile.cpp ${MultiCompileDepends} $(StructProfilesPublicAPI)VaryingProfile.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)VaryingProfileByZone$(oext) : $(StructProfiles)VaryingProfileByZone.cpp ${MultiCompileDepends} $(StructProfilesPublicAPI)VaryingProfileByZone.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
 
 %include MultiCppCompileGo.mki
 

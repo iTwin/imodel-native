@@ -1,14 +1,13 @@
 #---------------------------------------------------------------------------------------+
 #
-#     $Source: StructuralPhysical/StructuralPhysical.prewire.mki $
+#     $Source: StructuralProfiles/StructuralProfiles.prewire.mki $
 #
 #  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 #
 #---------------------------------------------------------------------------------------+
 
-$(targetAPIDir)StructuralPhysical : $(_MakeFilePath)StructuralPhysical/PublicAPI/StructuralPhysical
+$(targetAPIDir)StructuralProfiles : $(_MakeFilePath)StructuralProfiles/PublicAPI/StructuralProfiles
     $(LinkFirstDepToFirstTargetAsDirectory)
 
-$(targetSchemasDir)StructuralPhysical.ecschema.xml : $(_MakeFilePath)StructuralPhysical\StructuralPhysical.ecschema.xml
+$(targetSchemasDir)StructuralProfiles.ecschema.xml : $(_MakeFilePath)StructuralProfiles\StructuralProfiles.ecschema.xml
     $(LinkFirstDepToFirstTarget)
-  
