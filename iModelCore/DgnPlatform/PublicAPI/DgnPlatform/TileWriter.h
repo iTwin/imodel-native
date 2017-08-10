@@ -46,20 +46,6 @@ struct TileTexture : Render::Texture
     bool GetRepeat() const { return !m_createParams.m_isTileSection; }
  }; // TileTexture
 
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     04/2017
-+===============+===============+===============+===============+===============+======*/
-struct MeshMaterial 
-{ 
-    Utf8String  m_name;
-
-    MeshMaterial (Utf8StringCR suffix) : m_name("Material_" + suffix) { }
-
-    bool IsTextured() const { return false; }
-    bool IgnoresLighting() const { return false; }
-    Utf8StringCR GetName() const { return m_name; }
-
-};
 
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     12/2016                                                     a
@@ -69,7 +55,6 @@ struct Writer
 public:
     Writer(StreamBufferR buffer, GeometricModelR model) : m_buffer(buffer), m_model(model) { }
     BentleyStatus WriteGltf(DPoint3dCR centroid);
-    void                AddTriMesh(Json::Value& primitivesNode, TriMeshArgsCR meshArgs, Primitives::ColorTableCR colorTable, MeshMaterial const& meshMaterial, size_t& index);
 
 protected:
     Json::Value         m_json;
@@ -98,7 +83,6 @@ protected:
     BentleyStatus       CreateMeshMaterialJson(Json::Value& matJson, Primitives::ColorTableCR colorTable, MeshMaterialCR meshMaterial, Utf8StringCR suffix); 
     Json::Value         AddNormals (OctEncodedNormalCP normals, size_t numNormals, Utf8String name, Utf8CP id);
     Json::Value         AddNormalPairs(OctEncodedNormalPairCP pairs, size_t numPairs, Utf8String name, Utf8CP id);
-    BentleyStatus       CreateTriMesh(Json::Value& primitiveJson, TriMeshArgs const& meshArgs, MeshMaterialCR meshMaterial, Utf8StringCR idStr);
     void                AppendPolylineToBufferView(MeshPolylineCR polyline, bool useShortIndices);
     Json::Value         AddPolylines(Primitives::PolylineList const& polylines, size_t maxIndex, Utf8StringCR name, Utf8StringCR idStr); 
 

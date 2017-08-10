@@ -628,7 +628,7 @@ TileIO::ReadStatus  ReadGltf(Render::Primitives::GeometryCollectionR geometryCol
     if(!m_buffer.ReadBytes(gltfMagic, 4) ||
         0 != memcmp(gltfMagic, s_gltfMagic, 4) ||
         !m_buffer.Read(gltfVersion) ||
-        gltfVersion != s_gltfVersion ||
+        (gltfVersion != s_gltfVersion && gltfVersion != s_gltfVersion2) ||
         !m_buffer.Read(gltfLength) ||
         !m_buffer.Read(sceneStrLength) ||
         !m_buffer.Read(gltfSceneFormat) ||

@@ -24,43 +24,6 @@ USING_NAMESPACE_BENTLEY_RENDER_PRIMITIVES
 static double s_minToleranceRatio = 512.0;
 
 BEGIN_TILEWRITER_NAMESPACE
-/*=================================================================================**//**
-* @bsiclass                                                     Ray.Bentley     04/2017
-+===============+===============+===============+===============+===============+======*/
-struct RenderSystem : Render::System
-{
-
-    RenderSystem()  { }
-    ~RenderSystem() { }
-
-    virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
-    virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const override { return nullptr; } 
-    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const override { BeAssert(false); return nullptr; }
-    virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const override { BeAssert(false); return nullptr; }
-    virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const override { BeAssert(false); return nullptr; };
-    virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const override { return nullptr; }
-
-    virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override { BeAssert(false); return nullptr; }
-    virtual LightPtr   _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const override { BeAssert(false); return nullptr; }
-
-    virtual int _Initialize(void* systemWindow, bool swRendering) override { return  0; }
-    virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) override { return nullptr; }
-    virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) override { return nullptr; }
-    virtual GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb)  const override { return nullptr; }
-    virtual GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb)  const override { return nullptr; }
-    virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const override { return nullptr; }
-    virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& features) const override {return nullptr; }
-    virtual uint32_t   _GetMaxFeaturesPerBatch() const override { return 0xffffffff; }
-
-    virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const override {return nullptr; }
-    virtual TexturePtr _CreateTexture(ImageCR image, Render::Texture::CreateParams const& params) const override {return new TileTexture(image, params);}
-    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params) const override { BeAssert(false); return nullptr; }
-    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const override  { return nullptr; }
-    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb)  const override {return nullptr; }
-    virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR args, DgnDbR dgndb) const override  { return  nullptr; }
-    virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const override { return nullptr; }
-
-};  // RenderSystem
 
 //=======================================================================================
 // We use a hierarchical batch table to organize features by element and subcategory,
@@ -481,19 +444,84 @@ auto BatchTableBuilder::QueryAssembly(DgnElementId childId) const -> Assembly
 
 
 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     04/2017
++===============+===============+===============+===============+===============+======*/
+struct MeshMaterial 
+{ 
+    Utf8String  m_name;
+
+    MeshMaterial (Utf8StringCR suffix) : m_name("Material_" + suffix) { }
+
+    bool IsTextured() const { return false; }
+    bool IgnoresLighting() const { return false; }
+    Utf8StringCR GetName() const { return m_name; }
+
+
+};  // MeshMaterial
+
+
 //=======================================================================================
 // @bsistruct                                                   Ray.Bentley     06/2017
 //=======================================================================================
 struct CesiumTileWriter : TileWriter::Writer
 {
-    StreamBuffer        m_streamBuffer;
-public:
-    CesiumTileWriter(GeometricModelR model) : TileWriter::Writer(m_streamBuffer, model) { }
+    CesiumTileWriter(StreamBufferR streamBuffer, GeometricModelR model) : TileWriter::Writer(streamBuffer, model) { }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeginBatchedTable(uint32_t& startPosition, uint32_t& lengthDataPosition, Render::FeatureTableCR featureTable)
+BentleyStatus CreateTriMesh(Json::Value& primitiveJson, TriMeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr)
+    {
+    primitiveJson["mode"] = GLTF_TRIANGLES;
+
+    Utf8String      accPositionId =  AddQuantizedPointsAttribute(meshArgs.m_points, meshArgs.m_numPoints, meshArgs.m_pointParams, "Position", idStr.c_str());
+    primitiveJson["attributes"]["POSITION"] = accPositionId;
+
+    bool isTextured = meshMaterial.IsTextured();
+    if (nullptr != meshArgs.m_textureUV && isTextured)
+        primitiveJson["attributes"]["TEXCOORD_0"] = AddParamAttribute (meshArgs.m_textureUV, meshArgs.m_numPoints, "Param", idStr.c_str());
+    if (meshArgs.m_colors.m_numColors > 1)
+        AddColors(primitiveJson, meshArgs.m_colors, meshArgs.m_numPoints, idStr);
+
+    BeAssert (meshMaterial.IgnoresLighting() || nullptr != meshArgs.m_normals);
+
+    if (nullptr != meshArgs.m_normals && !meshMaterial.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
+        primitiveJson["attributes"]["NORMAL"] = AddNormals(meshArgs.m_normals, meshArgs.m_numPoints, "Normal", idStr.c_str());
+
+    primitiveJson["indices"] = AddMeshIndices ("Indices", (uint32_t const*) meshArgs.m_vertIndex, meshArgs.m_numIndices, idStr, meshArgs.m_numPoints);
+    AddMeshPointRange(m_json["accessors"][accPositionId], meshArgs.m_pointParams.GetRange());
+
+    return SUCCESS;
+    }
+                                                                                     
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddTriMesh(Json::Value& primitivesNode, TriMeshArgsCR meshArgs, ColorTableCR colorTable, MeshMaterial const& meshMaterial, size_t& index)
+    {
+    if (0 == meshArgs.m_numIndices)
+        return;
+
+    Utf8String          idStr(std::to_string(index++).c_str());
+    Json::Value         materialJson = Json::objectValue, primitiveJson = Json::objectValue;
+
+    if (//SUCCESS == CreateMeshMaterialJson(materialJson, colorTable, meshMaterial, idStr) &&
+        SUCCESS == CreateTriMesh(primitiveJson, meshArgs, meshMaterial, idStr))
+        {
+#ifdef NONDEFAULT_MATERIALS
+        m_json["materials"][meshMaterial.GetName()] = materialJson;
+#endif
+        primitiveJson["material"] = meshMaterial.GetName();
+        primitivesNode.append(primitiveJson);
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     06/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void BeginBatchedModel(uint32_t& startPosition, uint32_t& lengthDataPosition, Render::FeatureTableCR featureTable)
     {
     Utf8String          batchTableStr = BatchTableBuilder (featureTable, m_model.GetDgnDb(), m_model.Is3d()).ToString();
     uint32_t            batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
@@ -510,36 +538,80 @@ BentleyStatus BeginBatchedTable(uint32_t& startPosition, uint32_t& lengthDataPos
     m_buffer.Append((const uint8_t *) batchTableStr.data(), batchTableStrLen);
 
     PadToBoundary();
-    return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus EndBatchedTable(uint32_t startPosition, uint32_t lengthDataPosition, Render::FeatureTableCR featureTable)
+void EndBatchedModel(uint32_t startPosition, uint32_t lengthDataPosition)
     {
     PadToBoundary ();
     WriteLength(startPosition, lengthDataPosition);
-    return SUCCESS;
     }
-
-};  // CesiumTileWriter
-
-//=======================================================================================
-// @bsistruct                                                   Ray.Bentley     06/2017
-//=======================================================================================
-struct CesiumTileWriterRenderSystem : RenderSystem
-{
-    mutable StreamBuffer        m_streamBuffer;
-    mutable TileWriter::Writer  m_writer;
-    mutable Json::Value         m_primitives;
-    mutable DRange3d            m_range;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-CesiumTileWriterRenderSystem(GeometricModelR model) : m_writer(m_streamBuffer, model), m_range(DRange3d::NullRange())
+BentleyStatus  WriteBatchedModel(Render::FeatureTableCR featureTable, DPoint3dCR centroid)
     {
+    uint32_t       startPosition = 0, lengthDataPosition = 0;
+
+    BeginBatchedModel(startPosition, lengthDataPosition, featureTable);
+    WriteGltf(centroid);
+    EndBatchedModel(startPosition, lengthDataPosition);
+
+    return SUCCESS;
+    }
+
+
+};  // CesiumTileWriter
+
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     04/2017
++===============+===============+===============+===============+===============+======*/
+struct RenderSystem : Render::System
+{
+    static  constexpr uint32_t          s_maxFeatures = 0xffff;
+
+    mutable StreamBuffer                m_streamBuffer;
+    mutable CesiumTileWriter            m_writer;
+    mutable Json::Value                 m_primitives;
+    mutable DRange3d                    m_range;
+    mutable FeatureTable               m_featureTable;
+
+    RenderSystem(GeometricModelR model) : m_writer(m_streamBuffer, model), m_range(DRange3d::NullRange()), m_featureTable(s_maxFeatures)  { }
+
+    virtual MaterialPtr _GetMaterial(RenderMaterialId, DgnDbR) const override { return nullptr; }
+    virtual GraphicPtr _CreateSprite(ISprite& sprite, DPoint3dCR location, DPoint3dCR xVec, int transparency, DgnDbR db) const override { BeAssert(false); return nullptr; }
+    virtual GraphicPtr _CreateBranch(GraphicBranch&& branch, DgnDbR dgndb, TransformCR transform, ClipVectorCP clips) const override { BeAssert(false); return nullptr; }
+    virtual GraphicPtr _CreateViewlet(GraphicBranch& branch, PlanCR, ViewletPosition const&) const override { BeAssert(false); return nullptr; };
+    virtual TexturePtr _GetTexture(DgnTextureId textureId, DgnDbR db) const override { return nullptr; }
+
+    virtual TexturePtr _CreateGeometryTexture(GraphicCR graphic, DRange2dCR range, bool useGeometryColors, bool forAreaPattern) const override { BeAssert(false); return nullptr; }
+    virtual LightPtr   _CreateLight(Lighting::Parameters const&, DVec3dCP direction, DPoint3dCP location) const override { BeAssert(false); return nullptr; }
+
+    virtual int _Initialize(void* systemWindow, bool swRendering) override { return  0; }
+    virtual Render::TargetPtr _CreateTarget(Render::Device& device, double tileSizeModifier) override { return nullptr; }
+    virtual Render::TargetPtr _CreateOffscreenTarget(Render::Device& device, double tileSizeModifier) override { return nullptr; }
+    virtual GraphicPtr _CreateVisibleEdges(MeshEdgeArgsCR args, DgnDbR dgndb)  const override { return nullptr; }
+    virtual GraphicPtr _CreateSilhouetteEdges(SilhouetteEdgeArgsCR args, DgnDbR dgndb)  const override { return nullptr; }
+    virtual GraphicPtr _CreateGraphicList(bvector<GraphicPtr>&& primitives, DgnDbR dgndb) const override { return new Graphic(dgndb); }
+    virtual uint32_t   _GetMaxFeaturesPerBatch() const override { return s_maxFeatures; }
+
+    virtual TexturePtr _GetTexture(GradientSymbCR gradient, DgnDbR db) const override {return nullptr; }
+    virtual TexturePtr _CreateTexture(ImageCR image, Render::Texture::CreateParams const& params) const override {return new TileTexture(image, params);}
+    virtual TexturePtr _CreateTexture(ImageSourceCR source, Image::BottomUp bottomUp, Texture::CreateParams const& params) const override { BeAssert(false); return nullptr; }
+    virtual GraphicPtr _CreateIndexedPolylines(IndexedPolylineArgsCR args, DgnDbR dgndb) const override  { return nullptr; }
+    virtual GraphicPtr _CreatePointCloud(PointCloudArgsCR args, DgnDbR dgndb)  const override {return nullptr; }
+    virtual GraphicBuilderPtr _CreateGraphic(GraphicBuilder::CreateParams const& params) const override { return nullptr; }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual GraphicPtr _CreateBatch(GraphicR graphic, FeatureTable&& featureTable) const override 
+    {
+    m_featureTable = std::move(featureTable);
+    return nullptr; 
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -553,7 +625,7 @@ virtual MaterialPtr _CreateMaterial(Material::CreateParams const&) const overrid
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR triMesh, DgnDbR dgndb) const override 
+virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR triMesh, DgnDbR db) const override 
     {
     ColorTable      colorTable;
     size_t          index = (size_t) m_primitives.size();
@@ -561,9 +633,9 @@ virtual GraphicPtr _CreateTriMesh(TriMeshArgsCR triMesh, DgnDbR dgndb) const ove
     MeshMaterial    meshMaterial(idStr);
 
     m_range.Extend(triMesh.m_pointParams.GetRange());
-    m_writer.AddTriMesh(m_primitives, triMesh, colorTable, meshMaterial,index); 
+    m_writer.AddTriMesh(m_primitives, triMesh, colorTable, meshMaterial, index); 
 
-    return nullptr;
+    return new Graphic(db);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -574,7 +646,7 @@ TileIO::WriteStatus WriteTile(PublishedTileR outputTile)
     if (m_range.IsNull())
         return TileIO::WriteStatus::NoGeometry;
 
-    m_writer.WriteGltf(m_range.LocalToGlobal(.5, .5, .5));
+    m_writer.WriteBatchedModel(m_featureTable, m_range.LocalToGlobal(.5, .5, .5));
 
     BeFile          outputFile;
 
@@ -588,7 +660,7 @@ TileIO::WriteStatus WriteTile(PublishedTileR outputTile)
     return TileIO::WriteStatus::Success;
     }
         
-};  // CesiumTileWriterRenderSystem
+};  // RenderSystem
 
    
 /*=================================================================================**//**
@@ -627,7 +699,7 @@ PublishedTile::PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDire
     name.ReplaceAll(L"/", L"_");
 
     m_tileRange = inputTile.GetRange();
-    m_fileName = BeFileName (nullptr, outputDirectory.c_str(), name.c_str(), L".gltf");
+    m_fileName = BeFileName (nullptr, outputDirectory.c_str(), name.c_str(), L".b3dm");
     m_tolerance = m_tileRange.DiagonalDistance() / s_minToleranceRatio;
     }
 
@@ -637,7 +709,7 @@ PublishedTile::PublishedTile(TileTree::TileCR inputTile, BeFileNameCR outputDire
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileIO::WriteStatus writeCesiumTile(Context context)
     {
-    TileWriter::CesiumTileWriterRenderSystem*    renderSystem = new TileWriter::CesiumTileWriterRenderSystem(*context.m_model);
+    TileWriter::RenderSystem*    renderSystem = new TileWriter::RenderSystem(*context.m_model);
 
     return folly::via(&BeFolly::ThreadPool::GetIoPool(), [=]
         {                                
@@ -708,7 +780,7 @@ static FutureWriteStatus generateChildTiles (TileIO::WriteStatus parentStatus, C
 +---------------+---------------+---------------+---------------+---------------+------*/
 FutureWriteStatus writeCesiumTileset(ICesiumPublisher* publisher, GeometricModelP model, TransformCR transformFromDgn, double leafTolerance)
     {
-    TileWriter::RenderSystem        renderSystem;
+    TileWriter::RenderSystem        renderSystem(*model);
     TileTree::RootCPtr              tileRoot = model->GetTileTree(&renderSystem);
     ClipVectorPtr                   clip;
     PublishedTilePtr                publishedRoot = new PublishedTile(*tileRoot->GetRootTile(), publisher->_GetOutputDirectory(*model));

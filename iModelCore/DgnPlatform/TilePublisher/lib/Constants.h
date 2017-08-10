@@ -19,6 +19,7 @@ static const char s_vectorMagic[]            = "vctr";
 
 static const uint32_t s_b3dmVersion          = 1;
 static const uint32_t s_gltfVersion          = 1;
+static const uint32_t s_gltfVersion2         = 2;
 static const uint32_t s_gltfSceneFormat      = 0;
 static const uint32_t s_compositeTileVersion = 1; 
 static const uint32_t s_instanced3dVersion   = 1;

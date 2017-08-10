@@ -382,15 +382,6 @@ DirectPublisher::Status DirectPublisher::GetViewsetJson(Json::Value& json, DPoin
 +---------------+---------------+---------------+---------------+---------------+------*/
 DirectPublisher::Status DirectPublisher::GetViewsJson (Json::Value& json, DPoint3dCR groundPoint)
     {
-    // URL of tileset .json
-    Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
-    Utf8String tilesetUrl = rootNameUtf8;
-    tilesetUrl.append(1, '/');
-    tilesetUrl.append(rootNameUtf8);
-    tilesetUrl.append(".json");
-
-    json["tilesetUrl"] = tilesetUrl;
-
     return GetViewsetJson(json, groundPoint, m_defaultViewId);
     }
 
@@ -1008,12 +999,21 @@ BeFileName DirectPublisher::GetTilesetFileName(DgnModelId modelId)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString DirectPublisher::GetTileUrl(PublishedTileCR tile, GeometricModelCR model) const
+Utf8String DirectPublisher::GetTileUrl(PublishedTileCR tile, GeometricModelCR model) const
     {
     WString     modelRootName = TileUtil::GetRootNameForModel(model.GetModelId(), false);
     BeFileName  nameAndExtensionOnly(BeFileName::NameAndExt, tile.GetFileName().c_str());
 
-    return modelRootName + L"//" + nameAndExtensionOnly.c_str(); 
+    return Utf8String(modelRootName + L"//" + nameAndExtensionOnly.c_str());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void    DirectPublisher::AddModelRange(DgnModelId modelId, DRange3dCR modelRange)
+    {
+    BeMutexHolder lock(m_mutex);
+    m_modelRanges[modelId] = modelRange;
     }
 
 //=======================================================================================
@@ -1048,9 +1048,14 @@ TileIO::WriteStatus _BeginProcessModel(GeometricModelCR model)
 TileIO::WriteStatus _EndProcessModel(GeometricModelCR model, PublishedTileCR rootTile, TileIO::WriteStatus status)
     {
     if (TileIO::WriteStatus::Success == status)
+        {
         m_publisher.WriteModelTileset(model, rootTile);
+        m_publisher.AddModelRange(model.GetModelId(), rootTile.GetTileRange());
+        }
     else
+        {
         m_publisher.CleanDirectories(m_publisher.GetDataDirForModel(model));
+        }
 
     return status;
     }

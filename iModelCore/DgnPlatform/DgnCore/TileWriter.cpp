@@ -80,7 +80,7 @@ BentleyStatus Writer::WriteGltf(DPoint3dCR centroid)
 
     long    startPosition =  m_buffer.GetSize();
     m_buffer.Append((const uint8_t*) s_gltfMagic, 4);
-    m_buffer.Append(s_gltfVersion);
+    m_buffer.Append(s_gltfVersion2);
     long    lengthDataPosition = m_buffer.GetSize();
     m_buffer.Append((uint32_t) 0);
     m_buffer.Append((const uint8_t*) &sceneStrLength, sizeof(sceneStrLength));
@@ -423,14 +423,6 @@ Json::Value Writer::CreateColorJson(RgbFactorCR color)
     return colorJson;
     }
 
- /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus  Writer::CreateMeshMaterialJson(Json::Value& matJson, ColorTableCR colorTable, MeshMaterial const& meshMaterial, Utf8StringCR suffix) 
-    {
-    return SUCCESS;
-    }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
@@ -464,53 +456,6 @@ Json::Value Writer::AddNormalPairs(OctEncodedNormalPairCP pairs, size_t numPairs
     m_json["bufferViews"][bufferViewId]["target"] = GLTF_ARRAY_BUFFER;
 
     return accessorId;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus Writer::CreateTriMesh(Json::Value& primitiveJson, TriMeshArgs const& meshArgs, MeshMaterial const& meshMaterial, Utf8StringCR idStr)
-    {
-    primitiveJson["mode"] = GLTF_TRIANGLES;
-
-    Utf8String      accPositionId =  AddQuantizedPointsAttribute(meshArgs.m_points, meshArgs.m_numPoints, meshArgs.m_pointParams, "Position", idStr.c_str());
-    primitiveJson["attributes"]["POSITION"] = accPositionId;
-
-    bool isTextured = meshMaterial.IsTextured();
-    if (nullptr != meshArgs.m_textureUV && isTextured)
-        primitiveJson["attributes"]["TEXCOORD_0"] = AddParamAttribute (meshArgs.m_textureUV, meshArgs.m_numPoints, "Param", idStr.c_str());
-    if (meshArgs.m_colors.m_numColors > 1)
-        AddColors(primitiveJson, meshArgs.m_colors, meshArgs.m_numPoints, idStr);
-
-    BeAssert (meshMaterial.IgnoresLighting() || nullptr != meshArgs.m_normals);
-
-    if (nullptr != meshArgs.m_normals && !meshMaterial.IgnoresLighting())        // No normals if ignoring lighting (reality meshes).
-        primitiveJson["attributes"]["NORMAL"] = AddNormals(meshArgs.m_normals, meshArgs.m_numPoints, "Normal", idStr.c_str());
-
-    primitiveJson["indices"] = AddMeshIndices ("Indices", (uint32_t const*) meshArgs.m_vertIndex, meshArgs.m_numIndices, idStr, meshArgs.m_numPoints);
-    AddMeshPointRange(m_json["accessors"][accPositionId], meshArgs.m_pointParams.GetRange());
-
-    return SUCCESS;
-    }
-                                                                                     
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void Writer::AddTriMesh(Json::Value& primitivesNode, TriMeshArgsCR meshArgs, ColorTableCR colorTable, MeshMaterial const& meshMaterial, size_t& index)
-    {
-    if (0 == meshArgs.m_numIndices)
-        return;
-
-    Utf8String          idStr(std::to_string(index++).c_str());
-    Json::Value         materialJson = Json::objectValue, primitiveJson = Json::objectValue;
-
-    if (SUCCESS == CreateMeshMaterialJson(materialJson, colorTable, meshMaterial, idStr) &&
-        SUCCESS == CreateTriMesh(primitiveJson, meshArgs, meshMaterial, idStr))
-        {
-        m_json["materials"][meshMaterial.GetName()] = materialJson;
-        primitiveJson["material"] = meshMaterial.GetName();
-        primitivesNode.append(primitiveJson);
-        }
     }
 
 /*---------------------------------------------------------------------------------**//**
