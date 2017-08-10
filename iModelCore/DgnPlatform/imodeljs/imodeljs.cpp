@@ -579,7 +579,7 @@ BeSQLite::DbResult IModelJs::ExecuteQuery(Utf8StringR errmsg, JsonValueR results
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-BeSQLite::DbResult IModelJs::ExecuteStatement(Utf8StringR errmsg, ECSqlStatement& stmt, JsonValueCR bindings)
+BeSQLite::DbResult IModelJs::ExecuteStatement(Utf8StringR errmsg, Utf8StringR instanceId, ECSqlStatement& stmt, bool isInsertStmt, JsonValueCR bindings)
     {
     if (SUCCESS != JsonBinder::BindValues(stmt, bindings))
         {
@@ -587,12 +587,16 @@ BeSQLite::DbResult IModelJs::ExecuteStatement(Utf8StringR errmsg, ECSqlStatement
         return BE_SQLITE_ERROR;
         }
 
-    DbResult result = stmt.Step();
-    if (BE_SQLITE_OK != result)
+    ECInstanceKey instanceKey;
+    DbResult result = isInsertStmt ? stmt.Step(instanceKey) : stmt.Step();
+    if (BE_SQLITE_DONE != result)
         {
         errmsg = GetLastEcdbIssue();
         return result;
         }
+
+    if (isInsertStmt)
+        instanceId = instanceKey.GetInstanceId().ToString();
 
     return result;
     }
@@ -611,7 +615,6 @@ JsECDbPtr IModelJs::OpenECDb(DbResult &dbres, Utf8StringR errmsg, BeFileNameCR p
         errmsg.append(" - not found.");
         return nullptr;
         }
-
 
     JsECDbPtr ecdb = new JsECDb();
     DbResult result = ecdb->OpenBeSQLiteDb(pathname, BeSQLite::Db::OpenParams(openMode));
