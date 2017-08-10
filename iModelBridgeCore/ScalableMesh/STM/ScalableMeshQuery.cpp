@@ -1837,7 +1837,7 @@ ScalableMeshTexture::ScalableMeshTexture(RefCountedPtr<SMMemoryPoolBlobItem<Byte
         memcpy_s(&m_nbChannels, sizeof(int), (int*)m_texturePtr->GetData() + 2, sizeof(int));
         if (!m_texturePtr->IsCompressedType())
             {
-            m_dataSize = m_dimension.x * m_dimension.y * m_nbChannels;
+            m_dataSize = m_texturePtr->GetSize() - sizeof(int) * 3; 
             m_textureData = m_texturePtr->GetData() + sizeof(int) * 3;
             }
         else
