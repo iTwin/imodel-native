@@ -7,11 +7,15 @@
 +--------------------------------------------------------------------------------------*/
 #include <RoadRailPhysicalInternal.h>
 
+HANDLER_DEFINE_MEMBERS(BufferComponentHandler)
 HANDLER_DEFINE_MEMBERS(BufferDefinitionHandler)
+HANDLER_DEFINE_MEMBERS(EndConditionComponentHandler)
 HANDLER_DEFINE_MEMBERS(EndConditionDefinitionHandler)
 HANDLER_DEFINE_MEMBERS(OverallTypicalSectionHandler)
 HANDLER_DEFINE_MEMBERS(RoadTravelwayDefinitionHandler)
+HANDLER_DEFINE_MEMBERS(TravelwayComponentHandler)
 HANDLER_DEFINE_MEMBERS(TravelwayDefinitionElementHandler)
+HANDLER_DEFINE_MEMBERS(TypicalSectionComponentElementHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPortionBreakDownModelHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPortionHandler)
 HANDLER_DEFINE_MEMBERS(TypicalSectionPortionElementHandler)
@@ -197,4 +201,75 @@ OverallTypicalSectionPtr OverallTypicalSection::Create(DefinitionModelCR model, 
 DgnCode OverallTypicalSection::CreateCode(DefinitionModelCR scope, Utf8StringCR value)
     {
     return CodeSpec::CreateCode(BRRP_CODESPEC_OverallTypicalSection, scope, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TypicalSectionComponentElement::TypicalSectionComponentElement(CreateParams const& params):
+    T_Super(params)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BufferComponent::BufferComponent(CreateParams const& params):
+    T_Super(params)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+BufferComponentPtr BufferComponent::Create(TypicalSectionPortionBreakDownModelCR model)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+
+    return new BufferComponent(createParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TravelwayComponent::TravelwayComponent(CreateParams const& params):
+    T_Super(params)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TravelwayComponentPtr TravelwayComponent::Create(TypicalSectionPortionBreakDownModelCR model)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+
+    return new TravelwayComponent(createParams);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+EndConditionComponent::EndConditionComponent(CreateParams const& params):
+    T_Super(params)
+    {
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+EndConditionComponentPtr EndConditionComponent::Create(TypicalSectionPortionBreakDownModelCR model)
+    {
+    if (!model.GetModelId().IsValid())
+        return nullptr;
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+
+    return new EndConditionComponent(createParams);
     }

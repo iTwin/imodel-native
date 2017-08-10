@@ -202,6 +202,84 @@ public:
     ROADRAILPHYSICAL_EXPORT static OverallTypicalSectionPtr Create(Dgn::DefinitionModelCR model, Utf8StringCR code);
 }; // OverallTypicalSection
 
+//=======================================================================================
+//! Base class for TypicalSection Components.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionComponentElement : Dgn::DefinitionElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionComponentElement, Dgn::DefinitionElement);
+friend struct TypicalSectionComponentElementHandler;
+
+protected:
+    //! @private
+    explicit TypicalSectionComponentElement(CreateParams const& params);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionComponentElement)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionComponentElement)
+}; // TypicalSectionComponentElement
+
+//=======================================================================================
+//! Buffer Components.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE BufferComponent : TypicalSectionComponentElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_BufferComponent, TypicalSectionComponentElement);
+friend struct BufferComponentHandler;
+
+protected:
+    //! @private
+    explicit BufferComponent(CreateParams const& params);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(BufferComponent)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(BufferComponent)
+
+    ROADRAILPHYSICAL_EXPORT static BufferComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
+}; // BufferComponent
+
+//=======================================================================================
+//! Travelway Components.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayComponent : TypicalSectionComponentElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_TravelwayComponent, TypicalSectionComponentElement);
+friend struct TravelwayComponentHandler;
+
+protected:
+    //! @private
+    explicit TravelwayComponent(CreateParams const& params);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwayComponent)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TravelwayComponent)
+
+    ROADRAILPHYSICAL_EXPORT static TravelwayComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
+}; // TravelwayComponent
+
+//=======================================================================================
+//! EndCondition Components.
+//! @ingroup GROUP_RoadRailPhysical
+//=======================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE EndConditionComponent : TypicalSectionComponentElement
+{
+DGNELEMENT_DECLARE_MEMBERS(BRRP_CLASS_EndConditionComponent, TypicalSectionComponentElement);
+friend struct EndConditionComponentHandler;
+
+protected:
+    //! @private
+    explicit EndConditionComponent(CreateParams const& params);
+
+public:
+    DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(EndConditionComponent)
+    DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(EndConditionComponent)
+
+    ROADRAILPHYSICAL_EXPORT static EndConditionComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
+}; // EndConditionComponent
+
 //=================================================================================
 //! ElementHandler for TypicalSection Elements
 //! @ingroup GROUP_RoadRailPhysical
@@ -272,5 +350,41 @@ struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionPortionBreakDownModelHandler : Dgn:
 {
     MODELHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionPortionBreakDownModel, TypicalSectionPortionBreakDownModel, TypicalSectionPortionBreakDownModelHandler, Dgn::dgn_ModelHandler::Definition, ROADRAILPHYSICAL_EXPORT)
 }; // TypicalSectionPortionBreakDownModelHandler
+
+//=================================================================================
+//! ElementHandler for TypicalSection Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TypicalSectionComponentElementHandler : Dgn::dgn_ElementHandler::Definition
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TypicalSectionComponentElement, TypicalSectionComponentElement, TypicalSectionComponentElementHandler, Dgn::dgn_ElementHandler::Definition, ROADRAILPHYSICAL_EXPORT)
+}; // TypicalSectionComponentElementHandler
+
+//=================================================================================
+//! ElementHandler for EndCondition Component Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE EndConditionComponentHandler : TypicalSectionComponentElementHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_EndConditionComponent, EndConditionComponent, EndConditionComponentHandler, TypicalSectionComponentElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // EndConditionComponentHandler
+
+//=================================================================================
+//! ElementHandler for Buffer Component Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE BufferComponentHandler : TypicalSectionComponentElementHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_BufferComponent, BufferComponent, BufferComponentHandler, TypicalSectionComponentElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // BufferComponentHandler
+
+//=================================================================================
+//! ElementHandler for Travelway Component Elements
+//! @ingroup GROUP_RoadRailPhysical
+//=================================================================================
+struct EXPORT_VTABLE_ATTRIBUTE TravelwayComponentHandler : TypicalSectionComponentElementHandler
+{
+ELEMENTHANDLER_DECLARE_MEMBERS(BRRP_CLASS_TravelwayComponent, TravelwayComponent, TravelwayComponentHandler, TypicalSectionComponentElementHandler, ROADRAILPHYSICAL_EXPORT)
+}; // TravelwayComponentHandler
 
 END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE

@@ -27,6 +27,11 @@ RoadRailPhysicalDomain::RoadRailPhysicalDomain() : DgnDomain(BRRP_SCHEMA_NAME, "
     RegisterHandler(EndConditionDefinitionHandler::GetHandler());
     RegisterHandler(BufferDefinitionHandler::GetHandler());
 
+    RegisterHandler(TypicalSectionComponentElementHandler::GetHandler());
+    RegisterHandler(BufferComponentHandler::GetHandler());
+    RegisterHandler(EndConditionComponentHandler::GetHandler());
+    RegisterHandler(TravelwayComponentHandler::GetHandler());
+
     RegisterHandler(PathwayElementHandler::GetHandler());
     RegisterHandler(TravelwaySegmentElementHandler::GetHandler());
     RegisterHandler(RegularTravelwaySegmentHandler::GetHandler());
