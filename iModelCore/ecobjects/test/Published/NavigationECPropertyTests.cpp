@@ -794,7 +794,7 @@ void NavigationPropertyValueTests::TestSettingNavPropStringValues(IECInstanceR i
 
     VerifyNavPropStringValue(instance, "MyTarget", "IdOfTarget", expectedRelClass);
 
-    /*
+    /* Array Navigation Properties are not currently supported
     ECValueAccessor accessor;
     ECValueAccessor::PopulateValueAccessor(accessor, instance, "MyTargetMult[0]");
     ECValue myTargetValueMult("IdOfTarget");
@@ -1054,11 +1054,10 @@ void NavigationPropertyValueTests::InstanceWithNavProp(PrimitiveType navPropType
     ASSERT_EQ(InstanceWriteStatus::Success, writeStatus) << "Failed to serilaize an instance to xml with a nav property";
     DeserializeAndVerifyInstanceXml(schema, *sourceInstance, xmlString, navPropType);
 
-    // WIP
     Json::Value jsonValue;
     StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true);
     ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
-    //DeserializeAndVerifyInstanceJson(schema, *sourceInstance, jsonValue, navPropType);
+    DeserializeAndVerifyInstanceJson(schema, *sourceInstance, jsonValue["Source"], navPropType);
 
     //if (PrimitiveType::PRIMITIVETYPE_Long == navPropType)
     //    ASSERT_NE(0, xmlString.ReplaceAll("long", "string")) << "Failed to replace 'long' with 'string' in the serialzied xml";

@@ -1275,11 +1275,35 @@ StatusInt     JsonEcInstanceWriter::WriteEmbeddedStructValueForPresentation(Json
     }
 
 //---------------------------------------------------------------------------------------
-// @bsimethod                                    Caleb.Shafer                    12/2016
+// @bsimethod                                    Caleb.Shafer                    08/2017
 //---------------------------------------------------------------------------------------
-StatusInt     JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR structProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties)
+StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueToPopulate, NavigationECPropertyR navigationProperty, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties)
     {
-    // TODO: Temporarily skipping NavigationProperty deserialization...
+    Utf8String navName = navigationProperty.GetName();
+
+    auto& navObj = valueToPopulate[navName.c_str()] = Json::objectValue;
+
+    Utf8String thisAccessString;
+    if (nullptr != baseAccessString)
+        AppendAccessString(thisAccessString, *baseAccessString, navName);
+    else
+        thisAccessString = navName.c_str();
+        
+    ECValue value;
+    if (ECObjectsStatus::Success != ecInstance.GetValue(value, thisAccessString.c_str()))
+        return BSIERROR;
+
+    if (!value.IsNavigation())
+        BeAssert(false);
+
+    ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
+    
+    // GetValue performs the check for an invalid id and will assert if it is not valid.
+    navObj[JSON_NAVIGATION_ID_KEY] = navInfo.GetId<ECClassId>().GetValue();
+
+    if (navInfo.GetRelationshipClassId().IsValid())
+        navObj[JSON_NAVIGATION_RELECCLASSID_KEY] = navInfo.GetRelationshipClassId().GetValueUnchecked();
+
     return BSISUCCESS;
     }
 
@@ -1297,13 +1321,13 @@ StatusInt     JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& va
         NavigationECPropertyP   navigationProperty;
         StatusInt               ixwStatus = BSIERROR;
 
-        if (NULL != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
+        if (nullptr != (primitiveProperty = ecProperty->GetAsPrimitivePropertyP()))
             ixwStatus = WritePrimitivePropertyValue(valueToPopulate, *primitiveProperty, ecInstance, baseAccessString, writeFormattedQuanties);
-        else if (NULL != (arrayProperty = ecProperty->GetAsArrayPropertyP()))
+        else if (nullptr != (arrayProperty = ecProperty->GetAsArrayPropertyP()))
             ixwStatus = WriteArrayPropertyValue(valueToPopulate, *arrayProperty, ecInstance, baseAccessString, writeFormattedQuanties);
-        else if (NULL != (structProperty = ecProperty->GetAsStructPropertyP()))
+        else if (nullptr != (structProperty = ecProperty->GetAsStructPropertyP()))
             ixwStatus = WriteEmbeddedStructPropertyValue(valueToPopulate, *structProperty, ecInstance, baseAccessString, writeFormattedQuanties);
-        else if (NULL != (navigationProperty = ecProperty->GetAsNavigationPropertyP()))
+        else if (nullptr != (navigationProperty = ecProperty->GetAsNavigationPropertyP()))
             ixwStatus = WriteNavigationPropertyValue(valueToPopulate, *navigationProperty, ecInstance, baseAccessString, writeFormattedQuanties);
 
         if (BSISUCCESS != ixwStatus)
