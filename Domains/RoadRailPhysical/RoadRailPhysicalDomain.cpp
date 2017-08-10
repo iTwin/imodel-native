@@ -354,13 +354,13 @@ BentleyStatus create2dView(DefinitionModelR model, Utf8CP viewName,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject)
+DgnDbStatus RoadRailPhysicalDomain::SetUpDefaultViews(SubjectCR subject, Utf8CP alignmentPartitionName, Utf8CP physicalPartitionName)
     {
     auto& dgnDb = subject.GetDgnDb();
 
     auto alignmentModelPtr =
-        AlignmentModel::Query(subject, RoadRailAlignmentDomain::GetDefaultPartitionName());
-    auto physicalModelPtr = RoadRailPhysicalDomain::QueryPhysicalModel(subject,
+        AlignmentModel::Query(subject, (alignmentPartitionName) ? alignmentPartitionName : RoadRailAlignmentDomain::GetDefaultPartitionName());
+    auto physicalModelPtr = RoadRailPhysicalDomain::QueryPhysicalModel(subject, (physicalPartitionName) ? physicalPartitionName :
         RoadRailPhysicalDomain::GetDefaultPhysicalPartitionName());
 
     auto& subjectName = subject.GetCode().GetValue();

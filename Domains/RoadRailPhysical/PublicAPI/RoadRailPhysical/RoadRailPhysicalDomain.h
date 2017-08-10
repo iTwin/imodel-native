@@ -26,7 +26,7 @@ public:
     RoadRailPhysicalDomain();
 
     ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpModelHierarchy(Dgn::SubjectCR, Utf8CP physicalPartitionName);
-    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpDefaultViews(Dgn::SubjectCR);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnDbStatus SetUpDefaultViews(Dgn::SubjectCR, Utf8CP alignmentPartitionName = nullptr, Utf8CP physicalPartitionName = nullptr);
     ROADRAILPHYSICAL_EXPORT static Dgn::PhysicalModelPtr QueryPhysicalModel(Dgn::SubjectCR parentSubject, Utf8CP modelName);
     static Utf8CP GetDefaultPhysicalPartitionName() { return "Roads/Rail Physical"; }
 
