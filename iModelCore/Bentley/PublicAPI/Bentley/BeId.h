@@ -102,7 +102,9 @@ public:
         ToString(idStrBuffer, useHex);
         return Utf8String(idStrBuffer); 
         }
-        
+
+    Utf8String ToHexStr() const {return ToString(UseHex::Yes);}
+
     //! Parse a string into a BeInt64Id
     //! @remarks To parse correctly, the id string must contain an unsigned number in decimal or hexidecimal format.
     //! @param[in] idString String to parse

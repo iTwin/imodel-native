@@ -7,6 +7,7 @@
  +--------------------------------------------------------------------------------------*/
 #include <stdlib.h>
 #include <Bentley/Base64Utilities.h>
+#include <Bentley/ByteStream.h>
 
 USING_NAMESPACE_BENTLEY
 
@@ -40,7 +41,7 @@ static_assert(sizeof(base64_decodeindex)/sizeof(Byte) == 123, "base64decodelooku
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    08/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
-bool is_base64(Byte c) { return (isalnum (c) || (c == '+') || (c == '/')); }
+static bool is_base64(Byte c) { return (isalnum (c) || (c == '+') || (c == '/')); }
 
 //--------------------------------------------------------------------------------------
 // @bsimethod                                                    Tahir.Hayat    12/2012
