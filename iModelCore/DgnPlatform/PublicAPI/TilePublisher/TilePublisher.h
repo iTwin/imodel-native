@@ -106,8 +106,7 @@ struct  PublishTileData
     void AddBinaryData(void const* data, size_t size);
     void PadBinaryDataToBoundary(size_t boundarySize);
     template<typename T> void AddBufferView(Utf8CP name, T const& bufferData);
-    Utf8String GetJsonString() const { return Json::FastWriter().write(m_json); }
-
+    Utf8String GetJsonString() const;
 };
 
 //=======================================================================================
@@ -219,6 +218,15 @@ public:
 //=======================================================================================
 struct PublisherContext : TileGenerator::ITileCollector
 {
+    struct ModelRange
+    {
+        DRange3d    m_range;
+        bool        m_isEcef;
+
+        ModelRange() : m_isEcef(false) { }
+        explicit ModelRange(DRange3dCR range, bool isEcef=false) : m_range(range), m_isEcef(isEcef) { }
+    };
+
     enum TextureMode
         {
         Embedded = 0,
@@ -264,12 +272,15 @@ protected:
     Transform                                   m_dbToTile;
     Transform                                   m_spatialToEcef;
     size_t                                      m_maxTilesetDepth;
-    bmap<DgnModelId, DRange3d>                  m_modelRanges;
+    bmap<DgnModelId, ModelRange>                m_modelRanges;
     BeMutex                                     m_mutex;
     bool                                        m_publishSurfacesOnly;
     TextureMode                                 m_textureMode;
     bool                                        m_publishAsClassifier;
     bmap<DgnModelId, ModelSpatialClassifiers>   m_classifierMap;
+    bmap<DgnModelId, Utf8String>                m_directUrls;
+    AxisAlignedBox3d                            m_projectExtents; // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
+    bool                                        m_isEcef; // Hack for ScalableMeshes at YII...all coords in .bim already in ECEF, but nothing in .bim tells us that...
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
 

@@ -283,7 +283,7 @@ DbResult RepositoryManager::CreateCodesTable()
     return m_db.CreateTable(TABLE_Codes,
             CODE_CodeSpec " INTEGER NOT NULL,"
             CODE_Scope " TEXT NOT NULL,"
-            CODE_Value " TEXT NOT NULL,"
+            CODE_Value " TEXT NOT NULL COLLATE NOCASE,"
             CODE_State " INTEGER,"
             CODE_Revision " TEXT,"
             CODE_Briefcase " INTEGER,"
@@ -712,7 +712,7 @@ void RepositoryManager::MarkDiscarded(DgnCodeInfoSet const& discarded)
         DgnCodeCR code = info.GetCode();
         stmt.BindId(1, code.GetCodeSpecId());
         stmt.BindText(2, code.GetScopeString(), Statement::MakeCopy::No);
-        stmt.BindText(3, code.GetValue(), Statement::MakeCopy::No);
+        stmt.BindText(3, code.GetValueUtf8(), Statement::MakeCopy::No);
         stmt.BindText(4, info.GetRevisionId(), Statement::MakeCopy::No);
 
         stmt.Step();
@@ -809,7 +809,7 @@ void RepositoryManager::_ReserveCodes(Response& response, DgnCodeSet const& req,
         {
         insert.BindId(1, code.GetCodeSpecId());
         insert.BindText(2, code.GetScopeString(), Statement::MakeCopy::No);
-        insert.BindText(3, code.GetValue(), Statement::MakeCopy::No);
+        insert.BindText(3, code.GetValueUtf8(), Statement::MakeCopy::No);
         insert.BindInt(4, bcId);
         auto revIter = discarded.find(DgnCodeInfo(code));
         if (discarded.end() != revIter)
@@ -962,7 +962,7 @@ void RepositoryManager::MarkRevision(DgnCodeSet const& codes, bool discarded, Ut
         {
         stmt.BindId(1, code.GetCodeSpecId());
         stmt.BindText(2, code.GetScopeString(), Statement::MakeCopy::No);
-        stmt.BindText(3, code.GetValue(), Statement::MakeCopy::No);
+        stmt.BindText(3, code.GetValueUtf8(), Statement::MakeCopy::No);
         stmt.BindInt(4, static_cast<int>(discarded ? CodeState::Discarded : CodeState::Used));
         stmt.BindText(5, revId, Statement::MakeCopy::No);
 
@@ -2948,7 +2948,7 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
     ExpectState(MakeReserved(MakeStyleCode("MyStyle", db), db), db);
 
     // An attempt to insert an element with the same code as an already-used code will fail
-    EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValue().c_str(), db, false));
+    EXPECT_EQ(DgnDbStatus::CodeNotReserved, InsertStyle(existingStyleCode.GetValueUtf8().c_str(), db, false));
 
     // Updating an element and changing its code will NOT reserve the new code if we haven't done so already
     auto pStyle = AnnotationTextStyle::Get(db, "MyStyle")->CreateCopy();
@@ -2965,7 +2965,7 @@ TEST_F(CodesManagerTest, AutoReserveCodes)
 
     // Attempting to change code to an already-used code will fail on update
     pStyle = AnnotationTextStyle::Get(db, "MyRenamedStyle")->CreateCopy();
-    pStyle->SetName(existingStyleCode.GetValue().c_str());
+    pStyle->SetName(existingStyleCode.GetValueUtf8().c_str());
     EXPECT_TRUE(pStyle->DgnElement::Update(&status).IsNull());
     EXPECT_EQ(DgnDbStatus::CodeNotReserved, status);
 
@@ -3270,6 +3270,50 @@ TEST_F(CodesManagerTest, PlantScenario)
         {
         EXPECT_TRUE(codeState.IsUsed());
         }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* Code value uniqueness constraint uses COLLATE NOCASE, which means case-insensitive strictly for
+* the ASCII uppercase characters A-Z.
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(CodesManagerTest, Collation)
+    {
+    DgnDbPtr pDb = SetupDb(L"CodeCollationTest.bim", BeBriefcaseId(2));
+    DgnDbR db = *pDb;
+    IBriefcaseManagerR mgr = db.BriefcaseManager();
+
+    DgnCode abc = MakeStyleCode("abc", db);
+    DgnCodeSet req;
+    req.insert(abc);
+    EXPECT_STATUS(Success, mgr.ReserveCodes(req).Result());
+
+    DgnCode ABC = MakeStyleCode("ABC", db);
+    EXPECT_TRUE(ABC == abc);
+    EXPECT_TRUE(abc == ABC);
+    EXPECT_FALSE(ABC < abc);
+    EXPECT_FALSE(abc < ABC);
+    EXPECT_FALSE(ABC != abc);
+    EXPECT_FALSE(abc != ABC);
+
+    EXPECT_TRUE(IsCodeReserved(mgr, ABC));
+
+    req.clear();
+    req.insert(ABC);
+    EXPECT_EQ(1, req.size());
+    req.insert(abc);
+    EXPECT_EQ(1, req.size());
+
+    EXPECT_EQ(DgnDbStatus::Success, InsertStyle("ABC", db));
+    db.SaveChanges();
+
+    ExpectState(MakeReserved(abc, db), db);
+    ExpectState(MakeReserved(ABC, db), db);
+
+    EXPECT_EQ(DgnDbStatus::DuplicateCode, InsertStyle("abc", db, false));
+
+    EXPECT_TRUE(db.Elements().QueryElementIdByCode(abc).IsValid());
+    EXPECT_TRUE(db.Elements().QueryElementIdByCode(ABC).IsValid());
     }
 
 //=======================================================================================

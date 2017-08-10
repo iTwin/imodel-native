@@ -104,23 +104,9 @@ void ComparisonSymbologyOverrides::GetUntouchedOverrides(Render::OvrGraphicParam
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr  RevisionComparisonViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
-    if (nullptr != context.GetIPickGeom())
-        {
-        DgnElementCP element = source.ToElement();
-
-        // Avoid letting user pick elements that are not being compared
-        if (!m_comparisonData->ContainsElement(element))
-            return nullptr;
-
-        // If we are only showing target version on a view, avoid modified persistent elements to be highlighted by mouse
-        if (!WantShowCurrent() && m_comparisonData->ContainsElement(element) && !(m_comparisonData->GetPersistentState(element->GetElementId())).IsModified())
-            return nullptr;
-
-        // Let user hover/select transient elements
-        TransientState state = m_comparisonData->GetTransientState(element->GetElementId());
-        if (WantShowTarget() && state.IsValid() && nullptr != state.m_element->ToGeometrySource())
-            return state.m_element->ToGeometrySource()->Stroke(context, pixelSize);
-        }
+    // Avoid letting user pick elements that are not being compared
+    if (nullptr != context.GetIPickGeom() && !m_comparisonData->ContainsElement(source.ToElement()))
+        return nullptr;
 
     return source.Stroke(context, pixelSize);
     }

@@ -13,6 +13,7 @@
 #include <Bentley/Tasks/CancellationToken.h>
 #include <BeHttp/HttpRequest.h>
 #include <DgnPlatform/RealityDataCache.h>
+#include <forward_list>
 
 #define BEGIN_TILETREE_NAMESPACE    BEGIN_BENTLEY_DGN_NAMESPACE namespace TileTree {
 #define END_TILETREE_NAMESPACE      } END_BENTLEY_DGN_NAMESPACE
@@ -299,7 +300,6 @@ protected:
     TileLoadStatePtr m_loads;
     Dgn::Render::SystemP m_renderSys;
     
-
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
     StreamBuffer m_tileBytes;   // when available, bytes are saved here
@@ -540,5 +540,91 @@ struct ProgressiveTask : Dgn::ProgressiveTask
     
 } // end QuadTree
 
+//=======================================================================================
+//! Tiles for reality models typically consist of one or more large textured meshes.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+namespace TriMeshTree
+{
+//=======================================================================================
+//! Creates a Render::GraphicPtr created from the mesh, and (for pickable tiles)
+//! holds the data required to describe the mesh for picking.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct TriMesh : RefCountedBase, NonCopyableClass
+{
+    typedef Render::IGraphicBuilder::TriMeshArgs CreateParams;
+protected:
+    bvector<FPoint3d> m_points;
+    bvector<FPoint3d> m_normals;
+    bvector<FPoint2d> m_textureUV;
+    bvector<int32_t> m_indices;
+    Render::GraphicPtr m_graphic;
+public:
+    DGNPLATFORM_EXPORT TriMesh(CreateParams const&, RootR, Render::SystemP renderSys);
+    TriMesh() { }
 
+    DGNPLATFORM_EXPORT PolyfaceHeaderPtr GetPolyface() const;
+    DGNPLATFORM_EXPORT void GetGraphics(DrawGraphicsR);
+    DGNPLATFORM_EXPORT void Pick(PickArgsR);
+
+    void ClearGraphic() {m_graphic = nullptr;}
+    bvector<FPoint3d> const& GetPoints() const {return m_points;}
+    bool IsEmpty() const {return m_points.empty();}
+};
+
+DEFINE_POINTER_SUFFIX_TYPEDEFS(TriMesh);
+DEFINE_REF_COUNTED_PTR(TriMesh);
+
+//=======================================================================================
+//! The root of a TriMeshTree
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct Root : TileTree::Root
+{
+    DEFINE_T_SUPER(TileTree::Root);
+
+protected:
+    Root(DgnDbR db, TransformCR location, Utf8CP sceneFile, Render::SystemP system) : T_Super(db, location, sceneFile, system) { }
+
+    virtual TriMeshPtr _CreateGeometry(TriMesh::CreateParams const& args, Render::SystemP system) {return new TriMesh(args, *this, system);}
+    virtual Render::TexturePtr _CreateTexture(Render::ImageSourceCR source, Render::Image::Format targetFormat, Render::Image::BottomUp bottomUp, Render::SystemP renderSys)
+        {return renderSys ? renderSys->_CreateTexture(source, targetFormat, bottomUp) : nullptr;}
+};
+
+//=======================================================================================
+//! A TriMeshTree tile.
+// @bsistruct                                                   Paul.Connelly   07/17
+//=======================================================================================
+struct Tile : TileTree::Tile
+{
+    DEFINE_T_SUPER(TileTree::Tile);
+    typedef std::forward_list<TriMeshPtr> TriMeshList; // a forward_list is smaller than a vector in the common case of a single element.    
+
+protected:
+    double m_maxDiameter;
+    double m_factor=0.5;
+
+    TriMeshList m_meshes;
+
+    Tile(Root& root, Tile const* parent, double maxDiameter=0.0) : T_Super(root, parent), m_maxDiameter(maxDiameter) { }
+
+    virtual bool _WantDebugRangeGraphics() const { return false; }
+    DGNPLATFORM_EXPORT void AddDebugRangeGraphics(DrawArgsR args) const;
+
+    ChildTiles const* _GetChildren(bool load) const override {return IsReady() ? &m_children : nullptr;}
+    double _GetMaximumSize() const override {return m_factor * m_maxDiameter;}
+    void _UnloadChildren(BeTimePoint olderThan) const override {if (IsReady()) T_Super::_UnloadChildren(olderThan);}
+    void _OnChildrenUnloaded() const override {m_loadStatus.store(LoadStatus::NotLoaded);}
+
+    DGNPLATFORM_EXPORT void _DrawGraphics(DrawArgsR, int depth) const override;
+    DGNPLATFORM_EXPORT void _GetGraphics(DrawGraphicsR, int depth) const override;
+    DGNPLATFORM_EXPORT void _PickGraphics(PickArgsR, int depth) const override;
+public:
+    TriMeshList& GetGeometry() {return m_meshes;}
+    void ClearGeometry() {m_meshes.clear();}
+    Root& GetTriMeshRootR() {return static_cast<Root&>(GetRootR());}
+};
+
+} // end TriMeshTree
 END_TILETREE_NAMESPACE

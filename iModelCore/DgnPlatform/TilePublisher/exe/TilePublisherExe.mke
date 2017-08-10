@@ -62,6 +62,8 @@ LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \
                       $(SubpartLibs)ThreeMx.lib           \
                       $(SubpartLibs)PointCloud.lib        \
                       $(SubPartLibs)Raster.lib            \
+                      $(SubPartLibs)ScalableMeshSchema$(libext) \
+                      $(SubPartLibs)ScalableMesh$(libext) \
                       $(SubpartLibs)BeFolly.lib           \
                       $(SubpartLibs)TilePublisher.lib     \
                       gdi32.lib                           \

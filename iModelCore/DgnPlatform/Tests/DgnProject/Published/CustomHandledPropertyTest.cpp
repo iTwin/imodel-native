@@ -86,7 +86,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
 
         ASSERT_EQ(DgnDbStatus::ReadOnly, el.SetPropertyValue(codeValueIndex, ECN::ECValue(1)));
         ASSERT_EQ(DgnDbStatus::Success, el.GetPropertyValue(checkValue1, codeValueIndex));
-        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
+        ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValueUtf8().c_str())));
         checkValue1.Clear();
 
         ASSERT_EQ(DgnDbStatus::BadArg, el.SetPropertyValue(uvindex, ECN::ECValue(1)));
@@ -121,7 +121,7 @@ TEST_F(GetSetCustomHandledProprty, ElementProperties)
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetScopeElementId(*m_db))));
      checkValue1.Clear();
      ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, codeValueIndex));
-     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValue().c_str())));
+     ASSERT_TRUE(checkValue1.Equals(ECN::ECValue(code.GetValueUtf8().c_str())));
      checkValue1.Clear();
      ASSERT_EQ(DgnDbStatus::Success, el->GetPropertyValue(checkValue1, uvindex));
      ASSERT_TRUE(checkValue1.Equals(ECN::ECValue("userlabel")));

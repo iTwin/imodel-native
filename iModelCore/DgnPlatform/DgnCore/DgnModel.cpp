@@ -37,7 +37,7 @@ DgnModelId DgnModels::QuerySubModelId(DgnCodeCR modeledElementCode) const
 void DgnModels::AddLoadedModel(DgnModelR model)
     {
     model.m_persistent = true;
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     m_models.Insert(model.GetModelId(), &model);
     }
 
@@ -47,7 +47,7 @@ void DgnModels::AddLoadedModel(DgnModelR model)
 void DgnModels::DropLoadedModel(DgnModelR model)
     {
     model.m_persistent = false;
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     m_models.erase(model.GetModelId());
     }
 
@@ -99,7 +99,7 @@ ECSqlClassInfo const& DgnModels::FindClassInfo(DgnModelR model)
     {
     DgnClassId classId = model.GetClassId();
 
-    BeDbMutexHolder lock(m_mutex);
+    BeMutexHolder lock(m_mutex);
 
     auto found = m_classInfos.find(classId);
     if (found != m_classInfos.end())
@@ -137,7 +137,7 @@ Utf8String DgnModel::GetName() const
     {
     // WIP: keep this method around to avoid having to change too much source code. Use the CodeValue of the modeled element as this model's name.
     DgnElementCPtr modeledElement = GetModeledElement();
-    return modeledElement.IsValid() ? modeledElement->GetCode().GetValue() : Utf8String();
+    return modeledElement.IsValid() ? modeledElement->GetCode().GetValue().GetUtf8() : Utf8String();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -682,6 +682,27 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
+    {
+    val[json_id()] = m_modelId.ToHexStr();
+
+    auto ecClass = GetDgnDb().Schemas().GetClass(m_classId);
+
+    val[json_schemaName()] = ecClass->GetSchema().GetName();
+    val[json_className()] = ecClass->GetName();
+    if (m_parentModelId.IsValid())
+        val[json_parentModel()] = m_parentModelId.ToHexStr();
+
+    if (m_modeledElementId.IsValid())
+        val[json_modeledElement()] = m_modeledElementId.ToHexStr();
+
+    if (!m_jsonProperties.empty())
+        val[json_jsonProperties()] = m_jsonProperties;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus DgnModel::Update()
@@ -1192,7 +1213,7 @@ DgnModelPtr DgnModels::LoadDgnModel(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnModelPtr DgnModels::FindModel(DgnModelId modelId)
     {
-    BeDbMutexHolder _v_v(m_mutex);
+    BeMutexHolder _v_v(m_mutex);
     auto it=m_models.find(modelId);
     return it!=m_models.end() ? it->second : NULL;
     }
@@ -1214,7 +1235,6 @@ DgnModelPtr DgnModels::CreateModel(DgnDbStatus* inStat, ECN::IECInstanceCR prope
         }
 
     return handler->_CreateNewModel(inStat, GetDgnDb(), properties);
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1224,6 +1244,10 @@ DgnModelPtr DgnModels::GetModel(DgnModelId modelId)
     {
     if (!modelId.IsValid())
         return nullptr;
+
+    // since we can load models on more than one thread, we need to check that the model doesn't already exist
+    // *with the lock held* before we load it. This avoids a race condition where an model is loaded on more than one thread.
+    BeMutexHolder _v_v(m_mutex);
 
     DgnModelPtr dgnModel = FindModel(modelId);
     return dgnModel.IsValid() ? dgnModel : LoadDgnModel(modelId);
@@ -1280,6 +1304,8 @@ ModelHandlerP dgn_ModelHandler::Model::FindHandler(DgnDb const& db, DgnClassId h
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECSqlClassParams const& dgn_ModelHandler::Model::GetECSqlClassParams()
     {
+    BeMutexHolder _v(m_mutex);
+
     if (!m_classParams.IsInitialized())
         m_classParams.Initialize(*this);
 
@@ -1294,7 +1320,7 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ParentModel, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::Insert);
-    params.Add(MODEL_PROP_IsPrivate, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_IsPrivate, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_JsonProperties, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
     }

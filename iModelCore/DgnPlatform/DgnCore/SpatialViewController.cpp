@@ -62,7 +62,11 @@ SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Su
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::_DrawDecorations(DecorateContextR context)
     {
+// Decorators on QV with opengles draw without a depth buffer, which makes ground plane useless.
+// This check should be removed on the tiles (non-QV) branch. WIP_Paul
+#if !defined(BENTLEYCONFIG_GRAPHICS_OPENGLES)
     DrawGroundPlane(context);
+#endif
 
     if (m_copyrightMsgs.empty())
         return;
@@ -487,6 +491,22 @@ void SceneQueue::Add(Task& task)
     m_cv.notify_all();
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   07/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void SceneQueue::AbortAll()
+    {
+    BeMutexHolder holder(m_cv.GetMutex());
+    if (State::Active != m_state)
+        return;
+
+    m_pending.clear();
+    if (!m_active.IsValid())
+        return;
+
+    m_active->RequestAbort();  // if we're working on a query tell it to stop
+    m_cv.InfiniteWait(holder); // wait for it to complete.
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * Note: Must be called with query queue mutex held!

@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------------------------------+                                                                                           
+/*-------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
@@ -1682,8 +1682,12 @@ TileGenerator::TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter, ITileG
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), 
       m_totalTiles(0), m_totalModels(0), m_completedModels(0)
     {
+#if defined(WIP_MESHTILE_3SM)
+    m_spatialTransformFromDgn.InitIdentity();
+#else
     DPoint3d origin = dgndb.GeoLocation().GetProjectExtents().GetCenter();
     m_spatialTransformFromDgn = Transform::From(-origin.x, -origin.y, -origin.z);
+#endif
     }
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
@@ -1789,8 +1793,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     {
     DgnModelPtr         modelPtr(&model);
     auto                pCollector = &collector;
+
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
-    auto                getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(&model);
+    auto                getTileTree = nullptr == generateMeshTiles ? dynamic_cast<IGetTileTreeForPublishing*>(&model) : nullptr;
+    auto                getPublishedURL = nullptr == generateMeshTiles && nullptr == getTileTree ? dynamic_cast<IGetPublishedTilesetInfoP>(&model) : nullptr;
+
     GeometricModelCP    geometricModel = model.ToGeometricModel();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
     
@@ -1806,7 +1813,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         leafTolerance = std::max(s_minLeafTolerance, std::min(leafTolerance, rangeDiagonal * minDiagonalToleranceRatio));
         }
 
-    if (nullptr != getTileTree)
+    if (nullptr != getPublishedURL)
+        {
+        return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
+        }
+    else if (nullptr != getTileTree)
         {
         return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
         }

@@ -115,7 +115,7 @@ ECValue DgnElementExpressionContext::GetDisplayLabel() const
 //---------------------------------------------------------------------------------------
 ECValue DgnElementExpressionContext::GetCodeValue() const
     {
-    return ECValue(m_element.GetCode().GetValueCP());
+    return ECValue(m_element.GetCode().GetValueUtf8CP());
     }
 
 //---------------------------------------------------------------------------------------

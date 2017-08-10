@@ -786,7 +786,7 @@ TEST_F(DgnElementTests, GetSetAutoHandledProperties)
     EXPECT_STREQ(element->GetUserLabel(), element->GetPropertyValueString("UserLabel").c_str());
     EXPECT_EQ(element->GetCode().GetCodeSpecId(), element->GetPropertyValueId<CodeSpecId>("CodeSpec"));
     EXPECT_EQ(element->GetCode().GetScopeElementId(*m_db), element->GetPropertyValueId<DgnElementId>("CodeScope"));
-    EXPECT_STREQ(element->GetCode().GetValue().c_str(), element->GetPropertyValueString("CodeValue").c_str());
+    EXPECT_STREQ(element->GetCode().GetValueUtf8().c_str(), element->GetPropertyValueString("CodeValue").c_str());
     }
 
     if (true)
@@ -1435,7 +1435,7 @@ TEST_F(DgnElementTests, CreateFromECInstance)
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("UserLabel", ECN::ECValue("my label")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeSpec", ECN::ECValue(code.GetCodeSpecId())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeScope", ECN::ECValue(code.GetScopeElementId(*m_db))));
-        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueCP())));
+        ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue("CodeValue", ECN::ECValue(code.GetValueUtf8CP())));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_TestElementProperty, ECN::ECValue("a string")));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_IntegerProperty1, ECN::ECValue(99)));
         ASSERT_EQ(ECN::ECObjectsStatus::Success, testClassInstance->SetValue(DPTEST_TEST_ELEMENT_DoubleProperty1, ECN::ECValue(99.99)));
@@ -2225,7 +2225,7 @@ TEST_F(DgnElementTests, ElementIterator)
         ASSERT_STREQ(entry.GetUserLabel(), userLabel.c_str());
         Utf8PrintfString codeValue("CodeValue%d", count);
         ASSERT_STREQ(entry.GetCodeValue(), codeValue.c_str());
-        ASSERT_STREQ(entry.GetCode().GetValueCP(), codeValue.c_str());
+        ASSERT_STREQ(entry.GetCode().GetValueUtf8CP(), codeValue.c_str());
         ASSERT_EQ(entry.GetCode().GetCodeSpecId(), codeSpecId);
         count++;
         }

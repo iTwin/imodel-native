@@ -7,10 +7,6 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 
-#define PARAM_BBoxLow "BBoxLow"
-#define PARAM_BBoxHigh "BBoxHigh"
-#define PARAM_GeometryStream "GeometryStream"
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -20,7 +16,7 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
     if (DgnDbStatus::Success != status)
         return status;
 
-    int geometryStreamIndex = params.GetSelectIndex(PARAM_GeometryStream);
+    int geometryStreamIndex = params.GetSelectIndex(prop_GeometryStream());
     if (statement.IsValueNull(geometryStreamIndex))
         return DgnDbStatus::BadElement;
 
@@ -30,10 +26,20 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
     if (DgnDbStatus::Success != status)
         return status;
 
-    DPoint3d bboxLow = statement.GetValuePoint3d(params.GetSelectIndex(PARAM_BBoxLow));
-    DPoint3d bboxHigh = statement.GetValuePoint3d(params.GetSelectIndex(PARAM_BBoxHigh));
+    DPoint3d bboxLow = statement.GetValuePoint3d(params.GetSelectIndex(prop_BBoxLow()));
+    DPoint3d bboxHigh = statement.GetValuePoint3d(params.GetSelectIndex(prop_BBoxHigh()));
     m_bbox = ElementAlignedBox3d(bboxLow.x, bboxLow.y, bboxLow.z, bboxHigh.x, bboxHigh.y, bboxHigh.z);
     return DgnDbStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnGeometryPart::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+    out[json_geometryStream()] = m_geometry.ToBase64();
+    JsonUtils::DRange3dToJson(out[json_bbox()], m_bbox);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -42,9 +48,9 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
 void DgnGeometryPart::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(statement, forInsert);
-    statement.BindPoint3d(statement.GetParameterIndex(PARAM_BBoxLow), m_bbox.low);
-    statement.BindPoint3d(statement.GetParameterIndex(PARAM_BBoxHigh), m_bbox.high);
-    m_geometry.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), statement, PARAM_GeometryStream);
+    statement.BindPoint3d(statement.GetParameterIndex(prop_BBoxLow()), m_bbox.low);
+    statement.BindPoint3d(statement.GetParameterIndex(prop_BBoxHigh()), m_bbox.high);
+    m_geometry.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), statement, prop_GeometryStream());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -89,7 +95,7 @@ DgnDbStatus DgnGeometryPart::WriteGeometryStream()
 
     m_multiChunkGeomStream = false;
     DgnDbR db = GetDgnDb();
-    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), BIS_CLASS_GeometryPart, PARAM_GeometryStream);
+    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), BIS_CLASS_GeometryPart, prop_GeometryStream());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -123,7 +129,7 @@ BentleyStatus DgnGeometryPart::QueryGeometryPartRange(DRange3dR range, DgnDbR db
     if (!geomPartId.IsValid())
         return BentleyStatus::ERROR;
 
-    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("SELECT " PARAM_BBoxLow "," PARAM_BBoxHigh " FROM " BIS_SCHEMA(BIS_CLASS_GeometryPart) " WHERE ECInstanceId=?");
+    CachedECSqlStatementPtr statement = db.GetPreparedECSqlStatement("SELECT BBoxLow,BBoxHigh FROM " BIS_SCHEMA(BIS_CLASS_GeometryPart) " WHERE ECInstanceId=?");
     if (!statement.IsValid())
         return BentleyStatus::ERROR;
 
@@ -185,7 +191,7 @@ DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId sourc
     if (!destModel.IsValid())
         return DgnGeometryPartId();
 
-    DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(*destModel, sourceGeometryPart->GetCode().GetValue());
+    DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(*destModel, sourceGeometryPart->GetCode().GetValue().GetUtf8());
     if (!destGeometryPart.IsValid())
         return DgnGeometryPartId();
 
@@ -217,18 +223,18 @@ void dgn_ElementHandler::GeometryPart::_RegisterPropertyAccessors(ECSqlClassInfo
     return DgnDbStatus::Success;                                     \
     }
 
-    params.RegisterPropertyAccessors(layout, PARAM_BBoxLow, 
+    params.RegisterPropertyAccessors(layout, DgnGeometryPart::prop_BBoxLow(), 
         GETBBOXPROP(value.SetPoint3d(bbox.low)),
         SETBBOXPROP(bbox.low = value.GetPoint3d()));
 
-    params.RegisterPropertyAccessors(layout, PARAM_BBoxHigh, 
+    params.RegisterPropertyAccessors(layout, DgnGeometryPart::prop_BBoxHigh(), 
         GETBBOXPROP(value.SetPoint3d(bbox.high)),
         SETBBOXPROP(bbox.high = value.GetPoint3d()));
 
 #undef GETBBOXPROP
 #undef SETBBOXPROP
 
-    params.RegisterPropertyAccessors(layout, PARAM_GeometryStream, 
+    params.RegisterPropertyAccessors(layout, DgnGeometryPart::prop_GeometryStream(), 
         [](ECValueR, DgnElementCR)
             {
             return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface

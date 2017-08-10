@@ -167,6 +167,25 @@ static void DRange3dToJson(JsonValueR outValue, DRange3dCR range)
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   MattGooding     09/12
+//---------------------------------------------------------------------------------------
+static void DRange2dFromJson(DRange2dR range, JsonValueCR inValue)
+    {
+    DPoint2dFromJson(range.low, inValue[json_low()]);
+    DPoint2dFromJson(range.high, inValue[json_high()]);
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   MattGooding     09/12
+//---------------------------------------------------------------------------------------
+static void DRange2dToJson(JsonValueR outValue, DRange2dCR range)
+    {
+    DPoint2dToJson(outValue[json_low()], range.low);
+    DPoint2dToJson(outValue[json_high()], range.high);
+    }
+
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                                   MattGooding     12/12
 //---------------------------------------------------------------------------------------
 static void MatrixRowFromJson(double* row, JsonValueCR inValue)
