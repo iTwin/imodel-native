@@ -1,6 +1,6 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ArchPhysCreater/ArchPhysCreater/DoorTools.cpp $
+|     $Source: BimCreater/ArchPhysCreater/DoorTools.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |

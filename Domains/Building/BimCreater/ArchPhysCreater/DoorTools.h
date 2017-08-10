@@ -2,7 +2,7 @@
 
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: ArchPhysCreater/ArchPhysCreater/DoorTools.h $
+|     $Source: BimCreater/ArchPhysCreater/DoorTools.h $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
