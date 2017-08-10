@@ -389,15 +389,24 @@ AlignmentCPtr Alignment::UpdateWithMainPair(AlignmentPairCR alignmentPair, DgnDb
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnDbStatus Alignment::GenerateAprox3dGeom()
     {
-    auto horizAlignmentCPtr = QueryHorizontal();
-    if (horizAlignmentCPtr.IsNull())
+    auto mainPairPtr = QueryMainPair();
+    if (mainPairPtr.IsNull())
         return DgnDbStatus::MissingId;
 
-    auto& horizGeometryCR = horizAlignmentCPtr->GetGeometry();
     DPoint3d origin = { 0, 0, 0 };
     auto geomBuilderPtr = GeometryBuilder::Create(*GetModel(), GetCategoryId(), origin);
-    if (!geomBuilderPtr->Append(horizGeometryCR, GeometryBuilder::CoordSystem::World))
-        return DgnDbStatus::NoGeometry;
+
+    if (mainPairPtr->VerticalCurveVector().IsNull())
+        {
+        if (!geomBuilderPtr->Append(*mainPairPtr->HorizontalCurveVector(), GeometryBuilder::CoordSystem::World))
+            return DgnDbStatus::NoGeometry;
+        }
+    else
+        {
+        auto strokedPoints = mainPairPtr->GetStrokedAlignment();        
+        if (!geomBuilderPtr->Append(*CurveVector::CreateLinear(strokedPoints), GeometryBuilder::CoordSystem::World))
+            return DgnDbStatus::NoGeometry;
+        }
 
     if (BentleyStatus::SUCCESS != geomBuilderPtr->Finish(*this))
         return DgnDbStatus::NoGeometry;
