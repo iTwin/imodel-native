@@ -302,7 +302,7 @@ void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
 
             default: 
                 {
-                BeAssert(false && "TBD");
+//                BeAssert(false && "TBD");
                 rowJson[name] = GetRowAsRawJson(stmt)[i];     // *** WIP_NODE_ADDON
                 }
             }

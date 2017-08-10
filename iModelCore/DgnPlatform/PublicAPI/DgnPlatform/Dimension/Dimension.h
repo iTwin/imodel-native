@@ -45,6 +45,7 @@ private:
 
 protected:
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
     DgnDbStatus _OnDelete() const override {return DgnDbStatus::DeletionProhibited; /* Must be "purged" */ }
@@ -59,7 +60,7 @@ public:
     explicit DimensionStyle(CreateParams const& params) : T_Super(params) {}
     DimensionStylePtr CreateCopy() const {return MakeCopy<DimensionStyle>();}
 
-    Utf8String GetName() const {return GetCode().GetValue();}
+    Utf8String GetName() const {return GetCode().GetValueUtf8();}
     void SetName(Utf8CP value) {T_Super::SetCode(CreateCode(GetDgnDb(), value)); /* Only SetName is allowed to SetCode. */ }
 
     static DgnElementId QueryId(DgnDbR db, Utf8CP name) {return db.Elements().QueryElementIdByCode(CreateCode(db, name));}
@@ -162,6 +163,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR original) override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
 
@@ -189,6 +191,7 @@ protected:
     DGNPLATFORM_EXPORT DgnDbStatus _OnInsert() override;
     DGNPLATFORM_EXPORT DgnDbStatus _OnUpdate(DgnElementCR original) override;
     DGNPLATFORM_EXPORT DgnDbStatus _ReadSelectParams(BeSQLite::EC::ECSqlStatement&, ECSqlClassParams const&) override;
+    DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
     DGNPLATFORM_EXPORT void _CopyFrom(DgnElementCR) override;
 

@@ -137,7 +137,7 @@ Utf8String DgnModel::GetName() const
     {
     // WIP: keep this method around to avoid having to change too much source code. Use the CodeValue of the modeled element as this model's name.
     DgnElementCPtr modeledElement = GetModeledElement();
-    return modeledElement.IsValid() ? modeledElement->GetCode().GetValue() : Utf8String();
+    return modeledElement.IsValid() ? modeledElement->GetCode().GetValue().GetUtf8() : Utf8String();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1235,7 +1235,6 @@ DgnModelPtr DgnModels::CreateModel(DgnDbStatus* inStat, ECN::IECInstanceCR prope
         }
 
     return handler->_CreateNewModel(inStat, GetDgnDb(), properties);
-
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1248,8 +1247,6 @@ DgnModelPtr DgnModels::GetModel(DgnModelId modelId)
 
     // since we can load models on more than one thread, we need to check that the model doesn't already exist
     // *with the lock held* before we load it. This avoids a race condition where an model is loaded on more than one thread.
-    // Example: work thread (accudraw -> ViewController::GetTargetModel -> ...        ViewController2d::GetViewedModel ... -> DgnModels::LoadModel) 
-    //        + Scene thread (CreateSceneTask::_Go -> ViewController::CreateScene ... ViewController2d::GetViewedModel ... -> DgnModels::LoadModel)
     BeMutexHolder _v_v(m_mutex);
 
     DgnModelPtr dgnModel = FindModel(modelId);
@@ -1323,7 +1320,7 @@ void dgn_ModelHandler::Model::_GetClassParams(ECSqlClassParamsR params)
     params.Add(MODEL_PROP_ECInstanceId, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ParentModel, ECSqlClassParams::StatementType::Insert);
     params.Add(MODEL_PROP_ModeledElement, ECSqlClassParams::StatementType::Insert);
-    params.Add(MODEL_PROP_IsPrivate, ECSqlClassParams::StatementType::InsertUpdate);
+    params.Add(MODEL_PROP_IsPrivate, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_JsonProperties, ECSqlClassParams::StatementType::All);
     params.Add(MODEL_PROP_IsTemplate, ECSqlClassParams::StatementType::All);
     }

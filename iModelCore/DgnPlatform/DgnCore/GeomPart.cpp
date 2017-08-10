@@ -36,6 +36,16 @@ DgnDbStatus DgnGeometryPart::_ReadSelectParams(ECSqlStatement& statement, ECSqlC
     return DgnDbStatus::Success;
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void DgnGeometryPart::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+#if defined (TOFROM_JSON)
+#endif
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Shaun.Sewall    04/16
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -185,7 +195,7 @@ DgnGeometryPartId DgnImportContext::_RemapGeometryPartId(DgnGeometryPartId sourc
     if (!destModel.IsValid())
         return DgnGeometryPartId();
 
-    DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(*destModel, sourceGeometryPart->GetCode().GetValue());
+    DgnGeometryPartPtr destGeometryPart = DgnGeometryPart::Create(*destModel, sourceGeometryPart->GetCode().GetValue().GetUtf8());
     if (!destGeometryPart.IsValid())
         return DgnGeometryPartId();
 

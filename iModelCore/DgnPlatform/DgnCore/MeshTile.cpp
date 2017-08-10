@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------------------------------+                                                                                           
+/*-------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
@@ -1668,8 +1668,12 @@ TileGenerator::TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter, ITileG
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), 
       m_totalTiles(0), m_totalModels(0), m_completedModels(0)
     {
+#if defined(WIP_MESHTILE_3SM)
+    m_spatialTransformFromDgn.InitIdentity();
+#else
     DPoint3d origin = dgndb.GeoLocation().GetProjectExtents().GetCenter();
     m_spatialTransformFromDgn = Transform::From(-origin.x, -origin.y, -origin.z);
+#endif
     }
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
