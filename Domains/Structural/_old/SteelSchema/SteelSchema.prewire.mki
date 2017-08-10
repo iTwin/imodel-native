@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: _old/SteelSchema/SteelSchema.prewire.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+$(targetAPIDir)Steel : $(_MakeFilePath)SteelSchema/PublicAPI/Steel
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(targetSchemasDir)Steel.ecschema.xml : $(_MakeFilePath)SteelSchema\EC3_Schemas\Steel.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+

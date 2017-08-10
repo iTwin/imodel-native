@@ -1,0 +1,73 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="StructuralPhysical" alias="sp" version="01.00.00" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECSchemaReference name="BisCore" version="01.00.00" alias="bis" />
+    <ECEntityClass typeName="StructuralElement" modifier="Abstract">
+        <BaseClass>bis:PhysicalElement</BaseClass>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Structural Member" typeName="StructuralMember" modifier="Abstract">
+        <BaseClass>StructuralElement</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Surface Member" typeName="SurfaceMember">
+        <BaseClass>StructuralMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Slab" typeName="Slab">
+        <BaseClass>SurfaceMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Wall" typeName="Wall">
+        <BaseClass>SurfaceMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Curve Member" typeName="CurveMember">
+        <BaseClass>StructuralMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Beam" typeName="Beam">
+        <BaseClass>CurveMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Column" typeName="Column">
+        <BaseClass>CurveMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Brace" typeName="Brace">
+        <BaseClass>CurveMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Foundation Member" typeName="FoundationMember">
+        <BaseClass>StructuralMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Strip Footing" typeName="StripFooting">
+        <BaseClass>FoundationMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+    <ECEntityClass displayLabel = "Spread Footing" typeName="SpreadFooting">
+        <BaseClass>FoundationMember</BaseClass>
+        <ECCustomAttributes>
+            <ClassHasHandler xmlns="BisCore.01.00" />
+        </ECCustomAttributes>
+    </ECEntityClass>
+</ECSchema>

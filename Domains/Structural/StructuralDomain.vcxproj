@@ -19,16 +19,30 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="StructuralDomainInternal.h" />
+    <None Include="structural.mke" />
+    <None Include="Structural.prewire.mke" />
+    <None Include="StructuralCommon\StructuralCommon.prewire.mki" />
+    <None Include="StructuralPhysical\StructuralPhysical.prewire.mki" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="ConcreteSchema\ConcreteDomain.cpp" />
-    <ClCompile Include="StructuralDomainInternal.cpp" />
-    <ClCompile Include="StructuralDomainUtilities.cpp" />
-    <ClCompile Include="StructuralMaterials\StructuralMaterialsDomain.cpp" />
-    <ClCompile Include="StructuralPhysicalSchema\StructuralPhysicalDomain.cpp" />
-    <ClCompile Include="StructuralPhysicalSchema\StructuralPhysicalModel.cpp" />
-    <ClCompile Include="StructuralPhysicalSchema\StructuralTypeDefinitionModel.cpp" />
+    <Xml Include="StructuralCommon\StructuralCommon.ecschema.xml" />
+    <Xml Include="StructuralDomains.Partfile.xml">
+      <SubType>Designer</SubType>
+    </Xml>
+    <Xml Include="StructuralPhysical\StructuralPhysical.ecschema.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="StructuralCommon\StructuralCommonDomain.cpp" />
+    <ClCompile Include="StructuralCommon\StructuralPhysicalModel.cpp" />
+    <ClCompile Include="StructuralCommon\StructuralTypeDefinitionModel.cpp" />
+    <ClCompile Include="StructuralPhysical\StructuralPhysicalDomain.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h" />
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDefinitions.h" />
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDomain.h" />
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralPhysicalModel.h" />
+    <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralTypeDefinitionModel.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{7317B658-8A6E-4A68-857A-2DFA99B98479}</ProjectGuid>
@@ -53,7 +67,7 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>Makefile</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
     <CLRSupport>false</CLRSupport>
@@ -91,6 +105,8 @@
     <LinkIncremental>true</LinkIncremental>
     <EnableManagedIncrementalBuild>false</EnableManagedIncrementalBuild>
     <IncludePath>$(SRCROOT)DgnDomains\Structural;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\VendorAPI;$(IncludePath)</IncludePath>
+    <NMakeBuildCommandLine>bb -ax64 -p StructuralDomain b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 re StructuralDomain</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

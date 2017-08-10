@@ -10,19 +10,8 @@
 CompileOptionsMki   = $(SrcRoot)DgnDomains/Structural/StructuralCompileOptions.mki
 %include $(CompileOptionsMki)
 
-
-ConcreteSrc       = $(_MakeFilePath)ConcreteSchema/
-ConcretePublicApi = $(ConcreteSrc)PublicAPI/Concrete/
-
-SteelSrc       = $(_MakeFilePath)SteelSchema/
-SteelPublicApi = $(SteelSrc)PublicAPI/Steel/
-
-StructPhysSrc       = $(_MakeFilePath)StructuralPhysicalSchema/
-StructPhysPublicApi = $(StructPhysSrc)PublicAPI/StructuralPhysical/
-
-StructMatSrc       = $(_MakeFilePath)StructuralMaterials/
-StructMatPublicApi = $(StructMatSrc)PublicAPI/StructuralMaterials/
-
+StructPhysical          = $(_MakeFilePath)StructuralPhysical/
+StructPhysicalPublicAPI = $(StructPhysical)PublicAPI/
 
 #--------------------------------------------------------------------------------------
 #   Macros
@@ -30,7 +19,6 @@ StructMatPublicApi = $(StructMatSrc)PublicAPI/StructuralMaterials/
 appSrc              = $(_MakeFilePath)
 appPublicApi        = $(appSrc)PublicAPI/$(appName)/
 MultiCompileDepends = $(_MakeFileSpec) \
-                      $(appSrc)StructuralDomainInternal.h \
 
 always:
     !~@mkdir $(o)
@@ -38,20 +26,28 @@ always:
 #----------------------------------------------------------------------
 #   Pre-compiled header
 #----------------------------------------------------------------------
-PchCompiland        = $(appSrc)StructuralDomainInternal.cpp
-PchOutputDir        = $(o)
-PchExtraOptions     = -Zm160
-PchExplicitDepends  = $(MultiCompileDepends)
+# PchCompiland        = $(appSrc)___.cpp
+# PchOutputDir        = $(o)
+# PchExtraOptions     = -Zm160
+# PchExplicitDepends  = $(MultiCompileDepends)
 
 %if defined (winNT) && $(BUILD_TOOLSET) == "LINUX_GCC"
     # Avoid internal compiler error in GCC using windows ndk toolchain
     GCC_NO_PRE_COMPILED_HEADER = 1
 %endif
 
-%include $(SharedMki)PreCompileHeader.mki
+# %include $(SharedMki)PreCompileHeader.mki
 
 CCPchOpts = $(UsePrecompiledHeaderOptions)
 CPchOpts  = $(UsePrecompiledHeaderOptions)
+
+
+StructCommon            = $(_MakeFilePath)StructuralCommon/
+StructCommonPublicAPI   = $(StructCommon)PublicAPI/StructuralCommon/
+
+StructPhys            = $(_MakeFilePath)StructuralPhysical/
+StructPhysPublicAPI   = $(StructPhys)PublicAPI/StructuralPhysical/
+
 
 #--------------------------------------------------------------------------------------
 #   Compile source
@@ -59,20 +55,37 @@ CPchOpts  = $(UsePrecompiledHeaderOptions)
 
 %include MultiCppCompileRule.mki
 
-$(o)ConcreteDomain$(oext) : $(ConcreteSrc)ConcreteDomain.cpp ${MultiCompileDepends} $(ConcretePublicApi)ConcreteDomain.h
+$(o)StructuralCommonDomain$(oext) : $(StructCommon)StructuralCommonDomain.cpp ${MultiCompileDepends} $(StructCommonPublicAPI)StructuralCommonDomain.h
 
-$(o)SteelDomain$(oext) : $(SteelSrc)SteelDomain.cpp ${MultiCompileDepends} $(SteelPublicApi)SteelDomain.h
+$(o)StructuralPhysicalModel$(oext) : $(StructCommon)StructuralPhysicalModel.cpp ${MultiCompileDepends} $(StructCommonPublicAPI)StructuralPhysicalModel.h
 
-$(o)StructuralPhysicalDomain$(oext) : $(StructPhysSrc)StructuralPhysicalDomain.cpp ${MultiCompileDepends} $(StructPhysPublicApi)StructuralPhysicalDomain.h
+$(o)StructuralTypeDefinitionModel$(oext) : $(StructCommon)StructuralTypeDefinitionModel.cpp ${MultiCompileDepends} $(StructCommonPublicAPI)StructuralTypeDefinitionModel.h
 
-$(o)StructuralPhysicalModel$(oext) : $(StructPhysSrc)StructuralPhysicalModel.cpp ${MultiCompileDepends} $(StructPhysPublicApi)StructuralPhysicalModel.h
+$(o)StructuralPhysicalDomain$(oext) : $(StructPhys)StructuralPhysicalDomain.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)StructuralPhysicalDomain.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
-$(o)StructuralTypeDefinitionModel$(oext) : $(StructPhysSrc)StructuralTypeDefinitionModel.cpp ${MultiCompileDepends} $(StructPhysPublicApi)StructuralTypeDefinitionModel.h
+$(o)StructuralElement$(oext) : $(StructPhys)StructuralElement.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)StructuralElement.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
-$(o)StructuralMaterialsDomain$(oext) : $(StructMatSrc)StructuralMaterialsDomain.cpp ${MultiCompileDepends} $(StructMatPublicApi)StructuralMaterialsDomain.h
+$(o)StructuralMember$(oext) : $(StructPhys)StructuralMember.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)StructuralMember.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
-$(o)StructuralDomainUtilities$(oext) : $(appSrc)StructuralDomainUtilities.cpp ${MultiCompileDepends} $(appPublicApi)StructuralDomainUtilities.h
+$(o)SurfaceMember$(oext) : $(StructPhys)SurfaceMember.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)SurfaceMember.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
+$(o)Slab$(oext) : $(StructPhys)Slab.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)Slab.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)Wall$(oext) : $(StructPhys)Wall.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)Wall.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)CurveMember$(oext) : $(StructPhys)CurveMember.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)CurveMember.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)Beam$(oext) : $(StructPhys)Beam.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)Beam.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)Column$(oext) : $(StructPhys)Column.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)Column.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)Brace$(oext) : $(StructPhys)Brace.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)Brace.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)FoundationMember$(oext) : $(StructPhys)FoundationMember.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)FoundationMember.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)StripFooting$(oext) : $(StructPhys)StripFooting.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)StripFooting.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+
+$(o)SpreadFooting$(oext) : $(StructPhys)SpreadFooting.cpp ${MultiCompileDepends} $(StructPhysPublicAPI)SpreadFooting.h $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
 %include MultiCppCompileGo.mki
 
@@ -82,7 +95,7 @@ $(o)StructuralDomainUtilities$(oext) : $(appSrc)StructuralDomainUtilities.cpp ${
 DLM_NAME                    = $(appName)
 DLM_OBJECT_FILES            = $(MultiCompileObjectList)
 DLM_OBJECT_DEST             = $(o)
-DLM_OBJECT_PCH              = $(o)StructuralDomainInternal$(oext) 
+# DLM_OBJECT_PCH              = $(o)____$(oext) 
 DLM_DEST                    = $(o)
 DLM_EXPORT_DEST             = $(o)
 DLM_NOENTRY                 = 1
@@ -101,8 +114,6 @@ LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)DgnPlatfo
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeXml$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeLibxml2$(libext)
 LINKER_LIBRARIES            + $(BuildContext)SubParts/Libs/$(libprefix)BeJsonCpp$(libext)
-
-
 
 %include $(sharedMki)linkLibrary.mki
 

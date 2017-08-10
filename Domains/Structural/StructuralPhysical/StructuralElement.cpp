@@ -1,14 +1,10 @@
 /*--------------------------------------------------------------------------------------+
 |
-|     $Source: PublicAPI/StructuralDomain/StructuralDomainApi.h $
+|     $Source: StructuralPhysical/StructuralElement.cpp $
 |
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#pragma once
+#include <StructuralDomain\StructuralPhysical\StructuralElement.h>
 
-//__PUBLISH_SECTION_START__
-
-#include "StructuralCommon\StructuralCommonApi.h"
-#include "StructuralPhysical\StructuralPhysicalApi.h"
-#include "StructuralDomainUtilities.h"
+HANDLER_DEFINE_MEMBERS(StructuralElementHandler);
