@@ -332,6 +332,9 @@ public:
     DGNPLATFORM_EXPORT explicit CreateParams(LinkModelR linkModel, Utf8CP url = nullptr, Utf8CP label = nullptr, Utf8CP description = nullptr);
     };
 
+    BE_JSON_NAME(url);
+    BE_JSON_NAME(description);
+
     //! Constructor
     explicit UrlLink(CreateParams const& params) : T_Super(params), m_url(params.m_url), m_description(params.m_description) {}
 
@@ -442,6 +445,9 @@ protected:
     DGNPLATFORM_EXPORT void _ToJson(JsonValueR out, JsonValueCR opts) const override;
 
 public:
+    BE_JSON_NAME(name);
+    BE_JSON_NAME(description);
+
     //! Constructor
     explicit EmbeddedFileLink(CreateParams const& params) : T_Super(params), m_name(params.m_name), m_description(params.m_description) {}
 

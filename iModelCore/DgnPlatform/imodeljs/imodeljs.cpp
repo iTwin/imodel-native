@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #include <DgnPlatformInternal.h>
 #include "imodeljs.h"
+#include <Bentley/Base64Utilities.h>
 #include <Bentley/Desktop/FileSystem.h>
 #include <GeomSerialization/GeomSerializationApi.h>
 
@@ -264,45 +265,39 @@ void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
         switch (typedesc.GetPrimitiveType())
             {
             case ECN::PRIMITIVETYPE_Boolean:
-                rowJson[name] = Json::Value(value.GetBoolean());
+                rowJson[name] = value.GetBoolean();
                 break;
             case ECN::PRIMITIVETYPE_Long:
                 rowJson[name] = value.GetUInt64();
                 break;
             case ECN::PRIMITIVETYPE_Integer:
-                rowJson[name] = Json::Value(value.GetInt());
+                rowJson[name] = value.GetInt();
                 break;
             case ECN::PRIMITIVETYPE_Double:
-                rowJson[name] = Json::Value(value.GetDouble());
+                rowJson[name] = value.GetDouble();
                 break;
             case ECN::PRIMITIVETYPE_String: 
-                rowJson[name] = Json::Value(value.GetText());
+                rowJson[name] = value.GetText();
                 break;
             case ECN::PRIMITIVETYPE_Binary:
-            #ifdef NEEDS_WORK
                 {
                 int length;
-                const void* blob = value.GetBlob(&length);
-                row->push_back(new Values::Blob(name, length, blob));
-                break;
+                void const* blob = value.GetBlob(&length);
+                ECJsonUtilities::BinaryToJson(rowJson[name], (Byte const*) blob, length);
                 }
-            #else
-                rowJson[name] = Json::Value();
                 break;
-            #endif
             case ECN::PRIMITIVETYPE_Point2d: 
-                JsonUtils::DPoint2dToJson(rowJson[name], value.GetPoint2d());                 // *** WIP_NODE_ADDON
+                JsonUtils::DPoint2dToJson(rowJson[name], value.GetPoint2d());
                 break;
             case ECN::PRIMITIVETYPE_Point3d:
-                JsonUtils::DPoint3dToJson(rowJson[name], value.GetPoint3d());                 // *** WIP_NODE_ADDON
+                JsonUtils::DPoint3dToJson(rowJson[name], value.GetPoint3d());
                 break;
             case ECN::PRIMITIVETYPE_DateTime:
-                rowJson[name] = Json::Value(value.GetDateTime().ToString().c_str());          // *** WIP_NODE_ADDON
+                rowJson[name] = value.GetDateTime().ToString();
                 break;
 
             default: 
                 {
-//                BeAssert(false && "TBD");
                 rowJson[name] = GetRowAsRawJson(stmt)[i];     // *** WIP_NODE_ADDON
                 }
             }
