@@ -2829,8 +2829,8 @@ ECObjectsStatus ECRelationshipConstraint::ValidateBaseConstraint(ECRelationshipC
 
     if (RelationshipMultiplicity::Compare(GetMultiplicity(), baseConstraint.GetMultiplicity()) == -1)
         {
-        LOG.errorv("Multiplicity Violation: The %s Multiplicity (%" PRIu32 "..%" PRIu32 ") of %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
-                   (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, GetMultiplicity().GetLowerLimit(), GetMultiplicity().GetUpperLimit(), m_relClass->GetFullName(),
+        LOG.errorv("Multiplicity Violation: The Multiplicity (%" PRIu32 "..%" PRIu32 ") of the %s-constraint on %s is larger than the Multiplicity of it's base class %s (%" PRIu32 "..%" PRIu32 ")",
+                   GetMultiplicity().GetLowerLimit(), GetMultiplicity().GetUpperLimit(), (m_isSource) ? EC_SOURCECONSTRAINT_ELEMENT : EC_TARGETCONSTRAINT_ELEMENT, m_relClass->GetFullName(),
                    baseConstraint.GetRelationshipClass().GetFullName(), baseConstraint.GetMultiplicity().GetLowerLimit(), baseConstraint.GetMultiplicity().GetUpperLimit());
         return ECObjectsStatus::BaseClassUnacceptable;
         }
