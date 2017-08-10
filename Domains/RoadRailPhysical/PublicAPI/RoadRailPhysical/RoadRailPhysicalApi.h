@@ -140,8 +140,7 @@ END_BENTLEY_ROADRAILPHYSICAL_NAMESPACE
 #define BRRP_CODESPEC_RoadClassDefinition                          "RoadClassDefinition"
 #define BRRP_CODESPEC_RoadClassDefinitionTable                     "RoadClassDefinitionTable"
 #define BRRP_CODESPEC_RoadTravelway                                "RoadTravelway"
-
-#define BRRP_CODESPEC_OverallTypicalSection                        "OverallTypicalSection"
+#define BRRP_CODESPEC_TypicalSectionComponent                      "TypicalSectionComponent"
 
 
 //-----------------------------------------------------------------------------------------

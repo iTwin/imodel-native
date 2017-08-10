@@ -218,6 +218,9 @@ protected:
 public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TypicalSectionComponentElement)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_GET_METHODS(TypicalSectionComponentElement)
+
+    ROADRAILPHYSICAL_EXPORT static Dgn::CodeSpecId QueryCodeSpecId(Dgn::DgnDbCR dgndb);
+    ROADRAILPHYSICAL_EXPORT static Dgn::DgnCode CreateCode(TypicalSectionPortionBreakDownModelCR scope, Utf8StringCR value);
 }; // TypicalSectionComponentElement
 
 //=======================================================================================
@@ -237,7 +240,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(BufferComponent)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(BufferComponent)
 
-    ROADRAILPHYSICAL_EXPORT static BufferComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
+    ROADRAILPHYSICAL_EXPORT static BufferComponentPtr Create(TypicalSectionPortionBreakDownModelCR model, Utf8StringCR code);
 }; // BufferComponent
 
 //=======================================================================================
@@ -257,7 +260,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(TravelwayComponent)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(TravelwayComponent)
 
-    ROADRAILPHYSICAL_EXPORT static TravelwayComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
+    ROADRAILPHYSICAL_EXPORT static TravelwayComponentPtr Create(TypicalSectionPortionBreakDownModelCR model, Utf8StringCR code);
 }; // TravelwayComponent
 
 //=======================================================================================
@@ -277,7 +280,7 @@ public:
     DECLARE_ROADRAILPHYSICAL_QUERYCLASS_METHODS(EndConditionComponent)
     DECLARE_ROADRAILPHYSICAL_ELEMENT_BASE_METHODS(EndConditionComponent)
 
-    ROADRAILPHYSICAL_EXPORT static EndConditionComponentPtr Create(TypicalSectionPortionBreakDownModelCR model);
+    ROADRAILPHYSICAL_EXPORT static EndConditionComponentPtr Create(TypicalSectionPortionBreakDownModelCR model, Utf8StringCR code);
 }; // EndConditionComponent
 
 //=================================================================================

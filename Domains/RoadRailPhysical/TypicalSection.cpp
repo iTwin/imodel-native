@@ -212,6 +212,24 @@ TypicalSectionComponentElement::TypicalSectionComponentElement(CreateParams cons
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+CodeSpecId TypicalSectionComponentElement::QueryCodeSpecId(DgnDbCR dgndb)
+    {
+    CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BRRP_CODESPEC_TypicalSectionComponent);
+    BeAssert(codeSpecId.IsValid());
+    return codeSpecId;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Diego.Diaz                      10/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnCode TypicalSectionComponentElement::CreateCode(TypicalSectionPortionBreakDownModelCR scope, Utf8StringCR value)
+    {
+    return CodeSpec::CreateCode(BRRP_CODESPEC_TypicalSectionComponent, scope, value);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 BufferComponent::BufferComponent(CreateParams const& params):
@@ -222,12 +240,12 @@ BufferComponent::BufferComponent(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BufferComponentPtr BufferComponent::Create(TypicalSectionPortionBreakDownModelCR model)
+BufferComponentPtr BufferComponent::Create(TypicalSectionPortionBreakDownModelCR model, Utf8StringCR code)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, code));
 
     return new BufferComponent(createParams);
     }
@@ -243,12 +261,12 @@ TravelwayComponent::TravelwayComponent(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TravelwayComponentPtr TravelwayComponent::Create(TypicalSectionPortionBreakDownModelCR model)
+TravelwayComponentPtr TravelwayComponent::Create(TypicalSectionPortionBreakDownModelCR model, Utf8StringCR code)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, code));
 
     return new TravelwayComponent(createParams);
     }
@@ -264,12 +282,12 @@ EndConditionComponent::EndConditionComponent(CreateParams const& params):
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Diego.Diaz                      08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-EndConditionComponentPtr EndConditionComponent::Create(TypicalSectionPortionBreakDownModelCR model)
+EndConditionComponentPtr EndConditionComponent::Create(TypicalSectionPortionBreakDownModelCR model, Utf8StringCR code)
     {
     if (!model.GetModelId().IsValid())
         return nullptr;
 
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()));
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, code));
 
     return new EndConditionComponent(createParams);
     }
