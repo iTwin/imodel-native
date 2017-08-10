@@ -39,18 +39,15 @@ DbResult SetupDb(Db& db, WCharCP dbName)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST(BeSQLiteDb, BeBriefcaseBasedIdTest)
     {
-    BeBriefcaseId bc(100);
-    BeBriefcaseBasedId id1(bc, 4443332222);
+    BeBriefcaseId bc(0x103);
+    BeBriefcaseBasedId id1(bc, 0x108d7de7e);
     EXPECT_TRUE(bc == id1.GetBriefcaseId());
-    EXPECT_TRUE(4443332222 == id1.GetLocalId());
+    EXPECT_TRUE(0x108d7de7e == id1.GetLocalId());
 
-    Json::Value val=id1.ToJson();
-    EXPECT_TRUE(100 == val["b"].asUInt());
-    EXPECT_TRUE(4443332222 == val["l"].asUInt64());
-    Utf8String str = val.ToString();
-    EXPECT_EQ("{\"b\":100,\"l\":4443332222}", str);
+    Utf8String val=id1.ToHexStr();
+    EXPECT_TRUE(val == "0x1030108d7de7e");
 
-    BeBriefcaseBasedId id2 = BeBriefcaseBasedId::FromJson(val);
+    BeBriefcaseBasedId id2 = BeBriefcaseBasedId::FromJson(Json::Value(val));
     EXPECT_TRUE(id2 == id1);
     }
 
