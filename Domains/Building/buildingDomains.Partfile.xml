@@ -105,25 +105,19 @@
         <SubPart PartName="StructuralDomains"               PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
         <SubPart PartName="PlantPrototypeDomainHandler"     PartFile="PlantPrototypeDomain"     Repository="DgnDomain-PlantPrototype"/>
         <SubPart PartName="PlantDomainEverything"           PartFile="PlantDomain"              Repository="DgnDomains-Plant"/>
-        <SubPart PartName="StaticDataFiles"                 PartFile="BeIcu4cLibrary"           Repository="Libsrc-Icu4c"   />        
-        
+        <SubPart PartName="BeIcu4cLibrary"                  PartFile="BeIcu4cLibrary"           Repository="Libsrc-Icu4c"   />        
         <Directories DirectoryListName="DesignModelingDomainsSDK"/>
     </Product>
 
     <ProductDirectoryList ListName="DesignModelingDomainsSDK">
-        <!--
-            The lib sub-directory name should match some pre-defined Visual
-            Studio variable to simplify customizing project files. Several
-            variables with the word "platform" exist. At this time,
-            PlatformTarget seems pretty reasonable, and has values "x86" and
-            "x64".
-        -->
-
-        <!-- lib/x64 -->
-        <ProductDirectory Name="PublicAPI"                                              Path="PublicAPI"/>
-        <ProductDirectory Name="VendorAPI"                                              Path="VendorAPI"/>
-        <ProductDirectory Name="Assets"                                                 Path="Assets"/>
-        <ProductDirectory Name="Assemblies"                              Deliver="true" Path="lib/x64"/>
+        <ProductDirectory Name="PublicAPI"                               Deliver="true" Path="PublicAPI"/>
+        <ProductDirectory Name="VendorAPI"                               Deliver="true" Path="VendorAPI"/>
+        <ProductDirectory Name="VendorNotices"                           Deliver="true" Path="VendorNotices"/>
+        <ProductDirectory Name="Assets"                                  Deliver="true" Path="Assets"/>
+        <ProductDirectory Name="Assets"                                  Deliver="true" Path="Assets" LibType="static"/>
+        <ProductDirectory Name="Assemblies"                              Deliver="true" Path="Assemblies"/>
+        <ProductDirectory Name="sqlang"                                  Deliver="true" Path="sqlang" RelativeTo="Assets"/>
+        <ProductDirectory Name="sqlang"                                  Deliver="true" Path="sqlang" RelativeTo="Assets" LibType="static"/>
         <ProductDirectory Name="Libs"                                    Deliver="true" Path="lib/x64"/>
         <ProductDirectory Name="BuildingDomainIncludes"                  Deliver="true" Path="Include/BuildingDomain"/>
         <ProductDirectory Name="StructuralDomainIncludes"                Deliver="true" Path="Include/StructuralDomain"/>
@@ -132,8 +126,9 @@
         <ProductDirectory Name="BuildingSpacePlanningDomainIncludes"     Deliver="true" Path="Include/BuildingSpacePlanningDomain"/>
         <ProductDirectory Name="GridsIncludes"                           Deliver="true" Path="Include/Grids"/>
         <ProductDirectory Name="ConstraintSystemIncludes"                Deliver="true" Path="Include/ConstraintSystem"/>
+        <ProductDirectory Name="PlantDomainSchemasDir"                   Deliver="true" Path="Assets/ECSchemas/Domain"/>
+        <ProductDirectory Name="PlantDomainAssembliesDir"                Deliver="true" Path="Assemblies"/>
         
-
     </ProductDirectoryList>
 
 
