@@ -667,12 +667,6 @@ struct RealityDataServiceTransfer : public CurlConstructor
 
     REALITYDATAPLATFORM_EXPORT virtual ~RealityDataServiceTransfer();
 
-    //! Set proxy informations
-    REALITYDATAPLATFORM_EXPORT void SetProxyUrlAndCredentials(Utf8StringCR proxyUrl, Utf8StringCR proxyCreds) { m_proxyUrl = proxyUrl; m_proxyCreds = proxyCreds; };
-
-    //! Set certificate path for https upload.
-    REALITYDATAPLATFORM_EXPORT void SetCertificatePath(BeFileNameCR certificatePath) { m_certificatePath = certificatePath; }
-
     //! Set callback to follow progression of the upload.
     REALITYDATAPLATFORM_EXPORT void SetProgressCallBack(RealityDataServiceTransfer_ProgressCallBack pi_func)
         {
