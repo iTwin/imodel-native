@@ -50,8 +50,8 @@ struct ArchPhysCreator : Dgn::DgnPlatformLib::Host
         Dgn::DgnCode SetCodeFromParent1(Utf8StringR shortCode, Dgn::FunctionalElementR functionElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR deviceCode);
 
         Dgn::FunctionalComponentElementPtr CreateNozzle          (Dgn::DgnElementId pipeRunId,  Dgn::DgnElementId equipmentId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement, bool isVirtual = false);
-        Dgn::DrawingGraphicPtr             CreatePipeRunGraphics (Dgn::FunctionalComponentElementCPtr, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count);
-        Dgn::FunctionalComponentElementPtr CreatePipeRun         (Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel);
+        Dgn::DrawingGraphicPtr             CreatePipeRunGraphics (Dgn::FunctionalBreakdownElementCPtr, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count);
+        Dgn::FunctionalBreakdownElementPtr CreatePipeRun         (Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel);
         Dgn::FunctionalComponentElementPtr CreateGateValve       (Dgn::DgnElementId pipeRunId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement);
         Dgn::FunctionalComponentElementPtr CreateTank            (Dgn::DgnElementId subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement);
         Dgn::FunctionalComponentElementPtr CreateRoundTank       (Dgn::DgnElementId  subUnitId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionalModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement);

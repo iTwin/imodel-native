@@ -9,7 +9,7 @@
 #include <BuildingDomain\BuildingDomainApi.h>
 #include <BeJsonCpp\BeJsonUtilities.h>
 #include <Json\Json.h>
-//#include <Grids\gridsApi.h>
+#include <Grids\gridsApi.h>
 
 #define DOOR_CODE_VALUE       "D-001"
 #define WINDOW_CODE_VALUE     "W-001"
@@ -790,19 +790,19 @@ TEST_F(BuildingDomainTestFixture, RadialTests)
     Dgn::SpatialLocationModelCPtr spatialModel =  BuildingDomain::BuildingDomainUtilities::CreateBuildingSpatialLocationModel(MODEL_TEST_NAME, *db);
     ASSERT_TRUE(spatialModel.IsValid());
 
-//    Grids::RadialGridPortion::CreateParams params (&(*spatialModel), 2, 2, 10, 10, 20, 20, true);
+    Grids::RadialGridPortion::CreateParams params (&(*spatialModel), 2, 2, 10, 10, 20, 20, true);
 
-//    Grids::GridAxisMap grid;
+    Grids::GridAxisMap grid;
 
-//    BentleyStatus status = Grids::RadialGridPortion::CreateAndInsert(grid, params);
- //   ASSERT_TRUE(BentleyStatus::SUCCESS == status);
+    BentleyStatus status = Grids::RadialGridPortion::CreateAndInsert(grid, params);
+    ASSERT_TRUE(BentleyStatus::SUCCESS == status);
 
-//    Grids::OrthogonalGridPortion::CreateParams params1(&(*spatialModel), 2, 2, 10, 15, 20, 20, DVec3d::From(0, 0, 10), DVec3d::From(10, 0, 0));
+    Grids::OrthogonalGridPortion::CreateParams params1(&(*spatialModel), 2, 2, 10, 15, 20, 20, DVec3d::From(0, 0, 10), DVec3d::From(10, 0, 0));
 
-//    Grids::GridAxisMap grid2;
+    Grids::GridAxisMap grid2;
 
-//    status = Grids::OrthogonalGridPortion::CreateAndInsert(grid2, params1);
-  //  ASSERT_TRUE(BentleyStatus::SUCCESS == status);
+    status = Grids::OrthogonalGridPortion::CreateAndInsert(grid2, params1);
+    ASSERT_TRUE(BentleyStatus::SUCCESS == status);
 
 
 

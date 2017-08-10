@@ -6,7 +6,11 @@
 #pragma once
 
 #include <BuildingDomain/BuildingDomainApi.h>
-#include <Plant/CommonEquipmentFunctional.h>
+#include <Grids\gridsApi.h>
+#include <PlantPrototype\CommonEquipmentFunctional.h>
+#include <PlantPrototype\CommonPipingFunctionalBreakdown.h>
+#include <PlantPrototype\CommonPipingPhysical.h>
+#include <PlantPrototype\CommonPipingFunctional.h>
 #include "Geometry.h"
 #include "DoorTools.h"
 

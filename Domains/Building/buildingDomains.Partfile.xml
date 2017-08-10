@@ -2,10 +2,9 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
-    <Part Name="BuildingDomains" PrgOutputDir="BuildingDomainSDK-Winx64">
-        <!--SubProduct ProductName="BuildingDomainTests"/-->
+    <Part Name="BuildingDomains" PrgOutputDir="DesignModelingDomainsSDK">
         <SubPart PartName="RunBuildingDomainTests"/>
-        <SubPart PartName="BuildingDomainSDK-Winx64-Only"/>
+        <SubPart PartName="DesignModelingDomainsSDK-Only"/>
     </Part>
 
 
@@ -18,10 +17,10 @@
 
 
     <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
-        <!--SubPart PartName="ConstraintModelSchema" PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/-->
-        <!--SubPart PartName="Grids"                 PartFile="Grids"                    Repository="DgnDomains-Grids"/-->
+        <SubPart PartName="ConstraintModelSchema" PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
+        <SubPart PartName="Grids"                 PartFile="Grids"                    Repository="DgnDomains-Grids"/>
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
-        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
 
         <Bindings>
             <Libs>Delivery/$(libprefix)BuildingDomain$(libext)</Libs>
@@ -91,23 +90,27 @@
     </Part>
 
 
-    <Part Name="BuildingDomainSDK-Winx64-Only" OnlyPlatforms="x64">
-        <SubProduct ProductName="BuildingDomainSDK-Winx64"/>
+    <Part Name="DesignModelingDomainsSDK-Only" OnlyPlatforms="x64">
+        <SubProduct ProductName="DesignModelingDomainsSDK"/>
     </Part>
 
 
 
-    <Product Name="BuildingDomainSDK-Winx64"  SaveProduct="true">
-        <!--SubPart PartName="ConstraintModelSchema"           PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/-->
-        <!--SubPart PartName="ConstraintModel"                 PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/-->
-        <!--SubPart PartName="Grids"                           PartFile="Grids"                    Repository="DgnDomains-Grids"/-->
+    <Product Name="DesignModelingDomainsSDK"  SaveProduct="true">
+        <SubPart PartName="ConstraintModelSchema"           PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
+        <SubPart PartName="ConstraintModel"                 PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
+        <SubPart PartName="Grids"                           PartFile="Grids"                    Repository="DgnDomains-Grids"/>
+        <SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/>
         <SubPart PartName="BuildingDomain"/>
-        <SubPart PartName="StructuralDomains"              PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
-        <SubPart PartName="PlantPrototypeDomainHandler"    PartFile="PlantPrototypeDomain"     Repository="DgnDomain-PlantPrototype"/>
-        <Directories DirectoryListName="BuildingDomainSDK-Winx64"/>
+        <SubPart PartName="StructuralDomains"               PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
+        <SubPart PartName="PlantPrototypeDomainHandler"     PartFile="PlantPrototypeDomain"     Repository="DgnDomain-PlantPrototype"/>
+        <SubPart PartName="PlantDomainEverything"           PartFile="PlantDomain"              Repository="DgnDomains-Plant"/>
+        <SubPart PartName="StaticDataFiles"                 PartFile="BeIcu4cLibrary"           Repository="Libsrc-Icu4c"   />        
+        
+        <Directories DirectoryListName="DesignModelingDomainsSDK"/>
     </Product>
 
-    <ProductDirectoryList ListName="BuildingDomainSDK-Winx64">
+    <ProductDirectoryList ListName="DesignModelingDomainsSDK">
         <!--
             The lib sub-directory name should match some pre-defined Visual
             Studio variable to simplify customizing project files. Several
@@ -117,14 +120,14 @@
         -->
 
         <!-- lib/x64 -->
-        <!--ProductDirectory Name="PublicAPI"                                              Path="PublicAPI"/>
-        <ProductDirectory Name="VendorAPI"                                              Path="VendorAPI"/-->
+        <ProductDirectory Name="PublicAPI"                                              Path="PublicAPI"/>
+        <ProductDirectory Name="VendorAPI"                                              Path="VendorAPI"/>
         <ProductDirectory Name="Assets"                                                 Path="Assets"/>
         <ProductDirectory Name="Assemblies"                              Deliver="true" Path="lib/x64"/>
         <ProductDirectory Name="Libs"                                    Deliver="true" Path="lib/x64"/>
         <ProductDirectory Name="BuildingDomainIncludes"                  Deliver="true" Path="Include/BuildingDomain"/>
         <ProductDirectory Name="StructuralDomainIncludes"                Deliver="true" Path="Include/StructuralDomain"/>
-        <ProductDirectory Name="PlantDomainIncludes"                     Deliver="true" Path="Include/PlantDomain"/>
+        <ProductDirectory Name="PlantPrototypeIncludes"                  Deliver="true" Path="Include/PlantPrototype"/>
         <ProductDirectory Name="SpacePlanningDomainIncludes"             Deliver="true" Path="Include/SpacePlanningDomain"/>
         <ProductDirectory Name="BuildingSpacePlanningDomainIncludes"     Deliver="true" Path="Include/BuildingSpacePlanningDomain"/>
         <ProductDirectory Name="GridsIncludes"                           Deliver="true" Path="Include/Grids"/>

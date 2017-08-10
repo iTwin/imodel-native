@@ -102,14 +102,14 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions);BENTLEY_WIN32;</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(outRoot)winx64\Product\BuildingDomainSDK-Winx64\PublicApi;$(outRoot)winx64\Product\BuildingDomainSDK-Winx64\VendorApi</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(outRoot)winx64\Product\DesignModelingDomainsSDK\PublicApi;$(outRoot)winx64\Product\DesignModelingDomainsSDK\VendorApi</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(OUTROOT)Winx64\BuildContexts\BuildingDomains\SubParts\Libsx;$(outroot)winx64\product\BuildingDomainSDK-Winx64\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>GridElements.lib;BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;plantDomainHandler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(outroot)winx64\product\DesignModelingDomainsSDK\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>GridElements.lib;BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;plantPrototypeDomainHandler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
       <Command>xcopy /s /y $(outroot)winx64\BuildContexts\buildingDomains\SubParts\Assemblies\*  $(outdir)
@@ -123,7 +123,7 @@ xcopy /y $(outroot)\Winx64\build\DgnPlatform\DgnPlatform_en.sqlang.db3 $(outdir)
 xcopy /y  $(srcRoot)DgnPlatform\LastResortFonts\lastresortfonts $(outdir)Assets\
 xcopy /y $(srcRoot)DgnPlatform\ECSchemas\functional* $(outdir)Assets\ECSchemas\Domain\
 xcopy /y $(srcRoot)libsrc\icu4c\icudt58l.dat $(outdir)Assets\
-xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\lib\x64\PlantDomainHandler.dll $(outdir)
+xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\lib\x64\PlantPrototypeDomainHandler.dll $(outdir)
 xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\lib\x64\StructuralDomainB02.dll $(outdir)</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

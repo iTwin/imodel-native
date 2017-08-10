@@ -8,10 +8,9 @@
 
 #include "stdafx.h"
 #include "ArchPhysCreater.h"
-#include <Grids\gridsApi.h>
 
 
-#define BUILDING_MODEL_NAME "SampleBuildingModel"
+#define BUILDING_MODEL_NAME "SamplePlantModel"
 #define USERLABEL_NAME  "UserLabel"
 
 
@@ -267,11 +266,11 @@ BentleyStatus ArchPhysCreator::DoUpdateSchema(Dgn::DgnDbPtr db)
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel)
+Dgn::FunctionalBreakdownElementPtr ArchPhysCreator::CreatePipeRun(Dgn::DgnElementCPtr pipeline, Dgn::DgnElementId toId, Dgn::DgnElementId fromId, Dgn::FunctionalModelR functionalModel)
     {
 
     // Create the functional Instance
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_PipeRun, functionalModel);
+    Dgn::FunctionalBreakdownElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_PipeRun, functionalModel);
 
     Utf8String shortCode;
 
@@ -284,7 +283,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreatePipeRun(Dgn::DgnElemen
 
     if (pipeline.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipelineOwnsPipeRuns);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipelineOwnsPipeRuns);
         functionalElement->SetParentId(pipeline->GetElementId(), relClass->GetId());
         }
 
@@ -292,19 +291,19 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreatePipeRun(Dgn::DgnElemen
 
     if (toId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunConnectsToPipingComponent);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipeRunConnectsToPipingComponents);
         relationShipClass = relClass->GetRelationshipClassCP();
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, fe->GetElementId(), toId);
         }
 
     if (fromId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunConnectsToPipingComponent);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipeRunConnectsToPipingComponents);
         relationShipClass = relClass->GetRelationshipClassCP();
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, fe->GetElementId(), fromId);
         }
 
-    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalComponentElement>(functionalModel, fe->GetElementId());
+    functionalElement = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::FunctionalBreakdownElement>(functionalModel, fe->GetElementId());
 
     return functionalElement;
 
@@ -340,7 +339,7 @@ Dgn::DrawingGraphicPtr ArchPhysCreator::CreateAnnotation(Dgn::DgnCategoryId cate
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 
-Dgn::DrawingGraphicPtr ArchPhysCreator::CreatePipeRunGraphics(Dgn::FunctionalComponentElementCPtr pipeRun, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count)
+Dgn::DrawingGraphicPtr ArchPhysCreator::CreatePipeRunGraphics(Dgn::FunctionalBreakdownElementCPtr pipeRun, Dgn::DgnCategoryId categoryId, Dgn::DrawingModelR drawingModel, DPoint2dCP points, bvector<int> count)
     {
 
     // Now create each of the graphical line instances.
@@ -351,7 +350,7 @@ Dgn::DrawingGraphicPtr ArchPhysCreator::CreatePipeRunGraphics(Dgn::FunctionalCom
 
     Dgn::DgnCode code = pipeRun->GetCode();
     ECN::ECValue value;
-    value.SetUtf8CP(code.GetValueCP());
+    value.SetUtf8CP(code.GetValueUtf8CP());
 
     Dgn::DgnElementCPtr ge;
 
@@ -388,7 +387,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateNozzle(Dgn::DgnElement
 
     // Create Nozzle Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Nozzle, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_Nozzle, functionalModel);
 
     Utf8String shortCode;
 
@@ -422,7 +421,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateNozzle(Dgn::DgnElement
     ECN::ECClassCP relClass;
     if (equipmentId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_EquipmentOwnsNozzle);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_EquipmentOwnsNozzles);
         functionalElement->SetParentId(equipmentId, relClass->GetId());
         }
 
@@ -436,7 +435,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateNozzle(Dgn::DgnElement
 
     if (pipeRunId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunConnectsToPipingComponent);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipeRunConnectsToPipingComponents);
         ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
         BeSQLite::EC::ECInstanceKey rkey;
 
@@ -458,7 +457,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateTank( Dgn::DgnElementI
 
     // Create Tank Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement( "ProcessEquipmentFunctional", "Tank", functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_EQUIPMENT_FUNCTIONAL, "Tank", functionalModel);
     Utf8String shortCode;
     SetCodeFromParent1( shortCode, *functionalElement, parentElement, "T");
     PopulateElementProperties(functionalElement);
@@ -489,7 +488,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateTank( Dgn::DgnElementI
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalComponentElements);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
         relationShipClass = relClass->GetRelationshipClassCP();
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
         }
@@ -509,7 +508,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateRoundTank(Dgn::DgnElem
 
     // Create Tank Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_RoundTank, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_EQUIPMENT_FUNCTIONAL, PEF_CLASS_Drum, functionalModel);
 
     Utf8String shortCode;
     SetCodeFromParent1(shortCode, *functionalElement, parentElement, "T");
@@ -544,7 +543,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateRoundTank(Dgn::DgnElem
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalComponentElements);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
         relationShipClass = relClass->GetRelationshipClassCP();
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
         }
@@ -563,7 +562,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateVessel(Dgn::DgnElement
 
     // Create Tank Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Vessel, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_EQUIPMENT_FUNCTIONAL, PEF_CLASS_Vessel, functionalModel);
 
     Utf8String shortCode;
 
@@ -600,7 +599,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreateVessel(Dgn::DgnElement
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalComponentElements);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
         relationShipClass = relClass->GetRelationshipClassCP();
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
         }
@@ -619,7 +618,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreatePump(Dgn::DgnElementId
 
     // Create Pump Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Pump, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_EQUIPMENT_FUNCTIONAL, PEF_CLASS_CentrifugalPump, functionalModel);
 
     Utf8String shortCode;
     SetCodeFromParent1(shortCode, *functionalElement, parentElement, "PMP");
@@ -654,7 +653,7 @@ Dgn::FunctionalComponentElementPtr ArchPhysCreator::CreatePump(Dgn::DgnElementId
 
     if (subUnitId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalComponentElements);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
         relationShipClass = relClass->GetRelationshipClassCP();
         functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnitId, functionalElement->GetElementId());
         }
@@ -902,14 +901,14 @@ Dgn::DrawingModelPtr ArchPhysCreator::CreatePidDrawings(Dgn::DocumentListModelR 
 
     // Create the pipeline breakdown element. 
 
-    Dgn::FunctionalBreakdownElementPtr pipeline = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, "Pipeline", functionalModel);
+    Dgn::FunctionalBreakdownElementPtr pipeline = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_Pipeline, functionalModel);
     Utf8String shortCode;
 
     SetCodeFromParent1(shortCode, *pipeline, subUnit, "L");
 
     Dgn::DgnElementCPtr pl = pipeline->Insert();
 
-    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_SubUnitContainsFunctionalBreakdownElements);
+    relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
     relationShipClass = relClass->GetRelationshipClassCP();
     functionalModel.GetDgnDb().InsertLinkTableRelationship(rkey, *relationShipClass, subUnit->GetElementId(), pl->GetElementId());
 
@@ -925,34 +924,34 @@ Dgn::DrawingModelPtr ArchPhysCreator::CreatePidDrawings(Dgn::DocumentListModelR 
 
     // PipeRun from Tank to the reducer
 
-    Dgn::FunctionalComponentElementPtr pipeRun1 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, reducer->GetElementId(), tankNozzle->GetElementId(), functionalModel);
+    Dgn::FunctionalBreakdownElementPtr pipeRun1 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, reducer->GetElementId(), tankNozzle->GetElementId(), functionalModel);
 
     // PipeRun from Reducer to the Pump
 
-    Dgn::FunctionalComponentElementPtr pipeRun2 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, pumpNozzle1->GetElementId(), reducer->GetElementId(), functionalModel);
+    Dgn::FunctionalBreakdownElementPtr pipeRun2 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, pumpNozzle1->GetElementId(), reducer->GetElementId(), functionalModel);
 
     // PipeRun from Round Tank to the Vessel
 
-    Dgn::FunctionalComponentElementPtr pipeRun4 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, vesselNozzle->GetElementId(), roundTankNozzle->GetElementId(), functionalModel);
+    Dgn::FunctionalBreakdownElementPtr pipeRun4 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, vesselNozzle->GetElementId(), roundTankNozzle->GetElementId(), functionalModel);
 
     // **** Add 3 way Valve ****
 
     placement.GetOriginR() = DPoint2d::From(28.494, 2.5);
     Dgn::FunctionalComponentElementPtr threeWayValve = CreateThreeWayValve(pipeRun4->GetElementId(), categoryId, functionalModel, *drawingModel, placement);
     placement.GetOriginR() = DPoint2d::From(33.5, 2.5);
-    annotation = CreateAnnotation(categoryId, *drawingModel, threeWayValve->GetCode().GetValueCP(), placement);
+    annotation = CreateAnnotation(categoryId, *drawingModel, threeWayValve->GetCode().GetValueUtf8CP(), placement);
 
 
     // PipeRun from Pump to the 3 way valves
 
-    Dgn::FunctionalComponentElementPtr pipeRun3 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, threeWayValve->GetElementId(), pumpNozzle2->GetElementId(), functionalModel);
+    Dgn::FunctionalBreakdownElementPtr pipeRun3 = CreatePipeRun((Dgn::FunctionalBreakdownElementCPtr)pipeline, threeWayValve->GetElementId(), pumpNozzle2->GetElementId(), functionalModel);
 
     // ******** Add the Gate Valve ******
 
     placement.GetOriginR() = DPoint2d::From(-48.361, 19.375);
     Dgn::FunctionalComponentElementPtr gateValve = CreateGateValve(pipeRun1->GetElementId(), categoryId, functionalModel, *drawingModel, placement);
     placement.GetOriginR() = DPoint2d::From(-46.861, 17.375);
-    annotation = CreateAnnotation(categoryId, *drawingModel, gateValve->GetCode().GetValueCP(), placement);
+    annotation = CreateAnnotation(categoryId, *drawingModel, gateValve->GetCode().GetValueUtf8CP(), placement);
 
     // Add the PipeRun graphics for the fist PipeRun
 
@@ -1019,6 +1018,15 @@ BentleyStatus ArchPhysCreator::DoCreate()
     if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessEquipmentFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
         return BentleyStatus::ERROR;
 
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::PlantBreakdownFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BentleyStatus::ERROR;
+
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPipingPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BentleyStatus::ERROR;
+
+    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessPipingFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
+        return BentleyStatus::ERROR;
+
 
     Dgn::DgnDbPtr db = CreateDgnDb(GetOutputFileName());
     if (!db.IsValid())
@@ -1042,23 +1050,23 @@ BentleyStatus ArchPhysCreator::DoCreate()
 
     Utf8String shortCode;
 
-    for (int unitNum = 0; unitNum < 4; unitNum++)
+    for (int unitNum = 0; unitNum < 5; unitNum++)
         {
 
-        Dgn::FunctionalBreakdownElementPtr unit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Unit, *functionalModel);
+        Dgn::FunctionalBreakdownElementPtr unit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Class_Unit, *functionalModel);
 
         SetCodeFromParent1(shortCode, *unit, nullptr, "U");
         Dgn::DgnElementCPtr un = unit->Insert();
 
-        for (int subUnitNum = 0; subUnitNum < 4; subUnitNum++)
+        for (int subUnitNum = 0; subUnitNum < 5; subUnitNum++)
             {
 
-            Dgn::FunctionalBreakdownElementPtr subUnit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_SubUnit, *functionalModel);
+            Dgn::FunctionalBreakdownElementPtr subUnit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Class_SubUnit, *functionalModel);
             SetCodeFromParent1(shortCode, *subUnit, un, "SU");
 
             Dgn::DgnElementCPtr subUn = subUnit->Insert();
 
-            ECN::ECClassCP relClass = db->GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_UnitContainsSubUnit);
+            ECN::ECClassCP relClass = db->GetClassLocater().LocateClass(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Rel_FunctionalBreakdownGroupsFunctionalElements);
             ECN::ECRelationshipClassCP relationShipClass = relClass->GetRelationshipClassCP();
             BeSQLite::EC::ECInstanceKey rkey;
             db->InsertLinkTableRelationship(rkey, *relationShipClass, un->GetElementId(), subUn->GetElementId());
@@ -1574,7 +1582,7 @@ Dgn::DgnCode ArchPhysCreator::SetCodeFromParent1(Utf8StringR shortCode, Dgn::Fun
     Utf8String lookUp;
 
     if (parentElement.IsValid())
-        lookUp.Sprintf("%s%s", parentElement->GetCode().GetValueCP(), deviceCode.c_str());
+        lookUp.Sprintf("%s%s", parentElement->GetCode().GetValueUtf8CP(), deviceCode.c_str());
     else
         lookUp = deviceCode;
 
@@ -1596,7 +1604,7 @@ Dgn::DgnCode ArchPhysCreator::SetCodeFromParent1(Utf8StringR shortCode, Dgn::Fun
     shortCode.Sprintf("%s%0.3d", deviceCode.c_str(), number);
 
     if (parentElement.IsValid())
-        codeValue.Sprintf("%s-%s", parentElement->GetCode().GetValueCP(), shortCode.c_str());
+        codeValue.Sprintf("%s-%s", parentElement->GetCode().GetValueUtf8CP(), shortCode.c_str());
     else
         codeValue = shortCode;
 
