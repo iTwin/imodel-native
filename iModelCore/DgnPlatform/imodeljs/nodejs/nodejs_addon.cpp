@@ -30,6 +30,13 @@
     }                                                                           \
     Nan::Utf8String var(info[i]);
 
+#define REQUIRE_ARGUMENT_STRING_SYNC(i, var, errcode, errmsg)                        \
+    if (info.Length() <= (i) || !info[i]->IsString()) {                         \
+        ReturnError(info, errcode, errmsg);                            \
+        return;                                                                 \
+    }                                                                           \
+    Nan::Utf8String var(info[i]);
+
 #define REQUIRE_ARGUMENT_OBJ(i, T, var, errcode, errmsg)                        \
     if (info.Length() <= (i) || !T::HasInstance(info[i])) {                     \
         ResolveArgumentError(info, errcode, errmsg);                            \
@@ -109,6 +116,12 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         }
 
     STATUSTYPE GetStatus() { return m_status; }
+
+    static void ReturnError(Nan::NAN_METHOD_ARGS_TYPE& info, STATUSTYPE errorStatus, Utf8CP errorMessage)
+        {
+        v8::Local<v8::Object> retObj = CreateErrorObject(errorStatus, errorMessage);
+        info.GetReturnValue().Set(resolver->GetPromise());
+        }
 
     static void ResolveArgumentError(Nan::NAN_METHOD_ARGS_TYPE& info, STATUSTYPE errorStatus, Utf8CP errorMessage)
         {
@@ -802,7 +815,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     // Returns ECClass metadata
     //! @bsiclass
     //=======================================================================================
-    // Return the results of calling an element's ToJson method
     struct GetECClassMetaData : WorkerBase<DgnDbStatus>
         {
         Utf8String m_ecSchema;            // input
@@ -819,6 +831,20 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             REQUIRE_ARGUMENT_STRING(0, s, DgnDbStatus::BadRequest, "Argument 0 must be the schema name (as a string)");
             REQUIRE_ARGUMENT_STRING(1, c, DgnDbStatus::BadRequest, "Argument 1 must be the class name (as a string)");
             (new GetECClassMetaData(db, *s, *c))->ScheduleAndReturnPromise(info);
+            }
+
+        static NAN_METHOD(ExecuteSync)
+            {
+            Nan::HandleScope scope;
+            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+            REQUIRE_ARGUMENT_STRING_SYNC(0, s, DgnDbStatus::BadRequest, "Argument 0 must be the schema name (as a string)");
+            REQUIRE_ARGUMENT_STRING_SYNC(1, c, DgnDbStatus::BadRequest, "Argument 1 must be the class name (as a string)");
+            GetECClassMetaData worker(db, *s, *c);
+            worker.Execute();
+            v8::Local<v8::Value> result;
+            worker._GetResult(result);
+            info.GetReturnValue().Set(result);
             }
 
         void Execute() override
