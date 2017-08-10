@@ -25,6 +25,21 @@ static double s_minToleranceRatio = 512.0;
 
 BEGIN_TILEWRITER_NAMESPACE
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     12/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String      getJsonString(Json::Value const& value)
+    {
+    Utf8String      string =  Json::FastWriter().write(value);
+
+    // Pad to 4 byte boundary...
+    while (0 != string.size() % 4)
+        string = string + " ";
+
+    return string;
+    }
+
+
 //=======================================================================================
 // We use a hierarchical batch table to organize features by element and subcategory,
 // and subcategories by category
@@ -128,7 +143,7 @@ public:
         {
         Json::Value json;
         json["HIERARCHY"] = GetHierarchy();
-        return Json::FastWriter().write(json);
+        return getJsonString(json);
         }
 };
 
@@ -524,18 +539,22 @@ void AddTriMesh(Json::Value& primitivesNode, TriMeshArgsCR meshArgs, ColorTableC
 void BeginBatchedModel(uint32_t& startPosition, uint32_t& lengthDataPosition, Render::FeatureTableCR featureTable)
     {
     Utf8String          batchTableStr = BatchTableBuilder (featureTable, m_model.GetDgnDb(), m_model.Is3d()).ToString();
-    uint32_t            batchTableStrLen = static_cast<uint32_t>(batchTableStr.size());
-    uint32_t            b3dmNumBatches = featureTable.size();
+    Json::Value         featureTableJson;
+
+    featureTableJson["BATCH_LENGTH"] = featureTable.size();
+    Utf8String      featureTableStr = getJsonString(featureTableJson);
 
     startPosition = m_buffer.GetSize();
     m_buffer.Append((const uint8_t *) s_b3dmMagic, 4);
-    m_buffer.Append(s_b3dmVersion);
+    m_buffer.Append(s_b3dmVersion);                                                          
     lengthDataPosition = m_buffer.GetSize();
-    m_buffer.Append((uint32_t) 0);              // Filled in below.
-    m_buffer.Append(batchTableStrLen);
-    m_buffer.Append((uint32_t) 0); // length of binary portion of batch table - we have no binary batch table data
-    m_buffer.Append(b3dmNumBatches);
-    m_buffer.Append((const uint8_t *) batchTableStr.data(), batchTableStrLen);
+    m_buffer.Append((uint32_t) 0);                                                      // total length - filled in later.
+    m_buffer.Append(static_cast<uint32_t>(featureTableStr.size()));                        // feature table JSon length.
+    m_buffer.Append((uint32_t) 0);                                                      // length of binary portion of feature table (zero).
+    m_buffer.Append(static_cast<uint32_t>(batchTableStr.size()));                       // batch table JSon length.
+    m_buffer.Append((uint32_t) 0);                                                      // length of binary portion of batch table (zero)
+    m_buffer.Append((const uint8_t *) featureTableStr.data(), featureTableStr.size());  // Feature table Json.
+    m_buffer.Append((const uint8_t *) batchTableStr.data(), batchTableStr.size());      // Batch table Json.
 
     PadToBoundary();
     }
