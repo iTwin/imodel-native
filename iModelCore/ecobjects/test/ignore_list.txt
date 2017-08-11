@@ -11,8 +11,3 @@ NavigationPropertyValueTests.InstanceWithNavProp_String
 
 MixinTest.MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass
 MixinTest.MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass
-
-SupplementalDeserializationTests.*
-
-# Fails after merge
-SchemaValidatorTests.BisCoreAspectTests

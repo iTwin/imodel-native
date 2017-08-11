@@ -1192,5 +1192,48 @@ TEST_F(NavigationPropertyValueTests, TestNullNavigationValue)
     EXPECT_FALSE(v.IsNavigation()) << "The value should not be a navigation value but it is.";
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Caleb.Shafer                   08/2017
+//---------------------------------------------------------------------------------------
+TEST_F(NavigationPropertyValueTests, JsonRelatedInstanceIdSerialization)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP sourceClass;
+    ECEntityClassP targetClass;
+    ECRelationshipClassP relClass;
+
+    ECSchema::CreateSchema(schema, "NavTest", "ts", 4, 0, 2);
+    schema->CreateRelationshipClass(relClass, "RelClass");
+    schema->CreateEntityClass(sourceClass, "Source");
+    schema->CreateEntityClass(targetClass, "Target");
+
+    relClass->GetSource().AddClass(*sourceClass);
+    relClass->GetSource().SetMultiplicity(RelationshipMultiplicity::ZeroOne());
+    relClass->GetTarget().AddClass(*targetClass);
+    relClass->GetTarget().SetMultiplicity(RelationshipMultiplicity::OneOne());
+
+    NavigationECPropertyP navPropSource;
+    CreateNavProp(sourceClass, "MyTarget", *relClass, ECRelatedInstanceDirection::Forward, navPropSource, PrimitiveType::PRIMITIVETYPE_Long);
+
+    StandaloneECEnablerPtr enabler = sourceClass->GetDefaultStandaloneEnabler();
+    StandaloneECInstancePtr sourceInstance = enabler->CreateInstance();
+
+    BeInt64Id navId(50);
+    ECValue myTarget;
+    myTarget.SetNavigationInfo(navId);
+    ASSERT_EQ(ECObjectsStatus::Success, sourceInstance->SetValue("MyTarget", myTarget)) << "Failed to set the value of MyTargetNoRel nav prop to a long";
+    EXPECT_EQ(navId, myTarget.GetNavigationInfo().GetId<BeInt64Id>()) << "Id value of MyTargetNoRel nav property not as expected";
+    EXPECT_EQ(nullptr, myTarget.GetNavigationInfo().GetRelationshipClass()) << "Relationship Class of MyTargetNoRel nav property not as expected";
+
+    Json::Value jsonValue;
+    StatusInt jsonWriteStatus = JsonEcInstanceWriter::WriteInstanceToJson(jsonValue, *sourceInstance, "Source", true);
+    ASSERT_EQ(0, jsonWriteStatus) << "Failed to serialize an instance to Json with a nav property";
+    
+    ASSERT_TRUE(jsonValue.isObject());
+    ASSERT_TRUE(jsonValue["Source"].isObject());
+    ASSERT_TRUE(jsonValue["Source"]["MyTarget"].isObject());
+    EXPECT_STREQ(navId.ToString().c_str(), jsonValue["Source"]["MyTarget"]["id"].asString().c_str());
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE
 

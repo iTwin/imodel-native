@@ -1299,7 +1299,7 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
     ECValue::NavigationInfo const& navInfo = value.GetNavigationInfo();
     
     // GetValue performs the check for an invalid id and will assert if it is not valid.
-    navObj[JSON_NAVIGATION_ID_KEY] = navInfo.GetId<ECClassId>().GetValue();
+    navObj[JSON_NAVIGATION_ID_KEY] = navInfo.GetId<BeInt64Id>().ToString();
 
     if (navInfo.GetRelationshipClassId().IsValid())
         navObj[JSON_NAVIGATION_RELECCLASSID_KEY] = navInfo.GetRelationshipClassId().GetValueUnchecked();
@@ -1310,7 +1310,7 @@ StatusInt JsonEcInstanceWriter::WriteNavigationPropertyValue(Json::Value& valueT
 //---------------------------------------------------------------------------------------
 // @bsimethod                                    Bill.Steinbock                  02/2016
 //---------------------------------------------------------------------------------------
-    StatusInt     JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECClassCR ecClass, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties)
+StatusInt JsonEcInstanceWriter::WritePropertyValuesOfClassOrStructArrayMember(Json::Value& valueToPopulate, ECClassCR ecClass, IECInstanceCR ecInstance, Utf8String* baseAccessString, bool writeFormattedQuanties)
     {
     ECPropertyIterableCR    collection = ecClass.GetProperties(true);
     for (ECPropertyP ecProperty : collection)
