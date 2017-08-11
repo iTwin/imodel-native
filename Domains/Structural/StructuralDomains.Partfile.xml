@@ -2,27 +2,46 @@
 
 <BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
 
-    <Part Name="StructuralDomains" >
-        <!--SubPart PartName="RunStructuralDomainTests"/-->
-        <SubPart PartName="StructuralDomain"/>
-        <SubProduct ProductName="StructuralDomainSDK-Winx64"/>
-    </Part>
-
-
     <!-- A convenience to platform developers that want to build platform and use Gist as their testbed. -->
     <Part Name="StructuralDomainsWithGist" PrgOutputDir="DgnClientSdk" Sequential="true">
         <SubPart PartName="DgnClientSdk-Tested" PartFile="DgnClientFx" Repository="DgnClientFx"/>
         <SubPart PartName="Gist" PartFile="Gist" Repository="Gist"/>
-        <SubPart PartName="StructuralDomains"/>
+        <SubProduct ProductName="StructuralDomainsTested"/>
     </Part>
 
+    <Product Name="StructuralDomainsSDK">
+        <SubPart PartName="StructuralDomainDLL"/>
+        <Directories DirectoryListName="StructuralDomainsSDKDirs"/>
+    </Product>
 
-    <Part Name="StructuralDomain" BentleyBuildMakeFile="Structural.mke" ApiNumber="B02">
-        <SubPart PartName="StructuralPhysicalPublicAPI"/>
-        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+    <Product Name="StructuralDomainsTested">
+        <SubProduct ProductName="StructuralDomainsSDK"/>
+        <SubPart PartName="RunStructuralDomainTests"/>
+        <Directories DirectoryListName="StructuralDomainsSDKDirs"/>
+        <Directories DirectoryListName="StructuralDomainsTestDirs"/>
+    </Product>
+
+    <Part Name="StructuralDomainPublicAPI" BentleyBuildMakeFile="Structural.prewire.mke" ApiNumber="B02">
         <Bindings>
-            <Libs>Delivery/$(libprefix)StructuralDomain$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)StructuralDomain$(ApiNumber)$(shlibext)</Assemblies>
+            <PublicAPI Domain="StructuralDomain"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/StructuralCommon.ecschema.xml
+                ECSchemas/Domain/StructuralPhysical.ecschema.xml
+            </Files>
+            <Directory SourceName="PublicAPI/StructuralDomain" ProductDirectoryName="StructuralDomainIncludes" />
+        </Bindings>
+    </Part>
+
+    <Part Name="StructuralDomainDLL" BentleyBuildMakeFile="Structural.mke" ApiNumber="B02">
+        <SubPart PartName="DgnPlatformDLL"  PartFile="DgnPlatform"  Repository="DgnPlatform" />
+        <SubPart PartName="StructuralDomainPublicAPI"/>
+        <Bindings>
+            <Libs>
+                Delivery/$(libprefix)StructuralDomain$(libext)
+            </Libs>
+            <Assemblies>
+                Delivery/$(shlibprefix)StructuralDomain$(ApiNumber)$(shlibext)
+            </Assemblies>
             <Files ProductDirectoryName="Libs" >
                 Delivery/$(libprefix)StructuralDomain$(libext)
                 Delivery/$(shlibprefix)StructuralDomain$(ApiNumber)$(shlibext)
@@ -30,79 +49,50 @@
         </Bindings>
     </Part>
 
-
-    <Part Name="StructuralPhysicalPublicAPI" BentleyBuildMakeFile="Structural.prewire.mke" ApiNumber="B02">
-        <Bindings>
-            <PublicAPI Domain="StructuralDomain"/>
-            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
-                ECSchemas/Domain/StructuralCommon.ecschema.xml                
-                ECSchemas/Domain/StructuralPhysical.ecschema.xml
-            </Files>
-
-            <Directory SourceName="PublicAPI/StructuralDomain" ProductDirectoryName="StructuralDomainIncludes" />
-        </Bindings>
-    </Part>
-
-
-    <Part Name="StructuralDomainTestsExe" DeferType="StructuralDomainTests" BentleyBuildMakeFile="Tests/Tests.mke" OnlyPlatforms="x64">
+    <Part Name="StructuralDomainTestsExe" DeferType="StructuralDomainTests" BentleyBuildMakeFile="Tests/Tests.mke">
         <SubPart PartName="google_gtest_lib"     PartFile="gtest"         Repository="util-gtest"  />
         <SubPart PartName="DgnView"              PartFile="DgnDisplay"    Repository="DgnDisplay"  />
         <SubPart PartName="DgnDbTestUtils"       PartFile="DgnPlatform"   Repository="DgnPlatform" />
         <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"   Repository="DgnPlatform" />
-        <SubPart PartName="StructuralDomain"/>
+        <SubPart PartName="StructuralDomainDLL"/>
         <Bindings>
-              <Assemblies>Delivery/$(shlibprefix)StructuralDomainTests.exe</Assemblies>
-              <Files ProductDirectoryName="Assets">Delivery/StructuralDomainTests.logging.config.xml</Files>
-              <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">Delivery/StructuralDomainTests_en-US.sqlang.db3</Files>
+            <Assemblies>Delivery/$(shlibprefix)StructuralDomainTests.exe</Assemblies>
+            <Files ProductDirectoryName="StructuralDomainsRoot">
+                Delivery/StructuralDomainTests.logging.config.xml
+                Delivery/ignore_list.txt
+            </Files>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="sqlang">
+                Delivery/StructuralDomainTests_en-US.sqlang.db3
+            </Files>
         </Bindings>
     </Part>
 
-    <ProductDirectoryList ListName="Tests">
-        <ProductDirectory Name="VendorNotices"                  Path="VendorNotices"/>
-        <ProductDirectory Name="Assemblies"                     Path="Assemblies"/>
-        <ProductDirectory Name="Libs"                           Path="Libs"/>
-        <ProductDirectory Name="Assets"                         Path="Assemblies/Assets"/>
-        <ProductDirectory Name="IgnoreList"                     Path="Ignore"/>
-        <ProductDirectory Name="DgnPlatformSqlang"              Path="sqlang"/>
-        <ProductDirectory Name="UnitTests-Assets"               Deliver="false"/>
-        <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false"/>
-        <ProductDirectory Name="UnitTests-Objects"              Deliver="false"/>
+    <Part Name="RunStructuralDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" 
+          BentleyBuildMakeOptions="-dGTEST_PRODUCT=StructuralDomainsTested\  -dGTEST_NAME=StructuralDomainTests" ExcludeLibType="Static">
+        <SubPart PartName="StructuralDomainTestsExe"/>
+        <Bindings>
+            <Files Required="false" SubPartDirectory="Gtest/Logs">
+                Delivery/Gtest/Logs/StructuralDomainTests.log
+            </Files>
+        </Bindings>
+    </Part>
+
+    <ProductDirectoryList ListName="StructuralDomainsTestDirs">
+        <ProductDirectory Name="VendorNotices"                  Deliver="false" />
+        <ProductDirectory Name="Libs"                           Deliver="false"/>
+        <ProductDirectory Name="UnitTests-Assets"               Path="UnitTests-Assets"/>
+        <ProductDirectory Name="UnitTests-IgnoreList"           Path="UnitTests-IgnoreList"/>
+        <ProductDirectory Name="UnitTests-Objects"              Path="UnitTests-Objects"/>
     </ProductDirectoryList>
 
-    <Product Name="StructuralDomainTests" OnlyPlatforms="x64">
-        <SubPart PartName="StructuralDomainTestsExe"/>
-        <Directories DirectoryListName="Tests"/>
-    </Product>
-
-
-    <Part Name="RunStructuralDomainTests" DeferType="RunUnitTests" BentleyBuildMakeFile="${SrcRoot}BeGTest/gtest/RunGtest.mke" BentleyBuildMakeOptions="-dGTEST_PRODUCT=StructuralDomainTests\Assemblies\  -dGTEST_NAME=StructuralDomainTests" OnlyPlatforms="x64" ExcludeLibType="Static">
-        <SubProduct ProductName="StructuralDomainTests" />
-        <Bindings>
-            <Files Required="false" SubPartDirectory="Gtest/Logs">Delivery/Gtest/Logs/StructuralDomainTests.log</Files>
-        </Bindings>
-    </Part>
-
-
-    <Product Name="StructuralDomainSDK-Winx64">
-        <Directories DirectoryListName="StructuralDomainSDK-Winx64"/>
-        <SubPart PartName="StructuralPhysicalPublicAPI"/>
-
-    </Product>
-
-    <ProductDirectoryList ListName="StructuralDomainSDK-Winx64">
-        <!--
-            The lib sub-directory name should match some pre-defined Visual
-            Studio variable to simplify customizing project files. Several
-            variables with the word "platform" exist. At this time,
-            PlatformTarget seems pretty reasonable, and has values "x86" and
-            "x64".
-        -->
-
-        <!-- lib/x64 -->
-        <ProductDirectory Name="Assets"                          Path="Assets"/>
-        <ProductDirectory Name="Assemblies"       Deliver="true" Path="lib/x64"/>
-        <ProductDirectory Name="Libs"             Deliver="true" Path="lib/x64"/>
-        <ProductDirectory Name="StructuralDomainIncludes"         Deliver="true" Path="Include/StructuralDomain"/>
+    <ProductDirectoryList ListName="StructuralDomainsSDKDirs">
+        <ProductDirectory Name="StructuralDomainsRoot"           Path=""/>
+        <ProductDirectory Name="Assemblies"                      RelativeTo="StructuralDomainsRoot" Path=""/>
+        <ProductDirectory Name="Libs"                            RelativeTo="StructuralDomainsRoot" Path=""/>
+        <ProductDirectory Name="Assets"                          RelativeTo="StructuralDomainsRoot" Path="Assets"/>
+        <ProductDirectory Name="Assets"                          LibType="static" Deliver="false" />
+        <ProductDirectory Name="StructuralDomainIncludes"        RelativeTo="StructuralDomainsRoot" Path="Include/StructuralDomain"/>
+        <ProductDirectory Name="VendorNotices"                   RelativeTo="StructuralDomainsRoot" Path="VendorNotices"/>
 
     </ProductDirectoryList>
 

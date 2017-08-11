@@ -17,30 +17,30 @@ BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 //=======================================================================================
 struct StructuralDomainUtilities
     {
-    STRUCTURAL_DOMAIN_EXPORT static Utf8String                                              BuildDynamicSchemaName(Utf8StringCR modelCodeName);
-    STRUCTURAL_DOMAIN_EXPORT static Utf8String                                              BuildPhysicalModelCode(Utf8StringCR modelCodeName);
-    STRUCTURAL_DOMAIN_EXPORT static Utf8String                                              BuildTypeDefinitionModelCode(Utf8StringCR modelCodeName);
+    // STRUCTURAL_DOMAIN_EXPORT static Utf8String                       BuildDynamicSchemaName(Utf8StringCR modelCodeName);
+    // STRUCTURAL_DOMAIN_EXPORT static Utf8String                       BuildPhysicalModelCode(Utf8StringCR modelCodeName);
+    // STRUCTURAL_DOMAIN_EXPORT static Utf8String                       BuildTypeDefinitionModelCode(Utf8StringCR modelCodeName);
 
-    STRUCTURAL_DOMAIN_EXPORT static BentleyStatus                                           RegisterDomainHandlers();
+    STRUCTURAL_DOMAIN_EXPORT static BentleyStatus                    RegisterDomainHandlers();
 
-    STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                                         GetStructuralDynamicSchema(StructuralPhysical::StructuralPhysicalModelCPtr model);
-    STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaPtr                                        GetUpdateableSchema(StructuralPhysical::StructuralPhysicalModelCPtr model);
-    STRUCTURAL_DOMAIN_EXPORT static Utf8String                                              GetSchemaNameFromModel(StructuralPhysical::StructuralPhysicalModelCPtr model);
-    STRUCTURAL_DOMAIN_EXPORT static StructuralPhysical::StructuralPhysicalModelPtr          GetStructuralPhyicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
-    STRUCTURAL_DOMAIN_EXPORT static StructuralPhysical::StructuralTypeDefinitionModelPtr    GetStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
-    STRUCTURAL_DOMAIN_EXPORT static ECN::ECClassCP                                          GetExistingECClass(Dgn::DgnDbPtr db, Utf8StringCR schemaName, Utf8StringCR className);
+    // STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                  GetStructuralDynamicSchema(StructuralPhysicalModelCPtr model);
+    // STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaPtr                 GetUpdateableSchema(StructuralPhysicalModelCPtr model);
+    // STRUCTURAL_DOMAIN_EXPORT static Utf8String                       GetSchemaNameFromModel(StructuralPhysicalModelCPtr model);
+    // STRUCTURAL_DOMAIN_EXPORT static StructuralPhysicalModelPtr       GetStructuralPhyicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+    // STRUCTURAL_DOMAIN_EXPORT static StructuralTypeDefinitionModelPtr GetStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+    // STRUCTURAL_DOMAIN_EXPORT static ECN::ECClassCP                   GetExistingECClass(Dgn::DgnDbPtr db, Utf8StringCR schemaName, Utf8StringCR className);
 
-    STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                                         CreateStructuralDynamicSchema(Utf8StringCR modelCodeName, StructuralPhysical::StructuralPhysicalModelPtr model);
-    STRUCTURAL_DOMAIN_EXPORT static BentleyStatus                                           CreateStructuralModels(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr, bool createDynamicSchema = true, ECN::ECSchemaPtr suppliedDynamicSchema = nullptr);
-    STRUCTURAL_DOMAIN_EXPORT static StructuralPhysical::StructuralPhysicalModelPtr          CreateStructuralPhysicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
-    STRUCTURAL_DOMAIN_EXPORT static StructuralPhysical::StructuralTypeDefinitionModelPtr    CreateStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
-    STRUCTURAL_DOMAIN_EXPORT static Dgn::PhysicalElementPtr                                 CreatePhysicalElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model, Utf8CP categoryName = nullptr);
-    STRUCTURAL_DOMAIN_EXPORT static ECN::ECEntityClassP                                     CreatePhysicalElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr, Utf8StringCR className);
+    // STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                  CreateStructuralDynamicSchema(Utf8StringCR modelCodeName, StructuralPhysicalModelPtr model);
+    // STRUCTURAL_DOMAIN_EXPORT static BentleyStatus                    CreateStructuralModels(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr, bool createDynamicSchema = true, ECN::ECSchemaPtr suppliedDynamicSchema = nullptr);
+    // STRUCTURAL_DOMAIN_EXPORT static StructuralPhysicalModelPtr       CreateStructuralPhysicalModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+    // STRUCTURAL_DOMAIN_EXPORT static StructuralTypeDefinitionModelPtr CreateStructuralTypeDefinitionModel(Utf8StringCR modelCodeName, Dgn::DgnDbR db, Dgn::SubjectCPtr parentSubject = nullptr);
+    // STRUCTURAL_DOMAIN_EXPORT static Dgn::PhysicalElementPtr          CreatePhysicalElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model, Utf8CP categoryName = nullptr);
+    // STRUCTURAL_DOMAIN_EXPORT static ECN::ECEntityClassP              CreatePhysicalElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr, Utf8StringCR className);
 
-    STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                                         InsertSuppliedSchema(ECN::ECSchemaPtr suppliedDynamicSchema, StructuralPhysical::StructuralPhysicalModelPtr model);
+    // STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                  InsertSuppliedSchema(ECN::ECSchemaPtr suppliedDynamicSchema, StructuralPhysicalModelPtr model);
 
-    STRUCTURAL_DOMAIN_EXPORT static Dgn::SchemaStatus                                       UpdateSchemaInDb(Dgn::DgnDbR db, ECN::ECSchemaR updatedSchema);
-    STRUCTURAL_DOMAIN_EXPORT static BentleyStatus                                           UpdateSchemaNameInModel(Utf8StringCR schemaName, StructuralPhysical::StructuralPhysicalModelPtr model);
+    // STRUCTURAL_DOMAIN_EXPORT static Dgn::SchemaStatus                UpdateSchemaInDb(Dgn::DgnDbR db, ECN::ECSchemaR updatedSchema);
+    // STRUCTURAL_DOMAIN_EXPORT static BentleyStatus                    UpdateSchemaNameInModel(Utf8StringCR schemaName, StructuralPhysicalModelPtr model);
     };
 
 //=======================================================================================

@@ -9,6 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
+#include <Bentley/WString.h>
 #include <ECDb/ECDbTypes.h>
 #include <ECDb/ECDbApi.h>
 #include <ECObjects/ECSchema.h>

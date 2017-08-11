@@ -26,6 +26,8 @@ struct EXPORT_VTABLE_ATTRIBUTE StructuralElement : Dgn::PhysicalElement
 protected:
     explicit StructuralElement(CreateParams const& params) : T_Super(params) {}
 
+    Dgn::DgnDbStatus _OnDelete() const override { return Dgn::DgnDbStatus::Success; }
+
 public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(StructuralElement)
     DECLARE_STRUCTURAL_PHYSICAL_ELEMENT_BASE_GET_METHODS(StructuralElement)
