@@ -298,6 +298,16 @@ struct TMTransformHelper : RefCountedBase
                 }
             return value;
             }
+
+        DPoint3d getPointFromDTM(DPoint3dCR pt)
+            {
+            if (m_IsIdentity)
+                return pt;
+            DPoint3d cPt = pt;
+            m_transform.Multiply(cPt);
+            return cPt;
+            }
+
         void convertPointFromDTM (double& x, double& y)
             {
             if (!m_IsIdentity)
