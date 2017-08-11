@@ -221,11 +221,14 @@ struct  BeThreadUtilities
     //! @param[in] newName Name to call thread.
     BENTLEYDLL_EXPORT static void SetCurrentThreadName(Utf8CP newName);
 
+    //! Get the default size of the stack for a thread in bytes.
+    BENTLEYDLL_EXPORT static int GetDefaultStackSize();
+
     //! Start a new thread.
-    //!@param[in] stackSize the number of bytes for the newly created thread's stack
     //!@param[in] startAddr the function to call at thread start. Thread exits when this function returns.
     //!@param[in] arg Argument to startAddr
-    BENTLEYDLL_EXPORT static BentleyStatus StartNewThread(int stackSize, T_ThreadStart startAddr, void* arg);
+    //!@param[in] stackSize the number of bytes for the newly created thread's stack
+    BENTLEYDLL_EXPORT static BentleyStatus StartNewThread(T_ThreadStart startAddr, void* arg=nullptr, int stackSize=GetDefaultStackSize());
 
     //! Suspend the current thread for a specified amount of time
     //! @param[in] sleepTime Duration of sleep 

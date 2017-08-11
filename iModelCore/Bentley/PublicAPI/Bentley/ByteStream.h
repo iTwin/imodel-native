@@ -10,6 +10,7 @@
 
 #include "Bentley.h"
 #include "BeAssert.h"
+#include "Base64Utilities.h"
 #include <utility>
 #include <string.h>
 #include <stdlib.h> // on *nix, the declarations for free and realloc are in stdlib.h
@@ -106,6 +107,10 @@ public:
     const_iterator end() const {return data() + size();}
     uint8_t const& operator[](size_t i) const {return data()[i];}
     uint8_t& operator[](size_t i) {return data()[i];}
+
+    Utf8String ToBase64() const {return Base64Utilities::Encode((Utf8CP) m_data, m_size);}
+    void FromBase64(Utf8CP src, size_t len) {Base64Utilities::Decode(*this, src, len);}
+    void FromBase64(Utf8String src) {Base64Utilities::Decode(*this, src.c_str(), src.size());}
 };
 
 END_BENTLEY_NAMESPACE
