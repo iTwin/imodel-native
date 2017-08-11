@@ -2,7 +2,7 @@
 |
 |     $Source: SQLite/DownloadVfs.cpp $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <BeSQLite/DownloadAdmin.h>
@@ -598,7 +598,7 @@ THREAD_MAIN_DECL requesterThreadMain (void* arg)
 ChunkRequestQueue::ChunkRequestQueue(Connection& conn) : m_connection(conn)
     {
     m_aborted = false;
-    BeThreadUtilities::StartNewThread (50*1024, requesterThreadMain, this);
+    BeThreadUtilities::StartNewThread(requesterThreadMain, this, 50*1024);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -665,7 +665,7 @@ ChunkReceiveQueue::ChunkReceiveQueue(DownloadFile& dlFile)
     {
     m_aborted = false;
     m_dlFile = &dlFile;
-    BeThreadUtilities::StartNewThread (50*1024, receiverThreadMain, this);
+    BeThreadUtilities::StartNewThread(receiverThreadMain, this, 50*1024);
     }
 
 /*---------------------------------------------------------------------------------**//**
