@@ -48,7 +48,7 @@ AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     return m_range;
     }
 
-
+#if defined(TODO_TILE_PUBLISH)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -59,7 +59,7 @@ PublishedTilesetInfo ScalableMeshModel::_GetPublishedTilesetInfo()
 
     return PublishedTilesetInfo(Utf8String(GetPath()), _GetRange());
     }
-
+#endif
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                 Mathieu.St-Pierre     8/2017
