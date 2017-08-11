@@ -90,6 +90,17 @@
         </Bindings>
     </Part>
 
+    <Part Name="NuGetPackage-WebServicesClient" BentleyBuildMakeFile="WebServicesClient.NuGetPackage.mke" OnlyPlatforms="x64" >
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WebServicesClient"/>
+        <SubPart PartName="WSClient-PublishedAPI"/>
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesClient.*.nupkg</Files>
+        </Bindings>
+    </Part>
+    
+    
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // WebServicesCache lib                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -148,6 +159,16 @@
                 SubPartDirectory="ECSchemas/WSClient/Cache"
                 ProductDirectoryName="Assets"
                 ProductSubDirectory="ECSchemas/WSClient/Cache" />
+        </Bindings>
+    </Part>
+    
+    <Part Name="NuGetPackage-WebServicesCache" BentleyBuildMakeFile="WebServicesCache.NuGetPackage.mke" OnlyPlatforms="x64" >
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesCache.*.nupkg</Files>
         </Bindings>
     </Part>
     
@@ -745,6 +766,16 @@
         <SubPart PartName="WSClientCompatibilityTests" />
         <Directories DirectoryListName="WSClientCompatibilityTestToolDirList" />
     </Product>
+    
+    <Part Name="NuGetPackage-WSClientCompatibilityTestTool" BentleyBuildMakeFile="WSClientCompatibilityTestTool.NuGetPackage.mke" OnlyPlatforms="x64" >
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WSClientCompatibilityTests" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\WSClientCompatibilityTestTool.*.nupkg</Files>
+        </Bindings>
+    </Part>
     
     <ProductDirectoryList ListName="WSClientCompatibilityTestToolDirList" >
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
