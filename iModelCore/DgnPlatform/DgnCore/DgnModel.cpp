@@ -686,17 +686,17 @@ void DgnModel::_BindWriteParams(BeSQLite::EC::ECSqlStatement& statement, ForInse
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnModel::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
-    val[json_id()] = m_modelId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_id()] = m_modelId.ToHexStr();
 
     auto ecClass = GetDgnDb().Schemas().GetClass(m_classId);
 
     val[json_schemaName()] = ecClass->GetSchema().GetName();
     val[json_className()] = ecClass->GetName();
     if (m_parentModelId.IsValid())
-        val[json_parentModel()] = m_parentModelId.ToString(BeInt64Id::UseHex::Yes);
+        val[json_parentModel()] = m_parentModelId.ToHexStr();
 
     if (m_modeledElementId.IsValid())
-        val[json_modeledElement()] = m_modeledElementId.ToString(BeInt64Id::UseHex::Yes);
+        val[json_modeledElement()] = m_modeledElementId.ToHexStr();
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;

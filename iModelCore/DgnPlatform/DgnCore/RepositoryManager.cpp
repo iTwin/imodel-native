@@ -1749,7 +1749,7 @@ bool RepositoryJson::BeInt64IdFromJson(BeInt64Id& id, JsonValueCR value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void RepositoryJson::BeInt64IdToJson(JsonValueR value, BeInt64Id id)
     {
-    value = id.ToString(BeInt64Id::UseHex::Yes);
+    value = id.ToHexStr();
     }
 
 /*---------------------------------------------------------------------------------**//**

@@ -571,7 +571,7 @@ void DgnCode::RelocateToDestinationDb(DgnImportContext& importer)
 
     uint64_t scopeElementId;
     if (BentleyStatus::SUCCESS == BeStringUtilities::ParseUInt64(scopeElementId, m_scope.c_str()))
-        m_scope = importer.FindElementId(DgnElementId(scopeElementId)).ToString(BeInt64Id::UseHex::Yes);
+        m_scope = importer.FindElementId(DgnElementId(scopeElementId)).ToHexStr();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -636,7 +636,7 @@ DgnDbStatus CodeSpec::ValidateCode(DgnElementCR element) const
 Json::Value DgnCode::ToJson2() const
     {
     Json::Value val;
-    val[json_spec()] = m_specId.ToString(BeInt64Id::UseHex::Yes);
+    val[json_spec()] = m_specId.ToHexStr();
     val[json_scope()] = m_scope;
     val[json_value()] = m_value.GetUtf8();
     return val;

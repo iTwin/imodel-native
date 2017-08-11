@@ -294,8 +294,8 @@ DgnDbStatus UrlLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams co
 void UrlLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
     {
     T_Super::_ToJson(out, opts);
-#if defined (TOFROM_JSON)
-#endif
+    out[json_url()] = m_url;
+    out[json_description()] = m_description;
     }
 
 //---------------------------------------------------------------------------------------
@@ -468,8 +468,8 @@ DgnDbStatus EmbeddedFileLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 void EmbeddedFileLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
     {
     T_Super::_ToJson(out, opts);
-#if defined (TOFROM_JSON)
-#endif
+    out[json_name()] = m_name;
+    out[json_description()] = m_description;
     }
 
 //---------------------------------------------------------------------------------------
