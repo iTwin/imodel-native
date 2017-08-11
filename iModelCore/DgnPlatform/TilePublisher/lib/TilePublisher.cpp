@@ -1184,148 +1184,6 @@ ClassifierTileWriter(DRange3dCR range) : m_range(range)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus   ExtractPolygonBoundaryFromTriangles(bvector<uint32_t>& indices, DVec3dR normal, bvector<TileTriangle const*>& triangles, TileMeshCR mesh)
-    {
-    struct  MeshEdge
-        {
-        uint32_t                m_indices[2];
-        bool                    m_interior;
-        bool                    m_reversed;
-
-        MeshEdge() { }
-        MeshEdge(uint32_t index0, uint32_t index1) : m_interior(false)
-            {
-            if (index0 < index1)
-                {
-                m_indices[0] = index0;
-                m_indices[1] = index1;
-                m_reversed = false;
-                }
-            else
-                {
-                m_indices[0] = index1;
-                m_indices[1] = index0;
-                m_reversed = true;
-                }
-            }
-
-        bool MeshEdge::operator < (MeshEdge const& rhs) const { return m_indices[0] == rhs.m_indices[0] ? (m_indices[1] < rhs.m_indices[1]) :  (m_indices[0] < rhs.m_indices[0]); }
-        };                 
-
-    struct  PolylineSegment
-        {
-        MeshEdge        m_edge;
-        bool            m_processed;
-
-        PolylineSegment(MeshEdge const& edge) : m_edge (edge), m_processed(false) { }
-        };
-
-    struct MapEntry
-        {
-        uint32_t            m_endIndex;
-        PolylineSegment*    m_segment;
-
-        MapEntry() { }
-        MapEntry(uint32_t endIndex, PolylineSegment* segment) : m_endIndex(endIndex), m_segment(segment) { }
-        };
-    
-    bset<MeshEdge>                  edges;
-    bvector<PolylineSegment>        segments;
-    bmultimap <uint32_t, MapEntry>  segmentMap;
-    bool                            first;
-
-    for (auto& triangle : triangles)
-        {
-        if (triangle->IsSingleSided())
-            {
-            BeAssert(false && "Mixed sidedness in classifier");
-            return ERROR;
-            }
-
-        DVec3d      triangleNormal = mesh.GetTriangleNormal(*triangle);
-
-        if (first)
-            {
-            normal = triangleNormal;
-            }
-        else if (!triangleNormal.IsParallelTo(normal))
-            {
-            BeAssert(false && "Non planar classifier shell");
-            }
-            
-        for (size_t i=0; i<3; i++)
-            {
-            MeshEdge    thisEdge(triangle->m_indices[i], triangle->m_indices[(i + 1) % 3]);
-
-            auto const&   insertPair = edges.insert(thisEdge);
-
-            if (!insertPair.second)
-                insertPair.first->m_interior = true;        
-            }
-        }
-    
-
-    for (auto& edge : edges)
-        if (!edge.m_interior)
-            segments.push_back(PolylineSegment(edge));
-
-    std::list<uint32_t> indexList;
-
-    for (auto& segment : segments)
-        {
-        segmentMap.Insert (segment.m_edge.m_indices[0], MapEntry(segment.m_edge.m_indices[1], &segment));
-        segmentMap.Insert (segment.m_edge.m_indices[1], MapEntry(segment.m_edge.m_indices[0], &segment));
-        }
-
-    auto&   segment = segments.front();
-
-    indexList.push_back (segment.m_edge.m_indices[0]);
-    indexList.push_back (segment.m_edge.m_indices[1]);
-    segment.m_processed = true;
-
-    bool    linkFound = false;
-
-    do
-        {
-        linkFound = false;
-        for (bmultimap <uint32_t, MapEntry>::iterator curr = segmentMap.lower_bound (indexList.back()), end = segmentMap.upper_bound(indexList.back()); !linkFound && curr != end; curr++)
-            {
-            if (!curr->second.m_segment->m_processed)
-                {
-                linkFound = true;
-                indexList.push_back(curr->second.m_endIndex);
-                curr->second.m_segment->m_processed = true;
-                break;
-                }
-            }
-        for (bmultimap <uint32_t, MapEntry>::iterator curr = segmentMap.lower_bound (indexList.front()), end = segmentMap.upper_bound(indexList.front()); !linkFound && curr != end; curr++)
-            {
-            if (!curr->second.m_segment->m_processed)
-                {
-                linkFound = true;
-                indexList.push_front(curr->second.m_endIndex);
-                curr->second.m_segment->m_processed = true;
-                break;
-                }
-            }
-        } while (linkFound);
-
-    if (indexList.size() != segments.size() + 1)
-        return ERROR;
-
-    for (auto& index : indexList)
-        indices.push_back(index);
-
-
-    BeAssert (indices.front() == indices.back());
-    indices.pop_back();     // SCP.
-
-    return SUCCESS;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley   07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
 uint32_t AddMeshPoint(DPoint3dCR point)
     {
     uint32_t        index = m_meshPositions.size() / sizeof(FPoint3d);
@@ -1350,21 +1208,66 @@ uint32_t    MeshPointIndex (uint32_t inIndex, DPoint3dCP points, bmap<uint32_t, 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AddClosedMesh (ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, TileMeshCR mesh, bvector<TileTriangle const*> const& triangles, bmap<uint32_t, uint32_t>& indexMap)
+BentleyStatus AddExtrudedPolygon (ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, TileMeshCR mesh, bvector<TileTriangle const*> const& triangles, bmap<uint32_t, uint32_t>& indexMap, DRange3dCR classifiedRange)
     {
+    DVec3d              normal;
+    bvector<uint32_t>   indices;
+    bool                first = true;
+    uint32_t            initialIndexSize = m_meshIndices.size();
+
     for (auto& triangle : triangles)
-        if (!triangle->IsSingleSided())
+        {
+        DVec3d  triangleNormal = mesh.GetTriangleNormal(*triangle);
+        if (first)
+            {
+            normal = triangleNormal;
+            }
+        else if (!normal.IsParallelTo(triangleNormal))
+            {
+            BeAssert(false && "cant classify with non-planar surface");
             return ERROR;
+            }
+        }
+    
+    DRay3d              ray = DRay3d::FromOriginAndVector(mesh.Points().at(triangles.front()->m_indices[0]), normal);
+    DRange1d            classifiedProjection = classifiedRange.GetCornerRange(ray);
+    bvector<uint32_t>   baseIndices, topIndices;
+    DVec3d              baseOffset = DVec3d::FromScale(normal, classifiedProjection.low),
+                        topOffset  = DVec3d::FromScale(normal, classifiedProjection.high);
+
+    for(auto& point : mesh.Points())
+        {
+        baseIndices.push_back(AddMeshPoint(DPoint3d::FromSumOf(point, baseOffset)));
+        topIndices.push_back(AddMeshPoint(DPoint3d::FromSumOf(point, topOffset)));
+        }
 
     indexOffsetBuffer.Append((uint32_t) (m_meshIndices.size() / sizeof(uint32_t)));
 
     for (auto& triangle : triangles)
         {
         for (size_t i=0; i<3; i++)
-            m_meshIndices.Append(MeshPointIndex(triangle->m_indices[i], mesh.Points().data(), indexMap));
+            m_meshIndices.Append(topIndices[triangle->m_indices[i]]);       
+
+        for (size_t i=0; i<3; i++)
+            m_meshIndices.Append(baseIndices[triangle->m_indices[2-i]]); 
+
+        for (size_t i=0; i<3; i++)
+            {
+            if (triangle->m_edgeVisible[i])
+                {
+                uint32_t    iNext = (i + 1) %3;
+
+                m_meshIndices.Append(topIndices[triangle->m_indices[i]]);       
+                m_meshIndices.Append(baseIndices[triangle->m_indices[i]]);       
+                m_meshIndices.Append(topIndices[triangle->m_indices[iNext]]);       
+                m_meshIndices.Append(baseIndices[triangle->m_indices[i]]);       
+                m_meshIndices.Append(baseIndices[triangle->m_indices[iNext]]);       
+                m_meshIndices.Append(topIndices[triangle->m_indices[iNext]]);       
+                }
+            }
         }
 
-    uint32_t      indexCount = triangles.size() * 3;
+    uint32_t      indexCount = (m_meshIndices.size() - initialIndexSize) / sizeof(uint32_t);
     m_batchIdsBuffer.Append((uint16_t) (mesh.Attributes().at(triangles.front()->m_indices[0]) /* Subtract 1 to produce zero based batchIds - workaround this dependence in vector tiles */ - 1));
     indexCountBuffer.Append(indexCount);
     m_featureBinary.Append(indexCount);
@@ -1375,13 +1278,26 @@ BentleyStatus AddClosedMesh (ByteStream& indexCountBuffer, ByteStream& indexOffs
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AddExtrudedPolygon (ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, TileMeshCR mesh, bvector<TileTriangle const*> const& triangles, bmap<uint32_t, uint32_t>& indexMap, DRange3dCR classifiedRange)
+BentleyStatus AddClosedMesh (ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, TileMeshCR mesh, bvector<TileTriangle const*> const& triangles, bmap<uint32_t, uint32_t>& indexMap)
     {
-#ifdef WIP
-    
-#endif    
-    return ERROR;       // WIP.
+    for (auto& triangle : triangles)
+        if (!triangle->IsSingleSided())
+            return ERROR;
+
+    indexOffsetBuffer.Append((uint32_t) (m_meshIndices.size() / sizeof(uint32_t)));
+
+    for (auto& triangle : triangles)
+        for (size_t i=0; i<3; i++)
+            m_meshIndices.Append(MeshPointIndex(triangle->m_indices[i], mesh.Points().data(), indexMap));
+
+    uint32_t      indexCount = triangles.size() * 3;
+    m_batchIdsBuffer.Append((uint16_t) (mesh.Attributes().at(triangles.front()->m_indices[0]) /* Subtract 1 to produce zero based batchIds - workaround this dependence in vector tiles */ - 1));
+    indexCountBuffer.Append(indexCount);
+    m_featureBinary.Append(indexCount);
+
+    return SUCCESS;
     }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
@@ -1511,15 +1427,13 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
 void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeometryR geometry)
     {
     DRange3d        contentRange = DRange3d::NullRange();
-    auto const&     classifiedModel = m_context.ClassifierModels().find(m_tile.GetModel().GetModelId());
+    auto const&     classifiedModelRange = m_context.ClassifierModels().find(m_tile.GetModel().GetModelId());
 
-#ifdef WIP_EXTRUDE
-    if (classifiedModel == m_context.ClassifierModels().end())
+    if (classifiedModelRange == m_context.ClassifierModels().end())
         {
         BeAssert(false && "classified range not found");
         return;
         }
-#endif
 
     for (auto& mesh : geometry.Meshes())
         contentRange.Extend(mesh->Points());
@@ -1530,7 +1444,7 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
     for (auto& mesh : geometry.Meshes())
         {
         if (!mesh->Triangles().empty())
-            writer.AddMeshes(*mesh, mesh->Triangles(), classifiedModel->second);
+            writer.AddMeshes(*mesh, mesh->Triangles(), classifiedModelRange->second);
 
 #ifdef POLYLINE_SUPPORT
         if (!mesh->Polylines().empty())
@@ -3636,13 +3550,8 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         ModelSpatialClassifiers     classifiers;
         auto const&                 foundRange = m_modelRanges.find(modelId);
 
-#ifdef WIP_EXTRUDE
-        if (modelRange == m_modelRanges.end())
-            {
-            BeAssert(false && "Model Range not found for classifier");
+        if (foundRange == m_modelRanges.end())
             continue;
-            }
-#endif
 
         if (nullptr != getTileTree && 
             SUCCESS == getTileTree->_GetSpatialClassifiers(classifiers))
@@ -3653,11 +3562,9 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
                 classifierModels.insert (classifierModelId);
                 m_classifierMap.Insert(modelId, classifiers);
-#ifdef WIP_EXTRUDE
-                auto  insertPair = m_classifierModels.Insert(classifierModelId, modelRange->second.m_range);
+                auto  insertPair = m_classifierModels.Insert(classifierModelId, foundRange->second.m_range);
                 if (!insertPair.second)
-                    insertPair.first->second.Extend(modelRange->second.m_range);
-#endif
+                    insertPair.first->second.Extend(foundRange->second.m_range);
                 }
             }
         }
