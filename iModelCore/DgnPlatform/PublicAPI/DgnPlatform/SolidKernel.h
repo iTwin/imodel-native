@@ -494,6 +494,11 @@ struct Create
     //! @return nullptr if supplied entity was not a wire or single face planar sheet body that could be represented as a CurveVector. 
     DGNPLATFORM_EXPORT static CurveVectorPtr BodyToCurveVector(IBRepEntityCR entity);
 
+    //! Represent a planar face as a CurveVector.
+    //! @param[in] face The planar face to try to convert.
+    //! @return nullptr if supplied sub-entity was not a planar face that could be represented as a CurveVector. 
+    DGNPLATFORM_EXPORT static CurveVectorPtr PlanarFaceToCurveVector(ISubEntityCR face);
+
     //! Represent edges with the given offset distance on the supplied planar face as a CurveVector.
     //! @param[in] face The target face sub-entity to offset the edges onto.
     //! @param[in] edges The list of edges to offset with the first edge used as the reference edge for the offset distance. Edges that don't surround the target face are ignored.
