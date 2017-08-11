@@ -628,7 +628,7 @@ TileIO::ReadStatus  ReadGltf(Render::Primitives::GeometryCollectionR geometryCol
     if(!m_buffer.ReadBytes(gltfMagic, 4) ||
         0 != memcmp(gltfMagic, s_gltfMagic, 4) ||
         !m_buffer.Read(gltfVersion) ||
-        gltfVersion != s_gltfVersion ||
+        (gltfVersion != s_gltfVersion && gltfVersion != s_gltfVersion2) ||
         !m_buffer.Read(gltfLength) ||
         !m_buffer.Read(sceneStrLength) ||
         !m_buffer.Read(gltfSceneFormat) ||
@@ -838,7 +838,7 @@ END_TILEREADER_NAMESPACE
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-TileIO::ReadStatus TileIO::ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem, bool& isLeaf)
+TileIO::ReadStatus TileIO::ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf)
     {
     return TileReader::DgnCacheTileReader(streamBuffer, model, renderSystem).ReadTile(contentRange, geometry, isLeaf);
     }

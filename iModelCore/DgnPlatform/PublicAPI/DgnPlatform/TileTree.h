@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+ // may wish to adjust to reduce level of detail...
+/*--------------------------------------------------------------------------------------+ 
 |
 |     $Source: PublicAPI/DgnPlatform/TileTree.h $
 |
@@ -257,6 +257,8 @@ public:
 
     virtual void _PickGraphics(PickArgsR args, int depth) const {}
 
+    virtual Render::GraphicPtr _GetGraphic() const { return nullptr; }
+
     //! Called when tile data is required.
     virtual TileLoaderPtr _CreateTileLoader(TileLoadStatePtr, Dgn::Render::SystemP renderSys = nullptr) = 0;
 
@@ -329,7 +331,6 @@ protected:
 
     void InvalidateDamagedTiles();
     bvector<TileCPtr> SelectTiles(DrawArgsR args);
-    DrawArgs CreateDrawArgs(SceneContextR context);
 public:
     DGNPLATFORM_EXPORT virtual folly::Future<BentleyStatus> _RequestTile(TileR tile, TileLoadStatePtr loads, Render::SystemP renderSys);
     void RequestTiles(MissingNodesCR);
@@ -355,6 +356,7 @@ public:
     ElementAlignedBox3d ComputeRange() const {return m_rootTile->ComputeRange();}
     DGNPLATFORM_EXPORT void MarkDamaged(DRange3dCR range);
     Dgn::Render::SystemP GetRenderSystemP() const {return m_renderSystem;}
+    DrawArgs CreateDrawArgs(SceneContextR context);
 
     //! Get the resource name (file name or URL) of a Tile in this TileTree. By default it concatenates the tile cache key to the rootResource
     virtual Utf8String _ConstructTileResource(TileCR tile) const {return m_rootResource + tile._GetTileCacheKey();}
@@ -778,7 +780,7 @@ public:
     bool _HasGraphics() const override { return IsReady() && m_graphic.IsValid(); }
     Root& GetOctRoot() const { return static_cast<Root&>(m_root); }
     Tile const* GetOctParent() const { return static_cast<Tile const*>(GetParent()); }
-    Render::GraphicPtr GetGraphic() const { return m_graphic; }
+    Render::GraphicPtr _GetGraphic() const override { return m_graphic; }
     bool IsLeaf() const { return m_isLeaf; }
 
     void SetIsLeaf() { m_isLeaf = true; /*m_children.clear();*/ }

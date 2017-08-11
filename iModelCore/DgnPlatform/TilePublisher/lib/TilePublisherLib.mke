@@ -27,6 +27,8 @@ $(o)TilePublisher$(oext) : $(SrcDir)TilePublisher.cpp $(SrcDir)Constants.h ${Mul
 
 $(o)CesiumPublisher$(oext) : $(SrcDir)CesiumPublisher.cpp $(SrcDir)CesiumConstants.h ${MultiCompileDepends}
 
+$(o)CesiumDirectPublisher$(oext) : $(SrcDir)CesiumDirectPublisher.cpp $(SrcDir)CesiumConstants.h ${MultiCompileDepends}
+
 %include MultiCppCompileGo.mki
 
 LINKER_LIBRARIES    = $(SubpartLibs)Bentley.lib \

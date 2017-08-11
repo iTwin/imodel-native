@@ -3156,50 +3156,6 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
     return meshes;
     }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileUtil::WriteJsonToFile (WCharCP fileName, Json::Value const& value)
-    {
-    BeFile          outputFile;
-
-    if (BeFileStatus::Success != outputFile.Create (fileName))
-        return ERROR;
-   
-    Utf8String  string = Json::FastWriter().write(value);
-
-    return BeFileStatus::Success == outputFile.Write (nullptr, string.data(), string.size()) ? SUCCESS : ERROR;
-    }
-
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     11/2016
-+---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
-    {
-    Json::Reader    reader;
-    ByteStream      inputData;
-    BeFile          inputFile;
-
-    return BeFileStatus::Success == inputFile.Open (fileName, BeFileAccess::Read) &&
-           BeFileStatus::Success == inputFile.ReadEntireFile (inputData) &&
-           reader.parse ((char*) inputData.GetData(), (char*) (inputData.GetData() + inputData.GetSize()), value) ? SUCCESS : ERROR;
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   11/16
-+---------------+---------------+---------------+---------------+---------------+------*/
-WString TileUtil::GetRootNameForModel(DgnModelId modelId, bool asClassifier)
-    {
-    WString name = asClassifier ? L"Classifier" : L"Model";
-    name.append(1, '_');
-    WChar idBuf[17];
-    BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), modelId.GetValue(), HexFormatOptions::None);
-    name.append(idBuf);
-    return name;
-    }
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/

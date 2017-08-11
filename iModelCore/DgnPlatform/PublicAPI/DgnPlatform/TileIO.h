@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+
+/*--------------------------------------------------------------------------------------+                                                                                                                             '
 |
 |     $Source: PublicAPI/DgnPlatform/TileIO.h $
 |
@@ -39,7 +39,9 @@ struct TileIO
         {
         Success = 0,
         NoGeometry,
+        UnableToLoadTile,
         UnableToOpenFile,
+        Aborted,
         };
 
     enum Flags
@@ -47,16 +49,15 @@ struct TileIO
         None            = 0,
         ContainsCurves  = 0x0001,
         Incomplete      = 0x0001 << 1,
-        IsLeaf          = 0x001 << 2,
+        IsLeaf          = 0x0001 << 2,
         };
 
     // DgnTiles are tiles with GLTF like structure (JSon with binary data) - but optimized for caching tiles (storing feature table directly etc.)
-    static BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, DgnModelR model, DPoint3dCR centroid, bool isLeaf);
-    static ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, DgnModelR model, Render::System& renderSystem, bool& isLeaf);
+    static BentleyStatus WriteDgnTile(StreamBufferR streamBuffer, ElementAlignedBox3dCR contentRange, Render::Primitives::GeometryCollectionCR geometry, GeometricModelR model, DPoint3dCR centroid, bool isLeaf);
+    static ReadStatus ReadDgnTile(ElementAlignedBox3dR contentRange, Render::Primitives::GeometryCollectionR geometry, StreamBufferR streamBuffer, GeometricModelR model, Render::System& renderSystem, bool& isLeaf);
 
-    // Write cesium tile from TileTree tile.
-    static WriteStatus WriteCesiumTile(BeFileNameCR fileName, TileTree::TileCR tile, DgnModelR model);
 };  
+
 
 
 END_TILETREE_NAMESPACE
