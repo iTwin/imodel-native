@@ -625,6 +625,7 @@ public:
         DgnElementId        m_parentId;
         DgnClassId          m_parentRelClassId;
 
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR, JsonValueCR);
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parentId=DgnElementId(), DgnClassId parentRelClassId=DgnClassId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid())
             : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parentId), m_parentRelClassId(parentRelClassId), m_federationGuid(federationGuid) {SetUserLabel(label);}
 
@@ -1100,6 +1101,7 @@ public:
         RelatedElement(DgnElementId id=DgnElementId(), DgnClassId relClassId=DgnClassId()) : m_id(id), m_relClassId(relClassId) {}
         bool IsValid() const {return m_id.IsValid();}
         DGNPLATFORM_EXPORT Json::Value ToJson(DgnDbR db) const;
+        DGNPLATFORM_EXPORT RelatedElement(DgnDbR, JsonValueCR val);
         };
 
 private:
@@ -1497,8 +1499,7 @@ protected:
 
 public:
     BE_JSON_NAME(id)
-    BE_JSON_NAME(schemaName)
-    BE_JSON_NAME(className)
+    BE_JSON_NAME(classFullName)
     BE_JSON_NAME(model)
     BE_JSON_NAME(code)
     BE_JSON_NAME(parent)
