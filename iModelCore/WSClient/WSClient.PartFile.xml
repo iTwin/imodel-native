@@ -90,6 +90,17 @@
         </Bindings>
     </Part>
 
+    <Part Name="NuGetPackage-WebServicesClient" BentleyBuildMakeFile="WebServicesClient.NuGetPackage.mke" OnlyPlatforms="x64" >
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WebServicesClient"/>
+        <SubPart PartName="WSClient-PublishedAPI"/>
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesClient.*.nupkg</Files>
+        </Bindings>
+    </Part>
+    
+    
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // WebServicesCache lib                                                   // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -151,6 +162,16 @@
         </Bindings>
     </Part>
     
+    <Part Name="NuGetPackage-WebServicesCache" BentleyBuildMakeFile="WebServicesCache.NuGetPackage.mke" OnlyPlatforms="x64" >
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WebServicesCache" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\WebServicesCache.*.nupkg</Files>
+        </Bindings>
+    </Part>
+    
     <!-- //////////////////////////////////////////////////////////////////////////// -->
     <!-- // iModelHubClient lib                                                  // -->
     <!-- //////////////////////////////////////////////////////////////////////////// -->
@@ -204,7 +225,14 @@
         </Bindings>
     </Part>
 
-    
+    <Part Name="NuGetPackage-iModelHubClient" BentleyBuildMakeFile="iModelHubClient.NuGetPackage.mke"  OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="iModelHubClient" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\iModelHubClient.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
     <Part Name="iModelHubClient-Xliffs" BentleyBuildMakeFile="iModelHubClient/xliffs.mke">
         <Bindings>
             <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
@@ -531,7 +559,7 @@
     
     <Part Name="UnitTests-Published" DeferType="BuildUnitTests" 
         BentleyBuildMakeFile="Tests/UnitTests/BuildTests.mke" 
-        BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS"
+        BentleyBuildMakeOptions="-dTestDir=Published -dUsePublishedApi -dENABLE_DGNDBSERVER_UNIT_TESTS -dBUILD_AGGREGATE_TESTS"
         >
         <SubPart PartName="PrewireForUnitTests" />
         <SubPart PartName="WSClient-PublishedAPI" />
@@ -746,6 +774,16 @@
         <Directories DirectoryListName="WSClientCompatibilityTestToolDirList" />
     </Product>
     
+    <Part Name="NuGetPackage-WSClientCompatibilityTestTool" BentleyBuildMakeFile="WSClientCompatibilityTestTool.NuGetPackage.mke" OnlyPlatforms="x64" >
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="WSClientLibrarySubParts" />
+        <SubPart PartName="WSClientCompatibilityTests" />
+        <SubPart PartName="WSClient-PublishedAPI" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\WSClientCompatibilityTestTool.*.nupkg</Files>
+        </Bindings>
+    </Part>
+    
     <ProductDirectoryList ListName="WSClientCompatibilityTestToolDirList" >
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
         <ProductDirectory Name="Gtest-NativeAssemblies" Path=""/>
@@ -848,7 +886,7 @@
 
 <Part Name="Tools-AndroidShared" BentleyBuildMakeFile="mki/Android/nativeCodeTools.mke" OnlyPlatforms="Android*">
     <Bindings>
-        <Directory Required="False" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
+        <Directory Required="false" SubPartDirectory="AndroidTools" SourceName="AndroidTools"/>
     </Bindings>
 </Part>
 

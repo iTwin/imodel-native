@@ -17,14 +17,20 @@ USING_NAMESPACE_BENTLEY_WEBSERVICES
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 
 DEFINE_POINTER_SUFFIX_TYPEDEFS(VersionsManager);
+//WIP remove then relationship to get changeSets implemented
+DEFINE_POINTER_SUFFIX_TYPEDEFS(iModelConnection);
 
 struct VersionsManager
     {
 private:
     friend struct iModelConnection;
 
+    //WIP remove then relationship to get changeSets implemented
+    iModelConnectionCP m_connection;
     IWSRepositoryClientPtr m_wsRepositoryClient = nullptr;
-    VersionsManager(IWSRepositoryClientPtr reposiroryClient) : m_wsRepositoryClient(reposiroryClient) {};
+    VersionsManager(IWSRepositoryClientPtr reposiroryClient, iModelConnectionCP connection)
+        : m_wsRepositoryClient(reposiroryClient), m_connection(connection){};
+
     VersionsManager() {};
 public:
     //! Returns all versions available in the server.
@@ -48,6 +54,19 @@ public:
     //! @param[in] version
     //! @param[in] cancellationToken
     IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateVersion(VersionInfoCR version, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns ChangeSets from first ChangeSet to Version.
+    //! @param[in] versionId
+    //! @param[in] cancellationToken
+    //! @returns Asynchronous task that has ChangeSets information as the result.
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetVersionChangeSets(Utf8String versionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns ChangeSets used to get one Version from another.
+    //! @param[in] firstVersionId
+    //! @param[in] secondVersionId
+    //! @param[in] cancellationToken
+    //! @returns Asynchronous task that has ChangeSets information as the result.
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsBetweenVersions(Utf8String firstVersionId, Utf8String secondVersionId, ICancellationTokenPtr cancellationToken = nullptr) const;
     };
 
 END_BENTLEY_IMODELHUB_NAMESPACE

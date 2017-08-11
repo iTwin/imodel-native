@@ -44,9 +44,7 @@ IHttpHandlerPtr            customHandler
     wsRepositoryClient->SetCredentials(credentials);
     wsRepositoryClient->GetWSClient()->EnableWsgServerHeader(true);
 
-    m_wsRepositoryClient = wsRepositoryClient;
-    m_versionsManager = VersionsManager(m_wsRepositoryClient);
-    m_userInfoManager = UserInfoManager(m_wsRepositoryClient);
+    SetRepositoryClient(wsRepositoryClient);
     }
 
 //---------------------------------------------------------------------------------------
@@ -522,7 +520,7 @@ bool                         queryOnly
     int i = 0;
     for (auto const& code : codes)
         {
-        properties[ServerSchema::Property::Values][i++] = code.GetValue();
+        properties[ServerSchema::Property::Values][i++] = code.GetValueUtf8();
         }
 
     return properties;
@@ -900,9 +898,9 @@ const BeBriefcaseId*  briefcaseId
     {
     Utf8String idString;
     if (nullptr != briefcaseId)
-        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValue(), *briefcaseId).c_str());
-	else
-        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValue()).c_str());
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValueUtf8(), *briefcaseId).c_str());
+    else
+        idString.Sprintf("%s", FormatCodeId(code.GetCodeSpecId(), code.GetScopeString(), code.GetValueUtf8()).c_str());
 
     return ObjectId(ServerSchema::Schema::iModel, ServerSchema::Class::Code, idString);
     }
@@ -2484,6 +2482,26 @@ FileTaskPtr iModelConnection::GetSeedFileById(BeGuidCR fileId, ICancellationToke
     query.SetFilter(filter);
 
     return SeedFilesQuery(query, cancellationToken)->Then<FileResult>([=](FilesResult filesResult)
+        {
+        if (!filesResult.IsSuccess())
+            return FileResult::Error(filesResult.GetError());
+
+        return FileResult::Success(*filesResult.GetValue().begin());
+        });
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Karolis.Dziedzelis             08/2016
+//---------------------------------------------------------------------------------------
+FileTaskPtr iModelConnection::GetLatestSeedFile(ICancellationTokenPtr cancellationToken) const
+    {
+    WSQuery query(ServerSchema::Schema::iModel, ServerSchema::Class::File);
+    Utf8String orderByClouse;
+    orderByClouse.Sprintf("%s+%s", ServerSchema::Property::Index, "desc");
+    query.SetOrderBy(orderByClouse);
+    query.SetTop(1);
+
+    return SeedFilesQuery(query, cancellationToken)->Then<FileResult>([=] (FilesResult filesResult)
         {
         if (!filesResult.IsSuccess())
             return FileResult::Error(filesResult.GetError());
