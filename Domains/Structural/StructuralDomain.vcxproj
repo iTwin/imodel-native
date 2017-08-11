@@ -39,6 +39,7 @@
     <ClCompile Include="StructuralCommon\StructuralCommonDomain.cpp" />
     <ClCompile Include="StructuralCommon\StructuralPhysicalModel.cpp" />
     <ClCompile Include="StructuralCommon\StructuralTypeDefinitionModel.cpp" />
+    <ClCompile Include="StructuralDomainUtilities.cpp" />
     <ClCompile Include="StructuralPhysical\Beam.cpp" />
     <ClCompile Include="StructuralPhysical\Brace.cpp" />
     <ClCompile Include="StructuralPhysical\Column.cpp" />
@@ -64,6 +65,7 @@
     <ClCompile Include="StructuralProfiles\VaryingProfileZone.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="PublicAPI\StructuralDomain\StructuralDomainUtilities.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDefinitions.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDomain.h" />
@@ -155,8 +157,8 @@
     <LinkIncremental>true</LinkIncremental>
     <EnableManagedIncrementalBuild>false</EnableManagedIncrementalBuild>
     <IncludePath>$(SRCROOT)DgnDomains\Structural;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\VendorAPI;$(IncludePath)</IncludePath>
-    <NMakeBuildCommandLine>bb -ax64 -p StructuralDomain b</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine>bb -ax64 re StructuralDomain</NMakeReBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p StructuralDomainDLL b</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine>bb -ax64 re StructuralDomainDLL</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>

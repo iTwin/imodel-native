@@ -29,6 +29,9 @@
     <Filter Include="StructuralProfiles">
       <UniqueIdentifier>{ca75b9d4-4568-4811-bedd-cc4e114d9d7d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Utilities">
+      <UniqueIdentifier>{f163d5b0-dfe7-4b74-b751-cb31b378e72f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="structural.mke">
@@ -140,6 +143,9 @@
     <ClCompile Include="StructuralProfiles\VaryingProfileZone.cpp">
       <Filter>StructuralProfiles</Filter>
     </ClCompile>
+    <ClCompile Include="StructuralDomainUtilities.cpp">
+      <Filter>Utilities</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonApi.h">
@@ -228,6 +234,9 @@
     </ClInclude>
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Wall.h">
       <Filter>StructuralPhysical</Filter>
+    </ClInclude>
+    <ClInclude Include="PublicAPI\StructuralDomain\StructuralDomainUtilities.h">
+      <Filter>Utilities</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
