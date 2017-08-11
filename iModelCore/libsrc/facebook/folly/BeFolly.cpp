@@ -2,7 +2,7 @@
 |
 |     $Source: folly/BeFolly.cpp $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -62,7 +62,7 @@ THREAD_MAIN_IMPL ThreadPool::Worker::Main(void* arg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ThreadPool::Worker::Start()
     {
-    BeThreadUtilities::StartNewThread(50*1024, Main, this);
+    BeThreadUtilities::StartNewThread(Main, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
