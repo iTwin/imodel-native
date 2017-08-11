@@ -321,9 +321,19 @@ void BeThreadUtilities::SetCurrentThreadName(Utf8CP newName)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+int BeThreadUtilities::GetDefaultStackSize()
+    {
+    // 50kb is too small (see crash on Android when loading elements from scene thread).
+    // 1mb too big.
+    return 300*1024;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/12
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus BeThreadUtilities::StartNewThread(int stackSize, T_ThreadStart startAddr, void* arg)
+BentleyStatus BeThreadUtilities::StartNewThread(T_ThreadStart startAddr, void* arg, int stackSize)
     {
 #if defined (__unix__)
     pthread_attr_t  threadAttr;
