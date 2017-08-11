@@ -292,22 +292,16 @@ TEST_F(DimensionTests, NotetoSheet)
         auto drawingmodel = drawingele->GetSub<DrawingModel>();
         ASSERT_TRUE(drawingmodel.IsValid());
         //Count elements on drawing model 
-        countElements(*drawingmodel, 3);
-        countElementsInModelByClass(*drawingmodel, getBisClassId(*db, "DrawingGraphic"), 3);
+        countElements(*drawingmodel, 1); // drawing model just contains its own line
+        countElementsInModelByClass(*drawingmodel, getBisClassId(*db, "DrawingGraphic"), 1);
 
         BentleyApi::Bstdcxx::bvector<DgnElementId>idlist;
         idlist = db->Elements().MakeIterator(BIS_SCHEMA(BIS_CLASS_DrawingGraphic), nullptr, "ORDER BY ECInstanceId ASC").BuildIdList<DgnElementId>();
+        ASSERT_EQ(1, idlist.size());
         BentleyApi::RefCountedCPtr<DrawingGraphic> Dragraphic1 = db->Elements().Get<DrawingGraphic>(idlist[0]);
         ASSERT_TRUE(Dragraphic1.IsValid());
         ASSERT_TRUE(Dragraphic1->GetPlacement().GetElementBox().IsEqual(ElementAlignedBox2d(0, 0, 1, 0)));
 
-        BentleyApi::RefCountedCPtr<DrawingGraphic> Dragraphic2 = db->Elements().Get<DrawingGraphic>(idlist[1]);
-        ASSERT_TRUE(Dragraphic2.IsValid());
-        ASSERT_TRUE(Dragraphic2->GetPlacement().GetElementBox().IsEqual(ElementAlignedBox2d(0.0454, -0.0298, 0.1135, 0.0302), 1.0e1));
-
-        BentleyApi::RefCountedCPtr<DrawingGraphic> Dragraphic3 = db->Elements().Get<DrawingGraphic>(idlist[2]);
-        ASSERT_TRUE(Dragraphic3.IsValid());
-        ASSERT_TRUE(Dragraphic3->GetPlacement().GetElementBox().IsEqual(ElementAlignedBox2d(0.01, 0, 0.05, 0), 1.0e-10));
         Sheet::ElementCPtr sheet = db->Elements().Get<Sheet::Element>(findFirstElementByClass(*db, getBisClassId(*db, BIS_CLASS_Sheet)));
         ASSERT_TRUE(sheet.IsValid());
         Sheet::ModelPtr sheetModel = sheet->GetSub<Sheet::Model>();

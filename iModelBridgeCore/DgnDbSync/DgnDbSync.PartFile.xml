@@ -40,6 +40,8 @@
         <SubPart PartName="PointCloud"          PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ThreeMx"             PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
         <SubPart PartName="ScalableMeshSchema"  PartFile="RealityModeling"  Repository="DgnDomains-RealityModeling" />
+        <SubPart PartName="ConnectClientWrapperNative.VC120" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
+        <SubPart PartName="RealityPlatform"                  PartFile="RealityModFramework"  Repository="RealityModFramework"/>
         <Bindings>
             <Libs ProductDirectoryName="DgnV8ConverterLibs" Required="false">Delivery/$(libprefix)DgnV8Converter$(libext)</Libs>
             <Assemblies>Delivery/$(shlibprefix)DgnV8Converter$(ApiNumber)$(shlibext)</Assemblies>
@@ -57,6 +59,7 @@
             </Files>
         </Bindings>
     </Part>
+        
 
     <Part Name="ScalableMeshV8SDK" BentleyBuildMakeFile="DgnV8/DgnPlatformV8.Prewire.mke" BMakeOptions="+dDGNV8_DGNPLATFORM_SDK=$(BuildContext)SdkSources\ScalableMeshSDK\" OnlyPlatforms="x64" ExcludeLibType="Static">
       <SdkSource>ScalableMeshSDK</SdkSource>
@@ -149,13 +152,19 @@
 
     <ProductDirectoryList ListName="DgnV8BridgeDirList">
         <ProductDirectory Name="applicationroot" Path=""/>
-	<ProductDirectory Name="Assemblies"     Path="lib/x64"  RelativeTo="applicationroot"/>
-	<ProductDirectory Name="DgnV8ConverterLibs" Path="lib/x64"  RelativeTo="applicationroot"/>
+	    <ProductDirectory Name="Assemblies"     Path="lib/x64"  RelativeTo="applicationroot"/>
+	    <ProductDirectory Name="DgnV8ConverterLibs" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi" Path="lib/x64"  RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path="lib/x64"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="DgnV8Dlls"      Path="DgnV8"    RelativeTo="Assemblies"/>
         <ProductDirectory Name="PublicApi"      Path="include"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="VendorApi"      Path="include"  RelativeTo="applicationroot"/>
         <ProductDirectory Name="Libs"           Path=""         RelativeTo="Assemblies"/>
         <ProductDirectory Name="DgnV8ConverterLibs" Path=""     RelativeTo="Assemblies"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Path=""     RelativeTo="Assemblies"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Path=""     RelativeTo="Assemblies" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Path=""     RelativeTo="Assemblies"/>
     </ProductDirectoryList>
 
 
@@ -177,6 +186,10 @@
         <ProductDirectory Name="MrSidAssemblies"            Deliver="true" Path="Libs" />
         <ProductDirectory Name="DataCaptureAssemblies"      Deliver="true" Path="Libs"/>
         <ProductDirectory Name="DataCaptureLibs"            Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"  Deliver="true" Path="Libs"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"        Deliver="true" Path="Libs" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" Deliver="true" Path="Libs"/>
+
   </ProductDirectoryList>
   
   <Part Name="Bimv8SyncVendorAPI" BentleyBuildMakeFile="Bimv8SyncVendorAPI.mke"  OnlyPlatforms="x64">
@@ -207,6 +220,9 @@
         <ProductDirectory Name="applicationroot" Path=""/>
         <ProductDirectory Name="DgnPlatformV8Assemblies"                         RelativeTo="applicationroot"/>
         <ProductDirectory Name="DgnPlatformV8TranskitEn"            Path="en"    RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyClientSharedAssemblies"                   RelativeTo="applicationroot"/>
+        <ProductDirectory Name="BentleyDesktopClientApi"                         RelativeTo="applicationroot" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native"                  RelativeTo="applicationroot"/>
     </ProductDirectoryList>
 
     <Part Name="ConverterApp-Source" BentleyBuildMakeFile="DgnV8/Converters/DeliverConverterAppSource.mke" OnlyPlatforms="x64" ExcludeLibType="Static">

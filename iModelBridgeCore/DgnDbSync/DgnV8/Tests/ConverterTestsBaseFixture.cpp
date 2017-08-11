@@ -739,7 +739,7 @@ void ConverterTestBaseFixture::countElements(DgnModel& model, int expected)
     auto stmt = model.GetDgnDb().GetPreparedECSqlStatement("SELECT COUNT(*) from " BIS_SCHEMA(BIS_CLASS_Element) " WHERE Model.Id=?");
     stmt->BindId(1, model.GetModelId());
     stmt->Step();
-    ASSERT_EQ(expected, stmt->GetValueInt(0));
+    EXPECT_EQ(expected, stmt->GetValueInt(0));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -751,5 +751,5 @@ void ConverterTestBaseFixture::countElementsInModelByClass(DgnModel& model, DgnC
     stmt->BindId(1, model.GetModelId());
     stmt->BindId(2, classId);
     stmt->Step();
-    ASSERT_EQ(expected, stmt->GetValueInt(0));
+    EXPECT_EQ(expected, stmt->GetValueInt(0));
     }

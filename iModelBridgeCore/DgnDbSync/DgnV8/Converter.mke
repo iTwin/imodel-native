@@ -190,7 +190,9 @@ LINKER_LIBRARIES        + $(ContextSubpartsLibs)PointCloud.lib
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ThreeMx.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)iModelBridge.lib 
 LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMeshSchema.lib 
-LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib 
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ScalableMesh.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)RealityPlatform.lib
+LINKER_LIBRARIES        + $(ContextSubpartsLibs)ConnectClientWrapperNative.VC120.lib
 
 
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)Bentley.lib

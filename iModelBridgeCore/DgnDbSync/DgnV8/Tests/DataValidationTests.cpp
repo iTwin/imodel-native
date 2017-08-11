@@ -179,7 +179,7 @@ void XmlReporter::ReportCategories()
         std::replace_if(catName.begin(), catName.end(), isNotAlphaNum, '_');
         catNodeName.append(catName);
         BentleyApi::BeXmlNodeP catNode = catsNode->AddEmptyElement(catNodeName.c_str());
-        BentleyApi::WString catCode = BentleyApi::WString(category->GetCode().GetValueCP());
+        BentleyApi::WString catCode = BentleyApi::WString(category->GetCode().GetValueUtf8CP());
         std::replace_if(catCode.begin(), catCode.end(), isNotAlphaNum, '_');
         catNode->AddAttributeStringValue("Code", catCode.c_str());
         catCount++;
@@ -271,7 +271,7 @@ void XmlReporter::ReportElements(BentleyApi::BeXmlNodeP parentNode, DgnElementMa
         BentleyApi::Dgn::DgnElementCPtr elementCPtr = m_dgnProject->Elements().GetElement(elementId);
         BentleyApi::WString elementNodeName = L"Element";
         elementNodeName.AppendA("_");
-        BentleyApi::WString elemCode = BentleyApi::WString(elementCPtr->GetCode().GetValue().c_str());
+        BentleyApi::WString elemCode = BentleyApi::WString(elementCPtr->GetCode().GetValueUtf8().c_str());
         std::replace_if(elemCode.begin(), elemCode.end(), isNotAlphaNum, '_');
         elementNodeName.append(elemCode);
         BentleyApi::BeXmlNodeP elemNode = elemsNode->AddEmptyElement(elementNodeName.c_str());
@@ -307,7 +307,7 @@ void XmlReporter::ReportElements(BentleyApi::BeXmlNodeP parentNode, BentleyApi::
             BentleyApi::Dgn::DgnElementCPtr elementCPtr = m_dgnProject->Elements().GetElement(elemStatement.GetValueId<BentleyApi::Dgn::DgnElementId>(0));
             BentleyApi::WString elementNodeName = L"Element";
             elementNodeName.AppendA("_");
-            BentleyApi::WString elemCode = BentleyApi::WString(elementCPtr->GetCode().GetValue().c_str());
+            BentleyApi::WString elemCode = BentleyApi::WString(elementCPtr->GetCode().GetValueUtf8().c_str());
             std::replace_if(elemCode.begin(), elemCode.end(), isNotAlphaNum, '_');
             elementNodeName.append(elemCode);
             BentleyApi::BeXmlNodeP elemNode = classNode->AddEmptyElement(elementNodeName.c_str());

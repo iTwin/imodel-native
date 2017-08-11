@@ -211,7 +211,7 @@ DgnElementId Converter::CreateRepositoryLink(DgnV8FileR file)
     // The RepositoryLink also stores a URI, and that is what actually identifies the file.
 
     DgnCode code = RepositoryLink::CreateUniqueCode(*lmodel, codevalue.c_str());
-    auto rlink = RepositoryLink::Create(*lmodel, uri.c_str(), code.GetValueCP());
+    auto rlink = RepositoryLink::Create(*lmodel, uri.c_str(), code.GetValueUtf8CP());
     auto rlinkPersist = rlink->Insert();
     if (!rlinkPersist.IsValid())
         {
@@ -837,7 +837,7 @@ DrawingPtr Converter::CreateDrawing(Utf8CP name)
         return nullptr;
 
     DgnCode drawingCode = Drawing::CreateUniqueCode(*drawingListModel, name);
-    DrawingPtr drawing = Drawing::Create(*drawingListModel, drawingCode.GetValueCP());
+    DrawingPtr drawing = Drawing::Create(*drawingListModel, drawingCode.GetValueUtf8CP());
     if (!drawing.IsValid())
         return nullptr;
 
@@ -855,7 +855,7 @@ SectionDrawingPtr Converter::CreateSectionDrawing(Utf8CP name)
         return nullptr;
 
     DgnCode drawingCode = Drawing::CreateUniqueCode(*drawingListModel, name);
-    SectionDrawingPtr drawing = SectionDrawing::Create(*drawingListModel, drawingCode.GetValueCP());
+    SectionDrawingPtr drawing = SectionDrawing::Create(*drawingListModel, drawingCode.GetValueUtf8CP());
     if (!drawing.IsValid())
         return nullptr;
 
@@ -892,7 +892,7 @@ Sheet::ElementPtr Converter::CreateSheet(Utf8CP name, DgnV8ModelCR v8Model)
     size.y *= toMeters;
 
     DgnCode sheetCode = Sheet::Element::CreateUniqueCode(*sheetListModel, name);
-    Sheet::ElementPtr sheet = Sheet::Element::Create(*sheetListModel, scale, size, sheetCode.GetValueCP());
+    Sheet::ElementPtr sheet = Sheet::Element::Create(*sheetListModel, scale, size, sheetCode.GetValueUtf8CP());
     if (!sheet.IsValid())
         return nullptr;
 
@@ -992,7 +992,7 @@ DgnModelId Converter::CreateModelFromV8Model(DgnV8ModelCR v8Model, Utf8CP newNam
                 }
             }
 
-        PhysicalPartitionPtr ed = PhysicalPartition::Create(parentSubject, partitionCode.GetValueCP());
+        PhysicalPartitionPtr ed = PhysicalPartition::Create(parentSubject, partitionCode.GetValueUtf8CP());
         PhysicalPartitionCPtr partition = ed->InsertT<PhysicalPartition>();
         if (!partition.IsValid())
             {
@@ -2414,7 +2414,7 @@ DgnDbStatus Converter::InsertResults(ElementConversionResults& results)
     if (DgnDbStatus::DuplicateCode == stat)
         {                                                                                                                           // *** WIP_BIM_BRIDGE -- remove this logic
         Utf8String duplicateMessage;                                                                                                // *** WIP_BIM_BRIDGE -- remove this logic
-        duplicateMessage.Sprintf("Duplicate element code '%s' ignored", code.GetValue().c_str());                                   // *** WIP_BIM_BRIDGE -- remove this logic
+        duplicateMessage.Sprintf("Duplicate element code '%s' ignored", code.GetValueUtf8().c_str());                                   // *** WIP_BIM_BRIDGE -- remove this logic
         ReportIssue(IssueSeverity::Warning, IssueCategory::InconsistentData(), Issue::Message(), duplicateMessage.c_str());         // *** WIP_BIM_BRIDGE -- remove this logic
                                                                                                                                     // *** WIP_BIM_BRIDGE -- remove this logic
         DgnDbStatus stat2 = results.m_element->SetCode(DgnCode::CreateEmpty()); // just leave the code null                         // *** WIP_BIM_BRIDGE -- remove this logic
@@ -3207,7 +3207,7 @@ void Converter::PopulateRangePartIdMap()
         if (!geomPart.IsValid())
             continue;
 
-        Utf8CP codeValue = geomPart->GetCode().GetValueCP();
+        Utf8CP codeValue = geomPart->GetCode().GetValueUtf8CP();
         if (nullptr == codeValue)
             continue; //Null codes are valid.
 

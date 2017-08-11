@@ -1030,7 +1030,7 @@ SubjectCPtr SpatialConverterBase::GetOrCreateModelSubject(SubjectCR parent, Utf8
     for (auto childid : parent.QueryChildren())
         {
         auto subj = GetDgnDb().Elements().Get<Subject>(childid);
-        if (subj.IsValid() && modelName.Equals(subj->GetCode().GetValueCP()) && (modelProps == subj->GetSubjectJsonProperties().GetMember(Subject::json_Model())))
+        if (subj.IsValid() && modelName.Equals(subj->GetCode().GetValueUtf8CP()) && (modelProps == subj->GetSubjectJsonProperties().GetMember(Subject::json_Model())))
             return subj;
         }
 

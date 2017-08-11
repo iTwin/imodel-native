@@ -422,7 +422,7 @@ Raster::RasterFileModelPtr CreateRasterFileModel(DgnDbR       db,
 
     // Create the repository link that the RasterFileModel will use as its modeled element
     DgnCode linkCode = RepositoryLink::CreateUniqueCode(*db.GetRealityDataSourcesModel(), linkName.c_str());
-    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), fileUri.c_str(), linkCode.GetValueCP());
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), fileUri.c_str(), linkCode.GetValueUtf8CP());
     if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
         return nullptr;
 
@@ -446,7 +446,7 @@ Raster::WmsModelPtr CreateWMSModel(DgnDbR db, BeFileNameCR xmwsFile, Utf8StringC
         linkName.Assign(xmwsFile.GetFileNameWithoutExtension().c_str());
 
     DgnCode linkCode = RepositoryLink::CreateUniqueCode(*db.GetRealityDataSourcesModel(), linkName.c_str());
-    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), pMap->m_url.c_str(), linkCode.GetValueCP(), description.c_str());
+    RepositoryLinkPtr repositoryLink = RepositoryLink::Create(*db.GetRealityDataSourcesModel(), pMap->m_url.c_str(), linkCode.GetValueUtf8CP(), description.c_str());
     if (!repositoryLink.IsValid() || !repositoryLink->Insert().IsValid())
         return nullptr;
 

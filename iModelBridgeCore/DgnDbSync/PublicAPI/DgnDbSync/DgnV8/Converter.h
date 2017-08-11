@@ -776,6 +776,7 @@ struct Converter
         L10N_STRING(MissingGCS)                  // =="The project is not geo-located because no Geographic Coordinate System was detected or supplied."==
         L10N_STRING(MissingLevel)                // =="Missing Level %d"==
         L10N_STRING(MissingLsDefinition)         // =="Could not find definition for line style [%s]. Some elements may not display properly."==
+        L10N_STRING(MissingLsDefinitionFile)     // =="Could not find definition file %s. Some elements may not display properly."==
         L10N_STRING(ModelFilteredOut)            // =="Model [%s] was not converted."==
         L10N_STRING(NotADgnDb)                   // =="The file is not a DgnDb"==
         L10N_STRING(NotRecognizedFormat)         // =="File [%s] is not in a recognized format"==
@@ -897,6 +898,7 @@ struct Converter
         static Utf8String FmtElement(DgnElementCR);
         static Utf8String FmtModel(DgnModelCR);
         static Utf8String FmtModel(DgnV8ModelCR);
+        static Utf8String FmtModelRef(DgnModelRefCR);
         static Utf8String FmtAttachment(DgnAttachmentCR);
         static Utf8String FmtDouble(double value);
         static Utf8String FmtDoubles(double const* values, size_t count);
@@ -999,6 +1001,8 @@ public:
     DGNDBSYNC_EXPORT static void ConvertSolidKernelEntity(IBRepEntityPtr& clone, Bentley::ISolidKernelEntityCR v8Entity);
 
     DGNDBSYNC_EXPORT void InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model);
+
+    void InitLineStyle(Render::GeometryParams& params, DgnModelRefR styleModelRef, int32_t srcLineStyleNum, DgnV8Api::LineStyleParams const* v8lsParams);
 
     DGNDBSYNC_EXPORT bool InitPatternParams(PatternParamsR pattern, DgnV8Api::PatternParams const& patternV8, Bentley::bvector<DgnV8Api::DwgHatchDefLine> const& defLinesV8, Bentley::DPoint3d& origin, DgnV8Api::ViewContext& context);
 

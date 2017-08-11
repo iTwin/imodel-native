@@ -182,7 +182,7 @@ ConvertToDgnDbElementExtension::Result ConvertScalableMeshAttachment::_PreConver
   	//Avoid slash in URL being converted to backslash  
     smFileName.AppendString(rootUrlW.c_str());
 
-    IMeshSpatialModelP spatialModel(ScalableMeshModelHandler::AttachTerrainModel(db, modelName, smFileName, *repositoryLink, false));
+    IMeshSpatialModelP spatialModel(ScalableMeshModelHandler::AttachTerrainModel(db, modelName, smFileName, *repositoryLink, true));
     DgnModelId modelId = spatialModel->GetModelId();
 
     DgnCategoryId category = converter.GetSyncInfo().GetCategory(v8el, v8mm);

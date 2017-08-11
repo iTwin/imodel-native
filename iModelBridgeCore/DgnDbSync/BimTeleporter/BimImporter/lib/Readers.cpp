@@ -1000,10 +1000,10 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
             camera->SetLensAngle(lensAngle);
             camera->SetEyePoint(eyePoint);
 
-            viewDef = new SpatialViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), *categorySelector, *displayStyle, *modelSelector, camera);
+            viewDef = new SpatialViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValueUtf8(), *categorySelector, *displayStyle, *modelSelector, camera);
             }
         else
-            viewDef = new OrthographicViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), *categorySelector, *displayStyle, *modelSelector);
+            viewDef = new OrthographicViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValueUtf8(), *categorySelector, *displayStyle, *modelSelector);
 
         viewDef->SetOrigin(origin);
         viewDef->SetExtents(DVec3d::From(extents));
@@ -1050,9 +1050,9 @@ BentleyStatus ViewDefinitionReader::_Read(Json::Value& viewDefinition)
 
         ViewDefinition2d* viewDef;
         if (ecClass->Is(m_importer->m_sheetViewClass))
-            viewDef = new SheetViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), baseModelId, *categorySelector, *displayStyle);
+            viewDef = new SheetViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValueUtf8(), baseModelId, *categorySelector, *displayStyle);
         else
-            viewDef = new DrawingViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValue(), baseModelId, *categorySelector, *displayStyle);
+            viewDef = new DrawingViewDefinition(GetDgnDb()->GetDictionaryModel(), dgnCode.GetValueUtf8(), baseModelId, *categorySelector, *displayStyle);
 
         DgnDbStatus stat;
         DgnElementCPtr inserted = viewDef->Insert(&stat);

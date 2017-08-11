@@ -59,6 +59,19 @@ ScaledCopyMarker::Key ScaledCopyMarker::s_key;
 /*=================================================================================**//**
 * @bsiclass
 +===============+===============+===============+===============+===============+======*/
+struct OrphanDrawingMarker : DgnV8Api::DgnModelAppData
+    {
+    static Key s_key;
+    void _OnCleanup (DgnV8ModelR host) override {delete this;}
+    static bool IsFoundOn(DgnV8ModelCR model) {return nullptr != model.FindAppData(s_key);}
+    static void AddTo(DgnV8ModelR model) {model.AddAppData(s_key, new OrphanDrawingMarker);}
+    };
+
+OrphanDrawingMarker::Key OrphanDrawingMarker::s_key;
+
+/*=================================================================================**//**
+* @bsiclass
++===============+===============+===============+===============+===============+======*/
 struct ModelsToBeMerged : DgnV8Api::DgnModelAppData
     {
     static Key s_key;
@@ -225,6 +238,10 @@ void Converter::ImportDrawingModelsInFile(DgnV8FileR v8File, ResolvedModelMappin
             if (!resolvedMapping.IsValid())
                 continue;
 
+            // If we got here, it means that this drawing is not attached to a sheet.
+            // Note that we only merge attachments into orphan drawings, never drawings that are shown on sheets.
+            OrphanDrawingMarker::AddTo(*v8model);
+            SheetUnnestAttachments(*v8model);
             DrawingRegisterAttachmentsToBeMerged(*v8model, importres.first);
             }
         }
@@ -439,7 +456,12 @@ void            Converter::MakeAttachmentsMatchRootAnnotationScale(DgnModelRefR 
 bvector<DgnV8Api::ElementId> Converter::SheetGetAttachmentsToBeUnnested(DgnV8ModelR sheetModel)
     {
     bvector<DgnV8Api::ElementId> attachmentIds;
-    for (auto attachment : *sheetModel.GetDgnAttachmentsP())
+
+    auto attachments = sheetModel.GetDgnAttachmentsP();
+    if (nullptr == attachments)
+        return attachmentIds;
+
+    for (auto attachment : *attachments)
         {
         if (nullptr == attachment->GetDgnModelP())
             continue;
@@ -466,11 +488,21 @@ void Converter::SheetUnnestAttachments(DgnV8ModelR sheetModel)
     for (auto attachmentId : SheetGetAttachmentsToBeUnnested(sheetModel))
         {
         auto attachment = DgnV8Api::DgnAttachment::FindByElementId(&sheetModel, attachmentId);
-        attachment->MoveNestedAttachmentsToParent(99, vg.get());
+        if (nullptr == attachment)
+            {
+            BeAssert(false);
+            continue;
+            }
+        if (0 != attachment->MoveNestedAttachmentsToParent(-1, vg.get()))
+            {
+            BeAssert(false);
+            }
         }
 
     //  Transform sheet-sheet attachments into sheet->drawing attachments.
     auto attachments = GetAttachments(sheetModel);
+    if (nullptr == attachments)
+        return;
     for (auto attachment : *attachments)
         {
         if (!attachment->IsSheet())
@@ -668,6 +700,12 @@ void Converter::DrawingsConvertModelAndViews(ResolvedModelMapping const& v8mm)
     // Convert the elements in the drawing. This also converts the levels that are actually used by the elements.
     DoConvertDrawingElementsInModel(v8mm);
     if (WasAborted())
+        return;
+
+
+    //  We do not merge anything into a drawing and we do not convert any views of a drawing
+    //  except in the special case where it is an "orphan", that is, it is not shown on any sheet.
+    if (!OrphanDrawingMarker::IsFoundOn(v8model))
         return;
 
     // Convert the elements in the drawing's attachments, merging them into the drawing.
