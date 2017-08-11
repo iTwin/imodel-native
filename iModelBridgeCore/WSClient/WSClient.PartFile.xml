@@ -225,7 +225,14 @@
         </Bindings>
     </Part>
 
-    
+    <Part Name="NuGetPackage-iModelHubClient" BentleyBuildMakeFile="iModelHubClient.NuGetPackage.mke"  OnlyPlatforms="x64">
+        <RequiredRepository>bsitools-nuget</RequiredRepository>
+        <SubPart PartName="iModelHubClient" />
+        <Bindings>
+            <Files ProductDirectoryName="NuGetPackages">Install\iModelHubClient.*.nupkg</Files>
+        </Bindings>
+    </Part>
+
     <Part Name="iModelHubClient-Xliffs" BentleyBuildMakeFile="iModelHubClient/xliffs.mke">
         <Bindings>
             <Files ProductDirectoryName="WSClientXliffs" Required="false" SubPartDirectory="xliffs">
