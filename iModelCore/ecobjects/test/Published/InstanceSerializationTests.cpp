@@ -1069,4 +1069,30 @@ TEST_F(InstanceSerializationTest, TestShouldSerializeProperty)
     VerifyShouldSerializeProperty(*instance.get(), "SecondEmbeddedStruct.NestedArray", false);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Caleb.Shafer     08/2017
+//---------------------------------------------------------------------------------------
+TEST_F(InstanceSerializationTest, TestSerializeNullValues)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"SimpleTest_FirstSchema.01.00.ecschema.xml").c_str(), *schemaContext);
+    ASSERT_TRUE(schema.IsValid());
+
+    ECClassCP testClass = schema->GetClassCP("TestClass");
+    IECInstancePtr instance = testClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ASSERT_TRUE(instance.IsValid());
+
+    Json::Value instanceJson;
+    EXPECT_EQ(BSISUCCESS, JsonEcInstanceWriter::WriteInstanceToJson(instanceJson, *instance, "TestClass", true, true));
+
+    Json::StyledWriter writer = Json::StyledWriter();
+    LOG.error(writer.write(instanceJson).c_str());
+
+    StandaloneECEnablerP enabler = instance->GetClass().GetDefaultStandaloneEnabler();
+    IECInstancePtr readbackInstance = enabler->CreateInstance();
+    ASSERT_TRUE(readbackInstance.IsValid());
+    EXPECT_EQ(BSISUCCESS, ECJsonUtilities::ECInstanceFromJson(*readbackInstance, instanceJson["TestClass"]));
+    }
+
 END_BENTLEY_ECN_TEST_NAMESPACE

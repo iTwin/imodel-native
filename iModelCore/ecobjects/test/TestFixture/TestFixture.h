@@ -2,7 +2,7 @@
 |
 |     $Source: test/TestFixture/TestFixture.h $
 |
-|  $Copyright: (c) 2015 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -11,6 +11,9 @@
 #include "../ECObjectsTestPCH.h"
 
 BEGIN_BENTLEY_ECN_TEST_NAMESPACE
+
+#define EC_ASSERT_SUCCESS(actual) ASSERT_EQ(ECObjectsStatus::Success, actual)
+#define EC_EXPECT_SUCCESS(actual) EXPECT_EQ(ECObjectsStatus::Success, actual)
 
 struct ECTestFixture : ::testing::Test
     {
