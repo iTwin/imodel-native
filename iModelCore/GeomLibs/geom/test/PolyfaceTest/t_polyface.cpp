@@ -258,7 +258,7 @@ size_t numMoreIn
     }
 
 #if defined (COMMENT_OUT)
-TEST_NOTNOW (Polyface, Carrier)
+TEST (Polyface, Carrier)
     {
     DPoint3d xyz[4] =
         {
@@ -463,7 +463,7 @@ TEST (Polyface, PartitionByComponentTarget)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                     EarlinLuz  08/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_NOTNOW (Polyface, Compress)
+TEST (Polyface, Compress)
     {
     int nx = 3;
     int ny = 8;
@@ -1041,7 +1041,7 @@ TEST(Polyface, StitchCube)
     }
 
 
-TEST_NOTNOW(Polyface, ClipCube_OnePlaneCuts)
+TEST (Polyface, ClipCube_OnePlaneCuts)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
     //static int s_printGraph = 0;
@@ -1077,7 +1077,7 @@ TEST_NOTNOW(Polyface, ClipCube_OnePlaneCuts)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
-TEST_NOTNOW(Polyface, ClipCube_TwoPlanesCut)
+TEST (Polyface, ClipCube_TwoPlanesCut)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
     //static int s_printGraph = 0;
@@ -1159,7 +1159,7 @@ TEST(Polyface, ClipSphere)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
-TEST_NOTNOW(PolyfaceConstruction, Disk)
+TEST (PolyfaceConstruction, Disk)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
@@ -1177,7 +1177,7 @@ TEST_NOTNOW(PolyfaceConstruction, Disk)
         }
     }
 
-TEST_NOTNOW(PolyfaceConstruction, CylinderSides)
+TEST (PolyfaceConstruction, CylinderSides)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
@@ -1189,7 +1189,7 @@ TEST_NOTNOW(PolyfaceConstruction, CylinderSides)
     ExaminePolyface (builder->GetClientMeshR (), "CylinderSides");
     }
 
-TEST_NOTNOW(PolyfaceConstruction, CylinderCapped)
+TEST (PolyfaceConstruction, CylinderCapped)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
@@ -1246,13 +1246,13 @@ void TestSkewedCone (char const* title, bool capped)
     builder->GetClientMeshR ().Triangulate ();
     ExaminePolyface (builder->GetClientMeshR (), title);
     }
-TEST_NOTNOW(PolyfaceConstruction, WackyCone)
+TEST (PolyfaceConstruction, WackyCone)
     {
     TestSkewedCone ("Uncapped Skew cone", false);
     TestSkewedCone ("Capped Skew cone", true);
     }
 
-TEST_NOTNOW(PolyfaceConstruction, BsplineSurface)
+TEST (PolyfaceConstruction, BsplineSurface)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder = IPolyfaceConstruction::Create (*options);
@@ -1570,7 +1570,7 @@ TEST(PolyfaceHeader, BsplineCurve2)
 
 
 
-TEST_NOTNOW(Polyface,IlluminationName)
+TEST (Polyface,IlluminationName)
     {
     PolyfaceHeaderPtr header = PolyfaceHeader::CreateVariableSizeIndexed ();
     wchar_t const* name1 = L"name1";
@@ -1759,7 +1759,7 @@ TEST(Polyface,SweptLinestring)
     testSweptLinestrings (3, 0, 2, true, 4, 0);
     }
 
-TEST_NOTNOW(Polyface, RotateGPA)
+TEST (Polyface, RotateGPA)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
     IFacetOptionsPtr options = CreateFacetOptions ();
@@ -1800,7 +1800,7 @@ TEST_NOTNOW(Polyface, RotateGPA)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
-TEST_NOTNOW(Polyface, Contours)
+TEST (Polyface, Contours)
     {
     int64_t allocationCounter = BSIBaseGeom::GetAllocationDifference ();
     double z0 = 0.0;
@@ -1817,7 +1817,7 @@ TEST_NOTNOW(Polyface, Contours)
     Check::Size ((size_t)allocationCounter, (size_t)BSIBaseGeom::GetAllocationDifference ());
     }
 
-TEST_NOTNOW(Polyface, ClosedContours)
+TEST (Polyface, ClosedContours)
     {
     IFacetOptionsPtr options = CreateFacetOptions ();
     IPolyfaceConstructionPtr builder =  IPolyfaceConstruction::Create (*options);
@@ -1992,7 +1992,7 @@ bool isTransformed
     Check::True (product.IsIdentity ());    
     }
 
-TEST_NOTNOW(PolyfaceConstruction, Stack)
+TEST (PolyfaceConstruction, Stack)
     {
     Transform translation = Transform::FromRowValues (
                 1,0,0,1,
@@ -2457,7 +2457,7 @@ TEST_FRAGMENT(PolyfaceVisitor,ParamToDetail)
 
 
 
-TEST_NOTNOW(Polyface, NGonFaces)
+TEST (Polyface, NGonFaces)
     {
     //varunused Int64 allocationCounter = BSIBaseGeom::GetAllocationDifference ();
     //static int s_printGraph = 0;
