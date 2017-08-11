@@ -214,7 +214,7 @@ BentleyStatus PropertyNameExp::ResolveColumnRef(Utf8StringR error, RangeClassRef
             DerivedPropertyExp const* derivedPropertyRef = subQueryRef.GetSubquery()->FindProperty(propPath[0].GetPropertyName());
             if (derivedPropertyRef == nullptr)
                 {
-				//"Should not be nullptr as the classRefExp was found in the first place by checking that the property exists"
+                //"Should not be nullptr as the classRefExp was found in the first place by checking that the property exists"
                 BeAssert(false);
                 return ERROR;
                 }

@@ -39,6 +39,19 @@ struct SchemaValidator final
                 ValidRelationshipRule() {}
                 bool Validate(IssueReporter const&, ECN::ECSchemaCR, ECN::ECClassCR) const;
             };
+        //=======================================================================================
+        // @bsiclass                                                Affan.Khan      08/2017
+        //+===============+===============+===============+===============+===============+======
+        struct CyclicDependencyRule final : NonCopyableClass
+            {
+            private:
+                static bool HasRecusiveStructTypeProperty(ECN::ECClassCR, bvector<ECN::ECPropertyCP>&);
+                static bool HasRecusiveStructTypeProperty(ECN::ECClassCR, Utf8StringR);
+                static ECN::ECStructClassCP GetStructType(ECN::ECPropertyCP);
+            public:
+                CyclicDependencyRule() {}
+                bool Validate(IssueReporter const&, ECN::ECClassCR) const;
+            };
 
         //=======================================================================================
         // @bsiclass                                                Krischan.Eberle      04/2014

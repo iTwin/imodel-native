@@ -226,7 +226,7 @@ BentleyStatus DbSchema::InsertTable(DbTable const& table) const
     bmap<DbColumn const*, int> primaryKeys;
     if (PrimaryKeyDbConstraint const* pkConstraint = table.GetPrimaryKeyConstraint())
         {
-		int i = 0;
+        int i = 0;
         for (DbColumn const* pkCol : pkConstraint->GetColumns())
             {
             primaryKeys[pkCol] = i++;
@@ -280,7 +280,7 @@ BentleyStatus DbSchema::UpdateTable(DbTable const& table) const
     bmap<DbColumn const*, int> primaryKeys;
     if (PrimaryKeyDbConstraint const* pkConstraint = table.GetPrimaryKeyConstraint())
         {
-		int i = 0;
+        int i = 0;
         for (DbColumn const* pkCol : pkConstraint->GetColumns())
             {
             primaryKeys[pkCol] = i++;

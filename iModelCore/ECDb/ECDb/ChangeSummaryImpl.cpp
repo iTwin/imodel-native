@@ -320,6 +320,27 @@ bool TableClassMap::ContainsColumn(Utf8CP propertyAccessString) const
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                              Ramanujam.Raman     08/2017
+//---------------------------------------------------------------------------------------
+DbColumn const* TableClassMap::EndTableRelationshipMap::GetForeignEndClassIdColumn(ECDbCR ecdb, ECRelationshipClassCR relationshipClass) const
+    {
+    auto it = m_foreignEndClassIdColumnMap.find(&relationshipClass);
+    if (it != m_foreignEndClassIdColumnMap.end())
+        return it->second;
+
+    auto fkView = ForeignKeyPartitionView::CreateReadonly(ecdb, relationshipClass);
+    ForeignKeyPartitionView::Partition const* firstPartition = fkView->GetPartitions(true, true).front();
+    if (!firstPartition)
+        return nullptr;
+
+    DbColumn const* foreignEndClassIdColumn = firstPartition->GetFromECClassIdColumn();
+    BeAssert(foreignEndClassIdColumn != nullptr);
+
+    m_foreignEndClassIdColumnMap[&relationshipClass] = foreignEndClassIdColumn;
+    return foreignEndClassIdColumn;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                              Ramanujam.Raman     07/2015
 //---------------------------------------------------------------------------------------
 SqlChange::SqlChange(Changes::Change const& change) : m_sqlChange(change)
@@ -989,36 +1010,29 @@ void ChangeExtractor::ExtractRelInstanceInEndTable(ChangeIterator::RowEntry cons
     ECN::ECRelationshipEnd thisEnd = relClassMap->GetForeignEnd();
 
     // Setup other end of relationship
-    auto fkView = ForeignKeyPartitionView::CreateReadonly(m_ecdb, relClassMap->GetRelationshipClass());
-    ForeignKeyPartitionView::Partition const* firstPartition = fkView->GetPartitions(true, true).front();
-    if (!firstPartition)
-        return;
-
     ECN::ECRelationshipEnd otherEnd = (thisEnd == ECRelationshipEnd_Source) ? ECRelationshipEnd_Target : ECRelationshipEnd_Source;
-    DbColumn const* otherEndClassIdColumnCP = firstPartition->GetFromECClassIdColumn();
-    if (otherEndClassIdColumnCP == nullptr)
+    DbColumn const* otherEndClassIdColumn = endTableRelMap.GetForeignEndClassIdColumn(m_ecdb, *relClass->GetRelationshipClassCP());
+    if (otherEndClassIdColumn == nullptr)
         {
         BeAssert(false && "Need to adjust code when constraint ecclassid column is nullptr");
         return;
         }
 
-    DbColumn const& otherEndClassIdColumn = *otherEndClassIdColumnCP;
-
     ECClassId oldOtherEndClassId, newOtherEndClassId;
-    if (otherEndClassIdColumn.IsVirtual())
+    if (otherEndClassIdColumn->IsVirtual())
         {
         // The table at the end contains a single class only - just use the relationship to get the end class
         oldOtherEndClassId = newOtherEndClassId = GetRelEndClassIdFromRelClass(relClass->GetRelationshipClassCP(), otherEnd);
         }
     else
         {
-        TableMap const* otherEndTableMap = rowEntry.GetChangeIterator().GetTableMap(otherEndClassIdColumn.GetTable().GetName());
+        TableMap const* otherEndTableMap = rowEntry.GetChangeIterator().GetTableMap(otherEndClassIdColumn->GetTable().GetName());
         BeAssert(otherEndTableMap != nullptr);
 
         if (newOtherEndInstanceId.IsValid())
-            newOtherEndClassId = GetClassIdFromColumn(*otherEndTableMap, otherEndClassIdColumn, newOtherEndInstanceId);
+            newOtherEndClassId = GetClassIdFromColumn(*otherEndTableMap, *otherEndClassIdColumn, newOtherEndInstanceId);
         if (oldOtherEndInstanceId.IsValid())
-            oldOtherEndClassId = GetClassIdFromColumn(*otherEndTableMap, otherEndClassIdColumn, oldOtherEndInstanceId);
+            oldOtherEndClassId = GetClassIdFromColumn(*otherEndTableMap, *otherEndClassIdColumn, oldOtherEndInstanceId);
         }
 
     ECInstanceKey oldOtherEndInstanceKey, newOtherEndInstanceKey;
