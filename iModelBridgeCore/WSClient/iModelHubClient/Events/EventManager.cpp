@@ -126,7 +126,7 @@ bool EventManager::Start()
 
     LogHelper::Log(NativeLogging::SEVERITY::LOG_INFO, "EventManager::Start", "Start");
     m_eventManagerContext = new EventManagerContext(m_imodelConnectionP, this, SimpleCancellationToken::Create());
-    BentleyStatus status = BeThreadUtilities::StartNewThread(1024 * 1024, EventManagerThread, &m_eventManagerContext);
+    BentleyStatus status = BeThreadUtilities::StartNewThread(EventManagerThread, &m_eventManagerContext, 1024*1024);
     BeConditionVariable& cv = m_eventManagerContext->GetConditionVariable();
     BeMutexHolder holder(cv.GetMutex());
     cv.RelativeWait(holder, 200);
