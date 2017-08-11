@@ -5,6 +5,7 @@
     <Part Name="BuildingDomains" PrgOutputDir="DesignModelingDomainsSDK">
         <SubPart PartName="RunBuildingDomainTests"/>
         <SubPart PartName="DesignModelingDomainsSDK-Only"/>
+        <SubProduct ProductName="StructuralDomainsTested" PartFile="StructuralDomains"    Repository="DgnDomains-Structural"/>
     </Part>
 
 
@@ -56,7 +57,7 @@
         <SubPart PartName="DgnView"              PartFile="DgnDisplay"           Repository="DgnDisplay"  />
         <SubPart PartName="DgnPlatformSqlang"    PartFile="DgnPlatform"          Repository="DgnPlatform" />
         <SubPart PartName="BuildingDomain"/>
-        <SubPart PartName="StructuralDomains"    PartFile="StructuralDomains"    Repository="DgnDomains-Structural"/>
+        <SubPart PartName="StructuralDomainDLL"  PartFile="StructuralDomains"    Repository="DgnDomains-Structural"/>
         <Bindings>
               <Assemblies>Delivery/$(shlibprefix)BuildingDomainTests.exe</Assemblies>
               <Files ProductDirectoryName="Assets"> Delivery/BuildingDomainTests.logging.config.xml</Files>
@@ -102,7 +103,7 @@
         <SubPart PartName="Grids"                           PartFile="Grids"                    Repository="DgnDomains-Grids"/>
         <SubPart PartName="SpacePlanningDomain"             PartFile="BuildingSpacePlanning"    Repository="DgnDomains-BuildingSpacePlanning"/>
         <SubPart PartName="BuildingDomain"/>
-        <SubPart PartName="StructuralDomains"               PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
+        <SubPart PartName="StructuralDomainDLL"             PartFile="StructuralDomains"        Repository="DgnDomains-Structural"/>
         <SubPart PartName="PlantPrototypeDomainHandler"     PartFile="PlantPrototypeDomain"     Repository="DgnDomain-PlantPrototype"/>
         <SubPart PartName="PlantDomainEverything"           PartFile="PlantDomain"              Repository="DgnDomains-Plant"/>
         <SubPart PartName="BeIcu4cLibrary"                  PartFile="BeIcu4cLibrary"           Repository="Libsrc-Icu4c"   />        
@@ -120,7 +121,6 @@
         <ProductDirectory Name="sqlang"                                  Deliver="true" Path="sqlang" RelativeTo="Assets" LibType="static"/>
         <ProductDirectory Name="Libs"                                    Deliver="true" Path="lib/x64"/>
         <ProductDirectory Name="BuildingDomainIncludes"                  Deliver="true" Path="Include/BuildingDomain"/>
-        <ProductDirectory Name="StructuralDomainIncludes"                Deliver="true" Path="Include/StructuralDomain"/>
         <ProductDirectory Name="PlantPrototypeIncludes"                  Deliver="true" Path="Include/PlantPrototype"/>
         <ProductDirectory Name="SpacePlanningDomainIncludes"             Deliver="true" Path="Include/SpacePlanningDomain"/>
         <ProductDirectory Name="BuildingSpacePlanningDomainIncludes"     Deliver="true" Path="Include/BuildingSpacePlanningDomain"/>

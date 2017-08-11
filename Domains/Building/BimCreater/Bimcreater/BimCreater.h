@@ -46,7 +46,6 @@ struct BimCreater : Dgn::DgnPlatformLib::Host
         BentleyStatus PopulateElementProperties(Dgn::DgnElementPtr element);
 		Dgn::DgnDbPtr OpenDgnDb(BeFileNameCR outputFileName);
 
-       // BentleyStatus SetCodeFromParent(Dgn::FunctionalElementR functionElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR shortCode);
         Dgn::DgnCode SetCodeFromParent1(Utf8StringR shortCode, Dgn::FunctionalElementR functionElement, Dgn::DgnElementCPtr parentElement, Utf8StringCR deviceCode);
 
         Dgn::FunctionalComponentElementPtr CreateNozzle          (Dgn::DgnElementId pipeRunId,  Dgn::DgnElementId equipmentId, Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement, Dgn::DgnElementCPtr parentElement, bool isVirtual = false);
@@ -62,13 +61,9 @@ struct BimCreater : Dgn::DgnPlatformLib::Host
         Dgn::FunctionalComponentElementPtr CreateThreeWayValve   (Dgn::DgnElementId  pipeRunId,  Dgn::DgnCategoryId categoryId, Dgn::FunctionalModelR functionModel, Dgn::DrawingModelR drawingModel, Dgn::Placement2dCR placement);
 
 
-        Dgn::DgnDbPtr CreateDgnDb(BeFileNameCR);
-//        ToyTileGroupModelPtr CreateGroupModel(Dgn::DgnDbR);
-//        BentleyStatus CreateGroupElements(ToyTileGroupModelR);
-//        ToyTilePhysicalModelPtr CreatePhysicalModel(Dgn::DgnDbR);
-        //  BuildingTypeDefinitionModelPtr CreateBuildingTypeDefinitionModel(Dgn::DgnDbR db);
+        Dgn::DgnDbPtr  CreateDgnDb(BeFileNameCR);
         Dgn::DgnViewId CreateView(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::ModelSelectorR, Dgn::DisplayStyle3dR displayStyle);
 		Dgn::DgnViewId CreateView2d(Dgn::DefinitionModelR, Utf8CP, Dgn::CategorySelectorR, Dgn::DgnModelId baseModelId, Dgn::DisplayStyle2dR displayStyle);
-		BentleyStatus DoCreate();
-		BentleyStatus DoUpdateSchema(Dgn::DgnDbPtr db); 
+		BentleyStatus  DoCreate();
+		BentleyStatus  DoUpdateSchema(Dgn::DgnDbPtr db); 
 	};

@@ -12,6 +12,7 @@
 
 #define BUILDING_MODEL_NAME "SamplePlantModel"
 #define USERLABEL_NAME  "UserLabel"
+template<class T, class U> RefCountedCPtr<T> const_pointer_cast(RefCountedCPtr<U> const & p) { return dynamic_cast<T const *>(p.get()); }
 
 
 //---------------------------------------------------------------------------------------
@@ -51,10 +52,16 @@ WString BimCreater::GetArgValueW(WCharCP arg)
 //---------------------------------------------------------------------------------------
 BentleyStatus BimCreater::ParseCommandLine(int argc, WCharP argv[])
     {
-    if (argc < 2)
-        return PrintUsage(argv[0]);
+   // if (argc < 2)
+   //     return PrintUsage(argv[0]);
 
     WString outputFileNameArg, currentDirectory;
+
+    // Setup defaults for arguments so you can run without any arguments. 
+
+    outputFileNameArg = L"SamplePlantBim.Bim"; 
+    m_overwriteExistingOutputFile = true;
+
 
     for (int iArg = 1; iArg < argc; ++iArg)
         {
@@ -74,15 +81,7 @@ BentleyStatus BimCreater::ParseCommandLine(int argc, WCharP argv[])
         return PrintUsage(argv[0]);
         }
 
-    // validate input arg
-   // _wgetcwd(currentDirectory);
-
-    // validate output arg
- //   BeFileName outputFileNameDefaults;
- //   outputFileNameDefaults.AppendExtension(L"bim");
-
     m_outputFileName = BeFileName(outputFileNameArg.c_str());
- //   m_outputFileName.SupplyDefaultNameParts(outputFileNameDefaults);
 
     if (m_outputFileName.DoesPathExist() && !m_overwriteExistingOutputFile)
         {
@@ -104,7 +103,7 @@ BentleyStatus BimCreater::ParseCommandLine(int argc, WCharP argv[])
 BeSQLite::L10N::SqlangFiles BimCreater::_SupplySqlangFiles()
     {
     BeFileName defaultSqlang(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    defaultSqlang.AppendToPath(L"sqlang/DgnPlatform_en.sqlang.db3");
+    defaultSqlang.AppendToPath(L"sqlang/DgnClientFx_en.sqlang.db3");
     return BeSQLite::L10N::SqlangFiles(defaultSqlang);
     }
 
@@ -119,8 +118,6 @@ Dgn::CategorySelectorPtr BimCreater::CreateCategorySelector(Dgn::DefinitionModel
     // we know that we can safely choose any name.
     auto categorySelector = new Dgn::CategorySelector(model, "Default");
     categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingDrawingCategoryId(model.GetDgnDb(), "PidLine"));
-//    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWindowCategoryId(model.GetDgnDb()));
-//    categorySelector->AddCategory(ArchitecturalPhysical::ArchitecturalPhysicalCategory::QueryBuildingPhysicalWallCategoryId(model.GetDgnDb()));
     return categorySelector;
     }
 
@@ -145,9 +142,8 @@ Dgn::DisplayStyle3dPtr BimCreater::CreateDisplayStyle3d(Dgn::DefinitionModelR mo
     {
     // DisplayStyle is a definition element that is potentially shared by many ViewDefinitions.
     // To start off, we'll create a style that can be used as a good default for 3D views.
-    // We have to give the style a unique name of its own. Since we are settup up a new bim, we know that we can safely choose any name.
+    // We have to give the style a unique name of its own. Since we are setup up a new bim, we know that we can safely choose any name.
     auto displayStyle = new Dgn::DisplayStyle3d(model, "Default");
-//	auto d = new Dgn::DisplayStyle2d(model, "default2d");
     displayStyle->SetBackgroundColor(Dgn::ColorDef::White());
     displayStyle->SetSkyBoxEnabled(false);
     displayStyle->SetGroundPlaneEnabled(false);
@@ -163,10 +159,9 @@ Dgn::DisplayStyle3dPtr BimCreater::CreateDisplayStyle3d(Dgn::DefinitionModelR mo
 Dgn::DisplayStyle2dPtr BimCreater::CreateDisplayStyle2d(Dgn::DefinitionModelR model)
 	{
 	// DisplayStyle is a definition element that is potentially shared by many ViewDefinitions.
-	// To start off, we'll create a style that can be used as a good default for 3D views.
-	// We have to give the style a unique name of its own. Since we are settup up a new bim, we know that we can safely choose any name.
+	// To start off, we'll create a style that can be used as a good default for 2D views.
+	// We have to give the style a unique name of its own. Since we are setup up a new bim, we know that we can safely choose any name.
 	auto displayStyle = new Dgn::DisplayStyle2d(model, "Default2D");
-	//	auto d = new Dgn::DisplayStyle2d(model, "default2d");
 	displayStyle->SetBackgroundColor(Dgn::ColorDef::Black());
 	Dgn::Render::ViewFlags viewFlags = displayStyle->GetViewFlags();
 	viewFlags.SetRenderMode(Dgn::Render::RenderMode::Wireframe);
@@ -184,19 +179,14 @@ Dgn::DgnDbPtr BimCreater::CreateDgnDb(BeFileNameCR outputFileName)
     // Initialize parameters needed to create a DgnDb
     Dgn::CreateDgnDbParams createProjectParams;
     createProjectParams.SetOverwriteExisting(m_overwriteExistingOutputFile);
-    createProjectParams.SetRootSubjectName("Sample Building");
-    createProjectParams.SetRootSubjectDescription("Sample Building create by ArchCreater app");
+    createProjectParams.SetRootSubjectName("Sample Plant BIM");
+    createProjectParams.SetRootSubjectDescription("Sample Plant created by BimCreater app");
 
     // Create the DgnDb file. The BisCore domain schema is also imported. Note that a seed file is not required.
     BeSQLite::DbResult createStatus;
     Dgn::DgnDbPtr db = Dgn::DgnDb::CreateDgnDb(&createStatus, outputFileName, createProjectParams);
     if (!db.IsValid())
         return nullptr;
-
-    // After all domain schemas have been imported, it is valid to create ECClassViews (for debugging and review workflows)
-//    db->Schemas().ImportSchemas
-	
-
     return db;
     }
 
@@ -221,7 +211,6 @@ Dgn::DgnDbPtr BimCreater::OpenDgnDb(BeFileNameCR outputFileName)
 
 
 
-template<class T, class U> RefCountedCPtr<T> const_pointer_cast(RefCountedCPtr<U> const & p) { return dynamic_cast<T const *>(p.get()); }
 
 
 
@@ -231,12 +220,6 @@ template<class T, class U> RefCountedCPtr<T> const_pointer_cast(RefCountedCPtr<U
 
 BentleyStatus BimCreater::DoUpdateSchema(Dgn::DgnDbPtr db)
 	{
-
-	//BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers();
-
-	//Dgn::DgnDbPtr db = OpenDgnDb(GetOutputFileName());
-	//if (!db.IsValid())
-//		return BentleyStatus::ERROR;
 
 	BuildingPhysical::BuildingPhysicalModelCPtr model = BuildingDomain::BuildingDomainUtilities::GetBuildingPhyicalModel(BUILDING_MODEL_NAME, *db);
 
@@ -281,6 +264,7 @@ Dgn::FunctionalBreakdownElementPtr BimCreater::CreatePipeRun(Dgn::DgnElementCPtr
     ECN::ECRelationshipClassCP  relationShipClass;
     BeSQLite::EC::ECInstanceKey rkey;
 
+    // Relate this PipeRun to the input Pipeline 
     if (pipeline.IsValid())
         {
         relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipelineOwnsPipeRuns);
@@ -288,6 +272,8 @@ Dgn::FunctionalBreakdownElementPtr BimCreater::CreatePipeRun(Dgn::DgnElementCPtr
         }
 
     Dgn::DgnElementCPtr fe = functionalElement->Insert();
+
+    // Create the Too/ From relationships
 
     if (toId.IsValid())
         {
@@ -331,8 +317,6 @@ Dgn::DrawingGraphicPtr BimCreater::CreateAnnotation(Dgn::DgnCategoryId categoryI
     annotationGraphics = BuildingDomain::BuildingDomainUtilities::QueryById<Dgn::DrawingGraphic>(drawingModel, ge->GetElementId());
 
     return annotationGraphics;
-
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -375,7 +359,6 @@ Dgn::DrawingGraphicPtr BimCreater::CreatePipeRunGraphics(Dgn::FunctionalBreakdow
 
     return pipeRunGraphic;
 
-
     }
 
 //---------------------------------------------------------------------------------------
@@ -409,7 +392,6 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateNozzle(Dgn::DgnElementId pi
         GeometricTools::CreatePidNozzleGeometry(*nozzleGraphic, categoryId);
     else
         GeometricTools::CreatePidVirtualNozzleGeometry(*nozzleGraphic, categoryId);
-
 
     ECN::ECValue value;
     value.SetUtf8CP(shortCode.c_str());
@@ -687,7 +669,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateReducer(Dgn::DgnCategoryId 
 
     // Create Reducer Functional Component
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Reducer, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_ConcentricPipeReducer, functionalModel);
 
     functionalElement->SetPropertyValue(USERLABEL_NAME, value);
 
@@ -716,7 +698,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId
 
     // Create the functional component for the Gate Valve
 
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_Valve, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_GateValve, functionalModel);
 
     Utf8String shortCode;
     SetCodeFromParent1(shortCode, *functionalElement, nullptr, "HV");
@@ -726,7 +708,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateGateValve(Dgn::DgnElementId
     ECN::ECClassCP relClass;
     if (pipeRunId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunOwnsPipingComponents);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipeRunOwnsFunctionalPipingComponents);
         functionalElement->SetParentId(pipeRunId, relClass->GetId());
         }
 
@@ -771,7 +753,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnEleme
     {
 
     // Create the functional component for the three way valve
-    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_CLASS_3WayValve, functionalModel);
+    Dgn::FunctionalComponentElementPtr functionalElement = BuildingDomain::BuildingDomainUtilities::CreateFunctionalComponentElement(DOMAIN_PIPING_FUNCTIONAL, PPF_Class_ThreeWayValve, functionalModel);
 
     Utf8String shortCode;
     SetCodeFromParent1(shortCode, *functionalElement, nullptr, "HV");
@@ -779,7 +761,7 @@ Dgn::FunctionalComponentElementPtr BimCreater::CreateThreeWayValve(Dgn::DgnEleme
     ECN::ECClassCP relClass;
     if (pipeRunId.IsValid())
         {
-        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(BENTLEY_MECHANICAL_FUNCTIONAL_SCHEMA_NAME, MF_REL_PipeRunOwnsPipingComponents);
+        relClass = functionalModel.GetDgnDb().GetClassLocater().LocateClass(DOMAIN_PIPING_FUNCTIONAL, PPF_REL_PipeRunOwnsFunctionalPipingComponents);
         functionalElement->SetParentId(pipeRunId, relClass->GetId());
         }
 
@@ -858,9 +840,6 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
     placement.GetOriginR() = DPoint2d::From(0.0, -5);
     annotation = CreateAnnotation(categoryId, *drawingModel, pump->GetPropertyValueString(USERLABEL_NAME), placement);
 
-   // placement.GetOriginR() = DPoint2d::From(10, 0);
-  //  pump = CreatePump(subUnit->GetElementId(), categoryId, functionalModel, *drawingModel, placement, subUnit, 1);
-
     // ****** Add Nozzle to Pump Center ******
 
     placement.GetOriginR() = DPoint2d::From(0.0,0.0);
@@ -870,7 +849,6 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
     placement.GetOriginR() = DPoint2d::From(4.637, 2.5);
     placement.GetAngleR() = AngleInDegrees::FromDegrees(0.0);
     Dgn::FunctionalComponentElementPtr pumpNozzle2 = CreateNozzle(id, pump->GetElementId(), categoryId, functionalModel, *drawingModel, placement, pump, true);
-
 
     // **** Add the Round Tank ****
 
@@ -1013,7 +991,8 @@ Dgn::DrawingModelPtr BimCreater::CreatePidDrawings(Dgn::DocumentListModelR docLi
 BentleyStatus BimCreater::DoCreate()
     {
 
-	BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers();
+    if (BentleyStatus::SUCCESS != BuildingDomain::BuildingDomainUtilities::RegisterDomainHandlers())
+        return BentleyStatus::ERROR;
 
     if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(PlantBIM::ProcessEquipmentFunctionalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
         return BentleyStatus::ERROR;
@@ -1050,7 +1029,13 @@ BentleyStatus BimCreater::DoCreate()
 
     Utf8String shortCode;
 
-    for (int unitNum = 0; unitNum < 5; unitNum++)
+    // This is where we create add the information to the BIM file. You can control the number of Units, SubUnits and P&ID. 
+
+    int numberOfUnits = 5;
+    int numberOfSubunits = 5;
+    int numberOfPids = 5;
+
+    for (int unitNum = 0; unitNum < numberOfUnits; unitNum++)
         {
 
         Dgn::FunctionalBreakdownElementPtr unit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Class_Unit, *functionalModel);
@@ -1058,7 +1043,7 @@ BentleyStatus BimCreater::DoCreate()
         SetCodeFromParent1(shortCode, *unit, nullptr, "U");
         Dgn::DgnElementCPtr un = unit->Insert();
 
-        for (int subUnitNum = 0; subUnitNum < 5; subUnitNum++)
+        for (int subUnitNum = 0; subUnitNum < numberOfSubunits; subUnitNum++)
             {
 
             Dgn::FunctionalBreakdownElementPtr subUnit = BuildingDomain::BuildingDomainUtilities::CreateFunctionalBreakdownElement(DOMAIN_PLANT_BREAKDOWN_FUNCTIONAL, PBF_Class_SubUnit, *functionalModel);
@@ -1072,7 +1057,7 @@ BentleyStatus BimCreater::DoCreate()
             db->InsertLinkTableRelationship(rkey, *relationShipClass, un->GetElementId(), subUn->GetElementId());
 
             static int pidNum = 1;
-            for (int j = 1; j < 5; j++)
+            for (int j = 1; j < numberOfPids; j++)
                 {
                 Utf8String pidName;
                 pidName.Sprintf("PID-%0.3d", pidNum);
@@ -1088,25 +1073,23 @@ BentleyStatus BimCreater::DoCreate()
         }
 
 
+    // The 3D physical element will start out with some Architectural components. 
+
     CreateBuilding( *physicalModel, *typeDefinitionModel);
 
-
-    // Set the project extents to include the elements in the physicalModel, plus a margin
+   // Set the project extents to include the elements in the physicalModel, plus a margin
     Dgn::AxisAlignedBox3d projectExtents = physicalModel->QueryModelRange();
     projectExtents.Extend(0.5);
     db->GeoLocation().SetProjectExtents(projectExtents);
 
     // Create the initial view
     Dgn::ModelSelectorPtr modelSelector = CreateModelSelector(dictionary, *physicalModel, "Default3D");
-	//Dgn::ModelSelectorPtr modelSelector1 = CreateModelSelector(dictionary, *drawingModel, "Default2D");
 	Dgn::DisplayStyle3dPtr displayStyle = CreateDisplayStyle3d(dictionary);
 
 	Dgn::DgnViewId viewId = CreateView(dictionary, "Building View", *categorySelector, *modelSelector, *displayStyle);
 
     if (!viewId.IsValid())
         return BentleyStatus::ERROR;
-
-
 
     return BentleyStatus::SUCCESS;
     }

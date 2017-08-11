@@ -112,19 +112,9 @@
       <AdditionalDependencies>GridElements.lib;BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;plantPrototypeDomainHandler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /s /y $(outroot)winx64\BuildContexts\buildingDomains\SubParts\Assemblies\*  $(outdir)
-xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\Assets\ECSchemas\Domain\* $(outdir)Assets\ECSchemas\Domain\
-xcopy /y $(srcRoot)DgnPlatform\ECSchemas\* $(outdir)Assets\ECSchemas\Dgn\
-xcopy /y $(srcRoot)ECDb\ECDb\ECSchemas\* $(outdir)Assets\ECSchemas\ECDb\
-xcopy /y $(outroot)\Winx64\BuildContexts\ECStandards\ECSchemas\Standard\* $(outdir)Assets\ECSchemas\standard\
-xcopy /y $(outroot)\Winx64\BuildContexts\ECStandards\ECSchemas\Standard\General\* $(outdir)Assets\ECSchemas\standard\
-xcopy /y $(outroot)\Winx64\BuildContexts\ECStandards\ECSchemas\Standard\LibraryUnits\* $(outdir)Assets\ECSchemas\standard\
-xcopy /y $(outroot)\Winx64\build\DgnPlatform\DgnPlatform_en.sqlang.db3 $(outdir)Assets\sqlang\
-xcopy /y  $(srcRoot)DgnPlatform\LastResortFonts\lastresortfonts $(outdir)Assets\
-xcopy /y $(srcRoot)DgnPlatform\ECSchemas\functional* $(outdir)Assets\ECSchemas\Domain\
-xcopy /y $(srcRoot)libsrc\icu4c\icudt58l.dat $(outdir)Assets\
-xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\lib\x64\PlantPrototypeDomainHandler.dll $(outdir)
-xcopy /y $(outroot)Winx64\Product\BuildingDomainSDK-Winx64\lib\x64\StructuralDomainB02.dll $(outdir)</Command>
+      <Command>xcopy /s /y $(outroot)Winx64\Product\DesignModelingDomainsSdk\Assemblies\*  $(outdir)
+xcopy /s /y $(outroot)Winx64\Product\DesignModelingDomainsSdk\Assets\* $(outdir)Assets\
+</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
