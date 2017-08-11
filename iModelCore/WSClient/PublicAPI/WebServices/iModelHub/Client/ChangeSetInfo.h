@@ -48,7 +48,7 @@ private:
     BeSQLite::BeBriefcaseId m_briefcaseId;
     ContainingChanges       m_containingChanges;
     FileAccessKeyPtr        m_fileAccessKey;
-    bool                    m_containsFileAccessKey;
+    bool                    m_containsFileAccessKey = false;
 
     ChangeSetInfo(Utf8String id, Utf8String parentChangeSetId, Utf8String dbGuid, int64_t index,
         Utf8String description, int64_t fileSize, BeSQLite::BeBriefcaseId briefcaseId, Utf8String userCreated, DateTime pushDate, ContainingChanges containingChanges)

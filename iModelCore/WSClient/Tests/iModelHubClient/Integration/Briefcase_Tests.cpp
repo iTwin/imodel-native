@@ -109,6 +109,7 @@ TEST_F(BriefcaseTests, AcquireAfterQuerying)
     {
     auto imodelResult = m_client->GetiModelById(m_imodel->GetId())->GetResult();
     EXPECT_SUCCESS(imodelResult);
+    EXPECT_EQ(imodelResult.GetValue()->GetUserCreated(), imodelResult.GetValue()->GetOwnerInfo()->GetId());
 
     auto result = m_client->AcquireBriefcaseToDir(*imodelResult.GetValue(), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
@@ -116,6 +117,7 @@ TEST_F(BriefcaseTests, AcquireAfterQuerying)
 
     auto imodelResult2 = m_client->GetiModelByName(m_imodel->GetName())->GetResult();
     EXPECT_SUCCESS(imodelResult2);
+    EXPECT_EQ(imodelResult2.GetValue()->GetUserCreated(), imodelResult2.GetValue()->GetOwnerInfo()->GetId());
 
     auto result2 = m_client->AcquireBriefcaseToDir(*imodelResult2.GetValue(), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result2);

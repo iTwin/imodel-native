@@ -99,6 +99,7 @@ TEST_F(ClientTests, SuccessfulCreateiModel)
 
     auto result = m_client->GetiModels()->GetResult();
     EXPECT_SUCCESS(result);
+    EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
     EXPECT_FALSE(result.GetValue().empty());
 
     DeleteiModel(*m_client, *createResult.GetValue());
@@ -190,6 +191,7 @@ TEST_F(ClientTests, SuccessfulGetiModels)
 
     auto result = m_client->GetiModels()->GetResult();
     EXPECT_SUCCESS(result);
+    EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
 
     bvector<iModelInfoPtr>& imodels = result.GetValue();
     EXPECT_EQ(2, imodels.size());
@@ -206,6 +208,30 @@ TEST_F(ClientTests, SuccessfulGetiModels)
         }
     DeleteiModel(*m_client, *imodel1);
     DeleteiModel(*m_client, *imodel2);
+    }
+
+TEST_F(ClientTests, SuccessfulGetiModelByName)
+    {
+    DeleteiModels();
+    auto imodel = IntegrationTestsBase::CreateNewiModel(*m_client, "ClientTest");
+    
+    auto result1 = m_client->GetiModelByName(imodel->GetName())->GetResult();
+    EXPECT_SUCCESS(result1);
+
+    imodel = result1.GetValue();
+    EXPECT_EQ(imodel->GetUserCreated(), imodel->GetOwnerInfo()->GetId());
+
+    DateTime compareDate(DateTime::Kind::Utc, 2017, 1, 1, 0, 0, 0, 0);
+        
+    EXPECT_FALSE(imodel->GetServerURL().empty());
+    EXPECT_FALSE(imodel->GetId().empty());
+    EXPECT_FALSE(imodel->GetName().empty());
+
+    DateTimeCR createdDate = imodel->GetCreatedDate();
+    EXPECT_TRUE(createdDate.IsValid());
+    EXPECT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(compareDate, createdDate));
+
+    DeleteiModel(*m_client, *imodel);
     }
 
 TEST_F(ClientTests, UnsuccessfulGetiModels)
@@ -241,6 +267,7 @@ TEST_F (ClientTests, SuccessfulCreateiModelWithASpaceInName)
 
     auto result = m_client->GetiModels ()->GetResult ();
     EXPECT_SUCCESS(result);
+    EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
     EXPECT_TRUE (!result.GetValue ().empty ());
     DeleteiModel(*m_client, *createResult.GetValue());
     }
