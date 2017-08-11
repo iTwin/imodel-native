@@ -78,7 +78,7 @@ ViewManager& StructuralDomainTestsHost::_SupplyViewManager()
 L10N::SqlangFiles StructuralDomainTestsHost::_SupplySqlangFiles()
     {
     BentleyApi::BeFileName sqlangFile(GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory());
-    sqlangFile.AppendToPath(L"Assets/sqlang/StructuralDomainTests_en-US.sqlang.db3");
+    sqlangFile.AppendToPath(L"sqlang/StructuralDomainTests_en-US.sqlang.db3");
     BeAssert(sqlangFile.DoesPathExist());
 
     return L10N::SqlangFiles(sqlangFile);
@@ -104,6 +104,7 @@ void StructuralDomainTestFixture::SetUp_CreateNewDgnDb()
 +---------------+---------------+---------------+---------------+---------------+------*/
 void StructuralDomainTestFixture::SetUp()
     {
+    StructuralDomainUtilities::RegisterDomainHandlers();
     }
 
 /*---------------------------------------------------------------------------------**//**

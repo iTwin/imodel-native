@@ -27,6 +27,7 @@
             <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
                 ECSchemas/Domain/StructuralCommon.ecschema.xml
                 ECSchemas/Domain/StructuralPhysical.ecschema.xml
+                ECSchemas/Domain/StructuralProfiles.ecschema.xml
             </Files>
             <Directory SourceName="PublicAPI/StructuralDomain" ProductDirectoryName="StructuralDomainIncludes" />
         </Bindings>

@@ -81,6 +81,9 @@
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StripFooting.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralElement.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralMember.h" />
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalApi.h" />
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalDefinitions.h" />
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalDomain.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\SurfaceMember.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Wall.h" />
     <ClInclude Include="StructuralProfiles\PublicAPI\StructuralProfiles\BuiltUpProfile.h" />
@@ -157,7 +160,7 @@
     <LinkIncremental>true</LinkIncremental>
     <EnableManagedIncrementalBuild>false</EnableManagedIncrementalBuild>
     <IncludePath>$(SRCROOT)DgnDomains\Structural;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\PublicAPI;$(OUTROOT)Winx64\BuildContexts\StructuralDomains\VendorAPI;$(IncludePath)</IncludePath>
-    <NMakeBuildCommandLine>bb -ax64 -p StructuralDomainDLL b</NMakeBuildCommandLine>
+    <NMakeBuildCommandLine>bb -ax64 -p StructuralDomainDLL b -b</NMakeBuildCommandLine>
     <NMakeReBuildCommandLine>bb -ax64 re StructuralDomainDLL</NMakeReBuildCommandLine>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">

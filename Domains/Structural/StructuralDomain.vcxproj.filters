@@ -238,5 +238,14 @@
     <ClInclude Include="PublicAPI\StructuralDomain\StructuralDomainUtilities.h">
       <Filter>Utilities</Filter>
     </ClInclude>
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalApi.h">
+      <Filter>StructuralPhysical</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalDefinitions.h">
+      <Filter>StructuralPhysical</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalDomain.h">
+      <Filter>StructuralPhysical</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
