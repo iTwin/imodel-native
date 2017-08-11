@@ -8,7 +8,7 @@
 CLANG_ALLOW_UNDEFINED=1
 %include mdl.mki
 
-appName     = imodeljs
+appName     = imodeljs_$(NODE_GYP_VER)
 
 # I get the impression that node addons names should be all lower case. At least, that's what I see out there.
 
@@ -17,8 +17,8 @@ baseDir     = $(_MakeFilePath)
 # This is how node-gyp on Linux compiles an addon:
 #   g++ '-DNODE_GYP_MODULE_NAME=nodeprime' '-DUSING_UV_SHARED=1' '-DUSING_V8_SHARED=1' '-DV8_DEPRECATION_WARNINGS=1' '-D_LARGEFILE_SOURCE' '-D_FILE_OFFSET_BITS=64' '-DBUILDING_NODE_EXTENSION' -I/home/SamWilson/.node-gyp/7.10.0/include/node -I/home/SamWilson/.node-gyp/7.10.0/src -I/home/SamWilson/.node-gyp/7.10.0/deps/uv/include -I/home/SamWilson/.node-gyp/7.10.0/deps/v8/include -I../../prime4lib -I../node_modules/nan  -fPIC -pthread -Wall -Wextra -Wno-unused-parameter -m64 -Wall -std=c++11 -O3 -fno-omit-frame-pointer -fno-rtti -fno-exceptions -std=gnu++0x -MMD -MF ./Release/.deps/Release/obj.target/nodeprime/../prime4lib/exchange.o.d.raw   -c -o Release/obj.target/nodeprime/../prime4lib/exchange.o ../../prime4lib/exchange.cpp
 
-cIncs + -I$(BuildContext)VendorAPI/node-gyp
-cIncs + -I$(BuildContext)VendorAPI/node-nan
+cIncs + -I$(BuildContext)VendorAPI/node-gyp_$(NODE_GYP_VER)
+cIncs + -I$(BuildContext)VendorAPI/node-nan_$(NODE_GYP_VER)
 
 cDefs + -DNODE_GYP_MODULE_NAME=$(appName)
 cDefs + -DUSING_UV_SHARED=1
@@ -28,7 +28,7 @@ cDefs + -D_LARGEFILE_SOURCE
 cDefs + -D_FILE_OFFSET_BITS=64
 cDefs + -DBUILDING_NODE_EXTENSION
 
-o = $(OutputRootDir)Build/DgnPlatform/iModelJsNodeAddon/
+o = $(OutputRootDir)Build/DgnPlatform/iModelJsNodeAddon_$(NODE_GYP_VER)/
 always:
     !~@mkdir $(o)
 
@@ -108,7 +108,7 @@ DLM_OBJECT_FILES + $(THIN_ARCHIVE_PATH)
 
 DLM_OBJECT_FILES + $(ContextSubpartsLibs)$(libprefix)BeJsonCpp$(stlibext)
 
-LINKER_LIBRARIES  + $(BuildContext)SubParts/NodeJsLib/$(libprefix)node$(libext)
+LINKER_LIBRARIES  + $(BuildContext)SubParts/NodeJsLib/$(libprefix)node_$(NODE_GYP_VER)$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)DgnPlatform$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLiteEC$(libext)
 LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)

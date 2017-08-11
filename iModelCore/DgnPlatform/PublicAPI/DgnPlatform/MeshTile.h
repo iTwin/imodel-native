@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #define CLASSIFICATION_WIP
+// #define WIP_MESHTILE_3SM
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
@@ -44,6 +45,7 @@ BENTLEY_RENDER_TYPEDEFS(FeatureAttributesMap);
 BENTLEY_RENDER_TYPEDEFS(ColorIndexMap);
 BENTLEY_RENDER_TYPEDEFS(IGetTileTreeForPublishing);
 BENTLEY_RENDER_TYPEDEFS(TileTreePublishRenderSystem);
+BENTLEY_RENDER_TYPEDEFS(IGetPublishedTilesetInfo);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshPart);
@@ -958,6 +960,9 @@ struct TileGenerator
         {
         //! Invoked from one of several worker threads for each generated tile.
         virtual TileGeneratorStatus _AcceptTile(TileNodeCR tileNode) = 0;
+        //! Invoked when a model which exposes a direct URL to a published tileset is processed.
+        //! _Begin/_EndProcessModel() will not be invoked. Neither will _AcceptTile() as these models generate no tiles (the tiles already exist elsewhere).
+        virtual TileGeneratorStatus _AcceptPublishedTilesetInfo(DgnModelCR model, IGetPublishedTilesetInfoR url) = 0;
         //! Invoked before a model is processed.
         virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR model) { return TileGeneratorStatus::Success; }
         //! Invoked after a model is processed, with the result of processing.
@@ -1048,6 +1053,30 @@ struct IGenerateMeshTiles
 
 
 //=======================================================================================
+
+//=======================================================================================
+// Describes a published ready-to-use 3D tileset associated with a SpatialModel.
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct PublishedTilesetInfo
+{
+    Utf8String  m_url;
+    DRange3d    m_ecefRange;
+
+    PublishedTilesetInfo() { }
+    PublishedTilesetInfo(Utf8StringCR url, DRange3dCR ecefRange) : m_url(url), m_ecefRange(ecefRange) { }
+
+    bool IsValid() const { return !m_url.empty(); }
+};
+
+//=======================================================================================
+// Interface for models which provide direct URLs to pre-published tilesets.
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct IGetPublishedTilesetInfo
+{
+    virtual PublishedTilesetInfo _GetPublishedTilesetInfo() = 0;
+};
 // static utility methods
 // @bsistruct                                                   Ray.Bentley     08/2016
 //=======================================================================================

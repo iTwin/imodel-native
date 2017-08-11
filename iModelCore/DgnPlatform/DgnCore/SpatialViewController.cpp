@@ -476,6 +476,7 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+    BeThreadUtilities::StartNewThread(Main, this);
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR view)

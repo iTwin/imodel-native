@@ -164,6 +164,65 @@ struct DgnImportContext;
 struct ModelIterator;
 
 //=======================================================================================
+//! The "value" portion of a DgnCode uses sqlite's COLLATE NOCASE collation for
+//! comparison operations. This is "case-insensitive" over the ASCII character set only.
+//! In other words, to compare two code values:
+//!  1. The characters [A-Z] are folded to their lower-case equivalents [a-z]
+//!  2. The bytes of the two resultant strings are compared directly.
+//! Two code values are equal if and only if the resultant folded strings contain exactly
+//! the same bytes. Therefore all non-ascii characters are treated case-sensitively.
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct DgnCodeValue
+{
+    enum class CompareResult { Less, Equal, Greater };
+private:
+    Utf8String  m_value; //!< Note: can be "empty" (persisted as null)
+
+    static Utf8Char Fold(Utf8Char ch);
+    static CompareResult Compare(DgnCodeValueCR lhs, DgnCodeValueCR rhs) { return Compare(lhs.GetUtf8(), rhs.GetUtf8()); }
+    DGNPLATFORM_EXPORT static CompareResult Compare(Utf8StringCR lhs, Utf8StringCR rhs);
+    DGNPLATFORM_EXPORT static CompareResult Compare(Utf8Char lhs, Utf8Char rhs);
+public:
+    //! Create an empty code value
+    DgnCodeValue() { }
+    //! Create a code value from a Utf8String
+    DgnCodeValue(Utf8StringCR str) : m_value(str) { }
+    //! Create a code value from a pointer to a UTF-8 string
+    DgnCodeValue(Utf8CP str) : m_value(str) { }
+
+    //! Get the value as a Utf8String
+    Utf8StringCR GetUtf8() const { return m_value; }
+    //! Get the value as a pointer to a UTF-8 string, or nullptr if the string is empty
+    Utf8CP GetUtf8CP() const { return empty() ? nullptr : GetUtf8().c_str(); }
+
+    //! The number of bytes in this value's string
+    size_t size() const { return GetUtf8().size(); }
+    //! Return whether this value is an empty string
+    bool empty() const { return GetUtf8().empty(); }
+    //! Set this value to an empty string
+    void clear() { m_value.clear(); }
+
+    //! Compare this value to another value
+    CompareResult CompareTo(DgnCodeValueCR rhs) const { return Compare(*this, rhs); }
+    //! Compare this value to a pointer to a UTF-8 string
+    DGNPLATFORM_EXPORT bool Equals(Utf8CP str) const;
+
+    //! Compare for equality using COLLATE NOCASE rules
+    bool operator==(DgnCodeValueCR rhs) const { return size() == rhs.size() && CompareResult::Equal == CompareTo(rhs); }
+    //! Compare for inequality using COLLATE NOCASE rules
+    bool operator!=(DgnCodeValueCR rhs) const { return !(*this == rhs); }
+    //! Compare for less-than using COLLATE NOCASE rules
+    bool operator<(DgnCodeValueCR rhs) const { return CompareResult::Less == CompareTo(rhs); }
+    //! Compare for greater-than using COLLATE NOCASE rules
+    bool operator>(DgnCodeValueCR rhs) const { return CompareResult::Greater == CompareTo(rhs); }
+    //! Compare for less-or-equal using COLLATE NOCASE rules
+    bool operator<=(DgnCodeValueCR rhs) const { return !(*this > rhs); }
+    //! Compare for greater-or-equal using COLLATE NOCASE rules
+    bool operator>=(DgnCodeValueCR rhs) const { return !(*this < rhs); }
+};
+
+//=======================================================================================
 //! A DgnCode is a structure that holds the "name" of an element in a DgnDb.
 //! The DgnCode is stored as a three-part identifier: CodeSpecId, scope, and value.
 //! The combination of the three must be unique across all elements within a DgnDb.
@@ -181,7 +240,7 @@ struct DgnCode
 private:
     CodeSpecId m_specId; //!< @see CodeSpec
     Utf8String m_scope; //!< Note: stored as a string, but must be a valid/serialized FederationGuid or ElementId
-    Utf8String m_value; //!< Note: can be "empty" (persisted as null)
+    DgnCodeValue m_value; //!< Note: can be "empty" (persisted as null)
 
 public:
     //! Constructs an invalid DgnCode
@@ -189,7 +248,8 @@ public:
 
     //! Construct a DgnCode scoped to an existing element.
     //! @note The best practice is to call CodeSpec::CreateCode rather than this constructor
-    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scope(scopeElementId.ToString(BeInt64Id::UseHex::Yes)), m_value(value) {}
+    DgnCode(CodeSpecId specId, DgnElementId scopeElementId, Utf8StringCR value) : m_specId(specId), m_scope(scopeElementId.ToHexStr()), m_value(value) {}
+
     //! Construct a DgnCode scoped to an element that does not yet exist, but when it does exist it will have the specified FederationGuid. Typically used for reserving codes.
     DgnCode(CodeSpecId specId, BeSQLite::BeGuidCR scopeFederationGuid, Utf8StringCR value) : m_specId(specId), m_scope(scopeFederationGuid.ToString()), m_value(value) {}
 
@@ -213,9 +273,11 @@ public:
     DGNPLATFORM_EXPORT bool operator<(DgnCodeCR rhs) const;
 
     //! Get the value for this DgnCode
-    Utf8StringCR GetValue() const {return m_value;}
-    //! Get the value for this DgnCode
-    Utf8CP GetValueCP() const {return !m_value.empty() ? m_value.c_str() : nullptr;}
+    DgnCodeValueCR GetValue() const {return m_value;}
+    //! Get the value for this DgnCode as a Utf8String
+    Utf8StringCR GetValueUtf8() const {return m_value.GetUtf8();}
+    //! Get the value for this DgnCode as a Utf8CP, or nullptr if the value is empty.
+    Utf8CP GetValueUtf8CP() const {return m_value.GetUtf8CP();}
 
     //! Get the DgnElementId of the element providing the uniqueness scope for the code value.
     DGNPLATFORM_EXPORT DgnElementId GetScopeElementId(DgnDbR db) const;
@@ -653,6 +715,11 @@ public:
     //! @private
     //! Initialize the project extents by querying the volume of all the spatial models. Should only be used after conversion from external formats.
     DGNPLATFORM_EXPORT void InitializeProjectExtents();
+
+    //! @private
+    //! Compute the project extents by querying the volume of all the spatial models. Should only be used after conversion from external formats.
+    //! ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
+    DGNPLATFORM_EXPORT AxisAlignedBox3d ComputeProjectExtents() const;
 
     //! @private
     //! Update the global origin. @note Changing global origin invalidates all existing xyz coordinates stored in the BIM.

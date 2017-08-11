@@ -419,7 +419,6 @@ protected:
     BeSQLite::SnappyToBlob      m_snappyTo;
 
 
-
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
     StreamBuffer m_tileBytes;   // when available, bytes are saved here

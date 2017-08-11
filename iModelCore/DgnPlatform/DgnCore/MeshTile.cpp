@@ -1,4 +1,4 @@
-/*-------------------------------------------------------------------------------------+                                                                                           
+/*-------------------------------------------------------------------------------------+
 |
 |     $Source: DgnCore/MeshTile.cpp $
 |
@@ -1664,8 +1664,12 @@ TileGenerator::TileGenerator(DgnDbR dgndb, ITileGenerationFilterP filter, ITileG
     : m_progressMeter(nullptr != progress ? *progress : s_defaultProgressMeter), m_dgndb(dgndb), 
       m_totalTiles(0), m_totalModels(0), m_completedModels(0)
     {
+#if defined(WIP_MESHTILE_3SM)
+    m_spatialTransformFromDgn.InitIdentity();
+#else
     DPoint3d origin = dgndb.GeoLocation().GetProjectExtents().GetCenter();
     m_spatialTransformFromDgn = Transform::From(-origin.x, -origin.y, -origin.z);
+#endif
     }
 
 #if defined (BENTLEYCONFIG_PARASOLID) 
@@ -1775,7 +1779,7 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
     auto                generateMeshTiles = dynamic_cast<IGenerateMeshTiles*>(&model);
     GeometricModelP     geometricModel = model.ToGeometricModelP();
     bool                isModel3d = nullptr != geometricModel->ToGeometricModel3d();
-    
+
     if (!isModel3d)
         surfacesOnly = false;
 
@@ -1814,7 +1818,11 @@ TileGenerator::FutureStatus TileGenerator::GenerateTiles(ITileCollector& collect
         }
 
 #ifdef FROM_TILE_TREE
-    if (nullptr != getTileTree)
+    if (nullptr != getPublishedURL)
+        {
+        return collector._AcceptPublishedTilesetInfo(model, *getPublishedURL);
+        }
+    else if (nullptr != getTileTree)
         {
         return GenerateTilesFromTileTree (getTileTree, &collector, leafTolerance, surfacesOnly, &model);
         }

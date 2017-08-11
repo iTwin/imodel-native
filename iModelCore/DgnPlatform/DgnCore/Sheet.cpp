@@ -538,14 +538,13 @@ bvector<DgnElementId> Sheet::Model::GetSheetAttachmentIds() const
     return attachIds;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ray.Bentley                     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-bvector<ViewDefinitionCPtr>  Sheet::Model::GetSheetAttachmentViews(DgnDbR db) const
+bvector<ViewDefinitionCPtr> Sheet::Model::GetSheetAttachmentViews(DgnDbR db) const
     {
-    bvector<DgnElementId>       attachmentIds = GetSheetAttachmentIds();
-    bvector<ViewDefinitionCPtr>  attachmentViews;
+    bvector<DgnElementId> attachmentIds = GetSheetAttachmentIds();
+    bvector<ViewDefinitionCPtr> attachmentViews;
 
     for (auto& attachmentId : attachmentIds)
         {

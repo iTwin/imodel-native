@@ -289,6 +289,16 @@ DgnDbStatus UrlLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassParams co
     }
 
 //---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void UrlLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+    out[json_url()] = m_url;
+    out[json_description()] = m_description;
+    }
+
+//---------------------------------------------------------------------------------------
 // @bsimethod                                Ramanujam.Raman                    05/2016
 //---------------------------------------------------------------------------------------
 void UrlLink::_CopyFrom(DgnElementCR other)
@@ -450,6 +460,16 @@ DgnDbStatus EmbeddedFileLink::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     m_description = stmt.GetValueText(params.GetSelectIndex(EMBEDDEDFILELINK_Description));
 
     return DgnDbStatus::Success;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Jeff.Marker     11/2015
+//---------------------------------------------------------------------------------------
+void EmbeddedFileLink::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+    out[json_name()] = m_name;
+    out[json_description()] = m_description;
     }
 
 //---------------------------------------------------------------------------------------
