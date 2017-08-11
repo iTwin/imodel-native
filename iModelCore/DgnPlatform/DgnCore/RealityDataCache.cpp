@@ -71,7 +71,7 @@ THREAD_MAIN_IMPL Cache::Worker::Main(void* arg)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void Cache::Worker::Start()
     {
-    BeThreadUtilities::StartNewThread(50*1024, Main, this);
+    BeThreadUtilities::StartNewThread(Main, this);
     }
 
 /*---------------------------------------------------------------------------------**//**

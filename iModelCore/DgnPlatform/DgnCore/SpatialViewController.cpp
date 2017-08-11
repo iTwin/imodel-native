@@ -541,7 +541,7 @@ void SceneQueue::WaitFor(ViewControllerCR view)
 +---------------+---------------+---------------+---------------+---------------+------*/
 SceneQueue::SceneQueue(DgnDbR db) : m_db(db), m_state(State::Active)
     {
-    BeThreadUtilities::StartNewThread(50*1024, Main, this);
+    BeThreadUtilities::StartNewThread(Main, this);
     }
 
 /*---------------------------------------------------------------------------------**//**
