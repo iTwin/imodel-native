@@ -193,6 +193,23 @@ static CurveVectorPtr planarFaceLoopToCurveVector (PK_LOOP_t loopTag, EdgeToCurv
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isPlanarSurfaceClass(PK_CLASS_t surfaceClass)
+    {
+    switch (surfaceClass)
+        {
+        case PK_CLASS_plane:
+        case PK_CLASS_circle:
+        case PK_CLASS_ellipse:
+            return true;
+
+        default:
+            return false;
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  04/12
 +---------------+---------------+---------------+---------------+---------------+------*/
 CurveVectorPtr PSolidGeom::PlanarFaceToCurveVector(PK_FACE_t faceTag, EdgeToCurveIdMap const* idMap)
@@ -203,10 +220,10 @@ CurveVectorPtr PSolidGeom::PlanarFaceToCurveVector(PK_FACE_t faceTag, EdgeToCurv
     PK_LOOP_t*      loops = NULL;
     PK_LOGICAL_t    orientation;
 
-    if (SUCCESS != PK_FACE_ask_oriented_surf (faceTag, &surfaceTag, &orientation) ||
-        SUCCESS != PK_ENTITY_ask_class (surfaceTag, &surfaceClass) || surfaceClass != PK_CLASS_plane ||
-        SUCCESS != PK_FACE_ask_loops (faceTag, &nLoops, &loops) || nLoops < 1)
-        return NULL;
+    if (SUCCESS != PK_FACE_ask_oriented_surf(faceTag, &surfaceTag, &orientation) ||
+        SUCCESS != PK_ENTITY_ask_class(surfaceTag, &surfaceClass) || !isPlanarSurfaceClass(surfaceClass) ||
+        SUCCESS != PK_FACE_ask_loops(faceTag, &nLoops, &loops) || nLoops < 1)
+        return nullptr;
 
     bvector<CurveVectorPtr> curveLoops;
 

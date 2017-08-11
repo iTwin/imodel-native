@@ -184,7 +184,7 @@ BentleyStatus IModelJs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errm
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, Json::Value const& inOpts)
+BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, JsonValueCR inOpts)
     {
     DgnElementId eid(inOpts[json_id()].asUInt64());
     if (!eid.IsValid())

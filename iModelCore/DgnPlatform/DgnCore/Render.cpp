@@ -265,7 +265,7 @@ void DgnViewport::StartRenderThread()
     s_renderQueue = new Render::Queue();
 
     // create the rendering thread
-    BeThreadUtilities::StartNewThread(300*1024, Render::Queue::Main, s_renderQueue); 
+    BeThreadUtilities::StartNewThread(Render::Queue::Main, s_renderQueue); 
     }
 
 //=======================================================================================

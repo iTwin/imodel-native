@@ -700,15 +700,8 @@ DbResult IModelJs::ImportSchema(Utf8StringR errmsg, ECDbR ecdb, BeFileNameCR pat
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-// static
 ECClassCP IModelJs::GetClassFromInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR jsonInstance)
     {
-    if (!jsonInstance.isMember("$ECClassKey"))
-        {
-        errmsg = "Could not determine the class. The JSON instance must include a valid $ECClassKey member";
-        return nullptr;
-        }
-        
     Utf8String classKey = jsonInstance["$ECClassKey"].asString();
     if (classKey.empty())
         {
