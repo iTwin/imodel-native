@@ -5,27 +5,69 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "StructuralDomain\StructuralDomainUtilities.h"
+#include "StructuralDomain/StructuralDomainUtilities.h"
 
 BE_JSON_NAME(StructuralDomain)
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Arturas.Mizaras             08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+struct DomainHandlerRegisterHelper //use critical sections?
+    {
+    protected:
+        DomainHandlerRegisterHelper();
+    public:
+        ~DomainHandlerRegisterHelper() {};
+        static DomainHandlerRegisterHelper& Get(); //singleton
+        BentleyStatus GetRegistrationStatus() const { return m_registrationStatus; };
+    private:
+        bool RegisterDomain(Dgn::DgnDomain& domain);
+    private:
+        BentleyStatus m_registrationStatus;
+    };
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Arturas.Mizaras             08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DomainHandlerRegisterHelper& DomainHandlerRegisterHelper::Get()
+    {
+    static DomainHandlerRegisterHelper oObject;
+
+    return oObject;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Arturas.Mizaras             08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool DomainHandlerRegisterHelper::RegisterDomain(Dgn::DgnDomain& domain)
+    {
+    m_registrationStatus = Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No);
+    BeAssert(BentleyStatus::SUCCESS == m_registrationStatus);
+    
+    return BentleyStatus::SUCCESS == m_registrationStatus;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Arturas.Mizaras             08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+DomainHandlerRegisterHelper::DomainHandlerRegisterHelper() : m_registrationStatus(BentleyStatus::SUCCESS)
+    {
+    bool bStart(true);
+
+    bStart = bStart && RegisterDomain(BentleyApi::Structural::StructuralCommonDomain::GetDomain());
+    bStart = bStart && RegisterDomain(BentleyApi::Structural::StructuralProfilesDomain::GetDomain());
+    bStart = bStart && RegisterDomain(BentleyApi::Structural::StructuralPhysicalDomain::GetDomain());
+    }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
 BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
     {
-    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralCommonDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-        return BentleyStatus::ERROR;
-
-    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralProfilesDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-        return BentleyStatus::ERROR;
-
-    if (BentleyStatus::SUCCESS != Dgn::DgnDomains::RegisterDomain(BentleyApi::Structural::StructuralPhysicalDomain::GetDomain(), Dgn::DgnDomain::Required::Yes, Dgn::DgnDomain::Readonly::No))
-        return BentleyStatus::ERROR;
-
-    return BentleyStatus::SUCCESS;
+    return DomainHandlerRegisterHelper::Get().GetRegistrationStatus();
     }
 
 // //---------------------------------------------------------------------------------------

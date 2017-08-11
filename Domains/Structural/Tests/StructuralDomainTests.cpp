@@ -6,9 +6,9 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "StructuralDomainTestFixture.h"
-#include <StructuralDomain\StructuralDomainApi.h>
-#include <BeJsonCpp\BeJsonUtilities.h>
-#include <Json\Json.h>
+#include <StructuralDomain/StructuralDomainApi.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
+#include <Json/Json.h>
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Vytautas.Valiukonis             08/17

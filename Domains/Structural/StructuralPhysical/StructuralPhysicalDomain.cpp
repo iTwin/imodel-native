@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralPhysical\StructuralPhysicalDomain.h>
+#include <StructuralDomain/StructuralPhysical/StructuralPhysicalDomain.h>
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 

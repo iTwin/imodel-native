@@ -1,4 +1,4 @@
-#include <StructuralDomain\StructuralProfiles\VaryingProfileZone.h>
+#include <StructuralDomain/StructuralProfiles/VaryingProfileZone.h>
 
 HANDLER_DEFINE_MEMBERS(VaryingProfileZoneHandler)
 

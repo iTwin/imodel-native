@@ -1,4 +1,4 @@
-#include <StructuralDomain\StructuralProfiles\ConstantProfile.h>
+#include <StructuralDomain/StructuralProfiles/ConstantProfile.h>
 
 HANDLER_DEFINE_MEMBERS(ConstantProfileHandler)
 

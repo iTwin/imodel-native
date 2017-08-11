@@ -7,9 +7,9 @@
 +--------------------------------------------------------------------------------------*/
 #include "StructuralDomainTestFixture.h"
 #include <DgnPlatform/DgnPlatformLib.h>
-#include <DgnPlatform/DesktopTools\KnownDesktopLocationsAdmin.h>
+#include <DgnPlatform/DesktopTools/KnownDesktopLocationsAdmin.h>
 #include <DgnPlatform/UnitTests/ScopedDgnHost.h>
-#include <StructuralDomain\StructuralDomainApi.h>
+#include <StructuralDomain/StructuralDomainApi.h>
 
 using namespace BeSQLite;
 using namespace Dgn;

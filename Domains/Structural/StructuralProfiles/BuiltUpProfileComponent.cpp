@@ -1,4 +1,4 @@
-#include <StructuralDomain\StructuralProfiles\BuiltUpProfileComponent.h>
+#include <StructuralDomain/StructuralProfiles/BuiltUpProfileComponent.h>
 
 HANDLER_DEFINE_MEMBERS(BuiltUpProfileComponentHandler)
 

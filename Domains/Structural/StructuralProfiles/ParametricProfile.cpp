@@ -1,4 +1,4 @@
-#include <StructuralDomain\StructuralProfiles\ParametricProfile.h>
+#include <StructuralDomain/StructuralProfiles/ParametricProfile.h>
 
 HANDLER_DEFINE_MEMBERS(ParametricProfileHandler)
 
