@@ -115,7 +115,7 @@ struct BeThread : NonCopyableClass
             {
             BeThread thread;
             thread.m_arg = std::unique_ptr<__ThreadArg>(new __ThreadArg(work));
-            if (BeThreadUtilities::StartNewThread(DEFAULT_STACK_SIZE, __Run, thread.m_arg.get()) != SUCCESS)
+            if (BeThreadUtilities::StartNewThread(__Run, thread.m_arg.get(), DEFAULT_STACK_SIZE) != SUCCESS)
                 {
                 thread.m_arg->GetStateR().store(BeThread::State::Error);
                 }
