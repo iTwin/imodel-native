@@ -79,10 +79,11 @@
 
     <ProductDirectoryList ListName="StructuralDomainsTestDirs">
         <ProductDirectory Name="VendorNotices"                  Deliver="false" />
-        <ProductDirectory Name="Libs"                           Deliver="false"/>
-        <ProductDirectory Name="UnitTests-Assets"               Path="UnitTests-Assets"/>
-        <ProductDirectory Name="UnitTests-IgnoreList"           Path="UnitTests-IgnoreList"/>
-        <ProductDirectory Name="UnitTests-Objects"              Path="UnitTests-Objects"/>
+        <ProductDirectory Name="Libs"                           Deliver="false" />
+        <ProductDirectory Name="StructuralDomainIncludes"       Deliver="false" />
+        <ProductDirectory Name="UnitTests-Assets"               Deliver="false" />
+        <ProductDirectory Name="UnitTests-IgnoreList"           Deliver="false" />
+        <ProductDirectory Name="UnitTests-Objects"              Deliver="false" />
     </ProductDirectoryList>
 
     <ProductDirectoryList ListName="StructuralDomainsSDKDirs">
