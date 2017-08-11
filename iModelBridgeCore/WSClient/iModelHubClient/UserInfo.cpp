@@ -33,3 +33,20 @@ UserInfoPtr UserInfo::Parse(WSObjectsReader::Instance instance)
 	RapidJsonValueCR properties = instance.GetProperties();
 	return ParseRapidJson(properties);
 	}
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Paulius.Valiunas               08/2017
+//---------------------------------------------------------------------------------------
+UserInfoPtr UserInfo::ParseFromRelated(WSObjectsReader::Instance *instance)
+    {
+    auto relationshipInstance = *instance->GetRelationshipInstances().begin();
+
+    auto relatedInstance = relationshipInstance.GetRelatedInstance();
+    if (!relatedInstance.IsValid())
+        return nullptr;
+
+    if (relatedInstance.GetObjectId().className != ServerSchema::Class::UserInfo)
+        return nullptr;
+
+    return Parse(relatedInstance);
+    }

@@ -211,27 +211,32 @@ iModelsTaskPtr Client::GetiModels(ICancellationTokenPtr cancellationToken) const
         }
 
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-    ObjectId iModelsObject(ServerSchema::Schema::Project, ServerSchema::Class::iModel, "");
+
+    WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+
+    //Always select Owner Info relationship
+    Utf8String select = "*";
+    iModelInfo::AddOwnerInfoSelect(select);
+    query.SetSelect(select);
 
     IWSRepositoryClientPtr client = CreateProjectConnection();
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModels from project %s.", m_projectId.c_str());
-    return client->SendGetObjectRequest(iModelsObject, nullptr, cancellationToken)->Then<iModelsResult>
-        ([=](const WSObjectsResult& response)
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelsResult>([=] (WSObjectsResult const& result)
         {
-        if (!response.IsSuccess())
+        if (!result.IsSuccess())
             {
-            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, response.GetError().GetMessage().c_str());
-            return iModelsResult::Error(response.GetError());
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
+            return iModelsResult::Error(result.GetError());
             }
 
         bvector<iModelInfoPtr> iModels;
-        for (const auto& iModel : response.GetValue().GetInstances())
+        for (const auto& iModel : result.GetValue().GetInstances())
             {
             iModels.push_back(iModelInfo::Parse(iModel, m_serverUrl));
             }
 
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
-        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float)(end - start), "Success.");
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, (float) (end - start), "Success.");
         return iModelsResult::Success(iModels);
         });
     }
@@ -262,6 +267,11 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR iModelName, ICancellationToke
     filter.Sprintf("%s+eq+'%s'", ServerSchema::Property::iModelName, iModelName.c_str());
     query.SetFilter(filter);
 
+    //Always select Owner Info relationship
+    Utf8String select = "*";
+    iModelInfo::AddOwnerInfoSelect(select);
+    query.SetSelect(select);
+
     IWSRepositoryClientPtr client = CreateProjectConnection();
     return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
         {
@@ -270,8 +280,13 @@ iModelTaskPtr Client::GetiModelByName(Utf8StringCR iModelName, ICancellationToke
             LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return iModelResult::Error(result.GetError());
             }
-
-        iModelInfoPtr iModelInfo = iModelInfo::Parse(result.GetValue().GetJsonValue()[ServerSchema::Instances][0], m_serverUrl);
+        auto iModelInfoInstances = result.GetValue().GetInstances();
+        if (iModelInfoInstances.Size() == 0)
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "iModel does not exist.");
+            return iModelResult::Error(Error::Id::iModelDoesNotExist);
+            }
+        iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
         return iModelResult::Success(iModelInfo);
@@ -300,18 +315,31 @@ iModelTaskPtr Client::GetiModelById(Utf8StringCR iModelId, ICancellationTokenPtr
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Getting iModel with id %s.", iModelId.c_str());
 
-    ObjectId iModelsObject(ServerSchema::Schema::Project, ServerSchema::Class::iModel, iModelId);
-    IWSRepositoryClientPtr client = CreateProjectConnection();
+    WSQuery query = WSQuery(ServerSchema::Schema::Project, ServerSchema::Class::iModel);
+    Utf8String filter;
+    filter.Sprintf("$id+eq+'%s'", iModelId.c_str());
+    query.SetFilter(filter);
 
-    return client->SendGetObjectRequest(iModelsObject, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
+    //Always select Owner Info relationship
+    Utf8String select = "*";
+    iModelInfo::AddOwnerInfoSelect(select);
+    query.SetSelect(select);
+
+    IWSRepositoryClientPtr client = CreateProjectConnection();
+    return client->SendQueryRequest(query, nullptr, nullptr, cancellationToken)->Then<iModelResult>([=] (WSObjectsResult const& result)
         {
         if (!result.IsSuccess())
             {
             LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
             return iModelResult::Error(result.GetError());
             }
-
-        iModelInfoPtr iModelInfo = iModelInfo::Parse(result.GetValue().GetJsonValue()[ServerSchema::Instances][0], m_serverUrl);
+        auto iModelInfoInstances = result.GetValue().GetInstances();
+        if (iModelInfoInstances.Size() == 0)
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "iModel does not exist.");
+            return iModelResult::Error(Error::Id::iModelDoesNotExist);
+            }
+        iModelInfoPtr iModelInfo = iModelInfo::Parse(*iModelInfoInstances.begin(), m_serverUrl);
         double end = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
         LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "");
         return iModelResult::Success(iModelInfo);
@@ -356,7 +384,7 @@ iModelTaskPtr Client::CreateiModelInstance(Utf8StringCR iModelName, Utf8StringCR
             Json::Value json;
             createiModelResult.GetValue().GetJson(json);
             JsonValueCR iModelInstance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            auto iModelInfo = iModelInfo::Parse(iModelInstance, m_serverUrl);
+            auto iModelInfo = iModelInfo::Parse(ToRapidJson(iModelInstance[ServerSchema::Properties]), iModelInstance[ServerSchema::InstanceId].asString(), nullptr, m_serverUrl);
             finalResult->SetSuccess(iModelInfo);
             return;
             }
