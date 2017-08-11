@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralPhysical\StripFooting.h>
+#include <StructuralDomain/StructuralPhysical/StripFooting.h>
 
 HANDLER_DEFINE_MEMBERS(StripFootingHandler)
 

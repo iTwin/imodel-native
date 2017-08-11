@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include "StructuralDomain\StructuralDomainUtilities.h"
+#include "StructuralDomain/StructuralDomainUtilities.h"
 
 BE_JSON_NAME(StructuralDomain)
 

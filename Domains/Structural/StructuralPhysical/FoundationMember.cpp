@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralPhysical\FoundationMember.h>
+#include <StructuralDomain/StructuralPhysical/FoundationMember.h>
 
 HANDLER_DEFINE_MEMBERS(FoundationMemberHandler)
 

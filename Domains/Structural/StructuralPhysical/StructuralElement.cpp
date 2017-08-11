@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralPhysical\StructuralElement.h>
+#include <StructuralDomain/StructuralPhysical/StructuralElement.h>
 
 HANDLER_DEFINE_MEMBERS(StructuralElementHandler);
 

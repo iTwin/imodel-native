@@ -7,7 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 #pragma once
 
-#include <StructuralDomain\StructuralCommon\StructuralCommonDomain.h>
+#include "StructuralCommonDefinitions.h"
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 

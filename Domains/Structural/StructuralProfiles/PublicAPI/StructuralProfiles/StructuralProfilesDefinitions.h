@@ -8,7 +8,7 @@
 #pragma once
 
 //__PUBLISH_SECTION_START__
-#include <StructuralDomain\StructuralCommon\StructuralCommonDefinitions.h>
+#include <StructuralDomain/StructuralCommon/StructuralCommonDefinitions.h>
 
 //-----------------------------------------------------------------------------------------
 // ECSchema macros

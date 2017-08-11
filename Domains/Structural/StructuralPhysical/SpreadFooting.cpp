@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralPhysical\SpreadFooting.h>
+#include <StructuralDomain/StructuralPhysical/SpreadFooting.h>
 
 HANDLER_DEFINE_MEMBERS(SpreadFootingHandler)
 
