@@ -140,7 +140,10 @@ public:
     SMNode(Dgn::TileTree::TriMeshTree::Root& root, SMNodeP parent, IScalableMeshNodePtr& smNodePtr) : T_Super(root, parent), m_scalableMeshNodePtr(smNodePtr) {}
     Utf8String GetFilePath(SMSceneR) const;
 
-    bool _HasChildren() const override { return m_scalableMeshNodePtr->GetChildrenNodes().size() > 0; }
+    bool _HasChildren() const override { return m_scalableMeshNodePtr->GetChildrenNodes().size() > 0 || !IsReady(); }
+    ChildTiles const* _GetChildren(bool load) const override; 
+
+
     Dgn::ElementAlignedBox3d ComputeRange();
 };
 
@@ -178,7 +181,7 @@ public:
 //=======================================================================================
 // @bsiclass
 //=======================================================================================
-struct ScalableMeshModel : IMeshSpatialModel //, Dgn::Render::IGenerateMeshTiles
+struct ScalableMeshModel : IMeshSpatialModel //, Dgn::Render::IGetPublishedTilesetInfo
 {
     DGNMODEL_DECLARE_MEMBERS("ScalableMeshModel", IMeshSpatialModel)
 
@@ -188,6 +191,8 @@ private:
     SMSceneP Load(Dgn::Render::SystemP) const;
     //NEEDS_WORK_MS : Modify remove mutable
     mutable IScalableMeshPtr                m_smPtr;
+    Transform                               m_smToModelUorTransform;
+    Transform                               m_modelUorToSmTransform;
     mutable bool                            m_tryOpen;
     mutable BentleyApi::Dgn::AxisAlignedBox3d       m_range;
 
@@ -220,6 +225,7 @@ protected:
 
     virtual bool _IsMultiResolution() const { return true; };
     BentleyApi::Dgn::AxisAlignedBox3d _GetRange() const override;
+    SCALABLEMESH_SCHEMA_EXPORT BentleyApi::Dgn::AxisAlignedBox3d _QueryModelRange() const override;
 
     BentleyStatus _QueryTexturesLod(bvector<ITerrainTexturePtr>& textures, size_t maxSizeBytes) const override;
     BentleyStatus _QueryTexture(ITextureTileId const& tileId, ITerrainTexturePtr& texture) const override;
@@ -237,7 +243,7 @@ protected:
     SCALABLEMESH_SCHEMA_EXPORT void _PickTerrainGraphics(Dgn::PickContextR) const override;
     SCALABLEMESH_SCHEMA_EXPORT void _OnFitView(FitContextR context) override;
 public:
-    //TileGeneratorStatus _GenerateMeshTiles(TileNodePtr& rootTile, TransformCR transformDbToTile, double leafTolerance, TileGenerator::ITileCollector& collector, ITileGenerationProgressMonitorR progressMeter) override;
+    //Dgn::Render::PublishedTilesetInfo _GetPublishedTilesetInfo() override;
 
     //! Create a new TerrainPhysicalModel object, in preparation for loading it from the DgnDb.
     ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams const& params);
@@ -250,7 +256,7 @@ public:
 
     void SetFileNameProperty(BeFileNameCR smFilename);
 
-    SCALABLEMESH_SCHEMA_EXPORT BeFileName GetPath();
+    BeFileName GetPath() const { return m_path; }
 
     //! A DgnDb can have only one terrain.
     SCALABLEMESH_SCHEMA_EXPORT static IMeshSpatialModelP GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb);

@@ -42,8 +42,41 @@ USING_NAMESPACE_TILETREE
 //----------------------------------------------------------------------------------------
 AxisAlignedBox3d ScalableMeshModel::_GetRange() const
     {
-    if (m_smPtr.IsValid()) m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
+    if (m_smPtr.IsValid())
+        m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(m_range));
+
     return m_range;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+PublishedTilesetInfo ScalableMeshModel::_GetPublishedTilesetInfo()
+    {
+    if (m_smPtr.IsNull())
+        return PublishedTilesetInfo();
+
+    return PublishedTilesetInfo(Utf8String(GetPath()), _GetRange());
+    }
+
+
+//----------------------------------------------------------------------------------------
+// @bsimethod                                                 Mathieu.St-Pierre     8/2017
+//----------------------------------------------------------------------------------------
+AxisAlignedBox3d ScalableMeshModel::_QueryModelRange() const
+    {        
+    AxisAlignedBox3d range(DRange3d::NullRange());
+
+    if (m_smPtr.IsValid()) 
+        { 
+        m_smPtr->GetRange(const_cast<AxisAlignedBox3d&>(range));
+        Transform transform(m_smPtr->GetReprojectionTransform());
+
+        transform.Multiply(range, range);
+        }    
+    
+    return range;
     }
 
 //----------------------------------------------------------------------------------------
@@ -321,12 +354,12 @@ static bool s_loadTexture = true;
 static bool s_waitQueryComplete = false;
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                                    Paul.Connelly   07/17
+ * @bsimethod                                                    Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 SMGeometry::SMGeometry(CreateParams const& params, SMSceneR scene, Dgn::Render::SystemP sys) : Dgn::TileTree::TriMeshTree::TriMesh(params, scene, sys) { }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  11/2016
+// @bsimethod                                                   Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 SMNode::SMLoader::SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     : TileLoader("", tile, loads, tile._GetTileCacheKey(), renderSys)
@@ -339,7 +372,7 @@ SMNode::SMLoader::SMLoader(Dgn::TileTree::TileR tile, Dgn::TileTree::TileLoadSta
 
 //SMNode
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                   Mathieu.Marchand  11/2016
+// @bsimethod                                                   Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 TileLoaderPtr SMNode::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::SystemP renderSys)
     {
@@ -347,7 +380,7 @@ TileLoaderPtr SMNode::_CreateTileLoader(TileLoadStatePtr loads, Dgn::Render::Sys
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                                    Paul.Connelly   07/17
+ * @bsimethod                                                    Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 bool SMNode::_WantDebugRangeGraphics() const
     {
@@ -356,8 +389,44 @@ bool SMNode::_WantDebugRangeGraphics() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Tile::ChildTiles const* SMNode::_GetChildren(bool load) const
+    { 
+    return __super::_GetChildren(load);
+/*
+    if (!IsReady())
+        return nullptr;
+
+    if (m_children.size() == 0)
+        return nullptr;
+
+    if (!m_children[0]->IsReady())
+        return nullptr;
+
+    return &m_children;
+*/
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Mathieu.St-Pierre  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+/*
+bool SMNode::IsNotLoaded() const
+    { 
+    if (m_loadStatus.load() == LoadStatus::NotLoaded)
+        return true;
+    
+    if (m_children.size() > 0 && m_children[0].GetLoadStatus() == == LoadStatus::NotLoaded)
+        return true;
+
+    return false;
+    }
+*/
+
+/*---------------------------------------------------------------------------------**//**
  * Draw this node.
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                    Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 void SMNode::_DrawGraphics(Dgn::TileTree::DrawArgsR args) const
     {
@@ -397,7 +466,7 @@ void SMNode::_DrawGraphics(Dgn::TileTree::DrawArgsR args) const
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String SMNode::_GetTileCacheKey() const
     {
@@ -407,11 +476,25 @@ Utf8String SMNode::_GetTileCacheKey() const
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render::SystemP renderSys, bool loadChildren)
     {
     BeAssert(!IsReady());
+
+#if 0
+    //Just need to load the children
+    if (m_children.size() > 0)
+        {
+        for (auto& child : m_children)
+            {                     
+            ((SMNode*)&child)->Read3SMTile(in, scene, renderSys, false);
+            }
+
+        SetIsReady();
+        return SUCCESS;
+        }
+#endif
 
     if (SUCCESS != DoRead(in, scene, renderSys, loadChildren))
         {
@@ -421,13 +504,17 @@ BentleyStatus SMNode::Read3SMTile(StreamBuffer& in, SMSceneR scene, Dgn::Render:
         }
 
     // only after we've successfully read the entire node, mark it as ready so other threads can look at its child nodes.
-    SetIsReady();
+    //if (loadChildren)
+        SetIsReady();
+
     return SUCCESS;
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
+static double s_maxDiamFactor = 10;
+static double s_constantFactor = 100;
 bool SMNode::ReadHeader(Transform& locationTransform)
     {
     m_range.low = m_scalableMeshNodePtr->GetContentExtent().low;
@@ -451,7 +538,8 @@ bool SMNode::ReadHeader(Transform& locationTransform)
 
     m_scalableMeshNodePtr->GetResolutions(geometricResolution, textureResolution);
         
-    m_maxDiameter = m_range.low.Distance(m_range.high) / std::min(geometricResolution, textureResolution);
+    //m_maxDiameter = m_range.low.Distance(m_range.high) / std::min(geometricResolution, textureResolution) / s_maxDiamFactor;
+    m_maxDiameter = s_constantFactor / std::min(geometricResolution, textureResolution);
 	
 	//m_maxDiameter = 1000 / std::min(geometricResolution, textureResolution);
 
@@ -478,7 +566,7 @@ bool SMNode::ReadHeader(Transform& locationTransform)
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
+// @bsimethod                                                    Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 static bool s_applyTexture = true;
 
@@ -657,7 +745,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
 #endif
 
     bvector<IScalableMeshNodePtr> childrenNodes(m_scalableMeshNodePtr->GetChildrenNodes());
-
+    
     for (auto& childNode : childrenNodes)
         {
         SMNodePtr nodeptr = new SMNode(GetTriMeshRootR(), this, childNode);
@@ -666,11 +754,12 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
            if (!nodeptr->ReadHeader(centroid))
            return ERROR;
            */
-
+/*
         if (loadChildren)
             {
             nodeptr->Read3SMTile(in, scene, renderSys, false);
             }
+*/
 
         m_children.push_back(nodeptr);
         }
@@ -716,7 +805,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     for (size_t faceVerticeInd = 0; faceVerticeInd < polyfaceQuery->GetPointIndexCount(); faceVerticeInd++)
         {
         vertIndex[faceVerticeInd] = faceVerticeInd; //polyfaceQuery->GetPointIndexCP()[faceVerticeInd] - 1;
-        }
+        }  
 
     for (size_t paramInd = 0; paramInd < polyfaceQuery->GetPointIndexCount(); paramInd++)
         {
@@ -728,18 +817,39 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     trimesh.m_vertIndex = vertIndex;
 
     if (s_applyTexture && renderSys != nullptr)
-        {
-        trimesh.m_textureUV = textureUv;
-
+        {        
         //IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
 
+#if 1 //NEEDS_WORK_SM GetTextureCompressed doesn't currently work for Cesium. 
+        IScalableMeshTexturePtr smTexturePtr(m_scalableMeshNodePtr->GetTexture());
+
+        if (smTexturePtr.IsValid())
+            {
+            trimesh.m_textureUV = textureUv;
+            ByteStream imageBytes(smTexturePtr->GetSize());
+
+            size_t lineSize = smTexturePtr->GetDimension().x * 3;
+
+            for (size_t indY = 0; indY < smTexturePtr->GetDimension().y; indY++)
+                memcpy(imageBytes.GetDataP() + indY * lineSize, smTexturePtr->GetData() + (smTexturePtr->GetDimension().y - indY - 1) * lineSize, lineSize);
+                                                        
+            Image binaryImage(smTexturePtr->GetDimension().x, smTexturePtr->GetDimension().y, std::move(imageBytes), Image::Format::Rgb);
+
+            Render::Texture::CreateParams params;
+            params.SetIsTileSection();  // tile section have clamp instead of warp mode for out of bound pixels. That help reduce seams between tiles when magnified.            
+            trimesh.m_texture = renderSys->_CreateTexture(binaryImage, params);
+            }
+#else
+
         IScalableMeshTexturePtr compressedTexturePtr(m_scalableMeshNodePtr->GetTextureCompressed());
-        Image jpegImage(Image::FromJpeg(compressedTexturePtr->GetData(), compressedTexturePtr->GetSize(), Image::Format::Rgb));
+        Image jpegImage(Image::FromJpeg(compressedTexturePtr->GetData(), compressedTexturePtr->GetSize(), Image::Format::Rgb));        
+        ImageSource imageSource(jpegImage, ImageSource::Format::Jpeg);        
+        trimesh.m_texture = renderSys->_CreateTexture(imageSource, Image::Format::Rgb, Image::BottomUp::Yes);
+        trimesh.m_textureUV = textureUv;
+#endif
         //ImageSource jpeg(ImageSource::Format::Jpeg, ByteStream(buffer, resourceSize));
-
-        ImageSource imageSource(jpegImage, ImageSource::Format::Jpeg);
-
-        trimesh.m_texture =  renderSys->_CreateTexture(imageSource, Image::BottomUp::Yes);
+        
+                
         }
 
     m_meshes.push_front(scene._CreateGeometry(trimesh, renderSys));
@@ -764,7 +874,7 @@ BentleyStatus SMNode::DoRead(StreamBuffer& in, SMSceneR scene, Dgn::Render::Syst
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   08/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
     {
@@ -774,7 +884,7 @@ BentleyStatus SMScene::LoadNodeSynchronous(SMNodeR node)
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus SMScene::LoadScene()
     {
@@ -799,7 +909,7 @@ BentleyStatus SMScene::LoadScene()
     }
 
 //----------------------------------------------------------------------------------------
-// @bsimethod                                                      Ray.Bentley     09/2015
+// @bsimethod                                                      Mathieu.St-Pierre  08/17
 //----------------------------------------------------------------------------------------
 BentleyStatus SMScene::LocateFromSRS()
     {
@@ -855,7 +965,7 @@ BentleyStatus SMScene::LocateFromSRS()
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   04/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 #if 0
 BentleyStatus Scene::ReadSceneFile()
@@ -907,7 +1017,8 @@ IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEng
 TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
     {
     Utf8String sceneFile;
-    Transform location(Transform::FromIdentity());
+
+    Transform toLocationTransform;
     Transform toFloatTransform;
 
     if (m_smPtr.IsValid())
@@ -916,21 +1027,22 @@ TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
         DPoint3d centroid;
         centroid = DPoint3d::From((range3D.high.x + range3D.low.x) / 2.0, (range3D.high.y + range3D.low.y) / 2.0, (range3D.high.z + range3D.low.z) / 2.0);
 
+#if 0 
         DPoint3d go = m_dgndb.GeoLocation().GetGlobalOrigin();
 
         GeoCoords::GCS gcs(m_smPtr->GetGCS());
         DgnGCSPtr  smGCS = DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), m_dgndb);
 
         DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
-        smGCS->UorsFromCartesian(scale, scale);
+        smGCS->UorsFromCartesian(scale, scale);        
+                    
         scale.DifferenceOf(scale, go);
 
-        smGCS->UorsFromCartesian(centroid, centroid);
+        smGCS->UorsFromCartesian(centroid, centroid);       
 
         toFloatTransform = Transform::FromRowValues(scale.x, 0, 0, -(centroid.x - go.x),
                                                     0, scale.y, 0, -(centroid.y - go.y),
                                                     0, 0, scale.z, -(centroid.z - go.z));
-
 
         
 /*
@@ -946,14 +1058,28 @@ TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
                                                      0, 0, scale.z, centroid.z);
 
         //location = Transform::From(centroid.x + go.x, centroid.y + go.y, centroid.z + go.z);                                    
+#endif
+
+        m_smToModelUorTransform.Multiply(centroid, centroid);
+        
+        toFloatTransform = Transform::FromRowValues(1.0, 0, 0, -(centroid.x),
+                                                    0, 1.0, 0, -(centroid.y),
+                                                    0, 0, 1.0, -(centroid.z));
+
+        toLocationTransform = Transform::FromRowValues(1.0, 0, 0, (centroid.x),
+                                                       0, 1.0, 0, (centroid.y),
+                                                       0, 0, 1.0, (centroid.z));
+
+        toFloatTransform = Transform::FromProduct(toFloatTransform, m_smToModelUorTransform);
+        //toLocationTransform = Transform::FromProduct(toLocationTransform, m_smToModelUorTransform);
         }
     else
         { 
-        location = Transform::FromIdentity();
+        toLocationTransform = Transform::FromIdentity();
         toFloatTransform = Transform::FromIdentity();
         }
 
-    SMScenePtr scene = new SMScene(m_dgndb, m_smPtr, location, toFloatTransform, sceneFile.c_str(), system);
+    SMScenePtr scene = new SMScene(m_dgndb, m_smPtr, toLocationTransform, toFloatTransform, sceneFile.c_str(), system);
     scene->SetPickable(true);
     if (SUCCESS != scene->LoadScene())
         return nullptr;
@@ -971,7 +1097,7 @@ SMSceneP ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshModel::_PickTerrainGraphics(Dgn::PickContextR context) const
     {
@@ -987,7 +1113,7 @@ void ScalableMeshModel::_PickTerrainGraphics(Dgn::PickContextR context) const
     }
 
 /*---------------------------------------------------------------------------------**//**
- * @bsimethod                                    Keith.Bentley                   05/16
+ * @bsimethod                                                   Mathieu.St-Pierre  08/17
  +---------------+---------------+---------------+---------------+---------------+------*/
 void ScalableMeshModel::_OnFitView(FitContextR context)
     {
@@ -1246,15 +1372,18 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
     scale.x = 1;
     scale.y = 1;
     scale.z = 1;
+    
+    DgnGCS* projGCS = dgnProject.GeoLocation().GetDgnGCS();
 
     if (gcs.HasGeoRef())
         {
         DgnGCSPtr dgnGcsPtr(DgnGCS::CreateGCS(gcs.GetGeoRef().GetBasePtr().get(), dgnProject));
         dgnGcsPtr->UorsFromCartesian(scale, scale);
 
-        DgnGCSPtr projGCS = dgnProject.GeoLocation().GetDgnGCS();
-        if (projGCS.IsValid() && !projGCS->IsEquivalent(*dgnGcsPtr))
+        if (projGCS != nullptr && !projGCS->IsEquivalent(*dgnGcsPtr))
             {
+            dgnGcsPtr->SetReprojectElevation(true);
+
             DRange3d smExtent, smExtentUors;
             m_smPtr->GetRange(smExtent);
             Transform trans;
@@ -1265,20 +1394,44 @@ void ScalableMeshModel::OpenFile(BeFileNameCR smFilename, DgnDbR dgnProject)
             extent.DifferenceOf(smExtentUors.high, smExtentUors.low);
             Transform       approxTransform;
 
-            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, *projGCS);
-            if (0 == status || 1 == status)
-                m_smPtr->SetReprojection(*projGCS, approxTransform);
+            auto coordInterp = m_smPtr->IsCesium3DTiles() ? Dgn::GeoCoordInterpretation::XYZ : Dgn::GeoCoordInterpretation::Cartesian;
+
+            StatusInt status = dgnGcsPtr->GetLocalTransform(&approxTransform, smExtentUors.low, &extent, true/*doRotate*/, true/*doScale*/, coordInterp, *projGCS);
+            if (0 == status || 1 == status || 25 == status)
+                {
+                DRange3d smExtentInDestGCS1;
+                approxTransform.Multiply(smExtentInDestGCS1, smExtentUors);
+                m_smToModelUorTransform = Transform::FromProduct(approxTransform, trans);
+
+                DRange3d smExtentInDestGCS;
+                m_smToModelUorTransform.Multiply(smExtentInDestGCS, smExtent);
+                }
+            else
+                {
+                m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
+                }
+            }
+        else
+            {
+            m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
             }
         }
     else
         {
-        if (dgnProject.GeoLocation().GetDgnGCS()!=nullptr)
-            dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
+        dgnProject.GeoLocation().GetDgnGCS()->UorsFromCartesian(scale, scale);
+        assert(scale.x == 1 && scale.y == 1 && scale.z == 1);
+        m_smToModelUorTransform = Transform::FromScaleFactors(scale.x, scale.y, scale.z);
         }
 
-    DPoint3d translation = {0,0,0};
+    m_smPtr->SetReprojection(*projGCS, m_smToModelUorTransform);
+
+    DPoint3d translation = { 0,0,0 };
 
     m_storageToUorsTransfo = DMatrix4d::FromScaleAndTranslation(scale, translation);
+
+    bool invertResult = m_modelUorToSmTransform.InverseOf(m_smToModelUorTransform);
+    assert(invertResult);
+
 
     // NEEDS_WORK_SM
     /*
@@ -1332,11 +1485,6 @@ Transform ScalableMeshModel::GetUorsToStorage()
 IMeshSpatialModelP ScalableMeshModel::GetTerrainModelP(BentleyApi::Dgn::DgnDbCR dgnDb)
     {
     return ScalableMeshTerrainModelAppData::Get(dgnDb)->GetModel(dgnDb);
-    }
-
-BeFileName ScalableMeshModel::GetPath()
-    {
-    return m_path;
     }
 
 //----------------------------------------------------------------------------------------
