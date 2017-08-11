@@ -309,11 +309,7 @@ public:
     //! this value will be invalid on return.
     BE_SQLITE_EXPORT BeBriefcaseBasedId(Db& db, Utf8CP tableName, Utf8CP columnName);
 
-    //! save this BeBriefcaseBasedId as a JSON value
-    Json::Value ToJson() const {Json::Value val; val[json_b()]=GetBriefcaseId().GetValue(); val[json_l()]=GetLocalId(); return val;}
-
-    //! create a new BeBriefcaseBasedId from a JSON value
-    static BeBriefcaseBasedId FromJson(Json::Value val) {return BeBriefcaseBasedId((BeBriefcaseId) val[json_b()].asUInt(), val[json_l()].asUInt64());}
+    static BeBriefcaseBasedId FromJson(Json::Value val) {return BeBriefcaseBasedId(val.asUInt64());}
 };
 
 #define BEBRIEFCASEBASED_ID_SUBCLASS(classname,superclass) struct classname : superclass { \
