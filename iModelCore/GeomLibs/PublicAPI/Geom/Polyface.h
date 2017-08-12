@@ -2237,7 +2237,7 @@ OffsetOptions () :
 //!<ul>
 GEOMDLLIMPEXP PolyfaceHeaderPtr ComputeOffset
 (
-OffsetOptions const &options,
+OffsetOptions const &options, //!< [in] offset polyface offset options
 double distance1,            //!< [in] offset distance for a positively oriented offset
 double distance2,            //!< [in] offset distance for a negatively oriented offset
 bool outputOffset1 = true,         //!< [in] true to output the (positive oriented) offset at distance1
