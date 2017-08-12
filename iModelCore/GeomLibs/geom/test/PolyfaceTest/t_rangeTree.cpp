@@ -242,6 +242,185 @@ TEST(PolyfaceRangeTree01,CollectInRange)
 #endif
 #endif
 
+TEST(PolyfaceOffset,Cube)
+    {
+    PolyfaceHeader::OffsetOptions offsetOptions;
+
+    auto box0 = ISolidPrimitive::CreateDgnBox (
+       DgnBoxDetail::InitFromCenterAndSize (
+            DPoint3d::From (5,5,5),
+            DPoint3d::From (1,2,3),
+            true
+            ));
+    auto line = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 1,1,0));
+    auto options = IFacetOptions::Create ();
+    IPolyfaceConstructionPtr meshBuilder = IPolyfaceConstruction::Create (*options);
+    meshBuilder->AddSolidPrimitive (*box0);
+    auto mesh0 = meshBuilder->GetClientMeshPtr ();
+    Check::SaveTransformed (*line);
+    Check::SaveTransformed (*mesh0);
+
+    auto mesh1 = mesh0->ComputeOffset (offsetOptions, 1.0, -0.25);
+    if (mesh1.IsValid ())
+        {
+        Check::Shift (10,0,0);
+        Check::SaveTransformed (*line);
+        Check::SaveTransformed (*mesh1);
+        }
+    Check::ClearGeometry ("PolyfaceOffset.Cube");
+    }
+
+
+TEST(PolyfaceOffset,OpenMesh1)
+    {
+    PolyfaceHeader::OffsetOptions offsetOptions;
+
+    auto line = ICurvePrimitive::CreateLine (DSegment3d::From (0,0,0, 1,1,0));
+    auto options = IFacetOptions::Create ();
+    IPolyfaceConstructionPtr meshBuilder = IPolyfaceConstruction::Create (*options);
+    bvector<DPoint3d> points
+        {
+        DPoint3d::From (0,0,0),
+        DPoint3d::From (10,0,0),
+        DPoint3d::From (10,5,0),
+        DPoint3d::From (5,5,0),
+        DPoint3d::From (5,10,0),
+        DPoint3d::From (0,10,0)
+        };
+    meshBuilder->AddTriangulation (points);
+    auto mesh0 = meshBuilder->GetClientMeshPtr ();
+    Check::SaveTransformed (*line);
+    Check::SaveTransformed (*mesh0);
+
+    auto mesh1 = mesh0->ComputeOffset (offsetOptions, 1.0, -0.25);
+    if (mesh1.IsValid ())
+        {
+        Check::Shift (10,0,0);
+        Check::SaveTransformed (*line);
+        Check::SaveTransformed (*mesh1);
+        }
+    Check::ClearGeometry ("PolyfaceOffset.OpenMesh1");
+    }
+
+
+TEST(PolyfaceOffset,OpenMesh2)
+    {
+    PolyfaceHeader::OffsetOptions offsetOptions;
+    TransformShifter shifter (20,0,0, 0,20,0, false);
+    double sz = -1.0;
+    DPoint3d pointB = DPoint3d::From (10,0, sz * 8);
+    DPoint3d pointC = DPoint3d::From (4,0, sz * 8);
+    DPoint3d pointD = DPoint3d::From (4,0, sz * 12);
+
+    auto arc = ICurvePrimitive::CreateArc
+        (
+        DEllipse3d::FromPointsOnArc
+            (
+            DPoint3d::From (10,0,sz * 0),
+            DPoint3d::From (12,0,sz * 4),
+            pointB
+            )
+        );
+    auto path = CurveVector::Create (CurveVector::BOUNDARY_TYPE_Open);
+    path->push_back (arc);
+    path->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointB, pointC)));
+    path->push_back (ICurvePrimitive::CreateLine (DSegment3d::From (pointC, pointD)));
+
+    auto options = IFacetOptions::Create ();
+    IPolyfaceConstructionPtr meshBuilder = IPolyfaceConstruction::Create (*options);
+    auto solid = ISolidPrimitive::CreateDgnRotationalSweep
+                        (
+                        DgnRotationalSweepDetail (path,
+                            DPoint3d::From (0,0,sz * -1),
+                            DVec3d::From (1,0,0),
+                            0.5 * Angle::Pi (),
+                            false
+                        ));
+
+    meshBuilder->AddSolidPrimitive (*solid);
+    auto mesh0 = meshBuilder->GetClientMeshPtr ();
+
+    Check::SaveTransformed (*mesh0);
+
+    auto mesh1 = mesh0->ComputeOffset (offsetOptions, 1.0, -0.25);
+    if (mesh1.IsValid ())
+        {
+        shifter.DoShift0 ();
+        Check::SaveTransformed (*mesh1);
+
+        shifter.DoShift0 ();
+        auto mesh2 = mesh0->ComputeOffset (offsetOptions, 1.0, -0.25, false, true, false);
+        Check::SaveTransformed (*mesh2);
+        shifter.DoShift0 ();
+        mesh2 = mesh0->ComputeOffset (offsetOptions, 1.0, -0.25, false, false, true);
+        Check::SaveTransformed (*mesh2);
+        shifter.DoShift0 ();
+        mesh2 = mesh0->ComputeOffset (offsetOptions, 1.0, -0.25, true, false, false);
+        Check::SaveTransformed (*mesh2);
+        }
+
+    // Make sure "zero shift" works . . .
+    shifter.DoGridShift (0.0, 2.0, true);
+    auto mesh3 = mesh0->ComputeOffset (offsetOptions, 1.0, 0.0, true, true, true);
+    if (mesh3.IsValid ())
+        {
+        shifter.DoShift0 ();
+        Check::SaveTransformed (*mesh3);
+        }    
+    Check::ClearGeometry ("PolyfaceOffset.OpenMesh2");
+    }
+
+
+
+
+TEST(PolyfaceOffset,Torus)
+    {
+    PolyfaceHeader::OffsetOptions offsetOptions;
+    double r0 = 8.0;
+    double r1 = 2.0;
+    auto solid = ISolidPrimitive::CreateDgnTorusPipe (
+       DgnTorusPipeDetail
+            (
+            DPoint3d::From (0,0,0),
+            DVec3d::From (1,0,0),
+            DVec3d::From (0,1,0),
+            r0, r1,
+            Angle::DegreesToRadians (180.0),
+            true
+            ));
+
+    auto options = IFacetOptions::Create ();
+    options->SetAngleTolerance (Angle::DegreesToRadians (15.0));
+    IPolyfaceConstructionPtr meshBuilder = IPolyfaceConstruction::Create (*options);
+    meshBuilder->AddSolidPrimitive (*solid);
+    auto mesh0 = meshBuilder->GetClientMeshPtr ();
+    Check::SaveTransformed (*mesh0);
+    TransformShifter shifter (25,0,0, 0,20,0);
+    for (double offset : bvector<double>{0.1, 0.3})
+        {
+        shifter.DoShift1 ();
+        for (Angle theta : bvector<Angle>
+                {
+                Angle::FromDegrees (10.0),
+                Angle::FromDegrees (20.0),
+                Angle::FromDegrees (30.0)
+                })
+            {
+            auto meshA = mesh0->Clone ();
+            shifter.DoShift0 ();
+            shifter.DoShift0 ();
+            static double s_accumulatedAngleFactor = 3.0;
+            auto meshB = meshA->ComputeOffset (offsetOptions, offset, 0.0, true, false, false);
+            // save meshA AFTER so it shows the intermediate normal computations
+            Check::SaveTransformed (*meshA);
+            if (meshB.IsValid ())
+                Check::SaveTransformed (*meshB);
+            }
+        }
+    Check::ClearGeometry ("PolyfaceOffset.Torus");
+    
+    }
+
 TEST(Polyface,SimpleCreate)
     {
     //     4  3  6
