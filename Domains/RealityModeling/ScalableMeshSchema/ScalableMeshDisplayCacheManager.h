@@ -34,8 +34,10 @@ struct ScalableMeshDisplayCacheManager : public IScalableMeshDisplayCacheManager
     {
     private:
         
-        //Dgn::Render::SystemP m_renderSys
+        Dgn::Render::SystemP m_renderSys;
         bool m_resourcesOutOfDate;
+
+        virtual uint32_t _GetExcessiveRefCountThreshold() const { return 4000000000; }
 
     public:
 
