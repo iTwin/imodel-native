@@ -511,7 +511,7 @@ bvector<SectorData> &offsetVectors
             size_t numNode = sectors.size ();
             size_t position0 = WrapAndAssignBaseNodes (sectors, numNode + 3);
             size_t position1 = position0 + numNode;
-            for (size_t positionA = position0; positionA < position1; positionA)
+            for (size_t positionA = position0; positionA < position1;)
                 {
                 size_t positionB = positionA + 1;
                 while (positionB < position1 && sectors[positionB].m_normalIndex == sectors[positionA].m_normalIndex)
