@@ -409,7 +409,7 @@ TEST(PolyfaceOffset,Torus)
             auto meshA = mesh0->Clone ();
             shifter.DoShift0 ();
             shifter.DoShift0 ();
-            static double s_accumulatedAngleFactor = 3.0;
+            //static double s_accumulatedAngleFactor = 3.0;
             auto meshB = meshA->ComputeOffset (offsetOptions, offset, 0.0, true, false, false);
             // save meshA AFTER so it shows the intermediate normal computations
             Check::SaveTransformed (*meshA);
