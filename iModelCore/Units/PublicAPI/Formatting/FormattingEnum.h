@@ -396,6 +396,7 @@ struct Utils
     UNITS_EXPORT static int IndexOf(Utf8Char c, Utf8CP text);
     UNITS_EXPORT static size_t NumberOfUtf8Bytes(size_t code);
     UNITS_EXPORT static Utf8String AccumulatorStateName(AccumulatorState state);
+    UNITS_EXPORT static Utf8String CharToString(Utf8Char c);
     //#endif
     };
 

@@ -65,6 +65,8 @@ $(o)Quantity$(oext)                 :   $(srcDir)Quantity.cpp ${MultiCompileDepe
 
 $(o)Formatting$(oext)     : $(formatSrcDir)Formatting.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
+$(o)FormattingIO$(oext)     : $(formatSrcDir)FormattingIO.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
+
 $(o)FormatUtils$(oext)    : $(formatSrcDir)FormatUtils.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}
 
 $(o)FormatQuantity$(oext) : $(formatSrcDir)FormatQuantity.cpp $(formatHeaderDir)FormattingApi.h ${MultiCompileDepends}

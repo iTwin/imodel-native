@@ -7,6 +7,7 @@
 +--------------------------------------------------------------------------------------*/
 
 #include <Bentley/BeTest.h>
+#include <BeJsonCpp/BeJsonUtilities.h>
 #include <Logging/bentleylogging.h>
 #include <Bentley/BeTimeUtilities.h>
 #include <Formatting/FormattingApi.h>
@@ -22,6 +23,13 @@ using namespace BentleyApi::Formatting;
 BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 static UnitProxySetCP upx = nullptr;
 static int repc = 0;
+BE_JSON_NAME(degrees)
+BE_JSON_NAME(low)
+BE_JSON_NAME(high)
+BE_JSON_NAME(yaw)
+BE_JSON_NAME(pitch)
+BE_JSON_NAME(roll)
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      03/17
@@ -86,7 +94,7 @@ TEST(FormattingTest, Preliminary)
     else
         LOG.info("Test Data File is not available");
 
-    LOG.info("Stopping Signsatures");
+    LOG.info("Stopping Signatures");
     FormattingTestFixture::ShowSignature("1+52.17", 100);
     FormattingTestFixture::ShowSignature("1+152.17", 100);
     FormattingTestFixture::ShowSignature("1*52.17", 100);
@@ -110,6 +118,27 @@ TEST(FormattingTest, Preliminary)
     Utf8CP nameCM = (nullptr == upCM) ? "xxx" : upCM->GetName();
     LOG.infov("%s %s %s  Reset:%d", nameFT, nameIN, nameCM, upx->GetResetCount());
     LOG.infov("Compare address %x %x repet %d", upFT, upFT1, repc);
+
+    // Json Experimentation
+
+    Json::Value jDeg;
+    jDeg[json_degrees()] = 47.5;
+    LOG.infov("JsonDeg %s", jDeg.ToString().c_str());
+   
+    Json::Value jY;
+    jY[json_degrees()] = 30.1234;
+    Json::Value jP;
+    jP[json_degrees()] = 45.9876;
+    Json::Value jR;
+    jR[json_degrees()] = 65.786;
+
+    Json::Value val;
+    val[json_yaw()] = jY;
+    val[json_pitch()] =jP;
+    val[json_roll()] = jR;
+    LOG.infov("JsonAstro %s", val.ToString().c_str());
+
+
 
     /*NumericFormatSpec numFmt = NumericFormatSpec();
 
@@ -142,6 +171,10 @@ TEST(FormattingTest, Preliminary)
     FormatTraits traits = FormatConstant::DefaultFormatTraits();
     NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
     NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+
+
+    Json::Value nfcJson = nfst100.ToJson();
+    LOG.infov("JsonNFC %s", nfcJson.ToString().c_str());
 
     nfst1000.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
     nfst100.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);

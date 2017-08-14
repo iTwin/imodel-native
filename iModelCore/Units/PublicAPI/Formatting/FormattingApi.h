@@ -35,6 +35,43 @@ DEFINE_POINTER_SUFFIX_TYPEDEFS(NamedFormatSpec)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxySet)
 DEFINE_POINTER_SUFFIX_TYPEDEFS(UnitProxy)
 
+// Json presentation
+BE_JSON_NAME(roundFactor)
+BE_JSON_NAME(presentType)
+BE_JSON_NAME(signOpt)
+BE_JSON_NAME(formatTraits)
+BE_JSON_NAME(LeadZeroes)
+BE_JSON_NAME(TrailZeroes)
+BE_JSON_NAME(KeepDecPnt)
+BE_JSON_NAME(KeepSingleZero)
+BE_JSON_NAME(ExponentZero)
+BE_JSON_NAME(ZeroEmpty)
+BE_JSON_NAME(Use1000Separator)
+BE_JSON_NAME(ApplyRounding)
+BE_JSON_NAME(FractionDash)
+BE_JSON_NAME(UseFractSymbol)
+BE_JSON_NAME(AppendUnitName)
+BE_JSON_NAME(decPrec)
+BE_JSON_NAME(fractPrec)
+BE_JSON_NAME(barType)
+BE_JSON_NAME(decimalSeparator)
+BE_JSON_NAME(thousandSeparator)
+BE_JSON_NAME(uomSeparator)
+BE_JSON_NAME(statSeparator)
+BE_JSON_NAME(minWidth)
+
+// NamedFormatSpec
+BE_JSON_NAME(SpecName)
+BE_JSON_NAME(SpecAlias)
+BE_JSON_NAME(SpecType)
+BE_JSON_NAME(CompositeFormat)
+BE_JSON_NAME(NumericFormat)
+
+//UnitProxy
+BE_JSON_NAME(unitName)
+BE_JSON_NAME(unitLabel)
+
+
 struct FactorPower
     {
 private:
@@ -112,6 +149,8 @@ public:
 //=======================================================================================
 struct NumericFormatSpec
     {
+    
+
 private:
     double              m_roundFactor;
     PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
@@ -155,6 +194,7 @@ public:
         m_thousandsSeparator(other.m_thousandsSeparator), m_barType(other.m_barType), m_uomSeparator(other.m_uomSeparator),
         m_stopSeparator(other.m_stopSeparator), m_minWIdth(other.m_minWIdth) {}
     UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
+    UNITS_EXPORT NumericFormatSpec(Json::Value);
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
     FormatTraits GetFormatTraits() const { return m_formatTraits; }
     UNITS_EXPORT void SetKeepTrailingZeroes(bool keep);
@@ -175,6 +215,11 @@ public:
     bool IsApplyRounding() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); } 
     bool IsAppendUnit() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::AppendUnitName)) != 0); }
     UNITS_EXPORT void SetAppendUnit(bool use);
+    bool IsFractionDash() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::FractionDash)) != 0); }
+    UNITS_EXPORT void SetUseFractionDash(bool use);
+    bool IsUseFractSymbol() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::UseFractSymbol)) != 0); }
+    UNITS_EXPORT void SetUseFractionSymbol(bool use);
+
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
     void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
     bool IsNegativeParentheses() const { return (m_signOption == ShowSignOption::NegativeParentheses); }
@@ -241,6 +286,16 @@ public:
     UNITS_EXPORT Utf8String ShortToBinaryText(short int n, bool useSeparator);
     UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
     UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
+
+
+    UNITS_EXPORT Json::Value ToJson();
+    Json::Value JsonRoundFactor()
+        {
+        Json::Value jFact;
+        jFact[json_roundFactor()] = m_roundFactor;
+        return jFact;
+        }
+    UNITS_EXPORT Json::Value JsonFormatTraits();
     };
 
 //=======================================================================================
@@ -281,6 +336,7 @@ public:
     Utf8CP SetLabel(Utf8CP lab) { m_unitLabel = Utf8String(lab);  return m_unitLabel.c_str(); }
     Utf8CP GetName() const { return m_unitName.c_str(); }
     BEU::UnitCP GetUnit() const { return m_unit; }
+    UNITS_EXPORT Json::Value ToJson();
     };
 
 
@@ -419,6 +475,7 @@ public:
     Utf8String SetSpacer(Utf8CP spacer) { return m_spacer = spacer; }
     bool IsIncludeZero() const { return m_includeZero; }
     bool SetIncludeZero(bool incl) { return m_includeZero = incl; }
+    UNITS_EXPORT Json::Value ToJson();
     };
 
 struct CompositeValue
@@ -479,6 +536,7 @@ public:
         Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
         Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
         PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
+        UNITS_EXPORT Json::Value ToJson();
     };
 
 //=======================================================================================
@@ -561,6 +619,7 @@ public:
     UNITS_EXPORT static bvector<Utf8CP> StdFormatNames(bool useAlias);
     UNITS_EXPORT static Utf8String StdFormatNameList(bool useAlias);
     static FormatUnitSet DefaultFUS(BEU::QuantityCR qty) { return FormatUnitSet(DefaultFormatSpec(), qty.GetUnit()); }
+    UNITS_EXPORT bvector<Json::Value> ToJson();
     };
 
 //=======================================================================================

@@ -93,7 +93,6 @@ size_t  FormatConstant::ExtractTrailingBits(unsigned char c, size_t shift)
         cod <<= shift;
     return cod; 
     }
-
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 04/17
 //----------------------------------------------------------------------------------------
@@ -201,6 +200,13 @@ Utf8String Utils::AccumulatorStateName(AccumulatorState state)
         }
     }
 
+Utf8String Utils::CharToString(Utf8Char c)
+    {
+    Utf8Char buf[2];
+    buf[0] = c;
+    buf[1] = '\0';
+    return Utf8String(buf);
+    }
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //----------------------------------------------------------------------------------------
@@ -1185,30 +1191,6 @@ BEU::UnitCP FormatUnitSet::ResetUnit()
     return m_unit;
     }
 
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-Json::Value FormatUnitSet::ToJson(bool useAlias) const
-    {
-    Json::Value jval = Json::objectValue;
-    if (useAlias)
-        jval[FormatConstant::FUSJsonAlias()] = m_formatSpec->GetAlias();
-    else
-        jval[FormatConstant::FUSJsonName()] = m_formatSpec->GetName();
-    jval[FormatConstant::FUSJsonUnit()] = m_unit->GetName();
-    return jval;
-    }
-
-//----------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 05/17
-//----------------------------------------------------------------------------------------
-Utf8String FormatUnitSet::ToJsonString(bool useAlias) const
-    {
-    Utf8String str;
-    Json::Value jval = ToJson(useAlias);
-    str = jval.ToString();
-    return str;
-    }
 
 
 //----------------------------------------------------------------------------------------
@@ -1380,6 +1362,9 @@ NamedFormatSpec::NamedFormatSpec(Utf8CP name, NumericFormatSpecCR numSpec, Utf8C
     if (Utils::IsNameNullOrEmpty(name))
         m_problem.UpdateProblemCode(FormatProblemCode::NFS_InvalidSpecName);
     }
+
+
+
 
 //===================================================
 //
