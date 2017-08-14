@@ -26,21 +26,6 @@ USING_NAMESPACE_GROUND_DETECTION
 using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 
-#ifndef VANCOUVER_API
-
-namespace BENTLEY_NAMESPACE_NAME
-    {
-    namespace GeoCoordinates 
-        {
-        // TODO : implement GeoCoordInterpretation in ####GeoCoord.h
-        enum GeoCoordInterpretation
-            {
-            Cartesian = 0,
-            XYZ = 1
-            };
-        }
-    }
-#endif
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
 
