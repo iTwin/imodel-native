@@ -75,12 +75,12 @@
     <ECEntityClass typeName="VaryingProfileByZone" description="A Varying Profile that is defined using zones along its length.">
         <BaseClass>VaryingProfile</BaseClass>
     </ECEntityClass>
-    <ECRelationshipClass typeName="VaryingProfileOwnsZone" description="VaryingProfileByZone's ownership of VaryingProfileZone." modifier="None" strength="embedding">
+    <!--<ECRelationshipClass typeName="VaryingProfileOwnsZone" description="VaryingProfileByZone's ownership of VaryingProfileZone." modifier="None" strength="embedding">
         <Source multiplicity="(0..1)" roleLabel="owns zone" polymorphic="false">
             <Class class="VaryingProfileByZone"/>
         </Source>
         <Target multiplicity="(0..*)" roleLabel="is zone of" polymorphic="false">
             <Class class="VaryingProfileZone"/>
         </Target>
-    </ECRelationshipClass>
+    </ECRelationshipClass>-->
 </ECSchema>
