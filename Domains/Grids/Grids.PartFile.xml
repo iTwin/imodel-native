@@ -19,10 +19,10 @@
     </Part>
     
     <Part Name="GridElements" BentleyBuildMakeFile="Grids/Elements/GridElements.mke">
+      <RequiredRepository>DgnDomains-ConstraintSystem</RequiredRepository>
       <SubPart PartName="DgnPlatformDLL" Repository="DgnPlatform" PartFile="DgnPlatform"/>
       <SubPart PartName="ConstraintModel" Repository="DgnDomains-ConstraintSystem" PartFile="ConstraintSystem" />
       <SubPart PartName="GridsApi"/>
-      <RequiredRepository>DgnDomains-ConstraintSystem</RequiredRepository>
       <Bindings>
         <Libs>Delivery/$(libprefix)GridElements$(libext)</Libs>
         <Assemblies>Delivery/$(shlibprefix)GridElements$(shlibext)</Assemblies>
