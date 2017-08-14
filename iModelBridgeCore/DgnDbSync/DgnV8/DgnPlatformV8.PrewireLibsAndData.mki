@@ -198,9 +198,6 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcis.dll : $(DgnV8Sdk)Dlls/SPAXAcis.dll
 $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisBase.dll : $(DgnV8Sdk)Dlls/SPAXAcisBase.dll
     $(LinkFirstDepToFirstTarget)
 
-$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisCompositeEntitiesDS.dll : $(DgnV8Sdk)Dlls/SPAXAcisCompositeEntitiesDS.dll
-    $(LinkFirstDepToFirstTarget)
-
 $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXAcisKernel.dll : $(DgnV8Sdk)Dlls/SPAXAcisKernel.dll
     $(LinkFirstDepToFirstTarget)
 
@@ -229,6 +226,9 @@ $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXCommon.dll : $(DgnV8Sdk)Dlls/SPAXCommon.dll
     $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXGeometryRepresentation.dll : $(DgnV8Sdk)Dlls/SPAXGeometryRepresentation.dll
+    $(LinkFirstDepToFirstTarget)
+
+$(Delivery)DgnPlatformV8Sdk/Dlls/SPAXicuC.dll : $(DgnV8Sdk)Dlls/SPAXicuC.dll
     $(LinkFirstDepToFirstTarget)
 
 $(Delivery)DgnPlatformV8Sdk/Dlls/SPAXicuuc54.dll : $(DgnV8Sdk)Dlls/SPAXicuuc54.dll
