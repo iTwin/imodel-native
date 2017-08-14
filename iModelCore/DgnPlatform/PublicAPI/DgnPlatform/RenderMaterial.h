@@ -95,6 +95,7 @@ public:
         DGNPLATFORM_EXPORT DPoint2d GetOffset() const;
         DGNPLATFORM_EXPORT Units GetUnits() const;
         DGNPLATFORM_EXPORT Render::Material::MapMode GetMode() const;
+        DGNPLATFORM_EXPORT Render::Material::TextureMapParams GetTextureMapParams() const;
         DGNPLATFORM_EXPORT DgnTextureId GetTextureId() const;
         Type GetType() const {return m_type;}
         DGNPLATFORM_EXPORT double GetUnitScale(Units units) const;

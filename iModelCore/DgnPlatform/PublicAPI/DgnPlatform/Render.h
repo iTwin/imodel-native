@@ -589,31 +589,47 @@ struct Material : RefCounted<NonCopyableClass>
     {
         TextureMapParams() {}
         double m_textureWeight = 1.0;
-        Trans2x3* m_textureMat2x3 = nullptr;
+        Trans2x3 m_textureMat2x3 = Trans2x3 (1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
         MapMode m_mapMode = MapMode::Parametric;
         bool m_worldMapping = false;
+        /* Only used for newer mapping modes which are not yet implemented
         DPoint3dCP m_basisX = nullptr;
         DPoint3dCP m_basisY = nullptr;
         DPoint3dCP m_basisZ = nullptr;
         DPoint3dCP m_basisOrg = nullptr;
         DPoint3dCP m_basisScale = nullptr;
+        */
         void SetMapMode(MapMode val) {m_mapMode=val;}
         void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
-        void SetTransform(Trans2x3* val) {m_textureMat2x3 = val;} //<! Set Texture 2x3 transform
+        void SetTransform(Trans2x3* val) {m_textureMat2x3 = *val;} //<! Set Texture 2x3 transform
         void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
-        void SetBasis(DPoint3dCP x, DPoint3dCP y, DPoint3dCP z, DPoint3dCP org, DPoint3dCP scale) {m_basisX = x; m_basisY = y; m_basisZ = z; m_basisOrg = org; m_basisScale = scale;}
+        //void SetBasis(DPoint3dCP x, DPoint3dCP y, DPoint3dCP z, DPoint3dCP org, DPoint3dCP scale) {m_basisX = x; m_basisY = y; m_basisZ = z; m_basisOrg = org; m_basisScale = scale;}
+        BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
     };
 
+    struct MappedTexture : RefCounted<NonCopyableClass>
+    {
+        TextureCPtr m_texture = nullptr;
+        TextureMapParams m_mapParams;
+
+    public:
+        bool IsValid() const {return !(m_texture.IsNull());}
+        MappedTexture (TextureCR texture, TextureMapParams const& mapParams) {m_texture = &texture; m_mapParams = mapParams;}
+    };
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(MappedTexture)
+    DEFINE_REF_COUNTED_PTR(MappedTexture)
+
 protected:
-    bvector<TextureCPtr> m_mappedTextures;
-    void AddMappedTexture(TextureCR texture) {m_mappedTextures.push_back(&texture);}
+    MappedTextureCPtr m_mappedTexture = nullptr;
+    void AddMappedTexture(TextureCR texture, TextureMapParams const& mapParams) {m_mappedTexture = new MappedTexture(texture, mapParams);}
 
 public:
     //! Map a texture to this material
     virtual void _MapTexture(Texture const& texture, TextureMapParams const& params = TextureMapParams()) = 0;
 
-    bool HasTextures() const { return !m_mappedTextures.empty(); }
-    TextureCPtr GetMappedTexture(size_t i) const {return i < m_mappedTextures.size() ? m_mappedTextures[i] : TextureCPtr(nullptr);}
+    bool HasTexture() const { return m_mappedTexture.IsValid(); }
+    MappedTextureCPtr GetMappedTextureAndParams() const {return m_mappedTexture;}
+    TextureCPtr GetMappedTexture() const {return m_mappedTexture.IsValid() ? m_mappedTexture->m_texture : nullptr;}
 };
 
 //=======================================================================================

@@ -214,11 +214,10 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
                     }
                 }
 
-            if (m_material.IsValid() && m_material->HasTextures())
+            if (m_material.IsValid() && m_material->HasTexture())
                 {
                 // Texture already baked into material...e.g. skybox.
-                // ###TODO: Why is it a vector? AFAICT only 1 texture supported...
-                m_texture = const_cast<TextureP>(m_material->GetMappedTexture(0).get()); // ###TODO constness...
+                m_texture = const_cast<TextureP>(m_material->GetMappedTexture().get()); // ###TODO constness...
                 }
             else
                 {
@@ -265,6 +264,23 @@ DisplayParamsCPtr DisplayParams::CreateForGeomPartInstance(DisplayParamsCR part,
         }
 
     return clone.get();
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Marc.Neely      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::Material::MappedTextureCPtr DisplayParams::GetMappedTexture() const
+    {
+    if (nullptr != m_renderingAsset)
+        {
+        auto patternMap = m_renderingAsset->GetPatternMap();
+        return new Render::Material::MappedTexture (*m_texture, patternMap.GetTextureMapParams());
+        }
+    else if (!m_material.IsNull() && m_material->HasTexture())
+        return m_material->GetMappedTextureAndParams();
+
+    Render::Material::TextureMapParams mapParams;
+    return new Render::Material::MappedTexture (*m_texture, mapParams);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -856,7 +872,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, RenderingAssetCP renderingAsset, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, Render::Material::MappedTextureCPtr mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
@@ -884,15 +900,15 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, RenderingAsse
 
         bool haveParams = includeParams && !params.empty();
         newTriangle.SetEdgeFlags(visibility);
-        if (haveParams && nullptr != renderingAsset)
+        if (haveParams && !mappedTexture.IsNull())
             {
-            auto const&         patternMap = renderingAsset->GetPatternMap();
+            auto const&         textureMapParams = mappedTexture->m_mapParams;
             bvector<DPoint2d>   computedParams;
 
-            if (patternMap.IsValid())
+            if (mappedTexture->IsValid())
                 {
                 BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
-                if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
+                if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor))
                     params = computedParams;
                 }
             }
@@ -1536,7 +1552,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 
             meshBuilder->BeginPolyface(*polyface, tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges);
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder->AddFromPolyfaceVisitor(*visitor, displayParams->GetRenderingAsset(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+                meshBuilder->AddFromPolyfaceVisitor(*visitor, displayParams->GetMappedTexture(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
 
             meshBuilder->EndPolyface();
             }
