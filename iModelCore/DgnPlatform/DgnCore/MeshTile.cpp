@@ -227,8 +227,6 @@ static Render::GraphicSet s_unusedDummyGraphicSet;
 
 END_UNNAMED_NAMESPACE
 
-#define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
-#define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -634,24 +632,8 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileMeshPointCloud::TileMeshPointCloud(TileDisplayParamsCR params, DPoint3dCP points, Rgb const* colors, FPoint3dCP normals, size_t nPoints, TransformCR transform, double clusterTolerance) :  m_displayParams(&params)
     {
-    struct PointComparator
-        {
-        double  m_tolerance;
-
-        explicit PointComparator(double tolerance) : m_tolerance(tolerance) { }
-
-
-        bool operator()(DPoint3dCR lhs, DPoint3dCR rhs) const
-            {
-            COMPARE_VALUES_TOLERANCE(lhs.x, rhs.x, m_tolerance);
-            COMPARE_VALUES_TOLERANCE(lhs.y, rhs.y, m_tolerance);
-            COMPARE_VALUES_TOLERANCE(lhs.z, rhs.z, m_tolerance);
-                                                                    
-            return false;
-            }
-        };
-    PointComparator                     comparator(clusterTolerance);
-    bset <DPoint3d, PointComparator>    clusteredPointSet(comparator);
+    TileUtil::PointComparator                       comparator(clusterTolerance);
+    bset <DPoint3d, TileUtil::PointComparator>      clusteredPointSet(comparator);
 
     for (size_t i=0; i<nPoints; i++)
         {

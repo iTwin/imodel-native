@@ -1091,6 +1091,9 @@ struct IGetPublishedTilesetInfo
     virtual PublishedTilesetInfo _GetPublishedTilesetInfo() = 0;
 };
 
+#define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
+#define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
+
 //=======================================================================================
 // static utility methods
 // @bsistruct                                                   Ray.Bentley     08/2016
@@ -1100,6 +1103,23 @@ struct TileUtil
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
     DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
     DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId, bool asClassifier = false);
+
+    struct PointComparator
+        {
+        double  m_tolerance;
+
+        explicit PointComparator(double tolerance) : m_tolerance(tolerance) { }
+
+
+        bool operator()(DPoint3dCR lhs, DPoint3dCR rhs) const
+            {
+            COMPARE_VALUES_TOLERANCE(lhs.x, rhs.x, m_tolerance);
+            COMPARE_VALUES_TOLERANCE(lhs.y, rhs.y, m_tolerance);
+            COMPARE_VALUES_TOLERANCE(lhs.z, rhs.z, m_tolerance);
+                                                                    
+            return false;
+            }
+        };
 
 };  // TileUtil
 
