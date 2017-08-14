@@ -70,8 +70,8 @@
         <ProductDirectory Name="DgnV8Dlls"  Path="DgnV8"/>
         <ProductDirectory Name="CifDlls"  Path="Cif"/>
         <ProductDirectory Name="ScalableMeshV8SDK" Deliver="false" />
-        <ProductDirectory Name="BentleyDesktopClientApi" Deliver="false" />
-        <ProductDirectory Name="BentleyDesktopClientApi_Native" Deliver="false" />
+        <ProductDirectory Name="BentleyDesktopClientApi" RelativeTo="ApplicationRoot" />
+        <ProductDirectory Name="BentleyDesktopClientApi_Native" RelativeTo="ApplicationRoot" />
         <ProductDirectory Name="BentleyClientSharedAssemblies" RelativeTo="ApplicationRoot"/>        
     </ProductDirectoryList>
 
@@ -94,6 +94,7 @@
     <Part Name="BackdoorForORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/BuildTests.mke" BentleyBuildMakeOptions="-dTestDir=BackdoorORDBridge">
         <SubProduct ProductName="ORDBridgeTestApp"/>
         <SubPart PartName="PrewireForORDBridgeUnitTests" />
+        <SubPart PartName="RoadRailPhysical" PartFile="RoadRailPhysical" Repository="DgnDomains-RoadRailPhysical"/>
         <Bindings>
             <Directory ProductDirectoryName="UnitTests-Objects"    ProductSubDirectory="CiviliModelBridgesORDBridge/Backdoor" SourceName="Delivery/UnitTests/Objects/BackdoorORDBridge"/>
         </Bindings>
