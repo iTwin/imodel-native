@@ -34,7 +34,11 @@
 #include <Bentley\BeDirectoryIterator.h>
 #include <Bentley\BeConsole.h>
 
+#ifdef VANCOUVER_API
 #include <DgnGeoCoord\DgnGeoCoord.h>
+#else
+#include <DgnPlatform\DgnGeoCoord.h>
+#endif
 
 USING_NAMESPACE_GROUND_DETECTION
 
@@ -75,7 +79,7 @@ StatusInt IScalableMeshGroundPreviewer::UpdatePreview(PolyfaceQueryCR currentGro
 
 bool IScalableMeshGroundPreviewer::UpdateProgress(IScalableMeshProgress* progress)
     {
-    return _UpdateProgress(progress);
+		return _UpdateProgress(progress);
     }
 /*----------------------------------------------------------------------------+
 |IScalableMeshGroundPreviewer - End
@@ -138,6 +142,7 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
         Transform                       m_previewTransform;
 
         GeoCoordInterpretation m_geocoordInterpretation;
+
         BaseGCSPtr             m_sourceGcs;
         BaseGCSPtr             m_destinationGcs;
 
@@ -148,7 +153,7 @@ struct ScalableMeshPointsAccumulator : public IGroundPointsAccumulator
                 assert(m_sourceGcs.IsValid());
                 GeoPoint srcLatLong;
                 GeoPoint dstLatLong;                
-                
+
                 if (m_geocoordInterpretation == GeoCoordInterpretation::Cartesian)
                     {
                     m_sourceGcs->LatLongFromCartesian(srcLatLong, ptIn);
@@ -451,10 +456,10 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
         covExt.ScaleAboutCenter(covExt, 1.1);
 
         bvector<DPoint3d> closedPolygonPoints;
-        DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.high.y, 0), DPoint3d::From(covExt.high.x, covExt.high.y, 0),
-            DPoint3d::From(covExt.high.x, covExt.low.y, 0), DPoint3d::From(covExt.low.x, covExt.low.y, 0) };
+        DPoint3d rangePts[5] = { DPoint3d::From(covExt.low.x, covExt.low.y, covExt.low.z), DPoint3d::From(covExt.low.x, covExt.high.y, covExt.low.z), DPoint3d::From(covExt.high.x, covExt.high.y, covExt.low.z),
+            DPoint3d::From(covExt.high.x, covExt.low.y, covExt.low.z), DPoint3d::From(covExt.low.x, covExt.low.y, covExt.low.z) };
         closedPolygonPoints.assign(rangePts, rangePts + 5);
-        if (m_createProgress.IsCanceled()) return status;
+        if (m_createProgress.IsCanceled()) return ERROR;
 
         textureGenerator->GenerateTexture(closedPolygonPoints, &m_createProgress);
 
@@ -486,7 +491,7 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(&m_createProgress);
 
-    if (m_createProgress.IsCanceled()) return status;
+    if (m_createProgress.IsCanceled()) return ERROR;
 
     BeFileName coverageBreaklineFile(coverageTempDataFolder);
     coverageBreaklineFile.AppendString(L"\\");    
@@ -507,6 +512,9 @@ StatusInt ScalableMeshGroundExtractor::CreateSmTerrain(const BeFileName& coverag
     
     status = terrainCreator->Create();
     terrainCreator->SaveToFile();
+
+	if (terrainCreator->GetProgress()->IsCanceled())
+		return ERROR;
     
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(nullptr);
@@ -546,7 +554,7 @@ static double s_heightPercentile = 60;
 static double s_anglePercentile = 65;
 static double s_heightPercentile = 65;
 
-static bool   s_useMultiThread = false;
+static bool   s_useMultiThread = true;
 
 static double s_time;
 static size_t s_nbPoints;
@@ -625,7 +633,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(&m_createProgress);
 
-    if (m_createProgress.IsCanceled()) return SUCCESS;
+    if (m_createProgress.IsCanceled()) return ERROR;
     ScalableMeshPointsProviderCreatorPtr smPtsProviderCreator(ScalableMeshPointsProviderCreator::Create(m_scalableMesh));    
 
     if (!m_scalableMesh->GetGCS().IsNull() && m_destinationGcs.IsValid() && m_scalableMesh->IsCesium3DTiles())
@@ -684,7 +692,7 @@ StatusInt ScalableMeshGroundExtractor::_ExtractAndEmbed(const BeFileName& covera
     if (m_groundPreviewer.IsValid())
         m_groundPreviewer->UpdateProgress(&m_createProgress);
 
-    if (m_createProgress.IsCanceled()) return status;
+    if (m_createProgress.IsCanceled()) return ERROR;
     assert(status == SUCCESS);
 
     clock_t endTime = clock() - startTime;

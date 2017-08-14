@@ -6,14 +6,19 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
+#undef static_assert
 #include "ScalableMeshPointsProvider.h"
+#ifdef VANCOUVER_API
 #include <DgnGeoCoord\DgnGeoCoord.h>
+#else
+#include <DgnPlatform\DgnGeoCoord.h>
+#endif
 
 #include "..\GeoCoords\ReprojectionUtils.h"
 
 USING_NAMESPACE_BENTLEY
 USING_NAMESPACE_BENTLEY_TERRAINMODEL
-using namespace Bentley::GeoCoordinates;
+using namespace BENTLEY_NAMESPACE_NAME::GeoCoordinates;
 
 
 BEGIN_BENTLEY_SCALABLEMESH_NAMESPACE
@@ -144,8 +149,8 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
 
         if (m_smesh->IsCesium3DTiles())
             {
-			assert(!"Deactivated for now. Need ECEF clipping capability and correct UORs to meters transfo");
-#if 0 			
+			//assert(!"Deactivated for now. Need ECEF clipping capability and correct UORs to meters transfo");
+//#if 0 			
             Transform uorTransfo(Transform::FromRowValues(1 / 10000.0, 0, 0, 0,
                                                             0, 1 / 10000.0, 0, 0,
                                                             0, 0, 1 / 10000.0, 0));
@@ -159,7 +164,7 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
 
             queryClip = ClipVector::CreateCopy(*clip);
             queryClip->TransformInPlace(destToSmTrans);            
-#endif			
+//#endif			
             }
         else
             {                
@@ -596,10 +601,11 @@ IPointsProviderPtr ScalableMeshPointsProviderCreator::_CreatePointProvider(DRang
     {
     IPointsProviderPtr pointProvider(ScalableMeshPointsProvider::CreateFrom(m_smesh, boundingBoxInUors));
 
+#ifdef VANCOUVER_API
     ((ScalableMeshPointsProvider*)pointProvider.get())->SetReprojectionInfo(m_geocoordInterpretation,
                                                                             m_sourceGcs,
                                                                             m_destinationGcs);
-
+#endif
     return pointProvider;
     }
 
@@ -612,13 +618,15 @@ IPointsProviderPtr ScalableMeshPointsProviderCreator::_CreatePointProvider()
 
 void ScalableMeshPointsProviderCreator::_GetAvailableRange(DRange3d& availableRange) 
     {   
-    DRange3d smRange;    
+    DRange3d smRange = DRange3d::NullRange();
 
     if (m_destinationGcs.IsValid())
         {
         DRange3d smRangeLocal;
         DTMStatusInt status = m_smesh->GetRange(smRangeLocal);
+#ifdef VANCOUVER_API
         ReprojectRange(smRange, smRangeLocal, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
+#endif
         assert(status == SUCCESS);
         }
     else
@@ -646,7 +654,9 @@ void ScalableMeshPointsProviderCreator::SetExtractionArea(const bvector<DPoint3d
     {    
     if (m_destinationGcs.IsValid())
         { 
+#ifdef VANCOUVER_API
         Reproject(m_extractionArea, area, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
+#endif 
         }
     else
         {

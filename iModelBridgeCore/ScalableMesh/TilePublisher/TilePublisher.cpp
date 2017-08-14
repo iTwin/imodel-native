@@ -398,7 +398,8 @@ PublisherContext::Status TilePublisher::Publish(TileMeshR mesh, bvector<Byte>& o
 
     Json::Value batchTableJson(Json::objectValue);
     #ifndef VANCOUVER_API
-        m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
+        //m_batchIds.ToJson(batchTableJson, m_context->GetDgnDb());
+	assert(!"Not on DgnDb, missing argument in ToJson");
     #else
         m_batchIds.ToJson(batchTableJson);
     #endif

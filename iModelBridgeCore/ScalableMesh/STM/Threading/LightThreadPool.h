@@ -43,6 +43,6 @@ class LightThreadPool
 bool TryReserveNodes(std::map<void*, std::atomic<unsigned int>>& map, void** reservedNodes, size_t nNodesToReserve, unsigned int id);
 void SetThreadAvailableAsync(size_t threadId);
 void RunOnNextAvailableThread(std::function<void(size_t threadId)> lambda);
-void WaitForThreadStop();
+void WaitForThreadStop(IScalableMeshProgress* p =nullptr);
 
 END_BENTLEY_SCALABLEMESH_NAMESPACE

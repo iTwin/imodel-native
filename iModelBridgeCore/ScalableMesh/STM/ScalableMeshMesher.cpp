@@ -438,7 +438,7 @@ void MergePolygonSets(bvector<bvector<DPoint3d>>& polygons, std::function<bool(c
 						}
 						if (poly.size() < poly2.size()) poly = poly2;
 
-						if (!bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
+						if (!withoutIntersect.empty() && !bsiDPoint3d_pointEqualTolerance(&withoutIntersect.front(), &withoutIntersect.back(), 1e-8)) withoutIntersect.push_back(withoutIntersect.front());
 						if (withoutIntersect.size() > 4)
 						{
 							poly2 = withoutIntersect;

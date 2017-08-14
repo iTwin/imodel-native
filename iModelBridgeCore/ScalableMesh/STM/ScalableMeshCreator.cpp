@@ -378,12 +378,21 @@ IScalableMeshCreator::Impl::Impl(const IScalableMeshPtr& scmPtr)
         m_gcsDirty(false),     
         m_compressionType(SCM_COMPRESSION_DEFLATE),
         m_workingLayer(DEFAULT_WORKING_LAYER),
-        m_isCanceled(false)
+        m_isCanceled(false),
+	m_progress(new ScalableMeshProgress())
     {
   
 
     WString smStoreDgnDbStr;
     m_isDgnDb = false;
+	s_useThreadsInMeshing = true;
+	s_useThreadsInStitching = true;
+	s_useThreadsInFiltering = true;
+	m_progress->ProgressStep() = ScalableMeshStep::STEP_NOT_STARTED;
+	m_progress->ProgressStepIndex() = 0;
+	m_progress->Progress() = 0;
+	m_progress->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_INACTIVE;
+	m_progress->SetTotalNumberOfSteps(0);
 
 
     }
@@ -406,12 +415,14 @@ StatusInt IScalableMeshCreator::Impl::SetTextureMosaic(HIMMosaic* mosaicP)
     GetProgress()->ProgressStepProcess() = ScalableMeshStepProcess::PROCESS_TEXTURING;
     GetProgress()->ProgressStepIndex() = 1;
     GetProgress()->Progress() = 0.0;
+	GetProgress()->UpdateListeners();
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetProgressCallback(GetProgress());
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->GatherCounts();
     ITextureProviderPtr mosaicPtr = new MosaicTextureProvider(mosaicP);
     ((ScalableMesh<DPoint3d>*)m_scmPtr.get())->GetMainIndexP()->SetTextured(IndexTexture::Embedded);
     m_scmPtr->TextureFromRaster(mosaicPtr);
     GetProgress()->Progress() = 1.0;
+	GetProgress()->UpdateListeners();
     return SUCCESS;
     }
 

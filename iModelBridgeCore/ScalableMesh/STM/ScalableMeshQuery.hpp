@@ -3053,16 +3053,16 @@ template <class POINT> bool ScalableMeshNode<POINT>::_IsClippingUpToDate() const
     else return m_meshNode->IsClippingUpToDate();
     }
 
-template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips() const
+template <class POINT> void ScalableMeshNode<POINT>::_ApplyAllExistingClips(Transform tr) const
     {
        
-    _RefreshMergedClip();    
+    _RefreshMergedClip(tr);    
     }
 
-template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip() const
+template <class POINT> void ScalableMeshNode<POINT>::_RefreshMergedClip(Transform tr) const
     {
     dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->BuildSkirts();
-    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->ComputeMergedClips();
+    dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->ComputeMergedClips(tr);
     }
 
 
@@ -3078,7 +3078,7 @@ template <class POINT> void ScalableMeshNode<POINT>::_UpdateData()
     LOAD_NODE
 
         dynamic_cast<SMMeshIndexNode<POINT, Extent3dType>*>(m_node.GetPtr())->UpdateData();
-    _RefreshMergedClip(); //must recompute clip after data was updated
+    _RefreshMergedClip(Transform::FromIdentity()); //must recompute clip after data was updated
     }
 
 template <class POINT> bool ScalableMeshNode<POINT>::_AddClip(uint64_t id, bool isVisible) const

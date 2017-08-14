@@ -769,6 +769,11 @@ bool IScalableMeshMesh::CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d&
     return _CutWithPlane(segmentList, cuttingPlane);
     }
 
+void IScalableMeshMesh::SetTransform(Transform myTransform) 
+{
+	return _SetTransform(myTransform);
+}
+
 void IScalableMeshMesh::WriteToFile(WString& filePath)
     {
 #ifndef NDEBUG
@@ -1685,9 +1690,18 @@ bool ScalableMeshMesh::_IntersectRay(bvector<DTMRayIntersection>& hits, const DR
     return minParam < DBL_MAX;
     }
 
+void ScalableMeshMesh::_SetTransform(Transform tr)
+    {
+	m_transform = tr;
+	for (size_t i = 0; i < m_nbPoints; ++i)
+		m_transform.Multiply(m_points[i]);
+    }
+
 bool ScalableMeshMesh::_CutWithPlane(bvector<DSegment3d>& segmentList, DPlane3d& cuttingPlane) const
     {
     if (m_nbPoints < 3 || m_nbFaceIndexes < 3) return false;
+
+	//if (!m_transform.IsIdentity()) m_transform.Multiply(cuttingPlane);
     for (size_t i = 0; i < m_nbFaceIndexes; i += 3)
         {
         DPoint3d pts[3];
@@ -2710,14 +2724,14 @@ void IScalableMeshNode::LoadNodeHeader() const
     return _LoadHeader();
     }
 
-void IScalableMeshNode::ApplyAllExistingClips() const
+void IScalableMeshNode::ApplyAllExistingClips(Transform tr) const
     {
-    return _ApplyAllExistingClips();
+    return _ApplyAllExistingClips(tr);
     }
 
-void     IScalableMeshNode::RefreshMergedClip() const
+void     IScalableMeshNode::RefreshMergedClip(Transform tr) const
     {
-    return _RefreshMergedClip();
+    return _RefreshMergedClip(tr);
     }
 
 bool     IScalableMeshNode::AddClip(uint64_t id, bool isVisible) const

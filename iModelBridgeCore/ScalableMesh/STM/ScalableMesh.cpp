@@ -471,7 +471,7 @@ BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageDat
     return _CreateCoverage(coverageData, id, coverageName);
     }
 
-BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSPtr destinationGcs, bool limitResolution)
+BentleyStatus IScalableMesh::DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr destinationGcs, bool limitResolution)
     {
     return _DetectGroundForRegion(createdTerrain, coverageTempDataFolder, coverageData, id, groundPreviewer, destinationGcs, limitResolution);
     }
@@ -2213,7 +2213,6 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
     {
     bvector<bvector<DPoint3d>> coverageData;
     if (m_scmIndexPtr->GetClipRegistry() == nullptr) return false;
-    m_scmIndexPtr->GetClipRegistry()->GetAllCoveragePolygons(coverageData);
 
     const DPoint3d* targetPts;
     bvector<DPoint3d> reprojectedPts(ptsSize);
@@ -2232,7 +2231,9 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, targetPts, ptsSize);
     if (!alsoAddOnTerrain || coverageData.empty())
         {
-        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
+		Transform t = Transform::FromIdentity();
+		if (IsCesium3DTiles()) t = GetReprojectionTransform();
+        m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent,true, t);
         }
     else
         {
@@ -2268,7 +2269,11 @@ template <class POINT> bool ScalableMesh<POINT>::_AddClip(const DPoint3d* pts, s
 
     if (m_scmIndexPtr->GetClipRegistry()->HasClip(clipID)) return false;
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent);
+
+	Transform t = Transform::FromIdentity();
+	if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_ADD, clipID, extent,true, t);
     SaveEditFiles();
     return true;
     }
@@ -2297,7 +2302,11 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
     extent.Extend(extentNew);
 
     m_scmIndexPtr->GetClipRegistry()->ModifyClip(clipID, targetPts, ptsSize);
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
+
+	Transform t = Transform::FromIdentity();
+	if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent,true, t);
     
     SaveEditFiles();    
 
@@ -2322,8 +2331,17 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifyClip(const DPoint3d* pts
 
     DRange3d extent = DRange3d::From(targetPts, (int)ptsSize);
 
+	bvector<DPoint3d> clipData;
+	m_scmIndexPtr->GetClipRegistry()->GetClip(clipID, clipData);
+	if(!clipData.empty())
+		extent.Extend(DRange3d::From(&clipData[0], (int)clipData.size()));
+
     m_scmIndexPtr->GetClipRegistry()->AddClipWithParameters(clipID, targetPts, ptsSize, geom, type, isActive);
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent);
+
+	Transform t = Transform::FromIdentity();
+	if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent,true, t);
         
     SaveEditFiles();        
 
@@ -2499,7 +2517,10 @@ template <class POINT> bool ScalableMesh<POINT>::_ModifySkirt(const bvector<bvec
     DRange3d extent = DRange3d::From(reprojSkirt[0][0]);
     for (auto& vec : reprojSkirt) extent.Extend(vec, nullptr);
     m_scmIndexPtr->GetClipRegistry()->ModifySkirt(clipID, reprojSkirt);
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent, false);
+	Transform t = Transform::FromIdentity();
+	if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_MODIFY, clipID, extent, false, t);
     
     SaveEditFiles();
     
@@ -2681,7 +2702,11 @@ template <class POINT> bool ScalableMesh<POINT>::_RemoveSkirt(uint64_t clipID)
     DRange3d extent =  DRange3d::From(skirt[0][0]);
     for (auto& vec : skirt) extent.Extend(vec, nullptr);
     m_scmIndexPtr->GetClipRegistry()->DeleteClip(clipID);
-    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent, false);
+
+	Transform t = Transform::FromIdentity();
+	if (IsCesium3DTiles()) t = GetReprojectionTransform();
+
+    m_scmIndexPtr->PerformClipAction(ClipAction::ACTION_DELETE, clipID, extent, false, t);
     SaveEditFiles();
     return true;
     }
@@ -2928,7 +2953,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     return status;
     }
 
-template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSPtr& destinationGcs, bool limitResolution)
+template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
     {    
     BeFileName terrainAbsName;
 
@@ -2954,14 +2979,16 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
         */
         IScalableMeshGroundExtractorPtr smGroundExtractor(IScalableMeshGroundExtractor::Create(terrainAbsName, scalableMeshPtr));
 
-        smGroundExtractor->SetDestinationGcs(destinationGcs);
+        BaseGCSPtr newDestPtr = (BaseGCS*)destinationGcs.get();
+        smGroundExtractor->SetDestinationGcs(newDestPtr);
         smGroundExtractor->SetExtractionArea(coverageData);
         smGroundExtractor->SetGroundPreviewer(groundPreviewer);
 		smGroundExtractor->SetLimitTextureResolution(limitResolution);
                 
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
-        assert(status == SUCCESS);
+		if (status != SUCCESS)
+			return status == SUCCESS ? SUCCESS : ERROR;
 /*
         Utf8String newBaseEditsFilePath = Utf8String(m_baseExtraFilesPath) + "_terrain_";
         newBaseEditsFilePath.append(std::to_string(id).c_str());
@@ -3092,6 +3119,8 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
         DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
         if (smGCS != nullptr && !targetCS->IsEquivalent(*smGCS))
             {
+            smGCS->SetReprojectElevation(true);
+
             DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
             smGCS->UorsFromCartesian(scale, scale);
             scale.DifferenceOf(scale, globalOrigin);            
