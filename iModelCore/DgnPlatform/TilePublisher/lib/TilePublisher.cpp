@@ -1343,7 +1343,6 @@ void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3
     padTo4ByteBoundary(m_featureBinary);
     }
 
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   06/2017
