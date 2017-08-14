@@ -116,7 +116,7 @@ BentleyStatus   DwgImporter::_OnUpdateLayer (DgnCategoryId& id, DwgDbLayerTableR
         DgnDbTable::ReplaceInvalidCharacters(name, DgnCategory::GetIllegalCharacters(), '_');
         name.Trim ();
 
-        if (!name.EqualsI(categoryCode.GetValue()))
+        if (!categoryCode.GetValue().Equals(name.c_str()))
             {
             categoryCode = DgnCode (categoryCode.GetCodeSpecId(), categoryCode.GetScopeElementId(this->GetDgnDb()), name);
             writeEl->SetCode (categoryCode);

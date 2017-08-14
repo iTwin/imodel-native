@@ -486,7 +486,8 @@ void Converter::_GenerateProxyGraphics(ResolvedModelMapping const& v8ModelMappin
         attachment->Rewrite(true, true);
         attachment->FixSelfReferenceAttachments(false);
 
-        v8Model.ReloadNestedDgnAttachments(true);
+        // TFS#735518 - once we have the proxygraphics, we don't care about nested attachments any more.
+        //v8Model.ReloadNestedDgnAttachments(true);
         }
     }
 

@@ -477,6 +477,34 @@ void Converter::ConvertSolidKernelEntity(IBRepEntityPtr& clone, Bentley::ISolidK
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    BrienBastings   05/15
 +---------------+---------------+---------------+---------------+---------------+------*/
+void Converter::InitLineStyle(Render::GeometryParams& params, DgnModelRefR styleModelRef, int32_t srcLineStyleNum, DgnV8Api::LineStyleParams const* v8lsParams)
+    {
+    DgnFileP styleFile = styleModelRef.GetDgnFileP();
+    if (nullptr == styleFile)
+        {
+        ReportIssueV(Converter::IssueSeverity::Warning, Converter::IssueCategory::MissingData(), Converter::Issue::MissingLsDefinitionFile(), NULL, 
+                     IssueReporter::FmtModelRef(styleModelRef));
+        return;
+        }
+
+    double          unitsScale;
+
+    DgnStyleId mappedStyleId = _RemapLineStyle(unitsScale, *styleFile, srcLineStyleNum, true);
+    if (!mappedStyleId.IsValid())
+        return;
+
+    double modelLsScale = styleModelRef.GetRoot()->GetLineStyleScale();
+    DgnV8Api::ModelInfo const& v8ModelInfo = styleModelRef.GetRoot()->GetModelInfo();
+    double uorPerMeter = DgnV8Api::ModelInfo::GetUorPerMeter(&v8ModelInfo);
+    Render::LineStyleParams lsParams;
+    ConvertLineStyleParams(lsParams, v8lsParams, uorPerMeter, unitsScale, modelLsScale);
+    LineStyleInfoPtr lsInfo = LineStyleInfo::Create(mappedStyleId, &lsParams);
+    params.SetLineStyle(lsInfo.get());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    BrienBastings   05/15
++---------------+---------------+---------------+---------------+---------------+------*/
 void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::ElemDisplayParams& paramsV8, DgnV8Api::ViewContext& context, bool is3d, SyncInfo::V8ModelSource v8Model)
     {
     // NOTE: Resolve loses information like WEIGHT_BYLEVEL and we may be called multiple times (ex. disjoint brep)...
@@ -574,35 +602,12 @@ void Converter::InitGeometryParams(Render::GeometryParams& params, DgnV8Api::Ele
         {
         if (DgnV8Api::STYLE_BYLEVEL != ovr->GetLineStyle() && ovr->GetLineStyle() != 0)
             {
-            double          unitsScale;
-            
-            DgnStyleId mappedStyleId = _RemapLineStyle(unitsScale, *styleModelRef->GetDgnFileP(), ovr->GetLineStyle(), true);
-            if (mappedStyleId.IsValid())
-                {
-                double modelLsScale = styleModelRef->GetRoot()->GetLineStyleScale();
-                DgnV8Api::ModelInfo const& v8ModelInfo = styleModelRef->GetRoot()->GetModelInfo();
-                double uorPerMeter = DgnV8Api::ModelInfo::GetUorPerMeter(&v8ModelInfo);
-                Render::LineStyleParams lsParams;
-                ConvertLineStyleParams(lsParams, ovr->GetLineStyleParams(), uorPerMeter, unitsScale, modelLsScale);
-                LineStyleInfoPtr lsInfo = LineStyleInfo::Create(mappedStyleId, &lsParams);
-                params.SetLineStyle(lsInfo.get());
-                }
+            InitLineStyle(params, *styleModelRef, ovr->GetLineStyle(), ovr->GetLineStyleParams());
             }
         }
     else if (DgnV8Api::STYLE_BYLEVEL != rawStyle && paramsV8.GetLineStyle() != 0 && nullptr != (styleModelRef = (nullptr == paramsV8.GetLineStyleModelRef()) ? context.GetCurrentModel() : paramsV8.GetLineStyleModelRef())) 
         {
-        double unitsScale;
-        DgnStyleId mappedStyleId = _RemapLineStyle(unitsScale, *styleModelRef->GetDgnFileP(), paramsV8.GetLineStyle(), true);
-        if (mappedStyleId.IsValid())
-            {
-            double modelLsScale = styleModelRef->GetRoot()->GetLineStyleScale();
-            LineStyleParams lsParams;
-            DgnV8Api::ModelInfo const& v8ModelInfo = styleModelRef->GetRoot()->GetModelInfo();
-            double uorPerMeter = DgnV8Api::ModelInfo::GetUorPerMeter(&v8ModelInfo);
-            ConvertLineStyleParams(lsParams, paramsV8.GetLineStyleParams(), uorPerMeter, unitsScale, modelLsScale);
-            LineStyleInfoPtr lsInfo = LineStyleInfo::Create(mappedStyleId, &lsParams);
-            params.SetLineStyle(lsInfo.get());
-            }
+        InitLineStyle(params, *styleModelRef, paramsV8.GetLineStyle(), paramsV8.GetLineStyleParams());
         }
 
     params.SetTransparency(paramsV8.GetTransparency());
