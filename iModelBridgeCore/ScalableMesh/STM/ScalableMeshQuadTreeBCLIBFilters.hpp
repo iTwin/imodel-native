@@ -436,8 +436,17 @@ template<class POINT, class EXTENT> bool ScalableMeshQuadTreeBCLIBMeshFilter1<PO
 			otherNewTypes.insert(otherNewTypes.end(), newTypes.begin(), newTypes.end());
 			polylines.insert(polylines.end(), newLines.begin(), newLines.end());
 			types = otherNewTypes;
+			newLines = polylines;
 
 			SimplifyPolylines(polylines);
+			std::transform(polylines.begin(), polylines.end(),newLines.begin(), polylines.begin(),
+				[newLines&, polylines&](const bvector<DPoint3d>&vec, const bvector<DPoint3d>& vec2)
+			{
+				if(types[&vec - &polylines[0]] == DTMFeatureType::Hull)
+					return vec2;
+				else return vec;
+			});
+
 		}
 
 		for (auto& polyline : polylines)

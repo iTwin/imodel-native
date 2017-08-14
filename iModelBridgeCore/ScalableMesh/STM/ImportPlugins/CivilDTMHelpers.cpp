@@ -6,7 +6,7 @@
 |       $Date: 2012/02/23 00:32:43 $
 |     $Author: Raymond.Gauthier $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #include <ScalableMeshPCH.h>
@@ -43,7 +43,7 @@ CivilImportedTypes::CivilImportedTypes ()
         DTMFeatureType::Breakline,
         // Removed as it was automatically transformed to DTMFeatureType::TinHull when tin was triangulated. Tin types couldn't be added to
         // not triangulated dtm.
-        //DTMFeatureType::Hull,
+        DTMFeatureType::Hull,
         DTMFeatureType::ContourLine,
         DTMFeatureType::Void,
         DTMFeatureType::BreakVoid,
