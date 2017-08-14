@@ -43,6 +43,8 @@ void ComparisonSymbologyOverrides::InitializeDefaults()
     m_targetRevisionOverrides.Insert(DbOpcode::Delete, deleted);
 
     m_untouchedOverride.SetFillColor(ColorDef::MediumGrey());
+    m_untouchedOverride.SetFillTransparency(200);
+    m_untouchedOverride.SetLineTransparency(200);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -108,7 +110,7 @@ Render::GraphicPtr  RevisionComparisonViewController::_StrokeGeometry(ViewContex
     if (nullptr != context.GetIPickGeom() && !m_comparisonData->ContainsElement(source.ToElement()))
         return nullptr;
 
-    return source.Stroke(context, pixelSize);
+    return T_Super::_StrokeGeometry(context, source, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
