@@ -2437,6 +2437,11 @@ IScalableMeshNodePlaneQueryParamsPtr IScalableMeshNodePlaneQueryParams::CreatePa
     return IScalableMeshNodePlaneQueryParamsPtr(new ScalableMeshNodePlaneQueryParams());
     }
 
+bool IScalableMeshMeshFlags::ShouldLoadClips() const
+    {
+    return _ShouldLoadClips();
+    }
+
 bool IScalableMeshMeshFlags::ShouldLoadTexture() const
     {
     return _ShouldLoadTexture();
@@ -2461,6 +2466,11 @@ bool IScalableMeshMeshFlags::ShouldPrecomputeBoxes() const
 {
     return _ShouldPrecomputeBoxes();
 }
+
+void IScalableMeshMeshFlags::SetLoadClips(bool loadClips)
+    {
+    _SetLoadClips(loadClips);
+    }
 
 void IScalableMeshMeshFlags::SetLoadTexture(bool loadTexture) 
     {
@@ -2501,6 +2511,18 @@ IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create(bool shouldLoadTexture,
     return smMeshFlag;
     }
 
+IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create(bool shouldLoadTexture, bool shouldLoadGraph, bool shouldLoadClips)
+    {
+    IScalableMeshMeshFlagsPtr smMeshFlag = IScalableMeshMeshFlags::Create(shouldLoadTexture, shouldLoadGraph);
+    smMeshFlag->SetLoadClips(shouldLoadClips);
+    return smMeshFlag;
+    }
+
+bool ScalableMeshMeshFlags::_ShouldLoadClips () const
+    {
+    return m_loadClips;
+    }
+
 bool ScalableMeshMeshFlags::_ShouldLoadTexture() const
     {
     return m_loadTexture;
@@ -2525,6 +2547,11 @@ bool ScalableMeshMeshFlags::_ShouldPrecomputeBoxes() const
 {
     return m_precomputeBoxes;
 }
+
+void ScalableMeshMeshFlags::_SetLoadClips(bool loadClips)
+    {
+    m_loadClips = loadClips;
+    }
 
 void ScalableMeshMeshFlags::_SetLoadIndices(bool loadIndices)
     {
@@ -2584,6 +2611,11 @@ IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const
     {
     return _GetMeshUnderClip(flags, clip);
+    }
+
+IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, uint64_t clip, bool isClipBoundary) const
+    {
+    return _GetMeshUnderClip2(flags, clip, isClipBoundary);
     }
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bset<uint64_t>& clipsToShow) const

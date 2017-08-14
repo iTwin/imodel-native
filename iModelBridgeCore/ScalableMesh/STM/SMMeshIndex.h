@@ -386,6 +386,8 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
     void PropagateMeshToChildren();
 #endif
 
+    virtual bool        SaveGroupedNodeHeaders(SMNodeGroupPtr pi_pGroup, IScalableMeshProgressPtr progress) override;
+
     size_t CountAllFeatures();
 
     /**----------------------------------------------------------------------------
@@ -762,7 +764,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
         return SMMemoryPool::GetInstance();
         }               
 
-    bool         Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress);
+    bool         Publish3DTile(ISMDataStoreTypePtr<EXTENT>& pi_pDataStore, const uint64_t& clipID, bool isClipBoundary, const GeoCoordinates::BaseGCSCPtr sourceGCS, const GeoCoordinates::BaseGCSCPtr destinationGCS, IScalableMeshProgressPtr progress);
 
     void         ChangeGeometricError(ISMDataStoreTypePtr<EXTENT>&    pi_pDataStore, const double& newGeometricErrorValue);
 
@@ -946,7 +948,7 @@ template <class POINT, class EXTENT> class SMMeshIndexNode : public SMPointIndex
 
         virtual void        Mesh();
                         
-        StatusInt           Publish3DTiles(const WString& path, const GeoCoordinates::BaseGCSCPtr sourceGCS);
+        StatusInt           Publish3DTiles(const WString& path, const uint64_t& clipID, const GeoCoordinates::BaseGCSCPtr sourceGCS);
 
         StatusInt           SaveMeshToCloud(const WString& path, const bool& pi_pCompress);
 

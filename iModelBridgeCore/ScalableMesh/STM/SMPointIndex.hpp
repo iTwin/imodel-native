@@ -7886,7 +7886,7 @@ template<class POINT, class EXTENT> StatusInt SMPointIndex<POINT, EXTENT>::SaveG
     GetRootNode()->SaveGroupedNodeHeaders(group, nullptr /*no progress*/);
 
     // Handle all open groups 
-    strategy->SaveAllOpenGroups();
+    strategy->SaveAllOpenGroups(true /*save root*/);
 
     // Save group master file which contains info about all the generated groups (groupID and blockID)
     BeFileName masterHeaderPath(pi_pOutputDirPath.c_str());
