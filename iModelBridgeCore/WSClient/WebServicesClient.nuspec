@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+    <metadata>
+        <id>WebServicesClient</id>
+        <version>$version$</version>
+        <title>WebServicesClient</title>
+        <authors>Bentley Systems, Incorporated</authors>
+        <owners>Bentley Systems, Incorporated</owners>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>Bentley WebServicesClient library</description>
+        <copyright>(c) $CopyRightYear$ Bentley Systems, Incorporated. All rights reserved.</copyright>
+        <language>en-US</language>
+        <dependencies>
+            <group>
+                <dependency id="ECObjects" version="[#DgnClientSdk_version#]" />
+                <dependency id="BeSQLiteEC" version="[#DgnClientSdk_version#]" />
+            </group>
+        </dependencies>
+    </metadata>
+    <files>
+        <file src="Delivery\WebServicesClientB02.dll"               target="lib\native\WebServicesClientB02.dll" />
+        <file src="Delivery\WebServicesClient.lib"                  target="lib\native\WebServicesClient.lib" />
+        <file src="SubParts\Assemblies\BentleyB02.dll"              target="lib\native\BentleyB02.dll" />
+        <file src="SubParts\libs\Bentley.lib"                       target="lib\native\Bentley.lib" />
+        <file src="SubParts\Assemblies\BeHttpB02.dll"               target="lib\native\BeHttpB02.dll" />
+        <file src="SubParts\libs\BeHttp.lib"                        target="lib\native\BeHttp.lib" />
+        <file src="SubParts\Assemblies\BeFollyB02.dll"              target="lib\native\BeFollyB02.dll" />
+        <file src="SubParts\libs\BeFolly.lib"                       target="lib\native\BeFolly.lib" />
+        <file src="SubParts\Assemblies\BeXmlB02.dll"                target="lib\native\BeXmlB02.dll" />
+        <file src="SubParts\libs\BeXml.lib"                         target="lib\native\BeXml.lib" />
+        <file src="SubParts\Assemblies\BeSecurity.dll"              target="lib\native\BeSecurity.dll" />
+        <file src="SubParts\libs\BeSecurity.lib"                    target="lib\native\BeSecurity.lib" />
+        <file src="SubParts\Assemblies\BeLibxml2B02.dll"            target="lib\native\BeLibxml2B02.dll" />
+        <file src="SubParts\libs\BeLibxml2.lib"                     target="lib\native\BeLibxml2.lib" />
+        <file src="SubParts\Assemblies\BeOpenSSLB02.dll"            target="lib\native\BeOpenSSLB02.dll" />
+        <file src="SubParts\libs\BeOpenSSL.lib"                     target="lib\native\BeOpenSSL.lib" />
+        <file src="SubParts\libs\BeJsonCpp.lib"                     target="lib\native\BeJsonCpp.lib" />
+
+        <file src="SubParts\VendorNotices\*.txt"                    target="notices\" />
+        <file src="Delivery\PublishedAPI\**\*"                      target="include"/>
+    </files>
+</package>
