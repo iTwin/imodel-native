@@ -467,8 +467,6 @@ bvector<DgnV8Api::ElementId> Converter::SheetGetAttachmentsToBeUnnested(DgnV8Mod
             continue;
         if (attachment->Is3d())
             continue;
-        if (nullptr != GetDrawingGeneratorAttachment(*attachment))
-            continue;
             
         attachmentIds.push_back(attachment->GetElementId());
         }
