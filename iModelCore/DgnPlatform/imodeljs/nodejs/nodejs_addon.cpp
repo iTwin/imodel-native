@@ -30,6 +30,13 @@
     }                                                                           \
     Nan::Utf8String var(info[i]);
 
+#define REQUIRE_ARGUMENT_STRING_SYNC(i, var, errcode, errmsg)                   \
+    if (info.Length() <= (i) || !info[i]->IsString()) {                         \
+        info.GetReturnValue().Set(CreateErrorObject(errcode, errmsg));          \
+        return;                                                                 \
+    }                                                                           \
+    Nan::Utf8String var(info[i]);
+
 #define REQUIRE_ARGUMENT_OBJ(i, T, var, errcode, errmsg)                        \
     if (info.Length() <= (i) || !T::HasInstance(info[i])) {                     \
         ResolveArgumentError(info, errcode, errmsg);                            \
@@ -127,17 +134,14 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         info.GetReturnValue().Set(resolver->GetPromise());
         }
 
-    void HandleOKCallback() override
+    static v8::Local<v8::Object> CreateSuccessObject(v8::Local<v8::Value> const& goodVal)
         {
-        Nan::HandleScope scope;
         v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
-        v8::Local<v8::Value> result;
-        if (_GetResult(result))
-            retObj->Set(Nan::New("result").ToLocalChecked(), result);
-        auto resolver = Nan::New(*m_resolver);
-        resolver->Resolve(retObj);
+        retObj->Set(Nan::New("result").ToLocalChecked(), goodVal);
+        return retObj;
         }
 
+        
     static v8::Local<v8::Object> CreateErrorObject(STATUSTYPE errCode, Utf8CP errMessage)
         {
         v8::Local<v8::Object> error = Nan::New<v8::Object>();
@@ -149,12 +153,28 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         return retObj;
         }
 
+    v8::Local<v8::Object> CreateErrorObject()
+        {
+        BeAssert(HadError());
+        return CreateErrorObject(m_status, m_errmsg.c_str());
+        }
+
+    v8::Local<v8::Object> CreateSuccessObject()
+        {
+        BeAssert(!HadError());
+        return CreateSuccessObject(GetResultOrUndefined());
+        }
+
+    void HandleOKCallback() override
+        {
+        Nan::HandleScope scope;
+        Nan::New(*m_resolver)->Resolve(CreateSuccessObject());
+        }
+
     void HandleErrorCallback() override
         {
         Nan::HandleScope scope;
-        v8::Local<v8::Object> retObj = CreateErrorObject(m_status, m_errmsg.c_str());
-        auto resolver = Nan::New(*m_resolver);
-        resolver->Resolve(retObj);
+        Nan::New(*m_resolver)->Resolve(CreateErrorObject());
         }
 
     // Mark this worker as being in a failed state.
@@ -170,6 +190,14 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
 
     // Implement one of these methods to return true if there are results after initializing the result string
     virtual bool _GetResult(v8::Local<v8::Value>& result) { return false; }
+
+    v8::Local<v8::Value> GetResultOrUndefined()
+        {
+        v8::Local<v8::Value> result;
+        if (!_GetResult(result))
+            result = Nan::Undefined();
+        return result;
+        }
 };
 
 //=======================================================================================
@@ -802,7 +830,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     // Returns ECClass metadata
     //! @bsiclass
     //=======================================================================================
-    // Return the results of calling an element's ToJson method
     struct GetECClassMetaData : WorkerBase<DgnDbStatus>
         {
         Utf8String m_ecSchema;            // input
@@ -819,6 +846,22 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             REQUIRE_ARGUMENT_STRING(0, s, DgnDbStatus::BadRequest, "Argument 0 must be the schema name (as a string)");
             REQUIRE_ARGUMENT_STRING(1, c, DgnDbStatus::BadRequest, "Argument 1 must be the class name (as a string)");
             (new GetECClassMetaData(db, *s, *c))->ScheduleAndReturnPromise(info);
+            }
+
+        static NAN_METHOD(ExecuteSync)
+            {
+            Nan::HandleScope scope;
+            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+            REQUIRE_ARGUMENT_STRING_SYNC(0, s, DgnDbStatus::BadRequest, "Argument 0 must be the schema name (as a string)");
+            REQUIRE_ARGUMENT_STRING_SYNC(1, c, DgnDbStatus::BadRequest, "Argument 1 must be the class name (as a string)");
+
+            GetECClassMetaData worker(db, *s, *c);
+            worker.Execute();
+            if (worker.HadError())
+                info.GetReturnValue().Set(worker.CreateErrorObject());
+            else
+                info.GetReturnValue().Set(worker.CreateSuccessObject());
             }
 
         void Execute() override
@@ -1075,6 +1118,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
+        Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
         Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);
 
         Nan::SetAccessor(t->InstanceTemplate(), Nan::New("IsDbOpen").ToLocalChecked(), OpenGetter);

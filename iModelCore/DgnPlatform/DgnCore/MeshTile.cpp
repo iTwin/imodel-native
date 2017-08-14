@@ -227,8 +227,6 @@ static Render::GraphicSet s_unusedDummyGraphicSet;
 
 END_UNNAMED_NAMESPACE
 
-#define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
-#define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   09/16
@@ -587,6 +585,15 @@ void TileMesh::AddTriMesh(Render::IGraphicBuilder::TriMeshArgs const& triMesh, T
         if (nullptr != triMesh.m_textureUV)
             m_uvParams.at(i).Init((double) triMesh.m_textureUV[i].x, (double) (invertVParam ? (1.0 - triMesh.m_textureUV[i].y) : triMesh.m_textureUV[i].y));
         }
+#define DEFAULT_ATTRIBUTE_VALUE 1
+#ifdef DEFAULT_ATTRIBUTE_VALUE
+        m_attributes.resize(triMesh.m_numPoints);
+
+        for (int32_t i=0; i<triMesh.m_numPoints; i++)
+            m_attributes[i] = DEFAULT_ATTRIBUTE_VALUE;
+
+        m_validIdsPresent = true;
+#endif
     
     for (int32_t i=0; i<triMesh.m_numIndices; i += 3)
         AddTriangle(TileTriangle(triMesh.m_vertIndex[i], triMesh.m_vertIndex[i+1], triMesh.m_vertIndex[i+2], false));
@@ -625,24 +632,8 @@ void    TileMesh::AddMesh (TileMeshCR mesh)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TileMeshPointCloud::TileMeshPointCloud(TileDisplayParamsCR params, DPoint3dCP points, Rgb const* colors, FPoint3dCP normals, size_t nPoints, TransformCR transform, double clusterTolerance) :  m_displayParams(&params)
     {
-    struct PointComparator
-        {
-        double  m_tolerance;
-
-        explicit PointComparator(double tolerance) : m_tolerance(tolerance) { }
-
-
-        bool operator()(DPoint3dCR lhs, DPoint3dCR rhs) const
-            {
-            COMPARE_VALUES_TOLERANCE(lhs.x, rhs.x, m_tolerance);
-            COMPARE_VALUES_TOLERANCE(lhs.y, rhs.y, m_tolerance);
-            COMPARE_VALUES_TOLERANCE(lhs.z, rhs.z, m_tolerance);
-                                                                    
-            return false;
-            }
-        };
-    PointComparator                     comparator(clusterTolerance);
-    bset <DPoint3d, PointComparator>    clusteredPointSet(comparator);
+    TileUtil::PointComparator                       comparator(clusterTolerance);
+    bset <DPoint3d, TileUtil::PointComparator>      clusteredPointSet(comparator);
 
     for (size_t i=0; i<nPoints; i++)
         {
@@ -903,6 +894,7 @@ bool TileMeshBuilder::GetMaterial(RenderMaterialId materialId, DgnDbR dgnDb)
 void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId materialId, DgnDbR dgnDb, FeatureAttributesCR attributes, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
     auto const&         points = visitor.Point();
+    bool const*         visitorVisibility = visitor.GetVisibleCP();
     size_t              nTriangles = points.size() - 2;
 
     for (size_t iTriangle =0; iTriangle< nTriangles; iTriangle++)
@@ -916,8 +908,12 @@ void TileMeshBuilder::AddTriangle(PolyfaceVisitorR visitor, RenderMaterialId mat
                 return;
             }
 
-        TileTriangle            newTriangle(!visitor.GetTwoSided());
-        bvector<DPoint2d>       params = visitor.Param();
+        TileTriangle        newTriangle(!visitor.GetTwoSided());
+        bvector<DPoint2d>   params = visitor.Param();
+
+        newTriangle.m_edgeVisible[0] = (0 == iTriangle) ? visitorVisibility[0] : false;
+        newTriangle.m_edgeVisible[1] = visitorVisibility[iTriangle+1];
+        newTriangle.m_edgeVisible[2] = (iTriangle == nTriangles-1) ? visitorVisibility[iTriangle+2] : false;
 
         if (includeParams &&
             !params.empty() &&
@@ -2981,7 +2977,7 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db, TileGeometry::NormalMode normalMode,  bool doSurfacesOnly, ITileGenerationFilterCP filter) const
+PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db, TileGeometry::NormalMode normalMode,  bool doSurfacesOnly, bool doInstancing, ITileGenerationFilterCP filter) const
     {
     bmap<TileGeomPartCP, TileMeshPartPtr>   partMap;
     TileGeometryList            uninstancedGeometry;
@@ -2994,9 +2990,8 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     for (auto& geom : m_geometries)
         {
         auto const&     part = geom->GetPart();
-        static bool     s_disableInstancing = false;
 
-        if (!s_disableInstancing && (part.IsValid() && (part->GetInstanceCount() > minInstanceCount || part->IsWorthInstancing(GetTolerance()))))
+        if (doInstancing && (part.IsValid() && (part->GetInstanceCount() > minInstanceCount || part->IsWorthInstancing(GetTolerance()))))
             {
             auto const&         found = partMap.find(part.get());
             TileMeshPartPtr     meshPart;

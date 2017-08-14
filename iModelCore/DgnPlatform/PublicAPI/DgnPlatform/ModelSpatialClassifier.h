@@ -69,6 +69,7 @@ public:
 
     DgnModelId GetModelId()  const { return m_modelId; }
     Utf8String  GetName() const { return m_name; }
+    double ExpandDistance() const { return m_expandDistance; }
 
     DGNPLATFORM_EXPORT Json::Value ToJson() const;
     DGNPLATFORM_EXPORT BentleyStatus FromJson(Json::Value const& value);

@@ -141,6 +141,8 @@ BentleyStatus IModelJs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errm
 
     auto& propsjson = mjson["properties"] = Json::objectValue;
 
+    auto customHandledProperty = dgndb.Schemas().GetClass(BIS_ECSCHEMA_NAME, "CustomHandledProperty");
+
     for (auto ecprop : ecclass->GetProperties(false))
         {
         Utf8String pname(ecprop->GetName());
@@ -161,6 +163,7 @@ BentleyStatus IModelJs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errm
             propjson["readOnly"] = true;
         SET_IF_NOT_NULL_STR(propjson["kindOfQuantity"], ecprop->GetKindOfQuantity());
         
+        propjson["isCustomHandled"] = ecprop->IsDefined(*customHandledProperty);
         customAttributesToJson(propjson["customAttributes"], *ecprop);
 
         if (ecprop->GetAsPrimitiveProperty())
@@ -181,7 +184,7 @@ BentleyStatus IModelJs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errm
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
 //---------------------------------------------------------------------------------------
-BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, Json::Value const& inOpts)
+BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, JsonValueCR inOpts)
     {
     DgnElementId eid(inOpts[json_id()].asUInt64());
     if (!eid.IsValid())
