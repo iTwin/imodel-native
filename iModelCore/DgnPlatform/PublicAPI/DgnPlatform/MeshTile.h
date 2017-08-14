@@ -366,14 +366,16 @@ struct TileTriangle
 {
     uint32_t    m_indices[3];   // indexes into point/normal/uvparams/elementID vectors
     bool        m_singleSided;
+    bool        m_edgeVisible[3];
 
-    explicit TileTriangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); }
-    TileTriangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); }
-    TileTriangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c); }
+    explicit TileTriangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); SetVisibility(true);  }
+    TileTriangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices);  SetVisibility(true); }
+    TileTriangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c);  SetVisibility(true); }
 
     void SetIndices(uint32_t indices[3]) { SetIndices(indices[0], indices[1], indices[2]); }
     void SetIndices(uint32_t a, uint32_t b, uint32_t c) { m_indices[0] = a; m_indices[1] = b; m_indices[2] = c; }
-
+    void SetVisibility(bool visible) { m_edgeVisible[0] = m_edgeVisible[1] = m_edgeVisible[2] = visible; }
+    bool IsSingleSided() const { return m_singleSided; }
     bool IsDegenerate() const
         {
         return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2];
@@ -1089,6 +1091,9 @@ struct IGetPublishedTilesetInfo
     virtual PublishedTilesetInfo _GetPublishedTilesetInfo() = 0;
 };
 
+#define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
+#define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
+
 //=======================================================================================
 // static utility methods
 // @bsistruct                                                   Ray.Bentley     08/2016
@@ -1098,6 +1103,23 @@ struct TileUtil
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
     DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
     DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId, bool asClassifier = false);
+
+    struct PointComparator
+        {
+        double  m_tolerance;
+
+        explicit PointComparator(double tolerance) : m_tolerance(tolerance) { }
+
+
+        bool operator()(DPoint3dCR lhs, DPoint3dCR rhs) const
+            {
+            COMPARE_VALUES_TOLERANCE(lhs.x, rhs.x, m_tolerance);
+            COMPARE_VALUES_TOLERANCE(lhs.y, rhs.y, m_tolerance);
+            COMPARE_VALUES_TOLERANCE(lhs.z, rhs.z, m_tolerance);
+                                                                    
+            return false;
+            }
+        };
 
 };  // TileUtil
 
