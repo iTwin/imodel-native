@@ -281,6 +281,8 @@ protected:
     bmap<DgnModelId, Utf8String>                m_directUrls;
     AxisAlignedBox3d                            m_projectExtents; // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
     bool                                        m_isEcef; // Hack for ScalableMeshes at YII...all coords in .bim already in ECEF, but nothing in .bim tells us that...
+    bmap<DgnModelId, DRange3d>                  m_classifierModels;
+
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
 
@@ -322,7 +324,8 @@ public:
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
     TextureMode GetTextureMode() const { return m_textureMode; }
     bool DoPublishAsClassifier() const { return m_publishAsClassifier; }
-    WString GetTileExtension (TileNodeCR til);
+    WString GetTileExtension (TileNodeCR tile);
+    bmap<DgnModelId, DRange3d> const& ClassifierModels() const { return m_classifierModels; }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
@@ -396,7 +399,7 @@ private:
     void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes);
     void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
     void WriteGltf(std::FILE* outputFile, PublishTileData const& tileData);
-    void WriteVector(std::FILE* outputFile, PublishableTileGeometryR geometry);
+    void WriteClassifier(std::FILE* outputFile, PublishableTileGeometryR geometry);
 
     void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
     void AddDefaultScene (PublishTileData& tileData);
