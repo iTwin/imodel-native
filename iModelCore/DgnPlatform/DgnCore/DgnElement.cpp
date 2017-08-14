@@ -9,24 +9,29 @@
 #include "BisCoreNames.h"
 #include "ElementECInstanceAdapter.h"
 
-/* GeometrySource properties... 
- *  GeometrySource
- *      Geometry : binary
- *      CategoryId : long
- *  GeometrySource2d : GeometrySource
- *      Origin : point2d
- *      Rotation : double
- *      BBoxLow : point2d
- *      BBoxHigh : point2d
- *  GeometrySource3d : GeometrySource
- *      InSpatialIndex : boolean
- *      Origin : point3d
- *      Yaw : double
- *      Pitch : double
- *      Roll : double
- *      BBoxLow : point3d
- *      BBoxHigh : point3d
- */
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnClassId getClassId(DgnDbR db, Utf8StringCR name)
+    {
+    auto dot = name.find('.');
+    if (Utf8String::npos == dot || name.length() <= dot + 1)
+        return DgnClassId();
+
+    return db.Schemas().GetClassId(name.substr(0, dot), name.substr(dot+1));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
+    {
+    m_classId = getClassId(db, val[DgnElement::json_classFullName()].asString());
+    m_modelId.FromJson(val[DgnElement::json_model()]);
+    m_code.FromJson(val[DgnElement::json_code()]);
+    m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());
+    m_userLabel = val[DgnElement::json_userLabel()].asString();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/16
@@ -1216,6 +1221,15 @@ Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
     return val;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::RelatedElement::RelatedElement(DgnDbR db, JsonValueCR val)
+    {
+    m_id.FromJson(val[json_id()]);
+    if (m_id.IsValid())
+        m_relClassId = getClassId(db, val[json_relClass()].asString());
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
@@ -1223,10 +1237,9 @@ Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
 void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     val[json_id()] = m_elementId.ToHexStr();
-
     auto ecClass = GetElementClass();
-    val[json_schemaName()] = ecClass->GetSchema().GetName();
-    val[json_className()] = ecClass->GetName();
+    BeAssert(ecClass != nullptr);
+    val[json_classFullName()] = Utf8String(ecClass->GetSchema().GetName() + "." + ecClass->GetName());
     val[json_model()] = m_modelId.ToHexStr();
     val[json_code()] = m_code.ToJson2();
 

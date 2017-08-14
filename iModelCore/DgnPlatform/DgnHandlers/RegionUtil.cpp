@@ -299,6 +299,9 @@ BentleyStatus GetActiveRegions(CurveVectorPtr& regionOut)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curvePrimitive)
     {
+    if (ICurvePrimitive::CURVE_PRIMITIVE_TYPE_CurveVector == curvePrimitive.GetCurvePrimitiveType())
+        return GetRoots(regionRoots, *curvePrimitive.GetChildCurveVectorCP());
+
     CurveNodeInfo const* nodeInfo = dynamic_cast <CurveNodeInfo const*> (curvePrimitive.GetCurvePrimitiveInfo().get());
 
     if (!nodeInfo)
@@ -568,6 +571,31 @@ bool RegionGraphicsContext::_ProcessCurveVector(CurveVectorCR curves, bool fille
     {
     RegionData& data = static_cast<RegionData&> (*m_regionData);
 
+    if (m_restrictToPlane)
+        {
+        DRange3d    localRange;
+        Transform   localToWorld, worldToLocal, fwdPlacementTrans, invPlacementTrans;
+        DVec3d      defaultNormal = m_plane.normal;
+
+        fwdPlacementTrans = graphic.GetLocalToWorldTransform();
+        invPlacementTrans.InverseOf(fwdPlacementTrans);
+        invPlacementTrans.MultiplyMatrixOnly(defaultNormal);
+
+        if (!curves.IsPlanarWithDefaultNormal(localToWorld, worldToLocal, localRange, &defaultNormal))
+            return true;
+
+        DVec3d      planeDir = DVec3d::UnitZ();
+        DPoint3d    planePt = DPoint3d::FromZero();
+        Transform   planeTrans = Transform::FromProduct(fwdPlacementTrans, localToWorld);
+
+        planeTrans.Multiply(planePt);
+        planeTrans.MultiplyMatrixOnly(planeDir);
+        planeDir.Normalize();
+
+        if (fabs(planeDir.DotProduct(m_plane.normal)) < 0.99999 || fabs(m_plane.Evaluate(planePt)) > (1.0e-10 * (1.0 + m_plane.origin.Magnitude())))
+            return true;
+        }
+
     jmdlRIMSBS_setCurrGroupId(data.m_pCurves, ++m_currentGeomMarkerId);
 
     graphic.ProcessAsCurvePrimitives(curves, filled);
@@ -797,7 +825,7 @@ bool RegionGraphicsContext::GetFaceAtPoint(CurveVectorPtr& region, DPoint3dCR se
     FloodSeed   floodSeed;
 
     floodSeed.m_pt = seedPoint;
-    data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, false);
+    data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, m_stepOutOfHoles);
 
     if (0 == floodSeed.m_faceNodeIds.size())
         {
@@ -840,7 +868,7 @@ bool RegionGraphicsContext::IsFaceAtPointSelected(DPoint3dCR seedPoint)
     FloodSeed   floodSeed;
 
     floodSeed.m_pt = seedPoint;
-    data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, false);
+    data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, m_stepOutOfHoles);
 
     if (0 == floodSeed.m_faceNodeIds.size())
         return false;
@@ -863,7 +891,7 @@ bool RegionGraphicsContext::ToggleFaceAtPoint(DPoint3dCR seedPoint)
     FloodSeed   floodSeed;
 
     floodSeed.m_pt = seedPoint;
-    data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, false);
+    data.CollectFaceLoopsAtPoint(&floodSeed.m_faceNodeIds, floodSeed.m_pt, m_regionLoops, m_stepOutOfHoles);
 
     if (0 == floodSeed.m_faceNodeIds.size())
         return false;
@@ -944,13 +972,33 @@ BentleyStatus RegionGraphicsContext::AddFaceLoopsAtPoints(DPoint3dCP seedPoints,
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElementCPtrVec const* in)
+BentleyStatus RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElementCPtrVec const* in, DRange3dCP range, DPlane3dCP plane, CurveVectorCP boundaryEdges)
     {
+    if (nullptr == vp)
+        return ERROR;
+
     m_operation = RegionType::Flood;
     m_ignoreViewRange = false;
 
+    if (nullptr != range)
+        {
+        Frustum    frustum;
+        DPoint3dP  frustPts = frustum.GetPtsP();
+
+        range->Get8Corners(frustPts);
+        vp->GetWorldToNpcMap()->M0.MultiplyAndRenormalize(frustPts, frustPts, NPC_CORNER_COUNT);
+        m_npcSubRange = frustum.ToRange();
+        m_useNpcSubRange = true;
+        }
+
     if (SUCCESS != Attach(vp, m_purpose))
         return ERROR;
+
+    if (nullptr != plane)
+        {
+        m_plane = *plane;
+        m_restrictToPlane = true;
+        }
 
     if (in)
         {
@@ -971,6 +1019,17 @@ BentleyStatus RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElementCP
 
     if (WasAborted())
         return ERROR;
+
+    if (nullptr != boundaryEdges)
+        {
+        if (0 == m_currentGeomMarkerId)
+            return ERROR; // No other geometry was added...
+
+        Render::GraphicBuilderPtr builder = CreateGraphic();
+        SimplifyGraphic* graphic = static_cast<SimplifyGraphic*> (builder.GetGraphic());
+
+        _ProcessCurveVector(*boundaryEdges, false, *graphic);
+        }
 
     RegionData& data = static_cast<RegionData&> (*m_regionData);
 

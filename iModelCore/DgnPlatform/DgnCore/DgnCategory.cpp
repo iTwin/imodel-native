@@ -732,12 +732,9 @@ DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbR db, ECN:
     auto params = DgnSubCategory::CreateParamsFromECInstance(db, properties, inStat);
     if (!params.IsValid())
         return nullptr;
+
     auto ele = new DgnSubCategory(params);
-    if (nullptr == ele)
-        {
-        BeAssert(false && "when would a handler fail to construct an element?");
-        return nullptr;
-        }
+
     bset<Utf8String> ignoreProps;
     ignoreProps.insert("Parent");
     DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping, false, ignoreProps);
