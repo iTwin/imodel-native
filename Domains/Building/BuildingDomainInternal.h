@@ -6,8 +6,8 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include "BuildingDomain\BuildingDomainApi.h"
-#include <ConstraintSystem/ConstraintSystemApi.h>
-#include <Grids/GridsApi.h>
+//#include <ConstraintSystem/ConstraintSystemApi.h>
+//#include <Grids/GridsApi.h>
 
 
  

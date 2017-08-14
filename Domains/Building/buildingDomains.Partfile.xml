@@ -18,8 +18,8 @@
 
 
     <Part Name="BuildingDomain" BentleyBuildMakeFile="Building.mke" ApiNumber="B02">
-        <SubPart PartName="ConstraintModelSchema" PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
-        <SubPart PartName="Grids"                 PartFile="Grids"                    Repository="DgnDomains-Grids"/>
+        <!--SubPart PartName="ConstraintModelSchema" PartFile="ConstraintSystem"         Repository="DgnDomains-ConstraintSystem"/>
+        <SubPart PartName="Grids"                 PartFile="Grids"                    Repository="DgnDomains-Grids"/-->
         <SubPart PartName="BuildingPhysicalPublicAPI"/>
         <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
 
