@@ -43,6 +43,8 @@ void ComparisonSymbologyOverrides::InitializeDefaults()
     m_targetRevisionOverrides.Insert(DbOpcode::Delete, deleted);
 
     m_untouchedOverride.SetFillColor(ColorDef::MediumGrey());
+    m_untouchedOverride.SetFillTransparency(200);
+    m_untouchedOverride.SetLineTransparency(200);
     }
 
 /*---------------------------------------------------------------------------------**//**
