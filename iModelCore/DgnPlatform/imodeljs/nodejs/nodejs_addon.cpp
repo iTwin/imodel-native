@@ -402,8 +402,8 @@ struct NodeAddonECDb : Nan::ObjectWrap
     struct InsertInstanceWorker : WorkerBase<DbResult>
         {
         Json::Value m_jsonInstance; // input
-        ECInstanceId m_insertedId; //output
-
+        Utf8String m_insertedId; // output
+        
         InsertInstanceWorker(NodeAddonECDb *addon, Nan::Utf8String const& strInstance) : WorkerBase(addon, DbResult::BE_SQLITE_OK), m_jsonInstance(Json::Value::From(*strInstance, *strInstance + strInstance.length())) {}
 
         static NAN_METHOD(Start)
@@ -432,7 +432,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            result = Nan::New(m_insertedId.ToHexStr().c_str()).ToLocalChecked();
+            result = Nan::New(m_insertedId.c_str()).ToLocalChecked();
             return true;
             }
         };

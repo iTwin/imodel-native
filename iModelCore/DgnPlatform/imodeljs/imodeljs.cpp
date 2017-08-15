@@ -268,9 +268,7 @@ void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
                 rowJson[name] = value.GetBoolean();
                 break;
             case ECN::PRIMITIVETYPE_Long:
-                Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
-                BeStringUtilities::FormatUInt64(idStrBuffer, BeInt64Id::ID_STRINGBUFFER_LENGTH, value.GetInt64(), (HexFormatOptions) ((int) HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase));
-                rowJson[name] = &idStrBuffer[0];
+                rowJson[name] = Int64ToHexString(value.GetInt64());
                 break;
             case ECN::PRIMITIVETYPE_Integer:
                 rowJson[name] = value.GetInt();
@@ -422,7 +420,11 @@ private:
                 {
                 if (!EXPECTED_CONDITION(valueType == Json::stringValue  && "int64_t values need to be serialized as strings to allow use in Javascript"))
                     return ERROR;
-                if (ECSqlStatus::Success != binder.BindInt(BeJsonUtilities::Int64FromValue(value)))
+                BentleyStatus status;
+                uint64_t longValue = BeStringUtilities::ParseHex(value.asCString(), &status);
+                if (!EXPECTED_CONDITION(status == SUCCESS))
+                    return ERROR;
+                if (ECSqlStatus::Success != binder.BindInt64((int64_t) longValue))
                     return ERROR;
                 return SUCCESS;
                 }
@@ -542,6 +544,17 @@ public:
         return SUCCESS;
         }
 };
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                               Ramanujam.Raman                 07/17
+//---------------------------------------------------------------------------------------
+// static
+Utf8String IModelJs::Int64ToHexString(int64_t value)
+    {
+    Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+    BeStringUtilities::FormatUInt64(idStrBuffer, BeInt64Id::ID_STRINGBUFFER_LENGTH, value, (HexFormatOptions) ((int) HexFormatOptions::IncludePrefix));
+    return Utf8String(idStrBuffer);
+    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
@@ -760,7 +773,7 @@ ECInstanceId IModelJs::GetInstanceIdFromInstance(Utf8StringR errmsg, ECDbCR ecdb
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
 // static
-DbResult IModelJs::InsertInstance(Utf8StringR errmsg, ECInstanceId& insertedId, ECDbCR ecdb, JsonValueCR jsonInstance)
+DbResult IModelJs::InsertInstance(Utf8StringR errmsg, Utf8StringR insertedId, ECDbCR ecdb, JsonValueCR jsonInstance)
     {
     ECClassCP ecClass = GetClassFromInstance(errmsg, ecdb, jsonInstance);
     if (!ecClass)
@@ -774,9 +787,8 @@ DbResult IModelJs::InsertInstance(Utf8StringR errmsg, ECInstanceId& insertedId, 
         errmsg.Sprintf("Could not insert instance with key %s", jsonInstance["$ECClassKey"].asCString());
         return result;
         }
-    insertedId = instanceKey.GetInstanceId();
-    BeAssert(insertedId.IsValid());
 
+    insertedId = Int64ToHexString(instanceKey.GetInstanceId().GetValueUnchecked());
     return BE_SQLITE_OK;
     }
 
@@ -827,7 +839,7 @@ DbResult IModelJs::ReadInstance(Utf8StringR errmsg, JsonValueR jsonInstance, ECD
         return BE_SQLITE_ERROR;
         }
 
-    jsonInstance["$ECInstanceId"] = instanceId.ToHexStr();
+    jsonInstance["$ECInstanceId"] = Int64ToHexString((int64_t) instanceId.GetValueUnchecked());
     return BE_SQLITE_OK;
     }
 
