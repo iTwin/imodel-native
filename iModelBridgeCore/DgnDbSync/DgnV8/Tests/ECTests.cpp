@@ -1641,27 +1641,70 @@ TEST_F(DataValidation_Tests, VerifyViewsForConvertediBimFile)
     BentleyApi::BeFileListIterator filesIterator(sourceFilesPath, false);
     BentleyApi::BeFileName dbName;
 
+    //Creating a csv
+    BentleyApi::BeFileName csvPath;
+    BentleyApi::BeTest::GetHost().GetDocumentsRoot(csvPath);
+    csvPath.AppendToPath(L"TestData");
+    csvPath.AppendToPath(L"CsvFile");
+
+    if (!csvPath.DoesPathExist())
+        ASSERT_TRUE(BeFileNameStatus::Success == BeFileName::CreateNewDirectory(csvPath.c_str()));
+
+    BentleyApi::BeFileName resultsFilePath = csvPath;
+    resultsFilePath.AppendToPath(L"ViewVerification").AppendA(".csv");
+
+    if (resultsFilePath.DoesPathExist())
+        ASSERT_EQ(0, remove(resultsFilePath.GetNameUtf8().c_str())) << "Error deleting file.";
+
+    //Writing results in csv 
+    FILE *f;
+    f = fopen(resultsFilePath.GetNameUtf8().c_str(), "a");
+    if (f != NULL)
+        {
+        fprintf(f, "FileName, Status\n");
+        }
+    else
+        ASSERT_TRUE(false) << "Error opening csv file";
+
+    BentleyApi::BeSQLite::DbResult sqlPrepareStatus;
+    BentleyApi::Bstdcxx::bvector<BentleyApi::Utf8String> FailingViews;
+
     while (filesIterator.GetNextFileName(dbName) != ERROR)
         {
-        //printf("ibim Name: %s\n", dbName.GetNameUtf8().c_str());
+        printf("\n\n\nibim Name: %s\n\n\n", dbName.GetNameUtf8().c_str());
+
+        bool Filestatus = false;
 
         DgnDbPtr dgnProj = OpenExistingDgnDb(dbName, Db::OpenMode::Readonly);
         EXPECT_TRUE(dgnProj->IsDbOpen());
-
         BentleyApi::BeSQLite::Statement statement;
         EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, statement.Prepare(*dgnProj, "select '[' || name || ']'  from sqlite_master where type = 'view' and instr (name,'.') and instr(sql, '--### ECCLASS VIEW')"));
         while (statement.Step() == BE_SQLITE_ROW)
             {
-            //printf ("\n ViewName : %s \n", statement.GetValueText (0));
+            //printf("\n ViewName : %s \n", statement.GetValueText(0));
             BentleyApi::BeSQLite::Statement stmt;
             BentleyApi::Utf8String sql;
             sql.Sprintf("SELECT * FROM %s", statement.GetValueText(0));
             //printf("Select sql:  %s \n", sql.c_str());
-            EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, stmt.Prepare(*dgnProj, sql.c_str())) << "ECClassView " << stmt.GetValueText(0) << " has invalid DDL: " << dgnProj->GetLastError().c_str() << " in DgnDb : " << dbName.c_str();
+            sqlPrepareStatus = stmt.Prepare(*dgnProj, sql.c_str());
+            EXPECT_EQ(BentleyApi::BeSQLite::DbResult::BE_SQLITE_OK, sqlPrepareStatus) << "ECClassView " << stmt.GetValueText(0) << " has invalid DDL: " << dgnProj->GetLastError().c_str() << " in DgnDb : " << dbName.c_str();
+
+            if (sqlPrepareStatus == BE_SQLITE_OK)
+                Filestatus = true;
+            else
+                FailingViews.push_back(stmt.GetValueText(0));
+            Filestatus = false;
             }
         statement.Finalize();
         dgnProj->CloseDb();
+
+        if (FailingViews.size() == 0)
+            fprintf(f, "%ls , %s\n", dbName.GetFileNameAndExtension().c_str(), "PASS");
+        else
+            fprintf(f, "%ls , %s\n", dbName.GetFileNameAndExtension().c_str(), "FAILED");
         }
+
+    fclose(f);
     }
 
 /*---------------------------------------------------------------------------------**//**
