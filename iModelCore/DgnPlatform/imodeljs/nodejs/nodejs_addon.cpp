@@ -432,7 +432,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            result = Nan::New(m_insertedId.ToString().c_str()).ToLocalChecked();
+            result = Nan::New(m_insertedId.ToHexStr().c_str()).ToLocalChecked();
             return true;
             }
         };

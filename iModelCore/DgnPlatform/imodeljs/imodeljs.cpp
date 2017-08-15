@@ -268,7 +268,9 @@ void IModelJs::GetRowAsJson(Json::Value& rowJson, ECSqlStatement& stmt)
                 rowJson[name] = value.GetBoolean();
                 break;
             case ECN::PRIMITIVETYPE_Long:
-                rowJson[name] = value.GetUInt64();
+                Utf8Char idStrBuffer[BeInt64Id::ID_STRINGBUFFER_LENGTH];
+                BeStringUtilities::FormatUInt64(idStrBuffer, BeInt64Id::ID_STRINGBUFFER_LENGTH, value.GetInt64(), (HexFormatOptions) ((int) HexFormatOptions::IncludePrefix | (int) HexFormatOptions::Uppercase));
+                rowJson[name] = &idStrBuffer[0];
                 break;
             case ECN::PRIMITIVETYPE_Integer:
                 rowJson[name] = value.GetInt();
@@ -591,7 +593,7 @@ BeSQLite::DbResult IModelJs::ExecuteStatement(Utf8StringR errmsg, Utf8StringR in
         }
 
     if (isInsertStmt)
-        instanceId = instanceKey.GetInstanceId().ToString();
+        instanceId = instanceKey.GetInstanceId().ToString(ECInstanceId::UseHex::Yes);
 
     return result;
     }
@@ -739,23 +741,14 @@ ECInstanceId IModelJs::GetInstanceIdFromInstance(Utf8StringR errmsg, ECDbCR ecdb
     {
     if (!jsonInstance.isMember("$ECInstanceId"))
         {
-        errmsg = "Could not determine the instance id. The JSON instance does must include $ECInstanceId";
+        errmsg = "Could not determine the instance id. The JSON instance must include $ECInstanceId";
         return ECInstanceId();
         }
 
-    uint64_t id;
-    BentleyStatus status = BeStringUtilities::ParseUInt64(id, jsonInstance["$ECInstanceId"].asCString());
-    if (status != SUCCESS)
+    ECInstanceId instanceId;
+    if (SUCCESS != ECInstanceId::FromString(instanceId, jsonInstance["$ECInstanceId"].asCString()))
         {
         errmsg = "Could not parse the instance id from $ECInstanceId: ";
-        errmsg.append(jsonInstance["$ECInstanceId"].asCString());
-        return ECInstanceId();
-        }
-
-    ECInstanceId instanceId = ECInstanceId(id);
-    if (!instanceId.IsValid())
-        {
-        errmsg = "Cannot read an instance with an invalid $ECInstanceId: ";
         errmsg.append(jsonInstance["$ECInstanceId"].asCString());
         return ECInstanceId();
         }
@@ -834,6 +827,7 @@ DbResult IModelJs::ReadInstance(Utf8StringR errmsg, JsonValueR jsonInstance, ECD
         return BE_SQLITE_ERROR;
         }
 
+    jsonInstance["$ECInstanceId"] = instanceId.ToHexStr();
     return BE_SQLITE_OK;
     }
 
