@@ -607,6 +607,7 @@ struct Material : RefCounted<NonCopyableClass>
         BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
     };
 
+    DEFINE_POINTER_SUFFIX_TYPEDEFS(MappedTexture)
     struct MappedTexture : RefCounted<NonCopyableClass>
     {
         TextureCPtr m_texture = nullptr;
@@ -616,7 +617,6 @@ struct Material : RefCounted<NonCopyableClass>
         bool IsValid() const {return !(m_texture.IsNull());}
         MappedTexture (TextureCR texture, TextureMapParams const& mapParams) {m_texture = &texture; m_mapParams = mapParams;}
     };
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(MappedTexture)
     DEFINE_REF_COUNTED_PTR(MappedTexture)
 
 protected:

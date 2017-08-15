@@ -37,10 +37,10 @@ DEFINE_REF_COUNTED_PTR(PublishedTile)
 struct TileTexture : Render::Texture
  {
     CreateParams        m_createParams;
-    Image               m_image;
+    Render::Image               m_image;
 
     TileTexture() { }
-    TileTexture(ImageCR image, CreateParams const& createParams) : m_image(image), m_createParams(createParams) { }
+    TileTexture(Render::ImageCR image, CreateParams const& createParams) : m_image(image), m_createParams(createParams) { }
 
 
     bool GetRepeat() const { return !m_createParams.m_isTileSection; }
@@ -71,20 +71,20 @@ protected:
     void                AddExtensions(DPoint3dCR centroid);
     void                AddDefaultScene ();
     void                AddMeshUInt16Attributes(Json::Value& primitive, uint16_t const* attributes16, size_t nAttributes, Utf8StringCR idStr, Utf8CP name, Utf8CP semantic);
-    void                AddBatchIds(Json::Value& primitive, FeatureIndex const& featureIndex, size_t nVertices, Utf8StringCR idStr);
-    void                AddColors(Json::Value& primitive, ColorIndex const& colorIndex, size_t nVertices, Utf8StringCR idStr);
+    void                AddBatchIds(Json::Value& primitive, Render::FeatureIndex const& featureIndex, size_t nVertices, Utf8StringCR idStr);
+    void                AddColors(Json::Value& primitive, Render::ColorIndex const& colorIndex, size_t nVertices, Utf8StringCR idStr);
     void                AddAccessor(uint32_t componentType, Utf8StringCR accessorId, Utf8StringCR bufferViewId, size_t count, Utf8CP type);
-    Utf8String          AddQuantizedPointsAttribute(QPoint3dCP qPoints, size_t nPoints, QPoint3d::Params params, Utf8StringCR name, Utf8StringCR id); 
+    Utf8String          AddQuantizedPointsAttribute(Render::QPoint3dCP qPoints, size_t nPoints, Render::QPoint3d::Params params, Utf8StringCR name, Utf8StringCR id); 
     Utf8String          AddQuantizedParamAttribute(FPoint2d const* params, size_t nParams, Utf8StringCR name, Utf8StringCR id); 
     Utf8String          AddParamAttribute(FPoint2d const* params, size_t nParams, Utf8StringCR name, Utf8StringCR id); 
     Utf8String          AddMeshIndices(Utf8StringCR name, uint32_t const* indices, size_t numIndices, Utf8StringCR idStr, size_t maxIndex);
-    Utf8String          AddMeshTriangleIndices(Utf8StringCR name, Primitives::TriangleList const& triangles, Utf8StringCR idStr, size_t maxIndex);
+    Utf8String          AddMeshTriangleIndices(Utf8StringCR name, Render::Primitives::TriangleList const& triangles, Utf8StringCR idStr, size_t maxIndex);
     void                AddMeshPointRange (Json::Value& positionValue, DRange3dCR pointRange);
-    BentleyStatus       CreateMeshMaterialJson(Json::Value& matJson, Primitives::ColorTableCR colorTable, MeshMaterialCR meshMaterial, Utf8StringCR suffix); 
-    Json::Value         AddNormals (OctEncodedNormalCP normals, size_t numNormals, Utf8String name, Utf8CP id);
-    Json::Value         AddNormalPairs(OctEncodedNormalPairCP pairs, size_t numPairs, Utf8String name, Utf8CP id);
-    void                AppendPolylineToBufferView(MeshPolylineCR polyline, bool useShortIndices);
-    Json::Value         AddPolylines(Primitives::PolylineList const& polylines, size_t maxIndex, Utf8StringCR name, Utf8StringCR idStr); 
+    BentleyStatus       CreateMeshMaterialJson(Json::Value& matJson, Render::Primitives::ColorTableCR colorTable, MeshMaterialCR meshMaterial, Utf8StringCR suffix); 
+    Json::Value         AddNormals (Render::OctEncodedNormalCP normals, size_t numNormals, Utf8String name, Utf8CP id);
+    Json::Value         AddNormalPairs(Render::OctEncodedNormalPairCP pairs, size_t numPairs, Utf8String name, Utf8CP id);
+    void                AppendPolylineToBufferView(Render::MeshPolylineCR polyline, bool useShortIndices);
+    Json::Value         AddPolylines(Render::Primitives::PolylineList const& polylines, size_t maxIndex, Utf8StringCR name, Utf8StringCR idStr); 
 
     static Json::Value  CreateColorJson(RgbFactorCR color);
     static Json::Value  CreateDecodeQuantizeValues(double const* min, double const* max, size_t nComponents);
