@@ -278,7 +278,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 
                   qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());
                   */
-                assert(!"Should not get here");
+                //assert(!"Should not get here");
                 }
             }
         }
@@ -314,7 +314,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                 }
             else
                 {
-                assert(!"Should not occur");
+                //assert(!"Should not occur");
                 /*NEEDS_WORK_SM : Not support yet.
                   __int64 meshId = GetMeshId(meshNodes[nodeInd]->GetNodeId());
                   qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());
@@ -433,13 +433,11 @@ public:
             DMatrix4d&                              storageToUorsTransfo,
             TerrainContextR                            context,
             IScalableMeshDisplayCacheManagerPtr& cacheManager)
-        {
-        /*
-           context.GetViewport()->ScheduleTerrainProgressiveTask (*new ScalableMeshProgressiveTask(progressiveQueryEngine,
+        {        
+           context.GetViewport()->ScheduleProgressiveTask(*new ScalableMeshProgressiveTask(progressiveQueryEngine,
            currentDrawingInfoPtr,
            storageToUorsTransfo,
-           cacheManager));
-           */
+           cacheManager));        
         }
 };
 
@@ -1280,7 +1278,7 @@ void ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
         m_scene = nullptr;
     }
 
-static bool s_useProgressiveQuery = false; 
+static bool s_useProgressiveQuery = true; 
 
 void ScalableMeshModel::_AddTerrainGraphics(TerrainContextR context) const
     {
