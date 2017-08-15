@@ -890,6 +890,18 @@ struct TopologyID
     //! @return SUCCESS if face ids are assigned to the body.
     DGNPLATFORM_EXPORT static BentleyStatus FindNodeIdRange(IBRepEntityCR entity, uint32_t& highestNodeId, uint32_t& lowestNodeId);
 
+    //! Assign topology id to the given face. Does not check or resolve duplicate face ids.
+    //! @param[in,out] subEntity The face to modify.
+    //! @param[in] nodeId The non-zero topology node id to use in the nodeId-entityId pair.
+    //! @param[in] entityId The non-zero topology entity id to use in the nodeId-entityId pair.
+    //! @return SUCCESS if id was added.
+    DGNPLATFORM_EXPORT static BentleyStatus AddNodeIdAttribute(ISubEntityR subEntity, FaceId faceId);
+
+    //! Remove topology id from the given face.
+    //! @param[in,out] subEntity The face to modify.
+    //! @return SUCCESS if id was removed.
+    DGNPLATFORM_EXPORT static BentleyStatus DeleteNodeIdAttribute(ISubEntityR subEntity);
+
     //! Get the FaceId currently assigned to a given face sub-entity.
     //! @param[out] faceId The requested nodeId-entityId pair.
     //! @param[in] subEntity The face sub-entity to query.
