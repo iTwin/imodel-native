@@ -2977,7 +2977,7 @@ TileGeneratorStatus ElementTileNode::_CollectGeometry(TileGenerationCacheCR cach
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     12/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db, TileGeometry::NormalMode normalMode,  bool doSurfacesOnly, ITileGenerationFilterCP filter) const
+PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db, TileGeometry::NormalMode normalMode,  bool doSurfacesOnly, bool doInstancing, ITileGenerationFilterCP filter) const
     {
     bmap<TileGeomPartCP, TileMeshPartPtr>   partMap;
     TileGeometryList            uninstancedGeometry;
@@ -2990,9 +2990,8 @@ PublishableTileGeometry ElementTileNode::_GeneratePublishableGeometry(DgnDbR db,
     for (auto& geom : m_geometries)
         {
         auto const&     part = geom->GetPart();
-        static bool     s_disableInstancing = false;
 
-        if (!s_disableInstancing && (part.IsValid() && (part->GetInstanceCount() > minInstanceCount || part->IsWorthInstancing(GetTolerance()))))
+        if (doInstancing && (part.IsValid() && (part->GetInstanceCount() > minInstanceCount || part->IsWorthInstancing(GetTolerance()))))
             {
             auto const&         found = partMap.find(part.get());
             TileMeshPartPtr     meshPart;

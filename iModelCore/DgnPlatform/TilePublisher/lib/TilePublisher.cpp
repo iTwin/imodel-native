@@ -768,7 +768,7 @@ template<typename T> static void FWrite(T const& value, std::FILE* file) { if (!
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish()
     {
-    PublishableTileGeometry publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, m_context.WantSurfacesOnly(), nullptr);
+    PublishableTileGeometry publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, m_context.WantSurfacesOnly(), !m_context.DoPublishAsClassifier() /* no instancing for classifiers */, nullptr);
 
     if (publishableGeometry.IsEmpty())
         return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
@@ -783,8 +783,6 @@ PublisherContext::Status TilePublisher::Publish()
         return PublisherContext::Status::CantOpenOutputFile;
         }
     
-    static double s_minClassHeight = 1.0E3;
-
     if (m_context.DoPublishAsClassifier())
         {
         WriteClassifier(outputFile, publishableGeometry);
@@ -1150,26 +1148,26 @@ uint16_t    zigZagEncode(int32_t value) { return (uint16_t) (((value << 1) ^ (va
 +===============+===============+===============+===============+===============+======*/
 struct ClassifierTileWriter
 {
-    Json::Value         m_featureTable;
-    bvector<uint32_t>   m_meshIndices;
-    ByteStream          m_polylineIndices;
-    ByteStream          m_meshPositions;
-    ByteStream          m_polylinePositionsX;
-    ByteStream          m_polylinePositionsY;
-    ByteStream          m_pointPositionsX;
-    ByteStream          m_pointPositionsY;
-    ByteStream          m_featureBinary;
-    ByteStream          m_batchIdsBuffer;
-    VectorPosition      m_lastPosition;
-    DRange3d            m_range;
-    uint32_t            m_nextMeshPointIndex;
+    typedef bmap<DPoint3d, uint32_t, TileUtil::PointComparator> T_PointMap;
 
-    bmap<DPoint3d, uint32_t, TileUtil::PointComparator> m_meshPointMap;
+    Json::Value                 m_featureTable;
+    bvector<uint32_t>           m_meshIndices;
+    bvector<FPoint3d>           m_meshPositions;
+    ByteStream                  m_pointPositionsX;
+    ByteStream                  m_pointPositionsY;
+    ByteStream                  m_featureBinary;
+    ByteStream                  m_batchIdsBuffer;
+    VectorPosition              m_lastPosition;
+    DRange3d                    m_range;
+    uint32_t                    m_nextMeshPointIndex;
+    T_PointMap                  m_meshPointMap;
+
+    static constexpr double     s_pointTolerance = 1.0E-6;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-ClassifierTileWriter(DRange3dCR range) : m_range(range) , m_meshPointMap(TileUtil::PointComparator(1.0E-4)), m_nextMeshPointIndex(0)
+ClassifierTileWriter(DRange3dCR range) : m_range(range), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
     { 
     m_featureTable["RTC_CENTER"][0] = 0.0; m_featureTable["RTC_CENTER"][1] = 0.0; m_featureTable["RTC_CENTER"][2] = 0.0;
     m_featureTable["MINIMUM_HEIGHT"] = -1000.0;
@@ -1183,63 +1181,47 @@ ClassifierTileWriter(DRange3dCR range) : m_range(range) , m_meshPointMap(TileUti
     rectangle[3]  = range.high.y;
     }
 
-
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley   07/2017
+* @bsimethod                                                    Ray.Bentley   08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-uint32_t AddMeshPoint(DPoint3dCR point)
+PolyfaceHeaderPtr   BuildPolyface(bvector<DPoint3d> const& meshPoints, bvector<TileTriangle> const& triangles)
     {
-#define USE_MAP    
-#ifdef USE_MAP
-    auto const& insertPair = m_meshPointMap.Insert(point, m_nextMeshPointIndex);
+    PolyfaceHeaderPtr           polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    PolyfaceCoordinateMapPtr    coordinateMap = PolyfaceCoordinateMap::Create(*polyface);    // new PolyfaceCoordinateMap(*polyface, s_pointTolerance, 0.0, 0.0, 0.0);
 
-    if (insertPair.second)
+    for (auto& triangle : triangles)
         {
-        m_meshPositions.Append(FPoint3d::From(point));
-        return m_nextMeshPointIndex++;
-        }
-    else
-        {
-        return insertPair.first->second;
-        }
-#else
-    uint32_t    index = m_meshPositions.size() / sizeof(uint32_t);
+        int32_t         indices[3];
 
-    return index;
-#endif
+        for (size_t i=0; i<3; i++)
+            {
+            indices[i] = 1 + coordinateMap->AddPoint(meshPoints[triangle.m_indices[i]]);
+            if (!triangle.m_edgeVisible[i])
+                indices[i] = -indices[i];
+            }
+
+        polyface->AddIndexedFacet(3, indices);
+        }
+    return polyface;
     }
-
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AddClosedMesh (ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, DPoint3dCP meshPoints, uint16_t batchId, bvector<TileTriangle> const& triangles)
+bool IsSolid(bvector<TileTriangle> const& triangles) 
     {
     for (auto& triangle : triangles)
         if (!triangle.IsSingleSided())
-            return ERROR;
+            return false;
 
-    indexOffsetBuffer.Append((uint32_t) (m_meshIndices.size()));
-
-    for (auto& triangle : triangles)
-        for (size_t i=0; i<3; i++)
-            m_meshIndices.push_back(AddMeshPoint(meshPoints[triangle.m_indices[i]]));
-
-    uint32_t      indexCount = triangles.size() * 3;
-    m_batchIdsBuffer.Append((uint16_t)(batchId /* Subtract 1 to produce zero based batchIds - workaround this dependence in vector tiles */ - 1));
-    indexCountBuffer.Append(indexCount);
-    m_featureBinary.Append(indexCount);
-
-    return SUCCESS;
+    return true;
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-BentleyStatus AddExtrudedPolygon (ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR classifiedRange)
+bool IsPolygon(DVec3dR normal, bvector<TileTriangle> const& triangles, TileMeshCR mesh) 
     {
-    DVec3d                  normal;
     bvector<uint32_t>       indices;
     bool                    first = true;
     bvector<DPoint3d>       solidPoints;
@@ -1254,49 +1236,68 @@ BentleyStatus AddExtrudedPolygon (ByteStream& indexCountBuffer, ByteStream& inde
             }
         else if (!normal.IsParallelTo(triangleNormal))
             {
-            BeAssert(false && "cant classify with non-planar surface");
-            return ERROR;
+            return false;
             }
         }
+    return true;
+    }
     
-    DRay3d              ray = DRay3d::FromOriginAndVector(mesh.Points().at(triangles.front().m_indices[0]), normal);
-    DRange1d            classifiedProjection = classifiedRange.GetCornerRange(ray);
-    bvector<uint32_t>   baseIndices, topIndices;
-    DVec3d              baseOffset = DVec3d::FromScale(normal, classifiedProjection.low),
-                        topOffset  = DVec3d::FromScale(normal, classifiedProjection.high);
-
-    for(auto& point : mesh.Points())
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AddClosedMesh(ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, PolyfaceHeaderR polyface, double expandDistance, uint16_t batchId)
+    {
+    if (0.0 != expandDistance)
         {
-        baseIndices.push_back(solidPoints.size());
-        solidPoints.push_back(DPoint3d::FromSumOf(point, baseOffset));
-        topIndices.push_back(solidPoints.size());
-        solidPoints.push_back(DPoint3d::FromSumOf(point, topOffset));
-        }
-
-    for (auto& triangle : triangles)
-        {
-        solidTriangles.push_back(TileTriangle(topIndices[triangle.m_indices[0]], topIndices[triangle.m_indices[1]], topIndices[triangle.m_indices[2]], true));
-        solidTriangles.push_back(TileTriangle(baseIndices[triangle.m_indices[2]], baseIndices[triangle.m_indices[1]], baseIndices[triangle.m_indices[0]], true));
-
-        for (size_t i=0; i<3; i++)
+        PolyfaceHeaderPtr           offsetPolyface = polyface.ComputeOffset(PolyfaceHeader::OffsetOptions(), expandDistance, 0.0, true, false, false);
+        if (offsetPolyface.IsValid())
             {
-            if (triangle.m_edgeVisible[i])
-                {
-                uint32_t    iNext = (i + 1) %3;
-
-                solidTriangles.push_back(TileTriangle(topIndices[triangle.m_indices[i]], baseIndices[triangle.m_indices[i]], topIndices[triangle.m_indices[iNext]], true));
-                solidTriangles.push_back(TileTriangle(baseIndices[triangle.m_indices[i]], baseIndices[triangle.m_indices[iNext]], topIndices[triangle.m_indices[iNext]], true));
-                }
+            AddClosedMesh(indexCountBuffer, indexOffsetBuffer, *offsetPolyface, 0.0, batchId);
+            return;
+            }
+        else
+            {
+            BeAssert(false && "classifier offset error");
             }
         }
 
-    return AddClosedMesh(indexCountBuffer, indexOffsetBuffer, solidPoints.data(), mesh.Attributes().at(triangles.front().m_indices[0]), solidTriangles); 
+    size_t      initialIndexSize = m_meshIndices.size();
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
+        for (size_t i=0; i<3; i++)
+            m_meshIndices.push_back(m_meshPositions.size() + (uint32_t) visitor->GetClientPointIndexCP()[i]);
+
+    for (size_t i=0; i<polyface.GetPointCount(); i++)
+        m_meshPositions.push_back(FPoint3d::From(polyface.GetPointCP()[i]));
+
+    uint32_t      indexCount = m_meshIndices.size() - initialIndexSize;
+    m_batchIdsBuffer.Append((uint16_t)(batchId /* Subtract 1 to produce zero based batchIds - workaround this dependence in vector tiles */ - 1));
+    indexCountBuffer.Append(indexCount);
+    m_featureBinary.Append(indexCount);
+    }
+
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AddExtrudedPolygon(ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, PolyfaceHeaderR polyface, DVec3d normal, DRange3dCR classifiedRange, double expandDistance, uint16_t batchId)
+    {
+    DRay3d              ray = DRay3d::FromOriginAndVector(*polyface.GetPointCP(), normal);
+    DRange1d            classifiedProjection = classifiedRange.GetCornerRange(ray);
+    PolyfaceHeaderPtr   offsetPolyface = polyface.ComputeOffset(PolyfaceHeader::OffsetOptions(), classifiedProjection.high, classifiedProjection.low);
+
+    if (offsetPolyface.IsValid())
+        {
+        offsetPolyface->Triangulate();
+        AddClosedMesh(indexCountBuffer, indexOffsetBuffer, *offsetPolyface, expandDistance, batchId);
+        }
+    else
+        BeAssert(false && "classifier offset error");
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR classifiedRange)
+void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR classifiedRange, double expandDistance)
     {
     ByteStream          indexCountBuffer, indexOffsetBuffer;
 
@@ -1312,16 +1313,25 @@ void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3
         if (!insertPair.second)
             insertPair.first->second.push_back(triangle);
         }
-
+    
     for (auto& curr : triangleMap)
-        if (SUCCESS != AddClosedMesh(indexCountBuffer, indexOffsetBuffer, mesh.Points().data(), mesh.Attributes().at(curr.second.front().m_indices[0]), curr.second) &&
-            SUCCESS != AddExtrudedPolygon(indexCountBuffer, indexOffsetBuffer, mesh, curr.second, classifiedRange))
-            {
-            BeAssert(false);
-            }
+        {
+        uint16_t                batchId = curr.first;
+        PolyfaceHeaderPtr       polyface = BuildPolyface(mesh.Points(), curr.second);
+        DVec3d                  polygonNormal;
+
+        indexOffsetBuffer.Append((uint32_t) (m_meshIndices.size()));
+
+        if (IsSolid(curr.second))
+            AddClosedMesh(indexCountBuffer, indexOffsetBuffer, *polyface, expandDistance, batchId);
+        else if (IsPolygon(polygonNormal, curr.second, mesh))
+            AddExtrudedPolygon(indexCountBuffer, indexOffsetBuffer, *polyface, polygonNormal, classifiedRange, expandDistance, batchId);
+        else
+            BeAssert (false && "invalid classifier geometry");
+        }
 
     m_featureTable["MESHES_LENGTH"] = indexCountBuffer.size() / sizeof(uint32_t);
-    m_featureTable["MESH_POSITION_COUNT"] = m_meshPositions.size() / sizeof(FPoint3d);
+    m_featureTable["MESH_POSITION_COUNT"] = m_meshPositions.size();
     m_featureTable["MESHES_COUNT"]["byteOffset"] = 0;
     m_featureTable["MESH_INDEX_COUNTS"]["byteOffset"] = m_featureBinary.size();
     m_featureBinary.Append(indexCountBuffer.data(), indexCountBuffer.size());
@@ -1333,38 +1343,6 @@ void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3
     padTo4ByteBoundary(m_featureBinary);
     }
 
-#ifdef NOTYET
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley   06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void addVectorPolylinesAndPoints (Json::Value& json, ByteStream& polylinePositionsX, ByteStream& polylinePositionsY, ByteStream& polylineIndices, ByteStream& pointPositionsX, ByteStream& pointPositionsY, ByteStream& featureBinary, TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRange3dCR tileRange)
-    {
-    uint32_t            polylineCount =0;
-    ByteStream          polylineIndexCountBuffer, batchIdsBuffer;
-    VectorPosition      lastPosition;
-
-    for (auto& polyline : polylines)
-        {
-        for (auto& index : polyline.m_indices)
-            {
-            polylineIndices.Append((uint32_t) (polylinePositionsX.size()/sizeof(uint16_t)));
-            addVectorPosition(polylinePositionsX, polylinePositionsY, mesh.Points().at(index), lastPosition, tileRange);
-            }
-        batchIdsBuffer.Append(mesh.Attributes().at(polyline.m_indices[0]));
-        featureBinary.Append((uint32_t) polyline.m_indices.size());
-        polylineIndexCountBuffer.Append((uint32_t) polyline.m_indices.size());
-        polylineCount++;
-        }
-    
-    json["POLYLINES_LENGTH"] = polylineCount;
-    json["POLYLINE_COUNT"]["byteOffset"] = 0;
-    json["POLYLINE_INDEX_COUNT"]["byteOffset"] = featureBinary.size();
-    featureBinary.Append(polylineIndexCountBuffer.data(), polylineIndexCountBuffer.size());
-    json["POLYLINE_BATCH_IDS"]["byteOffset"] = featureBinary.size();
-    featureBinary.Append(batchIdsBuffer.data(), batchIdsBuffer.size());
-    padTo4ByteBoundary(featureBinary);
-    }
-#endif
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   06/2017
@@ -1389,17 +1367,14 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
     FWriteValue((uint32_t) m_featureBinary.size(), outputFile);                                                                 // Feature Table binary.
     FWriteValue((uint32_t) batchTableStr.size(), outputFile);                                                                   // Batch table Json.
     FWriteValue((uint32_t) 0, outputFile);                                                                                      // No binary batch data.
-    FWriteValue((uint32_t) (m_meshIndices.size() * sizeof(uint32_t) + m_polylineIndices.size()), outputFile);                                      // Indices byte length.
-    FWriteValue((uint32_t) (m_meshPositions.size() + m_polylinePositionsX.size() + m_polylinePositionsY.size()), outputFile);   // Positions byte length.
+    FWriteValue((uint32_t) (m_meshIndices.size() * sizeof(uint32_t)), outputFile);                                              // Indices byte length.
+    FWriteValue((uint32_t) (m_meshPositions.size() * sizeof(FPoint3d)), outputFile);                                            // Positions byte length.
     FWriteValue((uint32_t) 0, outputFile);                                                                                      // No polygons positions.
     FWriteValue((uint32_t) (m_pointPositionsX.size() + m_pointPositionsY.size()), outputFile);                                  // Point positions byte length.
     FWrite(featureTableStr, outputFile);                                                                                        // Feature table Json.
     FWrite(m_featureBinary, outputFile);                                                                                        // Feature table binary.
     FWrite(batchTableStr, outputFile);                                                                                          // Batch table Json.
-    FWrite(m_polylineIndices, outputFile);
     FWrite(m_meshIndices, outputFile);
-    FWrite(m_polylinePositionsX, outputFile);
-    FWrite(m_polylinePositionsY, outputFile);
     FWrite(m_pointPositionsX, outputFile);
     FWrite(m_pointPositionsY, outputFile);
     FWrite(m_meshPositions, outputFile);
@@ -1419,11 +1394,11 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
 void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeometryR geometry)
     {
     DRange3d        contentRange = DRange3d::NullRange();
-    auto const&     classifiedModelRange = m_context.ClassifierModels().find(m_tile.GetModel().GetModelId());
+    auto const&     classifierInfo = m_context.ClassifierInfoMap().find(m_tile.GetModel().GetModelId());
 
-    if (classifiedModelRange == m_context.ClassifierModels().end())
+    if (classifierInfo == m_context.ClassifierInfoMap().end())
         {
-        BeAssert(false && "classified range not found");
+        BeAssert(false && "classified not found");
         return;
         }
 
@@ -1436,7 +1411,7 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
     for (auto& mesh : geometry.Meshes())
         {
         if (!mesh->Triangles().empty())
-            writer.AddMeshes(*mesh, mesh->Triangles(), classifiedModelRange->second);
+            writer.AddMeshes(*mesh, mesh->Triangles(), classifierInfo->second.m_range, classifierInfo->second.m_expandDistance);
 
 #ifdef POLYLINE_SUPPORT
         if (!mesh->Polylines().empty())
@@ -3554,9 +3529,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
                 classifierModels.insert (classifierModelId);
                 m_classifierMap.Insert(modelId, classifiers);
-                auto  insertPair = m_classifierModels.Insert(classifierModelId, foundRange->second.m_range);
+
+                auto  insertPair = m_classifierInfo.Insert(classifierModelId, ClassifierInfo(foundRange->second.m_range, classifier.ExpandDistance()));
                 if (!insertPair.second)
-                    insertPair.first->second.Extend(foundRange->second.m_range);
+                    insertPair.first->second.m_range.Extend(foundRange->second.m_range);
                 }
             }
         }
