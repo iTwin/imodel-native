@@ -1098,9 +1098,9 @@ double      zscale
     {
     for (int i = 0; i < 3; i++)
         {
-        form3d[0][i] *= xscale;
-        form3d[1][i] *= yscale;
-        form3d[2][i] *= zscale;
+        form3d[0][i] = transform.form3d[0][i] * xscale;
+        form3d[1][i] = transform.form3d[0][i] * yscale;
+        form3d[2][i] = transform.form3d[0][i] * zscale;
         }
     }
 
