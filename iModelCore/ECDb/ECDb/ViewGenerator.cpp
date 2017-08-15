@@ -675,12 +675,17 @@ BentleyStatus ViewGenerator::RenderEntityClassMap(NativeSqlBuilder& viewSql, Con
                 {
                 const bool considerSubclasses = !isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery();
 
-                Utf8String whereClause;
-                if (SUCCESS != GenerateECClassIdFilter(whereClause, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), considerSubclasses))
+                Utf8String filterSQL;
+                if (SUCCESS != GenerateECClassIdFilter(filterSQL, classMap, partition->GetTable(), classIdPropertyMap->GetColumn(), considerSubclasses))
                     return ERROR;
 
-                if (!whereClause.empty())
-                    view.Append(" WHERE ").Append(whereClause.c_str());
+                if (!filterSQL.empty())
+                    {
+                    if (!considerSubclasses)
+                        view.Append(" WHERE ").Append(filterSQL.c_str());
+                    else
+                        view.Append(" ").Append(filterSQL.c_str());
+                    }
                 }
             }
 
@@ -818,13 +823,18 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
             const bool isSelectFromView = ctx.GetViewType() == ViewType::SelectFromView;
             if (classIdDataPropertyMap->GetColumn().GetPersistenceType() == PersistenceType::Physical && (!isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled()))
                 {
-                Utf8String whereClause;
+                Utf8String filterSQL;
                 const bool considerSubclasses = !isSelectFromView || ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery();
-                if (SUCCESS != GenerateECClassIdFilter(whereClause, relationMap, partition.GetTable(), classIdDataPropertyMap->GetColumn(), considerSubclasses))
+                if (SUCCESS != GenerateECClassIdFilter(filterSQL, relationMap, partition.GetTable(), classIdDataPropertyMap->GetColumn(), considerSubclasses))
                     return ERROR;
 
-                if (!whereClause.empty())
-                    view.Append(" WHERE ").Append(whereClause.c_str());
+                if (!filterSQL.empty())
+                    {
+                    if (!considerSubclasses)
+                        view.Append(" WHERE ").Append(filterSQL.c_str());
+                    else
+                        view.Append(" ").Append(filterSQL.c_str());
+                    }
                 }
             }
 
@@ -842,7 +852,6 @@ BentleyStatus ViewGenerator::RenderRelationshipClassLinkTableMap(NativeSqlBuilde
             viewSql.AppendParenLeft();
 
         viewSql.Append(unionList, " UNION ");
-
         if (ctx.GetViewType() == ViewType::SelectFromView)
             viewSql.AppendParenRight();
         }
@@ -1165,7 +1174,16 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
     if (propertyMaps.empty())
         return SUCCESS;
 
-    Utf8CP systemContextTableAlias = !requireJoinTo.empty() ? contextTable.GetName().c_str() : nullptr;
+
+    bool addSystemAlias = true;
+    if (requireJoinTo.empty())
+        {
+        if (ctx.GetViewType() == ViewType::SelectFromView)
+            addSystemAlias = ctx.GetAs<SelectFromViewContext>().IsPolymorphicQuery() && ctx.GetAs<SelectFromViewContext>().IsECClassIdFilterEnabled();
+        }
+        
+
+    Utf8CP systemContextTableAlias = addSystemAlias ? contextTable.GetName().c_str() : nullptr;
     NativeSqlBuilder::List propertySqlList;
     for (auto const& kvp : propertyMaps)
         {
@@ -1183,13 +1201,11 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         if (propertyMap->IsSystem())
             {
             SystemPropertyMap const& systemPropertyMap = propertyMap->GetAs<SystemPropertyMap>();
-
             ToSqlVisitor::ColumnAliasMode colAliasMode = ToSqlVisitor::ColumnAliasMode::SystemPropertyName;
             Utf8CP colAlias = nullptr;
             if (ctx.GetViewType() == ViewType::UpdatableView)
                 {
                 colAliasMode = ToSqlVisitor::ColumnAliasMode::NoAlias;//we append the alias ourselves
-
                 if (rootPropertyMap == nullptr)
                     {
                     SystemPropertyMap::PerTableIdPropertyMap const* perTableSystemPropMap = systemPropertyMap.FindDataPropertyMap(contextTable);
@@ -1351,7 +1367,7 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 //@bsimethod                                                    Krischan.Eberle    10 / 2015
 //------------------------------------------------------------------------------------------
 //static
-    BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const& classMap, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
+BentleyStatus ViewGenerator::GenerateECClassIdFilter(Utf8StringR filterSqlExpression, ClassMap const& classMap, DbTable const& table, DbColumn const& classIdColumn, bool polymorphic)
     {
     if (table.GetType() == DbTable::Type::Virtual)
         return SUCCESS;
@@ -1372,10 +1388,8 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
 
     Utf8String classIdColSql("[");
     classIdColSql.append(table.GetName()).append("].").append(classIdColumn.GetName());
-
     Utf8Char classIdStr[ECClassId::ID_STRINGBUFFER_LENGTH];
     classMap.GetClass().GetId().ToString(classIdStr);
-
     if (!polymorphic)
         {
         //if partition's table is only used by a single class, no filter needed     
@@ -1386,13 +1400,17 @@ BentleyStatus ViewGenerator::RenderPropertyMaps(NativeSqlBuilder& sqlView, Conte
         }
 
     if (partition->NeedsECClassIdFilter())
-        filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
-
+        {
+        Utf8String cacheTableAlias = "[CHC_" + table.GetName() + "]";
+        //filterSqlExpression.append(classIdColSql).append(" IN (SELECT ClassId FROM " TABLE_ClassHierarchyCache " WHERE BaseClassId=").append(classIdStr).append(")");
+        filterSqlExpression.append("INNER JOIN " TABLE_ClassHierarchyCache " ").append(cacheTableAlias)
+            .append(" ON ").append(cacheTableAlias).append(".[ClassId]").append("=").append(classIdColSql)
+            .append(" AND ").append(cacheTableAlias).append(".[BaseClassId]").append("=").append(classIdStr);
+        }
     return SUCCESS;
     }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                 Affan.Khan                          11/2016
 //---------------------------------------------------------------------------------------

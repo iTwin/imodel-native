@@ -2912,7 +2912,8 @@ TEST_F(JoinedTableECSqlStatementsTests, PersistSqlForQueryOnAbstractBaseClass)
     ECSqlStatement stmt;
     ASSERT_EQ(ECSqlStatus::Success, stmt.Prepare(m_ecdb, "SELECT ECInstanceId FROM ECST.Person"));
     ASSERT_EQ(BE_SQLITE_ROW, stmt.Step());
-    ASSERT_STREQ("SELECT [Person].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [ECST_Person]) [Person]", stmt.GetNativeSql());
+    //ASSERT_STREQ("SELECT [Person].[ECInstanceId] FROM (SELECT [Id] ECInstanceId,[ECClassId] FROM [ECST_Person]) [Person]", stmt.GetNativeSql());
+    ASSERT_STREQ("SELECT [Person].[ECInstanceId] FROM (SELECT [ECST_Person].[Id] ECInstanceId,[ECST_Person].[ECClassId] FROM [ECST_Person]) [Person]", stmt.GetNativeSql());
     }
 
 //---------------------------------------------------------------------------------------
