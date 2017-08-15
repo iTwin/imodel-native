@@ -542,7 +542,7 @@ private:
 #ifdef VANCOUVER_API
         DgnPlatformLib::AdoptHost(*hostToAdopt);
 #else
-        assert(!"No AdoptHost on BIM0200 - Untested behavior");
+        //assert(!"No AdoptHost on BIM0200 - Untested behavior");
 #endif
 
         ProcessingQuery<DPoint3d, Extent3dType>::Ptr processingQueryPtr;
@@ -1293,7 +1293,7 @@ class NewQueryStartingNodeProcessor
 #ifdef VANCOUVER_API
             DgnPlatformLib::AdoptHost(*hostToAdopt);
 #else
-            assert(!"No AdoptHost on BIM0200 - Untested behavior");
+            //assert(!"No AdoptHost on BIM0200 - Untested behavior");
 #endif     
                   
             m_lowerResOverviewNodes[threadId].clear();
