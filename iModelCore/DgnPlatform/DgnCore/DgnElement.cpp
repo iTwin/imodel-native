@@ -1334,11 +1334,35 @@ Transform GeometrySource::GetPlacementTransform() const
 void GeometrySource::SetUndisplayed(bool yesNo) const
     {
     DgnElementP el = const_cast<DgnElementP>(_ToElement());
+    if (nullptr != el)
+        el->GetDgnDb().Elements().SetUndisplayed(*el, yesNo);
+    }
 
-    if (nullptr == el)
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElements::SetUndisplayed(DgnElementR el, bool isUndisplayed)
+    {
+    DgnDb::VerifyClientThread();
+    auto elemId = el.GetElementId();
+    if (!elemId.IsValid())
+        {
+        BeAssert(false);
         return;
+        }
 
-    el->m_flags.m_undisplayed = yesNo;
+    if (el.m_flags.m_undisplayed != isUndisplayed)
+        {
+        el.m_flags.m_undisplayed = isUndisplayed;
+        if (isUndisplayed)
+            m_undisplayedSet.insert(elemId);
+        else
+            m_undisplayedSet.erase(elemId);
+
+        T_HOST._OnUndisplayedSetChanged(GetDgnDb());
+        }
+
+    BeAssert(isUndisplayed == (m_undisplayedSet.end() != m_undisplayedSet.find(elemId)));
     }
 
 /*---------------------------------------------------------------------------------**//**

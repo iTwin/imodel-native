@@ -3375,6 +3375,7 @@ private:
     BeSQLite::SnappyFromMemory m_snappyFrom;
     BeSQLite::SnappyToBlob m_snappyTo;
     DgnElementIdSet m_selectionSet;
+    DgnElementIdSet m_undisplayedSet;
     mutable BeMutex m_mutex;
     mutable ClassInfoMap m_classInfos;      // information about custom-handled properties 
     mutable T_ClassParamsMap m_classParams; // information about custom-handled properties 
@@ -3560,6 +3561,9 @@ public:
 
     DgnElementIdSet const& GetSelectionSet() const {return m_selectionSet;}
     DgnElementIdSet& GetSelectionSetR() {return m_selectionSet;}
+
+    DgnElementIdSet const& GetUndisplayedSet() const {return m_undisplayedSet;}
+    void SetUndisplayed(DgnElementR, bool isUndisplayed);
 
     //! Returns the time of the most recent modification to the elements table in unix milliseconds.
     DGNPLATFORM_EXPORT uint64_t GetLastModifiedTime() const;
