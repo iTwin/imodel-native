@@ -28,7 +28,7 @@ struct  PublishTileNode : ModelTileNode
         : ModelTileNode(model, range, transformDbToTile, depth, siblingIndex, parent, 0.0), m_publishContext(publishContext) { }
 
     virtual WString _GetFileExtension() const override { return L"pnts"; }
-    virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool doPolylines, ITileGenerationFilterCP filter = nullptr) const override;
+    virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool doPolylines, bool doInstancing, ITileGenerationFilterCP filter = nullptr) const override;
 
     size_t  QueryPointCount(size_t maxPoints) const;
 
@@ -151,7 +151,7 @@ size_t  PublishTileNode::QueryPointCount(size_t maxPoints) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PublishableTileGeometry PublishTileNode::_GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool doPolylines, ITileGenerationFilterCP filter) const 
+PublishableTileGeometry PublishTileNode::_GeneratePublishableGeometry(DgnDbR dgnDb, TileGeometry::NormalMode normalMode, bool doPolylines, bool doInstancing, ITileGenerationFilterCP filter) const 
     {
     PublishableTileGeometry                 publishableGeometry;
     bool                                    useRGB = m_publishContext.m_model.GetPointCloudSceneP()->_HasRGBChannel();
