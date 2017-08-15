@@ -2489,11 +2489,12 @@ inline void StreamingDataBlock::ParseCesium3DTilesData(const Byte* cesiumData, c
 
         if (m_tileData.textureSize > 3 * sizeof(uint32_t))
             {
+            int nbChannels = 3;
             m_tileData.textureOffset = m_tileData.uvOffset + m_tileData.numUvs * sizeof(DPoint2d);
             m_tileData.m_textureData = reinterpret_cast<Byte *>(this->data() + m_tileData.textureOffset);
             memcpy(m_tileData.m_textureData, &imageWidth, sizeof(uint32_t));
             memcpy(m_tileData.m_textureData + sizeof(uint32_t), &imageHeight, sizeof(uint32_t));
-            memset(m_tileData.m_textureData + 2 * sizeof(uint32_t), 0, sizeof(uint32_t));
+            memcpy(m_tileData.m_textureData + 2 * sizeof(nbChannels), &nbChannels, sizeof(nbChannels));
 
             // Decompress texture
             try {
