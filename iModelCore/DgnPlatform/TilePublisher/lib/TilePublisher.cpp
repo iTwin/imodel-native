@@ -1153,8 +1153,8 @@ struct ClassifierTileWriter
     Json::Value                 m_featureTable;
     bvector<uint32_t>           m_meshIndices;
     bvector<FPoint3d>           m_meshPositions;
-    ByteStream                  m_pointPositionsX;
-    ByteStream                  m_pointPositionsY;
+    bvector<uint32_t>           m_meshIndexCountBuffer;
+    bvector<uint32_t>           m_meshIndexOffsetBuffer;
     ByteStream                  m_featureBinary;
     ByteStream                  m_batchIdsBuffer;
     VectorPosition              m_lastPosition;
@@ -1184,10 +1184,10 @@ ClassifierTileWriter(DRange3dCR range) : m_range(range), m_meshPointMap(TileUtil
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-PolyfaceHeaderPtr   BuildPolyface(bvector<DPoint3d> const& meshPoints, bvector<TileTriangle> const& triangles)
+PolyfaceHeaderPtr   BuildPolyfaceFromTriangles(bvector<DPoint3d> const& meshPoints, bvector<TileTriangle> const& triangles)
     {
     PolyfaceHeaderPtr           polyface = PolyfaceHeader::CreateVariableSizeIndexed();
-    PolyfaceCoordinateMapPtr    coordinateMap = PolyfaceCoordinateMap::Create(*polyface);    // new PolyfaceCoordinateMap(*polyface, s_pointTolerance, 0.0, 0.0, 0.0);
+    PolyfaceCoordinateMapPtr    coordinateMap = PolyfaceCoordinateMap::Create(*polyface);    
 
     for (auto& triangle : triangles)
         {
@@ -1202,6 +1202,84 @@ PolyfaceHeaderPtr   BuildPolyface(bvector<DPoint3d> const& meshPoints, bvector<T
 
         polyface->AddIndexedFacet(3, indices);
         }
+    return polyface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr   BuildPolyfaceFromPolylines(DVec3dR normal, bvector<DPoint3d> const& meshPoints, bvector<TilePolyline> const& polylines, double expandDistance)
+    {
+    PolyfaceHeaderPtr           polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    PolyfaceCoordinateMapPtr    coordinateMap = PolyfaceCoordinateMap::Create(*polyface);   
+    bvector<DPoint3d>           points;
+    DPoint3d                    origin;
+    static constexpr double     s_tolerance = 1.0E-5;
+    static constexpr double     s_maxMiterDot = .75;
+
+    for (auto& polyline : polylines)
+        for (auto& index : polyline.m_indices)
+            points.push_back (meshPoints[index]);
+
+    if (!bsiGeom_planeThroughPointsTol(&normal, &origin, points.data(), points.size(), s_tolerance))
+        normal = DVec3d::From(0.0, 0.0, 1.0);
+    else
+        normal.Normalize();
+
+    for (auto& polyline : polylines)
+        {
+        size_t  segmentCount = polyline.m_indices.size()-1;
+
+        for (size_t i=0; i<segmentCount; i++)
+            {
+            DPoint3d    start = meshPoints[polyline.m_indices[i]],
+                        end = meshPoints[polyline.m_indices[i+1]];
+            DVec3d      delta = DVec3d::FromStartEnd(start, end);
+            DVec3d      perp = DVec3d::FromCrossProduct(normal, delta);
+                                                                                                                                                                                                                                                                                                                    
+            int32_t     indices0[3], indices1[3];
+            if (perp.Normalize() < s_tolerance ||
+                delta.Normalize() < s_tolerance)
+                continue;
+
+            DVec3d      perp0 = perp, perp1 = perp;
+            double      distance0 = expandDistance, distance1 = expandDistance;
+
+            if (i > 0)
+                {
+                DVec3d      dir = delta, prevDir = DVec3d::FromStartEndNormalize(start, meshPoints[polyline.m_indices[i-1]]);
+                double      dot = prevDir.DotProduct(dir);
+
+                if (dot > -.9999 && dot < s_maxMiterDot)
+                    {
+                    perp0.Normalize(DVec3d::FromSumOf(dir, prevDir));
+                    distance0 /= perp0.DotProduct(perp);
+                    }
+                }
+            if (i < segmentCount - 1)
+                {
+                DVec3d      dir = delta, nextDir = DVec3d::FromStartEndNormalize(end, meshPoints[polyline.m_indices[i+2]]);
+                dir.Negate();
+                double      dot = nextDir.DotProduct(dir);
+
+                if (dot > -.9999 && dot < s_maxMiterDot)
+                    {
+                    perp1.Normalize(DVec3d::FromSumOf(dir, nextDir));
+                    distance1 /= perp1.DotProduct(perp);
+                    }
+                }
+
+    
+            indices0[0]               = 1 + coordinateMap->AddPoint(DPoint3d::FromSumOf(start, perp0, -distance0));
+            indices0[2] = indices1[0] = 1 + coordinateMap->AddPoint(DPoint3d::FromSumOf(start, perp0,  distance0));
+            indices0[1] = indices1[1] = 1 + coordinateMap->AddPoint(DPoint3d::FromSumOf(end,   perp1, -distance1));
+            indices1[2]               = 1 + coordinateMap->AddPoint(DPoint3d::FromSumOf(end,   perp1,  distance1));
+
+            polyface->AddIndexedFacet(3, indices0);
+            polyface->AddIndexedFacet(3, indices1);
+            }
+        }
+
     return polyface;
     }
 
@@ -1245,14 +1323,14 @@ bool IsPolygon(DVec3dR normal, bvector<TileTriangle> const& triangles, TileMeshC
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AddClosedMesh(ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, PolyfaceHeaderR polyface, double expandDistance, uint16_t batchId)
+void    AddClosedMesh(PolyfaceHeaderR polyface, double expandDistance, uint16_t batchId)
     {
     if (0.0 != expandDistance)
         {
         PolyfaceHeaderPtr           offsetPolyface = polyface.ComputeOffset(PolyfaceHeader::OffsetOptions(), expandDistance, 0.0, true, false, false);
         if (offsetPolyface.IsValid())
             {
-            AddClosedMesh(indexCountBuffer, indexOffsetBuffer, *offsetPolyface, 0.0, batchId);
+            AddClosedMesh(*offsetPolyface, 0.0, batchId);
             return;
             }
         else
@@ -1271,7 +1349,7 @@ void    AddClosedMesh(ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffe
 
     uint32_t      indexCount = m_meshIndices.size() - initialIndexSize;
     m_batchIdsBuffer.Append((uint16_t)(batchId /* Subtract 1 to produce zero based batchIds - workaround this dependence in vector tiles */ - 1));
-    indexCountBuffer.Append(indexCount);
+    m_meshIndexCountBuffer.push_back(indexCount);
     m_featureBinary.Append(indexCount);
     }
 
@@ -1279,7 +1357,7 @@ void    AddClosedMesh(ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffe
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    AddExtrudedPolygon(ByteStream& indexCountBuffer, ByteStream& indexOffsetBuffer, PolyfaceHeaderR polyface, DVec3d normal, DRange3dCR classifiedRange, double expandDistance, uint16_t batchId)
+void    AddExtrudedPolygon(PolyfaceHeaderR polyface, DVec3d normal, DRange3dCR classifiedRange, double expandDistance, uint16_t batchId)
     {
     DRay3d              ray = DRay3d::FromOriginAndVector(*polyface.GetPointCP(), normal);
     DRange1d            classifiedProjection = classifiedRange.GetCornerRange(ray);
@@ -1288,7 +1366,7 @@ void    AddExtrudedPolygon(ByteStream& indexCountBuffer, ByteStream& indexOffset
     if (offsetPolyface.IsValid())
         {
         offsetPolyface->Triangulate();
-        AddClosedMesh(indexCountBuffer, indexOffsetBuffer, *offsetPolyface, expandDistance, batchId);
+        AddClosedMesh(*offsetPolyface, expandDistance, batchId);
         }
     else
         BeAssert(false && "classifier offset error");
@@ -1299,8 +1377,6 @@ void    AddExtrudedPolygon(ByteStream& indexCountBuffer, ByteStream& indexOffset
 +---------------+---------------+---------------+---------------+---------------+------*/
 void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR classifiedRange, double expandDistance)
     {
-    ByteStream          indexCountBuffer, indexOffsetBuffer;
-
     // Need to process all triangles that have the same attribute value as a single "mesh".
     bmap <uint16_t, bvector<TileTriangle>> triangleMap;
     
@@ -1317,32 +1393,49 @@ void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3
     for (auto& curr : triangleMap)
         {
         uint16_t                batchId = curr.first;
-        PolyfaceHeaderPtr       polyface = BuildPolyface(mesh.Points(), curr.second);
+        PolyfaceHeaderPtr       polyface = BuildPolyfaceFromTriangles(mesh.Points(), curr.second);
         DVec3d                  polygonNormal;
 
-        indexOffsetBuffer.Append((uint32_t) (m_meshIndices.size()));
+        m_meshIndexOffsetBuffer.push_back(m_meshIndices.size());
 
         if (IsSolid(curr.second))
-            AddClosedMesh(indexCountBuffer, indexOffsetBuffer, *polyface, expandDistance, batchId);
+            AddClosedMesh(*polyface, expandDistance, batchId);
         else if (IsPolygon(polygonNormal, curr.second, mesh))
-            AddExtrudedPolygon(indexCountBuffer, indexOffsetBuffer, *polyface, polygonNormal, classifiedRange, expandDistance, batchId);
+            AddExtrudedPolygon(*polyface, polygonNormal, classifiedRange, expandDistance, batchId);
         else
             BeAssert (false && "invalid classifier geometry");
         }
-
-    m_featureTable["MESHES_LENGTH"] = indexCountBuffer.size() / sizeof(uint32_t);
-    m_featureTable["MESH_POSITION_COUNT"] = m_meshPositions.size();
-    m_featureTable["MESHES_COUNT"]["byteOffset"] = 0;
-    m_featureTable["MESH_INDEX_COUNTS"]["byteOffset"] = m_featureBinary.size();
-    m_featureBinary.Append(indexCountBuffer.data(), indexCountBuffer.size());
-    m_featureTable["MESH_INDEX_OFFSETS"]["byteOffset"] = m_featureBinary.size();
-    m_featureBinary.Append(indexOffsetBuffer.data(), indexCountBuffer.size());
-    m_featureTable["MESH_BATCH_IDS"]["byteOffset"] = m_featureBinary.size();
-    m_featureBinary.Append(m_batchIdsBuffer.data(), m_batchIdsBuffer.size());
-    
-    padTo4ByteBoundary(m_featureBinary);
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddPolylines (TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRange3dCR classifiedRange, double expandDistance)
+    {
+    // Need to process all polylines that have the same attribute value as a single "mesh".
+    bmap <uint16_t, bvector<TilePolyline>> polylineMap;
+    
+    for (auto& polyline : polylines)
+        {
+        bvector<TilePolyline>   polylineVector(1, polyline);
+
+        auto    insertPair = polylineMap.Insert(mesh.Attributes().at(polyline.m_indices[0]), polylineVector);
+
+        if (!insertPair.second)
+            insertPair.first->second.push_back(polyline);
+        }
+    
+    for (auto& curr : polylineMap)
+        {
+        uint16_t                batchId = curr.first;
+        DVec3d                  polylineNormal;
+        PolyfaceHeaderPtr       polyface = BuildPolyfaceFromPolylines(polylineNormal, mesh.Points(), curr.second, expandDistance);
+
+        m_meshIndexOffsetBuffer.push_back(m_meshIndices.size());
+
+        AddExtrudedPolygon(*polyface, polylineNormal, classifiedRange, 0.0, batchId);
+        }
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   06/2017
@@ -1351,6 +1444,18 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
     {
     FeatureAttributesMap    featureAttributes = tile.GetAttributes();
     FeatureAttributes       undefined;
+
+    m_featureTable["MESHES_LENGTH"] = m_meshIndexCountBuffer.size();
+    m_featureTable["MESH_POSITION_COUNT"] = m_meshPositions.size();
+    m_featureTable["MESHES_COUNT"]["byteOffset"] = 0;
+    m_featureTable["MESH_INDEX_COUNTS"]["byteOffset"] = m_featureBinary.size();
+    m_featureBinary.Append((uint8_t const*) m_meshIndexCountBuffer.data(), m_meshIndexCountBuffer.size()*sizeof(uint32_t));
+    m_featureTable["MESH_INDEX_OFFSETS"]["byteOffset"] = m_featureBinary.size();
+    m_featureBinary.Append((uint8_t const*) m_meshIndexOffsetBuffer.data(), m_meshIndexOffsetBuffer.size()*sizeof(uint32_t));
+    m_featureTable["MESH_BATCH_IDS"]["byteOffset"] = m_featureBinary.size();
+    m_featureBinary.Append(m_batchIdsBuffer.data(), m_batchIdsBuffer.size());
+    
+    padTo4ByteBoundary(m_featureBinary);
 
     featureAttributes.RemoveUndefined();
 
@@ -1370,13 +1475,11 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
     FWriteValue((uint32_t) (m_meshIndices.size() * sizeof(uint32_t)), outputFile);                                              // Indices byte length.
     FWriteValue((uint32_t) (m_meshPositions.size() * sizeof(FPoint3d)), outputFile);                                            // Positions byte length.
     FWriteValue((uint32_t) 0, outputFile);                                                                                      // No polygons positions.
-    FWriteValue((uint32_t) (m_pointPositionsX.size() + m_pointPositionsY.size()), outputFile);                                  // Point positions byte length.
+    FWriteValue((uint32_t) 0, outputFile);                                                                                      // No point positions.
     FWrite(featureTableStr, outputFile);                                                                                        // Feature table Json.
     FWrite(m_featureBinary, outputFile);                                                                                        // Feature table binary.
     FWrite(batchTableStr, outputFile);                                                                                          // Batch table Json.
     FWrite(m_meshIndices, outputFile);
-    FWrite(m_pointPositionsX, outputFile);
-    FWrite(m_pointPositionsY, outputFile);
     FWrite(m_meshPositions, outputFile);
 
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
@@ -1413,10 +1516,8 @@ void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeomet
         if (!mesh->Triangles().empty())
             writer.AddMeshes(*mesh, mesh->Triangles(), classifierInfo->second.m_range, classifierInfo->second.m_expandDistance);
 
-#ifdef POLYLINE_SUPPORT
         if (!mesh->Polylines().empty())
-            writer.AddPolyline();
-#endif
+            writer.AddPolylines(*mesh, mesh->Polylines(), classifierInfo->second.m_range, classifierInfo->second.m_expandDistance);
         }
     writer.Write(outputFile, m_tile, m_context.GetDgnDb());
 
