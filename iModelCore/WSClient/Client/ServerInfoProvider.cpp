@@ -10,14 +10,15 @@
 
 #define SERVER_INFO_REFRESH_MS (30*60*1000)
 
+std::map<Utf8String, std::pair<WSInfo, uint64_t>> ServerInfoProvider::s_serverInfo = {};
+BeMutex ServerInfoProvider::s_mutex;
+
 /*--------------------------------------------------------------------------------------+
 * @bsimethod                                                    Vincas.Razma    02/2014
 +---------------+---------------+---------------+---------------+---------------+------*/
 ServerInfoProvider::ServerInfoProvider(std::shared_ptr<const ClientConfiguration> configuration) :
-m_configuration(configuration),
-m_serverInfo(Http::Response()),
-m_serverInfoUpdated(0),
-m_enableWsgServerHeader(false)
+    m_configuration(configuration),
+    m_enableWsgServerHeader(false)
     {}
 
 /*--------------------------------------------------------------------------------------+
@@ -79,7 +80,10 @@ void ServerInfoProvider::NotifyServerInfoUpdated(WSInfoCR info) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool ServerInfoProvider::CanUseCachedInfo() const
     {
-    return BeTimeUtilities::GetCurrentTimeAsUnixMillis() - m_serverInfoUpdated < SERVER_INFO_REFRESH_MS;
+    Utf8String url = m_configuration->GetServerUrl();
+    if (s_serverInfo.find(url) == s_serverInfo.end())
+        return false;
+    return BeTimeUtilities::GetCurrentTimeAsUnixMillis() - s_serverInfo[url].second < SERVER_INFO_REFRESH_MS;
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -87,8 +91,9 @@ bool ServerInfoProvider::CanUseCachedInfo() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::UpdateInfo(WSInfoCR info)
     {
-    m_serverInfo = info;
-    m_serverInfoUpdated = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
+    Utf8String url = m_configuration->GetServerUrl();
+    s_serverInfo[url].first = info;
+    s_serverInfo[url].second = BeTimeUtilities::GetCurrentTimeAsUnixMillis();
     }
 
 /*--------------------------------------------------------------------------------------+
@@ -141,7 +146,7 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetInfo(ICancellationTokenPtr ct)
                 });
             });
         })
-            ->Then<WSInfoResult>([=]
+        ->Then<WSInfoResult>([=]
             {
             return *finalResult;
             });
@@ -171,15 +176,16 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoFromPage(Utf8StringCR 
 +---------------+---------------+---------------+---------------+---------------+------*/
 AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, ICancellationTokenPtr ct)
     {
-    BeMutexHolder lock(m_mutex);
+    BeMutexHolder lock(s_mutex);
+    Utf8String url = m_configuration->GetServerUrl();
     if (!forceQuery && CanUseCachedInfo())
-        return CreateCompletedAsyncTask(WSInfoResult::Success(m_serverInfo));
+        return CreateCompletedAsyncTask(WSInfoResult::Success(s_serverInfo[url].first));
 
     return m_getInfoExecutor.GetTask([=]
         {
         return GetInfo(ct)->Then<WSInfoResult>([=] (WSInfoResult result)
             {
-            BeMutexHolder lock(m_mutex);
+            BeMutexHolder lock(s_mutex);
 
             if (!result.IsSuccess())
                 return WSInfoResult::Error(result.GetError());
@@ -187,7 +193,7 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, IC
             UpdateInfo(result.GetValue());
             NotifyServerInfoUpdated(result.GetValue());
 
-            return WSInfoResult::Success(m_serverInfo);
+            return WSInfoResult::Success(s_serverInfo[url].first);
             });
         });
     }
@@ -197,6 +203,13 @@ AsyncTaskPtr<WSInfoResult> ServerInfoProvider::GetServerInfo(bool forceQuery, IC
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ServerInfoProvider::InvalidateInfo()
     {
-    BeMutexHolder lock(m_mutex);
-    m_serverInfoUpdated = 0;
+    BeMutexHolder lock(s_mutex);
+    Utf8String url = m_configuration->GetServerUrl();
+    s_serverInfo[url].second = 0;
+    }
+
+void ServerInfoProvider::InvalidateAllInfo()
+    {
+    BeMutexHolder lock(s_mutex);
+    s_serverInfo.clear();
     }
