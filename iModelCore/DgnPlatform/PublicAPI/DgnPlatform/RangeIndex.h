@@ -2,7 +2,7 @@
 |
 |     $Source: PublicAPI/DgnPlatform/RangeIndex.h $
 |
-|  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -212,6 +212,7 @@ private:
 
 public:
     size_t DebugElementCount() const {return m_root ? ((InternalNode*) m_root)->GetElementCount() : 0;} //! @private
+    size_t DebugAllocation() const {return m_leafNodes.GetMemoryAllocated() + m_internalNodes.GetMemoryAllocated();} //! @private
 
     FBox GetExtents() {return m_root ? m_root->GetRange() : FBox();}
     DGNPLATFORM_EXPORT Tree(bool is3d, size_t leafSize);

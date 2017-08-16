@@ -33,6 +33,10 @@ struct TileContext;
 // For debugging tile generation code - disables use of cached tiles.
 // #define DISABLE_TILE_CACHE
 
+// Cache facets for geometry parts in Root
+// This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
+#define CACHE_GEOMETRY_PARTS
+
 #define TILECACHE_DEBUG
 
 #ifdef TILECACHE_DEBUG
@@ -247,7 +251,7 @@ constexpr double s_solidPrimitivePartCompareTolerance = 1.0E-5;
 constexpr double s_spatialRangeMultiplier = 1.0;
 constexpr uint32_t s_hardMaxFeaturesPerTile = 2048*1024;
 
-static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::None;
+static Root::DebugOptions s_globalDebugOptions = Root::DebugOptions::ShowBoundingVolume;
 
 //=======================================================================================
 // @bsistruct                                                   Paul.Connelly   11/16
@@ -1242,6 +1246,7 @@ GeomPartPtr Root::FindOrInsertGeomPart(DgnGeometryPartId partId, Render::Geometr
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Render::GeometryParamsR geomParams, ViewContextR context)
     {
+#if defined CACHE_GEOMETRY_PARTS
     m_mutex.lock(); // << LOCK
 
     auto foundPart = m_parts.find(partId);
@@ -1284,6 +1289,10 @@ GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Ren
     builder->NotifyAll();
 
     return part;
+#else
+    GeomPartBuilderPtr builder = GeomPartBuilder::Create();
+    return builder->GeneratePart(partId, db, geomParams, context);
+#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
