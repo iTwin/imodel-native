@@ -826,11 +826,32 @@ void SMNodeGroup::Append3DTile(const uint64_t& nodeID, const uint64_t& parentNod
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Richard.Bois     07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void SMNodeGroup::AppendChildGroup(SMNodeGroupPtr childGroup)
+    {
+    Json::Value childReferenceNode;
+    childReferenceNode["SMRootID"] = childGroup->m_tilesetRootNode["SMHeader"]["id"];
+    childReferenceNode["boundingVolume"] = childGroup->m_tilesetRootNode["boundingVolume"];
+    childReferenceNode["geometricError"] = childGroup->m_tilesetRootNode["geometricError"];
+    childReferenceNode["refine"] = childGroup->m_tilesetRootNode["refine"];
+    auto& childReferenceContent = childReferenceNode["content"];
+    childReferenceContent["boundingVolume"] = childGroup->m_tilesetRootNode["content"]["boundingVolume"];
+
+    BeFileName tilesetDir(childGroup->m_outputDirPath.c_str());
+    tilesetDir.StripSeparatorAtEnd();
+    WString tilesetUrl = BeFileName::GetFileNameWithoutExtension(tilesetDir.c_str()) + L"/n_0.json";
+    childReferenceContent["url"] = Utf8String(tilesetUrl.c_str());
+    m_tilesetRootNode["children"].append(childReferenceNode);
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Richard.Bois     03/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SMNodeGroup::MergeChild(SMNodeGroupPtr child)
     {
     assert(child->m_ParentGroup == this);
+    if (!child->m_tilesetRootNode) return;
     assert(child->m_tilesetRootNode.isMember("SMHeader") && child->m_tilesetRootNode["SMHeader"].isMember("parentID"));
 
     auto& childTileTreeNode = child->m_tilesetRootNode;

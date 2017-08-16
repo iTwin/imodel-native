@@ -461,9 +461,9 @@ bool IScalableMesh::RemoveSkirt(uint64_t clipID)
     }
 
 
-int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
+int IScalableMesh::Generate3DTiles(const WString& outContainerName, WString outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, uint64_t converageId) const
     {
-    return _Generate3DTiles(outContainerName, outDatasetName, server, progress);
+    return _Generate3DTiles(outContainerName, outDatasetName, server, progress, converageId);
     }
 
 BentleyStatus IScalableMesh::CreateCoverage(const bvector<DPoint3d>& coverageData, uint64_t id, const Utf8String& coverageName)
@@ -2843,9 +2843,11 @@ template <class POINT> bool ScalableMesh<POINT>::_IsShareable() const
 /*----------------------------------------------------------------------------+
 |ScalableMesh::_Generate3DTiles
 +----------------------------------------------------------------------------*/
-template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress) const
+template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WString& outContainerName, const WString& outDatasetName, SMCloudServerType server, IScalableMeshProgressPtr progress, uint64_t coverageId) const
     {
     if (m_scmIndexPtr == nullptr) return ERROR;
+
+    StatusInt status;
 
     WString path;
     if (server == SMCloudServerType::Azure)
@@ -2886,7 +2888,69 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     
     //s_stream_from_grouped_store = false;
     m_scmIndexPtr->SetProgressCallback(progress);
-    return m_scmIndexPtr->Publish3DTiles(path, this->_GetGCS().GetGeoRef().GetBasePtr());
+    bool hasCoverages = false;
+    bvector<SMNodeGroupPtr> coverageTilesets;
+    if (coverageId == (uint64_t)-1)
+        {
+        // Generate 3DTiles tilesets for all coverages
+        bvector<uint64_t> ids;
+        m_scmIndexPtr->GetClipRegistry()->GetAllCoverageIds(ids);
+        hasCoverages = !ids.empty();
+        for (auto coverageID : ids)
+            {
+            Utf8String coverageName;
+            m_scmIndexPtr->GetClipRegistry()->GetCoverageName(coverageID, coverageName);
+
+            BeFileName coverageFileName(coverageName.c_str());
+            if (BeFileName::DoesPathExist(coverageFileName))
+                {
+                // Ensure that coverage path is formatted correctly (e.g. remove redundant double backslashes such as \\\\)
+                WString coverageFullPathName;
+                BeFileName::BeGetFullPathName(coverageFullPathName, coverageFileName.c_str());
+
+                IScalableMeshPtr coverageMesh = nullptr;
+                if ((coverageMesh = IScalableMesh::GetFor(coverageFullPathName.c_str(), Utf8String(m_baseExtraFilesPath.c_str()), false, true, true, status)) == nullptr || status != SUCCESS)
+                    {
+                    BeAssert(false); // Error opening coverage 3sm
+                    return status;
+                    }
+
+                // Create directory for coverage tileset output
+                BeFileName coverageOutDir(path.c_str());
+                coverageOutDir.AppendToPath(BeFileName::GetFileNameWithoutExtension(coverageFileName).c_str());
+                coverageOutDir.AppendSeparator();
+                if (!BeFileName::DoesPathExist(coverageOutDir) && (status = (StatusInt)BeFileName::CreateNewDirectory(coverageOutDir)) != SUCCESS)
+                    {
+                    BeAssert(false); // Could not create tileset output directory for coverage
+                    return status;
+                    }
+                if ((status = coverageMesh->Generate3DTiles(coverageOutDir.c_str(), outDatasetName, server, nullptr /*no progress?*/, coverageID)) != SUCCESS)
+                    {
+                    BeAssert(false); // Could not publish coverage
+                    return status;
+                    }
+                auto coverageIndex = static_cast<ScalableMesh<POINT>*>(coverageMesh.get())->m_scmIndexPtr;
+                auto root = coverageIndex->GetRootNodeGroup();
+                BeAssert(root.IsValid()); // Something wrong in the publish
+                coverageTilesets.push_back(root);
+                }
+            }
+        }
+
+    status = m_scmIndexPtr->Publish3DTiles(path, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), this->_GetGCS().GetGeoRef().GetBasePtr());
+    SMNodeGroupPtr rootTileset = m_scmIndexPtr->GetRootNodeGroup();
+    BeAssert(rootTileset.IsValid()); // something wrong in the publish
+
+    for (auto& converageTileset : coverageTilesets)
+        {
+        // insert tileset as child tileset to the current tileset
+        rootTileset->AppendChildGroup(converageTileset);
+        converageTileset->Close<Extent3dType>();
+        }
+
+    // Force save of root tileset and take into account coverages
+    rootTileset->Close<Extent3dType>();
+    return status;
     }
 
 template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::_DetectGroundForRegion(BeFileName& createdTerrain, const BeFileName& coverageTempDataFolder, const bvector<DPoint3d>& coverageData, uint64_t id, IScalableMeshGroundPreviewerPtr groundPreviewer, BaseGCSCPtr& destinationGcs, bool limitResolution)
@@ -2923,7 +2987,8 @@ template <class POINT>  BentleyStatus                      ScalableMesh<POINT>::
                 
         StatusInt status = smGroundExtractor->ExtractAndEmbed(coverageTempDataFolder);
 
-        assert(status == SUCCESS);
+		if (status != SUCCESS)
+			return status == SUCCESS ? SUCCESS : ERROR;
 /*
         Utf8String newBaseEditsFilePath = Utf8String(m_baseExtraFilesPath) + "_terrain_";
         newBaseEditsFilePath.append(std::to_string(id).c_str());
@@ -3054,6 +3119,8 @@ template <class POINT> BentleyStatus  ScalableMesh<POINT>::_Reproject(GeoCoordin
         DPoint3d globalOrigin = modelInfo.GetGlobalOrigin();
         if (smGCS != nullptr && !targetCS->IsEquivalent(*smGCS))
             {
+            smGCS->SetReprojectElevation(true);
+
             DPoint3d scale = DPoint3d::FromXYZ(1, 1, 1);
             smGCS->UorsFromCartesian(scale, scale);
             scale.DifferenceOf(scale, globalOrigin);            

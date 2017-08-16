@@ -10,9 +10,9 @@ void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, const Transform&
     return _Publish(node, transform, outData);
     }
 
-void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData)
+void IScalableMeshPublisher::Publish(IScalableMeshNodePtr node, const uint64_t& clipID, bool isClipBoundary, GeoCoordinates::BaseGCSCPtr sourceGCS, GeoCoordinates::BaseGCSCPtr destinationGCS, bvector<Byte>& outData)
     {
-    return _Publish(node, sourceGCS, destinationGCS, outData);
+    return _Publish(node, clipID, isClipBoundary, sourceGCS, destinationGCS, outData);
     }
 
 IScalableMeshPublisherPtr IScalableMeshPublisher::Create(const SMPublishType& type)
