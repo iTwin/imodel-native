@@ -892,8 +892,7 @@ struct TopologyID
 
     //! Assign topology id to the given face. Does not check or resolve duplicate face ids.
     //! @param[in,out] subEntity The face to modify.
-    //! @param[in] nodeId The non-zero topology node id to use in the nodeId-entityId pair.
-    //! @param[in] entityId The non-zero topology entity id to use in the nodeId-entityId pair.
+    //! @param[in] faceId The face nodeId-entityId pair.
     //! @return SUCCESS if id was added.
     DGNPLATFORM_EXPORT static BentleyStatus AddNodeIdAttribute(ISubEntityR subEntity, FaceId faceId);
 
