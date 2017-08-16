@@ -1033,7 +1033,7 @@ BentleyStatus BimCreater::DoCreate()
 
     int numberOfUnits = 5;
     int numberOfSubunits = 5;
-    int numberOfPids = 5;
+    int numberOfPids = 1000;
 
     for (int unitNum = 0; unitNum < numberOfUnits; unitNum++)
         {
@@ -1060,7 +1060,7 @@ BentleyStatus BimCreater::DoCreate()
             for (int j = 1; j < numberOfPids; j++)
                 {
                 Utf8String pidName;
-                pidName.Sprintf("PID-%0.3d", pidNum);
+                pidName.Sprintf("PID-%0.5d", pidNum);
                 pidNum++;
                 Dgn::DrawingModelPtr drawingModel = CreatePidDrawings(*docListModel, *functionalModel, pidName, subUn);
 
@@ -1394,6 +1394,8 @@ BentleyStatus BimCreater::CreateBuilding(BuildingPhysical::BuildingPhysicalModel
 	
 		}
 
+#ifdef NOTNOW
+
         Dgn::SpatialLocationModelCPtr spatialModel = BuildingDomain::BuildingDomainUtilities::CreateBuildingSpatialLocationModel(BUILDING_MODEL_NAME, physicalModel.GetDgnDb());
         if (spatialModel.IsValid())
             {
@@ -1409,9 +1411,9 @@ BentleyStatus BimCreater::CreateBuilding(BuildingPhysical::BuildingPhysicalModel
 
             status = Grids::OrthogonalGridPortion::CreateAndInsert(grid2, params1);
 
-
-
             }
+
+#endif
 
 
 
