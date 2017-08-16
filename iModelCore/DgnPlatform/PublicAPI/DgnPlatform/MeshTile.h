@@ -6,6 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #define CLASSIFICATION_WIP
+// #define WIP_MESHTILE_3SM
 
 #pragma once
 /*__PUBLISH_SECTION_START__*/
@@ -44,6 +45,7 @@ BENTLEY_RENDER_TYPEDEFS(FeatureAttributesMap);
 BENTLEY_RENDER_TYPEDEFS(ColorIndexMap);
 BENTLEY_RENDER_TYPEDEFS(IGetTileTreeForPublishing);
 BENTLEY_RENDER_TYPEDEFS(TileTreePublishRenderSystem);
+BENTLEY_RENDER_TYPEDEFS(IGetPublishedTilesetInfo);
 
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMesh);
 BENTLEY_RENDER_REF_COUNTED_PTR(TileMeshPart);
@@ -364,14 +366,16 @@ struct TileTriangle
 {
     uint32_t    m_indices[3];   // indexes into point/normal/uvparams/elementID vectors
     bool        m_singleSided;
+    bool        m_edgeVisible[3];
 
-    explicit TileTriangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); }
-    TileTriangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices); }
-    TileTriangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c); }
+    explicit TileTriangle(bool singleSided=true) : m_singleSided(singleSided) { SetIndices(0, 0, 0); SetVisibility(true);  }
+    TileTriangle(uint32_t indices[3], bool singleSided) : m_singleSided(singleSided) { SetIndices(indices);  SetVisibility(true); }
+    TileTriangle(uint32_t a, uint32_t b, uint32_t c, bool singleSided) : m_singleSided(singleSided) { SetIndices(a, b, c);  SetVisibility(true); }
 
     void SetIndices(uint32_t indices[3]) { SetIndices(indices[0], indices[1], indices[2]); }
     void SetIndices(uint32_t a, uint32_t b, uint32_t c) { m_indices[0] = a; m_indices[1] = b; m_indices[2] = c; }
-
+    void SetVisibility(bool visible) { m_edgeVisible[0] = m_edgeVisible[1] = m_edgeVisible[2] = visible; }
+    bool IsSingleSided() const { return m_singleSided; }
     bool IsDegenerate() const
         {
         return m_indices[0] == m_indices[1] || m_indices[0] == m_indices[2] || m_indices[1] == m_indices[2];
@@ -832,7 +836,7 @@ protected:
     TileNode(DgnModelCR model, DRange3dCR range, TransformCR transformFromDgn, size_t depth, size_t siblingIndex, TileNodeP parent, double tolerance = 0.0)
         : m_dgnRange(range), m_depth(depth), m_siblingIndex(siblingIndex), m_tolerance(tolerance), m_parent(parent), m_transformFromDgn(transformFromDgn), m_publishedRange(DRange3d::NullRange()), m_model(&model), m_isEmpty(true) { }
 
-    virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool doSurfacesOnly=false, ITileGenerationFilterCP filter = nullptr) const = 0;
+    virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool doSurfacesOnly=false, bool doInstancing=true, ITileGenerationFilterCP filter = nullptr) const = 0;
     virtual TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return TileGeneratorStatus::Success; }
     virtual void _ClearGeometry() { }
     virtual WString _GetFileExtension() const = 0;
@@ -879,8 +883,8 @@ public:
     TileGeneratorStatus  CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) { return _CollectGeometry(cache, db, leafThresholdExceeded, tolerance, surfacesOnly, leafCountThreshold); }
     void  ClearGeometry() { _ClearGeometry(); }
     WString GetFileExtension() const { return _GetFileExtension(); }
-    PublishableTileGeometry GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool doSurfacesOnly=false, ITileGenerationFilterCP filter = nullptr) const
-        { return _GeneratePublishableGeometry(dgndb, normalMode, doSurfacesOnly, filter); }
+    PublishableTileGeometry GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode=TileGeometry::NormalMode::CurvedSurfacesOnly, bool doSurfacesOnly=false, bool doInstancing=true, ITileGenerationFilterCP filter = nullptr) const
+        { return _GeneratePublishableGeometry(dgndb, normalMode, doSurfacesOnly, doInstancing,  filter); }
     DGNPLATFORM_EXPORT static void ComputeChildTileRanges(bvector<DRange3d>& subTileRanges, DRange3dCR range, size_t splitCount = 3);
 };
 
@@ -904,7 +908,7 @@ protected:
         : TileNode(model, range, transformFromDgn, depth, siblingIndex, parent, tolerance), m_isLeaf(false), m_containsParts(false) { }
 
 
-    DGNPLATFORM_EXPORT PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool surfacesOnly, ITileGenerationFilterCP filter) const override;
+    DGNPLATFORM_EXPORT PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR, TileGeometry::NormalMode, bool surfacesOnly, bool doInstancing, ITileGenerationFilterCP filter) const override;
     TileGeneratorStatus _CollectGeometry(TileGenerationCacheCR cache, DgnDbR db, bool* leafThresholdExceeded, double tolerance, bool surfacesOnly, size_t leafCountThreshold) override;
     void _ClearGeometry() override { m_geometries.clear(); }
     WString _GetFileExtension() const override { return m_containsParts ? L"cmpt" : L"b3dm"; }
@@ -958,6 +962,9 @@ struct TileGenerator
         {
         //! Invoked from one of several worker threads for each generated tile.
         virtual TileGeneratorStatus _AcceptTile(TileNodeCR tileNode) = 0;
+        //! Invoked when a model which exposes a direct URL to a published tileset is processed.
+        //! _Begin/_EndProcessModel() will not be invoked. Neither will _AcceptTile() as these models generate no tiles (the tiles already exist elsewhere).
+        virtual TileGeneratorStatus _AcceptPublishedTilesetInfo(DgnModelCR model, IGetPublishedTilesetInfoR url) = 0;
         //! Invoked before a model is processed.
         virtual TileGeneratorStatus _BeginProcessModel(DgnModelCR model) { return TileGeneratorStatus::Success; }
         //! Invoked after a model is processed, with the result of processing.
@@ -1061,6 +1068,33 @@ struct IGetTileTreeForPublishing
 };  // IGetTileTreeForPublishing
 
 //=======================================================================================
+// Describes a published ready-to-use 3D tileset associated with a SpatialModel.
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct PublishedTilesetInfo
+{
+    Utf8String  m_url;
+    DRange3d    m_ecefRange;
+
+    PublishedTilesetInfo() { }
+    PublishedTilesetInfo(Utf8StringCR url, DRange3dCR ecefRange) : m_url(url), m_ecefRange(ecefRange) { }
+
+    bool IsValid() const { return !m_url.empty(); }
+};
+
+//=======================================================================================
+// Interface for models which provide direct URLs to pre-published tilesets.
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct IGetPublishedTilesetInfo
+{
+    virtual PublishedTilesetInfo _GetPublishedTilesetInfo() = 0;
+};
+
+#define COMPARE_VALUES_TOLERANCE(val0, val1, tol)   if (val0 < val1 - tol) return true; if (val0 > val1 + tol) return false;
+#define COMPARE_VALUES(val0, val1) if (val0 < val1) { return true; } if (val0 > val1) { return false; }
+
+//=======================================================================================
 // static utility methods
 // @bsistruct                                                   Ray.Bentley     08/2016
 //=======================================================================================
@@ -1069,6 +1103,23 @@ struct TileUtil
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
     DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
     DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId, bool asClassifier = false);
+
+    struct PointComparator
+        {
+        double  m_tolerance;
+
+        explicit PointComparator(double tolerance) : m_tolerance(tolerance) { }
+
+
+        bool operator()(DPoint3dCR lhs, DPoint3dCR rhs) const
+            {
+            COMPARE_VALUES_TOLERANCE(lhs.x, rhs.x, m_tolerance);
+            COMPARE_VALUES_TOLERANCE(lhs.y, rhs.y, m_tolerance);
+            COMPARE_VALUES_TOLERANCE(lhs.z, rhs.z, m_tolerance);
+                                                                    
+            return false;
+            }
+        };
 
 };  // TileUtil
 

@@ -111,19 +111,26 @@ TileGeneratorStatus TilesetPublisher::_AcceptTile(TileNodeCR tile)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+TileGeneratorStatus TilesetPublisher::_AcceptPublishedTilesetInfo(DgnModelCR model, IGetPublishedTilesetInfoR getUrl)
+    {
+    PublishedTilesetInfo info = getUrl._GetPublishedTilesetInfo();
+    if (!info.IsValid())
+        return TileGeneratorStatus::NoGeometry;
+
+    BeMutexHolder lock(m_mutex);
+    m_directUrls.Insert(model.GetModelId(), info.m_url);
+    m_modelRanges.Insert(model.GetModelId(), ModelRange(info.m_ecefRange, true));
+
+    return TileGeneratorStatus::Success;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, DPoint3dCR groundPoint)
     {
-    // URL of tileset .json
-    Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
-    Utf8String tilesetUrl = rootNameUtf8;
-    tilesetUrl.append(1, '/');
-    tilesetUrl.append(rootNameUtf8);
-    tilesetUrl.append(".json");
-
-    json["tilesetUrl"] = tilesetUrl;
-
     return GetViewsetJson(json, groundPoint, m_defaultViewId);
     }
 

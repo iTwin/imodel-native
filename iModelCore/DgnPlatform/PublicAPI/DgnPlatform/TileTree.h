@@ -300,7 +300,6 @@ protected:
     TileLoadStatePtr m_loads;
     Dgn::Render::SystemP m_renderSys;
     
-
     // Cacheable information
     Utf8String m_cacheKey;      // for loading or saving to tile cache
     StreamBuffer m_tileBytes;   // when available, bytes are saved here

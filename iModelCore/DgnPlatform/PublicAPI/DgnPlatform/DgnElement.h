@@ -625,6 +625,7 @@ public:
         DgnElementId        m_parentId;
         DgnClassId          m_parentRelClassId;
 
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR, JsonValueCR);
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parentId=DgnElementId(), DgnClassId parentRelClassId=DgnClassId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid())
             : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parentId), m_parentRelClassId(parentRelClassId), m_federationGuid(federationGuid) {SetUserLabel(label);}
 
@@ -1090,6 +1091,19 @@ public:
         DGNPLATFORM_EXPORT static ECN::IECInstanceP GetAspectP(DgnElementR el, ECN::ECClassCR ecclass);
         };
 
+    struct RelatedElement 
+        {
+        DgnElementId m_id;
+        DgnClassId m_relClassId;
+        BE_JSON_NAME(id)
+        BE_JSON_NAME(relClass)
+
+        RelatedElement(DgnElementId id=DgnElementId(), DgnClassId relClassId=DgnClassId()) : m_id(id), m_relClassId(relClassId) {}
+        bool IsValid() const {return m_id.IsValid();}
+        DGNPLATFORM_EXPORT Json::Value ToJson(DgnDbR db) const;
+        DGNPLATFORM_EXPORT RelatedElement(DgnDbR, JsonValueCR val);
+        };
+
 private:
     template<class T> void CallAppData(T const& caller) const;
     Utf8String ToJsonPropString() const;
@@ -1123,8 +1137,7 @@ protected:
     mutable Byte* m_ecPropertyData;
     DgnDbR m_dgndb;
     DgnElementId m_elementId;
-    DgnElementId m_parentId;
-    DgnClassId m_parentRelClassId;
+    RelatedElement m_parent;
     DgnModelId m_modelId;
     DgnClassId m_classId;
     DgnCode m_code;
@@ -1416,7 +1429,7 @@ protected:
     //! Get the display label (for use in the GUI) for this DgnElement.
     //! The default implementation returns the label if set or the code if the label is not set.
     //! Override to generate the display label in a different way.
-    virtual Utf8String _GetDisplayLabel() const {return HasUserLabel() ? m_userLabel : GetCode().GetValue();}
+    virtual Utf8String _GetDisplayLabel() const {return HasUserLabel() ? m_userLabel : GetCode().GetValue().GetUtf8();}
 
     //! Change the parent (owner) of this DgnElement. The default implementation sets the parent without doing any checking.
     //! @param[in] parentId The DgnElementId of the new parent element.
@@ -1486,8 +1499,7 @@ protected:
 
 public:
     BE_JSON_NAME(id)
-    BE_JSON_NAME(schemaName)
-    BE_JSON_NAME(className)
+    BE_JSON_NAME(classFullName)
     BE_JSON_NAME(model)
     BE_JSON_NAME(code)
     BE_JSON_NAME(parent)
@@ -1681,14 +1693,14 @@ public:
     //! Get the DgnElementId of the parent of this element.
     //! @see SetParentId
     //! @return Id will be invalid if this element does not have a parent element.
-    DgnElementId GetParentId() const {return m_parentId;}
+    DgnElementId GetParentId() const {return m_parent.m_id;}
 
     //! Test if \a ancestorId identifies the parent of this element or of its parent, recursively.
     DGNPLATFORM_EXPORT bool IsDescendantOf(DgnElementId ancestorId) const;
 
     //! Get the DgnClassId of the ElementOwnsChildElements subclass used to relate this element to its parent element.
     //! @return Will be invalid if this element does not have a parent element.
-    DgnClassId GetParentRelClassId() const {return m_parentId.IsValid() ? m_parentRelClassId : DgnClassId();}
+    DgnClassId GetParentRelClassId() const {return m_parent.m_id.IsValid() ? m_parent.m_relClassId : DgnClassId();}
 
     //! Set the parent (owner) of this DgnElement.
     //! @see GetParentId, _SetParentId
@@ -2007,6 +2019,8 @@ public:
     //! Calculate the AxisAlignedBox3d of this Placement3d.
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
 
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
+
     //! Determine whether this Placement3d is valid.
     bool IsValid() const
         {
@@ -2076,6 +2090,8 @@ public:
     //! Calculate an AxisAlignedBox3d for this Placement2d.
     //! @note the z values are set to +-1m
     DGNPLATFORM_EXPORT AxisAlignedBox3d CalculateRange() const;
+
+    DGNPLATFORM_EXPORT Json::Value ToJson() const;
 
     //! Determine whether this Placement2d is valid
     bool IsValid() const
@@ -2212,7 +2228,7 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         //! @param[in] code The element's code
         //! @param[in] label (Optional) element label
         //! @param[in] parent (Optional) Id of this element's parent element
-        //! @param[in] parentRelClassId (Optional) The ECClassId of the parent relationship.  Must be a subclass of BisCore:ElementOwnsChildElements
+        //! @param[in] parentRelClassId (Optional) The ECClassId of the parent relationship. Must be a subclass of BisCore:ElementOwnsChildElements
         //! @param[in] federationGuid (Optional) FederationGuid for this element
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCategoryId category, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parent=DgnElementId(), DgnClassId parentRelClassId=DgnClassId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid(false))
             : T_Super(db, modelId, classId, code, label, parent, parentRelClassId, federationGuid), m_category(category) {}
@@ -2224,8 +2240,16 @@ struct EXPORT_VTABLE_ATTRIBUTE GeometricElement : DgnElement
         explicit CreateParams(DgnElement::CreateParams const& params, DgnCategoryId category=DgnCategoryId()) : T_Super(params), m_category(category) {}
     };
 
+    BE_PROP_NAME(GeometryStream)
+    BE_PROP_NAME(BBoxLow)
+    BE_PROP_NAME(BBoxHigh)
+    BE_PROP_NAME(Origin)
+    BE_PROP_NAME(TypeDefinition)
+    BE_PROP_NAME(Category)
+
+    BE_JSON_NAME(origin)
     BE_JSON_NAME(placement)
-    BE_JSON_NAME(typeDefintion)
+    BE_JSON_NAME(typeDefinition)
     BE_JSON_NAME(category)
     BE_JSON_NAME(geom)
 
@@ -2308,8 +2332,7 @@ public:
 protected:
 
     Placement3d m_placement;
-    DgnElementId m_typeDefinitionId;
-    ECN::ECClassId m_typeDefinitionRelClassId;
+    RelatedElement m_typeDefinition;
 
     explicit GeometricElement3d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
@@ -2334,6 +2357,11 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
+    BE_PROP_NAME(InSpatialIndex)
+    BE_PROP_NAME(Yaw)
+    BE_PROP_NAME(Pitch)
+    BE_PROP_NAME(Roll)
+
     //! Set the TypeDefinitionElement associated with this GeometricElement3d
     //! @param[in] typeDefinitionId The DgnElementId of the TypeDefinitionElement to be associated with this GeometricElement3d
     //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of BisCore:GeometricElement3dHasTypeDefinition
@@ -2341,11 +2369,11 @@ public:
 
     //! Get the DgnElementId of the TypeDefinitionElement for this GeometricElement3d
     //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement3d
-    DgnElementId GetTypeDefinitionId() const {return m_typeDefinitionId;}
+    DgnElementId GetTypeDefinitionId() const {return m_typeDefinition.m_id;}
 
     //! Get the DgnClassId of the relationship class that associates the TypeDefinitionElement with this GeometricElement3d
     //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement3d
-    DgnClassId GetTypeDefinitionRelClassId() const {return m_typeDefinitionRelClassId;}
+    DgnClassId GetTypeDefinitionRelClassId() const {return m_typeDefinition.m_relClassId;}
 };
 
 //=======================================================================================
@@ -2389,8 +2417,7 @@ public:
 
 protected:
     Placement2d m_placement;
-    DgnElementId m_typeDefinitionId;
-    ECN::ECClassId m_typeDefinitionRelClassId;
+    RelatedElement m_typeDefinition;
 
     explicit GeometricElement2d(CreateParams const& params) : T_Super(params), m_placement(params.m_placement) {}
     bool _IsPlacementValid() const override final {return m_placement.IsValid();}
@@ -2413,6 +2440,8 @@ protected:
     DGNPLATFORM_EXPORT void _BindWriteParams(BeSQLite::EC::ECSqlStatement&, ForInsert) override;
 
 public:
+    BE_PROP_NAME(Rotation)
+
     //! Set the TypeDefinitionElement associated with this GeometricElement2d
     //! @param[in] typeDefinitionId The DgnElementId of the TypeDefinitionElement to be associated with this GeometricElement2d
     //! @param[in] relClassId The ECClassId of the ECRelationshipClass that must be a subclass of BisCore:GeometricElement2dHasTypeDefinition
@@ -2420,11 +2449,11 @@ public:
 
     //! Get the DgnElementId of the TypeDefinitionElement for this GeometricElement2d
     //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement2d
-    DgnElementId GetTypeDefinitionId() const {return m_typeDefinitionId;}
+    DgnElementId GetTypeDefinitionId() const {return m_typeDefinition.m_id;}
 
     //! Get the DgnClassId of the relationship class that associates the TypeDefinitionElement with this GeometricElement2d
     //! @return Will be invalid if there is no TypeDefinitionElement associated with this GeometricElement2d
-    DgnClassId GetTypeDefinitionRelClassId() const {return m_typeDefinitionRelClassId;}
+    DgnClassId GetTypeDefinitionRelClassId() const {return m_typeDefinition.m_relClassId;}
 };
 
 //=======================================================================================

@@ -203,7 +203,7 @@ void DgnSubCategory::_ToJson(JsonValueR val, JsonValueCR opts) const
     T_Super::_ToJson(val, opts);
 
     val[json_appearance()] = m_data.m_appearance.ToJson();
-    val[json_descr()] = m_data.m_descr;
+    val[json_description()] = m_data.m_descr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -732,12 +732,9 @@ DgnElementPtr dgn_ElementHandler::SubCategory::_CreateNewElement(DgnDbR db, ECN:
     auto params = DgnSubCategory::CreateParamsFromECInstance(db, properties, inStat);
     if (!params.IsValid())
         return nullptr;
+
     auto ele = new DgnSubCategory(params);
-    if (nullptr == ele)
-        {
-        BeAssert(false && "when would a handler fail to construct an element?");
-        return nullptr;
-        }
+
     bset<Utf8String> ignoreProps;
     ignoreProps.insert("Parent");
     DgnElement::SetPropertyFilter filter(DgnElement::SetPropertyFilter::Ignore::WriteOnlyNullBootstrapping, false, ignoreProps);

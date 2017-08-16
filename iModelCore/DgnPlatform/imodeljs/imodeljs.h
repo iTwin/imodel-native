@@ -74,7 +74,9 @@ struct IModelJs
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ReadInstance(Utf8StringR errmsg, JsonValueR jsonInstance, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult DeleteInstance(Utf8StringR errmsg, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ContainsInstance(Utf8StringR errmsg, bool& containsInstance, JsECDbR ecdb, JsonValueCR instanceKey);
-    DGNPLATFORM_EXPORT static BeSQLite::DbResult ExecuteQuery(Utf8StringR errmsg, JsonValueR results, BeSQLite::EC::ECSqlStatement& stmt);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult ExecuteQuery(Utf8StringR errmsg, JsonValueR results, BeSQLite::EC::ECSqlStatement& stmt, JsonValueCR bindings);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult ExecuteStatement(Utf8StringR errmsg, Utf8StringR instanceId, BeSQLite::EC::ECSqlStatement& stmt, bool isInsertStmt, JsonValueCR bindings);
+
     DGNPLATFORM_EXPORT static Utf8String GetLastEcdbIssue();
 
 };

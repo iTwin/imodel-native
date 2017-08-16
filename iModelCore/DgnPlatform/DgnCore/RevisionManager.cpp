@@ -944,8 +944,6 @@ RevisionStatus RevisionManager::SaveParentRevisionId(Utf8StringCR revisionId)
 //---------------------------------------------------------------------------------------
 RevisionStatus RevisionManager::SaveReversedRevisionId(Utf8StringCR revisionId)
     {
-    BeAssert(revisionId.length() == SHA1::HashBytes * 2);
-
     DbResult result = m_dgndb.SaveBriefcaseLocalValue(REVERSED_CS_ID, revisionId);
     if (BE_SQLITE_DONE != result)
         {

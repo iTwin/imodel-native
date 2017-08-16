@@ -287,7 +287,7 @@ public:
     //! @param[in] name The name of the ModelSelector.
     ModelSelector(DefinitionModelR model, Utf8StringCR name) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
-    Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ModelSelector
+    Utf8String GetName() const {return GetCode().GetValue().GetUtf8();} //!< Get the name of this ModelSelector
 
     //! Query if the specified DgnModelId is selected by this ModelSelector
     bool ContainsModel(DgnModelId modelId) const {return m_models.Contains(modelId);}
@@ -338,7 +338,7 @@ public:
     CategorySelector(DefinitionModelR model, Utf8StringCR name) : T_Super(CreateParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), CreateCode(model, name))) {}
 
     //! Get the name of this CategorySelector
-    Utf8String GetName() const {return GetCode().GetValue();} 
+    Utf8String GetName() const {return GetCode().GetValue().GetUtf8();} 
 
     //! Get the set of currently displayed DgnCategories
     DgnCategoryIdSet const& GetCategories() const {return m_categories;}
@@ -468,7 +468,7 @@ public:
     DgnDbStatus SetDescription(Utf8StringCR value) {return SetPropertyValue(prop_Description(), value.c_str());} //!< Set description
 
     DgnViewId GetViewId() const {return DgnViewId(GetElementId().GetValue());} //!< This ViewDefinition's Id
-    Utf8String GetName() const {return GetCode().GetValue();} //!< Get the name of this ViewDefinition
+    Utf8String GetName() const {return GetCode().GetValue().GetUtf8();} //!< Get the name of this ViewDefinition
 
     /** @name ViewDefinition Details */
     /** @{ */

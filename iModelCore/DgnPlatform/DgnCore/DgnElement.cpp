@@ -9,24 +9,29 @@
 #include "BisCoreNames.h"
 #include "ElementECInstanceAdapter.h"
 
-/* GeometrySource properties... 
- *  GeometrySource
- *      Geometry : binary
- *      CategoryId : long
- *  GeometrySource2d : GeometrySource
- *      Origin : point2d
- *      Rotation : double
- *      BBoxLow : point2d
- *      BBoxHigh : point2d
- *  GeometrySource3d : GeometrySource
- *      InSpatialIndex : boolean
- *      Origin : point3d
- *      Yaw : double
- *      Pitch : double
- *      Roll : double
- *      BBoxLow : point3d
- *      BBoxHigh : point3d
- */
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static DgnClassId getClassId(DgnDbR db, Utf8StringCR name)
+    {
+    auto dot = name.find('.');
+    if (Utf8String::npos == dot || name.length() <= dot + 1)
+        return DgnClassId();
+
+    return db.Schemas().GetClassId(name.substr(0, dot), name.substr(dot+1));
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
+    {
+    m_classId = getClassId(db, val[DgnElement::json_classFullName()].asString());
+    m_modelId.FromJson(val[DgnElement::json_model()]);
+    m_code.FromJson(val[DgnElement::json_code()]);
+    m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());
+    m_userLabel = val[DgnElement::json_userLabel()].asString();
+    }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      12/16
@@ -256,7 +261,7 @@ DgnDbStatus DgnElement::_OnInsert()
     if (elementHandler.GetDomain().IsReadonly())
         return DgnDbStatus::ReadOnlyDomain;
 
-    if (m_parentId.IsValid() != m_parentRelClassId.IsValid())
+    if (m_parent.m_id.IsValid() != m_parent.m_relClassId.IsValid())
         {
         BeAssert(false); // when m_parentId.IsValid, m_parentRelClassId must be a subclass of BisCore:ElementOwnsChildElements
         return DgnDbStatus::InvalidParent;
@@ -299,7 +304,7 @@ Utf8String DgnElement::_GetInfoString(Utf8CP delimiter) const
         {
         DgnCategoryCPtr category = DgnCategory::Get(GetDgnDb(), geom->GetCategoryId());
         if (category.IsValid())
-            out += DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()) + category->GetCode().GetValue() + delimiter;
+            out += DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Category()) + category->GetCode().GetValue().GetUtf8() + delimiter;
         }
 
     return out + DgnCoreL10N::GetString(DgnCoreL10N::DISPLAY_INFO_MessageID_Model()) + GetModel()->GetName();
@@ -876,8 +881,8 @@ DgnDbStatus DgnElement::_SetParentId(DgnElementId parentId, DgnClassId parentRel
     if (GetElementHandler()._IsRestrictedAction(RestrictedAction::SetParent))
         return DgnDbStatus::MissingHandler;
 
-    m_parentId = parentId;
-    m_parentRelClassId = parentRelClassId;
+    m_parent.m_id = parentId;
+    m_parent.m_relClassId = parentRelClassId;
     return DgnDbStatus::Success;
     }
 
@@ -1093,7 +1098,7 @@ void DgnElement::_BindWriteParams(ECSqlStatement& statement, ForInsert forInsert
     if (m_code.IsEmpty())
         statement.BindNull(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue));
     else
-        statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().c_str(), IECSqlBinder::MakeCopy::No);
+        statement.BindText(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeValue), m_code.GetValue().GetUtf8().c_str(), IECSqlBinder::MakeCopy::No);
 
     statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeSpec), m_code.GetCodeSpecId());
     statement.BindNavigationValue(statement.GetParameterIndex(BIS_ELEMENT_PROP_CodeScope), m_code.GetScopeElementId(GetDgnDb()));
@@ -1206,20 +1211,40 @@ DgnDbStatus DgnElement::_LoadFromDb()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
+    {
+    Json::Value val;
+    val[json_id()] = m_id.ToHexStr();
+    val[json_relClass()] = db.Schemas().GetClass(m_relClassId)->GetName();
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::RelatedElement::RelatedElement(DgnDbR db, JsonValueCR val)
+    {
+    m_id.FromJson(val[json_id()]);
+    if (m_id.IsValid())
+        m_relClassId = getClassId(db, val[json_relClass()].asString());
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
-    val[json_id()] = m_elementId.ToString(BeInt64Id::UseHex::Yes);
-
+    val[json_id()] = m_elementId.ToHexStr();
     auto ecClass = GetElementClass();
-    val[json_schemaName()] = ecClass->GetSchema().GetName();
-    val[json_className()] = ecClass->GetName();
-    val[json_model()] = m_modelId.ToString(BeInt64Id::UseHex::Yes);
+    BeAssert(ecClass != nullptr);
+    val[json_classFullName()] = Utf8String(ecClass->GetSchema().GetName() + "." + ecClass->GetName());
+    val[json_model()] = m_modelId.ToHexStr();
     val[json_code()] = m_code.ToJson2();
 
-    if (m_parentId.IsValid())
-        val[json_parent()] = m_parentId.ToString(BeInt64Id::UseHex::Yes);
+    if (m_parent.IsValid())
+        val[json_parent()] = m_parent.ToJson(GetDgnDb());
 
     if (m_federationGuid.IsValid())
         val[json_federationGuid()] = m_federationGuid.ToString();
@@ -1472,8 +1497,8 @@ void DgnElement::_CopyFrom(DgnElementCR other)
     // Copying between DgnDbs is not allowed. Caller must do Id remapping.
     m_code = other.m_code;
     m_userLabel = other.m_userLabel;
-    m_parentId = other.m_parentId;
-    m_parentRelClassId = other.m_parentRelClassId;
+    m_parent.m_id = other.m_parent.m_id;
+    m_parent.m_relClassId = other.m_parent.m_relClassId;
     m_jsonProperties = other.m_jsonProperties;
     // don't copy FederationGuid
 
@@ -1520,8 +1545,8 @@ void DgnElement::_RemapIds(DgnImportContext& importer)
     {
     BeAssert(importer.IsBetweenDbs());
     m_code.RelocateToDestinationDb(importer);
-    m_parentId = importer.FindElementId(m_parentId);
-    m_parentRelClassId = importer.RemapClassId(m_parentRelClassId);
+    m_parent.m_id = importer.FindElementId(m_parent.m_id);
+    m_parent.m_relClassId = importer.RemapClassId(m_parent.m_relClassId);
     RemapAutoHandledNavigationproperties(importer);
     }
 
@@ -1610,7 +1635,7 @@ DgnElementCPtr DgnElement::Import(DgnDbStatus* stat, DgnModelR destModel, DgnImp
     if (nullptr != stat)
         *stat = DgnDbStatus::Success;
 
-    auto parent = GetDgnDb().Elements().GetElement(m_parentId);
+    auto parent = GetDgnDb().Elements().GetElement(m_parent.m_id);
     DgnDbStatus parentStatus = DgnDbStatus::Success;
     if (parent.IsValid() && DgnDbStatus::Success != (parentStatus = parent->_OnChildImport(*this, destModel, importer)))
         {
@@ -1696,8 +1721,8 @@ void GeometricElement2d::_CopyFrom(DgnElementCR el)
         }
 
     GeometricElement2dCR other = static_cast<GeometricElement2dCR>(el);
-    m_typeDefinitionId = other.m_typeDefinitionId;
-    m_typeDefinitionRelClassId = other.m_typeDefinitionRelClassId;
+    m_typeDefinition.m_id = other.m_typeDefinition.m_id;
+    m_typeDefinition.m_relClassId = other.m_typeDefinition.m_relClassId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1714,8 +1739,8 @@ void GeometricElement3d::_CopyFrom(DgnElementCR el)
         }
 
     GeometricElement3dCR other = static_cast<GeometricElement3dCR>(el);
-    m_typeDefinitionId = other.m_typeDefinitionId;
-    m_typeDefinitionRelClassId = other.m_typeDefinitionRelClassId;
+    m_typeDefinition.m_id = other.m_typeDefinition.m_id;
+    m_typeDefinition.m_relClassId = other.m_typeDefinition.m_relClassId;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1741,7 +1766,7 @@ ElementHandlerR DgnElement::GetElementHandler() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElementPtr DgnElement::CopyForEdit() const
     {
-    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parentId, m_parentRelClassId, GetFederationGuid());
+    DgnElement::CreateParams createParams(GetDgnDb(), m_modelId, m_classId, GetCode(), GetUserLabel(), m_parent.m_id, m_parent.m_relClassId, GetFederationGuid());
     createParams.SetElementId(GetElementId());
 
     DgnElementPtr newEl = GetElementHandler()._CreateInstance(createParams);
@@ -1779,6 +1804,18 @@ AxisAlignedBox3d Placement3d::CalculateRange() const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Placement3d::ToJson() const
+    {
+    Json::Value val;
+    JsonUtils::DPoint3dToJson(val[json_origin()], m_origin);
+    val[json_angles()] = JsonUtils::YawPitchRollToJson(m_angles);
+    JsonUtils::DRange3dToJson(val[json_bbox()], m_boundingBox);
+    return val;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   04/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 AxisAlignedBox3d Placement2d::CalculateRange() const
@@ -1798,6 +1835,19 @@ AxisAlignedBox3d Placement2d::CalculateRange() const
 
     return range;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Json::Value Placement2d::ToJson() const
+    {
+    Json::Value val;
+    JsonUtils::DPoint2dToJson(val[json_origin()], m_origin);
+    val[json_angle()] = JsonUtils::AngleInDegreesToJson(m_angle);
+    JsonUtils::DRange2dToJson(val[json_bbox()], m_boundingBox);
+    return val;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   05/15
@@ -2462,7 +2512,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
     params.RegisterPropertyAccessors(layout, BIS_ELEMENT_PROP_CodeValue,
         [](ECValueR value, DgnElementCR el)
             {
-            value.SetUtf8CP(el.GetCode().GetValue().c_str());
+            value.SetUtf8CP(el.GetCode().GetValueUtf8().c_str());
             return DgnDbStatus::Success;
             },
         
@@ -2571,7 +2621,7 @@ void dgn_ElementHandler::Element::_RegisterPropertyAccessors(ECSqlClassInfo& par
 +---------------+---------------+---------------+---------------+---------------+------*/
 void GeometricElement::RegisterGeometricPropertyAccessors(ECSqlClassInfo& params, ECN::ClassLayoutCR layout)
     {
-    params.RegisterPropertyAccessors(layout, GEOM_GeometryStream, 
+    params.RegisterPropertyAccessors(layout, prop_GeometryStream(), 
         [](ECValueR, DgnElementCR)
             {
             return DgnDbStatus::BadRequest;//  => Use GeometryCollection interface
@@ -2606,27 +2656,27 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             }
 
 
-    params.RegisterPropertyAccessors(layout, GEOM3_Yaw, 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Yaw(), 
         GETGEOMPLCPROPDBL(plc.GetAngles().GetYaw().Degrees()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetYaw(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
-    params.RegisterPropertyAccessors(layout, GEOM3_Pitch,
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Pitch(),
         GETGEOMPLCPROPDBL(plc.GetAngles().GetPitch().Degrees()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetPitch(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
-    params.RegisterPropertyAccessors(layout, GEOM3_Roll, 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Roll(), 
         GETGEOMPLCPROPDBL(plc.GetAngles().GetRoll().Degrees()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAnglesR().SetRoll(AngleInDegrees::FromDegrees(value.GetDouble()))));
 
-    params.RegisterPropertyAccessors(layout, GEOM_Origin, 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_Origin(), 
         GETGEOMPLCPROPPT3(plc.GetOrigin()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetOriginR() = value.GetPoint3d()));
 
-    params.RegisterPropertyAccessors(layout, GEOM_Box_Low, 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_BBoxLow(), 
         GETGEOMPLCPROPPT3(plc.GetElementBox().low),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().low = value.GetPoint3d()));
 
-    params.RegisterPropertyAccessors(layout, GEOM_Box_High, 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_BBoxHigh(), 
         GETGEOMPLCPROPPT3(plc.GetElementBox().high),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point3d, plc.GetElementBoxR().high = value.GetPoint3d()));
 
@@ -2634,7 +2684,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
 #undef GETGEOMPLCPROPPT3
 #undef SETGEOMPLCPROP
 
-    params.RegisterPropertyAccessors(layout, GEOM_Category, 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_Category(), 
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement3d& el = (GeometricElement3d&)elIn;
@@ -2652,11 +2702,11 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetCategoryId(value.GetNavigationInfo().GetId<DgnCategoryId>());
             });
 
-    params.RegisterPropertyAccessors(layout, GEOM_TypeDefinition, 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_TypeDefinition(), 
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement3dCR el = static_cast<GeometricElement3dCR>(elIn);
-            value.SetNavigationInfo(el.m_typeDefinitionId, el.m_typeDefinitionRelClassId);
+            value.SetNavigationInfo(el.m_typeDefinition.m_id, el.m_typeDefinition.m_relClassId);
             return DgnDbStatus::Success;
             },
         [](DgnElementR elIn, ECValueCR value)
@@ -2670,7 +2720,7 @@ void dgn_ElementHandler::Geometric3d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetTypeDefinition(value.GetNavigationInfo().GetId<DgnElementId>(), value.GetNavigationInfo().GetRelationshipClassId());
             });
 
-    params.RegisterPropertyAccessors(layout, GEOM3_InSpatialIndex, 
+    params.RegisterPropertyAccessors(layout, GeometricElement3d::prop_InSpatialIndex(), 
         [](ECValueR value, DgnElementCR el)
             {
             value.SetBoolean(!el.GetModel()->IsTemplate());
@@ -2718,23 +2768,23 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetPlacement(plc);                                                 \
             }
 
-    params.RegisterPropertyAccessors(layout, GEOM_Origin, 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_Origin(), 
         GETGEOMPLCPROPPT2(plc.GetOrigin()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetOriginR() = value.GetPoint2d()));
 
-    params.RegisterPropertyAccessors(layout, GEOM2_Rotation, 
+    params.RegisterPropertyAccessors(layout, GeometricElement2d::prop_Rotation(), 
         GETGEOMPLCPROPDBL(plc.GetAngle().Degrees()),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Double, plc.GetAngleR() = AngleInDegrees::FromDegrees(value.GetDouble())));
 
-    params.RegisterPropertyAccessors(layout, GEOM_Box_Low, 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_BBoxLow(), 
         GETGEOMPLCPROPPT2(plc.GetElementBox().low),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().low = value.GetPoint2d()));
 
-    params.RegisterPropertyAccessors(layout, GEOM_Box_High, 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_BBoxHigh(), 
         GETGEOMPLCPROPPT2(plc.GetElementBox().high),
         SETGEOMPLCPROP(ECN::PRIMITIVETYPE_Point2d, plc.GetElementBoxR().high = value.GetPoint2d()));
 
-    params.RegisterPropertyAccessors(layout, GEOM_Category, 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_Category(), 
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement2d& el = (GeometricElement2d&)elIn;
@@ -2752,11 +2802,11 @@ void dgn_ElementHandler::Geometric2d::_RegisterPropertyAccessors(ECSqlClassInfo&
             return el.SetCategoryId(value.GetNavigationInfo().GetId<DgnCategoryId>());
             });
 
-    params.RegisterPropertyAccessors(layout, GEOM_TypeDefinition, 
+    params.RegisterPropertyAccessors(layout, GeometricElement::prop_TypeDefinition(), 
         [](ECValueR value, DgnElementCR elIn)
             {
             GeometricElement2dCR el = static_cast<GeometricElement2dCR>(elIn);
-            value.SetNavigationInfo(el.m_typeDefinitionId, el.m_typeDefinitionRelClassId);
+            value.SetNavigationInfo(el.m_typeDefinition.m_id, el.m_typeDefinition.m_relClassId);
             return DgnDbStatus::Success;
             },
         [](DgnElementR elIn, ECValueCR value)
@@ -2954,8 +3004,8 @@ DgnDbStatus GeometricElement3d::_SetPlacement(Placement3dCR placement)
 DgnDbStatus GeometricElement2d::SetTypeDefinition(DgnElementId typeDefinitionId, DgnClassId typeDefinitionRelClassId)
     {
     // WIP: Validation
-    m_typeDefinitionId = typeDefinitionId;
-    m_typeDefinitionRelClassId = typeDefinitionId.IsValid() ? typeDefinitionRelClassId : DgnClassId();
+    m_typeDefinition.m_id = typeDefinitionId;
+    m_typeDefinition.m_relClassId = typeDefinitionId.IsValid() ? typeDefinitionRelClassId : DgnClassId();
     return DgnDbStatus::Success;
     }
 
@@ -2965,8 +3015,8 @@ DgnDbStatus GeometricElement2d::SetTypeDefinition(DgnElementId typeDefinitionId,
 DgnDbStatus GeometricElement3d::SetTypeDefinition(DgnElementId typeDefinitionId, DgnClassId typeDefinitionRelClassId)
     {
     // WIP: Validation
-    m_typeDefinitionId = typeDefinitionId;
-    m_typeDefinitionRelClassId = typeDefinitionId.IsValid() ? typeDefinitionRelClassId : DgnClassId();
+    m_typeDefinition.m_id = typeDefinitionId;
+    m_typeDefinition.m_relClassId = typeDefinitionId.IsValid() ? typeDefinitionRelClassId : DgnClassId();
     return DgnDbStatus::Success;
     }
 
@@ -3491,10 +3541,10 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_categoryId = stmt.GetValueNavigation<DgnCategoryId>(params.GetSelectIndex(GEOM_Category));
+    m_categoryId = stmt.GetValueNavigation<DgnCategoryId>(params.GetSelectIndex(prop_Category()));
 
     // Read GeomStream
-    auto geomIndex = params.GetSelectIndex(GEOM_GeometryStream);
+    auto geomIndex = params.GetSelectIndex(prop_GeometryStream());
     if (stmt.IsValueNull(geomIndex))
         return DgnDbStatus::Success;    // no geometry...
 
@@ -3509,14 +3559,14 @@ DgnDbStatus GeometricElement::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClass
 void GeometricElement::_ToJson(JsonValueR val, JsonValueCR opts) const 
     {
     T_Super::_ToJson(val, opts);
-    val[json_category()] = m_categoryId.ToString(BeInt64Id::UseHex::Yes);
-
+    val[json_category()] = m_categoryId.ToHexStr();
+    
     if (opts["noGeometry"].asBool(false))
         return;
 
     // load geometry
+    val[json_geom()] = m_geom.ToBase64();
     }
-
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   12/15
@@ -3526,8 +3576,8 @@ void GeometricElement::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInser
     T_Super::_BindWriteParams(stmt, forInsert);
 
     //WIP_NAV_PROP: Why does GeometricElement have m_categoryid if the categoryid is only defined on GeometricElement3d/2d?
-    stmt.BindNavigationValue(stmt.GetParameterIndex(GEOM_Category), m_categoryId);
-    m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, GEOM_GeometryStream);
+    stmt.BindNavigationValue(stmt.GetParameterIndex(prop_Category()), m_categoryId);
+    m_geom.BindGeometryStream(m_multiChunkGeomStream, GetDgnDb().Elements().GetSnappyTo(), stmt, prop_GeometryStream());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3577,7 +3627,7 @@ DgnDbStatus GeometryStream::BindGeometryStream(bool& multiChunkGeometryStream, S
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool GeometricElement::_EqualProperty(ECN::ECPropertyValueCR expected, DgnElementCR other) const
     {
-    if (!expected.GetValueAccessor().GetECProperty()->GetName().Equals(GEOM_GeometryStream))
+    if (!expected.GetValueAccessor().GetECProperty()->GetName().Equals(prop_GeometryStream()))
         {
         return T_Super::_EqualProperty(expected, other);
         }
@@ -3701,18 +3751,18 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_typeDefinitionId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(GEOM_TypeDefinition), &m_typeDefinitionRelClassId);
+    m_typeDefinition.m_id = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(prop_TypeDefinition()), &m_typeDefinition.m_relClassId);
     m_placement = Placement2d();
 
-    auto originIndex = params.GetSelectIndex(GEOM_Origin);
+    auto originIndex = params.GetSelectIndex(prop_Origin());
     if (stmt.IsValueNull(originIndex))
         return DgnDbStatus::Success;    // null placement
 
-    DPoint2d boxLow = stmt.GetValuePoint2d(params.GetSelectIndex(GEOM_Box_Low)),
-             boxHi  = stmt.GetValuePoint2d(params.GetSelectIndex(GEOM_Box_High));
+    DPoint2d boxLow = stmt.GetValuePoint2d(params.GetSelectIndex(prop_BBoxLow())), 
+             boxHi  = stmt.GetValuePoint2d(params.GetSelectIndex(prop_BBoxHigh()));
 
     m_placement = Placement2d(stmt.GetValuePoint2d(originIndex),
-                              AngleInDegrees::FromDegrees(stmt.GetValueDouble(params.GetSelectIndex(GEOM2_Rotation))),
+                              AngleInDegrees::FromDegrees(stmt.GetValueDouble(params.GetSelectIndex(prop_Rotation()))),
                               ElementAlignedBox2d(boxLow.x, boxLow.y, boxHi.x, boxHi.y));
 
     return DgnDbStatus::Success;
@@ -3724,7 +3774,10 @@ DgnDbStatus GeometricElement2d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 void GeometricElement2d::_ToJson(JsonValueR val, JsonValueCR opts) const 
     {
     T_Super::_ToJson(val, opts);
+    val[json_placement()] = m_placement.ToJson();
 
+    if (m_typeDefinition.IsValid())
+        val[json_typeDefinition()] = m_typeDefinition.ToJson(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3736,19 +3789,19 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
     if (DgnDbStatus::Success != status)
         return status;
 
-    m_typeDefinitionId = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(GEOM_TypeDefinition), &m_typeDefinitionRelClassId);
+    m_typeDefinition.m_id = stmt.GetValueNavigation<DgnElementId>(params.GetSelectIndex(prop_TypeDefinition()), &m_typeDefinition.m_relClassId);
     m_placement = Placement3d();
 
-    auto originIndex = params.GetSelectIndex(GEOM_Origin);
+    auto originIndex = params.GetSelectIndex(prop_Origin());
     if (stmt.IsValueNull(originIndex))
         return DgnDbStatus::Success;    // null placement
 
-    DPoint3d boxLow = stmt.GetValuePoint3d(params.GetSelectIndex(GEOM_Box_Low)),
-             boxHi  = stmt.GetValuePoint3d(params.GetSelectIndex(GEOM_Box_High));
+    DPoint3d boxLow = stmt.GetValuePoint3d(params.GetSelectIndex(prop_BBoxLow())),
+             boxHi  = stmt.GetValuePoint3d(params.GetSelectIndex(prop_BBoxHigh()));
 
-    double yaw      = stmt.GetValueDouble(params.GetSelectIndex(GEOM3_Yaw)),
-           pitch    = stmt.GetValueDouble(params.GetSelectIndex(GEOM3_Pitch)),
-           roll     = stmt.GetValueDouble(params.GetSelectIndex(GEOM3_Roll));
+    double yaw      = stmt.GetValueDouble(params.GetSelectIndex(prop_Yaw())),
+           pitch    = stmt.GetValueDouble(params.GetSelectIndex(prop_Pitch())),
+           roll     = stmt.GetValueDouble(params.GetSelectIndex(prop_Roll()));
 
     m_placement = Placement3d(stmt.GetValuePoint3d(originIndex),
                               YawPitchRollAngles(Angle::FromDegrees(yaw), Angle::FromDegrees(pitch), Angle::FromDegrees(roll)),
@@ -3762,6 +3815,10 @@ DgnDbStatus GeometricElement3d::_ReadSelectParams(ECSqlStatement& stmt, ECSqlCla
 void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const 
     {
     T_Super::_ToJson(val, opts);
+    val[json_placement()] = m_placement.ToJson();
+
+    if (m_typeDefinition.IsValid())
+        val[json_typeDefinition()] = m_typeDefinition.ToJson(GetDgnDb());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3770,21 +3827,21 @@ void GeometricElement3d::_ToJson(JsonValueR val, JsonValueCR opts) const
 void GeometricElement2d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     {
     T_Super::_BindWriteParams(stmt, forInsert);
-    stmt.BindNavigationValue(stmt.GetParameterIndex(GEOM_TypeDefinition), m_typeDefinitionId, m_typeDefinitionRelClassId);
+    stmt.BindNavigationValue(stmt.GetParameterIndex(prop_TypeDefinition()), m_typeDefinition.m_id, m_typeDefinition.m_relClassId);
 
     if (!m_placement.IsValid())
         {
-        stmt.BindNull(stmt.GetParameterIndex(GEOM_Origin));
-        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_Low));
-        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_High));
-        stmt.BindNull(stmt.GetParameterIndex(GEOM2_Rotation));
+        stmt.BindNull(stmt.GetParameterIndex(prop_Origin()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxLow()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxHigh()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_Rotation()));
         }
     else
         {
-        stmt.BindPoint2d(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
-        stmt.BindDouble(stmt.GetParameterIndex(GEOM2_Rotation), m_placement.GetAngle().Degrees());
-        stmt.BindPoint2d(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
-        stmt.BindPoint2d(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
+        stmt.BindPoint2d(stmt.GetParameterIndex(prop_Origin()), m_placement.GetOrigin());
+        stmt.BindDouble(stmt.GetParameterIndex(prop_Rotation()), m_placement.GetAngle().Degrees());
+        stmt.BindPoint2d(stmt.GetParameterIndex(prop_BBoxLow()), m_placement.GetElementBox().low);
+        stmt.BindPoint2d(stmt.GetParameterIndex(prop_BBoxHigh()), m_placement.GetElementBox().high);
         }
     }
 
@@ -3809,26 +3866,26 @@ void GeometricElement3d::_BindWriteParams(ECSqlStatement& stmt, ForInsert forIns
     {
     T_Super::_BindWriteParams(stmt, forInsert);
 
-    stmt.BindInt(stmt.GetParameterIndex(GEOM3_InSpatialIndex), GetModel()->IsTemplate() ? 0 : 1); // elements in a template model do not belong in the SpatialIndex
-    stmt.BindNavigationValue(stmt.GetParameterIndex(GEOM_TypeDefinition), m_typeDefinitionId, m_typeDefinitionRelClassId);
+    stmt.BindInt(stmt.GetParameterIndex(prop_InSpatialIndex()), GetModel()->IsTemplate() ? 0 : 1); // elements in a template model do not belong in the SpatialIndex
+    stmt.BindNavigationValue(stmt.GetParameterIndex(prop_TypeDefinition()), m_typeDefinition.m_id, m_typeDefinition.m_relClassId);
 
     if (!m_placement.IsValid())
         {
-        stmt.BindNull(stmt.GetParameterIndex(GEOM_Origin));
-        stmt.BindNull(stmt.GetParameterIndex(GEOM3_Yaw));
-        stmt.BindNull(stmt.GetParameterIndex(GEOM3_Pitch));
-        stmt.BindNull(stmt.GetParameterIndex(GEOM3_Roll));
-        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_Low));
-        stmt.BindNull(stmt.GetParameterIndex(GEOM_Box_High));
+        stmt.BindNull(stmt.GetParameterIndex(prop_Origin()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_Yaw()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_Pitch()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_Roll()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxLow()));
+        stmt.BindNull(stmt.GetParameterIndex(prop_BBoxHigh()));
         }
     else
         {
-        stmt.BindPoint3d(stmt.GetParameterIndex(GEOM_Origin), m_placement.GetOrigin());
-        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Yaw), m_placement.GetAngles().GetYaw().Degrees());
-        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Pitch), m_placement.GetAngles().GetPitch().Degrees());
-        stmt.BindDouble(stmt.GetParameterIndex(GEOM3_Roll), m_placement.GetAngles().GetRoll().Degrees());
-        stmt.BindPoint3d(stmt.GetParameterIndex(GEOM_Box_Low), m_placement.GetElementBox().low);
-        stmt.BindPoint3d(stmt.GetParameterIndex(GEOM_Box_High), m_placement.GetElementBox().high);
+        stmt.BindPoint3d(stmt.GetParameterIndex(prop_Origin()), m_placement.GetOrigin());
+        stmt.BindDouble(stmt.GetParameterIndex(prop_Yaw()), m_placement.GetAngles().GetYaw().Degrees());
+        stmt.BindDouble(stmt.GetParameterIndex(prop_Pitch()), m_placement.GetAngles().GetPitch().Degrees());
+        stmt.BindDouble(stmt.GetParameterIndex(prop_Roll()), m_placement.GetAngles().GetRoll().Degrees());
+        stmt.BindPoint3d(stmt.GetParameterIndex(prop_BBoxLow()), m_placement.GetElementBox().low);
+        stmt.BindPoint3d(stmt.GetParameterIndex(prop_BBoxHigh()), m_placement.GetElementBox().high);
         }
     }
 
@@ -3864,7 +3921,7 @@ DgnDbStatus GeometricElement::WriteGeomStream() const
 
     m_multiChunkGeomStream = false;
     DgnDbR db = GetDgnDb();
-    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), _GetGeometryColumnClassName(), GEOM_GeometryStream);
+    return GeometryStream::WriteGeometryStream(db.Elements().GetSnappyTo(), db, GetElementId(), _GetGeometryColumnClassName(), prop_GeometryStream());
     }
 
 /*---------------------------------------------------------------------------------**//**

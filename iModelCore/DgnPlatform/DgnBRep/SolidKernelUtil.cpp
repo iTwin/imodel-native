@@ -863,6 +863,25 @@ bool BRepUtil::IsDisjointBody(IBRepEntityCR entity)
 #endif
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isPlanarSurfaceClass(PK_CLASS_t surfaceClass)
+    {
+    switch (surfaceClass)
+        {
+        case PK_CLASS_plane:
+        case PK_CLASS_circle:
+        case PK_CLASS_ellipse:
+            return true;
+
+        default:
+            return false;
+        }
+    }
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -894,7 +913,7 @@ bool BRepUtil::IsSingleFacePlanarSheetBody(IBRepEntityCR entity, bool& hasHoles)
     PK_LOGICAL_t orientation;
 
     if (SUCCESS != PK_FACE_ask_oriented_surf(faceTag, &surfaceTag, &orientation) ||
-        SUCCESS != PK_ENTITY_ask_class(surfaceTag, &surfaceClass) || surfaceClass != PK_CLASS_plane ||
+        SUCCESS != PK_ENTITY_ask_class(surfaceTag, &surfaceClass) || !isPlanarSurfaceClass(surfaceClass) ||
         SUCCESS != PK_FACE_ask_loops(faceTag, &nLoops, &loops) || nLoops < 1)
         return false;
 
@@ -1323,6 +1342,42 @@ BentleyStatus BRepUtil::TopologyID::FindNodeIdRange(IBRepEntityCR entity, uint32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::AddNodeIdAttribute(ISubEntityR subEntity, FaceId faceId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Face != subEntity.GetSubEntityType())
+        return ERROR;
+
+    PK_FACE_t   faceTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    return PSolidTopoId::AttachEntityId(faceTag, faceId.nodeId, faceId.entityId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::DeleteNodeIdAttribute(ISubEntityR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Face != subEntity.GetSubEntityType())
+        return ERROR;
+
+    PK_FACE_t   faceTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    PSolidTopoId::DeleteEntityId(faceTag);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::TopologyID::IdFromFace(FaceId& faceId, ISubEntityCR subEntity, bool useHighestId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
@@ -1454,6 +1509,33 @@ CurveVectorPtr BRepUtil::Create::BodyToCurveVector(IBRepEntityCR entity)
         default:
             return nullptr;
         }
+#else
+    return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr BRepUtil::Create::PlanarFaceToCurveVector(ISubEntityCR face)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Face != face.GetSubEntityType())
+        return nullptr;
+
+    PK_ENTITY_t faceTag = PSolidSubEntity::GetSubEntityTag(face);
+
+    if (PK_ENTITY_null == faceTag)
+        return nullptr;
+
+    CurveVectorPtr curves = PSolidGeom::PlanarFaceToCurveVector(faceTag);
+
+    if (!curves.IsValid())
+        return nullptr;
+
+    curves->TransformInPlace(PSolidSubEntity::GetSubEntityTransform(face));
+
+    return curves;
 #else
     return nullptr;
 #endif
@@ -3341,7 +3423,7 @@ static BentleyStatus getBodyCurves(bvector<PK_CURVE_t>& curves, bvector<PK_INTER
         {
         PK_CURVE_t      curveTag;
 
-        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag))
+        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag)) // NOTE: Shouldn't need to check null curve/fin for current use cases (simple wire/sheets from CurveVectors)...
             continue;
 
         PK_INTERVAL_t   interval;
@@ -4375,14 +4457,34 @@ BentleyStatus wireBodyFromOffsetEdgesOnPlanarFace(bvector<PK_BODY_t>& wireBodies
         if (0 == edgeTag)
             continue;
 
-        PK_CURVE_t curveTag;
+        PK_CURVE_t      curveTag = PK_ENTITY_null;
+        PK_INTERVAL_t   interval;
 
-        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag))
-            continue;
+        if (SUCCESS == PK_EDGE_ask_curve(edgeTag, &curveTag) && PK_ENTITY_null != curveTag)
+            {
+            if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
+                curveTag = PK_ENTITY_null;
+            }
+        else
+            {
+            bvector<PK_FIN_t> edgeFins;
 
-        PK_INTERVAL_t interval;
+            PSolidTopo::GetEdgeFins(edgeFins, edgeTag);
 
-        if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
+            for (PK_FIN_t edgeFin : edgeFins)
+                {
+                PK_FACE_t finFace;
+
+                if (SUCCESS != PK_FIN_ask_face(edgeFin, &finFace) || finFace != faceTag)
+                    continue;
+
+                if (SUCCESS != PK_FIN_ask_curve(edgeFin, &curveTag) || SUCCESS != PK_FIN_find_interval(edgeFin, &interval))
+                    curveTag = PK_ENTITY_null;
+                break;
+                }
+            }
+
+        if (PK_ENTITY_null == curveTag)
             continue;
 
         if (curves.empty()) // Determine sign of offset distance...

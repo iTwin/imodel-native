@@ -63,6 +63,22 @@ DgnDbStatus DgnTexture::_ReadSelectParams(BeSQLite::EC::ECSqlStatement& stmt, EC
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnTexture::_ToJson(JsonValueR out, JsonValueCR opts) const 
+    {
+    T_Super::_ToJson(out, opts);
+    if (!m_descr.empty())
+        out[json_description()] = m_descr;
+
+    out[json_data()] = m_data.GetByteStream().ToBase64();
+    out[json_format()] = (int) m_data.GetFormat();
+    out[json_width()] = m_width;
+    out[json_height()] = m_height;
+    out[json_flags()] = (int) m_flags;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnTexture::_CopyFrom(DgnElementCR src)

@@ -43,6 +43,8 @@ void ComparisonSymbologyOverrides::InitializeDefaults()
     m_targetRevisionOverrides.Insert(DbOpcode::Delete, deleted);
 
     m_untouchedOverride.SetFillColor(ColorDef::MediumGrey());
+    m_untouchedOverride.SetFillTransparency(200);
+    m_untouchedOverride.SetLineTransparency(200);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -104,25 +106,11 @@ void ComparisonSymbologyOverrides::GetUntouchedOverrides(Render::OvrGraphicParam
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr  RevisionComparisonViewController::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
     {
-    if (!WantShowCurrent() && nullptr != context.GetIPickGeom())
-        {
-        DgnElementCP element = source.ToElement();
+    // Avoid letting user pick elements that are not being compared
+    if (nullptr != context.GetIPickGeom() && !m_comparisonData->ContainsElement(source.ToElement()))
+        return nullptr;
 
-        // Avoid letting user pick elements that are not being compared
-        if (!m_comparisonData->ContainsElement(element))
-            return nullptr;
-
-        // If we are only showing target version on a view, avoid modified persistent elements to be highlighted by mouse
-        if (m_comparisonData->ContainsElement(element) && !(m_comparisonData->GetPersistentState(element->GetElementId())).IsModified())
-            return nullptr;
-
-        // Let user hover/select transient elements
-        TransientState state = m_comparisonData->GetTransientState(element->GetElementId());
-        if (WantShowTarget() && state.IsValid() && nullptr != state.m_element->ToGeometrySource())
-            return state.m_element->ToGeometrySource()->Stroke(context, pixelSize);
-        }
-
-    return source.Stroke(context, pixelSize);
+    return T_Super::_StrokeGeometry(context, source, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
