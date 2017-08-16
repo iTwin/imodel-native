@@ -189,7 +189,7 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     if (DgnDbStatus::Success == status)
         {
         m_data.m_descr = stmt.GetValueText(params.GetSelectIndex(prop_Description()));
-        m_data.m_appearance.FromJson(stmt.GetValueText(params.GetSelectIndex(prop_Properties())));
+        m_data.m_appearance.FromJson(Json::Value::From(stmt.GetValueText(params.GetSelectIndex(prop_Properties()))));
         }
 
     return status;

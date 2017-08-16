@@ -547,9 +547,9 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
     subappearence.SetDisplayPriority(2);
     ASSERT_EQ(DgnDbStatus::Success, editsubcategory->GetPropertyIndex(scpropindex, "Properties"));
     ASSERT_EQ(DgnDbStatus::BadArg, editsubcategory->SetPropertyValue(scpropindex, ECN::ECValue(1)));
-    ASSERT_EQ(DgnDbStatus::Success, editsubcategory->SetPropertyValue(scpropindex, ECN::ECValue(subappearence.ToJson().c_str())));
+    ASSERT_EQ(DgnDbStatus::Success, editsubcategory->SetPropertyValue(scpropindex, ECN::ECValue(subappearence.ToJson().ToString().c_str())));
     ASSERT_EQ(DgnDbStatus::Success, editsubcategory->GetPropertyValue(checkValue, scpropindex));
-    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(subappearence.ToJson().c_str())));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(subappearence.ToJson().ToString().c_str())));
     DgnDbStatus  stat;
     editcategory->Update(&stat);
     ASSERT_EQ(stat,DgnDbStatus::Success);
@@ -573,7 +573,7 @@ TEST_F(GetSetCustomHandledProprty, CategoryProperties)
 
     //Verify Subcategory description is readonly
     ASSERT_EQ(DgnDbStatus::Success, subcategory->GetPropertyValue(checkValue, scpropindex));
-    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(subappearence.ToJson().c_str())));
+    ASSERT_TRUE(checkValue.Equals(ECN::ECValue(subappearence.ToJson().ToString().c_str())));
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Ridha.Malik                      02/17
