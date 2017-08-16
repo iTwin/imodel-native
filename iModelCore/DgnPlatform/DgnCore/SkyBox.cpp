@@ -334,6 +334,7 @@ void SpatialViewController::DrawSkyBox(RenderContextR context)
     flags.SetShowCameraLights(false);
     flags.SetShowSolarLight(false);
     flags.SetMonochrome(false);
+    flags.SetShowClipVolume(false);
 
     GraphicBranch branch;
     branch.Add(*skyGraphic->Finish()); // put the mesh into the branch
