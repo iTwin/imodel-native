@@ -231,6 +231,19 @@ BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, Json
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelJs::InsertElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, JsonValueCR props)
+    {
+    DgnElement::CreateParams params(dgndb, props);
+    if (!params.m_classId.IsValid())
+        return ERROR;
+
+    return BSISUCCESS;
+    }
+
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus IModelJs::GetModel(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR modelJson, DgnDbR dgndb, Json::Value const& inOpts)

@@ -140,24 +140,21 @@ Utf8String IModelJs::GetLastEcdbIssue()
     return s_lastEcdbIssue;
     }
 
+static bmap<BeFileName, DgnDbPtr> s_dbs;
+
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  05/17
 //---------------------------------------------------------------------------------------
 DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, Utf8String& errmsg, BeFileNameCR fn, DgnDb::OpenMode mode)
     {
-    static bmap<BeFileName, DgnDbPtr>* s_dbs;
-    
     // *** 
     // ***  TBD: sort out readonly vs. readwrite 
     // ***
 
     BeSystemMutexHolder threadSafeInScope;
 
-    if (nullptr == s_dbs)
-        s_dbs = new bmap<BeFileName, DgnDbPtr>();
-
-    auto found = s_dbs->find(fn);
-    if (found != s_dbs->end())
+    auto found = s_dbs.find(fn);
+    if (found != s_dbs.end())
         return found->second;
 
     // *** TBD: keep some kind of last-used-time for each db
@@ -206,9 +203,10 @@ DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, Utf8String& errmsg, BeFileNameCR
 
     db->AddIssueListener(s_listener); 
 
-    s_dbs->insert(make_bpair(fn, db));
+    s_dbs.insert(make_bpair(fn, db));
     return db;
     }
+
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
@@ -319,7 +317,6 @@ void IModelJs::GetECValuesCollectionAsJson(Json::Value& json, ECN::ECValuesColle
             ECUtils::ConvertECValueToJson(pvalue, prop.GetValue());
         }
     }
-
 
 //========================================================================================
 // @bsiclass                                                 Ramanujam.Raman      08/2017
@@ -734,7 +731,6 @@ ECClassCP IModelJs::GetClassFromInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonVa
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-// static
 ECInstanceId IModelJs::GetInstanceIdFromInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR jsonInstance)
     {
     if (!jsonInstance.isMember("$ECInstanceId"))
@@ -766,7 +762,6 @@ ECInstanceId IModelJs::GetInstanceIdFromInstance(Utf8StringR errmsg, ECDbCR ecdb
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-// static
 DbResult IModelJs::InsertInstance(Utf8StringR errmsg, ECInstanceId& insertedId, ECDbCR ecdb, JsonValueCR jsonInstance)
     {
     ECClassCP ecClass = GetClassFromInstance(errmsg, ecdb, jsonInstance);
@@ -790,7 +785,6 @@ DbResult IModelJs::InsertInstance(Utf8StringR errmsg, ECInstanceId& insertedId, 
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-// static
 DbResult IModelJs::UpdateInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR jsonInstance)
     {
     ECClassCP ecClass = GetClassFromInstance(errmsg, ecdb, jsonInstance);
@@ -815,7 +809,6 @@ DbResult IModelJs::UpdateInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR j
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-// static
 DbResult IModelJs::ReadInstance(Utf8StringR errmsg, JsonValueR jsonInstance, ECDbCR ecdb, JsonValueCR instanceKey)
     {
     ECClassCP ecClass = GetClassFromInstance(errmsg, ecdb, instanceKey);
@@ -840,7 +833,6 @@ DbResult IModelJs::ReadInstance(Utf8StringR errmsg, JsonValueR jsonInstance, ECD
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-// static
 DbResult IModelJs::DeleteInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR instanceKey)
     {
     ECClassCP ecClass = GetClassFromInstance(errmsg, ecdb, instanceKey);
@@ -865,7 +857,6 @@ DbResult IModelJs::DeleteInstance(Utf8StringR errmsg, ECDbCR ecdb, JsonValueCR i
 //---------------------------------------------------------------------------------------
 // @bsimethod                               Ramanujam.Raman                 07/17
 //---------------------------------------------------------------------------------------
-// static
 DbResult IModelJs::ContainsInstance(Utf8StringR errmsg, bool& containsInstance, JsECDbR ecdb, JsonValueCR instanceKey)
     {
     BeSqliteDbMutexHolder serializeAccess(ecdb); // hold mutex, so that I have a chance to get last ECDb error message
