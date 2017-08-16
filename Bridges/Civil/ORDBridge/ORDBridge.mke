@@ -93,7 +93,6 @@ LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DgnView.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)VisEdgesLib.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)DwgDgnIO.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acpal.lib
-LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)acdb21.lib
 LINKER_LIBRARIES_DELAYLOADED + $(DgnPlatformV8LibDir)BentleyGeomSerialization.lib
 LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.Cif.SDK.lib
 LINKER_LIBRARIES_DELAYLOADED + $(CifLibDir)Bentley.Cif.DGN.lib
