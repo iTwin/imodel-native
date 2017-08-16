@@ -28,7 +28,6 @@ private:
     Utf8String m_host;
     Utf8String m_projectNr;
     UrlProvider::Environment m_environment;
-    bool m_ims;
     void ReadSettings(BeFileNameCR settingsFile);
 public:
     static IntegrationTestSettings& Instance();
@@ -41,7 +40,6 @@ public:
     Utf8String GetProjectNr() const;
     UrlProvider::Environment GetEnvironment() const;
     ClientInfoPtr GetClientInfo() const;
-    bool IsIms() const;
     };
 
 Utf8String GenerateErrorMessage(Error const& e);

@@ -53,42 +53,6 @@ struct ClientTests : public IntegrationTestsBase
         }
     };
 
-TEST_F(ClientTests, SuccessfulCreateBasicUser)
-    {
-    if (IntegrationTestSettings::Instance().IsIms())
-        return;
-    
-    Utf8String userName;
-    BeSQLite::BeGuid guid;
-    guid.Create();
-    userName.Sprintf("User%s", guid.ToString().c_str());
-    Credentials credentials(userName, "password");
-    auto result = m_client->CreateBasicUser(credentials)->GetResult();
-    EXPECT_SUCCESS(result);
-
-    //Create non-admin user for a second time
-    result = m_client->CreateBasicUser(credentials)->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-
-    auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), credentials);
-
-    //Try to create new user by using non-admin user
-    Credentials credentials2("additionalUser", "additionalPass");
-    result = nonAdminClient->CreateBasicUser(credentials2)->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-
-    //Try to remove user using non-admin user
-    result = nonAdminClient->RemoveBasicUser(credentials)->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-
-    result = m_client->RemoveBasicUser(credentials)->GetResult();
-    EXPECT_SUCCESS(result);
-
-    //Try to remove non-admin user for asecond time by using admin user
-    result = m_client->RemoveBasicUser(credentials)->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-    }
-
 TEST_F(ClientTests, SuccessfulCreateiModel)
     {
     auto db = CreateTestDb();
@@ -425,4 +389,11 @@ TEST_F(ClientTests, CancelDownloadChangeSets)
 
     CheckNoProgress();
     DeleteiModel(*m_client, *imodelInfo);
+    }
+
+
+TEST_F(ClientTests, UnauthorizedSignIn)
+    {
+    auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetWrongPassword());
+    EXPECT_TRUE(badClient.IsNull());
     }

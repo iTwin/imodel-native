@@ -69,23 +69,14 @@ void IntegrationTestSettings::ReadSettings(BeFileNameCR settingsFile)
         }
 
     m_host = settings["Host"].asString();
-    m_ims = settings["Ims"].asBool();
-    if (m_ims)
-        {
-        m_projectNr = settings["ProjectNr"].asString();
-        Utf8String environment = settings["Environment"].asString();
-        if ("DEV" == environment)
-            m_environment = UrlProvider::Environment::Dev;
-        else if ("QA" == environment)
-            m_environment = UrlProvider::Environment::Qa;
-        else if ("PROD" == environment)
-            m_environment = UrlProvider::Environment::Release;
-        }
-    }
-
-bool IntegrationTestSettings::IsIms() const
-    {
-    return m_ims;
+    m_projectNr = settings["ProjectNr"].asString();
+    Utf8String environment = settings["Environment"].asString();
+    if ("DEV" == environment)
+        m_environment = UrlProvider::Environment::Dev;
+    else if ("QA" == environment)
+        m_environment = UrlProvider::Environment::Qa;
+    else if ("PROD" == environment)
+        m_environment = UrlProvider::Environment::Release;
     }
 
 CredentialsCR IntegrationTestSettings::GetValidAdminCredentials() const

@@ -69,7 +69,6 @@ struct iModelManagerTests: public IntegrationTestsBase
 
     Utf8String GetNonAdminUserId()
         {
-        IntegrationTestsBase::CreateNonAdminUser();
         auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
         auto briefcase2 = IntegrationTestsBase::AcquireBriefcase(*nonAdminClient, *m_imodel, true);
         auto connection = briefcase2->GetiModelConnectionPtr();
@@ -663,7 +662,6 @@ TEST_F(iModelManagerTests, EmptyFileReplaceOtherUser)
     auto briefcase = IntegrationTestsBase::AcquireBriefcase(*m_client, *imodelInfo, true);
 
     // Create new user
-    IntegrationTestsBase::CreateNonAdminUser();
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
     auto briefcase2 = IntegrationTestsBase::AcquireBriefcase(*nonAdminClient, *imodelInfo, true);
     DgnDbR dbnDb2 = briefcase2->GetDgnDb();
@@ -741,7 +739,6 @@ TEST_F(iModelManagerTests, EmptyFileReplaceOtherUser)
 
     m_pHost->SetRepositoryAdmin(m_client->GetiModelAdmin());
 
-    IntegrationTestsBase::RemoveNonAdminUser();
     DeleteiModel(*m_client, *imodelInfo);
     }
 
@@ -1646,7 +1643,6 @@ TEST_F(iModelManagerTests, QueryInformationAboutAllAvailableBriefcases)
     EXPECT_SUCCESS(result);
     EXPECT_EQ(0, result.GetValue().size());
 
-    IntegrationTestsBase::CreateNonAdminUser();
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
     //Acquire three briefcases
@@ -1658,8 +1654,6 @@ TEST_F(iModelManagerTests, QueryInformationAboutAllAvailableBriefcases)
     result = imodelConnection->QueryAllBriefcasesInfo()->GetResult();
     EXPECT_SUCCESS(result);
     EXPECT_EQ(3, result.GetValue().size());
-
-    IntegrationTestsBase::RemoveNonAdminUser();
     }
 //---------------------------------------------------------------------------------------
 //@bsimethod                                    julius.cepukenas                 08/2016
@@ -1669,7 +1663,6 @@ TEST_F(iModelManagerTests, QueryInformationAboutASubSetOfAvailableBriefcases)
     //Setup connection
     auto imodelConnection = ConnectToiModel(*m_client, m_imodel);
 
-    IntegrationTestsBase::CreateNonAdminUser();
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
     //Acquire three briefcases
@@ -1690,8 +1683,6 @@ TEST_F(iModelManagerTests, QueryInformationAboutASubSetOfAvailableBriefcases)
     result = imodelConnection->QueryBriefcasesInfo(queryBriefcases)->GetResult();
     EXPECT_SUCCESS(result);
     EXPECT_EQ(2, result.GetValue().size());
-
-    IntegrationTestsBase::RemoveNonAdminUser();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1834,7 +1825,6 @@ TEST_F(iModelManagerTests, PushAndRelinquishCodesLocks)
 //---------------------------------------------------------------------------------------
 TEST_F(iModelManagerTests, RelinquishOtherUserCodes)
     {
-    IntegrationTestsBase::CreateNonAdminUser();
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
     // Prapare imodel and acquire briefcases.
@@ -1931,8 +1921,6 @@ TEST_F(iModelManagerTests, RelinquishOtherUserCodes)
     ExpectCodesCount(*briefcase2, 0);
     ExpectCodeState(CreateCodeUsed(modelCode1, changeSet2), imodelManager1);
     ExpectCodeState(CreateCodeUsed(modelCode4, changeSet1), imodelManager1);
-
-    IntegrationTestsBase::RemoveNonAdminUser();
     }
 
 //---------------------------------------------------------------------------------------
@@ -1940,7 +1928,6 @@ TEST_F(iModelManagerTests, RelinquishOtherUserCodes)
 //---------------------------------------------------------------------------------------
 TEST_F(iModelManagerTests, RelinquishOtherUserLocks)
     {
-    IntegrationTestsBase::CreateNonAdminUser();
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
     // Prapare imodel and acquire briefcases.
@@ -2010,8 +1997,6 @@ TEST_F(iModelManagerTests, RelinquishOtherUserLocks)
 
     ExpectLocksCountById (*briefcase1, 2, false, LockableId (*model3), LockableId (model1->GetDgnDb ()));
     ExpectLocksCountById (*briefcase1, 4, false, LockableId (*model1), LockableId (*model2), LockableId (model1->GetDgnDb ()));
-
-    IntegrationTestsBase::RemoveNonAdminUser();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2019,7 +2004,6 @@ TEST_F(iModelManagerTests, RelinquishOtherUserLocks)
 //---------------------------------------------------------------------------------------
 TEST_F(iModelManagerTests, RelinquishOtherUserCodesLocks)
     {
-    IntegrationTestsBase::CreateNonAdminUser();
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
     // Prapare imodel and acquire briefcases.
@@ -2134,8 +2118,6 @@ TEST_F(iModelManagerTests, RelinquishOtherUserCodesLocks)
     ExpectNoCodeWithState(CreateCodeDiscarded(modelElem1->GetCode(), changeSet2), imodelManager2);
     ExpectCodeState(CreateCodeReserved(modelElem3->GetCode(), db2), imodelManager2);
     ExpectLocksCount(*briefcase2, 3);
-
-    IntegrationTestsBase::RemoveNonAdminUser();
     }
 
 //---------------------------------------------------------------------------------------
@@ -2613,7 +2595,6 @@ TEST_F(iModelManagerTests, VersionsTest)
     //set up
     auto versionManager = m_connection->GetVersionsManager();
 
-    IntegrationTestsBase::CreateNonAdminUser();
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
     auto nonAdminConnection = ConnectToiModel(*nonAdminClient, m_imodel);
     auto nonAdminVersionManager = nonAdminConnection->GetVersionsManager();
