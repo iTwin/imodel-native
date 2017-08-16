@@ -880,8 +880,8 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFi
     Json::Value json;
     briefcaseResult.GetValue().GetJson(json);
     JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-    BriefcaseInfoPtr briefcaseInfo = BriefcaseInfo::Parse(instance);
-    FileInfoPtr fileInfo = FileInfo::Parse(instance);
+    BriefcaseInfoPtr briefcaseInfo = BriefcaseInfo::ParseRapidJson(ToRapidJson(instance[ServerSchema::Properties]));
+    FileInfoPtr fileInfo = FileInfo::Parse(ToRapidJson(instance[ServerSchema::Properties]), instance[ServerSchema::InstanceId].asString());
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
 

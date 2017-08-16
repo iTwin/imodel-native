@@ -69,17 +69,6 @@ ChangeSetInfoPtr ChangeSetInfo::ParseRapidJson(RapidJsonValueCR properties)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Algirdas.Mikoliunas          01/2017
 //---------------------------------------------------------------------------------------
-ChangeSetInfoPtr ChangeSetInfo::Parse(JsonValueCR json)
-    {
-    JsonValueCR properties      = json[ServerSchema::Properties];
-    auto rapidJson = ToRapidJson(properties);
-
-    return ParseRapidJson(rapidJson);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     Algirdas.Mikoliunas          01/2017
-//---------------------------------------------------------------------------------------
 ChangeSetInfoPtr ChangeSetInfo::Parse(WSObjectsReader::Instance instance)
     {
     RapidJsonValueCR properties = instance.GetProperties();

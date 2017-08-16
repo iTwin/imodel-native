@@ -55,7 +55,7 @@ private:
     bool        m_areFileDetailsAvailable;
     InitializationState m_initialized;
     FileAccessKeyPtr m_fileAccessKey;
-    bool        m_containsFileAccessKey;
+    bool        m_containsFileAccessKey = false;
 
     FileInfo() : m_index(-1), m_fileSize(0), m_areFileDetailsAvailable(false) {}
     FileInfo(BeSQLite::BeGuid fileId) : m_fileId(fileId), m_areFileDetailsAvailable(false), m_index(-1), m_fileSize(0) {}
@@ -70,8 +70,6 @@ private:
     void SetFileAccessKey(FileAccessKeyPtr fileAccessKey) {m_containsFileAccessKey = true; m_fileAccessKey = fileAccessKey;}
 
     static FileInfoPtr Create(BeSQLite::BeGuid fileId) { return FileInfoPtr(new FileInfo(fileId)); }
-    //! DEPRECATED: Use Parsing from Instance
-    static FileInfoPtr Parse(JsonValueCR json, FileInfoCR fileInfo = FileInfo());
     static FileInfoPtr Parse(WebServices::WSObjectsReader::Instance instance, FileInfoCR fileInfo = FileInfo());
     void ToPropertiesJson(JsonValueR json) const;
     WebServices::ObjectId GetObjectId() const;
