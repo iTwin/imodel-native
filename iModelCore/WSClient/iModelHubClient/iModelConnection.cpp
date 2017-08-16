@@ -183,7 +183,7 @@ FileTaskPtr iModelConnection::CreateNewServerFile(FileInfoCR fileInfo, ICancella
             Json::Value json;
             result.GetValue().GetJson(json);
             JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            auto fileInfoPtr = FileInfo::Parse(instance, fileInfo);
+            auto fileInfoPtr = FileInfo::Parse(ToRapidJson(instance[ServerSchema::Properties]), instance[ServerSchema::InstanceId].asString(), fileInfo);
             fileInfoPtr->SetFileAccessKey(FileAccessKey::ParseFromRelated(instance));
 
             finalResult->SetSuccess(fileInfoPtr);
@@ -358,7 +358,7 @@ FilesTaskPtr iModelConnection::SeedFilesQuery(WSQuery query, ICancellationTokenP
             if (!result.IsSuccess())
                 return FilesResult::Error(result.GetError());
             bvector<FileInfoPtr> files;
-            for (auto const& instance : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+            for (auto const& instance : result.GetValue().GetInstances())
                 files.push_back(FileInfo::Parse(instance));
             return FilesResult::Success(files);
             });
@@ -950,9 +950,9 @@ BriefcasesInfoTaskPtr iModelConnection::QueryBriefcaseInfoInternal(WSQuery const
                 }
 
             bvector<BriefcaseInfoPtr> briefcases;
-            for (auto& value : result.GetValue().GetJsonValue()[ServerSchema::Instances])
+            for (auto const& instance : result.GetValue().GetInstances())
                 {
-                briefcases.push_back(BriefcaseInfo::Parse(value));
+                briefcases.push_back(BriefcaseInfo::Parse(instance));
                 }
 
             return BriefcasesInfoResult::Success(briefcases);
@@ -3301,7 +3301,7 @@ BriefcaseInfoTaskPtr iModelConnection::AcquireNewBriefcase(ICancellationTokenPtr
             Json::Value json;
             result.GetValue().GetJson(json);
             JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
-            return BriefcaseInfoResult::Success(BriefcaseInfo::Parse(instance));
+            return BriefcaseInfoResult::Success(BriefcaseInfo::ParseRapidJson(ToRapidJson(instance[ServerSchema::Properties])));
             });
         });
     }
