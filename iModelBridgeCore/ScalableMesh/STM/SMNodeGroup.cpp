@@ -839,7 +839,11 @@ void SMNodeGroup::AppendChildGroup(SMNodeGroupPtr childGroup)
     childReferenceContent["boundingVolume"] = childGroup->m_tilesetRootNode["content"]["boundingVolume"];
 
     BeFileName tilesetDir(childGroup->m_outputDirPath.c_str());
+#ifdef VANCOUVER_API
     tilesetDir.StripSeparatorAtEnd();
+#else
+    BeFileName::FixPathName(tilesetDir, tilesetDir.c_str(), false);
+#endif
     WString tilesetUrl = BeFileName::GetFileNameWithoutExtension(tilesetDir.c_str()) + L"/n_0.json";
     childReferenceContent["url"] = Utf8String(tilesetUrl.c_str());
     m_tilesetRootNode["children"].append(childReferenceNode);

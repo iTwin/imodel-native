@@ -5275,11 +5275,12 @@ template<class POINT, class EXTENT> StatusInt SMMeshIndex<POINT, EXTENT>::Publis
         }
 
     saveGroupsThread.join();
+
+    strategy->Clear();
 #else
 	assert(!"Not yet available on dgndb, missing SMNodeGroup::Create overload");
 #endif
 
-    strategy->Clear();
 
     if (m_progress != nullptr && m_progress->IsCanceled()) return SUCCESS;
 
