@@ -934,7 +934,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     //=======================================================================================
     struct GetModelWorker : WorkerBase<DgnDbStatus>
         {
-        Json::Value m_opts;         // input
+        Json::Value m_opts;       // input
         Json::Value m_modelJson;  // ouput
         
         GetModelWorker(NodeAddonDgnDb* db, Nan::Utf8String const& inOpts) : WorkerBase(db, DgnDbStatus::Success), m_opts(Json::Value::From(*inOpts, *inOpts+inOpts.length())) {}
@@ -971,6 +971,48 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         };
 
     //=======================================================================================
+    // insert a new element
+    //! @bsiclass
+    //=======================================================================================
+    struct InsertElementWorker : WorkerBase<DgnDbStatus>
+    {
+    Json::Value m_props;       // input
+    Json::Value m_out;
+    
+    InsertElementWorker(NodeAddonDgnDb* db, Nan::Utf8String const& elemProps) : WorkerBase(db, DgnDbStatus::Success), m_props(Json::Value::From(*elemProps, *elemProps+elemProps.length())) {}
+
+    static NAN_METHOD(Start)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        REQUIRE_ARGUMENT_STRING(0, props, DgnDbStatus::BadRequest, "Argument 0 must be a Json string");
+        (new InsertElementWorker(db, props))->ScheduleAndReturnPromise(info);
+        }
+
+    void Execute() override
+        {
+        if (!m_db->m_dgndb.IsValid())
+            {
+            m_status = DgnDbStatus::NotOpen;
+            m_errmsg = "DgnDb must be open";
+            SetupErrorReturn();
+            return;
+            }
+
+        if (BSISUCCESS != IModelJs::InsertElement(m_status, m_errmsg, m_out, GetDgnDb(), m_props))
+            SetupErrorReturn();
+        }
+
+    bool _GetResult(v8::Local<v8::Value>& result) override
+        {
+        Utf8String resultStr = Json::FastWriter::ToString(m_out);
+        result = Nan::New(resultStr.c_str()).ToLocalChecked();
+        return true;
+        }
+    };
+
+//=======================================================================================
     // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
     // The returned properties are be organized by EC display "category" as specified by CustomAttributes.
     // Properties are identified by DisplayLabel, not name.
@@ -1083,6 +1125,13 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     //  Destruct the native wrapper object itself
     ~NodeAddonDgnDb() {}
 
+    static NAN_METHOD(CloseDgnDb)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        db->m_dgndb = nullptr;
+        }
+    
     //  Create a native wrapper object that is linked to a new JS object
     static NAN_METHOD(New)
         {
@@ -1114,8 +1163,10 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         t->SetClassName(Nan::New("DgnDb").ToLocalChecked());
 
         Nan::SetPrototypeMethod(t, "openDgnDb", OpenDgnDbWorker::Start);
+        Nan::SetPrototypeMethod(t, "closeDgnDb", CloseDgnDb);
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
+        Nan::SetPrototypeMethod(t, "insertElement", InsertElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
@@ -1125,10 +1176,8 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
 
         s_constructor_template.Reset(t);
 
-        Nan::Set(target, Nan::New("DgnDb").ToLocalChecked(),
-                 Nan::GetFunction(t).ToLocalChecked());
+        Nan::Set(target, Nan::New("DgnDb").ToLocalChecked(), Nan::GetFunction(t).ToLocalChecked());
         }
-
 };
 
 /*---------------------------------------------------------------------------------**//**

@@ -103,8 +103,8 @@ public:
         double GetTransparency() const {return m_transparency;}
         DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
         bool IsEqual(Appearance const& other) const {return *this==other;}
-        DGNPLATFORM_EXPORT void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
-        DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
+        DGNPLATFORM_EXPORT void FromJson(JsonValueCR); //!< initialize this appearance from a previously saved json 
+        DGNPLATFORM_EXPORT Json::Value ToJson() const;   //!< convert this appearance to a json value
         void RelocateToDestinationDb(DgnImportContext&);
     };
 

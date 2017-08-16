@@ -10,6 +10,7 @@
 #include "ElementECInstanceAdapter.h"
 
 /*---------------------------------------------------------------------------------**//**
+* get the class id from a string in the form "Schema.ClassName"
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 static DgnClassId getClassId(DgnDbR db, Utf8StringCR name)
@@ -19,18 +20,6 @@ static DgnClassId getClassId(DgnDbR db, Utf8StringCR name)
         return DgnClassId();
 
     return db.Schemas().GetClassId(name.substr(0, dot), name.substr(dot+1));
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Keith.Bentley                   08/17
-+---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
-    {
-    m_classId = getClassId(db, val[DgnElement::json_classFullName()].asString());
-    m_modelId.FromJson(val[DgnElement::json_model()]);
-    m_code.FromJson(val[DgnElement::json_code()]);
-    m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());
-    m_userLabel = val[DgnElement::json_userLabel()].asString();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1224,8 +1213,14 @@ Json::Value DgnElement::RelatedElement::ToJson(DgnDbR db) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-DgnElement::RelatedElement::RelatedElement(DgnDbR db, JsonValueCR val)
+void DgnElement::RelatedElement::FromJson(DgnDbR db, JsonValueCR val)
     {
+    if (val.isNull())
+        {
+        *this = RelatedElement();
+        return;
+        }
+
     m_id.FromJson(val[json_id()]);
     if (m_id.IsValid())
         m_relClassId = getClassId(db, val[json_relClass()].asString());
@@ -1254,6 +1249,38 @@ void DgnElement::_ToJson(JsonValueR val, JsonValueCR opts) const
 
     if (!m_jsonProperties.empty())
         val[json_jsonProperties()] = m_jsonProperties;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DgnElement::_UpdateFromJson(JsonValueCR props) 
+    {
+    m_modelId.FromJson(props[DgnElement::json_model()]);
+    m_code.FromJson(props[DgnElement::json_code()]);
+    m_federationGuid.FromString(props[DgnElement::json_federationGuid()].asString().c_str());
+    m_userLabel = props[DgnElement::json_userLabel()].asString();
+    m_parent.FromJson(m_dgndb, props[json_parent()]);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+DgnElement::CreateParams::CreateParams(DgnDbR db, JsonValueCR val) : m_dgndb(db)
+    {
+    m_classId = getClassId(db, val[DgnElement::json_classFullName()].asString());
+    m_modelId.FromJson(val[DgnElement::json_model()]);
+    m_code.FromJson(val[DgnElement::json_code()]);
+    m_federationGuid.FromString(val[DgnElement::json_federationGuid()].asString().c_str());
+    m_userLabel = val[DgnElement::json_userLabel()].asString();
+
+    DgnElement::RelatedElement parent;
+    parent.FromJson(db, val[json_parent()]);
+    if (!parent.IsValid())
+        return;
+
+    m_parentId = parent.m_id;
+    m_parentRelClassId = parent.m_relClassId;
     }
 
 /*---------------------------------------------------------------------------------**//**
