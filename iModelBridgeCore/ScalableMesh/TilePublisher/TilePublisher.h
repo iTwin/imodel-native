@@ -82,7 +82,7 @@ struct  ScalableMeshTileNode : ModelTileNode
 #endif
         {
         TileMeshList        tileMeshes;
-        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false, true);
+        IScalableMeshMeshFlagsPtr flags = IScalableMeshMeshFlags::Create(true, false, m_clipID != -1);
         auto meshP = m_node->GetMeshUnderClip2(flags, m_clipID, m_isClipBoundary);
         if (!meshP.IsValid() || meshP->GetNbFaces() == 0) return tileMeshes;
         TileMeshBuilderPtr      builder;
