@@ -6,7 +6,7 @@
 |
 +--------------------------------------------------------------------------------------*/
 #include <TerrainModel\Drainage\WaterAnalysis.h>
-
+#include <TerrainModel\Core\TMTransformHelper.h>
 #include "bcdtmDrainage.h"
 
 BEGIN_BENTLEY_TERRAINMODEL_NAMESPACE
@@ -87,7 +87,7 @@ struct DtmSumpLinesPtr
 //----------------------------------------------------------------------------------------*
 // @bsistruct                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-PondAnalysis::PondAnalysis(PondAnalysisCR from, DrainageTracer& tracer) : m_tracer(tracer)
+PondAnalysis::PondAnalysis(PondAnalysisCR from, WaterAnalysis& tracer) : m_tracer(tracer)
     {
     m_type = from.m_type;
     m_needsVolume = from.m_needsVolume;
@@ -148,7 +148,7 @@ void PondAnalysis::SetCurrentIndex(int index)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-PondAnalysis::PondAnalysis(DrainageTracer& tracer, long lowPnt, double lowZ, LowPointType type, long ptNum2, long ptNum3) : m_tracer(tracer), m_lowPnt(lowPnt), m_lowZ(lowZ), m_type(type), m_pntNum2(ptNum2), m_pntNum3(ptNum3), m_pointList(tracer.GetPointList())
+PondAnalysis::PondAnalysis(WaterAnalysis& tracer, long lowPnt, double lowZ, LowPointType type, long ptNum2, long ptNum3) : m_tracer(tracer), m_lowPnt(lowPnt), m_lowZ(lowZ), m_type(type), m_pntNum2(ptNum2), m_pntNum3(ptNum3), m_pointList(tracer.GetPointList())
     {
     dtmP = m_tracer.GetDTM().GetTinHandle();
     }
@@ -156,7 +156,7 @@ PondAnalysis::PondAnalysis(DrainageTracer& tracer, long lowPnt, double lowZ, Low
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-PondAnalysisPtr PondAnalysis::Create(DrainageTracer& tracer, long lowPnt, double lowZ, LowPointType type, long ptNum2, long ptNum3)
+PondAnalysisPtr PondAnalysis::Create(WaterAnalysis& tracer, long lowPnt, double lowZ, LowPointType type, long ptNum2, long ptNum3)
     {
     return new PondAnalysis(tracer, lowPnt, lowZ, type, ptNum2, ptNum3);
     }
@@ -284,7 +284,7 @@ double PondAnalysis::GetVolumeOfTrianglesOnSide(double elevation)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-bvector<DPoint3d > PondAnalysis::GetPolygonAtElevation(double elevation, TPtrList& list)
+bvector<DPoint3d> PondAnalysis::GetPolygonAtElevation(double elevation, TPtrList& list)
     {
     bvector<DPoint3d> points;
 
@@ -352,7 +352,12 @@ bvector<bvector<DPoint3d>> PondAnalysis::GetPolygonAtElevation()
 
         auto points = GetPolygonAtElevation(elevation, list);
         if (!points.empty())
-            boundaries.push_back(points);
+            {
+            if (startInfo.m_location == ExpandingPondInfo::Location::Outer)
+                boundaries.insert(boundaries.begin(), points);
+            else
+                boundaries.push_back(points);
+            }
         }
     return boundaries;
     }
@@ -2107,6 +2112,22 @@ errexit :
     }
 
 //----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TraceStartPoint::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args)
+    {
+    loadFunction(DTMFeatureType::LowPoint, 0, 0, &m_startPoint, 1, args);
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TraceStartPoint::AddResult(WaterAnalysisResultR result) const
+    {
+    result.AddPoint(m_startPoint, WaterAnalysisResult::PointType::Start, CurrentVolume());
+    }
+
+//----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
@@ -2231,6 +2252,22 @@ void TraceStartPoint::Process(bvector<TraceFeaturePtr>& newFeatures)
     }
 
 //----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TraceInTriangle::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args)
+    {
+    loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TraceInTriangle::AddResult(WaterAnalysisResultR result) const
+    {
+    result.AddStream(m_points, CurrentVolume());
+    }
+
+//----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TraceInTriangle::Process(bvector<TraceFeaturePtr>& newFeatures)
@@ -2302,7 +2339,7 @@ void TraceInTriangle::Process(bvector<TraceFeaturePtr>& newFeatures)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-TraceOnEdge::TraceOnEdge(DrainageTracer& tracer, TraceFeature& parent, long P1, long P2, long P3, DPoint3dCR startPt, double lastAngle) : TraceFeature(tracer, &parent), pnt1(P1), pnt2(P2), pnt3(P3), m_pt(startPt), m_startPt(startPt), lastAngle(lastAngle)
+TraceOnEdge::TraceOnEdge(WaterAnalysis& tracer, TraceFeature& parent, long P1, long P2, long P3, DPoint3dCR startPt, double lastAngle) : TraceFeature(tracer, &parent), pnt1(P1), pnt2(P2), pnt3(P3), m_pt(startPt), m_startPt(startPt), lastAngle(lastAngle)
     {
     m_points.push_back(startPt);
 
@@ -2323,6 +2360,22 @@ TraceOnEdge::TraceOnEdge(DrainageTracer& tracer, TraceFeature& parent, long P1, 
             }
         }
 #endif
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TraceOnEdge::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args)
+    {
+    loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TraceOnEdge::AddResult(WaterAnalysisResultR result) const
+    {
+    result.AddStream(m_points, CurrentVolume());
     }
 
 //----------------------------------------------------------------------------------------*
@@ -2707,7 +2760,7 @@ void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
     //----------------------------------------------------------------------------------------*
     // @bsimethod                                                    Daryl.Holmwood  06/17
     // +---------------+---------------+---------------+---------------+---------------+------*
-    TraceOnPoint::TraceOnPoint(DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle, long prevPtNum) : TraceFeature(tracer, &parent), m_pt(startPoint), m_lastAngle(lastAngle), m_ptNum(startPtNum), m_prevPtNum(prevPtNum)
+    TraceOnPoint::TraceOnPoint(WaterAnalysis& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle, long prevPtNum) : TraceFeature(tracer, &parent), m_pt(startPoint), m_lastAngle(lastAngle), m_ptNum(startPtNum), m_prevPtNum(prevPtNum)
     {
     if (m_prevPtNum != -1)
         m_points.push_back(*pointAddrP(m_tracer.GetDTM().GetTinHandle(), m_prevPtNum));
@@ -2717,7 +2770,7 @@ void TraceOnEdge::Process(bvector<TraceFeaturePtr>& newFeatures)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-TraceOnPoint* TraceOnPoint::GetOrCreate(bvector<TraceFeaturePtr>& newFeatures, DrainageTracer& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle, long prevPt)
+TraceOnPoint* TraceOnPoint::GetOrCreate(bvector<TraceFeaturePtr>& newFeatures, WaterAnalysis& tracer, TraceFeature& parent, long startPtNum, DPoint3dCR startPoint, double lastAngle, long prevPt)
     {
     TraceOnPoint* existingPoint = tracer.FindExistingOnPoint(startPtNum);
 
@@ -2729,6 +2782,24 @@ TraceOnPoint* TraceOnPoint::GetOrCreate(bvector<TraceFeaturePtr>& newFeatures, D
     newFeatures.push_back(child);
     tracer.AddOnPoint(startPtNum, *child);
     return child.get();
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TraceOnPoint::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args)
+    {
+    if (m_points.size() != 1 && !m_onHullPoint)   // One point we can ignore.
+        loadFunction(DTMFeatureType::DescentTrace, 0, 0, m_points.data(), m_points.size(), args);
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TraceOnPoint::AddResult(WaterAnalysisResultR result) const
+    {
+    if (m_points.size() != 1 && !m_onHullPoint)   // One point we can ignore.
+        result.AddStream(m_points, CurrentVolume());
     }
 
 //----------------------------------------------------------------------------------------*
@@ -3001,7 +3072,7 @@ void TracePondLowPoint::GetExitInfo(bvector<PondExitInfo>& exits)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-TracePondEdge::TracePondEdge(DrainageTracer& tracer, TraceFeature& parent, long ptNum1, long ptNum2, DPoint3dCR pt) : TracePond(tracer, parent, pt, ptNum1), m_ptNum1(ptNum1), m_ptNum2(ptNum2)
+TracePondEdge::TracePondEdge(WaterAnalysis& tracer, TraceFeature& parent, long ptNum1, long ptNum2, DPoint3dCR pt) : TracePond(tracer, parent, pt, ptNum1), m_ptNum1(ptNum1), m_ptNum2(ptNum2)
     {
     if (ptNum1 == 26362 && ptNum2 == 26618)
         ptNum1 = ptNum1;
@@ -3015,11 +3086,35 @@ TracePondEdge::TracePondEdge(DrainageTracer& tracer, TraceFeature& parent, long 
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-TracePondEdge::TracePondEdge(TracePondEdgeCR from, DrainageTracer& newTracer) : TracePond(from, newTracer)
+TracePondEdge::TracePondEdge(TracePondEdgeCR from, WaterAnalysis& newTracer) : TracePond(from, newTracer)
     {
     m_ptNum1 = from.m_ptNum1;
     m_ptNum2 = from.m_ptNum2;
     m_sumpLines = from.m_sumpLines;
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondEdge::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args)
+    {
+    if (!m_points.empty())
+        __super::DoTraceCallback(waterCallback, loadFunction, args);
+
+    for (auto&& sump : m_sumpLines)
+        loadFunction(DTMFeatureType::SumpLine, 0, 0, sump.data(), (long)sump.size(), args);
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondEdge::AddResult(WaterAnalysisResultR result) const
+    {
+    if (!m_points.empty())
+        __super::AddResult(result);
+
+    for (auto&& sump : m_sumpLines)
+        result.AddStream(sump, CurrentVolume());
     }
 
 //----------------------------------------------------------------------------------------*
@@ -3113,7 +3208,7 @@ void TracePondFromPondExit::GetExitInfo(bvector<PondExitInfo>& exits)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-TracePond::TracePond(TracePondCR from, DrainageTracer& newTracer) : TraceFeature(from, newTracer)
+TracePond::TracePond(TracePondCR from, WaterAnalysis& newTracer) : TraceFeature(from, newTracer)
     {
     m_points = from.m_points;
     for (auto&& exit : from.m_exitPoints)
@@ -3155,7 +3250,7 @@ void TracePond::RemapFeatures(bmap<TraceFeatureCP, TraceFeatureP>& featureRemapT
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-PondAnalysis& TracePond::GetPondAnalysis()
+PondAnalysis& TracePond::GetPondAnalysis() const
     {
     return *m_pondAnalysis;
     }
@@ -3241,6 +3336,88 @@ void TracePond::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunct
             }
         loadFunction(DTMFeatureType::LowPointPond, 0, 0, const_cast<DPoint3dP>(points.data()), points.size(), args);
         }
+    }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePond::AddResult(WaterAnalysisResultR result) const
+    {
+    CurveVectorPtr curve = CurveVector::Create(CurveVector::BoundaryType::BOUNDARY_TYPE_ParityRegion);
+    result.AddPoint(m_pt, WaterAnalysisResult::PointType::Low, CurrentVolume());
+    if (result.IsWaterVolumeResult())
+        {
+        if (CurrentVolume() != 0)
+            {
+            if (IsFull())
+                {
+                bool draw = nullptr == m_topLevelPond;
+
+                if (draw)
+                    {
+                    if (!m_exitPoints.empty())
+                        {
+                        auto enclosedPond = m_exitPoints.front().exit->GetEnclosedPond();
+                        if (nullptr != enclosedPond)
+                            draw = enclosedPond->CurrentVolume() == 0;
+                        }
+                    }
+                if (draw)
+                    {
+                    for (auto&& points : m_points)
+                        {
+                        if (curve->empty())
+                            {
+                            CurveVectorPtr outer = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Outer);
+                            curve->push_back (ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*outer));
+                            }
+                        else
+                            {
+                            CurveVectorPtr hole  = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Inner);
+                            curve->push_back (ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*hole));
+                            }
+                        }
+                    }
+                }
+            else
+                {
+                if (m_pondAnalysis.IsValid())
+                    {
+                    for (auto&& points : GetPondAnalysis().GetCurrentVolumePoints())
+                        {
+                        if (curve->empty())
+                            {
+                            CurveVectorPtr outer = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Outer);
+                            curve->push_back (ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*outer));
+                            }
+                        else
+                            {
+                            CurveVectorPtr hole  = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Inner);
+                            curve->push_back (ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*hole));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    else
+        {
+        for (auto&& points : m_points)
+            {
+            if (curve->empty())
+                {
+                CurveVectorPtr outer = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Outer);
+                curve->push_back (ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*outer));
+                }
+            else
+                {
+                CurveVectorPtr hole  = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Inner);
+                curve->push_back (ICurvePrimitive::CreateChildCurveVector_SwapFromSource (*hole));
+                }
+            }
+       }
+    if (!curve->empty())
+        result.AddPond(*curve, IsFull(), CurrentVolume());
     }
 
 //----------------------------------------------------------------------------------------*
@@ -3542,6 +3719,46 @@ void TracePond::GetNewWaterVolumes(double totalVol, bvector<TraceFeature::WaterV
     }
 
 //----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondExit::DoTraceCallback(bool waterCallback, DTMFeatureCallback loadFunction, void* args)
+        {
+        loadFunction(DTMFeatureType::LowPoint, 0, 0, &m_exitPt, 1, args);
+
+        if (!m_onHullPoint)
+            {
+            DPoint3d points[2];
+            points[0] = m_exitPt;
+            for (auto&& pt : m_points)
+                {
+                points[1] = pt;
+                loadFunction(DTMFeatureType::DescentTrace, 0, 0, points, 2, args);
+                }
+            }
+        }
+
+//----------------------------------------------------------------------------------------*
+// @bsimethod                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+void TracePondExit::AddResult(WaterAnalysisResultR result) const
+    {
+    result.AddPoint(m_exitPt, WaterAnalysisResult::PointType::Exit, CurrentVolume());
+    if (!m_onHullPoint)
+        {
+        bvector<DPoint3d> points;
+        points.resize(2);
+        points[0] = m_exitPt;
+        double vol = CurrentVolume() / m_points.size();
+        for (auto&& pt : m_points)
+            {
+            points[1] = pt;
+            result.AddStream(points, vol);
+            }
+        }
+
+    }
+
+//----------------------------------------------------------------------------------------*
 // @bsimethod                                                    Daryl.Holmwood  05/17
 // +---------------+---------------+---------------+---------------+---------------+------*
 void TracePondExit::AddPond(TracePond& pond, const PondExitInfo& exitInfo)
@@ -3695,7 +3912,7 @@ void TracePondExit::GetNewWaterVolumes(double totalVol, bvector<TraceFeature::Wa
 
     CheckIsCalculated();
 
-    BeAssertOnce(m_ponds.size() <= m_numExitFlows);
+    BeAssertOnce((int)m_ponds.size() <= m_numExitFlows);
     if (m_allEnclosed) //m_ponds.size() >= m_numExitFlows)
         {
         if (m_numExitFlows == 1)
@@ -4387,7 +4604,7 @@ void TracePondExit::GetExitFlows(bvector<TraceFeaturePtr>& newFeatures, long pri
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-DrainageTracer::DrainageTracer(BcDTMR dtm) : m_dtm(dtm), m_dtmObj(dtm.GetTinHandle())
+WaterAnalysis::WaterAnalysis(BcDTMR dtm) : m_dtm(dtm), m_dtmObj(dtm.GetTinHandle())
     {
     m_pointList.resize(m_dtmObj->numPoints);
     bcdtmList_testForVoidsInDtmObject(m_dtmObj, m_dtmHasVoids) ;
@@ -4396,14 +4613,14 @@ DrainageTracer::DrainageTracer(BcDTMR dtm) : m_dtm(dtm), m_dtmObj(dtm.GetTinHand
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-DrainageTracer::~DrainageTracer()
+WaterAnalysis::~WaterAnalysis()
     {
     }
 
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-int DrainageTracer::DoTrace(DPoint3dCR startPt)
+int WaterAnalysis::DoTrace(DPoint3dCR startPt)
     {
     auto startFeature = TraceStartPoint::Create(*this, startPt);
     m_features.push_back(startFeature);
@@ -4416,7 +4633,7 @@ int DrainageTracer::DoTrace(DPoint3dCR startPt)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-int DrainageTracer::AddWaterVolume(DPoint3dCR startPt, double volume)
+int WaterAnalysis::AddWaterVolume(DPoint3dCR startPt, double volume)
     {
     m_forWater = true;
     auto startFeature = TraceStartPoint::Create(*this, startPt);
@@ -4450,7 +4667,7 @@ int DrainageTracer::AddWaterVolume(DPoint3dCR startPt, double volume)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-void DrainageTracer::DoTraceCallback(DTMFeatureCallback loadFunction, void* userArg)
+void WaterAnalysis::DoTraceCallback(DTMFeatureCallback loadFunction, void* userArg)
     {
     static bool showHidden = false;
     for (const auto& feature : m_features)
@@ -4465,7 +4682,7 @@ void DrainageTracer::DoTraceCallback(DTMFeatureCallback loadFunction, void* user
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-void DrainageTracer::AddAndProcessFeatures(bvector<TraceFeaturePtr>& featuresToAdd)
+void WaterAnalysis::AddAndProcessFeatures(bvector<TraceFeaturePtr>& featuresToAdd)
     {
     bool haveProcessedAFeature = false;
     bvector<TraceFeature*> featuresToProcess;
@@ -4499,7 +4716,7 @@ void DrainageTracer::AddAndProcessFeatures(bvector<TraceFeaturePtr>& featuresToA
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-TracePondExit* DrainageTracer::FindPondExit(long exitPoint)
+TracePondExit* WaterAnalysis::FindPondExit(long exitPoint)
     {
     auto it = m_pondExits.find(exitPoint);
     if (it == m_pondExits.end())
@@ -4510,7 +4727,7 @@ TracePondExit* DrainageTracer::FindPondExit(long exitPoint)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-void DrainageTracer::AddPondExit(TracePondExit& pondexit)
+void WaterAnalysis::AddPondExit(TracePondExit& pondexit)
     {
     m_pondExits[pondexit.GetExitPoint()] = &pondexit;
     }
@@ -4518,7 +4735,7 @@ void DrainageTracer::AddPondExit(TracePondExit& pondexit)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-void DrainageTracer::AddOnPoint(long pointNum, TraceOnPoint& point)
+void WaterAnalysis::AddOnPoint(long pointNum, TraceOnPoint& point)
     {
     m_onPointFeatures[pointNum] = &point;
     }
@@ -4526,7 +4743,7 @@ void DrainageTracer::AddOnPoint(long pointNum, TraceOnPoint& point)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-TraceOnPoint* DrainageTracer::FindExistingOnPoint(long pointNum)
+TraceOnPoint* WaterAnalysis::FindExistingOnPoint(long pointNum)
     {
     auto it = m_onPointFeatures.find(pointNum);
     if (it != m_onPointFeatures.end())
@@ -4537,7 +4754,7 @@ TraceOnPoint* DrainageTracer::FindExistingOnPoint(long pointNum)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-void DrainageTracer::AddPondLowPond(long pointNum, TracePond& pond)
+void WaterAnalysis::AddPondLowPond(long pointNum, TracePond& pond)
     {
     m_pondlowPts[pointNum] = &pond;
     }
@@ -4545,7 +4762,7 @@ void DrainageTracer::AddPondLowPond(long pointNum, TracePond& pond)
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-TracePond* DrainageTracer::FindPondLowPt(long pointNum)
+TracePond* WaterAnalysis::FindPondLowPt(long pointNum)
     {
     auto it = m_pondlowPts.find(pointNum);
     if (it != m_pondlowPts.end())
@@ -4618,15 +4835,15 @@ struct QuickFeatureJoiner
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-DrainageTracerPtr DrainageTracer::Clone()
+WaterAnalysisPtr WaterAnalysis::Clone()
     {
-    return new DrainageTracer(*this);
+    return new WaterAnalysis(*this);
     }
 
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-DrainageTracer::DrainageTracer(DrainageTracerCR from) : m_dtm(from.m_dtm), m_dtmObj(from.m_dtm.GetTinHandle())
+WaterAnalysis::WaterAnalysis(WaterAnalysisCR from) : m_dtm(from.m_dtm), m_dtmObj(from.m_dtm.GetTinHandle())
     {
     bmap<TraceFeatureCP, TraceFeatureP> featureRemapTable;
 
@@ -4665,9 +4882,9 @@ DrainageTracer::DrainageTracer(DrainageTracerCR from) : m_dtm(from.m_dtm), m_dtm
 //----------------------------------------------------------------------------------------*
 // @bsimethod                                                   Daryl.Holmwood  06/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-DrainageTracerPtr DrainageTracer::Create(BcDTMR dtm)
+WaterAnalysisPtr WaterAnalysis::Create(BcDTMR dtm)
     {
-    return new DrainageTracer(dtm);
+    return new WaterAnalysis(dtm);
     }
 
 //----------------------------------------------------------------------------------------*
@@ -4703,7 +4920,7 @@ int bcdtmDrainage_traceMaximumDescentDtmObject
     //startY = 6242144.7302313335;
     //bcdtmDrainage_traceMaximumDescentDtmObjectOld(dtmP, drainageTablesP, loadFunctionP, -falseLowDepth, startX, startY, userP);
     TerrainModel::BcDTMPtr dtm = TerrainModel::BcDTM::CreateFromDtmHandle(*dtmP);
-    DrainageTracerPtr tracer = DrainageTracer::Create(*dtm);
+    WaterAnalysisPtr tracer = WaterAnalysis::Create(*dtm);
 
     tracer->SetMinimumDepth(falseLowDepth);
     tracer->DoTrace(DPoint3d::From(startX, startY, 0));
@@ -4712,6 +4929,113 @@ int bcdtmDrainage_traceMaximumDescentDtmObject
     return DTM_SUCCESS;
     }
 
+
+struct WaterAnalysisResultImpl : WaterAnalysisResult
+    {
+    public:
+        virtual void AddPoint(DPoint3dCR point, WaterAnalysisResult::PointType type, double volume) override
+            {
+            if (nullptr == m_transformHelper)
+                push_back(WaterAnalysisResultPoint::Create(point, type, volume));
+            else
+                push_back(WaterAnalysisResultPoint::Create(m_transformHelper->getPointFromDTM(point), type, volume));
+            }
+
+        virtual void AddStream(CurveVector& geometry, double volume) override
+            {
+            if (nullptr != m_transformHelper)
+                geometry.TransformInPlace(m_fromDTMTransformation);
+
+            if (!empty())
+                {
+                auto lastItem = *back();
+                auto lastStream = lastItem.AsStream();
+
+                if (nullptr != lastStream && lastStream->GetWaterVolume() == volume)
+                    {
+                    DPoint3d startPt, endPt;
+
+                    if (lastStream->GetGeometry().GetStartEnd(startPt, endPt))
+                        {
+                        if (geometry.GetStartPoint(startPt))
+                            {
+                            if (endPt.IsEqual(startPt))
+                                {
+                                lastStream->AddPrimitives(geometry);
+                                return;
+                                }
+                            }
+                        }
+                    }
+                }
+
+            push_back(WaterAnalysisResultStream::Create(geometry, volume));
+            }
+
+        virtual void AddStream(const bvector<DPoint3d>& points, double volume) override
+            {
+            CurveVectorPtr curve = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Open);
+            AddStream(*curve, volume);
+            }
+
+        virtual void AddPond(CurveVector& geometry, bool isFull, double volume) override
+            {
+            if (nullptr != m_transformHelper)
+                geometry.TransformInPlace(m_fromDTMTransformation);
+
+            if (geometry.size() == 1)
+                push_back(WaterAnalysisResultPond::Create(*geometry.front()->GetChildCurveVectorP(), isFull, volume));
+            else
+                push_back(WaterAnalysisResultPond::Create(geometry, isFull, volume));
+            }
+
+        virtual bool IsWaterVolumeResult() const
+            {
+            return m_forWater;
+            }
+    private:
+        bool m_showHidden = false;
+        bool m_forWater = false;
+        TMTransformHelperP m_transformHelper = nullptr;
+        Transform m_fromDTMTransformation;
+
+        WaterAnalysisResultImpl(WaterAnalysisCR analysis)
+            {
+            GetResult(analysis);
+            }
+
+    private:
+        void GetResult(WaterAnalysisCR analysis)
+            {
+            m_transformHelper = analysis.GetDTM().GetTransformHelper();
+            if (nullptr != m_transformHelper)
+                {
+                if (m_transformHelper->IsIdentity())
+                    m_transformHelper = nullptr;
+                else
+                    m_transformHelper->GetTransformationFromDTM(m_fromDTMTransformation);
+                }
+            m_forWater = analysis.ForWater();
+            for (const auto& feature : analysis.GetFeatures())
+                {
+
+                if (m_showHidden || !feature->IsHidden() || m_forWater)
+                    feature->AddResult(*this);
+                }
+            }
+
+    public:
+        static WaterAnalysisResultPtr Create(WaterAnalysisCR analysis)
+            {
+            return new WaterAnalysisResultImpl(analysis);
+            }
+    };
+
+
+WaterAnalysisResultPtr WaterAnalysis::GetResult() const
+    {
+    return WaterAnalysisResultImpl::Create(*this);
+    }
 
 
 // ToDo
