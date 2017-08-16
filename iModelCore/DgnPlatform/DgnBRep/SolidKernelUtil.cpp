@@ -1342,6 +1342,42 @@ BentleyStatus BRepUtil::TopologyID::FindNodeIdRange(IBRepEntityCR entity, uint32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::AddNodeIdAttribute(ISubEntityR subEntity, FaceId faceId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Face != subEntity.GetSubEntityType())
+        return ERROR;
+
+    PK_FACE_t   faceTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    return PSolidTopoId::AttachEntityId(faceTag, faceId.nodeId, faceId.entityId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::DeleteNodeIdAttribute(ISubEntityR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Face != subEntity.GetSubEntityType())
+        return ERROR;
+
+    PK_FACE_t   faceTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    PSolidTopoId::DeleteEntityId(faceTag);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::TopologyID::IdFromFace(FaceId& faceId, ISubEntityCR subEntity, bool useHighestId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
