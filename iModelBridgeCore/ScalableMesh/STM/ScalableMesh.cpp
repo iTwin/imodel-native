@@ -2890,6 +2890,8 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
     m_scmIndexPtr->SetProgressCallback(progress);
     bool hasCoverages = false;
     bvector<SMNodeGroupPtr> coverageTilesets;
+
+#if BAKE_CLIPS_3DTILES
     if (coverageId == (uint64_t)-1)
         {
         // Generate 3DTiles tilesets for all coverages
@@ -2936,6 +2938,7 @@ template <class POINT> StatusInt ScalableMesh<POINT>::_Generate3DTiles(const WSt
                 }
             }
         }
+#endif
 
     status = m_scmIndexPtr->Publish3DTiles(path, (uint64_t)(hasCoverages && coverageId == (uint64_t)-1 ? 0 : coverageId), this->_GetGCS().GetGeoRef().GetBasePtr());
     SMNodeGroupPtr rootTileset = m_scmIndexPtr->GetRootNodeGroup();
