@@ -15,6 +15,7 @@
 #include <WebServices/Client/WSRepositoryClient.h>
 #include <WebServices/Client/WSChangeset.h>
 #include <WebServices/Cache/Util/JsonUtil.h>
+#include "../../../../../Client/ServerInfoProvider.h"
 
 #include "MockWSSchemaProvider.h"
 
@@ -23,6 +24,11 @@ using namespace ::std;
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
 #define HEADER_MasFileETag "Mas-File-ETag"
+
+void WSRepositoryClientTests::SetUp()
+    {
+    ServerInfoProvider::InvalidateAllInfo();
+    }
 
 Json::Value StubWSObjectCreationJson()
     {
