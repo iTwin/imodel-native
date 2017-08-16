@@ -11,5 +11,4 @@ $(targetAPIDir)StructuralPhysical : $(_MakeFilePath)StructuralPhysical/PublicAPI
 
 $(targetSchemasDir)StructuralPhysical.ecschema.xml : $(_MakeFilePath)StructuralPhysical\StructuralPhysical.ecschema.xml
     $(LinkFirstDepToFirstTarget)
-
-    
+  

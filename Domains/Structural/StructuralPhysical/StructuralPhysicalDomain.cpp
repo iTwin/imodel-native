@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralPhysical\StructuralPhysicalDomain.h>
+#include <StructuralDomain/StructuralPhysical/StructuralPhysicalApi.h>
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
@@ -17,7 +17,18 @@ DOMAIN_DEFINE_MEMBERS(StructuralPhysicalDomain)
 StructuralPhysicalDomain::StructuralPhysicalDomain() : DgnDomain(BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME, "Bentley Structural Physical Domain", 1)
     {
     // TODO: register handlers once they are created
-    // RegisterHandler(StructuralPhysicalModelHandler::GetHandler());
+    /*RegisterHandler(StructuralElementHandler::GetHandler());
+    RegisterHandler(StructuralMemberHandler::GetHandler());
+    RegisterHandler(SurfaceMemberHandler::GetHandler());
+    RegisterHandler(SlabHandler::GetHandler());
+    RegisterHandler(WallHandler::GetHandler());
+    RegisterHandler(CurveMemberHandler::GetHandler());
+    RegisterHandler(BeamHandler::GetHandler());
+    RegisterHandler(ColumnHandler::GetHandler());
+    RegisterHandler(BraceHandler::GetHandler());
+    RegisterHandler(FoundationMemberHandler::GetHandler());
+    RegisterHandler(StripFootingHandler::GetHandler());
+    RegisterHandler(SpreadFootingHandler::GetHandler());*/
     }
 
 //---------------------------------------------------------------------------------------
@@ -27,6 +38,22 @@ void StructuralPhysicalDomain::_OnSchemaImported(Dgn::DgnDbR dgndb) const
     {
     Dgn::DgnSubCategory::Appearance defaultApperance;
     defaultApperance.SetInvisible(false);
+
+    StructuralPhysicalCategory::InsertDomainCategories(dgndb);
+    StructuralPhysicalDomain::InsertDomainCodeSpecs(dgndb); //???
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+void StructuralPhysicalDomain::InsertDomainCodeSpecs(Dgn::DgnDbR db)
+    {
+    Dgn::CodeSpecPtr codeSpec = Dgn::CodeSpec::Create(db, BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, Dgn::CodeScopeSpec::CreateModelScope());
+ 
+    if (codeSpec.IsValid())
+        {
+        codeSpec->Insert();
+        }
     }
 
 //---------------------------------------------------------------------------------------
@@ -53,6 +80,45 @@ Dgn::DgnCode StructuralPhysicalDomain::CreateCode(Dgn::DgnDbR dgndb, Utf8StringC
     {
     return Dgn::CodeSpec::CreateCode(dgndb, BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY, value);
     }
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+void StructuralPhysicalCategory::InsertDomainCategories(Dgn::DgnDbR db)
+    {
+    Dgn::DgnCategoryId    doorCategoryId = InsertCategory(db, STRUCTURAL_PHYSICAL_CATEGORY_StructuralCategory, Dgn::ColorDef::Red());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Dgn::DgnCategoryId StructuralPhysicalCategory::InsertCategory(Dgn::DgnDbR db, Utf8CP codeValue, Dgn::ColorDef const& color)
+{
+    Dgn::DgnSubCategory::Appearance appearance;
+    appearance.SetColor(color);
+
+    Dgn::SpatialCategory category(db.GetDictionaryModel(), codeValue, Dgn::DgnCategory::Rank::Domain);
+    category.Insert(appearance);
+    return category.GetCategoryId();
+}
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Dgn::DgnCategoryId StructuralPhysicalCategory::QueryStructuralPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName)
+{
+    Dgn::DgnCategoryId id = Dgn::DgnCategory::QueryCategoryId(db, Dgn::SpatialCategory::CreateCode(db.GetDictionaryModel(), categoryName));
+
+    // Create it if is does not exist.
+
+    if (!id.IsValid())
+        {
+        id = InsertCategory(db, categoryName, Dgn::ColorDef::White());
+        }
+
+    return id;
+}
 
 
 END_BENTLEY_STRUCTURAL_NAMESPACE

@@ -20,6 +20,11 @@
 #define BENTLEY_STRUCTURAL_PHYSICAL_AUTHORITY                          BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_NAME
 
 //-----------------------------------------------------------------------------------------
+// Categories
+//-----------------------------------------------------------------------------------------
+#define STRUCTURAL_PHYSICAL_CATEGORY_StructuralCategory                "StructuralCategory"
+
+//-----------------------------------------------------------------------------------------
 // ECClass names
 //-----------------------------------------------------------------------------------------
 #define STRUCTURAL_PHYSICAL_CLASS_StructuralElement "StructuralElement"

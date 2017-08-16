@@ -24,11 +24,25 @@ struct StructuralPhysicalDomain : Dgn::DgnDomain
         WCharCP _GetSchemaRelativePath() const override { return BENTLEY_STRUCTURAL_PHYSICAL_SCHEMA_PATH; }
         virtual void _OnSchemaImported(Dgn::DgnDbR) const override;
         virtual void _OnDgnDbOpened(Dgn::DgnDbR) const override;
+        static void InsertDomainCodeSpecs(Dgn::DgnDbR db);
 
     public:
         StructuralPhysicalDomain();
         STRUCTURAL_DOMAIN_EXPORT static Dgn::CodeSpecId QueryStructuralPhysicalCodeSpecId(Dgn::DgnDbCR dgndb);
         STRUCTURAL_DOMAIN_EXPORT static Dgn::DgnCode CreateCode(Dgn::DgnDbR dgndb, Utf8StringCR nameSpace, Utf8StringCR value);
+    };
+
+struct StructuralPhysicalCategory : NonCopyableClass
+    {
+    friend struct StructuralPhysicalDomain;
+
+    private:
+        static void InsertDomainCategories(Dgn::DgnDbR);
+        static Dgn::DgnCategoryId InsertCategory(Dgn::DgnDbR, Utf8CP, Dgn::ColorDef const&);
+        
+    public:
+        //! Get the DgnSubCategoryId
+        STRUCTURAL_DOMAIN_EXPORT static Dgn::DgnCategoryId QueryStructuralPhysicalCategoryId(Dgn::DgnDbR db, Utf8CP categoryName);
     };
 
 

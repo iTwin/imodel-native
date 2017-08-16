@@ -5,7 +5,8 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralPhysical\Beam.h>
+#include <StructuralDomain/StructuralPhysical/Beam.h>
+#include <StructuralDomain/StructuralPhysical/StructuralPhysicalDomain.h>
 
 HANDLER_DEFINE_MEMBERS(BeamHandler)
 
@@ -18,7 +19,9 @@ BeamPtr Beam::Create(Dgn::PhysicalModelR model)
         return nullptr;
 
     // TODO: needs a real category, not a fake one just passed
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), Dgn::DgnCategoryId());
+    Dgn::DgnCategoryId categoryId = Structural::StructuralPhysicalCategory::QueryStructuralPhysicalCategoryId(model.GetDgnDb(), STRUCTURAL_PHYSICAL_CATEGORY_StructuralCategory);
+
+    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), categoryId);
 
     return new Beam(createParams);
     }

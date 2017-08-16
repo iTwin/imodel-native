@@ -10,7 +10,7 @@
 //__PUBLISH_SECTION_START__
 #include "StructuralPhysicalDefinitions.h"
 
-USING_NAMESPACE_BENTLEY_STRUCTURAL_PHYSICAL
+USING_NAMESPACE_BENTLEY_STRUCTURAL
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
@@ -25,6 +25,8 @@ struct EXPORT_VTABLE_ATTRIBUTE StructuralElement : Dgn::PhysicalElement
 
 protected:
     explicit StructuralElement(CreateParams const& params) : T_Super(params) {}
+
+    Dgn::DgnDbStatus _OnDelete() const override { return Dgn::DgnDbStatus::Success; }
 
 public:
     DECLARE_STRUCTURAL_PHYSICAL_QUERYCLASS_METHODS(StructuralElement)

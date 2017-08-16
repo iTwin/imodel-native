@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralPhysical\Wall.h>
+#include <StructuralDomain/StructuralPhysical/Wall.h>
 
 HANDLER_DEFINE_MEMBERS(WallHandler)
 

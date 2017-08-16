@@ -9,6 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 #include <Bentley/Bentley.h>
+#include <Bentley/WString.h>
 #include <ECDb/ECDbTypes.h>
 #include <ECDb/ECDbApi.h>
 #include <ECObjects/ECSchema.h>
@@ -26,7 +27,7 @@
 /** @namespace BentleyApi::StructuralPhysical %STRUCTURAL_PHYSICAL data types */
 #define BEGIN_BENTLEY_STRUCTURAL_NAMESPACE BEGIN_BENTLEY_NAMESPACE namespace Structural {
 #define END_BENTLEY_STRUCTURAL_NAMESPACE } END_BENTLEY_NAMESPACE
-#define USING_NAMESPACE_BENTLEY_STRUCTURAL_PHYSICAL using namespace BentleyApi::Structural;
+#define USING_NAMESPACE_BENTLEY_STRUCTURAL using namespace BentleyApi::Structural;
 
 #define STRUCTURAL_POINTER_SUFFIX_TYPEDEFS(_structname_) \
     BEGIN_BENTLEY_STRUCTURAL_NAMESPACE DEFINE_POINTER_SUFFIX_TYPEDEFS(_structname_) END_BENTLEY_STRUCTURAL_NAMESPACE

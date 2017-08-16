@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralPhysical\Brace.h>
+#include <StructuralDomain/StructuralPhysical/Brace.h>
 
 HANDLER_DEFINE_MEMBERS(BraceHandler)
 

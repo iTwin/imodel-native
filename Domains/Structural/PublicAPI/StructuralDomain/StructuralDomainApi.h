@@ -9,6 +9,7 @@
 
 //__PUBLISH_SECTION_START__
 
-#include "StructuralCommon\StructuralCommonApi.h"
-#include "StructuralPhysical\StructuralPhysicalApi.h"
+#include "StructuralCommon/StructuralCommonApi.h"
+#include "StructuralPhysical/StructuralPhysicalApi.h"
+#include "StructuralProfiles/StructuralProfilesApi.h"
 #include "StructuralDomainUtilities.h"

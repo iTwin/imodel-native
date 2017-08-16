@@ -5,7 +5,7 @@
 |  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
-#include <StructuralDomain\StructuralCommon\StructuralTypeDefinitionModel.h>
+#include <StructuralDomain/StructuralCommon/StructuralTypeDefinitionModel.h>
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 
