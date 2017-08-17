@@ -312,10 +312,7 @@
                     <KeyName>EPSG:2215</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Douala48.AEF-West</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3119</KeyName>
+                    <KeyName>Douala1948.AEF-West</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:22832</KeyName>
@@ -5521,10 +5518,7 @@
                 <Name>Dominica</Name>
                 <Members>
                   <Member>
-                    <KeyName>EPSG:2002</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>Dominica45.BWIgrid</KeyName>
+                    <KeyName>Dominica1945.BWIgrid</KeyName>
                   </Member>
                   <Member>
                     <KeyName>SainteAnne.UTM-20N</KeyName>
@@ -5955,10 +5949,7 @@
                 <Name>Czechoslovakia</Name>
                 <Members>
                   <Member>
-                    <KeyName>Czech/JTSK.Krovak</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:102067</KeyName>
+                    <KeyName>CzechJTSK/5b.Krovak</KeyName>
                   </Member>
                   <Member>
                     <KeyName>Pulkovo42/83b.GK3d-3/EN</KeyName>
@@ -6661,10 +6652,7 @@
                     <KeyName>DHDN/BeTA.Gauss3d-5</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN.Berlin/Cassini</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:3068</KeyName>
+                    <KeyName>DHDN/3.Berlin/Cassini</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:3068-1</KeyName>
@@ -7610,16 +7598,10 @@
                 <Name>Romania</Name>
                 <Members>
                   <Member>
-                    <KeyName>DealulPiscului33.Stereo</KeyName>
+                    <KeyName>DealulPiscu1933.Stereo</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:31600</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DealulPiscului70.Stereo</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31700</KeyName>
+                    <KeyName>Pulkovo42/58b.Stereo</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:3844</KeyName>
@@ -9417,10 +9399,7 @@
             <Name>Indian Ocean</Name>
             <Members>
               <Member>
-                <KeyName>DiegoGarcia1969.LL</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:4724</KeyName>
+                <KeyName>DiegoGarcia69.LL</KeyName>
               </Member>
                <Member>
                  <KeyName>EPSG:3337</KeyName>
@@ -9516,31 +9495,19 @@
                     <KeyName>Rassadiran.NakhlTaqi</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50/77.UTM-38N</KeyName>
+                    <KeyName>Europ50/1977.UTM-38N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50/77.UTM-39N</KeyName>
+                    <KeyName>Europ50/1977.UTM-39N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50/77.UTM-40N</KeyName>
+                    <KeyName>Europ50/1977.UTM-40N</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>ED50/77.UTM-41N</KeyName>
+                    <KeyName>Europ50/1977.UTM-41N</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:2057</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2058</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2059</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2060</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:2061</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:3307</KeyName>
@@ -21794,7 +21761,7 @@
                     <KeyName>CHATHAM.ChathamIss</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Chatam1979a.ChathamIss</KeyName>
+                    <KeyName>Chatham1979a.ChathamIss</KeyName>
                   </Member>
                 </Members>
                 <Groups>
@@ -28379,11 +28346,95 @@
                 <KeyName>EPSG:3462</KeyName>
               </Member>
               <Member>
+                <KeyName>Dominica45.BWIgrid</KeyName>
+              </Member>
+              <Member>
+                <KeyName>ED50/77.UTM-38N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>ED50/77.UTM-39N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>ED50/77.UTM-40N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>ED50/77.UTM-41N</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DealulPiscului33.Stereo</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-1</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-2</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-3</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-4</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Gauss3d-5</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.Berlin/Cassini</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Douala48.AEF-West</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DealulPiscului70.Stereo</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2002</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2058</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2059</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2060</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:2061</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31462</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31463</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31464</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31465</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31600</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:31700</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3068</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:3119</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:102067</KeyName>
+              </Member>
+              <Member>
                 <KeyName>EPSG:3398-1</KeyName>
               </Member>
               <Member>
                 <KeyName>EPSG:3399-1</KeyName>
-              </Member>
+              </Member>	      
             </Members>
             <Groups>
               <Group>
@@ -28812,6 +28863,9 @@
                   <Member>
                     <KeyName>Krovak S-JTSK/95</KeyName>
                   </Member>
+                  <Member>
+                    <KeyName>Czech/JTSK.Krovak</KeyName>
+                  </Member>
                 </Members>
               </Group>
               <Group>
@@ -28861,34 +28915,22 @@
                 <Name>Germany</Name>
                 <Members>
                   <Member>
-                    <KeyName>DHDN.Gauss3d-1</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-1</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:31461</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN.Gauss3d-2</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-2</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:31462</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-3</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN.Gauss3d-3</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-4</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:31463</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DHDN.Gauss3d-4</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31464</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DHDN.Gauss3d-5</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:31465</KeyName>
+                    <KeyName>DHDN/3.Gauss3d-5</KeyName>
                   </Member>
                   <Member>
                     <KeyName>DHDN/BeTA.Gauss3d-1</KeyName>
@@ -31036,10 +31078,7 @@
                     <KeyName>Manoca.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Douala48.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4192</KeyName>
+                    <KeyName>Douala1948.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4228</KeyName>
@@ -31367,7 +31406,7 @@
                 <KeyName>CampAreaAstro_1.LL</KeyName>
               </Member>
               <Member>
-                <KeyName>DeceptionIsland.LL</KeyName>
+                <KeyName>DeceptionIsland_1.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>EPSG:4736</KeyName>
@@ -31759,10 +31798,7 @@
                 <KeyName>EPSG:4601</KeyName>
               </Member>
               <Member>
-                <KeyName>Dominica45.LL</KeyName>
-              </Member>
-              <Member>
-                <KeyName>EPSG:4602</KeyName>
+                <KeyName>Dominica1945.LL</KeyName>
               </Member>
               <Member>
                 <KeyName>Grenada53.LL</KeyName>
@@ -32072,7 +32108,7 @@
                     <KeyName>EPSG:4156</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>Czech/JTSK.LL</KeyName>
+                    <KeyName>CzechJTSK/5b.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:5228</KeyName>
@@ -32218,10 +32254,7 @@
                     <KeyName>DHDN/BeTA.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>DHDN.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4314</KeyName>
+                    <KeyName>DHDN/3.LL</KeyName>
                   </Member>
                   <Member>
                     <KeyName>EPSG:4745</KeyName>
@@ -32479,16 +32512,10 @@
                 <Name>Romania</Name>
                 <Members>
                   <Member>
-                    <KeyName>DealulPiscului70.LL</KeyName>
+                    <KeyName>Pulkovo42/58b.LL</KeyName>
                   </Member>
                   <Member>
-                    <KeyName>EPSG:4317</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>DealulPiscului33.LL</KeyName>
-                  </Member>
-                  <Member>
-                    <KeyName>EPSG:4316</KeyName>
+                    <KeyName>DealulPiscului1933.LL</KeyName>
                   </Member>
                 </Members>
               </Group>
@@ -34606,6 +34633,48 @@
               </Member>
               <Member>
                 <KeyName>EPSG:37259</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DHDN.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DealulPiscului33.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Dominica45.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Czech/JTSK.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>Douala48.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DealulPiscului70.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DiegoGarcia1969.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>DeceptionIsland.LL</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4314</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4316</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4602</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4192</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4317</KeyName>
+              </Member>
+              <Member>
+                <KeyName>EPSG:4724</KeyName>
               </Member>
             </Members>
           </Group>
