@@ -53,9 +53,12 @@ struct MyImageppLibAdmin : ImagePP::ImageppLibAdmin
     virtual BentleyStatus                           _GetDefaultTempDirectory(BeFileName& tempFileName) const override;
     virtual BentleyStatus                           _GetGDalDataPath(WStringR gdalDataPath) const override;
     virtual BentleyStatus                           _GetECWDataPath(WStringR ecwDataPath) const override;
+#else
+    virtual IRasterGeoCoordinateServices*           _GetIRasterGeoCoordinateServicesImpl() const override;
 #endif
+
     virtual BentleyStatus                           _GetLocalCacheDirPath(BeFileName& tempPath, bool checkForChange = false) const override;        
-    virtual                                         ~MyImageppLibAdmin() {}
+    virtual                                         ~MyImageppLibAdmin() {}        
     };
 
 
@@ -144,18 +147,19 @@ BentleyStatus MyImageppLibAdmin::_GetECWDataPath(WStringR ecwDataPath) const
 
     return BSISUCCESS;
     }
+
 #endif
 
+//-----------------------------------------------------------------------------------------
+// @bsimethod                                                   Mathieu.St-Pierre   08/2017
+//-----------------------------------------------------------------------------------------
+IRasterGeoCoordinateServices* MyImageppLibAdmin::_GetIRasterGeoCoordinateServicesImpl() const 
+    {
+    if (GeoCoordinationManager::GetServices() != NULL)
+        return ImageppLib::GetDefaultIRasterGeoCoordinateServicesImpl();
 
-
-
-
-
-
-
-
-
-
+    return NULL;
+    }
 
 BentleyStatus ScalableMeshATPexe::Initialize(int argc, WCharP argv[])
     {
