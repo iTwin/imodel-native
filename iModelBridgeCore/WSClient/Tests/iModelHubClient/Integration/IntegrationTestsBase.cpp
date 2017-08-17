@@ -270,27 +270,20 @@ ClientPtr IntegrationTestsBase::SetUpClient (Utf8StringCR host, Credentials cred
     WebServices::ClientInfoPtr clientInfo = IntegrationTestSettings::Instance().GetClientInfo();
     ClientPtr client = nullptr;
 
-    if (IntegrationTestSettings::Instance().IsIms())
-        {
-        UrlProvider::Initialize(IntegrationTestSettings::Instance().GetEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
-        ClientHelper::Initialize(clientInfo, StubLocalState::Instance());
+    UrlProvider::Initialize(IntegrationTestSettings::Instance().GetEnvironment(), UrlProvider::DefaultTimeout, StubLocalState::Instance());
+    ClientHelper::Initialize(clientInfo, StubLocalState::Instance());
 
-        auto manager = ConnectSignInManager::Create(clientInfo, customHandler, StubLocalState::Instance());
-        SignInResult signInResult = manager->SignInWithCredentials(credentials)->GetResult();
-        if (!signInResult.IsSuccess())
-            return nullptr;
+    auto manager = ConnectSignInManager::Create(clientInfo, customHandler, StubLocalState::Instance());
+    SignInResult signInResult = manager->SignInWithCredentials(credentials)->GetResult();
+    if (!signInResult.IsSuccess())
+        return nullptr;
 
-        auto clientHelper = ClientHelper::GetInstance();
-        client = clientHelper->SignInWithManager(manager, IntegrationTestSettings::Instance().GetEnvironment());
+    auto clientHelper = ClientHelper::GetInstance();
+    client = clientHelper->SignInWithManager(manager, IntegrationTestSettings::Instance().GetEnvironment());
 
-        WSError wsError;
-        Utf8String projectId = clientHelper->QueryProjectId(&wsError, IntegrationTestSettings::Instance().GetProjectNr());
-        client->SetProject(projectId);
-        }
-    else
-        {
-        client = Client::Create(clientInfo, customHandler);
-        }
+    WSError wsError;
+    Utf8String projectId = clientHelper->QueryProjectId(&wsError, IntegrationTestSettings::Instance().GetProjectNr());
+    client->SetProject(projectId);
 
     client->SetServerURL(host);
     client->SetCredentials(credentials);
@@ -386,31 +379,6 @@ void IntegrationTestsBase::InitializeWithChangeSets(ClientCR client, iModelInfoC
         EXPECT_SUCCESS(result);
         }
     db.BriefcaseManager().Relinquish();
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas            08/2016
-//---------------------------------------------------------------------------------------
-void IntegrationTestsBase::CreateNonAdminUser()
-    {
-    if (IntegrationTestSettings::Instance().IsIms())
-        return;
-
-    auto client = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials());
-    client->CreateBasicUser(IntegrationTestSettings::Instance().GetValidNonAdminCredentials())->GetResult();
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas            08/2016
-//---------------------------------------------------------------------------------------
-void IntegrationTestsBase::RemoveNonAdminUser()
-    {
-    if (IntegrationTestSettings::Instance().IsIms())
-        return;
-
-    auto client = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidAdminCredentials());
-    auto result = client->RemoveBasicUser(IntegrationTestSettings::Instance().GetValidNonAdminCredentials())->GetResult();
-    EXPECT_SUCCESS(result);
     }
 
 //---------------------------------------------------------------------------------------
