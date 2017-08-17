@@ -42,6 +42,11 @@ HFCPtr<HRFRasterFile> RasterUtilities::LoadRasterFile(WString path)
         }
     else
 #endif
+   if (HRFVirtualEarthCreator::GetInstance()->IsKindOfFile(pImageURL))
+        {
+        pRasterFile = HRFVirtualEarthCreator::GetInstance()->Create(pImageURL, HFC_READ_ONLY);
+        }    
+    else
         {
         pRasterFile = HRFRasterFileFactory::GetInstance()->OpenFile(HFCURL::Instanciate(path), TRUE);
         }
@@ -109,11 +114,13 @@ HFCPtr<HRARASTER> RasterUtilities::LoadRaster(HFCPtr<HRFRasterFile>& rasterFile,
     HFCPtr<HRSObjectStore> pObjectStore;
     HFCPtr<HRFRasterFile> pRasterFile = LoadRasterFile(path);
 
-	GCSCP pRasterGcs;
+	GCSCP pRasterGcs = nullptr;
+
 #ifndef VANCOUVER_API
      pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP();
 #else
-	pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP()->GetBaseGCS();
+    if (pRasterFile->GetPageDescriptor(0)->GetGeocodingCP() != nullptr)
+	    pRasterGcs = pRasterFile->GetPageDescriptor(0)->GetGeocodingCP()->GetBaseGCS();
 #endif
 
     HFCPtr<HGF2DTransfoModel> pReprojectionModel;
