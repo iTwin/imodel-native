@@ -661,7 +661,7 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
         }
 
     iModelConnectionPtr connection = connectionResult.GetValue();
-        
+
     auto fileResult = connection->GetBriefcaseFileInfo(briefcaseId, cancellationToken)->GetResult();
     if (!fileResult.IsSuccess())
         {
@@ -690,7 +690,7 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, end - start, "Download successful.");
 
     db->CloseDb();
-                
+
     BeFileName backupPath(originalFilePath.GetName());
     backupPath.AppendExtension(L"back");
 
@@ -744,12 +744,31 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     if (!doSync)
         return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), callback, cancellationToken);
 
+    auto seedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
+    if (!seedFileInfoResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
+        return StatusResult::Error(seedFileInfoResult.GetError());
+        }
+
+    Utf8String mergedChangeSetId = seedFileInfoResult.GetValue()->GetMergedChangeSetId();
+    ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), callback, cancellationToken);
+
     StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), callback, cancellationToken);
     if (!briefcaseResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
         return briefcaseResult;
         }
+
+    ChangeSetsResult pullChangeSetsResult = pullChangeSetsTask->GetResult();
+    if (!pullChangeSetsResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
+        return StatusResult::Error(pullChangeSetsResult.GetError());
+        }
+
+    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", fileInfo.GetMergedChangeSetId().c_str());
 
     BeSQLite::DbResult status;
     Dgn::DgnDbPtr db = Dgn::DgnDb::OpenDgnDb(&status, filePath, Dgn::DgnDb::OpenParams(Dgn::DgnDb::OpenMode::ReadWrite));
@@ -761,28 +780,28 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
         return result;
         }
 
-    ChangeSetsTaskPtr pullTask = connection->DownloadChangeSetsAfterId(db->Revisions().GetParentRevisionId(), fileInfo.GetFileId(), callback, cancellationToken);
-    ChangeSetsResult pullResult = pullTask->GetResult();
-    if (!pullResult.IsSuccess())
+    // If seedFile and briefacase id's do not match, query new changeset's
+    Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
+    if (!parentRevisionId.Equals(mergedChangeSetId))
         {
-        if (db.IsValid())
-            db->CloseDb();
-
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, pullResult.GetError().GetMessage().c_str());
-        return StatusResult::Error(pullResult.GetError());
+        pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, fileInfo.GetFileId(), callback, cancellationToken);
+        pullChangeSetsResult = pullChangeSetsTask->GetResult();
+        if (!pullChangeSetsResult.IsSuccess())
+            {
+            LogHelper::Log(SEVERITY::LOG_ERROR, methodName, pullChangeSetsResult.GetError().GetMessage().c_str());
+            return StatusResult::Error(pullChangeSetsResult.GetError());
+            }
         }
-
-    LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Briefcase file and changeSets after changeSet %s downloaded successfully.", fileInfo.GetMergedChangeSetId().c_str());
 
     db->Txns().EnableTracking(true);
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterOpenBriefcaseForMerge);
 #endif
-    ChangeSets changeSets = pullTask->GetResult().GetValue();
+    ChangeSets changeSets = pullChangeSetsTask->GetResult().GetValue();
 
     return MergeChangeSetsIntoDgnDb(db, changeSets, filePath);
     }
-	
+
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
@@ -821,7 +840,7 @@ StatusResult Client::MergeChangeSetsIntoDgnDb(Dgn::DgnDbPtr db, const ChangeSets
                 }
             }
         }
-    
+
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterMergeChangeSets);
 #endif
