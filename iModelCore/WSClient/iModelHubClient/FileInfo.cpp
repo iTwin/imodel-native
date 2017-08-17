@@ -118,17 +118,6 @@ FileInfoPtr FileInfo::Parse(RapidJsonValueCR properties, Utf8StringCR instanceId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             10/2016
 //---------------------------------------------------------------------------------------
-FileInfoPtr FileInfo::Parse(JsonValueCR json, FileInfoCR fileInfo)
-    {
-    JsonValueCR properties = json[ServerSchema::Properties];
-    auto rapidJson = ToRapidJson(properties);
-
-    return Parse(rapidJson, json[ServerSchema::InstanceId].asString(), fileInfo);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             10/2016
-//---------------------------------------------------------------------------------------
 FileInfoPtr FileInfo::Parse(WSObjectsReader::Instance instance, FileInfoCR fileInfo)
     {
     return Parse(instance.GetProperties(), instance.GetObjectId().remoteId, fileInfo);;

@@ -98,18 +98,6 @@ public:
 
     IMODELHUBCLIENT_EXPORT static BriefcaseFileNameCallback DefaultFileNameCallback;
 
-    //! Create new user. Use just for basic authorisation
-    //! @param[in] credentials of the new user
-    //! @param[in] cancellationToken
-    //! @return Returns a Asynchronous task, which indicates succes or error of the method
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr CreateBasicUser(Credentials credentials, ICancellationTokenPtr cancellationToken = nullptr);
-
-    //! Delete a user. Use just for basic authorisation
-    //! @param[in] credentials of the new user
-    //! @param[in] cancellationToken
-    //! @return Returns a Asynchronous task, which indicates succes or error of the method
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr RemoveBasicUser(Credentials credentials, ICancellationTokenPtr cancellationToken = nullptr);
-
     //! Create an instance of the client.
     //! @param[in] clientInfo Application information sent to server.
     //! @param[in] customHandler Http handler for connect authentication.

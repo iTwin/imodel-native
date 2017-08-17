@@ -39,8 +39,6 @@ private:
         : m_id(id), m_fileId(fileId), m_userOwned(userOwned), m_isReadOnly(isReadOnly) {}
 
     static BriefcaseInfoPtr Parse(WebServices::WSObjectsReader::Instance instance);
-    //! DEPRECATED: Use Parse from Instance
-    static BriefcaseInfoPtr Parse(JsonValueCR json);
     static BriefcaseInfoPtr ParseRapidJson(RapidJsonValueCR json);
     bool operator==(BriefcaseInfoCR briefcase) const { return briefcase.GetId() == GetId(); }
     void SetLocalPath(BeFileName localPath) { m_localPath = localPath; }
