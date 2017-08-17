@@ -466,7 +466,7 @@ BentleyStatus RelatedItemsDisplaySpecificationsCache::GatherRelationshipPathInfo
     ECClassCP ridsClass = m_ecDb.Schemas().GetClass("Bentley_Standard_CustomAttributes", "RelatedItemsDisplaySpecifications");
     if (!ridsClass)
         {
-        BeAssert(false);
+        // BeAssert(false);
         return ERROR;
         }
 
