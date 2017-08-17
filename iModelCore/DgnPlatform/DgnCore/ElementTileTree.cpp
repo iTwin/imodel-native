@@ -35,7 +35,8 @@ struct TileContext;
 
 // Cache facets for geometry parts in Root
 // This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
-#define CACHE_GEOMETRY_PARTS
+// With this disabled, we will still ensure that when multiple threads want to facet the same part, all but the first will wait for the first to do so
+// #define CACHE_GEOMETRY_PARTS
 
 #define TILECACHE_DEBUG
 
@@ -1246,7 +1247,6 @@ GeomPartPtr Root::FindOrInsertGeomPart(DgnGeometryPartId partId, Render::Geometr
 +---------------+---------------+---------------+---------------+---------------+------*/
 GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Render::GeometryParamsR geomParams, ViewContextR context)
     {
-#if defined CACHE_GEOMETRY_PARTS
     m_mutex.lock(); // << LOCK
 
     auto foundPart = m_parts.find(partId);
@@ -1273,12 +1273,17 @@ GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Ren
     m_mutex.unlock(); // >> UNLOCK
 
     GeomPartPtr part = builder->GeneratePart(partId, db, geomParams, context);
+
+#if defined CACHE_GEOMETRY_PARTS
     part->SetInCache(true);
+#endif
 
     m_mutex.lock(); // << LOCK
 
+#if defined CACHE_GEOMETRY_PARTS
     BeAssert(m_parts.end() == m_parts.find(partId));
     m_parts.Insert(partId, part);
+#endif
 
     foundBuilder = m_builders.find(partId);
     BeAssert(m_builders.end() != foundBuilder);
@@ -1289,10 +1294,6 @@ GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Ren
     builder->NotifyAll();
 
     return part;
-#else
-    GeomPartBuilderPtr builder = GeomPartBuilder::Create();
-    return builder->GeneratePart(partId, db, geomParams, context);
-#endif
     }
 
 /*---------------------------------------------------------------------------------**//**
