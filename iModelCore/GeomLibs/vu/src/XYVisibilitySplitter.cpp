@@ -442,6 +442,7 @@ XYVisibilityClipQuery &actionSelector
     //double loadFraction = loadTime.FractionOf (totalSearchTime);
     //double traverseFraction = traverseTime.FractionOf (totalSearchTime);
     //double collectFraction = collectTime.FractionOf (totalSearchTime);
+    XYZRangeTreeRoot::Free (rangeTree);
     }
 
 
