@@ -447,7 +447,7 @@ struct IScalableMesh abstract:  IRefCounted
 
         BENTLEY_SM_EXPORT void                   SetCurrentlyViewedNodes(const bvector<IScalableMeshNodePtr>& nodes);
 
-        BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr, uint64_t converageId = -1) const;
+        BENTLEY_SM_EXPORT int                    Generate3DTiles(const WString& outContainerName, WString outDatasetName = L"", SMCloudServerType server = SMCloudServerType::LocalDisk, IScalableMeshProgressPtr progress = nullptr, bool withClips = false) const;
 
         BENTLEY_SM_EXPORT void                   ImportTerrainSM(WString terrainPath);
 
