@@ -4126,6 +4126,10 @@ StatusInt       ProcessLinearUnitsKey (IGeoTiffKeysList::GeoKeyItem& geoKey, boo
             // put the unit info into csDef. Probably all we need is the name.
             if (projectedCS)
                 {
+                // if the units are the same we just bypass
+                if (strcmpi(pUnit->name, m_csDef.unit) == 0)
+                    return SUCCESS;
+
                 // convert the offsets to the new unit.
                 double oldToNewUnitConvFactor = m_csDef.unit_scl / pUnit->factor;
                 m_csDef.unit_scl = pUnit->factor;
@@ -4377,7 +4381,27 @@ StatusInt       ProcessProjectedCSTypeKey (IGeoTiffKeysList::GeoKeyItem& geoKey)
 
         CSDefinition* csDef;
         if (NULL == (csDef = CSMap::CS_csdef (coordSysName)))
-            return cs_Error;
+            {
+            // we didn't find an EPSG Number the easy way, have to search for an entry that has epsgNbr field set to desired value.
+            int         index;
+            char        csKeyName[128];
+            for (index = 0; (0 < CSMap::CS_csEnum (index, csKeyName, sizeof(csKeyName))); index++)
+                {
+                if (NULL != (csDef = CSMap::CS_csdef (csKeyName)))
+                    {
+                    if (geoCode == csDef->epsgNbr)
+                        break; // We have it
+                    
+                    CSMap::CS_free (csDef);
+                    csDef = NULL;
+                    }
+                }
+
+            // If we did not find then return immediately
+            if (NULL == csDef)
+                return cs_Error;
+            }
+
         // copy and free
         m_csDef     = *csDef;
         m_haveCS    = true;
@@ -6199,6 +6223,26 @@ int                     epsgCode
             return SUCCESS;
             }
         }
+
+    // we didn't find an EPSG Number the easy way, have to search for an entry that has epsgNbr field set to desired value.
+    int         index;
+    char        csKeyName[128];
+    for (index = 0; (0 < CSMap::CS_csEnum (index, csKeyName, sizeof(csKeyName))); index++)
+        {
+        WString keyNameString (csKeyName);
+
+        if (NULL != (m_csParameters = LibraryManager::Instance()->GetCS (m_sourceLibrary, WString(csKeyName).c_str())))
+            {
+            if (epsgCode = m_csParameters->csdef.epsgNbr)
+                {
+                // found it ... 
+                m_coordSysId = COORDSYS_KEYNM;
+                return SUCCESS;
+                }
+            CSMAP_FREE_AND_CLEAR (m_csParameters);
+            }
+
+         }
 
     return m_csError;
     }
@@ -10999,6 +11043,16 @@ CharCP    epsgName
     // if the name is of the form EPSG:xxxx, use the xxxx
     if (0 == strncmp (epsgName, "EPSG:", 5))
         {
+        // Note that some keynames have the form EPSG:XXXX-X or EPSG:XXXXA such as EPSG:3399-1 or EPSG:3399A
+        // Those must be refused as they are variant that must not be taken as pure EPSG values.
+        int position = 5;
+        // Advance after digits
+        while (isdigit(epsgName[position]) && epsgName[position] != '/0')
+            position++;
+        // If first position after digit is not end of keyname there is some postfix ... not EPSG
+        if (epsgName[position] != '/0')
+            return 0;
+
         int     epsgNum;
         if (1 == sscanf (&epsgName[5], "%d", &epsgNum))
             return epsgNum;

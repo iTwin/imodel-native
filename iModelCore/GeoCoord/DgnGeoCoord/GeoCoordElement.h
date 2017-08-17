@@ -2,7 +2,7 @@
 |
 |     $Source: DgnGeoCoord/GeoCoordElement.h $
 |
-|  $Copyright: (c) 2013 Bentley Systems, Incorporated. All rights reserved. $
+|  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 |
 +--------------------------------------------------------------------------------------*/
 #pragma once
@@ -112,7 +112,8 @@ typedef struct GeoCoordType66
     UInt16      dtmOrElpsdFromUserLib;  // If this is equal to SOURCELIB_USER, either the datum of the ellipsoid of this GCS is from a user library. That triggers differ processing.
     UInt16      localTransformType;     // a member of the LocalTransformType enum - only valid if version >= 
     double      transformParams[12];
-    char        filler[156];            // So that subsequent growth will not alter the stored element size
+    UInt16      epsgNbr;                // Added august 2017. Since default value of 0 means not set this addition should be backward compatible and I will not change version
+    char        filler[154];            // So that subsequent growth will not alter the stored element size
     } GeoCoordType66;
 
 typedef struct _domainLL
