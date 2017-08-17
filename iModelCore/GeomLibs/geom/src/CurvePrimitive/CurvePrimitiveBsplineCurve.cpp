@@ -874,7 +874,9 @@ double fractionB
         );
     if (xySpiral == NULL)
         return NULL;
-    return CREATE_SPIRAL_CURVE (*xySpiral, frame, fractionA, fractionB);
+    ICurvePrimitive* ptr = CREATE_SPIRAL_CURVE (*xySpiral, frame, fractionA, fractionB);
+    delete xySpiral;
+    return ptr;
     }
 
 
@@ -924,7 +926,9 @@ double fractionB
         );
     if (xySpiral == NULL)
         return NULL;
-    return CREATE_SPIRAL_CURVE (*xySpiral, frame, fractionA, fractionB);
+    ICurvePrimitive* ptr =  CREATE_SPIRAL_CURVE (*xySpiral, frame, fractionA, fractionB);
+    delete xySpiral;
+    return ptr;
     }
 
 
