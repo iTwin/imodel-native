@@ -159,7 +159,7 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
 
             smToDestTrans = Transform::FromProduct(uorTransfo, smToDestTrans);            
             Transform destToSmTrans; 
-            bool resultInv = destToSmTrans.inverseOf(&smToDestTrans);
+            bool resultInv = destToSmTrans.InverseOf(smToDestTrans);
             assert(resultInv);                                                
 
             queryClip = ClipVector::CreateCopy(*clip);
@@ -169,7 +169,7 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
         else
             {                
             if (m_destinationGcs.IsValid())
-                ReprojectRange(queryRangeInSrcGCS, queryRange, m_destinationGcs, m_sourceGcs, GeoCoordinates::GeoCoordInterpretation::Cartesian, m_geocoordInterpretation);
+                ReprojectRange(queryRangeInSrcGCS, queryRange, m_destinationGcs, m_sourceGcs, GeoCoordInterpretation::Cartesian, m_geocoordInterpretation);
             else
                 queryRangeInSrcGCS = queryRange;
 
@@ -212,7 +212,7 @@ BentleyStatus    ScalableMeshPointsProvider::GetPoints(bvector<DPoint3d>& points
             DPoint3d pt(mesh->EditPoints()[ptInd]);
         
             if (m_destinationGcs.IsValid())
-                ReprojectPt(pt, pt, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
+                ReprojectPt(pt, pt, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordInterpretation::Cartesian);
                             
             if (queryRange.IsContained(pt))
                 {
@@ -625,7 +625,7 @@ void ScalableMeshPointsProviderCreator::_GetAvailableRange(DRange3d& availableRa
         DRange3d smRangeLocal;
         DTMStatusInt status = m_smesh->GetRange(smRangeLocal);
 #ifdef VANCOUVER_API
-        ReprojectRange(smRange, smRangeLocal, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
+        ReprojectRange(smRange, smRangeLocal, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordInterpretation::Cartesian);
 #endif
         assert(status == SUCCESS);
         }
@@ -655,7 +655,7 @@ void ScalableMeshPointsProviderCreator::SetExtractionArea(const bvector<DPoint3d
     if (m_destinationGcs.IsValid())
         { 
 #ifdef VANCOUVER_API
-        Reproject(m_extractionArea, area, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordinates::GeoCoordInterpretation::Cartesian);
+        Reproject(m_extractionArea, area, m_sourceGcs, m_destinationGcs, m_geocoordInterpretation, GeoCoordInterpretation::Cartesian);
 #endif 
         }
     else

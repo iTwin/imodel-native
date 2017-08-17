@@ -46,6 +46,8 @@ template <class EXTENT> SMSQLiteStore<EXTENT>::SMSQLiteStore(SMSQLiteFilePtr dat
     bool success = BENTLEY_NAMESPACE_NAME::ScalableMesh::LoadSources(m_sources, *sourcesData, sourceEnv);
     assert(success == true);
 
+    delete sourcesData;
+
     SMIndexMasterHeader<EXTENT> indexHeader;
     if (LoadMasterHeader(&indexHeader, sizeof(indexHeader)) > 0)
         {

@@ -397,6 +397,8 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
 
         void Append3DTile(const uint64_t& nodeID, const uint64_t& parentNodeID, const Json::Value& tile);
 
+        void AppendChildGroup(SMNodeGroupPtr childGroup);
+
         uint32_t GetID() { return m_groupHeader->GetID(); }
 
         void SetID(const uint32_t& pi_NewID) { m_groupHeader->SetID(pi_NewID); }
@@ -531,8 +533,6 @@ class SMNodeGroup : public BENTLEY_NAMESPACE_NAME::RefCountedBase
                         assert(false); // Unknown/invalid grouping strategy
                         }
                     }
-                // Add this group as the first group to the grouping strategy
-                s_groupingStrategy->AddGroup(this);
                 }
             assert(nullptr != s_groupingStrategy);
 
@@ -727,14 +727,22 @@ class SMGroupingStrategy
         void             ApplyPostChildNodeProcess  (SMIndexNodeHeader<EXTENT>& pi_NodeHeader, size_t childIndex, SMNodeGroupPtr pi_pParentGroup, SMNodeGroupPtr& pi_pChildGroup);
         size_t           AddNodeToGroup             (SMIndexNodeHeader<EXTENT>& pi_NodeHeader, SMNodeGroupPtr pi_Group);
         void             AddGroup                   (SMNodeGroup* pi_pNodeGroup);
+        uint64_t         GetClipID                  () { return m_clipID;}
+        bool             IsClipBoundary             () { return m_isClipBoundary; }
+        void             SetClipInfo                (const uint64_t& clipID, bool isClipBoundary);
         void             SetOldMasterHeader         (SMIndexMasterHeader<EXTENT>& oldMasterHeader);
-        void             SaveAllOpenGroups          () const;
+        void             SaveAllOpenGroups          (bool saveRoot) const;
         void             SaveMasterHeader           (const WString pi_pOutputDirPath) const;
         void             SaveNodeGroup              (SMNodeGroupPtr pi_Group) const;
         void             SetSourceAndDestinationGCS(const GeoCoordinates::BaseGCSCPtr source, const GeoCoordinates::BaseGCSCPtr destination)
             {
             m_sourceGCS = source;
             m_destinationGCS = destination;
+            }
+        void             Clear()
+            {
+            m_GroupID = 0;
+            m_OpenGroups.clear();
             }
 
     protected:
@@ -754,7 +762,15 @@ class SMGroupingStrategy
         SMNodeGroupMasterHeader m_GroupMasterHeader;
         GeoCoordinates::BaseGCSCPtr m_sourceGCS;
         GeoCoordinates::BaseGCSCPtr m_destinationGCS;
+        bool m_isClipBoundary = false;
+        uint64_t m_clipID = -1;
     };
+
+template<class EXTENT> void SMGroupingStrategy<EXTENT>::SetClipInfo(const uint64_t& clipID, bool isClipBoundary)
+    {
+    m_clipID = clipID;
+    m_isClipBoundary = isClipBoundary;
+    }
 
 template<class EXTENT> void SMGroupingStrategy<EXTENT>::SetOldMasterHeader(SMIndexMasterHeader<EXTENT>& oldMasterHeader)
     {
@@ -766,11 +782,12 @@ This method saves all open groups in the Open Group map.
 
 @param
 -----------------------------------------------------------------------------*/
-template<class EXTENT> void SMGroupingStrategy<EXTENT>::SaveAllOpenGroups() const
+template<class EXTENT> void SMGroupingStrategy<EXTENT>::SaveAllOpenGroups(bool saveRoot) const
     {
     for (auto& openGroup : m_OpenGroups)
         {
         auto& group = openGroup.second;
+        if (!saveRoot && group->IsRoot()) continue;
         if (!group->IsEmpty() && !group->IsFull())
             {
             group->Close<EXTENT>();

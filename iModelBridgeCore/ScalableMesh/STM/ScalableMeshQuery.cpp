@@ -724,6 +724,11 @@ DTMStatusInt IScalableMeshMesh::GetBoundary(bvector<DPoint3d>& pts)
     return _GetBoundary(pts);
     }
 
+void IScalableMeshMesh::RemoveSlivers(double edgeLengthRatio)
+    {
+	return _RemoveSlivers(edgeLengthRatio);
+    }
+
 int IScalableMeshMesh::ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const
     {
     return _ProjectPolyLineOnMesh(endPt, projectedPoints, points, nPts, segment, triangle, startPt, lastEdge);
@@ -1299,6 +1304,41 @@ int ScalableMeshMesh::AppendMesh(size_t nbPoints, DPoint3d* points, size_t nbFac
         status = SUCCESS;
 
     return status;
+    }
+
+void ScalableMeshMesh::_RemoveSlivers(double edgeLengthRatio)
+    {
+
+	bvector<int32_t> newIndices;
+	bmap<bpair<int, int>, size_t> edgeOccurrences;
+	for (int i = 0; i < m_nbFaceIndexes; i += 3)
+	    {
+		edgeOccurrences[make_bpair(std::min(m_faceIndexes[i], m_faceIndexes[i + 1]), std::max(m_faceIndexes[i], m_faceIndexes[i + 1]))]++;
+		edgeOccurrences[make_bpair(std::min(m_faceIndexes[i+2], m_faceIndexes[i + 1]), std::max(m_faceIndexes[i+2], m_faceIndexes[i + 1]))]++;
+		edgeOccurrences[make_bpair(std::min(m_faceIndexes[i], m_faceIndexes[i + 2]), std::max(m_faceIndexes[i], m_faceIndexes[i + 2]))]++;
+	    }
+
+	for (int i = 0; i < m_nbFaceIndexes; i += 3)
+	    {
+
+		if (edgeOccurrences[make_bpair(std::min(m_faceIndexes[i], m_faceIndexes[i + 1]), std::max(m_faceIndexes[i], m_faceIndexes[i + 1]))] == 1 ||
+			edgeOccurrences[make_bpair(std::min(m_faceIndexes[i + 2], m_faceIndexes[i + 1]), std::max(m_faceIndexes[i + 2], m_faceIndexes[i + 1]))] == 1 ||
+			edgeOccurrences[make_bpair(std::min(m_faceIndexes[i], m_faceIndexes[i + 2]), std::max(m_faceIndexes[i], m_faceIndexes[i + 2]))] == 1
+			)
+		    {
+			DPoint3d triangle[3] = { m_points[m_faceIndexes[i] - 1], m_points[m_faceIndexes[i + 1] - 1], m_points[m_faceIndexes[i + 2] - 1] };
+			double segLengths[3] = { DVec3d::FromStartEnd(triangle[0], triangle[1]).MagnitudeSquared(), DVec3d::FromStartEnd(triangle[1], triangle[2]).MagnitudeSquared(), DVec3d::FromStartEnd(triangle[0], triangle[2]).MagnitudeSquared() };
+			double minLength = std::min(segLengths[0], std::min(segLengths[1], segLengths[2]));
+			double maxLength = std::max(segLengths[0], std::max(segLengths[1], segLengths[2]));
+			if (minLength / maxLength <= edgeLengthRatio)
+				continue;
+		    }
+		newIndices.push_back(m_faceIndexes[i]);
+		newIndices.push_back(m_faceIndexes[i+1]);
+		newIndices.push_back(m_faceIndexes[i+2]);
+	    }
+	memcpy(m_faceIndexes, &newIndices[0], newIndices.size() * sizeof(int32_t));
+	m_nbFaceIndexes = (int)newIndices.size();
     }
 
 int ScalableMeshMesh::_ProjectPolyLineOnMesh(DPoint3d& endPt, bvector<bvector<DPoint3d>>& projectedPoints, const DPoint3d* points, int nPts, int* segment, const int* triangle, DPoint3d startPt, MTGNodeId& lastEdge) const
@@ -2451,6 +2491,11 @@ IScalableMeshNodePlaneQueryParamsPtr IScalableMeshNodePlaneQueryParams::CreatePa
     return IScalableMeshNodePlaneQueryParamsPtr(new ScalableMeshNodePlaneQueryParams());
     }
 
+bool IScalableMeshMeshFlags::ShouldLoadClips() const
+    {
+    return _ShouldLoadClips();
+    }
+
 bool IScalableMeshMeshFlags::ShouldLoadTexture() const
     {
     return _ShouldLoadTexture();
@@ -2475,6 +2520,11 @@ bool IScalableMeshMeshFlags::ShouldPrecomputeBoxes() const
 {
     return _ShouldPrecomputeBoxes();
 }
+
+void IScalableMeshMeshFlags::SetLoadClips(bool loadClips)
+    {
+    _SetLoadClips(loadClips);
+    }
 
 void IScalableMeshMeshFlags::SetLoadTexture(bool loadTexture) 
     {
@@ -2515,6 +2565,18 @@ IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create(bool shouldLoadTexture,
     return smMeshFlag;
     }
 
+IScalableMeshMeshFlagsPtr IScalableMeshMeshFlags::Create(bool shouldLoadTexture, bool shouldLoadGraph, bool shouldLoadClips)
+    {
+    IScalableMeshMeshFlagsPtr smMeshFlag = IScalableMeshMeshFlags::Create(shouldLoadTexture, shouldLoadGraph);
+    smMeshFlag->SetLoadClips(shouldLoadClips);
+    return smMeshFlag;
+    }
+
+bool ScalableMeshMeshFlags::_ShouldLoadClips () const
+    {
+    return m_loadClips;
+    }
+
 bool ScalableMeshMeshFlags::_ShouldLoadTexture() const
     {
     return m_loadTexture;
@@ -2539,6 +2601,11 @@ bool ScalableMeshMeshFlags::_ShouldPrecomputeBoxes() const
 {
     return m_precomputeBoxes;
 }
+
+void ScalableMeshMeshFlags::_SetLoadClips(bool loadClips)
+    {
+    m_loadClips = loadClips;
+    }
 
 void ScalableMeshMeshFlags::_SetLoadIndices(bool loadIndices)
     {
@@ -2598,6 +2665,11 @@ IScalableMeshMeshPtr IScalableMeshNode::GetMesh(IScalableMeshMeshFlagsPtr& flags
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip(IScalableMeshMeshFlagsPtr& flags, uint64_t clip) const
     {
     return _GetMeshUnderClip(flags, clip);
+    }
+
+IScalableMeshMeshPtr IScalableMeshNode::GetMeshUnderClip2(IScalableMeshMeshFlagsPtr& flags, uint64_t clip, bool isClipBoundary) const
+    {
+    return _GetMeshUnderClip2(flags, clip, isClipBoundary);
     }
 
 IScalableMeshMeshPtr IScalableMeshNode::GetMeshByParts(bset<uint64_t>& clipsToShow) const
