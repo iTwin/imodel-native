@@ -245,11 +245,11 @@ $(o)BuiltUpProfile$(oext) : $(StructProfiles)BuiltUpProfile.cpp \
     $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
     $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
-#$(o)BuiltUpProfileComponent$(oext) : $(StructProfiles)BuiltUpProfileComponent.cpp \
-#    ${MultiCompileDepends} \
-#    $(StructProfilesPublicAPI)BuiltUpProfileComponent.h \
-#    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
-#    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
+$(o)BuiltUpProfileComponent$(oext) : $(StructProfiles)BuiltUpProfileComponent.cpp \
+    ${MultiCompileDepends} \
+    $(StructProfilesPublicAPI)BuiltUpProfileComponent.h \
+    $(StructProfilesPublicAPI)StructuralProfilesDefinitions.h \
+    $(StructCommonPublicAPI)StructuralCommonDefinitions.h
 
 $(o)ParametricProfile$(oext) : $(StructProfiles)ParametricProfile.cpp \
     ${MultiCompileDepends} \

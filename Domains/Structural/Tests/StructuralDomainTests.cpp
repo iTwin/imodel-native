@@ -370,3 +370,190 @@ TEST_F(StructuralDomainTestFixture, SurfaceMemberClassTests)
     Dgn::PhysicalElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::PhysicalElement>(*physicalModel, SURFACEMEMBER_CODE_VALUE);
     ASSERT_TRUE(queriedElement.IsValid());
     }
+
+#define BUILTUPPROFILE_CODE_VALUE       "BUILTUPPROFILE-001"
+
+TEST_F(StructuralDomainTestFixture, BuiltUpProfileClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_BuiltUpProfile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, BUILTUPPROFILE_CODE_VALUE);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnElementCPtr element = definitionElement->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, BUILTUPPROFILE_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+#define PROFILE_CODE_VALUE       "PROFILE-001"
+
+TEST_F(StructuralDomainTestFixture, ProfileClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_Profile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PROFILE_CODE_VALUE);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
+    }
+
+#define CONSTANTPROFILE_CODE_VALUE       "CONSTANTPROFILE-001"
+
+TEST_F(StructuralDomainTestFixture, ConstantProfileClassTests)
+{
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_ConstantProfile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, CONSTANTPROFILE_CODE_VALUE);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnElementCPtr element = definitionElement->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, CONSTANTPROFILE_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
+}
+
+#define PARAMETRICPROFILE_CODE_VALUE       "PARAMETRICPROFILE-001"
+
+TEST_F(StructuralDomainTestFixture, ParametricProfileClassTests)
+{
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_ParametricProfile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PARAMETRICPROFILE_CODE_VALUE);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnElementCPtr element = definitionElement->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PARAMETRICPROFILE_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
+}
+
+#define PUBLISHEDPROFILE_CODE_VALUE       "PUBLISHEDPROFILE-001"
+
+TEST_F(StructuralDomainTestFixture, PublishedProfileClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_PublishedProfile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PUBLISHEDPROFILE_CODE_VALUE);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnElementCPtr element = definitionElement->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, PUBLISHEDPROFILE_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+#define VARYINGPROFILE_CODE_VALUE       "VARYINGPROFILE-001"
+
+TEST_F(StructuralDomainTestFixture, VaryingProfileClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_VaryingProfile, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, VARYINGPROFILE_CODE_VALUE);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnElementCPtr element = definitionElement->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, VARYINGPROFILE_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+#define VARYINGPROFILEZONE_CODE_VALUE       "VARYINGPROFILEZONE-001"
+
+TEST_F(StructuralDomainTestFixture, VaryingProfileZoneClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    Structural::StructuralTypeDefinitionModelCPtr definitionModel = Structural::StructuralDomainUtilities::GetStructuralTypeDefinitionModel(MODEL_TEST_NAME, *db);
+    ASSERT_TRUE(definitionModel.IsValid());
+
+    Dgn::DefinitionElementPtr definitionElement = Structural::StructuralDomainUtilities::CreateDefinitionElement(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_VaryingProfileZone, *definitionModel);
+    ASSERT_TRUE(definitionElement.IsValid());
+
+    Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, VARYINGPROFILEZONE_CODE_VALUE);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == definitionElement->SetCode(code));
+
+    Dgn::DgnDbStatus status;
+    Dgn::DgnElementCPtr element = definitionElement->Insert(&status);
+    ASSERT_TRUE(Dgn::DgnDbStatus::Success == status);
+
+    Dgn::DefinitionElementPtr queriedElement = Structural::StructuralDomainUtilities::QueryByCodeValue<Dgn::DefinitionElement>(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, *definitionModel, VARYINGPROFILEZONE_CODE_VALUE);
+    ASSERT_TRUE(queriedElement.IsValid());
+    }
+
+TEST_F(StructuralDomainTestFixture, BuiltupProfileComponentClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECClassCP  aspectClass = db->Schemas().GetClass(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_BuiltUpProfileComponent);
+    ECN::StandaloneECEnablerPtr aspectEnabler = aspectClass->GetDefaultStandaloneEnabler();
+
+    ASSERT_TRUE(aspectEnabler.IsValid());
+
+    ECN::StandaloneECInstancePtr p = aspectEnabler->CreateInstance();
+    }
+
+/*TEST_F(StructuralDomainTestFixture, VaryingProfileByZoneClassTests)
+    {
+    DgnDbPtr db = OpenDgnDb();
+    ASSERT_TRUE(db.IsValid());
+
+    ECN::ECClassCP  aspectClass = db->Schemas().GetClass(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_VaryingProfileByZone);
+    ECN::StandaloneECEnablerPtr aspectEnabler = aspectClass->GetDefaultStandaloneEnabler();
+
+    ASSERT_TRUE(aspectEnabler.IsValid());
+
+    ECN::StandaloneECInstancePtr p = aspectEnabler->CreateInstance();
+    }*/

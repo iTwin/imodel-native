@@ -12,9 +12,3 @@ Dgn::DgnDbStatus BuiltUpProfileComponent::_UpdateProperties(Dgn::DgnElementCR el
     {
     return Dgn::DgnDbStatus::WriteError;
     }
-
-/*BuiltUpProfileComponentPtr BuiltUpProfileComponent::GetForEdit(Dgn::DgnDbR db, Dgn::DgnElementId id)
-{
-    //BeAssert(nullptr != db.Domains().FindDomain(SCHEMA_NAME)); // Domain must be registered
-    return db.Elements().GetForEdit<BuiltUpProfileComponent>(id);
-}*/

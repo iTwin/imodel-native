@@ -38,6 +38,9 @@ struct StructuralDomainUtilities
     STRUCTURAL_DOMAIN_EXPORT static Dgn::PhysicalElementPtr          CreatePhysicalElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::PhysicalModelCR model, Utf8CP categoryName = nullptr);
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECEntityClassP              CreatePhysicalElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr, Utf8StringCR className);
 
+    STRUCTURAL_DOMAIN_EXPORT static ECN::ECEntityClassP              CreateDefinitionElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR className);
+    STRUCTURAL_DOMAIN_EXPORT static Dgn::DefinitionElementPtr        CreateDefinitionElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::DefinitionModelCR model, Utf8CP categoryName = nullptr);
+
     STRUCTURAL_DOMAIN_EXPORT static ECN::ECSchemaCP                  InsertSuppliedSchema(ECN::ECSchemaPtr suppliedDynamicSchema, StructuralPhysicalModelPtr model);
 
     STRUCTURAL_DOMAIN_EXPORT static Dgn::SchemaStatus                UpdateSchemaInDb(Dgn::DgnDbR db, ECN::ECSchemaR updatedSchema);
@@ -49,6 +52,7 @@ struct StructuralDomainUtilities
     template <class T> static RefCountedPtr<T>                       QueryById(Dgn::DgnModelCR model, Dgn::DgnElementId id) { Dgn::DgnDbR    db = model.GetDgnDb(); return db.Elements().GetForEdit<T>(id); }
     template <class T> static RefCountedPtr<T>                       QueryByCode(Dgn::DgnModelCR model, Dgn::DgnCodeCR code) { Dgn::DgnDbR  db = model.GetDgnDb(); return QueryById<T>(model, db.Elements().QueryElementIdByCode(code)); }
     template <class T> static RefCountedPtr<T>                       QueryByCodeValue(Dgn::DgnModelCR model, Utf8StringCR codeValue) { Dgn::DgnCode code = CreateCode(model, codeValue); return QueryByCode<T>(model, code); }
+    template <class T> static RefCountedPtr<T>                       QueryByCodeValue(Utf8CP codeSpecName, Dgn::DgnModelCR model, Utf8StringCR codeValue) { Dgn::DgnCode code = Dgn::CodeSpec::CreateCode(codeSpecName, model, codeValue); return QueryByCode<T>(model, code); }
     };
 
 //=======================================================================================

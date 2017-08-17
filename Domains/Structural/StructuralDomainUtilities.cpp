@@ -366,6 +366,67 @@ BentleyStatus StructuralDomainUtilities::RegisterDomainHandlers()
      return structuralElement;
      }
 
+ Dgn::DefinitionElementPtr StructuralDomainUtilities::CreateDefinitionElement(Utf8StringCR schemaName, Utf8StringCR className, Dgn::DefinitionModelCR model, Utf8CP categoryName /*= nullptr*/)
+    {
+     Dgn::DgnDbR db = model.GetDgnDb();
+     Dgn::DgnModelId modelId = model.GetModelId();
+
+     // Find the class
+     ECN::ECClassCP structuralClass = db.GetClassLocater().LocateClass(schemaName.c_str(), className.c_str());
+
+     if (nullptr == structuralClass)
+        {
+         return nullptr;
+        }
+
+     ECN::ECClassId classId = structuralClass->GetId();
+
+     Dgn::ElementHandlerP elmHandler = Dgn::dgn_ElementHandler::Definition::FindHandler(db, classId);
+     
+     if (NULL == elmHandler)
+        {
+         return nullptr;
+        }
+
+     Utf8String localCategoryName = structuralClass->GetDisplayLabel();
+
+     if (nullptr != categoryName)
+         localCategoryName = categoryName;
+
+     Dgn::DefinitionElement::CreateParams params(db, modelId, classId);
+
+     Dgn::DgnElementPtr element = elmHandler->Create(params);
+
+     Dgn::DefinitionElementPtr structuralElement = dynamic_pointer_cast<Dgn::DefinitionElement>(element);
+
+     return structuralElement;
+    }
+
+ //---------------------------------------------------------------------------------------
+ // @bsimethod                                   Bentley.Systems
+ //---------------------------------------------------------------------------------------
+ ECN::ECEntityClassP StructuralDomainUtilities::CreateDefinitionElementEntityClass(Dgn::DgnDbPtr db, ECN::ECSchemaPtr schema, Utf8StringCR className)
+    {
+     ECN::ECClassCP baseClass = GetExistingECClass(db, BIS_ECSCHEMA_NAME, BIS_CLASS_DefinitionElement);
+
+     if (nullptr == baseClass)
+         return nullptr;
+
+     ECN::ECEntityClassP newClass;
+
+     if (ECN::ECObjectsStatus::Success != schema->CreateEntityClass(newClass, className))
+         return nullptr;
+
+     if (ECN::ECObjectsStatus::Success != newClass->AddBaseClass(*baseClass))
+     {
+         schema->DeleteClass(*newClass);
+         return nullptr;
+     }
+
+     return newClass;
+    }
+
+
  //---------------------------------------------------------------------------------------
  // @bsimethod                                   Bentley.Systems
  //---------------------------------------------------------------------------------------

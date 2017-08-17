@@ -12,7 +12,7 @@
 #include "StructuralProfilesDefinitions.h"
 #include "StructuralProfilesDomain.h"
 #include "BuiltUpProfile.h"
-//#include "BuiltUpProfileComponent.h"
+#include "BuiltUpProfileComponent.h"
 #include "ConstantProfile.h"
 #include "ParametricProfile.h"
 #include "Profile.h"

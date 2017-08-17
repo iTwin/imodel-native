@@ -17,7 +17,8 @@ DOMAIN_DEFINE_MEMBERS(StructuralProfilesDomain)
 StructuralProfilesDomain::StructuralProfilesDomain() : DgnDomain(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, "Bentley Structural Profiles Domain", 1)
     {
     // TODO: register handlers once they are created
-    // RegisterHandler(StructuralPhysicalModelHandler::GetHandler());
+    //RegisterHandler(StructuralProfilesModelHandler::GetHandler());
+    //RegisterHandler(BuiltUpProfileComponentHandler::GetHandler());
     }
 
 //---------------------------------------------------------------------------------------
@@ -27,6 +28,8 @@ void StructuralProfilesDomain::_OnSchemaImported(Dgn::DgnDbR dgndb) const
     {
     Dgn::DgnSubCategory::Appearance defaultApperance;
     defaultApperance.SetInvisible(false);
+
+    InsertDomainCodeSpecs(dgndb);
     }
 
 //---------------------------------------------------------------------------------------
@@ -39,7 +42,22 @@ void StructuralProfilesDomain::_OnDgnDbOpened(Dgn::DgnDbR db) const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Bentley.Systems
 //---------------------------------------------------------------------------------------
-Dgn::CodeSpecId  StructuralProfilesDomain::QueryStructuralPhysicalCodeSpecId(Dgn::DgnDbCR dgndb)
+void StructuralProfilesDomain::InsertDomainCodeSpecs(Dgn::DgnDbR db)
+    {
+    Dgn::CodeSpecPtr codeSpec = Dgn::CodeSpec::Create(db, BENTLEY_STRUCTURAL_PROFILES_AUTHORITY, Dgn::CodeScopeSpec::CreateModelScope());
+
+    if (codeSpec.IsValid())
+        {
+        codeSpec->Insert();
+        }
+    }
+
+
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Bentley.Systems
+//---------------------------------------------------------------------------------------
+Dgn::CodeSpecId  StructuralProfilesDomain::QueryStructuralProfilesCodeSpecId(Dgn::DgnDbCR dgndb)
     {
     Dgn::CodeSpecId codeSpecId = dgndb.CodeSpecs().QueryCodeSpecId(BENTLEY_STRUCTURAL_PROFILES_AUTHORITY);
     BeAssert(codeSpecId.IsValid());
