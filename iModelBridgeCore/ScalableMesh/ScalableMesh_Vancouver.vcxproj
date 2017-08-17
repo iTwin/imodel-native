@@ -426,6 +426,7 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\PacketAccess.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Memory\PacketAccess.hpp" />
     <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshDefs.h" />
+    <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshFrom3MX.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\ScalableMeshUtilityFunctions.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshCivilDTMSource.h" />
     <ClInclude Include="PublicAPI\ScalableMesh\Plugin\IScalableMeshFileUtilities.h" />
@@ -646,6 +647,7 @@ BentleyBuild.py -ax64 -p ScalableMesh -f  ScalableMeshCore -r  ScalableMesh re  
     <ClCompile Include="stm\ReprojectionModel.cpp" />
     <ClCompile Include="STM\ScalableMeshAnalysis.cpp" />
     <ClCompile Include="stm\ScalableMeshDb.cpp" />
+    <ClCompile Include="STM\ScalableMeshFrom3MX.cpp" />
     <ClCompile Include="STM\ScalableMeshQuadTreeQueries.cpp" />
     <ClCompile Include="STM\ScalableMeshTextureGenerator.cpp" />
     <ClCompile Include="STM\ScalableTerrainModelAdmin.cpp" />
