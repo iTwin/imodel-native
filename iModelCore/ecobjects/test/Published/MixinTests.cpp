@@ -662,6 +662,35 @@ TEST_F(MixinTest, RelationshipConstraints_MixinsNarrowByAppliesToConstraint_XmlD
     EXPECT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(ecSchema, schemaXmlGood, *schemaContext)) << "Deserialization should succeed because 'Mixin0' applies to 'Entity1' but is used on a constraint which must narrow 'Entity0', 'Entity1' derives from 'Entity0'";
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Abeesh.Basheer                  08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(MixinTest, CopySChemaShouldSupportMixins)
+    {
+    ECSchemaPtr schema;
+    ECEntityClassP entityBase, entityDerived;
+    ECEntityClassP mixin0;
+
+
+    ECSchema::CreateSchema(schema, "EntityClassSchema", "ECC", 1, 1, 1);
+    schema->CreateEntityClass(entityBase, "Entity0");
+    schema->CreateEntityClass(entityDerived, "Entity1");
+    
+    schema->CreateMixinClass(mixin0, "Mixin0", *entityBase);
+    PrimitiveECPropertyP prop;
+    mixin0->CreatePrimitiveProperty(prop, "P1");
+    entityDerived->AddBaseClass(*entityBase);
+    entityDerived->AddBaseClass(*mixin0);
+
+    EXPECT_EQ(2, entityDerived->GetBaseClasses().size());
+
+    ECSchemaPtr copiedSchema;
+    schema->CopySchema(copiedSchema);
+
+    ECClassCP copiedClass = copiedSchema->GetClassP("Entity1");
+    ASSERT_TRUE(NULL != copiedClass);
+    //EXPECT_EQ(2, copiedClass->GetBaseClasses().size());
+    }
 
 END_BENTLEY_ECN_TEST_NAMESPACE
 
