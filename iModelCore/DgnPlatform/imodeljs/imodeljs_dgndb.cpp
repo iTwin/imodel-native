@@ -14,6 +14,7 @@
 
 BE_JSON_NAME(id)
 BE_JSON_NAME(code)
+BE_JSON_NAME(federationGuid)
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Sam.Wilson                  06/17
@@ -186,24 +187,32 @@ BentleyStatus IModelJs::GetECClassMetaData(DgnDbStatus& status, Utf8StringR errm
 //---------------------------------------------------------------------------------------
 BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, JsonValueCR inOpts)
     {
+    DgnElementCPtr elem;
     DgnElementId eid(inOpts[json_id()].asUInt64());
+
     if (!eid.IsValid())
         {
-        auto codeVal = inOpts[json_code()];
-        if (!codeVal)
+        if (inOpts.isMember(json_federationGuid()))
             {
-            errmsg = "DgnDbStatus::NotFound";
-            status = DgnDbStatus::NotFound;
-            return BSIERROR;
+            BeGuid federationGuid;
+            federationGuid.FromString(inOpts[json_federationGuid()].asString().c_str());
+            elem = dgndb.Elements().QueryElementByFederationGuid(federationGuid);
             }
-        eid = dgndb.Elements().QueryElementIdByCode(DgnCode::FromJson2(codeVal));
+        else
+            {
+            eid =dgndb.Elements().QueryElementIdByCode(DgnCode::FromJson2(inOpts[json_code()]));
+            }
         }
 
     //  Look up the element
-    auto elem = dgndb.Elements().GetElement(eid);
+    if (!elem.IsValid())
+        elem = dgndb.Elements().GetElement(eid);
 
     if (!elem.IsValid())
+        {
+        status = DgnDbStatus::NotFound;
         return BSISUCCESS;      // This is not an exception. It just returns an empty result.
+        }
 
     elementJson = elem->ToJson(inOpts);
 
@@ -229,6 +238,19 @@ BentleyStatus IModelJs::GetElement(DgnDbStatus& status, Utf8StringR errmsg, Json
 
     return BSISUCCESS;
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus IModelJs::InsertElement(DgnDbStatus& status, Utf8StringR errmsg, JsonValueR elementJson, DgnDbR dgndb, JsonValueCR props)
+    {
+    DgnElement::CreateParams params(dgndb, props);
+    if (!params.m_classId.IsValid())
+        return ERROR;
+
+    return BSISUCCESS;
+    }
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   07/17

@@ -29,7 +29,7 @@ void DgnCategory::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_rank()] = (int) m_rank;
-    val[json_descr()] = m_descr;
+    val[json_description()] = m_descr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -189,7 +189,7 @@ DgnDbStatus DgnSubCategory::_ReadSelectParams(ECSqlStatement& stmt, ECSqlClassPa
     if (DgnDbStatus::Success == status)
         {
         m_data.m_descr = stmt.GetValueText(params.GetSelectIndex(prop_Description()));
-        m_data.m_appearance.FromJson(stmt.GetValueText(params.GetSelectIndex(prop_Properties())));
+        m_data.m_appearance.FromJson(Json::Value::From(stmt.GetValueText(params.GetSelectIndex(prop_Properties()))));
         }
 
     return status;
@@ -217,7 +217,7 @@ void DgnSubCategory::_BindWriteParams(ECSqlStatement& stmt, ForInsert forInsert)
     if (!IsDefaultSubCategory())
         stmt.BindText(stmt.GetParameterIndex(prop_Description()), m_data.m_descr.c_str(), IECSqlBinder::MakeCopy::No);
 
-    stmt.BindText(stmt.GetParameterIndex(prop_Properties()), m_data.m_appearance.ToJson().c_str(), IECSqlBinder::MakeCopy::Yes);
+    stmt.BindText(stmt.GetParameterIndex(prop_Properties()), m_data.m_appearance.ToJson().ToString().c_str(), IECSqlBinder::MakeCopy::Yes);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -378,15 +378,13 @@ DgnCode DgnSubCategory::_GenerateDefaultCode() const
     return DgnCode();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-void DgnSubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
+void DgnSubCategory::Appearance::FromJson(JsonValueCR val)
     {
     Init();
 
-    Json::Value val = Json::Value::From(jsonStr);
     if (val.isNull())
         return;
 
@@ -394,7 +392,7 @@ void DgnSubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
     m_dontPlot = val.get(json_dontPlot(), false).asBool();
     m_dontSnap = val.get(json_dontSnap(), false).asBool();
     m_dontLocate = val.get(json_dontLocate(), false).asBool();
-    m_color  = ColorDef(val[json_color()].asUInt());
+    m_color = ColorDef(val[json_color()].asUInt());
     m_weight = val[json_weight()].asUInt();
     if (val.isMember(json_style()))
         m_style  = DgnStyleId(val[json_style()].asUInt64());
@@ -412,7 +410,7 @@ void DgnSubCategory::Appearance::FromJson(Utf8StringCR jsonStr)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String DgnSubCategory::Appearance::ToJson() const
+Json::Value DgnSubCategory::Appearance::ToJson() const
     {
     Json::Value val;
 
@@ -427,7 +425,7 @@ Utf8String DgnSubCategory::Appearance::ToJson() const
     if (m_material.IsValid())   val[json_material()] = m_material.GetValue();
     if (0.0 != m_transparency)  val[json_transp()] = m_transparency;
 
-    return Json::FastWriter::ToString(val);
+    return val;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -812,7 +810,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
         [] (ECValueR value, DgnElementCR elIn)
             {
             auto& el = (DgnSubCategory&) elIn;
-            value.SetUtf8CP(el.m_data.m_appearance.ToJson().c_str());
+            value.SetUtf8CP(el.m_data.m_appearance.ToJson().ToString().c_str());
             return DgnDbStatus::Success;
             },
         [] (DgnElementR elIn, ECValueCR value)
@@ -820,7 +818,7 @@ void dgn_ElementHandler::SubCategory::_RegisterPropertyAccessors(ECSqlClassInfo&
             if (!value.IsUtf8())
                 return DgnDbStatus::BadArg;
             auto& el = (DgnSubCategory&) elIn;
-            el.m_data.m_appearance.FromJson(value.GetUtf8CP());
+            el.m_data.m_appearance.FromJson(Json::Value::From(value.GetUtf8CP()));
             return DgnDbStatus::Success;
             });
     }
