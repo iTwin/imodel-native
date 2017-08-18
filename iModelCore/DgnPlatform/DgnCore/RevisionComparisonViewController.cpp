@@ -76,6 +76,23 @@ bool    ComparisonData::ContainsElement(DgnElementCP element) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, DbOpcode& opcode)
+    {
+    // Obtain the type of Opcode associated with an element ID
+    PersistentState pers = GetPersistentState(elementId);
+    TransientState tran = GetTransientState(elementId);
+
+    if (pers.IsValid())
+        opcode = pers.m_opcode;
+    if (tran.IsValid())
+        opcode = tran.m_opcode;
+
+    return (pers.IsValid() || tran.IsValid()) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    04/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void ComparisonSymbologyOverrides::GetCurrentRevisionOverrides(DbOpcode const& opcode, Render::OvrGraphicParamsR overrides)

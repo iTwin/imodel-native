@@ -113,6 +113,8 @@ public:
     void Add(DgnElementCPtr el, DbOpcode opcode) { m_transient.insert(TransientState(el, opcode)); }
     void Add(DgnElementId id, DbOpcode opcode) { m_persistent.insert(PersistentState(id, opcode)); }
     bool ContainsElement(DgnElementCP element) const;
+
+    DGNPLATFORM_EXPORT StatusInt GetDbOpcode(DgnElementId elementId, DbOpcode& opcode);
 };
 
 //=======================================================================================
