@@ -103,8 +103,8 @@ public:
         double GetTransparency() const {return m_transparency;}
         DGNPLATFORM_EXPORT bool operator== (Appearance const& other) const;
         bool IsEqual(Appearance const& other) const {return *this==other;}
-        DGNPLATFORM_EXPORT void FromJson(Utf8StringCR); //!< initialize this appearance from a previously saved json string
-        DGNPLATFORM_EXPORT Utf8String ToJson() const;   //!< convert this appearance to a json string
+        DGNPLATFORM_EXPORT void FromJson(JsonValueCR); //!< initialize this appearance from a previously saved json 
+        DGNPLATFORM_EXPORT Json::Value ToJson() const;   //!< convert this appearance to a json value
         void RelocateToDestinationDb(DgnImportContext&);
     };
 
@@ -267,7 +267,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnCategory : DefinitionElement
 
 public:
     BE_JSON_NAME(rank)
-    BE_JSON_NAME(descr)
+    BE_JSON_NAME(description)
 
     //! The Rank of a category indicates how it was created and where it can be used.
     //! @ingroup GROUP_DgnCategory

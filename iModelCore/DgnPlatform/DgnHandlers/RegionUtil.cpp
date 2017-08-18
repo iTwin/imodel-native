@@ -607,6 +607,69 @@ bool RegionGraphicsContext::_ProcessCurveVector(CurveVectorCR curves, bool fille
 * @bsiclass                                                     Brien.Bastings  09/09
 +===============+===============+===============+===============+===============+======*/
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool hasValidCurveGeometry(GeometrySourceCR source)
+    {
+    bool hasCurveGeometry = false;
+    GeometryCollection collection(source);
+
+    for (auto iter : collection)
+        {
+        switch (iter.GetEntryType())
+            {
+            case GeometryCollection::Iterator::EntryType::TextString:
+                {
+                // NOTE: Ignore regions that are probably used as a text frame by skipping any element that contains text.
+                //       A text boundary/frame would always need to be treated as a hole, this is a bit of a pain and more 
+                //       difficult since the frame is just stored as loose geometry in the GeometryStream. Going forward it's 
+                //       probably better if the user makes use of display priority/z with a text background anyway.
+                return false;
+                }
+
+            case GeometryCollection::Iterator::EntryType::GeometryPart:
+                {
+                if (hasCurveGeometry)
+                    break;
+
+                DgnGeometryPartCPtr partGeom = iter.GetGeometryPartCPtr();
+
+                if (!partGeom.IsValid())
+                    break;
+
+                GeometryCollection partCollection(partGeom->GetGeometryStream(), partGeom->GetDgnDb());
+
+                for (auto partIter : partCollection)
+                    {
+                    switch (partIter.GetEntryType())
+                        {
+                        case GeometryCollection::Iterator::EntryType::CurvePrimitive:
+                        case GeometryCollection::Iterator::EntryType::CurveVector:
+                            {
+                            hasCurveGeometry = true;
+                            break;
+                            }
+                        }
+
+                    if (hasCurveGeometry)
+                        break;
+                    }
+                break;
+                }
+
+            case GeometryCollection::Iterator::EntryType::CurvePrimitive:
+            case GeometryCollection::Iterator::EntryType::CurveVector:
+                {
+                hasCurveGeometry = true;
+                break;
+                }
+            }
+        }
+
+    return hasCurveGeometry;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
 RegionGraphicsContext::RegionGraphicsContext()
@@ -618,22 +681,13 @@ RegionGraphicsContext::RegionGraphicsContext()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  09/09
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt RegionGraphicsContext::_OutputGeometry(GeometrySourceCR element)
+StatusInt RegionGraphicsContext::_OutputGeometry(GeometrySourceCR source)
     {
-    // NOTE: Ignore regions that are probably used as a text frame by skipping any element that contains text.
-    //       A text boundary/frame would always need to be treated as a hole, this is a bit of a pain and more 
-    //       difficult that the frame is just stored as loose geometry in the GeometryStream. Going forward it's 
-    //       probably better if the user makes use of display priority/z with a text background anyway.
-    GeometryCollection collection(element);
+    if (!hasValidCurveGeometry(source))
+        return SUCCESS; // Avoid de-serializing BReps and other expensive geometry that will just be ignored...
 
-    for (auto iter : collection)
-        {
-        if (GeometryCollection::Iterator::EntryType::TextString == iter.GetEntryType())
-            return SUCCESS;
-        }
-
-    m_currentGeomSource = &element;
-    StatusInt status = T_Super::_OutputGeometry(element);
+    m_currentGeomSource = &source;
+    StatusInt status = T_Super::_OutputGeometry(source);
     m_currentGeomSource = nullptr;
     
     return status;

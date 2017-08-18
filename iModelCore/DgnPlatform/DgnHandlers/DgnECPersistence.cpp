@@ -300,8 +300,9 @@ BentleyStatus DgnECPersistence::GetElementInfo(JsonValueR jsonInstances, JsonVal
         return ERROR;
         }
 
-    DgnECPropertyFormatterPtr propertyFormatter = DgnECPropertyFormatter::Create(element->GetModel().get());
-    JsonECSqlSelectAdapter::FormatOptions formatOptions (ECValueFormat::FormattedStrings, propertyFormatter.get());
+    // Note: This method is on it's way to becoming deprecated - here's a quick fix to avoid numerous assertions. 
+    // DgnECPropertyFormatterPtr propertyFormatter = DgnECPropertyFormatter::Create(element->GetModel().get());
+    JsonECSqlSelectAdapter::FormatOptions formatOptions (ECValueFormat::FormattedStrings, nullptr);
 
     JsonReader jsonReader(dgndb, element->GetElementClassId());
     BentleyStatus status = jsonReader.Read(jsonInstances, jsonDisplayInfo, (ECInstanceId) elementId.GetValue(), formatOptions);
