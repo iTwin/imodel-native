@@ -1,33 +1,32 @@
 #pragma once
+
 //__PUBLISH_SECTION_START__
 #include "StructuralProfilesDefinitions.h"
 
 USING_NAMESPACE_BENTLEY_STRUCTURAL
 
 BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
-//TODO: MutiAspect! currently this class  not in compile process
-struct EXPORT_VTABLE_ATTRIBUTE VaryingProfileZone : Dgn::PhysicalElement
-{
-    DGNELEMENT_DECLARE_MEMBERS(STRUCTURAL_PROFILES_CLASS_VaryingProfileZone, Dgn::PhysicalElement);
 
-    friend struct VaryingProfileZoneHandler;
+struct EXPORT_VTABLE_ATTRIBUTE VaryingProfileZone : Dgn::DgnElement::MultiAspect
+{
+    DGNASPECT_DECLARE_MEMBERS(BENTLEY_STRUCTURAL_PROFILES_SCHEMA_NAME, STRUCTURAL_PROFILES_CLASS_VaryingProfile, Dgn::DgnElement::MultiAspect);
+
+    friend struct  VaryingProfileZoneHandler;
+
+private:
+    VaryingProfileZone() {};
 
 protected:
-    explicit VaryingProfileZone(CreateParams const& params) : T_Super(params) {}
-
-public:
-    DECLARE_STRUCTURAL_PROFILES_QUERYCLASS_METHODS(VaryingProfileZone)
-    DECLARE_STRUCTURAL_PROFILES_ELEMENT_BASE_GET_METHODS(VaryingProfileZone)
-
-    STRUCTURAL_DOMAIN_EXPORT static VaryingProfileZonePtr Create(Dgn::PhysicalModelR model);
+    EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _LoadProperties(Dgn::DgnElementCR) override;
+    EXPORT_VTABLE_ATTRIBUTE Dgn::DgnDbStatus _UpdateProperties(Dgn::DgnElementCR, BeSQLite::EC::ECCrudWriteToken const*) override;
+    Dgn::DgnDbStatus _GetPropertyValue(ECN::ECValueR, Utf8CP, Dgn::PropertyArrayIndex const&) const override { return Dgn::DgnDbStatus::NotEnabled; }
+    Dgn::DgnDbStatus _SetPropertyValue(Utf8CP, ECN::ECValueCR, Dgn::PropertyArrayIndex const&) override { return Dgn::DgnDbStatus::NotEnabled; }
 };
 
-//=======================================================================================
-//! The ElementHandler for ConstantProfileHandler
-//=======================================================================================
-struct EXPORT_VTABLE_ATTRIBUTE VaryingProfileZoneHandler : Dgn::dgn_ElementHandler::Physical
+struct EXPORT_VTABLE_ATTRIBUTE VaryingProfileZoneHandler : Dgn::dgn_AspectHandler::Aspect
 {
-    ELEMENTHANDLER_DECLARE_MEMBERS(STRUCTURAL_PROFILES_CLASS_VaryingProfileZone, VaryingProfileZone, VaryingProfileZoneHandler, Dgn::dgn_ElementHandler::Physical, STRUCTURAL_DOMAIN_EXPORT)
+    DOMAINHANDLER_DECLARE_MEMBERS(STRUCTURAL_PROFILES_CLASS_BuiltUpProfileComponent, VaryingProfileZoneHandler, Dgn::dgn_AspectHandler::Aspect, STRUCTURAL_DOMAIN_EXPORT)
+        RefCountedPtr<Dgn::DgnElement::Aspect> _CreateInstance() override { return new VaryingProfileZone(); }
 };
 
 END_BENTLEY_STRUCTURAL_NAMESPACE

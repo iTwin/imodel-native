@@ -2,15 +2,13 @@
 
 HANDLER_DEFINE_MEMBERS(VaryingProfileZoneHandler)
 
-VaryingProfileZonePtr VaryingProfileZone::Create(Dgn::PhysicalModelR model)
+Dgn::DgnDbStatus VaryingProfileZone::_LoadProperties(Dgn::DgnElementCR el)
     {
-    if (!model.GetModelId().IsValid())
-        {
-        return nullptr;
-        }
+    return Dgn::DgnDbStatus::WriteError;
+    }
 
-    // TODO: needs a real category, not a fake one just passed
-    CreateParams createParams(model.GetDgnDb(), model.GetModelId(), QueryClassId(model.GetDgnDb()), Dgn::DgnCategoryId());
 
-    return new VaryingProfileZone(createParams);
+Dgn::DgnDbStatus VaryingProfileZone::_UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
+    {
+    return Dgn::DgnDbStatus::WriteError;
     }

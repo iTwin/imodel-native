@@ -42,11 +42,11 @@
             <Class class="ConstantProfile"/>
         </Target>
     </ECRelationshipClass>-->
-    <!--<ECEntityClass typeName="VaryingProfileZone" description="This aspect defines a zone of a VaryingProfileByZone.">
+    --<ECEntityClass typeName="VaryingProfileZone" description="This aspect defines a zone of a VaryingProfileByZone.">
         <BaseClass>bis:ElementMultiAspect</BaseClass>
         <ECProperty propertyName="Index" typeName="int" description="Zero-based index corresponding to the order of zones within the VaryingProfileByZone."/>
         <ECProperty propertyName="Transition" typeName="string" description="The transition of the profile between StartProfile and EndProfile along this zone. Standard values are &quot;Linear&quot;, &quot;ParabolicAtStart&quot;, &quot;ParabolicAtEnd&quot;, &quot;ParabolicAtBothEnds&quot;"/>
-    </ECEntityClass>-->
+    </ECEntityClass>
     <!--<ECRelationshipClass typeName="ProfileZoneUsesEndProfile" modifier="None" strength="referencing">
         <Source multiplicity="(0..1)" roleLabel="ProfileZoneUsesEndProfile" polymorphic="false">
             <Class class="VaryingProfileZone"/>
