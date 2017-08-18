@@ -523,11 +523,12 @@ struct Texture : RefCounted<NonCopyableClass>
 };
 
 //=======================================================================================
-// @bsiclass                                                    Keith.Bentley   09/15
+//! Represents a texture and a description of how to map the texture to geometry.
+// @bsistruct                                                   Paul.Connelly   08/17
 //=======================================================================================
-struct Material : RefCounted<NonCopyableClass>
+struct TextureMapping
 {
-    enum class MapMode : int
+    enum class Mode : int
     {
         None              = -1,
         Parametric        = 0,
@@ -541,6 +542,50 @@ struct Material : RefCounted<NonCopyableClass>
         FrontProject      = 8, //<! Only valid for lights.
     };
 
+    struct Trans2x3
+    {
+        double m_val[2][3];
+        Trans2x3() {}
+        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
+        Transform GetTransform() const;
+    };
+
+    struct Params
+    {
+        Trans2x3 m_textureMat2x3;
+        double m_textureWeight;
+        Mode m_mapMode;
+        bool m_worldMapping;
+
+        explicit Params(Mode mode=Mode::Parametric, Trans2x3 const& trans=Trans2x3(1.0, 0.0, 0.0, 0.0, 1.0, 0.0), double weight=1.0, bool worldMapping=false)
+            : m_textureMat2x3(trans), m_textureWeight(weight), m_mapMode(mode), m_worldMapping(worldMapping) { }
+
+        void SetMode(Mode val) {m_mapMode=val;}
+        void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
+        void SetTransform(Trans2x3* val) {m_textureMat2x3 = *val;} //<! Set Texture 2x3 transform
+        void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
+
+        BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
+    };
+
+private:
+    TextureCPtr m_texture;
+    Params      m_params;
+public:
+    TextureMapping(TextureCR texture, Params const& params) : m_texture(&texture), m_params(params) { }
+    explicit TextureMapping(TextureCP texture=nullptr) : m_texture(texture) { }
+    explicit TextureMapping(TextureCR texture) : TextureMapping(&texture) { }
+
+    bool IsValid() const { return m_texture.IsValid(); }
+    TextureCP GetTexture() const { return m_texture.get(); }
+    Params const& GetParams() const { return m_params; }
+};
+
+//=======================================================================================
+// @bsiclass                                                    Keith.Bentley   09/15
+//=======================================================================================
+struct Material : RefCounted<NonCopyableClass>
+{
     struct CreateParams
     {
         struct MatColor
@@ -577,59 +622,18 @@ struct Material : RefCounted<NonCopyableClass>
         void SetShadows(bool val) {m_shadows = val;} //! If false, do not cast shadows
     };
 
-    struct Trans2x3
-    {
-        double m_val[2][3];
-        Trans2x3() {}
-        Trans2x3(double t00, double t01, double t02, double t10, double t11, double t12) {m_val[0][0]=t00; m_val[0][1]=t01; m_val[0][2]=t02; m_val[1][0]=t10; m_val[1][1]=t11; m_val[1][2]=t12;}
-        Transform GetTransform() const;
-    };
-
-    struct TextureMapParams
-    {
-        TextureMapParams() {}
-        double m_textureWeight = 1.0;
-        Trans2x3 m_textureMat2x3 = Trans2x3 (1.0, 0.0, 0.0, 0.0, 1.0, 0.0);
-        MapMode m_mapMode = MapMode::Parametric;
-        bool m_worldMapping = false;
-        /* Only used for newer mapping modes which are not yet implemented
-        DPoint3dCP m_basisX = nullptr;
-        DPoint3dCP m_basisY = nullptr;
-        DPoint3dCP m_basisZ = nullptr;
-        DPoint3dCP m_basisOrg = nullptr;
-        DPoint3dCP m_basisScale = nullptr;
-        */
-        void SetMapMode(MapMode val) {m_mapMode=val;}
-        void SetWeight(double val) {m_textureWeight = val;} //<! Set weight for combining diffuse image and color
-        void SetTransform(Trans2x3* val) {m_textureMat2x3 = *val;} //<! Set Texture 2x3 transform
-        void SetWorldMapping(bool val) {m_worldMapping = val;} //! if true world mapping, false for surface
-        //void SetBasis(DPoint3dCP x, DPoint3dCP y, DPoint3dCP z, DPoint3dCP org, DPoint3dCP scale) {m_basisX = x; m_basisY = y; m_basisZ = z; m_basisOrg = org; m_basisScale = scale;}
-        BentleyStatus ComputeUVParams (bvector<DPoint2d>& params, PolyfaceVisitorCR visitor, TransformCP transformToDgn = nullptr) const;
-    };
-
-    DEFINE_POINTER_SUFFIX_TYPEDEFS(MappedTexture)
-    struct MappedTexture : RefCounted<NonCopyableClass>
-    {
-        TextureCPtr m_texture = nullptr;
-        TextureMapParams m_mapParams;
-
-    public:
-        bool IsValid() const {return !(m_texture.IsNull());}
-        MappedTexture (TextureCR texture, TextureMapParams const& mapParams) {m_texture = &texture; m_mapParams = mapParams;}
-    };
-    DEFINE_REF_COUNTED_PTR(MappedTexture)
-
 protected:
-    MappedTextureCPtr m_mappedTexture = nullptr;
-    void AddMappedTexture(TextureCR texture, TextureMapParams const& mapParams) {m_mappedTexture = new MappedTexture(texture, mapParams);}
+    TextureMapping  m_textureMapping;
+
+    //! Override to perform additional logic when texture mapping is set, if necessary.
+    virtual void _MapTexture() { }
 
 public:
     //! Map a texture to this material
-    virtual void _MapTexture(Texture const& texture, TextureMapParams const& params = TextureMapParams()) = 0;
+    void MapTexture(TextureMappingCR mapping) {m_textureMapping=mapping; _MapTexture();}
 
-    bool HasTexture() const { return m_mappedTexture.IsValid(); }
-    MappedTextureCPtr GetMappedTextureAndParams() const {return m_mappedTexture;}
-    TextureCPtr GetMappedTexture() const {return m_mappedTexture.IsValid() ? m_mappedTexture->m_texture : nullptr;}
+    bool HasTextureMapping() const {return m_textureMapping.IsValid();}
+    TextureMappingCR GetTextureMapping() const {return m_textureMapping;}
 };
 
 //=======================================================================================
@@ -638,7 +642,7 @@ public:
 //=======================================================================================
 struct LineStyleParams
 {
-    uint32_t    modifiers;      /* see STYLEMOD_... above              */
+    uint32_t    modifiers;      /* see STYLEMOD_... in LineStyleResource.r.h */
     uint32_t    reserved;
     double      scale;          /* Applied to all length values        */
     double      dashScale;      /* Applied to adjustable dash strokes  */

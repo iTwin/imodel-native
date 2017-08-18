@@ -95,11 +95,9 @@ private:
     Type                m_type;
     DgnCategoryId       m_categoryId;
     DgnSubCategoryId    m_subCategoryId;
-    TexturePtr          m_texture; // meshes only
     MaterialPtr         m_material; // meshes only
-    RenderMaterialCPtr  m_dgnMaterial;
-    RenderingAssetCP    m_renderingAsset = nullptr;
     GradientSymbCPtr    m_gradient;
+    TextureMapping      m_textureMapping;
     RenderMaterialId    m_materialId;
     ColorDef            m_lineColor = ColorDef::White(); // all types of geometry (edge color for meshes)
     ColorDef            m_fillColor = ColorDef::White(); // meshes only
@@ -127,7 +125,7 @@ public:
     ColorDef GetLineColorDef() const { return m_lineColor; }
     uint32_t GetLineColor() const { return GetLineColorDef().GetValue(); }
 
-    TextureP GetTexture() const { return m_texture.get(); }
+    TextureMappingCR GetTextureMapping() const { return m_textureMapping; }
     MaterialP GetMaterial() const { return m_material.get(); }
     GradientSymbCP GetGradient() const { return m_gradient.get(); }
     uint32_t GetLineWidth() const { return m_width; }
@@ -138,13 +136,11 @@ public:
     DgnCategoryId GetCategoryId() const { return m_categoryId; }
     DgnSubCategoryId GetSubCategoryId() const { return m_subCategoryId; }
     RenderMaterialId GetMaterialId() const { return m_materialId; }
-    RenderingAssetCP GetRenderingAsset() const { return m_renderingAsset; }
-    Render::Material::MappedTextureCPtr GetMappedTexture() const;
 
     bool IgnoresLighting() const { return m_ignoreLighting; }
     bool HasFillTransparency() const { return 0 != GetFillColorDef().GetAlpha(); }
     bool HasLineTransparency() const { return 0 != GetLineColorDef().GetAlpha(); }
-    bool IsTextured() const { BeAssert(m_resolved); return nullptr != GetTexture(); }
+    bool IsTextured() const { BeAssert(m_resolved); return m_textureMapping.IsValid(); }
     bool HasBlankingFill() const { return FillFlags::None != (GetFillFlags() & FillFlags::Blanking); }
     bool NeverRegionOutline() const { return HasBlankingFill() || (m_gradient.IsValid() && !m_gradient->GetIsOutlined()); }
     bool HasRegionOutline() const;
@@ -647,7 +643,7 @@ public:
     static MeshBuilderPtr Create(DisplayParamsCR params, double tolerance, double areaTolerance, FeatureTableP featureTable, Mesh::PrimitiveType type, DRange3dCR range, bool is2d, bool isPlanar)
         { return new MeshBuilder(params, tolerance, areaTolerance, featureTable, type, range, is2d, isPlanar); }
 
-    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, Render::Material::MappedTextureCPtr, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
+    DGNPLATFORM_EXPORT void AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR, DgnDbR dgnDb, FeatureCR feature, bool doVertexClustering, bool includeParams, uint32_t fillColor);
     DGNPLATFORM_EXPORT void AddPolyline(bvector<DPoint3d>const& polyline, FeatureCR feature, bool doVertexClustering, uint32_t fillColor, double startDistance, DPoint3dCR rangeCenter);
     DGNPLATFORM_EXPORT void BeginPolyface(PolyfaceQueryCR polyface, MeshEdgeCreationOptionsCR options);
     DGNPLATFORM_EXPORT void EndPolyface();

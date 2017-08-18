@@ -186,10 +186,10 @@ void SpatialViewController::LoadSkyBox(Render::SystemCR system)
     matParams.SetShadows(false);
     m_skybox = system._CreateMaterial(matParams);
 
-    Material::TextureMapParams mapParams;
-    Material::Trans2x3 transform(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
+    TextureMapping::Params mapParams;
+    TextureMapping::Trans2x3 transform(0.0, 1.0, 0.0, 1.0, 0.0, 0.0);
     mapParams.SetTransform(&transform);
-    m_skybox->_MapTexture(*texture, mapParams);
+    m_skybox->MapTexture(TextureMapping(*texture, mapParams));
     }
 
 /*---------------------------------------------------------------------------------**//**

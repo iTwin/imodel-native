@@ -519,7 +519,7 @@ double TileSizeAdjuster::Compute(Render::TargetCR target, double curMod) const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform Render::Material::Trans2x3::GetTransform() const
+Transform Render::TextureMapping::Trans2x3::GetTransform() const
     {
     Transform transform = Transform::FromIdentity();
 
