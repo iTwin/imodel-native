@@ -544,6 +544,8 @@ public:
     void SetGlyphDataOffsetsBuffer(ByteCP data, size_t dataSize) { m_glyphDataOffsets.clear(); std::copy(data, data + dataSize, std::back_inserter(m_glyphDataOffsets)); }
     void SetGlyphHeadersBuffer(ByteCP data, size_t dataSize) { m_glyphHeaders.clear(); std::copy(data, data + dataSize, std::back_inserter(m_glyphHeaders)); }
 
+    bool IsValid() { return !m_familyName.empty() && !m_header.empty() && !m_glyphData.empty() && !m_glyphDataOffsets.empty() && !m_glyphHeaders.empty(); }
+
     virtual IDgnFontDataP _CloneWithoutData() override;
     virtual BentleyStatus _Embed(DgnFonts::DbFaceDataDirect&) override;
     virtual BentleyStatus _AddDataRef() override { return SUCCESS; }
@@ -932,7 +934,17 @@ void Converter::_LoadEmbeddedV8Fonts(DgnV8Api::DgnFile& v8File)
     
     for (T_RscFontDataMap::const_reference rscFontData : rscFontDatas)
         {
-        DgnRscFontP rscFont = new DgnRscFont(Utf8String(rscFontData.first.second).c_str(), rscFontData.second);
+        // TFS#729926 and TFS#729931 have corrupt RSC fonts embedded in their pakcaged .i.dgn.
+        // RSC fonts are required to have a font header, glyph headers, glyph data offesets, and glyph data; fractions are optional.
+        // If any imported RSC fonts fail to have all required data, pretend they didn't exist because we can't use them later.
+        DgnRscInMemoryData* data = rscFontData.second;
+        if (nullptr == data || !data->IsValid())
+            {
+            //BeDataAssert(false);
+            continue;
+            }
+        
+        DgnRscFontP rscFont = new DgnRscFont(Utf8String(rscFontData.first.second).c_str(), data);
         m_workspaceFonts[T_WorkspaceFontKey(rscFont->GetType(), rscFont->GetName())] = rscFont;
         
         // Need to save off RSC number map because DgnV8 knows nothing about these embedded fonts.
