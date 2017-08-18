@@ -249,21 +249,17 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
             DPoint2d params[4];
             DPoint3d points[4];
 
-            points[0].Init(low.x,  low.y);
-            points[1].Init(low.x,  high.y);
-            points[2].Init(high.x, high.y);
-            points[3].Init(high.x, low.y);
+            double npcZ = 0.5;
+            points[0].Init(low.x,  low.y, npcZ);
+            points[1].Init(low.x,  high.y, npcZ);
+            points[2].Init(high.x, high.y, npcZ);
+            points[3].Init(high.x, low.y, npcZ);
 
             viewport.NpcToWorld(points, points, 4);
             for (int i=0; i<4; ++i)
                 {
                 DVec3d direction = DVec3d::FromStartEnd(cameraPos, points[i]);
                 params[i] = getUVForDirection(direction, rotation, zOffset);
-
-                // We need to move the point off the back plane slightly so it won't be clipped. Move it 1/10000 of the distance to the eye.
-                // That should keep it behind any geomtery of interest, but at least one value in zbuffer resolution inside the frustum.
-                double len = direction.Normalize();
-                points[i].SumOf(points[i], direction, -len/10000.);
                 }
 
             // Avoid seam discontinuities by eliminating cycles.
@@ -302,7 +298,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void SpatialViewController::DrawSkyBox(RenderContextR context)
+void SpatialViewController::DrawSkyBox(DecorateContextR context)
     {
     auto& style3d = GetSpatialViewDefinition().GetDisplayStyle3d();
     if (!style3d.IsSkyBoxEnabled())
@@ -323,25 +319,7 @@ void SpatialViewController::DrawSkyBox(RenderContextR context)
     // now create a 10x10 mesh on the backplane with the sky material mapped to its UV coordinates
     drawBackgroundMesh(skyGraphic.get(), *vp, 0.0, context.GetDgnDb().GeoLocation().GetGlobalOrigin().z);
 
-    // we want to control the rendermode, lighting, and edges for the mesh. To do that we have to create a GraphicBranch with the appropriate ViewFlags
-    ViewFlagsOverrides flags;
-    flags.SetRenderMode(Render::RenderMode::SmoothShade);
-    flags.SetShowTextures(true);
-    flags.SetShowVisibleEdges(false);
-    flags.SetShowMaterials(true);
-    flags.SetShowShadows(false);
-    flags.SetShowSourceLights(false);
-    flags.SetShowCameraLights(false);
-    flags.SetShowSolarLight(false);
-    flags.SetMonochrome(false);
-    flags.SetShowClipVolume(false);
-
-    GraphicBranch branch;
-    branch.Add(*skyGraphic->Finish()); // put the mesh into the branch
-    branch.SetViewFlagsOverrides(flags); // and set its Viewflags
-
-    // now add the skybox branch to the terrain context.
-    context.OutputGraphic(*context.CreateBranch(branch, context.GetDgnDb(), Transform::FromIdentity()), nullptr);
+    context.SetBackground(*skyGraphic->Finish());
     }
 
 //=======================================================================================

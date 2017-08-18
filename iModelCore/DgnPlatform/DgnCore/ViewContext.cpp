@@ -1090,6 +1090,14 @@ void DecorateContext::AddWorldDecoration(Render::GraphicR graphic, Render::OvrGr
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void DecorateContext::SetBackground(Render::GraphicR graphic)
+    {
+    m_decorations.m_background = &graphic;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/15
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DecorateContext::AddWorldOverlay(Render::GraphicR graphic, Render::OvrGraphicParamsCP ovrParams)

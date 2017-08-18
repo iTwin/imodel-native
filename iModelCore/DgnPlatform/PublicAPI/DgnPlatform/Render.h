@@ -2382,12 +2382,13 @@ public:
 //=======================================================================================
 struct Decorations
 {
-    DecorationListPtr m_normal;         // drawn with zbuffer, with scene lighting
-    DecorationListPtr m_flashed;        // drawn with zbuffer, with scene lighting
-    DecorationListPtr m_world;          // drawn with zbuffer, with default lighting, smooth shading
-    DecorationListPtr m_worldOverlay;   // drawn in overlay mode, world units
-    DecorationListPtr m_viewOverlay;    // drawn in overlay mode, view units
-    DgnElementId      m_flashedElem;
+    GraphicPtr          m_background;   // drawn first, with no zbuffer, smooth shading, default lighting. e.g., a skybox
+    DecorationListPtr   m_normal;       // drawn with zbuffer, with scene lighting
+    DecorationListPtr   m_flashed;      // drawn with zbuffer, with scene lighting
+    DecorationListPtr   m_world;        // drawn with zbuffer, with default lighting, smooth shading
+    DecorationListPtr   m_worldOverlay; // drawn in overlay mode, world units
+    DecorationListPtr   m_viewOverlay;  // drawn in overlay mode, view units
+    DgnElementId        m_flashedElem;  // the ID of the element currently flashed by the locate cursor
 };
 
 //=======================================================================================
