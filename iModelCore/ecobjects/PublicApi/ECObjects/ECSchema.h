@@ -1615,6 +1615,9 @@ public:
     //! If the given name is valid, creates an array property object using the specified primitive type as the array type
     ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, PrimitiveType primitiveType);
 
+    //! If the given name is valid, creates an array property object using the specified primitive type as the array type
+    ECOBJECTS_EXPORT ECObjectsStatus CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType);
+
     //! If the given name is valid, creates an array property object using the specified class as the array type
     ECOBJECTS_EXPORT ECObjectsStatus CreateStructArrayProperty(StructArrayECPropertyP& ecProperty, Utf8StringCR name, ECStructClassCR structType);
 

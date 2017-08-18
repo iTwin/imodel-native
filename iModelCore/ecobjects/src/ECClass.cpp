@@ -1243,6 +1243,23 @@ ECObjectsStatus ECClass::CreatePrimitiveArrayProperty (PrimitiveArrayECPropertyP
     return ECObjectsStatus::Success;
     }
     
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Carole.MacDonald            08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+ECObjectsStatus ECClass::CreatePrimitiveArrayProperty(PrimitiveArrayECPropertyP& ecProperty, Utf8StringCR name, ECEnumerationCR enumerationType)
+    {
+    ecProperty = new PrimitiveArrayECProperty(*this);
+    ecProperty->SetType(enumerationType);
+    ECObjectsStatus status = AddProperty(ecProperty, name);
+    if (status != ECObjectsStatus::Success)
+        {
+        delete ecProperty;
+        ecProperty = NULL;
+        return status;
+        }
+    return ECObjectsStatus::Success;
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2010
 +---------------+---------------+---------------+---------------+---------------+------*/
