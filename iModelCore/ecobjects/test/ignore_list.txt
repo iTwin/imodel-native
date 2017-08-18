@@ -8,6 +8,3 @@ NavigationPropertyValueTests.InstanceWithNavProp_String
 #----------------------------------------------------------------------------------------
 #   Tests that need attention
 #----------------------------------------------------------------------------------------
-
-MixinTest.MixinClassMayOnlyHaveMixinAsBaseClass_AddBaseClass
-MixinTest.MixinBaseClassMustHaveCompatibleAppliesToConstraint_AddBaseClass

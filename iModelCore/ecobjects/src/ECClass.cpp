@@ -2418,13 +2418,13 @@ ECObjectsStatus ECEntityClass::_AddBaseClass(ECClassCR baseClass, bool insertAtB
         if (IsMixin() && GetBaseClasses().size() == 1)
             return ECObjectsStatus::BaseClassUnacceptable;
 
-    //    ECEntityClassCP baseAsEntity = baseClass.GetEntityClassCP();
-    //    if (nullptr != baseAsEntity)
-    //        {
-    //        bool thisIsMixin = IsMixin();
-    //        if (!VerifyMixinHierarchy(thisIsMixin, baseAsEntity))
-    //            return ECObjectsStatus::BaseClassUnacceptable;
-    //        }
+        ECEntityClassCP baseAsEntity = baseClass.GetEntityClassCP();
+        if (nullptr != baseAsEntity)
+            {
+            bool thisIsMixin = IsMixin();
+            if (!VerifyMixinHierarchy(thisIsMixin, baseAsEntity))
+                return ECObjectsStatus::BaseClassUnacceptable;
+            }
         }
 
     return T_Super::_AddBaseClass(baseClass, insertAtBeginning, resolveConflicts, validate);
