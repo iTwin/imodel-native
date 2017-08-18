@@ -10,7 +10,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x64">
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x64" ApiNumber="B02">
         <SubPart PartName="RealityPackage" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
@@ -20,7 +20,7 @@
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
-            <Assemblies>delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
+            <Assemblies>delivery/$(shlibprefix)RealityPlatform$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
@@ -117,14 +117,14 @@
         <SubPart PartName="CrawlerLibExample"/>
     </Part>
 
-    <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke" OnlyPlatforms="x86,x64, androidarm7a">
+    <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke" OnlyPlatforms="x86,x64, androidarm7a" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="BeXml"    PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
         <Bindings>
             <Libs>Delivery/$(libprefix)RealityPackage$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)RealityPackage$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)RealityPackage$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
