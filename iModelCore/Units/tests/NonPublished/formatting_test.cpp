@@ -94,6 +94,18 @@ TEST(FormattingTest, Preliminary)
     else
         LOG.info("Test Data File is not available");
 
+    FormattingTestFixture::NamedSpecToJson("dms8");
+    FormattingTestFixture::NamedSpecToJson(nullptr);
+
+    UnitProxy prox = UnitProxy("FT", "Feet");
+    Json::Value proxV = prox.ToJson(true);
+    LOG.infov("UnitProxy verbose %s ", proxV.ToString().c_str());
+    proxV = prox.ToJson(false);
+    LOG.infov("UnitProxy compact %s ", proxV.ToString().c_str());
+    prox = UnitProxy("FT");
+    proxV = prox.ToJson(false);
+    LOG.infov("UnitProxy (no label) %s ", proxV.ToString().c_str());
+
     LOG.info("Stopping Signatures");
     FormattingTestFixture::ShowSignature("1+52.17", 100);
     FormattingTestFixture::ShowSignature("1+152.17", 100);
@@ -119,27 +131,7 @@ TEST(FormattingTest, Preliminary)
     LOG.infov("%s %s %s  Reset:%d", nameFT, nameIN, nameCM, upx->GetResetCount());
     LOG.infov("Compare address %x %x repet %d", upFT, upFT1, repc);
 
-    // Json Experimentation
-
-    Json::Value jDeg;
-    jDeg[json_degrees()] = 47.5;
-    LOG.infov("JsonDeg %s", jDeg.ToString().c_str());
-   
-    Json::Value jY;
-    jY[json_degrees()] = 30.1234;
-    Json::Value jP;
-    jP[json_degrees()] = 45.9876;
-    Json::Value jR;
-    jR[json_degrees()] = 65.786;
-
-    Json::Value val;
-    val[json_yaw()] = jY;
-    val[json_pitch()] =jP;
-    val[json_roll()] = jR;
-    LOG.infov("JsonAstro %s", val.ToString().c_str());
-
-
-
+ 
     /*NumericFormatSpec numFmt = NumericFormatSpec();
 
 
@@ -172,8 +164,7 @@ TEST(FormattingTest, Preliminary)
     NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
     NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
 
-
-    Json::Value nfcJson = nfst100.ToJson();
+    Json::Value nfcJson = nfst100.ToJson(false);
     LOG.infov("JsonNFC %s", nfcJson.ToString().c_str());
 
     nfst1000.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
@@ -304,6 +295,43 @@ TEST(FormattingTest, Preliminary)
 
     }
 
+TEST(FormattingTest, Json)
+    {
+ 
+    FormattingTestFixture::FormattingTraitsTest();
+
+    NumericFormatSpec jsonTestSpec = NumericFormatSpec();
+    FormattingTestFixture::FormattingSpecTraitsTest("default", jsonTestSpec, false);
+    FormattingTestFixture::FormattingSpecTraitsTest("default(verbose)", jsonTestSpec, true);
+
+    Json::Value jDeg;
+    jDeg[json_degrees()] = 47.5;
+    LOG.infov("JsonDeg %s", jDeg.ToString().c_str());
+
+    Json::Value jY;
+    jY[json_degrees()] = 30.1234;
+    Json::Value jP;
+    jP[json_degrees()] = 45.9876;
+    Json::Value jR;
+    jR[json_degrees()] = 65.786;
+
+    Json::Value val;
+    val[json_yaw()] = jY;
+    val[json_pitch()] = jP;
+    val[json_roll()] = jR;
+    LOG.infov("JsonAstro %s", val.ToString().c_str());
+
+    Json::Value jPnt;
+    jPnt[0] = 12.0;
+    jPnt[1] = 23.0;
+    jPnt[2] = 34.0;
+    LOG.infov("Dpnt3D %s", jPnt.ToString().c_str());
+
+    double x = jPnt[0].asDouble();
+    double y = jPnt[1].asDouble();
+    double z = jPnt[2].asDouble();
+    LOG.infov("Dpnt3D restored %.2f %.2f %.2f", x, y, z);
+    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      02/17
 +---------------+---------------+---------------+---------------+---------------+------*/

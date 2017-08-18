@@ -549,6 +549,10 @@ struct FormatConstant
         static const Utf8CP FUSJsonDispValue() { return "displayValue"; }
         static const Utf8CP FUSJsonPersist() { return "persistFUS"; }
         static const Utf8CP FUSJsonDispaly() { return "displayFUS"; }
+        static const bool IsBoolEqual(bool val, bool ref) { return val == ref; }
+        static const bool IsIntEqual(int val, int ref) { return val == ref; }
+        static const bool IsRealEqual(double val, double ref, double resolution) { return abs(val - ref) <= abs(resolution); }
+
 
         static const size_t* SpecialUOM()
             {

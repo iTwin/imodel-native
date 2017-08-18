@@ -71,6 +71,14 @@ BE_JSON_NAME(NumericFormat)
 BE_JSON_NAME(unitName)
 BE_JSON_NAME(unitLabel)
 
+//CompositeValueSpec
+BE_JSON_NAME(MajorUnit)
+BE_JSON_NAME(MiddleUnit)
+BE_JSON_NAME(MinorUnit)
+BE_JSON_NAME(SubUnit)
+BE_JSON_NAME(includeZero)
+BE_JSON_NAME(spacer)
+
 
 struct FactorPower
     {
@@ -195,30 +203,72 @@ public:
         m_stopSeparator(other.m_stopSeparator), m_minWIdth(other.m_minWIdth) {}
     UNITS_EXPORT NumericFormatSpec(PresentationType presType, ShowSignOption signOpt, FormatTraits formatTraits, const size_t precision);
     UNITS_EXPORT NumericFormatSpec(Json::Value);
+
     void SetFormatTraits(FormatTraits opt) { m_formatTraits = opt; }
-    FormatTraits GetFormatTraits() const { return m_formatTraits; }
-    UNITS_EXPORT void SetKeepTrailingZeroes(bool keep);
-    bool IsKeepTrailingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::TrailingZeroes)) != 0); }
-    UNITS_EXPORT void SetUseLeadingZeroes(bool use);
-    bool IsUseLeadingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::LeadingZeroes)) != 0); }
-    UNITS_EXPORT void SetKeepDecimalPoint(bool keep);
-    bool IsKeepDecimalPoint() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepDecimalPoint)) != 0); }
-    UNITS_EXPORT void SetKeepSingleZero(bool keep);
-    bool IsKeepSingleZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepSingleZero)) != 0); }
-    UNITS_EXPORT void SetExponentZero(bool keep);
-    bool IsExponentZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ExponentZero)) != 0); }
-    UNITS_EXPORT void SetZeroEmpty(bool empty);
-    bool IsZeroEmpty() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ZeroEmpty)) != 0); }
-    UNITS_EXPORT void SetUse1000Separator(bool use);
-    bool IsUse1000Separator() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
-    UNITS_EXPORT void SetApplyRounding(bool use);
-    bool IsApplyRounding() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); } 
-    bool IsAppendUnit() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::AppendUnitName)) != 0); }
-    UNITS_EXPORT void SetAppendUnit(bool use);
-    bool IsFractionDash() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::FractionDash)) != 0); }
-    UNITS_EXPORT void SetUseFractionDash(bool use);
-    bool IsUseFractSymbol() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::UseFractSymbol)) != 0); }
-    UNITS_EXPORT void SetUseFractionSymbol(bool use);
+    FormatTraits GetFormatTraits() const { return m_formatTraits; }   
+    bool CheckTraitsBit(FormatTraits word, FormatTraits bit) const { return ((static_cast<int>(word) & static_cast<int>(bit)) != 0); }
+    bool CheckTraitsBit(FormatTraits bit) const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(bit)) != 0); }
+    //UNITS_EXPORT void SetTraitsBit(bool set, FormatTraits bit, FormatTraits* word = nullptr);
+    UNITS_EXPORT void TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits ref, bool verbose=false) const;
+    UNITS_EXPORT static FormatTraits SetTraitsBit(FormatTraits bit, FormatTraits traits, bool set);
+    UNITS_EXPORT static void TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits);
+
+    void SetKeepTrailingZeroes(bool keep) { m_formatTraits = SetTraitsBit(FormatTraits::TrailingZeroes, m_formatTraits, keep); }//SetTraitsBit(keep, FormatTraits::TrailingZeroes); }
+    bool IsKeepTrailingZeroes() const { return CheckTraitsBit(FormatTraits::TrailingZeroes);}
+
+    void SetUseLeadingZeroes(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::LeadingZeroes, m_formatTraits, use); }
+    bool IsUseLeadingZeroes() const { return CheckTraitsBit(FormatTraits::LeadingZeroes); }
+
+    void SetKeepDecimalPoint(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::KeepDecimalPoint, m_formatTraits, use);
+        }
+    bool IsKeepDecimalPoint() const { return CheckTraitsBit(FormatTraits::KeepDecimalPoint); }
+
+    void SetKeepSingleZero(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::KeepSingleZero, m_formatTraits, use);
+        }
+    bool IsKeepSingleZero() const { return CheckTraitsBit(FormatTraits::KeepSingleZero); }
+
+    void SetExponentZero(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::ExponentZero, m_formatTraits, use); }
+    bool IsExponentZero() const { return CheckTraitsBit(FormatTraits::ExponentZero); }
+
+    void SetZeroEmpty(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::ZeroEmpty, m_formatTraits, use); }
+    bool IsZeroEmpty() const { return CheckTraitsBit(FormatTraits::ZeroEmpty); }
+
+    void SetUse1000Separator(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::Use1000Separator, m_formatTraits, use); }
+    bool IsUse1000Separator() const { return CheckTraitsBit(FormatTraits::Use1000Separator); }
+
+    void SetApplyRounding(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::ApplyRounding, m_formatTraits, use); }
+    bool IsApplyRounding() const { return CheckTraitsBit(FormatTraits::ApplyRounding); }
+
+    void SetAppendUnit(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::AppendUnitName, m_formatTraits, use); }
+    bool IsAppendUnit() const { return CheckTraitsBit(FormatTraits::AppendUnitName); }
+
+    void SetFractionDash(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::FractionDash, m_formatTraits, use); }
+    bool IsFractionDash() const { return CheckTraitsBit(FormatTraits::FractionDash); }
+
+    void SetUseFractSymbol(bool use) { m_formatTraits = SetTraitsBit(FormatTraits::UseFractSymbol, m_formatTraits, use); }
+    bool IsUseFractSymbol() const { return CheckTraitsBit(FormatTraits::UseFractSymbol); }
+
+   // bool IsKeepTrailingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::TrailingZeroes)) != 0); }
+   // UNITS_EXPORT void SetUseLeadingZeroes(bool use);
+    //bool IsUseLeadingZeroes() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::LeadingZeroes)) != 0); }
+    //UNITS_EXPORT void SetKeepDecimalPoint(bool keep);
+   // bool IsKeepDecimalPoint() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepDecimalPoint)) != 0); }
+    //UNITS_EXPORT void SetKeepSingleZero(bool keep);
+    //bool IsKeepSingleZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::KeepSingleZero)) != 0); }
+    //UNITS_EXPORT void SetExponentZero(bool keep);
+    //bool IsExponentZero() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ExponentZero)) != 0); }
+    //UNITS_EXPORT void SetZeroEmpty(bool empty);
+    //bool IsZeroEmpty() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ZeroEmpty)) != 0); }
+    //UNITS_EXPORT void SetUse1000Separator(bool use);
+    //bool IsUse1000Separator() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::Use1000Separator)) != 0); }
+    //UNITS_EXPORT void SetApplyRounding(bool use);
+    //bool IsApplyRounding() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::ApplyRounding)) != 0); } 
+   // bool IsAppendUnit() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::AppendUnitName)) != 0); }
+    //UNITS_EXPORT void SetAppendUnit(bool use);
+   // bool IsFractionDash() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::FractionDash)) != 0); }
+    //UNITS_EXPORT void SetUseFractionDash(bool use);
+    //bool IsUseFractSymbol() const { return ((static_cast<int>(m_formatTraits) & static_cast<int>(FormatTraits::UseFractSymbol)) != 0); }
+    //UNITS_EXPORT void SetUseFractionSymbol(bool use);
 
     bool IsInsertSeparator(bool confirm) const { return (IsUse1000Separator() && (m_thousandsSeparator != 0) && confirm); }
     void SetNegativeParentheses() { m_signOption = ShowSignOption::NegativeParentheses; }
@@ -287,15 +337,8 @@ public:
     UNITS_EXPORT Utf8String IntToBinaryText(int n, bool useSeparator);
     UNITS_EXPORT Utf8String DoubleToBinaryText(double x, bool useSeparator);
 
-
-    UNITS_EXPORT Json::Value ToJson();
-    Json::Value JsonRoundFactor()
-        {
-        Json::Value jFact;
-        jFact[json_roundFactor()] = m_roundFactor;
-        return jFact;
-        }
-    UNITS_EXPORT Json::Value JsonFormatTraits();
+    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
+    UNITS_EXPORT Json::Value JsonFormatTraits(bool verbose) const;
     };
 
 //=======================================================================================
@@ -336,7 +379,7 @@ public:
     Utf8CP SetLabel(Utf8CP lab) { m_unitLabel = Utf8String(lab);  return m_unitLabel.c_str(); }
     Utf8CP GetName() const { return m_unitName.c_str(); }
     BEU::UnitCP GetUnit() const { return m_unit; }
-    UNITS_EXPORT Json::Value ToJson();
+    UNITS_EXPORT Json::Value ToJson(bool verbose) const;
     };
 
 
@@ -397,6 +440,7 @@ public:
     Utf8CP SetUnitLabel(size_t indx, Utf8CP unitLabel) { return IsIndexCorrect(indx) ? m_proxys[indx].SetLabel(unitLabel) : nullptr; }
     bool SetUnit(size_t indx, BEU::UnitCP unitP) { return IsIndexCorrect(indx) ?  m_proxys[indx].SetUnit(unitP) : false; }
     bool SetUnitName(size_t indx, Utf8CP unitName) const { return IsIndexCorrect(indx) ? m_proxys[indx].SetName(unitName) : false; }
+    UNITS_EXPORT Json::Value ToJson() const;
 };
 
 //=======================================================================================
@@ -475,7 +519,7 @@ public:
     Utf8String SetSpacer(Utf8CP spacer) { return m_spacer = spacer; }
     bool IsIncludeZero() const { return m_includeZero; }
     bool SetIncludeZero(bool incl) { return m_includeZero = incl; }
-    UNITS_EXPORT Json::Value ToJson();
+    UNITS_EXPORT Json::Value ToJson() const;
     };
 
 struct CompositeValue
@@ -536,7 +580,7 @@ public:
         Utf8String GetProblemDescription() { return m_problem.GetProblemDescription(); }
         Utf8String GetNameAndAlias() const { return Utf8String(m_name) + Utf8String("(") + Utf8String(m_alias) + Utf8String(")"); };
         PresentationType GetPresentationType() const { return m_numericSpec.GetPresentationType(); }
-        UNITS_EXPORT Json::Value ToJson();
+        UNITS_EXPORT Json::Value ToJson(bool verbose) const;
     };
 
 //=======================================================================================
