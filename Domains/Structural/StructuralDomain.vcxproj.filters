@@ -32,6 +32,9 @@
     <Filter Include="Utilities">
       <UniqueIdentifier>{f163d5b0-dfe7-4b74-b751-cb31b378e72f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="StructuralMaterial">
+      <UniqueIdentifier>{0be3619c-bc2b-4cac-ab0e-990c9efa0a7a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="structural.mke">
@@ -49,6 +52,9 @@
     <None Include="StructuralProfiles\StructuralProfiles.prewire.mki">
       <Filter>Mke</Filter>
     </None>
+    <None Include="StructuralMaterial\StructuralMaterial.prewire.mki">
+      <Filter>Mke</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="StructuralDomains.Partfile.xml">
@@ -62,6 +68,9 @@
     </Xml>
     <Xml Include="StructuralProfiles\StructuralProfiles.ecschema.xml">
       <Filter>Schemas</Filter>
+    </Xml>
+    <Xml Include="StructuralMaterial\StructuralMaterial.ecschema.xml">
+      <Filter>StructuralMaterial</Filter>
     </Xml>
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +154,18 @@
     </ClCompile>
     <ClCompile Include="StructuralDomainUtilities.cpp">
       <Filter>Utilities</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralMaterial\ConcreteMaterialProperties.cpp">
+      <Filter>StructuralMaterial</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralMaterial\MaterialProperties.cpp">
+      <Filter>StructuralMaterial</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralMaterial\SteelMaterialProperties.cpp">
+      <Filter>StructuralMaterial</Filter>
+    </ClCompile>
+    <ClCompile Include="StructuralMaterial\StructuralMaterialDomain.cpp">
+      <Filter>StructuralMaterial</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -246,6 +267,24 @@
     </ClInclude>
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\StructuralPhysicalDomain.h">
       <Filter>StructuralPhysical</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\ConcreteMaterialProperties.h">
+      <Filter>StructuralMaterial</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\MaterialProperties.h">
+      <Filter>StructuralMaterial</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\SteelMaterialProperties.h">
+      <Filter>StructuralMaterial</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialDefinitions.h">
+      <Filter>StructuralMaterial</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialDomain.h">
+      <Filter>StructuralMaterial</Filter>
+    </ClInclude>
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialApi.h">
+      <Filter>StructuralMaterial</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

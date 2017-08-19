@@ -22,6 +22,7 @@
     <None Include="structural.mke" />
     <None Include="Structural.prewire.mke" />
     <None Include="StructuralCommon\StructuralCommon.prewire.mki" />
+    <None Include="StructuralMaterial\StructuralMaterial.prewire.mki" />
     <None Include="StructuralPhysical\StructuralPhysical.prewire.mki" />
     <None Include="StructuralProfiles\StructuralProfiles.prewire.mki" />
   </ItemGroup>
@@ -30,6 +31,7 @@
     <Xml Include="StructuralDomains.Partfile.xml">
       <SubType>Designer</SubType>
     </Xml>
+    <Xml Include="StructuralMaterial\StructuralMaterial.ecschema.xml" />
     <Xml Include="StructuralPhysical\StructuralPhysical.ecschema.xml" />
     <Xml Include="StructuralProfiles\StructuralProfiles.ecschema.xml">
       <SubType>Designer</SubType>
@@ -40,6 +42,10 @@
     <ClCompile Include="StructuralCommon\StructuralPhysicalModel.cpp" />
     <ClCompile Include="StructuralCommon\StructuralTypeDefinitionModel.cpp" />
     <ClCompile Include="StructuralDomainUtilities.cpp" />
+    <ClCompile Include="StructuralMaterial\ConcreteMaterialProperties.cpp" />
+    <ClCompile Include="StructuralMaterial\MaterialProperties.cpp" />
+    <ClCompile Include="StructuralMaterial\SteelMaterialProperties.cpp" />
+    <ClCompile Include="StructuralMaterial\StructuralMaterialDomain.cpp" />
     <ClCompile Include="StructuralPhysical\Beam.cpp" />
     <ClCompile Include="StructuralPhysical\Brace.cpp" />
     <ClCompile Include="StructuralPhysical\Column.cpp" />
@@ -71,6 +77,12 @@
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralCommonDomain.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralPhysicalModel.h" />
     <ClInclude Include="StructuralCommon\PublicAPI\StructuralCommon\StructuralTypeDefinitionModel.h" />
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\ConcreteMaterialProperties.h" />
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\MaterialProperties.h" />
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\SteelMaterialProperties.h" />
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialDefinitions.h" />
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialDomain.h" />
+    <ClInclude Include="StructuralMaterial\PublicAPI\StructuralMaterial\StructuralMaterialApi.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Beam.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Brace.h" />
     <ClInclude Include="StructuralPhysical\PublicAPI\StructuralPhysical\Column.h" />

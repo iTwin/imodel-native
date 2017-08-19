@@ -1,0 +1,14 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: StructuralMaterial/StructuralMaterial.prewire.mki $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+$(targetAPIDir)StructuralMaterial : $(_MakeFilePath)StructuralMaterial/PublicAPI/StructuralMaterial
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(targetSchemasDir)StructuralMaterial.ecschema.xml : $(_MakeFilePath)StructuralMaterial\StructuralMaterial.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+  
