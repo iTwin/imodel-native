@@ -12,31 +12,31 @@ BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 HANDLER_DEFINE_MEMBERS(SteelMaterialPropertiesHandler)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SteelMaterialPropertiesPtr SteelMaterialProperties::Create() 
     { return new SteelMaterialProperties(); }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SteelMaterialPropertiesPtr SteelMaterialProperties::Create(double k1, double k2, double k3) 
     { return new SteelMaterialProperties(); }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SteelMaterialPropertiesPtr SteelMaterialProperties::Clone() const
     { return new SteelMaterialProperties(*this); }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SteelMaterialProperties::SteelMaterialProperties(SteelMaterialPropertiesCR rhs) 
     { *this = rhs; }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 SteelMaterialProperties& SteelMaterialProperties::operator= (SteelMaterialPropertiesCR rhs)
     {
@@ -57,14 +57,22 @@ bool SteelMaterialProperties::IsEqual(SteelMaterialPropertiesCR rhs) const
     return false;
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<Dgn::DgnElement::Aspect> SteelMaterialPropertiesHandler::_CreateInstance() 
     { return SteelMaterialProperties::Create(); }
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Dgn::DgnDbStatus SteelMaterialProperties::_UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
+    {
+    return Dgn::DgnDbStatus::WriteError;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::DgnDbStatus SteelMaterialProperties::_UpdateProperties(Dgn::DgnElementCR el)
     {
@@ -95,11 +103,6 @@ Dgn::DgnDbStatus SteelMaterialProperties::_LoadProperties(Dgn::DgnElementCR el)
     return Dgn::DgnDbStatus::WriteError;
 }
 
-
-Dgn::DgnDbStatus SteelMaterialProperties::_UpdateProperties(Dgn::DgnElementCR el, BeSQLite::EC::ECCrudWriteToken const* writeToken)
-{
-    return Dgn::DgnDbStatus::WriteError;
-}
 
 END_BENTLEY_STRUCTURAL_NAMESPACE
 

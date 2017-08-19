@@ -12,31 +12,31 @@ BEGIN_BENTLEY_STRUCTURAL_NAMESPACE
 HANDLER_DEFINE_MEMBERS(ConcreteMaterialPropertiesHandler)
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConcreteMaterialPropertiesPtr ConcreteMaterialProperties::Create() 
     { return new ConcreteMaterialProperties(); }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConcreteMaterialPropertiesPtr ConcreteMaterialProperties::Create(double k1, double k2, double k3) 
     { return new ConcreteMaterialProperties(); }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConcreteMaterialPropertiesPtr ConcreteMaterialProperties::Clone() const
     { return new ConcreteMaterialProperties(*this); }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConcreteMaterialProperties::ConcreteMaterialProperties(ConcreteMaterialPropertiesCR rhs) 
     { *this = rhs; }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 ConcreteMaterialProperties& ConcreteMaterialProperties::operator= (ConcreteMaterialPropertiesCR rhs)
     {
@@ -48,6 +48,7 @@ ConcreteMaterialProperties& ConcreteMaterialProperties::operator= (ConcreteMater
     return *this;
     }
 bool ConcreteMaterialProperties::IsValid() const { return true; }
+
 bool ConcreteMaterialProperties::IsEqual(ConcreteMaterialPropertiesCR rhs) const
     {
     /* NEEDSWORK - system nothandled exception here
@@ -57,14 +58,14 @@ bool ConcreteMaterialProperties::IsEqual(ConcreteMaterialPropertiesCR rhs) const
     return false;
     }
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 RefCountedPtr<Dgn::DgnElement::Aspect> ConcreteMaterialPropertiesHandler::_CreateInstance() 
     { return ConcreteMaterialProperties::Create(); }
 
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                    Marc.Bedard                     12/2016
+* @bsimethod                                    Jason.Chickneas                     08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
 Dgn::DgnDbStatus ConcreteMaterialProperties::_UpdateProperties(Dgn::DgnElementCR el)
     {
