@@ -4,10 +4,6 @@
 
     <ECSchemaReference name="BisCore" version="01.00" alias="bis"/>
     <ECSchemaReference name="StructuralPhysical" version="01.00" alias="sp"/>
-    <ECStructClass typeName="CompressiveStrengthTestType" description="BritishStandardsCube or standard cylinder test used by ACI" displayLabel="Compressive Strength Test Type">
-        <ECProperty propertyName="BritishStandardsCube" typeName="boolean" description="the cube used by British Standards"/>
-        <ECProperty propertyName="StandardCylinder" typeName="boolean" description="standard cylinder test used by ACI and EC2 (cylinders are almost exactly the same size)" displayLabel="Standard Cylinder"/>
-    </ECStructClass>
     <ECEntityClass typeName="MaterialProperties" displayLabel="Material Properties">
 	        <BaseClass>bis:ElementUniqueAspect</BaseClass>
         <ECProperty propertyName="ElasticModulus" typeName="double" description="Modulus of Elasticity" displayLabel="Elastic Modulus" kindOfQuantity="M_PER_L_T2"/>
@@ -15,21 +11,25 @@
         <ECProperty propertyName="TensileStrength" typeName="double" description="Tensile Strength" displayLabel="Tensile Strength" kindOfQuantity="M_PER_L_T2_PSI"/>
         <ECProperty propertyName="ThermalExpansionCoefficient" typeName="double" description="Thermal Expansion Coefficient (1/deg.F) " displayLabel="Thermal Expansion Coefficient" kindOfQuantity="K"/>
     </ECEntityClass>
-    <ECStructClass typeName="ConcretePropertyCalcType" description="Classifies the type of calculation done to determine a property of concrete" displayLabel="Concrete Property Calc Type">
-        <ECProperty propertyName="PerCode" typeName="boolean" description="Use a calculation based on the effective building code" displayLabel="Per Code"/>
-        <ECProperty propertyName="Specified" typeName="boolean" description="use the specified value in Concrete "/>
-    </ECStructClass>
+    <ECEnumeration typeName="ConcretePropertyCalcType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="PerCode"/>
+        <ECEnumerator value="1" displayLabel="Specified"/>
+    </ECEnumeration>
+    <ECEnumeration typeName="CompressiveStrengthTestType" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="BritishStandardsCube"/>
+        <ECEnumerator value="1" displayLabel="StandardCylinder"/>
+    </ECEnumeration>    
     <ECEntityClass typeName="ConcreteMaterialProperties" displayLabel="Concrete Material Properties">
         <BaseClass>MaterialProperties</BaseClass>
-		<!---->
-		<ECCustomAttributes>
+        <!---->
+        <ECCustomAttributes>
             <ClassHasHandler xmlns="BisCore.1.0"/>
         </ECCustomAttributes>
         <ECProperty propertyName="UnitMass" typeName="double" description="True Unit Mass (kip/in^3)" displayLabel="Unit Mass"/>
         <ECProperty propertyName="CompressiveStrength" typeName="double" description="Compressive strength (typically at 28 days)" displayLabel="Compressive Strength" kindOfQuantity="M_PER_L_T2"/>
-        <ECStructProperty propertyName="CompressiveStrengthTestType" typeName="CompressiveStrengthTestType" description="test type for CompressiveStrength value" displayLabel="Compressive Strength Test Type"/>
-        <ECStructProperty propertyName="ElasticModulusCalc" typeName="ConcretePropertyCalcType" description="the type of calc to use to determine the elastic modulus" displayLabel="Elastic Modulus Calc"/>
-        <ECStructProperty propertyName="TensileStrengthCalc" typeName="ConcretePropertyCalcType" description="the type of calc to use to determine the tensile strength" displayLabel="Tensile Strength Calc"/>
+        <ECProperty propertyName="TestType" typeName="CompressiveStrengthTestType"/>
+        <ECProperty propertyName="ElasticModulusCalc" typeName="ConcretePropertyCalcType"/>
+        <ECProperty propertyName="TensileStrengthCalc" typeName="ConcretePropertyCalcType"/>
         <ECProperty propertyName="UnitMassForLoads" typeName="double" description="Unit mass of concrete for use in calculating loads. Must be non-negative. " displayLabel="Unit Mass for Loads"/>
     </ECEntityClass>
     <ECEntityClass typeName="FirstLoadProperties" description="Specified properties at first load. Must be non-negative. This is typically used for the case of prestress transfer or form stripping" displayLabel="First Load Properties">
