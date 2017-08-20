@@ -123,6 +123,8 @@
         <ProductDirectory Name="BuildingDomainIncludes"                  Deliver="true" Path="Include/BuildingDomain"/>
         <ProductDirectory Name="PlantPrototypeIncludes"                  Deliver="true" Path="Include/PlantPrototype"/>
         <ProductDirectory Name="SpacePlanningDomainIncludes"             Deliver="true" Path="Include/SpacePlanningDomain"/>
+        <ProductDirectory Name="SpacePlanningIncludes"                   Deliver="true" Path="Include/SpacePlanningDomain"/>
+        <ProductDirectory Name="StructuralDomainIncludes"                Deliver="true" Path="Include/StructuralDomain"/>
         <ProductDirectory Name="BuildingSpacePlanningDomainIncludes"     Deliver="true" Path="Include/BuildingSpacePlanningDomain"/>
         <ProductDirectory Name="GridsIncludes"                           Deliver="true" Path="Include/Grids"/>
         <ProductDirectory Name="ConstraintSystemIncludes"                Deliver="true" Path="Include/ConstraintSystem"/>
