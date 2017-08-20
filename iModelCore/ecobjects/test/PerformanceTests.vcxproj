@@ -34,14 +34,14 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-<PropertyGroup Label="UserMacros" >
+  <PropertyGroup Label="UserMacros">
     <OutDir>$(OutRoot)Winx64\Build\ECObjectsTest\</OutDir>
     <IntDir>$(OutRoot)Winx64\Build\ECObjectsTest\</IntDir>
     <IntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjectsTest\</IntermediateOutputPath>
     <BaseIntermediateOutputPath>$(OutRoot)Winx64\Build\ECObjectsTest\</BaseIntermediateOutputPath>
     <NMakeOutput>$(OutRoot)Winx64\Build\ECObjectsTest\</NMakeOutput>
     <NMakeIncludeSearchPath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutRoot)Winx64\BuildContexts\ECObjectsTest\VendorAPI\;$(VCInstallDir)INCLUDE\;$(OutRoot)Winx64\BuildContexts\ECObjectsTest\SubParts\PublicAPI\;$(NMakeIncludeSearchPath)</NMakeIncludeSearchPath>
-  </PropertyGroup>  
+  </PropertyGroup>
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <NMakePreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">WIN32;_DEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
@@ -63,13 +63,6 @@
   <ItemGroup>
     <ClInclude Include="ECObjectsTestPCH.h" />
     <ClInclude Include="Performance\PerformanceTestFixture.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="logging.config.xml">
-      <SubType>Designer</SubType>
-    </None>
-    <None Include="performanceCompileRules.mki" />
-    <None Include="performanceTests.mke" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
