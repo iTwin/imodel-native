@@ -575,7 +575,6 @@ struct FormatConstant
                 }
             return false;
             }
-        UNITS_EXPORT const static FormatSpecialCodes SpecialtyMap(Utf8CP name);
         UNITS_EXPORT const static FormatSpecialCodes ParsingPatternCode(Utf8CP name);
         UNITS_EXPORT const static Utf8CP SpecialAngleSymbol(Utf8String name);
         UNITS_EXPORT const static Utf8CP SpecialLengthSymbol(Utf8String name);

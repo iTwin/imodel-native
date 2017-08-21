@@ -94,17 +94,6 @@ TEST(FormattingTest, Preliminary)
     else
         LOG.info("Test Data File is not available");
 
-    FormattingTestFixture::NamedSpecToJson("dms8");
-    FormattingTestFixture::NamedSpecToJson(nullptr);
-
-    UnitProxy prox = UnitProxy("FT", "Feet");
-    Json::Value proxV = prox.ToJson(true);
-    LOG.infov("UnitProxy verbose %s ", proxV.ToString().c_str());
-    proxV = prox.ToJson(false);
-    LOG.infov("UnitProxy compact %s ", proxV.ToString().c_str());
-    prox = UnitProxy("FT");
-    proxV = prox.ToJson(false);
-    LOG.infov("UnitProxy (no label) %s ", proxV.ToString().c_str());
 
     LOG.info("Stopping Signatures");
     FormattingTestFixture::ShowSignature("1+52.17", 100);
@@ -159,20 +148,17 @@ TEST(FormattingTest, Preliminary)
         LOG.infov("[%03d] %c 0x%x", n, *p, n + 0x20);
         n++;
         }*/
-    Utf8P bufStop = (Utf8P)alloca(128);
-    FormatTraits traits = FormatConstant::DefaultFormatTraits();
-    NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
-    NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+    //Utf8P bufStop = (Utf8P)alloca(128);
+    //FormatTraits traits = FormatConstant::DefaultFormatTraits();
+    //NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+    //NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
 
-    Json::Value nfcJson = nfst100.ToJson(false);
-    LOG.infov("JsonNFC %s", nfcJson.ToString().c_str());
+    //nfst1000.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
+    //nfst100.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
 
-    nfst1000.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
-    nfst100.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
-
-    LOG.infov("NUNFU = %d", FormatConstant::SpecialtyMap("NUNFU"));
-    LOG.infov("NUNU = %d", FormatConstant::SpecialtyMap("NUNU"));
-    LOG.infov("null = %d", FormatConstant::SpecialtyMap(nullptr));
+    LOG.infov("NUNFU = %d", FormatConstant::ParsingPatternCode("NUNFU"));
+    LOG.infov("NUNU = %d", FormatConstant::ParsingPatternCode("NUNU"));
+    LOG.infov("null = %d", FormatConstant::ParsingPatternCode(nullptr));
 
     FormattingTestFixture::ParseToQuantity("-23.45E-03_M", 0, "MM");
     FormattingTestFixture::ParseToQuantity("30 1/2 IN", 0, "FT");
@@ -297,7 +283,25 @@ TEST(FormattingTest, Preliminary)
 
 TEST(FormattingTest, Json)
     {
- 
+
+    UnitProxy prox = UnitProxy("FT", "Feet");
+    Json::Value proxV = prox.ToJson(true);
+    LOG.infov("UnitProxy verbose %s ", proxV.ToString().c_str());
+    proxV = prox.ToJson(false);
+    LOG.infov("UnitProxy compact %s ", proxV.ToString().c_str());
+    prox = UnitProxy("FT");
+    proxV = prox.ToJson(false);
+    LOG.infov("UnitProxy (no label) %s ", proxV.ToString().c_str());
+
+    FormattingTestFixture::NamedSpecToJson("dms8");
+    FormattingTestFixture::NamedSpecToJson(nullptr);
+    FormatTraits traits = FormatConstant::DefaultFormatTraits();
+    NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+
+    Json::Value nfcJson = nfst100.ToJson(false);
+    LOG.infov("JsonNFC %s", nfcJson.ToString().c_str());
+
+
     FormattingTestFixture::FormattingTraitsTest();
 
     NumericFormatSpec jsonTestSpec = NumericFormatSpec();
