@@ -98,7 +98,7 @@ protected:
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptTile(TileNodeCR tile) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _AcceptPublishedTilesetInfo(DgnModelCR, IGetPublishedTilesetInfoR) override;
-    TILEPUBLISHER_EXPORT WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, bool asClassifie4r) const override;
+    TILEPUBLISHER_EXPORT WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, PublisherContext::ClassifierInfo const* classifier) const override;
     bool _AllTilesPublished() const override { return true; }
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR) override;

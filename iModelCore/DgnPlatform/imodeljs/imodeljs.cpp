@@ -147,19 +147,6 @@ static bmap<BeFileName, DgnDbPtr> s_dbs;
 //---------------------------------------------------------------------------------------
 DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, Utf8String& errmsg, BeFileNameCR fn, DgnDb::OpenMode mode)
     {
-    // *** 
-    // ***  TBD: sort out readonly vs. readwrite 
-    // ***
-
-    BeSystemMutexHolder threadSafeInScope;
-
-    auto found = s_dbs.find(fn);
-    if (found != s_dbs.end())
-        return found->second;
-
-    // *** TBD: keep some kind of last-used-time for each db
-    // *** TBD: if we have too many Dbs open, then close some that have not been accessed for a while.
-
     BeFileName dbfilename;
     if (!fn.GetDirectoryName().empty())
         {
@@ -202,8 +189,6 @@ DgnDbPtr IModelJs::GetDbByName(DbResult& dbres, Utf8String& errmsg, BeFileNameCR
         }
 
     db->AddIssueListener(s_listener); 
-
-    s_dbs.insert(make_bpair(fn, db));
     return db;
     }
 

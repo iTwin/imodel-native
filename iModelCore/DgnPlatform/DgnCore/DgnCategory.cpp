@@ -29,7 +29,7 @@ void DgnCategory::_ToJson(JsonValueR val, JsonValueCR opts) const
     {
     T_Super::_ToJson(val, opts);
     val[json_rank()] = (int) m_rank;
-    val[json_descr()] = m_descr;
+    val[json_description()] = m_descr;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -378,7 +378,6 @@ DgnCode DgnSubCategory::_GenerateDefaultCode() const
     return DgnCode();
     }
 
-
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Keith.Bentley                   12/13
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -393,7 +392,7 @@ void DgnSubCategory::Appearance::FromJson(JsonValueCR val)
     m_dontPlot = val.get(json_dontPlot(), false).asBool();
     m_dontSnap = val.get(json_dontSnap(), false).asBool();
     m_dontLocate = val.get(json_dontLocate(), false).asBool();
-    m_color  = ColorDef(val[json_color()].asUInt());
+    m_color = ColorDef(val[json_color()].asUInt());
     m_weight = val[json_weight()].asUInt();
     if (val.isMember(json_style()))
         m_style  = DgnStyleId(val[json_style()].asUInt64());

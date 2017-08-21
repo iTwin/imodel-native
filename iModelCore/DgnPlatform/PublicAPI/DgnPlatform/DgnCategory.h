@@ -267,7 +267,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnCategory : DefinitionElement
 
 public:
     BE_JSON_NAME(rank)
-    BE_JSON_NAME(descr)
+    BE_JSON_NAME(description)
 
     //! The Rank of a category indicates how it was created and where it can be used.
     //! @ingroup GROUP_DgnCategory
