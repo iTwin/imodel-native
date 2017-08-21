@@ -792,12 +792,12 @@
       </Files>
     </Bindings>  </Part>
 
-  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_7_10_1">
-    <SubPart PartName="node-gyp-standalone_7_10_1" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
+  <Part Name="iModelJsNodeAddonLib-Linux" OnlyPlatforms="Linux*" ExcludeLibType="Dynamic" BentleyBuildMakeFile="imodeljs/nodejs/addon.mke" BentleyBuildMakeOptions="-dNODE_GYP_VER=N_7_10_0">
+    <SubPart PartName="node-gyp-standalone_7_10_0" PartFile="nodejs" Repository="Thirdparty-nodejs"/>
     <SubPart PartName="iModelJsNodeAddonLibCommon"/>
     <Bindings>
       <Files ProductDirectoryName="iModelJsNode_node_module" ProductSubDirectory="N_7_10">
-        Delivery/iModelJsNodeAddon/N_7_10_1/imodeljs.node
+        Delivery/iModelJsNodeAddon/N_7_10_0/imodeljs.node
       </Files>
     </Bindings>
   </Part>
