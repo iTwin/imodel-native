@@ -189,7 +189,7 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::GetInfoByPokingWSG (int apiSu
             return;
             }
 
-        if (result.GetError().GetHttpStatus() != HttpStatus::InternalServerError || apiSubVersion == 1)
+        if (result.GetError ().GetHttpStatus () != HttpStatus::NotFound || apiSubVersion == 1)
             {
             finalResult->SetError (result.GetError ());
             return;
@@ -226,7 +226,7 @@ AsyncTaskPtr<WSInfoHttpResult> ServerInfoProvider::PokeWSG (Utf8StringCR version
         if (response.IsSuccess ())
             {
             BeVersion version(versionUrlSuffix.c_str (), "/v%d.%d/repositories");
-            WSInfo info(version, version, WSInfo::Type::BentleyWSG);
+            WSInfo info(version, version, WSInfo::Type::Unknown);
 
             return WSInfoHttpResult::Success (info);
             }
