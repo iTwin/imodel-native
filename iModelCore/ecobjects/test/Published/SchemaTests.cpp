@@ -27,6 +27,15 @@ struct SchemaCopyTest : ECTestFixture
     ECSchemaPtr m_testSchema;
     ECSchemaReadContextPtr   m_schemaContext;
     SearchPathSchemaFileLocaterPtr m_schemaLocater;
+
+    protected:
+        void CopySchema(ECSchemaPtr& copiedSchema)
+            {
+            EC_ASSERT_SUCCESS(m_testSchema->CopySchema(copiedSchema));
+            EXPECT_TRUE(copiedSchema.IsValid());
+            EXPECT_NE(m_testSchema, copiedSchema);
+            }
+
     public:
         void SetUp ()
             {
@@ -1778,6 +1787,76 @@ TEST_F(SchemaCopyTest, CopySchemaWithPropertyCategory)
     EXPECT_TRUE(copiedPropertyCategory->GetPriority() == propertyCategory->GetPriority());
     EXPECT_STREQ(copiedPropertyCategory->GetDisplayLabel().c_str(), propertyCategory->GetDisplayLabel().c_str());
     EXPECT_STREQ(copiedPropertyCategory->GetDescription().c_str(), propertyCategory->GetDescription().c_str());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestEntityClassWithBaseClasses)
+    {
+    ECEntityClassP baseClass;
+    ECEntityClassP ecClass;
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_testSchema, "TestSchema", "ts", 5, 0, 5));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(baseClass, "BaseClass"));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(ecClass, "Class"));
+    EC_ASSERT_SUCCESS(ecClass->AddBaseClass(*baseClass));
+
+    ECSchemaPtr copiedSchema;
+    CopySchema(copiedSchema);
+
+    EXPECT_EQ(m_testSchema->GetClassCount(), copiedSchema->GetClassCount());
+    auto copiedECClass = copiedSchema->GetClassCP("Class");
+    EXPECT_EQ(1, copiedECClass->GetBaseClasses().size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestEntityClassWithMixin)
+    {
+    ECEntityClassP mixin;
+    ECEntityClassP ecClass;
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_testSchema, "TestSchema", "ts", 5, 0, 5));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(ecClass, "Class"));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateMixinClass(mixin, "Mixin", *ecClass));
+    EC_ASSERT_SUCCESS(ecClass->AddBaseClass(*mixin));
+
+    ECSchemaPtr copiedSchema;
+    CopySchema(copiedSchema);
+
+    EXPECT_EQ(m_testSchema->GetClassCount(), copiedSchema->GetClassCount());
+    auto copiedECClass = copiedSchema->GetClassCP("Class");
+    EXPECT_EQ(1, copiedECClass->GetBaseClasses().size());
+    auto copiedMixin = copiedECClass->GetBaseClasses().front()->GetEntityClassCP();
+    EXPECT_TRUE(copiedMixin->IsMixin());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Abeesh.Basheer                  08/2017
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, TestEntityClassWithBothBaseClassAndMixin)
+    {
+    ECEntityClassP entityBase, entityDerived;
+    ECEntityClassP mixin0;
+
+    ECSchema::CreateSchema(m_testSchema, "EntityClassSchema", "ECC", 1, 1, 1);
+    m_testSchema->CreateEntityClass(entityBase, "Entity0");
+    m_testSchema->CreateEntityClass(entityDerived, "Entity1");
+    
+    m_testSchema->CreateMixinClass(mixin0, "Mixin0", *entityBase);
+    PrimitiveECPropertyP prop;
+    mixin0->CreatePrimitiveProperty(prop, "P1");
+    entityDerived->AddBaseClass(*entityBase);
+    entityDerived->AddBaseClass(*mixin0);
+
+    EXPECT_EQ(2, entityDerived->GetBaseClasses().size());
+
+    ECSchemaPtr copiedSchema;
+    CopySchema(copiedSchema);
+
+    ECClassCP copiedClass = copiedSchema->GetClassP("Entity1");
+    ASSERT_TRUE(nullptr != copiedClass);
+    EXPECT_EQ(2, copiedClass->GetBaseClasses().size());
     }
 
 /*---------------------------------------------------------------------------------**//**
