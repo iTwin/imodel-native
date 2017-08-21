@@ -186,11 +186,20 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
         return BentleyStatus::SUCCESS;
 
     Utf8String cifAlignmentName(cifAlignment.GetName().c_str());
+    Utf8String bimAlignmentName;
 
     // Create Alignment
     auto bimAlignmentPtr = AlignmentBim::Alignment::Create(*m_bimAlignmentModelPtr);
     if (!Utf8String::IsNullOrEmpty(cifAlignmentName.c_str()))
-        bimAlignmentPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, cifAlignmentName));
+        {
+        BeFileName fileName(cifAlignment.GetDgnModelP()->GetDgnFileP()->GetFileName().c_str());
+        bimAlignmentName += Utf8String(fileName.GetFileNameAndExtension().c_str());
+        bimAlignmentName += "\\";
+        bimAlignmentName += Utf8String(cifAlignment.GetDgnModelP()->GetModelName());
+        bimAlignmentName += "\\";
+        bimAlignmentName += cifAlignmentName;
+        bimAlignmentPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*m_bimAlignmentModelPtr, bimAlignmentName));
+        }
     
     ORDConverterUtils::AssignFederationGuid(*bimAlignmentPtr, cifAlignment.GetSyncId());
 
@@ -208,7 +217,8 @@ BentleyStatus ORDAlignmentsConverter::CreateNewBimAlignment(AlignmentCR cifAlign
     // Create Horizontal Alignment
     auto bimHorizAlignmPtr = AlignmentBim::HorizontalAlignment::Create(*bimAlignmentPtr, *bimHorizGeometryPtr);
     if (!Utf8String::IsNullOrEmpty(cifAlignmentName.c_str()))
-        bimHorizAlignmPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimHorizAlignmPtr->GetModel(), cifAlignmentName));
+        bimHorizAlignmPtr->SetCode(AlignmentBim::RoadRailAlignmentDomain::CreateCode(*bimHorizAlignmPtr->GetModel(), bimAlignmentName));
+
     bimHorizAlignmPtr->GenerateElementGeom();
     if (bimHorizAlignmPtr->Insert().IsNull())
         return BentleyStatus::ERROR;

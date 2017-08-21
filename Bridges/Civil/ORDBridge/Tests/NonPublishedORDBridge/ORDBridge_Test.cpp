@@ -23,8 +23,8 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldCorridorConversionTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullyFederatedConversionTest)
     {
-    ASSERT_TRUE(RunTestApp("Fully Federated\\container.dgn", "default", "ORDFullyFederatedTest.bim"));
-    VerifyConvertedElements("ORDFullyFederatedTest.bim", 2, 0);
+    ASSERT_TRUE(RunTestApp("Fully Federated\\container 2.dgn", "default", "ORDFullyFederatedTest.bim"));
+    VerifyConvertedElements("ORDFullyFederatedTest.bim", 4, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -33,5 +33,5 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDFullyFederatedConversionTest)
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDIHLConversionTest)
     {
     ASSERT_TRUE(RunTestApp("IHL\\IHL.dgn", "default", "ORDIHLTest.bim"));
-    VerifyConvertedElements("ORDFullyFederatedTest.bim", 2, 0);
+    VerifyConvertedElements("ORDIHLTest.bim", 44, 0);
     }
