@@ -68,6 +68,7 @@ RealityData::CachePtr DgnDb::ElementTileCache() const
         if (SUCCESS != m_elementTileCache->OpenAndPrepare(cacheName))
             m_elementTileCache = nullptr;
         }
+
     return m_elementTileCache;
     }
 
@@ -88,6 +89,7 @@ SchemaImportToken const* DgnDb::GetSchemaImportToken() const { return GetECDbSet
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnDb::Destroy()
     {
+    m_elementTileCache = nullptr;
     m_models.Empty();
     m_txnManager = nullptr; // RefCountedPtr, deletes TxnManager
     m_lineStyles = nullptr;
