@@ -24,7 +24,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke">
+    <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
@@ -36,7 +36,7 @@
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityAdmin$(stlibext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)RealityAdmin$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)RealityAdmin$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
