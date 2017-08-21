@@ -18,4 +18,5 @@ SchemaManagerTests.ImportMultipleSupplementalSchemas
 #TFS 721630 
 ECSqlSelectPrepareTests.LikeOperator
 
-
+#TFS 742202
+ECDbMetaSchemaECSqlTestFixture.TestPropertyOverrides
