@@ -70,6 +70,7 @@
     <Part Name="ECObjectsTestsSeedData" DeferType="BuildUnitTests" BentleyBuildMakeFile="test/SeedData.prewire.mke">
         <Bindings>
             <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*xml</Files>
+            <Files SubPartDirectory="SeedData" ProductDirectoryName="ECObjectsTestSeedData">Delivery/SeedData/*json</Files>
             <Files SubPartDirectory="SeedData/ur-PK" ProductDirectoryName="ECObjectsTestSeedDataPK">Delivery/SeedData/ur-PK/*xml</Files>
             <Files SubPartDirectory="SeedData/en-GB" ProductDirectoryName="ECObjectsTestSeedDataGB">Delivery/SeedData/en-GB/*xml</Files>
             <Files SubPartDirectory="SeedData/it" ProductDirectoryName="ECObjectsTestSeedDataIT">Delivery/SeedData/it/*xml</Files>

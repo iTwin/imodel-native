@@ -259,28 +259,28 @@ TEST_F(KindOfQuantityDeserializationTest, TestIncompatiblePersistenceAndPresenta
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="MyKindOfQuantity" relativeError="10e-3" persistenceUnit="LUX" presentationUnits="M" />
         </ECSchema>)xml";
-    ECTestUtility::ExpectSchemaDeserializationFailure(schemaXml);
+    ECTestFixture::ExpectSchemaDeserializationFailure(schemaXml);
     }
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
         <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
             <KindOfQuantity typeName="MyKindOfQuantity" relativeError="10e-3" persistenceUnit="M" presentationUnits="LUX"/>
         </ECSchema>)xml";
-    ECTestUtility::ExpectSchemaDeserializationFailure(schemaXml);
+    ECTestFixture::ExpectSchemaDeserializationFailure(schemaXml);
     }
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <KindOfQuantity typeName="MyKindOfQuantity" relativeError="10e-3" persistenceUnit="M" presentationUnits="CM;LUX"/>
     </ECSchema>)xml";
-    ECTestUtility::ExpectSchemaDeserializationFailure(schemaXml);
+    ECTestFixture::ExpectSchemaDeserializationFailure(schemaXml);
     }
     {
     Utf8CP schemaXml = R"xml(<?xml version="1.0" encoding="UTF-8"?>
     <ECSchema schemaName="TestSchema" alias="ts" version="1.0.0" xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
         <KindOfQuantity typeName="MyKindOfQuantity" relativeError="10e-3" persistenceUnit="LUX" presentationUnits="CM;MM"/>
     </ECSchema>)xml";
-    ECTestUtility::ExpectSchemaDeserializationFailure(schemaXml);
+    ECTestFixture::ExpectSchemaDeserializationFailure(schemaXml);
     }
     }
 
