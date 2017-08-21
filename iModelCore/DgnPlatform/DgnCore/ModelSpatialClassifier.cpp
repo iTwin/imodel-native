@@ -19,6 +19,13 @@ BentleyStatus   ModelSpatialClassifier::FromJson(Json::Value const& value)
     m_expandDistance = value["expand"].asDouble();
     m_name = value["name"].asString();
 
+    if (value.isMember("categoryId"))
+        m_categoryId = DgnCategoryId(value["categoryId"].asUInt64());
+
+    if (value.isMember("elementId"))
+        m_elementId = DgnElementId(value["elementId"].asUInt64());
+
+
     return SUCCESS;
     }
 
@@ -33,6 +40,12 @@ Json::Value ModelSpatialClassifier::ToJson() const
     value["expand"] = m_expandDistance;
     value["modelId"] = m_modelId.GetValue(); 
     value["name"] = m_name;
+
+    if (m_categoryId.IsValid())
+        value["categoryId"] = m_categoryId.GetValue();
+
+    if (m_elementId.IsValid())
+        value["m_elementId"] = m_elementId.GetValue();
 
     return value;
     }
@@ -61,13 +74,6 @@ BentleyStatus ModelSpatialClassifier::Flags::FromJson(Json::Value const& value)
         return ERROR;
 
     m_type = value["type"].asUInt();
-   
-    if (m_type != TYPE_Model)
-        {
-        BeAssert (false && "Needs work...Only model classifiers are currently supported");
-        return ERROR;
-        }
-
     m_outsideDisplay = value["outside"].asUInt();
     m_insideDisplay = value["inside"].asUInt();
     m_selectedDisplay = value["selected"].asUInt();
