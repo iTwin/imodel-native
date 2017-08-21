@@ -26,6 +26,12 @@ static void* testFile = nullptr;
 /*=================================================================================**//**
 * @bsiclass                                     		David Fox-Rabinovitz 06/2017
 +===============+===============+===============+===============+===============+======*/
+
+void FormattingTestFixture::StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue)
+    {
+    EXPECT_STREQ (expectedValue, NumericFormatSpec::StdFormatDouble(formatName, dval).c_str());
+    }
+
 void FormattingTestFixture::SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump)
     {
     LOG.infov("Signature Test%02d  >%s<================", tstN, txt);
