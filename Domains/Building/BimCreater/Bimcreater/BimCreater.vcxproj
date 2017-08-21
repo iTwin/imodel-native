@@ -64,6 +64,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="PropertySheet.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -74,7 +75,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(OUTROOT)Winx64\BuildContexts\buildingDomains\PublicAPI;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -102,18 +103,18 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CONSOLE;%(PreprocessorDefinitions);BENTLEY_WIN32;</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(outRoot)winx64\Product\DesignModelingDomainsSDK\PublicApi;$(outRoot)winx64\Product\DesignModelingDomainsSDK\VendorApi</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(DesignModelingDomainsSDKLocation)PublicApi;$(DesignModelingDomainsSDKLocation)VendorApi</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(outroot)winx64\product\DesignModelingDomainsSDK\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(DesignModelingDomainsSDKLocation)lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>GridElements.lib;BentleyGeom.lib;BuildingDomain.lib;Bentley.lib;BeSQLite.lib;BeSQLiteEC.lib;DgnPlatform.lib;BeXml.lib;BeLibXml2.lib;ECObjects.lib;Units.lib;BaseGeoCoord.lib;BeJsonCpp.lib;plantPrototypeDomainHandler.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /s /y $(outroot)Winx64\Product\DesignModelingDomainsSdk\Assemblies\*  $(outdir)
-xcopy /s /y $(outroot)Winx64\Product\DesignModelingDomainsSdk\Assets\* $(outdir)Assets\
+      <Command>xcopy /s /y $(DesignModelingDomainsSdkLocation)Assemblies\*  $(outdir)
+xcopy /s /y $(DesignModelingDomainsSdkLocation)Assets\* $(outdir)Assets\
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
