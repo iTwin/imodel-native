@@ -26,7 +26,7 @@
     <file src="Assemblies\BentleyB02.dll" target="build" />
     <file src="Assemblies\BentleyGeomB02.dll" target="build" />
     <file src="Assemblies\BeXmlB02.dll" target="build" />
-    <file src="Assemblies\RealityPackage.dll" target="build" />
+    <file src="Assemblies\RealityPackageB02.dll" target="build" />
     <file src="Files\Bentley.RealityDbECPluginC.targets" target="build" />
     <file src="Assemblies\Bentley.RealityDbECPluginC.dll" target="lib\net40\Bentley.RealityDbECPluginC.dll" />
     <file src="Assemblies\RealityServicesNet.dll" target="lib\net40\RealityServicesNet.dll" />
