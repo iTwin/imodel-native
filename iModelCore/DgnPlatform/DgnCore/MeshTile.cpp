@@ -1204,10 +1204,11 @@ struct SolidKernelTileGeometry : TileGeometry
 {
 private:
     IBRepEntityPtr      m_entity;
+    DgnDbR              m_db;
     BeMutex             m_mutex;
 
     SolidKernelTileGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, DgnDbR db)
-        : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid) { }
+        : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_db(db), m_entity(&solid) { }
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }
@@ -1603,6 +1604,7 @@ TileGeometry::T_TilePolyfaces SolidKernelTileGeometry::_GetPolyfaces(IFacetOptio
                 {
                 GeometryParams faceParams;
                 params[i].ToGeometryParams(faceParams, baseParams);
+                faceParams.Resolve(m_db);
 
                 TileDisplayParamsCPtr displayParams = TileDisplayParams::Create(GetDisplayParams().GetColor(), faceParams);
                 tilePolyfaces.push_back (TileGeometry::TilePolyface (*displayParams, *polyface));
