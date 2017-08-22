@@ -8,7 +8,7 @@
 CLANG_ALLOW_UNDEFINED=1
 %include mdl.mki
 
-appName     = imodeljs
+appName     = imodeljs_$(NODE_GYP_VER)
 
 # I get the impression that node addons names should be all lower case. At least, that's what I see out there.
 
@@ -117,5 +117,5 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 #----------------------------------------------------------------------
 #   Deliver the shared library using the .node extension
 #----------------------------------------------------------------------
-$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/$(appName).node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
     $(LinkFirstDepToFirstTarget)
