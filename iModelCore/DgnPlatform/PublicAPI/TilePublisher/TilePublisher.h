@@ -272,7 +272,9 @@ struct PublisherContext : TileGenerator::ITileCollector
         ClassifierInfo(ModelSpatialClassifierCR classifier, ModelRange const& range, uint32_t index) : m_classifier(classifier), m_classifiedRange(range), m_index(index) { }
         };
 
-    typedef bvector<ClassifierInfo> T_ClassifierInfos;
+    typedef bvector<ClassifierInfo>             T_ClassifierInfos;
+    typedef bvector<ViewDefinitionCPtr>         T_ViewDefs;
+    typedef bmap<DgnElementId, T_ViewDefs>      T_CategorySelectorMap;
       
     Statistics                                  m_statistics;
 
@@ -295,6 +297,8 @@ protected:
     bool                                        m_isEcef; // Hack for ScalableMeshes at YII...all coords in .bim already in ECEF, but nothing in .bim tells us that...
     ITileGenerationFilterP                      m_generationFilter;
     ClassifierInfo*                             m_currentClassifier;
+    bset<DgnCategoryId>                         m_usedCategories;
+    bset<DgnSubCategoryId>                      m_usedSubCategories;
 
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
@@ -317,12 +321,12 @@ protected:
 
 
     void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels);
-    void WriteCategoriesJson(Json::Value&, DgnElementIdSet const& allCategorySelectors);
+    void WriteCategoriesJson(Json::Value&, T_CategorySelectorMap const&);
     Json::Value GetDisplayStylesJson(DgnElementIdSet const& styleIds);
     Json::Value GetDisplayStyleJson(DisplayStyleCR style);
     Json::Value GetClassifiersJson(T_ClassifierInfos const& classifiers);
     Json::Value GetAllClassifiersJson();
-
+    bool CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views) const;
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
@@ -346,6 +350,9 @@ public:
     WString GetTileExtension (TileNodeCR tile);
     ITileGenerationFilterP GetGenerationFilter() { return m_generationFilter; }
     ClassifierInfo* GetCurrentClassifier() { return m_currentClassifier; }
+    void RecordUsage(TileDisplayParamsCR displayParams);
+    bool IsCategoryUsed(DgnCategoryId categoryId) const { return m_usedCategories.find(categoryId) != m_usedCategories.end(); }
+    bool IsSubCategoryUsed(DgnSubCategoryId subCategoryId) const { return m_usedSubCategories.find(subCategoryId) != m_usedSubCategories.end(); }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);

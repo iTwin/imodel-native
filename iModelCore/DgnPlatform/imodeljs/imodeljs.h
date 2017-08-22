@@ -9,7 +9,7 @@
 #pragma once
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
-#include <ECDb/ECdbApi.h>
+#include <ECDb/ECDbApi.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
