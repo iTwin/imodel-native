@@ -22,9 +22,14 @@
 
 FOLLY_NAMESPACE_STD_BEGIN
 
+// WIP_XCODE9
+#if !(defined (__clang__) && defined (__APPLE__) && ((__clang_major__ * 1000 + __clang_minor__ * 10) >= 9000))
+
 [[noreturn]] BE_FOLLY_EXPORT void __throw_length_error(const char* msg);
 [[noreturn]] BE_FOLLY_EXPORT void __throw_logic_error(const char* msg);
 [[noreturn]] BE_FOLLY_EXPORT void __throw_out_of_range(const char* msg);
+
+#endif
 
 #ifdef _MSC_VER
 [[noreturn]] BE_FOLLY_EXPORT void __throw_bad_alloc();

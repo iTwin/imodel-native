@@ -27,6 +27,9 @@
 
 FOLLY_NAMESPACE_STD_BEGIN
 
+// WIP_XCODE9
+#if !(defined (__clang__) && defined (__APPLE__) && ((__clang_major__ * 1000 + __clang_minor__ * 10) >= 9000))
+
 void __throw_length_error(const char* msg) {
   throw std::length_error(msg);
 }
@@ -38,6 +41,8 @@ void __throw_logic_error(const char* msg) {
 void __throw_out_of_range(const char* msg) {
   throw std::out_of_range(msg);
 }
+
+#endif
 
 #if defined(_MSC_VER)
 void __throw_bad_alloc() {
