@@ -166,10 +166,13 @@ static unsigned char parse_hexpair(Utf8CP s)
 +---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BeGuid::FromString(Utf8CP uuid_str)
     {
+    if (uuid_str == nullptr)
+        return ERROR;
+
     for (int i = 0; i < 36; ++i)
         {
         char c = uuid_str[i];
-        if (!isxdigit(c) && !(c == '-' && (i == 8 || i == 13 || i == 18 || i == 23)))
+        if (c==0 || !isxdigit(c) && !(c == '-' && (i == 8 || i == 13 || i == 18 || i == 23)))
             return ERROR;       /* ### need a better value */
         }
 
