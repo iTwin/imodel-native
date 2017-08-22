@@ -3621,26 +3621,54 @@ ECObjectsStatus ECRelationshipConstraint::SetRoleLabel (Utf8CP value)
 +---------------+---------------+---------------+---------------+---------------+------*/
 ECObjectsStatus ECRelationshipConstraint::CopyTo(ECRelationshipConstraintR toRelationshipConstraint)
     {
+    ECObjectsStatus status;
+
     toRelationshipConstraint.SetRoleLabel(GetInvariantRoleLabel().c_str());
-    toRelationshipConstraint.SetMultiplicity(GetMultiplicity());
+    status = toRelationshipConstraint.SetMultiplicity(GetMultiplicity());
+    if (ECObjectsStatus::Success != status)
+        return status;
     toRelationshipConstraint.SetIsPolymorphic(GetIsPolymorphic());
 
-    ECObjectsStatus status;
     ECSchemaP destSchema = const_cast<ECSchemaP>(toRelationshipConstraint._GetContainerSchema());
+
+    if (IsAbstractConstraintDefined())
+        {
+        ECClassP destAbstractConstraint = nullptr;
+        if (_GetContainerSchema()->GetSchemaKey() != GetAbstractConstraint()->GetSchema().GetSchemaKey())
+            destAbstractConstraint = const_cast<ECClassP>(GetAbstractConstraint());
+        else
+            {
+            destAbstractConstraint = destSchema->GetClassP(GetAbstractConstraint()->GetName().c_str());
+            if (nullptr == destAbstractConstraint)
+                {
+                status = destSchema->CopyClass(destAbstractConstraint, *GetAbstractConstraint());
+                if (ECObjectsStatus::Success != status)
+                    return status;
+                }
+            }
+
+        status = toRelationshipConstraint.SetAbstractConstraint(*destAbstractConstraint);
+        if (ECObjectsStatus::Success != status)
+            return status;    
+        }
+
     for (auto constraintClass : GetConstraintClasses())
         {
-        ECClassP destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
-        if (NULL == destConstraintClass)
+        ECClassP destConstraintClass = nullptr;
+        if (_GetContainerSchema()->GetSchemaKey() != constraintClass->GetSchema().GetSchemaKey())
+            destConstraintClass = const_cast<ECClassP>(constraintClass);
+        else
             {
-            status = destSchema->CopyClass(destConstraintClass, *constraintClass);
-            if (ECObjectsStatus::Success != status)
-                return status;
+            destConstraintClass = destSchema->GetClassP(constraintClass->GetName().c_str());
+            if (nullptr == destConstraintClass)
+                {
+                status = destSchema->CopyClass(destConstraintClass, *constraintClass);
+                if (ECObjectsStatus::Success != status)
+                    return status;
+                }
             }
-        ECEntityClassP destAsEntity = destConstraintClass->GetEntityClassP();
-        if (nullptr == destAsEntity)
-            return ECObjectsStatus::DataTypeNotSupported;
 
-        status = toRelationshipConstraint.AddClass(*destAsEntity);
+        status = toRelationshipConstraint.AddClass(*destConstraintClass);
         if (ECObjectsStatus::Success != status)
             return status;
         }
