@@ -113,22 +113,7 @@ StatusTaskPtr Briefcase::Merge(ChangeSets const& changeSets) const
         }
     CheckCreatingChangeSet();
 
-    RevisionStatus mergeStatus = ValidateChangeSets(changeSets, *m_db);
-    if (RevisionStatus::Success != mergeStatus)
-        {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Validate changeSets failed.");
-        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(mergeStatus));
-        }
-    
-    if (!changeSets.empty())
-        {
-        for (auto changeSet : changeSets)
-            {
-            mergeStatus = m_db->Revisions().MergeRevision(*changeSet);
-            if (mergeStatus != RevisionStatus::Success)
-                break; // TODO: Use the information on the changeSet that actually failed. 
-            }
-        }
+    RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets);
 
     if (RevisionStatus::Success == mergeStatus)
         {
@@ -568,3 +553,163 @@ StatusTaskPtr Briefcase::UnsubscribeEventsCallback(EventCallbackPtr callback) co
     }
 
 /* EventService Methods End */
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Viktorija.Adomauskaite             10/2015
+//---------------------------------------------------------------------------------------
+StatusTaskPtr Briefcase::UpdateBriefcaseToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::UpdateBriefcaseToVersion";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    if (!m_db.IsValid() || !m_db->IsDbOpen())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::FileNotFound));
+        }
+
+    auto versionManager = m_imodelConnection->GetVersionsManager();
+
+    ChangeSetsInfoResult changeSetResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(versionId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken)->GetResult();
+
+    if (!changeSetResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult.GetError()));
+        }
+    auto changeSetInfos = changeSetResult.GetValue();
+
+    auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
+    if (!changeSetsResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetsResult.GetError()));
+        }
+    auto changeSets = changeSetsResult.GetValue();
+
+    RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets);
+
+    if (RevisionStatus::Success == mergeStatus)
+        {
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
+        }
+
+    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
+    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(mergeStatus));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Viktorija.Adomauskaite             10/2015
+//---------------------------------------------------------------------------------------
+StatusTaskPtr Briefcase::UpdateBriefcaseToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+    {
+    const Utf8String methodName = "Client::UpdateBriefcaseToChangeSet";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    if (!m_db.IsValid() || !m_db->IsDbOpen())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File not found.");
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(Error::Id::FileNotFound));
+        }
+
+    ChangeSetsInfoResult changeSetResult;
+    changeSetResult = m_imodelConnection->GetChangeSetsBetween(changeSetId, GetLastChangeSetPulled(), m_db->GetDbGuid(), cancellationToken)->GetResult();
+
+    if (!changeSetResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetResult.GetError()));
+        }
+    auto changeSetInfos = changeSetResult.GetValue();
+
+    auto changeSetsResult = m_imodelConnection->DownloadChangeSetsInternal(changeSetInfos, callback, cancellationToken)->GetResult();
+    if (!changeSetsResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, changeSetsResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(changeSetsResult.GetError()));
+        }
+    auto changeSets = changeSetsResult.GetValue();
+
+    RevisionStatus mergeStatus = AddRemoveChangeSetsFromDgnDb(changeSets);
+
+    if (RevisionStatus::Success == mergeStatus)
+        {
+        LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Success.");
+        return CreateCompletedAsyncTask<StatusResult>(StatusResult::Success());
+        }
+
+    LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "Merge failed.");
+    return CreateCompletedAsyncTask<StatusResult>(StatusResult::Error(mergeStatus));
+    }
+
+//---------------------------------------------------------------------------------------
+//@bsimethod                                   Viktorija.Adomauskaite             10/2015
+//---------------------------------------------------------------------------------------
+RevisionStatus Briefcase::AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets) const
+    {
+    /*
+    So, there are four main use cases:
+    1. All ChangeSets should be merged(added)/ChangeSets are new
+       In this case reinstation step is skipped and merge step is done
+    2. All ChangeSets should be reversed(removed)/ChangeSets are already merged
+       In this case reverse step is done
+    3. All ChangeSets should be reinstated(added)/ChangeSets has been reversed before
+       In this case reinstation step is done and merge step is skipped
+    4. Some ChangeSets should be reinstated and some merged(added)/First part of ChangeSets has been reversed and others are new ChangeSets
+       In this case reinstations step and then merge step are done.
+    */
+    const Utf8String methodName = "Client::AddRemoveChangeSetsFromDgnDb";
+    LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
+
+    if (changeSets.size() <= 0)
+        return RevisionStatus::Success;
+
+    Utf8String parentChangeSetId = GetLastChangeSetPulled();
+
+    RevisionStatus mergeStatus = RevisionStatus::Success;
+    if (Utf8String::IsNullOrEmpty(parentChangeSetId.c_str()) ||
+        changeSets.at(0)->GetParentId() == parentChangeSetId)
+        {
+        auto changeSetIterator = changeSets.begin();
+        //reinstation step
+        while (changeSetIterator != changeSets.end() && m_db->Revisions().HasReversedRevisions())
+            {
+            mergeStatus = m_db->Revisions().ReinstateRevision(**changeSetIterator);
+            changeSetIterator++;
+
+            if (mergeStatus != RevisionStatus::Success)
+                return mergeStatus;
+            }
+
+        if (changeSetIterator != changeSets.begin())
+            changeSets.erase(changeSets.begin(), changeSetIterator--);
+
+        //merge step
+        mergeStatus = ValidateChangeSets(changeSets, *m_db);
+        if (mergeStatus != RevisionStatus::Success)
+            return mergeStatus;
+
+        for (auto changeSet : changeSets)
+            {
+            mergeStatus = m_db->Revisions().MergeRevision(*changeSet);
+
+            if (mergeStatus != RevisionStatus::Success)
+                break;
+            }
+        }
+    else
+        {
+        //reverse step
+        std::reverse(changeSets.begin(), changeSets.end());
+
+        for (auto changeSet : changeSets)
+            {
+            mergeStatus = m_db->Revisions().ReverseRevision(*changeSet);
+            if (mergeStatus != RevisionStatus::Success)
+                break;
+            }
+        }
+
+    return mergeStatus;
+    }
