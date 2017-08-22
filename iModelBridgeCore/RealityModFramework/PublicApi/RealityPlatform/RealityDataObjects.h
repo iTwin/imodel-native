@@ -186,14 +186,19 @@ private:
 //! @bsiclass                                   Jean-Francois.Cote              4/2016
 //! The central class of the Reality Data model. It represents a spatial
 //! geocoordinated data meant to represent reality modeling data. 
-//! It contains all fields necessary to represent the spatial
-//! entity except the actual data which is stored in the.
+//! In the context of our services the concepts Reality Data and Spatial Entities are similar
+//! except for a few fields and the way data sources are designated, a reality data
+//! having a single data source while spatial entities often have many data sources.
+//! It contains all fields necessary to represent the reality data
+//! except the actual data.
 //=====================================================================================
 struct RealityDataBase : public RefCountedBase
 {
 public:
 
     // This enum is intentionaly not a en enum class to enable conversion to int and oring values
+    // The classifications represent the main classification of the data. Most reality data will be model
+    // classified except for specialised data such as imagery and terrain.
     enum Classification
         {
         UNDEFINED_CLASSIF = 0x00,
@@ -203,7 +208,7 @@ public:
         PINNED = 0x8,
         };
 
-    // This enum is intentionaly not a en enum class to enable conversion to int and oring values
+    // This enum is intentionaly not a en enum class to enable conversion to int and oring values.
     enum Visibility
         {
         UNDEFINED_VISIBILITY = 0x00,
@@ -216,12 +221,12 @@ public:
 
 
     //! Get/Set
-    //! Identifier of spatial entity
+    //! Identifier of spatial entity/reality data
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetIdentifier() const;
     REALITYDATAPLATFORM_EXPORT void SetIdentifier(Utf8CP identifier);
 
     //! Get/Set
-    //! Name of spatial entity
+    //! Name of spatial entity/ reality data
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetName() const;
     REALITYDATAPLATFORM_EXPORT void SetName(Utf8CP name);
 
@@ -272,8 +277,13 @@ public:
     REALITYDATAPLATFORM_EXPORT Visibility GetVisibility() const;
     REALITYDATAPLATFORM_EXPORT void SetVisibility(Visibility visibility);
 
+    //! Enables setting the visibility by a string. The only valid values are "PUBLIC", "ENTERPRISE", "PERMISSION" and "PRIVATE"
+    //! Returns SUCCESS if value set and ERROR if given tag is invalid
     REALITYDATAPLATFORM_EXPORT Utf8String GetVisibilityTag() const;
     REALITYDATAPLATFORM_EXPORT StatusInt SetVisibilityByTag(Utf8CP visibility);
+
+    //! Static helper method: converts a visibility tag to a visibility
+    //! Returns SUCCESS if value valid and ERROR if given tag is invalid. In case of error the visibility value remains unchanged
     REALITYDATAPLATFORM_EXPORT static StatusInt GetVisibilityFromTag(Visibility& returnedVisibility, Utf8CP visibilityTag);
     REALITYDATAPLATFORM_EXPORT static Utf8String GetTagFromVisibility(Visibility returnedVisibility);
 
@@ -308,9 +318,11 @@ public:
     REALITYDATAPLATFORM_EXPORT Utf8StringCR GetDescription() const;
     REALITYDATAPLATFORM_EXPORT void SetDescription(Utf8CP description);
     
+    //! Helper static methods. These convert or interpret string formatted footprints in the GCS (Context Services) format
     REALITYDATAPLATFORM_EXPORT static Utf8String FootprintToGCSString(bvector<GeoPoint2d> footprint, Utf8String coordSys);
     REALITYDATAPLATFORM_EXPORT static bvector<GeoPoint2d> GCSStringToFootprint(Utf8String footprint, Utf8String& coordSys);
 
+    //! Helper static methods. These convert or interpret string formatted footprints in the RDS (ProjectWise Context Share) format
     REALITYDATAPLATFORM_EXPORT static Utf8String FootprintToRDSString(bvector<GeoPoint2d> footprint, Utf8String coordSys);
     REALITYDATAPLATFORM_EXPORT static bvector<GeoPoint2d> RDSJSONToFootprint(const Json::Value& footprintJson, Utf8String& coordSys);
 
