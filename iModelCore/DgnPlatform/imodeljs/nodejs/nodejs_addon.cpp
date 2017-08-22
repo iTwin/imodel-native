@@ -859,13 +859,11 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             if (m_status != BE_SQLITE_OK)
                 SetupErrorReturn();
 
-        
-            BeFileName assetsDir("c:/Temp/PresentationRules");
-            BeFileName tempDir("c:/Temp");
-            m_db->m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>( new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir,tempDir)));
+            BeFileName assetsDir = T_HOST.GetIKnownLocationsAdmin().GetDgnPlatformAssetsDirectory();
+            BeFileName tempDir = T_HOST.GetIKnownLocationsAdmin().GetLocalTempDirectoryBaseName();
+            m_db->m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>(new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir,tempDir)));
             m_db->m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
             IECPresentationManager::RegisterImplementation( m_db->m_presentationManager.get());
-       
             }
         };
 
@@ -1065,53 +1063,16 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     //=======================================================================================
     struct GetElementPropertiesForDisplayWorker : WorkerBase<DgnDbStatus>
         {
-        Utf8String m_id;            // input
-        Json::Value m_elementJson;  // ouput
-
-        GetElementPropertiesForDisplayWorker(NodeAddonDgnDb* db, Utf8CP id) : WorkerBase(db, DgnDbStatus::Success), m_id(id), m_elementJson(Json::objectValue) {}
-
-        static NAN_METHOD(Start)
-            {
-            Nan::HandleScope scope;
-            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
-
-            REQUIRE_ARGUMENT_STRING(0, id, DgnDbStatus::BadRequest, "Argument 0 must be a string representing the DgnElementId");
-            (new GetElementPropertiesForDisplayWorker(db, *id))->ScheduleAndReturnPromise(info);
-            }
-
-        void Execute() override 
-            {
-            if (!m_db->m_dgndb.IsValid())
-                {
-                m_status = DgnDbStatus::NotOpen;
-                m_errmsg = "DgnDb must be open";
-                SetupErrorReturn();
-                return;
-                }
-
-            if (BSISUCCESS != IModelJs::GetElementPropertiesForDisplay(m_status, m_errmsg, m_elementJson, GetDgnDb(), m_id.c_str()))
-                SetupErrorReturn();
-            }
-
-        bool _GetResult(v8::Local<v8::Value>& result) override
-            {
-            Utf8String resultStr = Json::FastWriter::ToString(m_elementJson);
-            result = Nan::New(resultStr.c_str()).ToLocalChecked();
-            return true;
-            }
-        };
-        struct GetElementPropertiesForDisplayWorkerEx : WorkerBase<DgnDbStatus>
-        {
             Utf8String m_elementIdStr;
             Utf8String m_exportedJson;
-            GetElementPropertiesForDisplayWorkerEx(NodeAddonDgnDb* db, Utf8CP id) : WorkerBase(db,  DgnDbStatus::Success),m_elementIdStr(id) {}
+            GetElementPropertiesForDisplayWorker(NodeAddonDgnDb* db, Utf8CP id) : WorkerBase(db,  DgnDbStatus::Success),m_elementIdStr(id) {}
             static NAN_METHOD(Start)
                 {
                 Nan::HandleScope scope;
                 NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
                  REQUIRE_ARGUMENT_STRING(0, id, DgnDbStatus::BadRequest, "Argument 0 must be an ElementId string");
-                (new GetElementPropertiesForDisplayWorkerEx(db,*id))->ScheduleAndReturnPromise(info);
+                (new GetElementPropertiesForDisplayWorker(db,*id))->ScheduleAndReturnPromise(info);
                 }
 
             void Execute() override
@@ -1124,7 +1085,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                     return;
                     }
 
-        
                 ECInstanceId elemId(ECInstanceId::FromString(m_elementIdStr.c_str()).GetValueUnchecked());
                 if (!elemId.IsValid())
                     {
@@ -1143,7 +1103,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                     return;
                     }
                 
-                stmt->BindId(0, elemId);
+                stmt->BindId(1, elemId);
                 if (stmt->Step() != BE_SQLITE_ROW)
                     {
                     m_status = DgnDbStatus::SQLiteError;
@@ -1191,7 +1151,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
                 m_exportedJson = buffer.GetString();
                 }
 
-            
             bool _GetResult(v8::Local<v8::Value>& result) override
                 {
                 result = Nan::New(m_exportedJson.c_str()).ToLocalChecked();
@@ -1307,7 +1266,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
         Nan::SetPrototypeMethod(t, "insertElement", InsertElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
-        Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplayEx", GetElementPropertiesForDisplayWorkerEx::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
         Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);

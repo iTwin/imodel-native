@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<PresentationRuleSet RuleSetId="Models" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
+
+    <LabelOverride Label='this.GetRelatedValue("BisCore:ModelModelsElement", "Forward", "BisCore:Element", "CodeValue")' />
+    <ImageIdOverride ImageId='"ECClassImage://BisCore:" &amp; this.GetClass().Name' />
+    
+    <!-- Content rules -->
+    <ContentRule>
+        <ContentInstancesOfSpecificClasses ClassNames="BisCore:GeometricModel" ArePolymorphic="true" ShowImages="true">
+            <HiddenProperties ClassName="BisCore:Model" PropertyNames="IsTemplate" />
+            <CalculatedProperties>
+                <Property Label="Type">this.GetClass().DisplayLabel</Property>
+            </CalculatedProperties>
+        </ContentInstancesOfSpecificClasses>
+    </ContentRule>
+
+</PresentationRuleSet>
