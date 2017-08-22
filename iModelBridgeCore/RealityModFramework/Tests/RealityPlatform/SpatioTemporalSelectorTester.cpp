@@ -65,14 +65,14 @@ TEST_F(SpatioTemporalSelectorFixture, OutsideRegionOfInterest)
     {
     auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesBigList.json");
 
-    auto regionOfInterest = new bvector<GeoPoint2d>();
-    regionOfInterest->emplace_back(GeoPoint2d::From(0, 0));
-    regionOfInterest->emplace_back(GeoPoint2d::From(-100, 0));
-    regionOfInterest->emplace_back(GeoPoint2d::From(-100, -100));
-    regionOfInterest->emplace_back(GeoPoint2d::From(0, -100));
-    regionOfInterest->emplace_back(GeoPoint2d::From(0, 0));
+    auto regionOfInterest = bvector<GeoPoint2d>();
+    regionOfInterest.emplace_back(GeoPoint2d::From(0, 0));
+    regionOfInterest.emplace_back(GeoPoint2d::From(-100, 0));
+    regionOfInterest.emplace_back(GeoPoint2d::From(-100, -100));
+    regionOfInterest.emplace_back(GeoPoint2d::From(0, -100));
+    regionOfInterest.emplace_back(GeoPoint2d::From(0, 0));
 
-    auto Ids = SpatioTemporalSelector::GetIDsByResFromJson(json.c_str(), *regionOfInterest);
+    auto Ids = SpatioTemporalSelector::GetIDsByResFromJson(json.c_str(), regionOfInterest);
     EXPECT_EQ(Ids.size(), 3);
     EXPECT_EQ(Ids[ResolutionCriteria::Low].size(), 0);
     EXPECT_EQ(Ids[ResolutionCriteria::Medium].size(), 0);
@@ -113,23 +113,23 @@ TEST_F(SpatioTemporalSelectorFixture, GetIdsFromJsonResolutionCriteria)
     {
     auto json = RealityModFrameworkTestsUtils::GetTestDataContent(L"TestData\\RealityPlatform\\SpatialEntitiesBigList.json");
 
-    auto regionOfInterest = new bvector<GeoPoint2d>();
-    regionOfInterest->emplace_back(GeoPoint2d::From(0, 0));
-    regionOfInterest->emplace_back(GeoPoint2d::From(20, 0));
-    regionOfInterest->emplace_back(GeoPoint2d::From(20, 20));
-    regionOfInterest->emplace_back(GeoPoint2d::From(0, 20));
-    regionOfInterest->emplace_back(GeoPoint2d::From(0, 0));
+    auto regionOfInterest = bvector<GeoPoint2d>();
+    regionOfInterest.emplace_back(GeoPoint2d::From(0, 0));
+    regionOfInterest.emplace_back(GeoPoint2d::From(20, 0));
+    regionOfInterest.emplace_back(GeoPoint2d::From(20, 20));
+    regionOfInterest.emplace_back(GeoPoint2d::From(0, 20));
+    regionOfInterest.emplace_back(GeoPoint2d::From(0, 0));
 
     // Low only return low, medium return medium+low and high return all.
     // they are based on the statistics of the whole set.
 
-    auto Ids = SpatioTemporalSelector::GetIDsFromJson(json.c_str(), *regionOfInterest, ResolutionCriteria::Low, DateCriteria::UpToDate);
+    auto Ids = SpatioTemporalSelector::GetIDsFromJson(json.c_str(), regionOfInterest, ResolutionCriteria::Low, DateCriteria::UpToDate);
     EXPECT_EQ(Ids.size(), 3);
 
-    Ids = SpatioTemporalSelector::GetIDsFromJson(json.c_str(), *regionOfInterest, ResolutionCriteria::Medium, DateCriteria::UpToDate);
+    Ids = SpatioTemporalSelector::GetIDsFromJson(json.c_str(), regionOfInterest, ResolutionCriteria::Medium, DateCriteria::UpToDate);
     EXPECT_EQ(Ids.size(), 6);
 
-    Ids = SpatioTemporalSelector::GetIDsFromJson(json.c_str(), *regionOfInterest, ResolutionCriteria::High, DateCriteria::UpToDate);
+    Ids = SpatioTemporalSelector::GetIDsFromJson(json.c_str(), regionOfInterest, ResolutionCriteria::High, DateCriteria::UpToDate);
     EXPECT_EQ(Ids.size(), 9);
     }
 

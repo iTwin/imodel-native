@@ -2,7 +2,7 @@
 <!--
 #  $Source: RealityDbECPlugin/Install/Product_Files.wxs $
 #
-#  $Copyright: (c) 2016 Bentley Systems, Incorporated. All rights reserved. $
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
 -->
 <?include Defines.wxi?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
@@ -128,8 +128,8 @@
       <Component Id="NCSEcw.dll" Directory="bin" Guid="{20521954-2999-45EC-B45D-93F8DECB776B}">
         <File Id="NCSEcw.dll" KeyPath="yes" Source="$(var.ProductDir)NCSEcw.dll" />
       </Component>
-      <Component Id="RealityPackage.dll" Directory="bin" Guid="{D4049E0D-CDD5-4BCE-BBA5-9A74488B4454}">
-        <File Id="RealityPackage.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPackage.dll" />
+      <Component Id="RealityPackageB02.dll" Directory="bin" Guid="{D4049E0D-CDD5-4BCE-BBA5-9A74488B4454}">
+        <File Id="RealityPackageB02.dll" KeyPath="yes" Source="$(var.ProductDir)RealityPackageB02.dll" />
       </Component>
     </ComponentGroup>
   </Fragment>

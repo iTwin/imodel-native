@@ -701,8 +701,13 @@ void RealityDataConsole::List()
     else
         m_serverNodes = NodeNavigator::GetInstance().GetChildNodes(m_server, RealityDataService::GetRepoName(), m_currentNode->node, nodeResponse);
 
-    if(nodeResponse.body.ContainsI("not listable"))
-        DisplayInfo("This entity is not listable\n", DisplayOption::Error);
+    if (nodeResponse.body.ContainsI("error"))
+        { 
+        if (nodeResponse.body.ContainsI("InstanceNotFound") || nodeResponse.body.ContainsI("does not exist"))
+            DisplayInfo("This entity seems to have been removed. Perhaps by another user\n", DisplayOption::Error);
+        else if (nodeResponse.body.ContainsI("not listable"))
+            DisplayInfo("This entity is not listable\n", DisplayOption::Error);
+        }
     else
         {
         for (NavNode node : m_serverNodes)
@@ -812,6 +817,8 @@ void RealityDataConsole::ListAll()
     if (handshakeStatus != BentleyStatus::SUCCESS)
         {
         DisplayInfo("Failure retrieving Azure token\n", DisplayOption::Error);
+        if (handshakeResponse.body.ContainsI("InstanceNotFound") || handshakeResponse.body.ContainsI("does not exist"))
+            DisplayInfo("This entity seems to have been removed. Perhaps by another user\n", DisplayOption::Error);
         return;
         }
 
@@ -967,7 +974,7 @@ void RealityDataConsole::Download()
         DisplayInfo(Utf8PrintfString("%s\n", report));
         }
     else
-        DisplayInfo("Download could not be completed. Please verify you have access to this RealityData and that it has files to download\n", DisplayOption::Error);
+        DisplayInfo("Download could not be completed. Please verify you have access to this RealityData, that it still exists and that it has files to download\n", DisplayOption::Error);
     }
 
 void RealityDataConsole::Upload()

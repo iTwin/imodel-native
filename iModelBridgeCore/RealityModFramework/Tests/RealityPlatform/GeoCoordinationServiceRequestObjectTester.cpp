@@ -78,6 +78,9 @@ public:
         case GeoCoordinationField::Footprint:
             order.append("Footprint");
             break;
+        case GeoCoordinationField::Name:
+            order.append("Name");
+            break;
         case GeoCoordinationField::Description:
             order.append("Description");
             break;
@@ -156,7 +159,7 @@ public:
 
     static bvector<GeoCoordinationField> GetAllCoordinationField()
     {
-        bvector<GeoCoordinationField> vectorField(25);
+        bvector<GeoCoordinationField> vectorField;
         for (auto i = static_cast<int>(GeoCoordinationField::Id); i <= static_cast<int>(GeoCoordinationField::SubAPI); i++)
         {
             vectorField.push_back(static_cast<GeoCoordinationField>(i));

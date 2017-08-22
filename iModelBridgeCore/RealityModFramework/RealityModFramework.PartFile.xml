@@ -10,7 +10,7 @@
         </Bindings>
     </Part>
     
-    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x64">
+    <Part Name="RealityPlatform" BentleyBuildMakeFile="RealityPlatform\RealityPlatform.mke" OnlyPlatforms="x64" ApiNumber="B02">
         <SubPart PartName="RealityPackage" />
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
@@ -20,11 +20,11 @@
         <SubPart PartName="CCAPI"                      PartFile="BentleyDesktopClient"      Repository="BentleyDesktopClient" />
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityPlatform$(stlibext)</Libs>
-            <Assemblies>delivery/$(shlibprefix)RealityPlatform$(shlibext)</Assemblies>
+            <Assemblies>delivery/$(shlibprefix)RealityPlatform$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
-    <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke">
+    <Part Name="RealityAdmin" BentleyBuildMakeFile="RealityAdmin\RealityAdmin.mke" ApiNumber="B02">
         <SubPart PartName="PublicAPI"/>
         <SubPart PartName="ImagePPDll"                 PartFile="ImagePP"                   Repository="ImagePP" />
         <SubPart PartName="PointoolsVortexAPI_DLL"     PartFile="PointoolsVortexAPI"        Repository="PointoolsVortexAPI" />
@@ -36,7 +36,7 @@
         <SubPart PartName="RealityPlatform"/>
         <Bindings>
             <Libs>Delivery/$(stlibprefix)RealityAdmin$(stlibext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)RealityAdmin$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)RealityAdmin$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
@@ -117,14 +117,14 @@
         <SubPart PartName="CrawlerLibExample"/>
     </Part>
 
-    <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke" OnlyPlatforms="x86,x64, androidarm7a">
+    <Part Name="RealityPackage" BentleyBuildMakeFile="RealityPackage\RealityPackage.mke" OnlyPlatforms="x86,x64, androidarm7a" ApiNumber="B02">
         <SubPart PartName="PublicAPI" />
         <SubPart PartName="BentleyDll"  PartFile="Bentley"      Repository="Bentley" />
         <SubPart PartName="BeXml"    PartFile="BeLibxml2"    Repository="libsrc-libxml2" />
         <SubPart PartName="GeomDlls"    PartFile="geomlibs"     Repository="GeomLibs" />        
         <Bindings>
             <Libs>Delivery/$(libprefix)RealityPackage$(libext)</Libs>
-            <Assemblies>Delivery/$(shlibprefix)RealityPackage$(shlibext)</Assemblies>
+            <Assemblies>Delivery/$(shlibprefix)RealityPackage$(ApiNumber)$(shlibext)</Assemblies>
         </Bindings>
     </Part>
     
@@ -314,10 +314,10 @@
     </Part>
     
     <Part Name="UsageDataExtractor" BMakeFile="RealityDbECPlugin\UsageDataExtractor\UsageDataExtractor.mke" OnlyPlatforms="x64">
+        <RequiredRepository>BCC-IdentityModel</RequiredRepository>
         <SubPart PartName="ConnectClientAPI" PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient"/>
         <SubPart PartName="RequiredNugets" />
         <!--<SubPart PartName="JsonNet45"           PartFile="${SrcRoot}bsicommon/CvsPartFiles\bin"    Repository="Bin-JsonNet" />-->
-        <RequiredRepository>BCC-IdentityModel</RequiredRepository>
         <Bindings>
             <Assemblies>Delivery/UsageDataExtractor.exe</Assemblies>    
             <Files ProductDirectoryName="Assemblies">Delivery/UsageDataExtractor.exe.config</Files>
@@ -325,8 +325,23 @@
     </Part>
     
     <Part Name="RealityDbECPluginNuGetPackages">
-        <RequiredRepository>Bsitools-NuGet</RequiredRepository>
+        <RequiredRepository>Bsitools-NuGet</RequiredRepository>       
         
+        <!--<NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECAbstractUI</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECF</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECObjects</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPersistence</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPluginBuilder</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPresentation</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECSystem</NuGetPackage>-->
+        
+        <NuGetPackage targetFramework=".NETFramework4.0">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.SelectServer.SaaS.Client</NuGetPackage>
+        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.Discovery.Buddi.Client</NuGetPackage>
+        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging</NuGetPackage>-->
+        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging.Core</NuGetPackage>-->
+
         <!--<SubPart PartName="LoggingManaged"  PartFile="LoggingSDK"   Repository="loggingsdk" />
         <SubPart PartName="Exceptions"           PartFile="platformtech"       Repository="platformtech" />
         <SubPart PartName="ExtensionDiscovery"   PartFile="platformtech"       Repository="platformtech" />
@@ -346,21 +361,6 @@
         <SubPart PartName="Common.Logging"          PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         <SubPart PartName="Common.Logging.core"     PartFile="BentleyDesktopClient" Repository="BentleyDesktopClient" />
         
-        
-        <!--<NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECAbstractUI</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECF</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECObjects</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPersistence</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPluginBuilder</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECPresentation</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5.2">Bentley.ECSystem</NuGetPackage>-->
-        
-        <NuGetPackage targetFramework=".NETFramework4.0">Microsoft.WindowsAzure.ConfigurationManager</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">WindowsAzure.ServiceBus</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.SelectServer.SaaS.Client</NuGetPackage>
-        <NuGetPackage targetFramework=".NETFramework4.5">Bentley.Discovery.Buddi.Client</NuGetPackage>
-        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging</NuGetPackage>-->
-        <!--<NuGetPackage targetFramework=".NETFramework4.0">Common.Logging.Core</NuGetPackage>-->
         <Bindings>
             <Assemblies>NuGet\net40\Microsoft.WindowsAzure.Configuration.dll</Assemblies> 
             <Assemblies>NuGet\net45\Bentley.SelectServer.SaaS.Client.dll</Assemblies> 

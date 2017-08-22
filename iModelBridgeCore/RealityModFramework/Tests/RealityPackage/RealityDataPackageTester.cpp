@@ -119,6 +119,62 @@ TEST_F (PackageTestFixture, InvalidVersion)
     ASSERT_TRUE(!pPackage.IsValid());
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Remi.Charbonneau                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PackageTestFixture, CantCreateWithInvalidXml)
+    {
+    Utf8CP packageString =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='999999.0'>";
+
+    WString parseError;
+    auto status = RealityPackageStatus::UnknownError;
+    auto pPackage = RealityDataPackage::CreateFromString(status, packageString, &parseError);
+
+    ASSERT_FALSE(WString::IsNullOrEmpty(parseError.c_str()));
+    ASSERT_EQ(status, RealityPackageStatus::XmlReadError);
+    ASSERT_EQ(pPackage, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Remi.Charbonneau                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PackageTestFixture, CantCreateWithNoVersionAttribute)
+    {
+    Utf8CP packageString =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' NOTversion='999999.0'>"
+        "<Name>ProjectName</Name>"
+        "</RealityDataPackage>";
+
+    WString parseError;
+    auto status = RealityPackageStatus::UnknownError;
+    auto pPackage = RealityDataPackage::CreateFromString(status, packageString, &parseError);
+
+    ASSERT_EQ(status, RealityPackageStatus::UnsupportedVersion);
+    ASSERT_EQ(pPackage, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Remi.Charbonneau                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PackageTestFixture, CantCreateWithBadlyFormatedVersion)
+    {
+    Utf8CP packageString =
+        "<?xml version='1.0' encoding='UTF-8'?>"
+        "<RealityDataPackage xmlns='http://www.bentley.com/RealityDataServer/v1' xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance' version='9999990'>"
+        "<Name>ProjectName</Name>"
+        "</RealityDataPackage>";
+
+    WString parseError;
+    auto status = RealityPackageStatus::UnknownError;
+    auto pPackage = RealityDataPackage::CreateFromString(status, packageString, &parseError);
+
+    ASSERT_EQ(status, RealityPackageStatus::UnsupportedVersion);
+    ASSERT_EQ(pPackage, nullptr);
+    }
+
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   Mathieu.Marchand  3/2015
 //----------------------------------------------------------------------------------------
@@ -172,6 +228,30 @@ TEST_F(PackageTestFixture, InvalidLongLat)
     ASSERT_STREQ(L"", parseError.c_str()); // we use _STREQ to display the parse error if we have one.
     ASSERT_EQ(RealityPackageStatus::InvalidLongitudeLatitude, status);
     ASSERT_FALSE(pPackage.IsValid());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Remi.Charbonneau                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PackageTestFixture, CantCreatePackageWithEmptyName)
+    {
+    auto package = RealityDataPackage::Create("");
+    ASSERT_EQ(package, nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Remi.Charbonneau                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PackageTestFixture, CantCreatePackageWithBadlyFormedXml)
+    {
+    Utf8CP packageString = "<?xml version='1.0' encoding='UTF-8'?><RealityData>";
+    auto status = RealityPackageStatus::Success;
+    WString parseError;
+    auto package = RealityDataPackage::CreateFromString(status, packageString, &parseError);
+    ASSERT_EQ(package, nullptr);
+    ASSERT_EQ(status, RealityPackageStatus::XmlReadError);
+    ASSERT_FALSE(WString::IsNullOrEmpty(parseError.c_str()));
+
     }
 
 //----------------------------------------------------------------------------------------
@@ -2093,6 +2173,11 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
 
     // **** Data sources
     RealityDataSourcePtr pJpegDataSource = RealityDataSource::Create("./imagery/map.jpeg", "image/jpeg");
+    pJpegDataSource->SetCopyright("MyCopyright");
+    pJpegDataSource->SetId("MyId");
+    pJpegDataSource->SetProvider("Some Provider");
+    pJpegDataSource->SetSize(8871);
+    pJpegDataSource->SetMetadata("Super useful metadata");
     ASSERT_TRUE(pJpegDataSource.IsValid());
 
     RealityDataSourcePtr pPodDataSource = RealityDataSource::Create("./terrain/canada.pod", "pod");
@@ -2191,8 +2276,14 @@ TEST_F (PackageTestFixture, CreateAndRead_1_0)
 
         ASSERT_STREQ(pLeft->GetSource(0).GetUri().GetSource().c_str(), pRight->GetSource(0).GetUri().GetSource().c_str());
         ASSERT_STREQ(pLeft->GetSource(0).GetType().c_str(), pRight->GetSource(0).GetType().c_str());
+
+        ASSERT_STREQ(pLeft->GetSource(0).GetCopyright().c_str(), pRight->GetSource(0).GetCopyright().c_str());
+        ASSERT_STREQ(pLeft->GetSource(0).GetId().c_str(), pRight->GetSource(0).GetId().c_str());
+        ASSERT_STREQ(pLeft->GetSource(0).GetProvider().c_str(), pRight->GetSource(0).GetProvider().c_str());
+        ASSERT_STREQ(pLeft->GetSource(0).GetMetadata().c_str(), pRight->GetSource(0).GetMetadata().c_str());
+        ASSERT_EQ(pLeft->GetSource(0).GetSize(), pRight->GetSource(0).GetSize());
         
-        ASSERT_EQ(0 != (pLeft->GetCornersCP()), 0 != (pRight->GetCornersCP()));
+        ASSERT_EQ(nullptr != (pLeft->GetCornersCP()), nullptr != (pRight->GetCornersCP()));
         if(pLeft->GetCornersCP())
             {
             ASSERT_NEAR(pLeft->GetCornersCP()[ImageryData::LowerLeft].longitude, pRight->GetCornersCP()[ImageryData::LowerLeft].longitude, LONGLAT_EPSILON);
@@ -2250,10 +2341,10 @@ TEST_F(PackageTestFixture, Write2_1)
     RealityPackageStatus status;
     WStringP parseError = nullptr;
 
+    // Read a sample package and write it down
     auto packageSample = RealityModFrameworkTestsUtils::GetTestDataPath(L"Testdata//RealityPackage//RealityDataPackageSample.xml");
 
     BeFileName filename(packageSample);
-
     RealityDataPackagePtr pPackage = RealityDataPackage::CreateFromFile(status, filename, parseError);
     EXPECT_EQ(parseError, nullptr);
     ASSERT_EQ(RealityPackageStatus::Success, status);
@@ -2264,12 +2355,14 @@ TEST_F(PackageTestFixture, Write2_1)
     auto statusWrite = pPackage->Write(written);
     ASSERT_EQ(RealityPackageStatus::Success, statusWrite);
 
+    // Verify that the exported package is valid based on the XSD
     BeXmlStatus xmlStatus;
-    auto xml = BeXmlDom::CreateAndReadFromFile(xmlStatus, filename.c_str(), nullptr);
+    auto xml = BeXmlDom::CreateAndReadFromFile(xmlStatus, written.c_str(), nullptr);
     xmlStatus = xml->SchemaValidate(GetXsd_2_1().c_str());
 
     EXPECT_EQ(xmlStatus, BeXmlStatus::BEXML_Success);
 
+    // Verify that the input and output are equal
     BeFileStatus fileStatus;
     auto input = BeTextFile::Open(fileStatus, filename.c_str(), TextFileOpenType::Read, TextFileOptions::None);
     auto output = BeTextFile::Open(fileStatus, written.c_str(), TextFileOpenType::Read, TextFileOptions::None);
@@ -2425,6 +2518,82 @@ TEST(OSMResource, BasicTest)
     EXPECT_STREQ(resultUrlList[0].c_str(), "https://firsturl.com*[bbox=0,1,100,101]");
     EXPECT_STREQ(resultUrlList[1].c_str(), "https://secondurl.com*[bbox=0,1,100,101]");
     }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Remi.Charbonneau                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST(OSMDataSource, BasicTest)
+    {
+    auto bbox = DRange2d::From(0, 1, 100, 101);
+    auto osmDataSource = OsmDataSource::Create("https://www.example.com", &bbox);
+        
+    auto osmResource = osmDataSource->GetOsmResource();
+    EXPECT_STREQ(osmResource.c_str(), "");
+        
+    auto osmSecondResource = OsmResource::Create(bbox);
+        
+    Utf8String osmXml;
+    osmSecondResource->ToXml(osmXml);
+        
+    osmDataSource->SetOsmResource(osmXml.c_str());
+    osmResource = osmDataSource->GetOsmResource();
+    EXPECT_STREQ(osmResource.c_str(), osmXml.c_str());
+    }
+
+
+/*=================================================================================**//**
+* @bsiclass                                     		Remi.Charbonneau 08/2017
++===============+===============+===============+===============+===============+======*/
+class    	PinnedDataFixture: public testing::Test
+{
+public:
+    PinnedDataFixture() {};
+
+
+}; // PinnedDataFixture
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Remi.Charbonneau                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PinnedDataFixture, CantCreateWithBadLocation)
+    {
+    auto source = RealityDataSource::Create("https://www.example.com", "jpeg");
+    auto pinnedData = PinnedData::Create(*source, 3600, 500);
+    ASSERT_TRUE(pinnedData == nullptr);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Remi.Charbonneau                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PinnedDataFixture, CantSetBadLocation)
+    {
+    auto source = RealityDataSource::Create("https://www.example.com", "jpeg");
+    auto pinnedData = PinnedData::Create(*source, 45, 45);
+
+    auto newLocation = GeoPoint2d::From(15, 15);
+    newLocation.latitude = 1500;
+
+    auto success = pinnedData->SetLocation(newLocation);
+    ASSERT_FALSE(success);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Remi.Charbonneau                08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(PinnedDataFixture, CanSetGoodLocation)
+    {
+    auto source = RealityDataSource::Create("https://www.example.com", "jpeg");
+    auto pinnedData = PinnedData::Create(*source, 13, 47);
+
+    auto newLocation = GeoPoint2d::From(57, 14);
+
+    auto success = pinnedData->SetLocation(newLocation);
+    ASSERT_TRUE(success);
+    ASSERT_EQ(pinnedData->GetLocation().latitude, 14);
+    ASSERT_EQ(pinnedData->GetLocation().longitude, 57);
+    }
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                                   Jean-Francois.Cote         	    10/2016

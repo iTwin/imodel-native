@@ -1675,9 +1675,20 @@ bool RealityDataServiceTransfer::UpdateTransferAmount(int64_t transferedAmount)
     }
 
 //=====================================================================================
+//! @bsimethod                                   Spencer.Mason              08/2017
+//=====================================================================================
+RealityDataServiceUpload::RealityDataServiceUpload
+    (BeFileName uploadPath, Utf8String properties, bool overwrite, RealityDataServiceTransfer_StatusCallBack pi_func, 
+    bvector<BeFileName> colorList, bool isBlackList) :
+    RealityDataServiceUpload(uploadPath, "", properties, overwrite, true, pi_func, colorList, isBlackList)
+    {}
+
+//=====================================================================================
 //! @bsimethod                                   Spencer.Mason              02/2017
 //=====================================================================================
-RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, bool overwrite, bool listable, RealityDataServiceTransfer_StatusCallBack pi_func) :
+RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8String id, Utf8String properties, 
+    bool overwrite, bool listable, RealityDataServiceTransfer_StatusCallBack pi_func, bvector<BeFileName> colorList, 
+    bool isBlackList) :
     RealityDataServiceTransfer(), m_overwrite(overwrite)
     { 
     m_id = id;
@@ -1726,14 +1737,26 @@ RealityDataServiceUpload::RealityDataServiceUpload(BeFileName uploadPath, Utf8St
         // the bset is used to avoid adding multiple uploads for a single file
         bset<Utf8String> duplicateSet = bset<Utf8String>(); 
         size_t i = 0;
+        bool whiteListed;
+        bool noColorList = colorList.empty();
         while (fileIt.GetNextFileName(fileName) == BentleyStatus::SUCCESS) 
             {
             if(!uploadPath.IsDirectory() && duplicateSet.find(fileName.GetNameUtf8()) == duplicateSet.end())
                 {
                 duplicateSet.insert(fileName.GetNameUtf8());
-                fileUp = new RealityDataFileUpload(fileName, root, m_azureServer, i++);
-                m_filesToTransfer.push_back(fileUp);
-                m_fullTransferSize += fileUp->GetFileSize();
+                whiteListed = noColorList || isBlackList;
+                for (BeFileName colorFile : colorList)
+                    {
+                    if(fileName.GetNameUtf8().ContainsI(colorFile.GetNameUtf8()))
+                        whiteListed = !isBlackList;
+                    }
+            
+                if(whiteListed)
+                    {
+                    fileUp = new RealityDataFileUpload(fileName, root, m_azureServer, i++);
+                    m_filesToTransfer.push_back(fileUp);
+                    m_fullTransferSize += fileUp->GetFileSize();
+                    }
                 }
             }
         }
