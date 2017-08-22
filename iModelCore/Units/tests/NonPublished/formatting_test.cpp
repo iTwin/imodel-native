@@ -95,64 +95,6 @@ TEST(FormattingTest, Preliminary)
         LOG.info("Test Data File is not available");
 
 
-    LOG.info("Stopping Signatures");
-    FormattingTestFixture::ShowSignature("1+52.17", 100);
-    FormattingTestFixture::ShowSignature("1+152.17", 100);
-    FormattingTestFixture::ShowSignature("1*52.17", 100);
-
-    FormattingTestFixture::ShowSignature("1/52.17", 100);
-    if(nullptr == upx)
-        { 
-        upx = new UnitProxySet(4);
-        upx->SetUnitName(0, "FT");
-        upx->SetUnitName(1, "IN");
-        upx->SetUnitName(2, "CUB.M");
-        LOG.info("Init UPX");
-        }
-    repc++;
-    BEU::UnitCP upFT = upx->GetUnit(0);
-    BEU::UnitCP upIN = upx->GetUnit(1);
-    BEU::UnitCP upCM = upx->GetUnit(2);
-    BEU::UnitCP upFT1 = BEU::UnitRegistry::Instance().LookupUnit("FT");
-    Utf8CP nameFT = (nullptr == upFT) ? "xxx" : upFT->GetName();
-    Utf8CP nameIN = (nullptr == upIN) ? "xxx" : upIN->GetName();
-    Utf8CP nameCM = (nullptr == upCM) ? "xxx" : upCM->GetName();
-    LOG.infov("%s %s %s  Reset:%d", nameFT, nameIN, nameCM, upx->GetResetCount());
-    LOG.infov("Compare address %x %x repet %d", upFT, upFT1, repc);
-
- 
-
-    //LOG.infov("UNI: |%s|", uni);
-    //LOG.infov("ASCIIMap %s (len %d)", FormatConstant::ASCIImap(), strlen(FormatConstant::ASCIImap()));
-
-   /* int n = 0;
-    for (Utf8CP p = FormatConstant::ASCIImap(); *p != '\0'; ++p)
-        {
-        LOG.infov("[%03d] %c 0x%x", n, *p, n + 0x20);
-        n++;
-        }*/
-    //Utf8P bufStop = (Utf8P)alloca(128);
-    //FormatTraits traits = FormatConstant::DefaultFormatTraits();
-    //NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
-    //NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
-
-    //nfst1000.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
-    //nfst100.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
-
-   
-    /*size_t nc = tc.GetNextSymbol();
-    do {
-        LOG.infov("Next code %d scanLen %d inferredLen %d", nc, tc.GetLastLength(), Utils::NumberOfUtf8Bytes(nc));
-        nc = tc.GetNextSymbol();
-        } while (nc != 0);
-   */
-/*
-     LOG.infov("11100000 BitCount %d", tc.HeadBitCount(224));
-     LOG.infov("11110000 BitCount %d", tc.HeadBitCount(0xF0));
-     LOG.infov("11000000 BitCount %d", tc.HeadBitCount(0xC0));
-     LOG.infov("11111000 BitCount %d", tc.HeadBitCount(0xF8));
-     LOG.infov("11111100 BitCount %d", tc.HeadBitCount(0xFC));*/
-
     NumericAccumulator nacc = NumericAccumulator();
     //LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'-')).c_str());
     //LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.SetComplete()).c_str());
@@ -176,56 +118,8 @@ TEST(FormattingTest, Preliminary)
     else
         LOG.infov("NumAcc %d %s", nacc.GetByteCount(), nacc.ToText().c_str(), nacc.GetProblemDescription().c_str());
 
-   /* LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'2')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'.')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'4')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'5')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'E')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'-')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'0')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'_')).c_str());
-    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.SetComplete()).c_str());*/
-    //LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText(), nacc.GetProblemDescription());
-
-    FormattingTestFixture::ShowSignature(u8"135°", 200);
-    FormattingTestFixture::ShowSignature(u8"135°11'30-1/4\" S", 201);
-    FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"         ЯABГCDE   型号   sautéςερ   τcañón    ", 1, true);
-    //FormattingTestFixture::SignaturePattrenCollapsing(u8"135°11'30-1/4\" S", 10, true);
-                                                    //   012345678912345678901234567901234
-    /*FormattingTestFixture::SignaturePattrenCollapsing(u8"135° 11' 30¼\" S", 11, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30¼\" S ", 12, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 ¼\" S ", 13, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30-¼\" S ", 14, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 3/4\" S ", 15, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30-3/4\" S ", 16, false);
-    FormattingTestFixture::SignaturePattrenCollapsing(u8"  -135     °     11     ' 30 3/4\" S ", 17, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("   22' 3 1/2\"", 18, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3 1/2 IN", 19, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3-1/2 IN", 20, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3.5IN", 21, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("  15_mm", 22, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("125.43 ARC_DEG", 23, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("125.43ARC_DEG", 24, false);
-    FormattingTestFixture::SignaturePattrenCollapsing("1.3RAD", 24, false);*/
-    //FormattingTestFixture::ShowFUS("MM");
-    //FormattingTestFixture::ShowFUS("MM|fract8");
-
-    FormattingTestFixture::ShowFUS("MM|fract8|");
-    FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
-    //FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal|");
-    //FormattingTestFixture::ShowFUS("W/(M*C)(DefaultReal)");
-    //FormattingTestFixture::ShowFUS("W/(M*C)");
-    //FormattingTestFixture::ShowFUS("TONNE/HR(real4");
-    //FormattingTestFixture::ShowFUS("TONNE/HR(DefaultReal)");
-
-    //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
-    //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
-    //LOG.infov("TONNE_PER_HR-System  %s", sysN);
-
     }
+
 TEST(FormattingTest, StdFormatting)
     {
 
@@ -237,7 +131,6 @@ TEST(FormattingTest, StdFormatting)
     FormattingTestFixture::StdFormattingTest("stop100-2-4", 3.17, "0+0003.17");
         
     NumericFormatSpec numFmt = NumericFormatSpec();
-
     EXPECT_STREQ ("152", numFmt.FormatIntegerToString(152, 0, false).c_str());
     EXPECT_STREQ ("00152", numFmt.FormatIntegerToString(152, 5, false).c_str());
     EXPECT_STREQ ("-0152",  numFmt.FormatIntegerToString(-152, 4, false).c_str());
@@ -343,6 +236,54 @@ TEST(FormattingTest, Pasring)
     FormattingTestFixture::TestSegments("  -22FT 3 1/2IN", 0, "FT");
     FormattingTestFixture::TestSegments("-22' 3 1/2\"", 0, "FT");
 
+    /* LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'2')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'.')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'4')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'5')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'E')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'-')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'0')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'3')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.AddSymbol((size_t)'_')).c_str());
+    LOG.infov("Acc %d state %s", nacc.GetByteCount(), Utils::AccumulatorStateName(nacc.SetComplete()).c_str());*/
+    //LOG.infov("NumAcc %d %s  (%s)", nacc.GetByteCount(), nacc.ToText(), nacc.GetProblemDescription());
+
+    FormattingTestFixture::ShowSignature(u8"135°", 200);
+    FormattingTestFixture::ShowSignature(u8"135°11'30-1/4\" S", 201);
+    FormattingTestFixture::ShowHexDump(u8"135°11'30-1/4\" S", 30);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"         ЯABГCDE   型号   sautéςερ   τcañón    ", 1, true);
+    //FormattingTestFixture::SignaturePattrenCollapsing(u8"135°11'30-1/4\" S", 10, true);
+    //   012345678912345678901234567901234
+    /*FormattingTestFixture::SignaturePattrenCollapsing(u8"135° 11' 30¼\" S", 11, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30¼\" S ", 12, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 ¼\" S ", 13, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30-¼\" S ", 14, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30 3/4\" S ", 15, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  135     °     11     ' 30-3/4\" S ", 16, false);
+    FormattingTestFixture::SignaturePattrenCollapsing(u8"  -135     °     11     ' 30 3/4\" S ", 17, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("   22' 3 1/2\"", 18, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3 1/2 IN", 19, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3-1/2 IN", 20, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("  -22 FT 3.5IN", 21, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("  15_mm", 22, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("125.43 ARC_DEG", 23, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("125.43ARC_DEG", 24, false);
+    FormattingTestFixture::SignaturePattrenCollapsing("1.3RAD", 24, false);*/
+    //FormattingTestFixture::ShowFUS("MM");
+    //FormattingTestFixture::ShowFUS("MM|fract8");
+
+    FormattingTestFixture::ShowFUS("MM|fract8|");
+    FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal");
+    //FormattingTestFixture::ShowFUS("W/(M*C)|DefaultReal|");
+    //FormattingTestFixture::ShowFUS("W/(M*C)(DefaultReal)");
+    //FormattingTestFixture::ShowFUS("W/(M*C)");
+    //FormattingTestFixture::ShowFUS("TONNE/HR(real4");
+    //FormattingTestFixture::ShowFUS("TONNE/HR(DefaultReal)");
+
+    //BEU::UnitCP thUOM = BEU::UnitRegistry::Instance().LookupUnit("TONNE/HR");
+    //Utf8CP sysN = (nullptr == thUOM) ? "Unknown System" : thUOM->GetUnitSystem();
+    //LOG.infov("TONNE_PER_HR-System  %s", sysN);
     }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                            David.Fox-Rabinovitz                      02/17
@@ -833,3 +774,64 @@ TEST(FormattingTest, DictionaryValidation)
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 
+//////////// To be removed
+/* LOG.info("Stopping Signatures");
+FormattingTestFixture::ShowSignature("1+52.17", 100);
+FormattingTestFixture::ShowSignature("1+152.17", 100);
+FormattingTestFixture::ShowSignature("1*52.17", 100);
+
+FormattingTestFixture::ShowSignature("1/52.17", 100);
+if(nullptr == upx)
+{
+upx = new UnitProxySet(4);
+upx->SetUnitName(0, "FT");
+upx->SetUnitName(1, "IN");
+upx->SetUnitName(2, "CUB.M");
+LOG.info("Init UPX");
+}
+repc++;
+BEU::UnitCP upFT = upx->GetUnit(0);
+BEU::UnitCP upIN = upx->GetUnit(1);
+BEU::UnitCP upCM = upx->GetUnit(2);
+BEU::UnitCP upFT1 = BEU::UnitRegistry::Instance().LookupUnit("FT");
+Utf8CP nameFT = (nullptr == upFT) ? "xxx" : upFT->GetName();
+Utf8CP nameIN = (nullptr == upIN) ? "xxx" : upIN->GetName();
+Utf8CP nameCM = (nullptr == upCM) ? "xxx" : upCM->GetName();
+LOG.infov("%s %s %s  Reset:%d", nameFT, nameIN, nameCM, upx->GetResetCount());
+LOG.infov("Compare address %x %x repet %d", upFT, upFT1, repc);*/
+
+
+
+//LOG.infov("UNI: |%s|", uni);
+//LOG.infov("ASCIIMap %s (len %d)", FormatConstant::ASCIImap(), strlen(FormatConstant::ASCIImap()));
+
+/* int n = 0;
+for (Utf8CP p = FormatConstant::ASCIImap(); *p != '\0'; ++p)
+{
+LOG.infov("[%03d] %c 0x%x", n, *p, n + 0x20);
+n++;
+}*/
+//Utf8P bufStop = (Utf8P)alloca(128);
+//FormatTraits traits = FormatConstant::DefaultFormatTraits();
+//NumericFormatSpec nfst1000 = NumericFormatSpec(PresentationType::Stop1000, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+//NumericFormatSpec nfst100 = NumericFormatSpec(PresentationType::Stop100, ShowSignOption::OnlyNegative, traits, FormatConstant::DefaultDecimalPrecisionIndex());
+
+//nfst1000.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
+//nfst100.FormatDoubleBuf(1517.12, bufStop, 120, 2, 0.0);
+
+
+/*size_t nc = tc.GetNextSymbol();
+do {
+LOG.infov("Next code %d scanLen %d inferredLen %d", nc, tc.GetLastLength(), Utils::NumberOfUtf8Bytes(nc));
+nc = tc.GetNextSymbol();
+} while (nc != 0);
+*/
+/*
+LOG.infov("11100000 BitCount %d", tc.HeadBitCount(224));
+LOG.infov("11110000 BitCount %d", tc.HeadBitCount(0xF0));
+LOG.infov("11000000 BitCount %d", tc.HeadBitCount(0xC0));
+LOG.infov("11111000 BitCount %d", tc.HeadBitCount(0xF8));
+LOG.infov("11111100 BitCount %d", tc.HeadBitCount(0xFC));*/
+
+
+//////////// End of To be removed
