@@ -176,7 +176,7 @@ DbResult DgnDb::CreatePartitionElement(Utf8CP className, DgnElementId partitionI
     statement.BindId(4, Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_SubjectOwnsPartitionElements));
     statement.BindId(5, partitionCode.GetCodeSpecId());
     statement.BindId(6, partitionCode.GetScopeElementId(*this));
-    statement.BindText(7, partitionCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(7, partitionCode.GetValue().GetUtf8CP(), IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();
     BeAssert(BE_SQLITE_DONE == result);
@@ -247,7 +247,7 @@ DbResult DgnDb::CreateRootSubject(CreateDgnDbParams const& params)
     statement.BindId(2, modelId);
     statement.BindId(3, elementCode.GetCodeSpecId());
     statement.BindId(4, elementCode.GetScopeElementId(*this));
-    statement.BindText(5, elementCode.GetValueCP(), IECSqlBinder::MakeCopy::No);
+    statement.BindText(5, elementCode.GetValueUtf8CP(), IECSqlBinder::MakeCopy::No);
     statement.BindText(6, params.m_rootSubjectDescription.c_str(), IECSqlBinder::MakeCopy::No);
 
     DbResult result = statement.Step();

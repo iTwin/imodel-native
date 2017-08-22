@@ -205,7 +205,7 @@ bool DgnElement::SetPropertyFilter::_ExcludeProperty(ECPropertyValueCR propValue
             return true;
 
         // You cannot set any of the Geometry properties via the property API
-        if (propName.Equals(GEOM3_InSpatialIndex))
+        if (propName.Equals(GeometricElement3d::prop_InSpatialIndex()))
             return true;
         }
 

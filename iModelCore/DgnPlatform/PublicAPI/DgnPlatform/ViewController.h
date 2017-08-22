@@ -570,7 +570,7 @@ protected:
     double GetGroundElevation() const;
     AxisAlignedBox3d GetGroundExtents(DgnViewportCR) const;
     void DrawGroundPlane(DecorateContextR);
-    DGNPLATFORM_EXPORT void DrawSkyBox(RenderContextR);
+    DGNPLATFORM_EXPORT void DrawSkyBox(DecorateContextR);
 
 public:
     void ResetDeviceOrientation() {m_defaultDeviceOrientationValid = false;}

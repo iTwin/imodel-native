@@ -284,6 +284,8 @@ namespace Attachment
 
         TileTree::TilePtr _CreateChild(TileTree::QuadTree::TileId id) const override {return nullptr;}
         Tree& GetTree() const {return (Tree&) m_root;}
+        Tile2dModel(TileTree::QuadTree::Root& quadRoot, TileTree::QuadTree::TileId id, Tile const* parent) : T_Super(quadRoot, id, parent) 
+            {m_range = ElementAlignedBox3d(0.0, 0.0, 0.0, 1.0, 1.0, 1.0);}
     };
 
     struct Tile : TileTree::QuadTree::Tile

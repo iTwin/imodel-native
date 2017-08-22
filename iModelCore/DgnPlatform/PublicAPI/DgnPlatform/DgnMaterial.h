@@ -93,11 +93,11 @@ public:
         {
         SetPaletteName(paletteName);
         if (parentMaterialId.IsValid())
-            m_parentRelClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_RenderMaterialOwnsRenderMaterials);
+            m_parent.m_relClassId = GetDgnDb().Schemas().GetClassId(BIS_ECSCHEMA_NAME, BIS_REL_RenderMaterialOwnsRenderMaterials);
         }
 
     RenderMaterialId GetMaterialId() const {return RenderMaterialId(GetElementId().GetValue());} //!< Returns the Id of this RenderMaterial.
-    Utf8String GetMaterialName() const {return GetCode().GetValue();} //!< Returns the RenderMaterial name
+    Utf8String GetMaterialName() const {return GetCode().GetValue().GetUtf8();} //!< Returns the RenderMaterial name
 
     Utf8String GetPaletteName() const {return GetPropertyValueString(prop_PaletteName());} //!< Returns the palette name which categorizes this RenderMaterial
     DgnDbStatus SetPaletteName(Utf8StringCR paletteName) {return SetPropertyValue(prop_PaletteName(), paletteName.c_str());} //!< Set the palette name which categorizes this RenderMaterial

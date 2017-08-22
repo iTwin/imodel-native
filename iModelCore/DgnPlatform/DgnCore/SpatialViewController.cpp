@@ -51,6 +51,7 @@ SpatialViewController::SpatialViewController(SpatialViewDefinitionCR def) : T_Su
 void SpatialViewController::_DrawDecorations(DecorateContextR context)
     {
     DrawGroundPlane(context);
+    DrawSkyBox(context);
 
     if (m_copyrightMsgs.empty())
         return;
@@ -177,8 +178,6 @@ BentleyStatus SpatialViewController::_CreateScene(SceneContextR context)
 #endif
 
     StopWatch timer(true);
-
-    DrawSkyBox(context);
 
     uint32_t waitForAllLoadsMillis = 0;
     if (context.GetUpdatePlan().WantWait() && context.GetUpdatePlan().GetQuitTime().IsInFuture())
@@ -476,6 +475,7 @@ void SpatialViewController::_VisitAllElements(ViewContextR context)
     }
 
 /*---------------------------------------------------------------------------------**//**
+    BeThreadUtilities::StartNewThread(Main, this);
 * @bsimethod                                    Keith.Bentley                   02/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 void SpatialViewController::RangeQuery::AddAlwaysDrawn(SpatialViewControllerCR view)

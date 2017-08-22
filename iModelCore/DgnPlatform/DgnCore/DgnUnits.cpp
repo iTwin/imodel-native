@@ -115,6 +115,14 @@ void DgnGeoLocation::SetProjectExtents(AxisAlignedBox3dCR newExtents)
 +---------------+---------------+---------------+---------------+---------------+------*/
 void DgnGeoLocation::InitializeProjectExtents() 
     {
+    SetProjectExtents(ComputeProjectExtents());
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                    Keith.Bentley                   04/12
++---------------+---------------+---------------+---------------+---------------+------*/
+AxisAlignedBox3d DgnGeoLocation::ComputeProjectExtents() const
+    {
     auto& models = GetDgnDb().Models();
 
     // Set the project extents to the union of the ranges of all of the spatial models.
@@ -131,7 +139,7 @@ void DgnGeoLocation::InitializeProjectExtents()
     if (extent.IsEmpty()) // if we found nothing in any models, just set the project extents to a resonable default
         extent = GetDefaultProjectExtents();
 
-    SetProjectExtents(extent); // store the result
+    return extent;
     }
 
 /*---------------------------------------------------------------------------------**//**

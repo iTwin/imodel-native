@@ -3341,7 +3341,7 @@ static BentleyStatus getBodyCurves(bvector<PK_CURVE_t>& curves, bvector<PK_INTER
         {
         PK_CURVE_t      curveTag;
 
-        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag))
+        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag)) // NOTE: Shouldn't need to check null curve/fin for current use cases (simple wire/sheets from CurveVectors)...
             continue;
 
         PK_INTERVAL_t   interval;
@@ -4375,14 +4375,34 @@ BentleyStatus wireBodyFromOffsetEdgesOnPlanarFace(bvector<PK_BODY_t>& wireBodies
         if (0 == edgeTag)
             continue;
 
-        PK_CURVE_t curveTag;
+        PK_CURVE_t      curveTag = PK_ENTITY_null;
+        PK_INTERVAL_t   interval;
 
-        if (SUCCESS != PK_EDGE_ask_curve(edgeTag, &curveTag))
-            continue;
+        if (SUCCESS == PK_EDGE_ask_curve(edgeTag, &curveTag) && PK_ENTITY_null != curveTag)
+            {
+            if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
+                curveTag = PK_ENTITY_null;
+            }
+        else
+            {
+            bvector<PK_FIN_t> edgeFins;
 
-        PK_INTERVAL_t interval;
+            PSolidTopo::GetEdgeFins(edgeFins, edgeTag);
 
-        if (SUCCESS != PK_EDGE_find_interval(edgeTag, &interval) && SUCCESS != PK_CURVE_ask_interval(curveTag, &interval))
+            for (PK_FIN_t edgeFin : edgeFins)
+                {
+                PK_FACE_t finFace;
+
+                if (SUCCESS != PK_FIN_ask_face(edgeFin, &finFace) || finFace != faceTag)
+                    continue;
+
+                if (SUCCESS != PK_FIN_ask_curve(edgeFin, &curveTag) || SUCCESS != PK_FIN_find_interval(edgeFin, &interval))
+                    curveTag = PK_ENTITY_null;
+                break;
+                }
+            }
+
+        if (PK_ENTITY_null == curveTag)
             continue;
 
         if (curves.empty()) // Determine sign of offset distance...

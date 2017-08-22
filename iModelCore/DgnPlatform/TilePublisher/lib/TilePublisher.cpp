@@ -60,7 +60,15 @@ Utf8String      getJsonString(Json::Value const& value)
 
     return string;
     }
-
+ 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+Utf8String PublishTileData::GetJsonString() const
+    {
+    // TFS#734860: Missing padding following feature table json in i3dm tiles...
+    return getJsonString(m_json);
+    }
 
 //=======================================================================================
 // We use a hierarchical batch table to organize features by element and subcategory,
@@ -3014,9 +3022,21 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     m_outputDir.AppendSeparator();
     m_dataDir = m_outputDir;
 
+    // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
+    m_projectExtents = db.GeoLocation().ComputeProjectExtents();
+
+#if defined(WIP_MESHTILE_3SM)
+    m_isEcef = true; // ###TODO: Remove after YII...
+#else
+    m_isEcef = false;
+#endif
+
     // ###TODO: Probably want a separate db-to-tile per model...will differ for non-spatial models...
-    DPoint3d        origin = db.GeoLocation().GetProjectExtents().GetCenter();
-    m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
+    DPoint3d        origin = m_projectExtents.GetCenter();
+    if (m_isEcef)
+        m_dbToTile.InitIdentity();
+    else
+        m_dbToTile = Transform::From (-origin.x, -origin.y, -origin.z);
 
     DgnGCS*         dgnGCS = db.GeoLocation().GetDgnGCS();
     DPoint3d        ecfOrigin, ecfNorth;
@@ -3063,7 +3083,10 @@ PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFil
     rMatrix.SetColumn (zVector, 2);
     rMatrix.SquareAndNormalizeColumns (rMatrix, 1, 2);
 
-    m_spatialToEcef =  Transform::From (rMatrix, ecfOrigin);
+    if (m_isEcef)
+        m_spatialToEcef.InitIdentity(); // ###TODO: ecfNorth...
+    else
+        m_spatialToEcef =  Transform::From (rMatrix, ecfOrigin);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3304,7 +3327,7 @@ TileGeneratorStatus PublisherContext::_EndProcessModel(DgnModelCR model, TileNod
         {
             {
             BeMutexHolder lock(m_mutex);
-            m_modelRanges[model.GetModelId()] = rootTile->GetTileRange();
+            m_modelRanges[model.GetModelId()] = ModelRange(rootTile->GetTileRange(), false);
             }
 
         WriteModelTileset(*rootTile);
@@ -3405,7 +3428,10 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 
     rootRange = DRange3d::NullRange();
     for (auto const& kvp : m_modelRanges)
-        rootRange.Extend(kvp.second);
+        {
+        // ###TODO: Invert if already ECEF...
+        rootRange.Extend(kvp.second.m_range);
+        }
 
 #if defined(TODO_TILE_PUBLISH)
     for (auto& modelId : viewedModels)
@@ -3450,6 +3476,13 @@ BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId)
 +---------------+---------------+---------------+---------------+---------------+------*/
 Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, bool asClassifier)
     {
+    if (!asClassifier)
+        {
+        auto urlIter = m_directUrls.find(modelId);
+        if (m_directUrls.end() != urlIter)
+            return urlIter->second;
+        }
+
     WString         modelRootName = TileUtil::GetRootNameForModel(modelId, asClassifier);
     BeFileName      tilesetFileName (nullptr, m_rootName.c_str(), modelRootName.c_str(), s_metadataExtension);
     auto            utf8FileName = tilesetFileName.GetNameUtf8();
@@ -3482,8 +3515,8 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
             if (m_modelRanges.end() == modelRangeIter)
                 continue; // this model produced no tiles. ignore it.
 
-            DRange3d modelRange = modelRangeIter->second;
-            if (modelRange.IsNull())
+            ModelRange modelRange = modelRangeIter->second;
+            if (modelRange.m_range.IsNull())
                 {
                 BeAssert(false && "Null model range");
                 continue;
@@ -3497,15 +3530,22 @@ Json::Value PublisherContext::GetModelsJson (DgnModelIdSet const& modelIds)
 
             if (nullptr != spatialModel)
                 {
-                m_spatialToEcef.Multiply(modelRange, modelRange);
-                modelJson["transform"] = TransformToJson(m_spatialToEcef);
+                if (modelRange.m_isEcef)
+                    {
+                    modelJson["transform"] = TransformToJson(Transform::FromIdentity());
+                    }
+                else
+                    {
+                    m_spatialToEcef.Multiply(modelRange.m_range, modelRange.m_range);
+                    modelJson["transform"] = TransformToJson(m_spatialToEcef);
+                    }
                 }
             else if (nullptr != sheetModel)
                 {
                 modelJson["attachedViews"] = GetViewAttachmentsJson(*sheetModel);
                 }
 
-            modelJson["extents"] = RangeToJson(modelRange);
+            modelJson["extents"] = RangeToJson(modelRange.m_range);
             modelJson["tilesetUrl"] = GetTilesetName(modelId, false);
 
 #ifdef PER_MODEL_CLASSIFIER
@@ -3692,7 +3732,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
     WriteCategoriesJson(json, allCategorySelectors);
     json["displayStyles"] = GetDisplayStylesJson(allDisplayStyles);
 
-    AxisAlignedBox3d projectExtents = GetDgnDb().GeoLocation().GetProjectExtents();
+    AxisAlignedBox3d projectExtents = m_projectExtents;
     spatialTransform.Multiply(projectExtents, projectExtents);
     json["projectExtents"] = RangeToJson(projectExtents);
     json["projectTransform"] = TransformToJson(m_spatialToEcef);

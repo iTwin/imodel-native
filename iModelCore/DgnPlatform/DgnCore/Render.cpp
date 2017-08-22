@@ -217,7 +217,7 @@ void DgnViewport::StartRenderThread()
     s_renderQueue = new Render::Queue();
 
     // create the rendering thread
-    BeThreadUtilities::StartNewThread(300*1024, Render::Queue::Main, s_renderQueue); 
+    BeThreadUtilities::StartNewThread(Render::Queue::Main, s_renderQueue); 
     }
 
 //=======================================================================================
@@ -519,7 +519,7 @@ double TileSizeAdjuster::Compute(Render::TargetCR target, double curMod) const
 /*-----------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     03/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Transform Render::Material::Trans2x3::GetTransform() const
+Transform Render::TextureMapping::Trans2x3::GetTransform() const
     {
     Transform transform = Transform::FromIdentity();
 
@@ -611,6 +611,12 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
     {
     DgnDb::VerifyClientThread();
 
+    if (!m_alwaysDrawnExclusive)
+        {
+        auto const& undisplayed = view.GetDgnDb().Elements().GetUndisplayedSet();
+        m_neverDrawn.insert(undisplayed.begin(), undisplayed.end());
+        }
+
     ViewFlags vf = view.GetViewFlags();
     m_constructions = vf.ShowConstructions();
     m_dimensions = vf.ShowDimensions();
@@ -649,9 +655,6 @@ FeatureSymbologyOverrides::FeatureSymbologyOverrides(ViewControllerCR view) : m_
 void ViewController::_AddFeatureOverrides(FeatureSymbologyOverrides& overrides) const
     {
     // NB: DgnDisplay will register an ISelectionEvents listener to mark view controller's feature symbology dirty when selection set changes...
-    auto vp = m_vp;
-    if (nullptr == vp)
-        return;
     }
 
 /*---------------------------------------------------------------------------------**//**

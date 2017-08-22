@@ -1047,7 +1047,7 @@ uint64_t DgnElements::GetLastModifiedTime() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnElement::DgnElement(CreateParams const& params) : m_refCount(0), m_elementId(params.m_id), 
     m_dgndb(params.m_dgndb), m_modelId(params.m_modelId), m_classId(params.m_classId), 
-    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parentId(params.m_parentId), m_parentRelClassId(params.m_parentId.IsValid() ? params.m_parentRelClassId : DgnClassId()),
+    m_federationGuid(params.m_federationGuid), m_code(params.m_code), m_parent(params.m_parentId, params.m_parentId.IsValid() ? params.m_parentRelClassId : DgnClassId()),
     m_userLabel(params.m_userLabel), m_ecPropertyData(nullptr), m_ecPropertyDataSize(0), m_structInstances(nullptr)
     {
 #if !defined (NDEBUG)    
@@ -1366,7 +1366,7 @@ DgnElementCPtr DgnElements::PerformInsert(DgnElementR element, DgnDbStatus& stat
         return nullptr;
 
     // ask parent whether its ok to add this child.
-    DgnElementCPtr parent = GetElement(element.m_parentId);
+    DgnElementCPtr parent = GetElement(element.m_parent.m_id);
     if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildInsert(element)))
         return nullptr;
 
@@ -1509,22 +1509,22 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* 
     if (DgnDbStatus::Success != (stat=replacement._OnUpdate(element)))
         return nullptr; // something rejected proposed change
 
-    if (element.m_parentId != replacement.m_parentId) // did parent change?
+    if (element.m_parent.m_id != replacement.m_parent.m_id) // did parent change?
         {
         // ask original parent if it is okay to drop the child
-        DgnElementCPtr originalParent = GetElement(element.m_parentId);
+        DgnElementCPtr originalParent = GetElement(element.m_parent.m_id);
         if (originalParent.IsValid() && DgnDbStatus::Success != (stat = originalParent->_OnChildDrop(element)))
             return nullptr;
 
         // ask new parent if it is okay to add the child
-        DgnElementCPtr replacementParent = GetElement(replacement.m_parentId);
+        DgnElementCPtr replacementParent = GetElement(replacement.m_parent.m_id);
         if (replacementParent.IsValid() && DgnDbStatus::Success != (stat = replacementParent->_OnChildAdd(replacement)))
             return nullptr;
         }
     else
         {
         // ask parent whether it is ok to update its child.
-        DgnElementCPtr parent = GetElement(element.m_parentId);
+        DgnElementCPtr parent = GetElement(element.m_parent.m_id);
         if (parent.IsValid() && DgnDbStatus::Success != (stat = parent->_OnChildUpdate(element, replacement)))
             return nullptr;
         }
@@ -1536,22 +1536,22 @@ DgnElementCPtr DgnElements::UpdateElement(DgnElementR replacement, DgnDbStatus* 
     replacement._OnUpdated(element);
     FinishUpdate(replacement, element);
 
-    if (element.m_parentId != replacement.m_parentId) // did parent change?
+    if (element.m_parent.m_id != replacement.m_parent.m_id) // did parent change?
         {
         // notify original parent that child has been dropped
-        DgnElementCPtr originalParent = GetElement(element.m_parentId);
+        DgnElementCPtr originalParent = GetElement(element.m_parent.m_id);
         if (originalParent.IsValid())
             originalParent->_OnChildDropped(element);
 
         // notify new parent that child has been added
-        DgnElementCPtr replacementParent = GetElement(replacement.m_parentId);
+        DgnElementCPtr replacementParent = GetElement(replacement.m_parent.m_id);
         if (replacementParent.IsValid())
             replacementParent->_OnChildAdded(replacement);
         }
     else
         {
         // notify parent that its child has been updated
-        DgnElementCPtr parent = GetElement(replacement.m_parentId);
+        DgnElementCPtr parent = GetElement(replacement.m_parent.m_id);
         if (parent.IsValid())
             parent->_OnChildUpdated(element);
         }
@@ -1606,7 +1606,7 @@ DgnDbStatus DgnElements::Delete(DgnElementCR elementIn)
         return stat;
 
     // ask parent whether its ok to delete his child.
-    auto parent = GetElement(element.m_parentId);
+    auto parent = GetElement(element.m_parent.m_id);
     if (parent.IsValid() && DgnDbStatus::Success != (stat=parent->_OnChildDelete(element)))
         return stat;
 
@@ -1638,7 +1638,7 @@ DgnElementId DgnElements::QueryElementIdByCode(DgnCodeCR code) const
     if (!code.IsValid() || code.IsEmpty())
         return DgnElementId(); // An invalid code won't be found; an empty code won't be unique. So don't bother.
 
-    return QueryElementIdByCode(code.GetCodeSpecId(), code.GetScopeElementId(GetDgnDb()), code.GetValue());
+    return QueryElementIdByCode(code.GetCodeSpecId(), code.GetScopeElementId(GetDgnDb()), code.GetValueUtf8());
     }
 
 /*---------------------------------------------------------------------------------**//**

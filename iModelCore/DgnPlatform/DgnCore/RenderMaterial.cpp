@@ -78,9 +78,24 @@ double RenderingAsset::TextureMap::GetUnitScale(Units units) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    RayBentley      08/2015
 +---------------+---------------+---------------+---------------+---------------+------*/
-Render::Material::MapMode RenderingAsset::TextureMap::GetMode() const 
+Render::TextureMapping::Mode RenderingAsset::TextureMap::GetMode() const 
     {
-    return (Render::Material::MapMode) m_value[RENDER_MATERIAL_PatternMapping].asInt((int)Render::Material::MapMode::Parametric);
+    return (Render::TextureMapping::Mode) m_value[RENDER_MATERIAL_PatternMapping].asInt((int)Render::TextureMapping::Mode::Parametric);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Marc Neely      08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+Render::TextureMapping::Params RenderingAsset::TextureMap::GetTextureMapParams() const 
+    {
+    BeAssert(IsValid());
+
+    Render::TextureMapping::Params mapParams;
+    if (!IsValid())
+        return mapParams;
+
+    Render::TextureMapping::Trans2x3 trans = GetTransform();
+    return Render::TextureMapping::Params(GetMode(), trans, 1.0, Units::Relative != GetUnits());
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -94,9 +109,9 @@ RenderingAsset::TextureMap::Units RenderingAsset::TextureMap::GetUnits() const
 //---------------------------------------------------------------------------------------
 // @bsimethod                                               Ray.Bentley     08/2015
 //---------------------------------------------------------------------------------------
-Render::Material::Trans2x3 RenderingAsset::TextureMap::GetTransform() const
+Render::TextureMapping::Trans2x3 RenderingAsset::TextureMap::GetTransform() const
     {
-    Render::Material::Trans2x3 trans;
+    Render::TextureMapping::Trans2x3 trans;
 
     for (size_t i=0; i<2; i++)
         {
@@ -126,7 +141,7 @@ Render::Material::Trans2x3 RenderingAsset::TextureMap::GetTransform() const
     if (yFlip)
         scale.y = -scale.y;
 
-    if (Render::Material::MapMode::ElevationDrape == GetMode())
+    if (Render::TextureMapping::Mode::ElevationDrape == GetMode())
         {
         trans.m_val[0][0] = cosAngle / scale.x;
         trans.m_val[0][1] = sinAngle / scale.x;
@@ -210,14 +225,22 @@ DgnTextureId RenderingAsset::TextureMap::Relocate(DgnImportContext& context)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   Ray.Bentley     10/2016
 //---------------------------------------------------------------------------------------
-static void computeParametricUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, RenderingAsset::TextureMap::Units units)
+static void computeParametricUVParams (DPoint2dP params, PolyfaceVisitorCR visitor, TransformCR uvTransform, bool isRelativeUnits)
     {
     for (size_t i=0; i < visitor.NumEdgesThisFace(); i++)
         {
         DPoint2d        param = DPoint2d::From (0.0, 0.0);
 
-        if (RenderingAsset::TextureMap::Units::Relative == units || !visitor.TryGetDistanceParameter (i, param))
-            visitor.TryGetNormalizedParameter (i, param);
+        if (isRelativeUnits || !visitor.TryGetDistanceParameter (i, param))
+            {
+            if (!visitor.TryGetNormalizedParameter (i, param))
+                {
+				// If the mesh does not have faceData we still want to use the texture coordinates if they are present.
+                DPoint2dCP inParams = visitor.GetParamCP();
+                if (NULL != inParams)
+                    param = inParams[i];
+                }
+            }
 
         uvTransform.Multiply (params[i], param);
         }
@@ -296,34 +319,41 @@ static void computeElevationDrapeUVParams (DPoint2dP params, PolyfaceVisitorCR v
 //---------------------------------------------------------------------------------------
 BentleyStatus RenderingAsset::TextureMap::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, TransformCP transformToDgn) const
     {
-    Transform           uvTransform = GetTransform().GetTransform();
+    Render::TextureMapping::Params mapParams = GetTextureMapParams();
+    return mapParams.ComputeUVParams(params, visitor, transformToDgn);
+    }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   Ray.Bentley     08/2016
+//---------------------------------------------------------------------------------------
+BentleyStatus Render::TextureMapping::Params::ComputeUVParams (bvector<DPoint2d>& params,  PolyfaceVisitorCR visitor, TransformCP transformToDgn) const
+    {
     params.resize (visitor.NumEdgesThisFace());
-    switch (GetMode())
+    switch (m_mapMode)
         {
         default:
-            BeAssert (false && "Material mapping mode not implemented - defaulting to parametric");
+            //BeAssert (false && "Material mapping mode not implemented - defaulting to parametric");
             // Fall through...
 
-        case Render::Material::MapMode::Parametric:
-            computeParametricUVParams (&params[0], visitor, uvTransform, GetUnits());
+        case Render::TextureMapping::Mode::Parametric:
+            computeParametricUVParams (&params[0], visitor, m_textureMat2x3.GetTransform(), !m_worldMapping);
             return SUCCESS;
 
-        case Render::Material::MapMode::Planar:
+        case Render::TextureMapping::Mode::Planar:
             {
             int32_t const*        normalIndices =visitor.GetClientNormalIndexCP();
 
             // We ignore planar mode unless master or sub units for scaleMode (TR# 162118) and facet is planar.
-            if (Units::Relative == GetUnits () || (NULL != visitor.GetNormalCP () && (normalIndices[0] != normalIndices[1] || normalIndices[0] != normalIndices[2])))
-                computeParametricUVParams (&params[0], visitor, uvTransform, GetUnits());
+            if (!m_worldMapping || (NULL != visitor.GetNormalCP () && (normalIndices[0] != normalIndices[1] || normalIndices[0] != normalIndices[2])))
+                computeParametricUVParams (&params[0], visitor, m_textureMat2x3.GetTransform(), !m_worldMapping);
             else
-                computePlanarUVParams (&params[0], visitor, uvTransform);
+                computePlanarUVParams (&params[0], visitor, m_textureMat2x3.GetTransform());
 
             return SUCCESS;
             }
 
-        case Render::Material::MapMode::ElevationDrape:
-            computeElevationDrapeUVParams (&params[0], visitor, uvTransform, transformToDgn);
+        case Render::TextureMapping::Mode::ElevationDrape:
+            computeElevationDrapeUVParams (&params[0], visitor, m_textureMat2x3.GetTransform(), transformToDgn);
             return SUCCESS;
 
 #ifdef WIP

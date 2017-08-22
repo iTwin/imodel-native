@@ -456,6 +456,8 @@ public:
     //! @private
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid=false, Point2dCP fixedRepetitions=nullptr);
 
+    DGNPLATFORM_EXPORT void SetBackground(Render::GraphicR graphic);
+
     //! Set context to state used to flash elements.
     void SetIsFlash(bool isFlash) {m_isFlash = isFlash;}
     Render::OvrGraphicParams& GetOvrGraphicParams() {return m_ovrParams;}

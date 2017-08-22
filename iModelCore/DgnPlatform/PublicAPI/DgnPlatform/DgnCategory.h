@@ -45,7 +45,7 @@ public:
     BE_PROP_NAME(Description)
 
     BE_JSON_NAME(appearance)
-    BE_JSON_NAME(descr)
+    BE_JSON_NAME(description)
 
     //! The parameters that can determine how graphics on a SubCategory appear when drawn.
     //! @ingroup GROUP_DgnCategory
@@ -217,7 +217,7 @@ public:
     explicit DgnSubCategory(CreateParams const& params) : T_Super(params), m_data(params.m_data) {}
 
     DgnSubCategoryId GetSubCategoryId() const {return DgnSubCategoryId(GetElementId().GetValue());} //!< The ID of this sub-category
-    Utf8String GetSubCategoryName() const {return GetCode().GetValue();} //!< The name of this sub-category.
+    Utf8String GetSubCategoryName() const {return GetCode().GetValue().GetUtf8();} //!< The name of this sub-category.
     DgnCategoryId GetCategoryId() const {return DgnCategoryId(GetParentId().GetValue());} //!< The ID of the category to which this sub-category belongs
     DGNPLATFORM_EXPORT bool IsDefaultSubCategory() const; //!< Returns true if this is the default sub-category for its category
 
@@ -323,7 +323,7 @@ public:
 
     DgnCategoryId GetCategoryId() const {return DgnCategoryId(GetElementId().GetValue());} //!< Returns the ID of this category.
     DgnSubCategoryId GetDefaultSubCategoryId() const {return GetDefaultSubCategoryId(GetCategoryId());} //!< Returns the ID of this category's default sub-category
-    Utf8String GetCategoryName() const {return GetCode().GetValue();} //!< The name of this category
+    Utf8String GetCategoryName() const {return GetCode().GetValue().GetUtf8();} //!< The name of this category
 
     Utf8CP GetDescription() const {return m_descr.empty() ? nullptr : m_descr.c_str();} //!< The category description, or null if not defined.
     Rank GetRank() const {return m_rank;} //!< The category's rank.

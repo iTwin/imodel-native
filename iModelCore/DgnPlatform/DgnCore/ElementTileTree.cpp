@@ -1894,7 +1894,7 @@ void MeshGenerator::AddPolyface(Polyface& tilePolyface, GeometryR geom, DisplayP
             {
             anyContributed = true;
             DgnElementId elemId = GetElementId(geom);
-            builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetRenderingAsset(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
+            builder.AddFromPolyfaceVisitor(*visitor, displayParams.GetTextureMapping(), db, featureFromParams(elemId, displayParams), doVertexCluster, hasTexture, fillColor);
             m_contentRange.Extend(visitor->Point());
             }
         }

@@ -214,11 +214,10 @@ DisplayParams::DisplayParams(Type type, GraphicParamsCR gfParams, GeometryParams
                     }
                 }
 
-            if (m_material.IsValid() && m_material->HasTextures())
+            if (m_material.IsValid() && m_material->HasTextureMapping())
                 {
                 // Texture already baked into material...e.g. skybox.
-                // ###TODO: Why is it a vector? AFAICT only 1 texture supported...
-                m_texture = const_cast<TextureP>(m_material->GetMappedTexture(0).get()); // ###TODO constness...
+                m_textureMapping = m_material->GetTextureMapping();
                 }
             else
                 {
@@ -304,21 +303,24 @@ void DisplayParams::Resolve(DgnDbR db, System& sys)
         return;
 
     if (m_gradient.IsValid())
-        m_texture = sys._GetTexture(*m_gradient, db);
-
-    if (m_materialId.IsValid())
         {
-        m_dgnMaterial = RenderMaterial::Get(db, m_materialId);
-        if (m_dgnMaterial.IsValid())
+        // ###TODO: UV mapping for gradient...
+        m_textureMapping = TextureMapping(*sys._GetTexture(*m_gradient, db));
+        }
+    else if (m_materialId.IsValid())
+        {
+        auto dgnMaterial = RenderMaterial::Get(db, m_materialId);
+        if (dgnMaterial.IsValid())
             {
             // This will also be used later by MeshBuilder...
-            m_renderingAsset = &m_dgnMaterial->GetRenderingAsset();
-            if (m_texture.IsNull())
+            auto const& renderingAsset = dgnMaterial->GetRenderingAsset();
+            DgnTextureId texId;
+            auto const& texMap = renderingAsset.GetPatternMap();
+            if (texMap.IsValid() && texMap.GetTextureId().IsValid())
                 {
-                DgnTextureId texId;
-                auto texMap = m_renderingAsset->GetPatternMap();
-                if (texMap.IsValid() && texMap.GetTextureId().IsValid())
-                    m_texture = sys._GetTexture(texMap.GetTextureId(), db);
+                auto texture = sys._GetTexture(texMap.GetTextureId(), db);
+                if (texture.IsValid())
+                    m_textureMapping = TextureMapping(*texture, texMap.GetTextureMapParams());
                 }
             }
         }
@@ -370,7 +372,7 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
 
     if (m_resolved && rhs.m_resolved)
         {
-        TEST_LESS_THAN(GetTexture());
+        TEST_LESS_THAN(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
         }
     else if (m_gradient.get() != rhs.m_gradient.get())
         {
@@ -383,8 +385,8 @@ bool DisplayParams::IsLessThan(DisplayParamsCR rhs, ComparePurpose purpose) cons
         TEST_LESS_THAN(HasFillTransparency());
         TEST_LESS_THAN(HasLineTransparency());
 
-        if (nullptr != GetTexture())
-            TEST_LESS_THAN(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses texture).
+        if (GetTextureMapping().IsValid())
+            TEST_LESS_THAN(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses color).
 
         return false;
         }
@@ -416,7 +418,7 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
 
     if (m_resolved && rhs.m_resolved)
         {
-        TEST_EQUAL(GetTexture());
+        TEST_EQUAL(GetTextureMapping().GetTexture()); // ###TODO: Care about whether params match?
         }
     else
         {
@@ -430,6 +432,9 @@ bool DisplayParams::IsEqualTo(DisplayParamsCR rhs, ComparePurpose purpose) const
         {
         TEST_EQUAL(HasFillTransparency());
         TEST_EQUAL(HasLineTransparency());
+        if (GetTextureMapping().IsValid())
+            TEST_EQUAL(GetFillColor());     // Textures may use color so they can't be merged. (could test if texture actually uses color).
+
         return true;
         }
 
@@ -856,7 +861,7 @@ void MeshBuilder::AddTriangle(TriangleCR triangle)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, RenderingAssetCP renderingAsset, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
+void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, TextureMappingCR mappedTexture, DgnDbR dgnDb, FeatureCR feature, bool doVertexCluster, bool includeParams, uint32_t fillColor)
     {
     auto const&     points = visitor.Point();
     bool const*     visitorVisibility = visitor.GetVisibleCP();
@@ -884,17 +889,14 @@ void MeshBuilder::AddFromPolyfaceVisitor(PolyfaceVisitorR visitor, RenderingAsse
 
         bool haveParams = includeParams && !params.empty();
         newTriangle.SetEdgeFlags(visibility);
-        if (haveParams && nullptr != renderingAsset)
+        if (haveParams && mappedTexture.IsValid())
             {
-            auto const&         patternMap = renderingAsset->GetPatternMap();
+            auto const&         textureMapParams = mappedTexture.GetParams();
             bvector<DPoint2d>   computedParams;
 
-            if (patternMap.IsValid())
-                {
-                BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
-                if (SUCCESS == patternMap.ComputeUVParams (computedParams, visitor))
-                    params = computedParams;
-                }
+            BeAssert (m_mesh->Verts().empty() || !m_mesh->Params().empty());
+            if (SUCCESS == textureMapParams.ComputeUVParams (computedParams, visitor))
+                params = computedParams;
             }
                 
         bool haveNormals = !visitor.Normal().empty();
@@ -1536,7 +1538,7 @@ MeshList GeometryAccumulator::ToMeshes(GeometryOptionsCR options, double toleran
 
             meshBuilder->BeginPolyface(*polyface, tilePolyface.m_displayEdges ? MeshEdgeCreationOptions::DefaultEdges : MeshEdgeCreationOptions::NoEdges);
             for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(*polyface); visitor->AdvanceToNextFace(); /**/)
-                meshBuilder->AddFromPolyfaceVisitor(*visitor, displayParams->GetRenderingAsset(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
+                meshBuilder->AddFromPolyfaceVisitor(*visitor, displayParams->GetTextureMapping(), GetDgnDb(), geom->GetFeature(), false, hasTexture, fillColor);
 
             meshBuilder->EndPolyface();
             }
@@ -1807,7 +1809,7 @@ bool MeshArgs::Init(MeshCR mesh)
     if (!mesh.GetDisplayParams().IgnoresLighting())    // ###TODO: Avoid generating normals in the first place if no lighting...
         Set(m_normals, mesh.Normals());
 
-    m_texture = mesh.GetDisplayParams().GetTexture();
+    m_texture = const_cast<TextureP>(mesh.GetDisplayParams().GetTextureMapping().GetTexture()); // ###TODO: constness...
     m_material = mesh.GetDisplayParams().GetMaterial();
     m_fillFlags = mesh.GetDisplayParams().GetFillFlags();
     m_isPlanar = mesh.IsPlanar();

@@ -171,7 +171,7 @@ TEST_F (CategoryTests, InsertCategory)
             {
             SpatialCategoryCPtr current = SpatialCategory::Get(*m_db, id);
             SpatialCategoryCPtr lastCategory = SpatialCategory::Get(*m_db, lastId);
-            EXPECT_TRUE(current->GetCode().GetValue().CompareTo( lastCategory->GetCode().GetValue().c_str()) > 0);
+            EXPECT_TRUE(current->GetCode().GetValueUtf8().CompareTo( lastCategory->GetCode().GetValueUtf8().c_str()) > 0);
             ++count;
             }
         lastId = id;
@@ -291,7 +291,7 @@ TEST_F (CategoryTests, IterateCategories)
         ASSERT_TRUE(category.IsValid());
         ASSERT_EQ(entry.GetClassId(), category->GetElementClassId());
         ASSERT_EQ(entry.GetModelId(), category->GetModelId());
-        ASSERT_STREQ(entry.GetCodeValue(), category->GetCode().GetValueCP());
+        ASSERT_STREQ(entry.GetCodeValue(), category->GetCode().GetValueUtf8CP());
         ASSERT_FALSE(entry.GetParentId().IsValid());
         ASSERT_FALSE(category->GetParentId().IsValid());
 
@@ -502,7 +502,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     // default sub-category exists with expected Code + ID
     DgnSubCategoryCPtr defaultSubCat1 = DgnSubCategory::Get(db, DgnCategory::GetDefaultSubCategoryId(cat1Id));
     ASSERT_TRUE(defaultSubCat1.IsValid());
-    EXPECT_EQ(defaultSubCat1->GetCode().GetValue(), "Cat1");
+    EXPECT_EQ(defaultSubCat1->GetCode().GetValueUtf8(), "Cat1");
     EXPECT_EQ(defaultSubCat1->GetSubCategoryId(), DgnCategory::GetDefaultSubCategoryId(cat1Id));
     db.SaveChanges();
 
@@ -570,7 +570,7 @@ TEST_F(CategoryTests, SubCategoryInvariants)
     // Can rename non-default sub-category if no name collisions
     cpSubcat2B = pSubcat2B->Update(&status);
     EXPECT_EQ(DgnDbStatus::Success, status);
-    EXPECT_EQ(0, strcmp(cpSubcat2B->GetCode().GetValue().c_str(), "2BNewName"));
+    EXPECT_EQ(0, strcmp(cpSubcat2B->GetCode().GetValueUtf8().c_str(), "2BNewName"));
 
     // Illegal characters in names
     pSubcat2B = cpSubcat2B->MakeCopy<DgnSubCategory>();
