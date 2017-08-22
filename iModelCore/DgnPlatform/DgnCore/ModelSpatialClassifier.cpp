@@ -18,6 +18,7 @@ BentleyStatus   ModelSpatialClassifier::FromJson(Json::Value const& value)
     m_modelId   = DgnModelId(value["modelId"].asUInt64());
     m_expandDistance = value["expand"].asDouble();
     m_name = value["name"].asString();
+    m_isActive = value["isActive"].asBool();
 
     if (value.isMember("categoryId"))
         m_categoryId = DgnCategoryId(value["categoryId"].asUInt64());
@@ -40,6 +41,7 @@ Json::Value ModelSpatialClassifier::ToJson() const
     value["expand"] = m_expandDistance;
     value["modelId"] = m_modelId.GetValue(); 
     value["name"] = m_name;
+    value["isActive"] = m_isActive;
 
     if (m_categoryId.IsValid())
         value["categoryId"] = m_categoryId.GetValue();
