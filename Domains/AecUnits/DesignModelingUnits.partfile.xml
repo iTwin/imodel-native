@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<BuildContext xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../bsicommon/build/PartFile.xsd">
+
+    <Part Name="DesignModelingUnitsDomain" BentleyBuildMakeFile="DesignModelingUnits.mke" ApiNumber="B02">
+        <SubPart PartName="DesignModelingUnitsPublicAPI"/>
+        <SubPart PartName="DgnPlatformDLL"        PartFile="DgnPlatform"  Repository="DgnPlatform" />
+
+        <Bindings>
+            <Libs>Delivery/$(libprefix)DesignModelingUnits$(libext)</Libs>
+            <Assemblies>Delivery/$(shlibprefix)DesignModelingUnits$(ApiNumber)$(shlibext)</Assemblies>
+            <Files ProductDirectoryName="Libs" >
+                Delivery/$(libprefix)DesignModelingUnits$(libext)
+                Delivery/$(shlibprefix)DesignModelingUnits$(ApiNumber)$(shlibext)
+            </Files>
+        </Bindings>
+    </Part>   
+
+
+    <Part Name="DesignModelingUnitsPublicAPI" BentleyBuildMakeFile="DesignModelingUnits.prewire.mke" ApiNumber="B02">
+        <Bindings>
+            <PublicAPI Domain="DesignModelingUnits"/>
+            <Files ProductDirectoryName="Assets" ProductSubDirectory="ECSchemas/Domain" SubPartDirectory="ECSchemas/Domain">
+                ECSchemas/Domain/DesignModelingUnits.ecschema.xml
+            </Files>
+          <!--  <Directory SourceName="Dox/Pages/Building"  SubPartDirectory="Dox/Pages/Building"/>
+            <Directory SourceName="Dox/Images/Building" SubPartDirectory="Dox/Images/Building"/> -->
+        </Bindings>
+    </Part>
+
+
+</BuildContext>

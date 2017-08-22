@@ -1,0 +1,21 @@
+#---------------------------------------------------------------------------------------+
+#
+#     $Source: DesignModelingUnits.prewire.mke $
+#
+#  $Copyright: (c) 2017 Bentley Systems, Incorporated. All rights reserved. $
+#
+#---------------------------------------------------------------------------------------+
+
+%include mdl.mki
+
+targetAPIDir = $(BuildContext)PublicAPI/
+
+targetSchemasDir = $(BuildContext)ECSchemas/Domain/
+
+$(targetAPIDir)DesignModelingUnits : $(_MakeFilePath)PublicAPI/DesignModelingUnits
+    $(LinkFirstDepToFirstTargetAsDirectory)
+
+$(targetSchemasDir)DesignModelingUnits.ecschema.xml : $(_MakeFilePath)Schema\DesignModelingUnits.ecschema.xml
+    $(LinkFirstDepToFirstTarget)
+
+    
