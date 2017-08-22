@@ -184,6 +184,11 @@ struct BeTimePoint : std::chrono::steady_clock::time_point
     DEFINE_T_SUPER(std::chrono::steady_clock::time_point)
     using T_Super::time_point;
 
+// WIP_XCODE9
+#if (defined (__clang__) && defined (__APPLE__) && ((__clang_major__ * 1000 + __clang_minor__ * 10) >= 9000))
+    BeTimePoint(T_Super const& val) : T_Super(val) {}
+#endif
+
     //! get the current time point from the steady_clock
     static BeTimePoint Now() {return std::chrono::steady_clock::now();}
 
