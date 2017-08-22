@@ -106,7 +106,6 @@ struct RegionGraphicsContext : RefCountedBase, NullContext, IGeometryProcessor
 {
     DEFINE_T_SUPER(NullContext)
     friend struct RegionData;
-    friend struct DgnRegionElementTool;
 
 protected:
 
@@ -117,6 +116,9 @@ bool                m_isAssociative = false;
 bool                m_forcePlanar = false;
 Transform           m_flattenTrans = Transform::FromIdentity();
 DVec3d              m_flattenDir = DVec3d::UnitZ();
+
+bool                m_restrictToPlane = false;
+DPlane3d            m_plane = DPlane3d::FromOriginAndNormal(0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
 
 RegionErrors        m_regionError = REGION_ERROR_None;
 RegionType          m_operation = RegionType::Flood;
@@ -141,30 +143,32 @@ bool _WantLineStyles() override {return false;}
 
 DGNPLATFORM_EXPORT RegionGraphicsContext();
 
-RegionErrors GetRegionError() {return m_regionError;}
 void SetCullRedundantLoops() {m_cullRedundantLoop = true;}
 BentleyStatus VisitBooleanCandidate(GeometrySourceCR element, bvector<DMatrix4d>* wireProducts = NULL, bool allowText = false);
 
-DGNPLATFORM_EXPORT bool IsGraphInitialized();
-DGNPLATFORM_EXPORT void SetAbortFunction(RegionGraphicsContext_AbortFunction abort);
-DGNPLATFORM_EXPORT BentleyStatus PopulateGraph(DgnViewportP vp, DgnElementCPtrVec const* in);
-DGNPLATFORM_EXPORT BentleyStatus PopulateGraph(DgnElementCPtrVec const& in);
-DGNPLATFORM_EXPORT BentleyStatus AddFaceLoopsAtPoints(DPoint3dCP seedPoints, size_t numSeed);
 DGNPLATFORM_EXPORT void AddFaceLoopsByInwardParitySearch(bool parityWithinComponent, bool vertexContactSufficient);
-DGNPLATFORM_EXPORT bool ToggleFaceAtPoint(DPoint3dCR seedPoint);
-DGNPLATFORM_EXPORT bool GetFaceAtPoint(CurveVectorPtr& region, DPoint3dCR seedPoint);
 DGNPLATFORM_EXPORT int  GetCurrentFaceNodeId(); // NOTE: Valid after calling GetFaceAtPoint...
-DGNPLATFORM_EXPORT bool GetActiveFaces(CurveVectorPtr& region);
-DGNPLATFORM_EXPORT bool IsFaceAtPointSelected(DPoint3dCR seedPoint);
-
-DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots); // May contain duplicates...
-DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, CurveVectorCR region); // May contain duplicates...
-DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curve); // May contain duplicates...
-
-DGNPLATFORM_EXPORT bool GetAdjustedSeedPoints(bvector<DPoint3d>* seedPoints);
 DGNPLATFORM_EXPORT BentleyStatus BooleanWithHoles(DgnElementCPtrVec const& in, DgnElementCPtrVec const& holes, RegionType operation);
 
 public:
+
+DGNPLATFORM_EXPORT bool IsGraphInitialized(); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT void SetAbortFunction(RegionGraphicsContext_AbortFunction abort); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT BentleyStatus PopulateGraph(DgnViewportP vp, DgnElementCPtrVec const* in = nullptr, DRange3dCP range = nullptr, DPlane3dCP plane = nullptr, CurveVectorCP boundaryEdges = nullptr); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT BentleyStatus PopulateGraph(DgnElementCPtrVec const& in); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT BentleyStatus AddFaceLoopsAtPoints(DPoint3dCP seedPoints, size_t numSeed); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT bool ToggleFaceAtPoint(DPoint3dCR seedPoint); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT bool GetFaceAtPoint(CurveVectorPtr& region, DPoint3dCR seedPoint); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT bool GetActiveFaces(CurveVectorPtr& region); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT bool IsFaceAtPointSelected(DPoint3dCR seedPoint); //!< @private Used by DgnRegionElementTool
+DGNPLATFORM_EXPORT bool GetAdjustedSeedPoints(bvector<DPoint3d>* seedPoints); //!< @private Used by DgnRegionElementTool
+
+DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots); //!< @private Used by DgnRegionElementTool. Returns unique roots for all active faces...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, CurveVectorCR region); //!< @private Used by DgnRegionElementTool. May contain duplicates...
+DGNPLATFORM_EXPORT BentleyStatus GetRoots(bvector<DgnElementId>& regionRoots, ICurvePrimitiveCR curve); //!< @private Used by DgnRegionElementTool. May contain duplicates...
+
+//! Get reason why region could not be created.
+RegionErrors GetRegionError() {return m_regionError;}
 
 //! Set flood parameters for boundary gap tolerance and finding interior holes.
 DGNPLATFORM_EXPORT void SetFloodParams(RegionLoops regionLoops, double gapTolerance, bool stepOutOfHoles = false);

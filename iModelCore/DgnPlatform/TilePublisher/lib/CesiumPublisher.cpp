@@ -131,15 +131,6 @@ TileGeneratorStatus TilesetPublisher::_AcceptPublishedTilesetInfo(DgnModelCR mod
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilesetPublisher::GetViewsJson (Json::Value& json, DPoint3dCR groundPoint)
     {
-    // URL of tileset .json
-    Utf8String rootNameUtf8(m_rootName.c_str()); // NEEDSWORK: Why can't we just use utf-8 everywhere...
-    Utf8String tilesetUrl = rootNameUtf8;
-    tilesetUrl.append(1, '/');
-    tilesetUrl.append(rootNameUtf8);
-    tilesetUrl.append(".json");
-
-    json["tilesetUrl"] = tilesetUrl;
-
     return GetViewsetJson(json, groundPoint, m_defaultViewId);
     }
 
@@ -351,9 +342,9 @@ void TilesetPublisher::GenerateModelNameList()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     04/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension, bool asClassifier) const
+WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension, PublisherContext::ClassifierInfo const* classifier) const
     {
-    WString     modelRootName = TileUtil::GetRootNameForModel(tile.GetModel().GetModelId(), asClassifier);
+    WString     modelRootName = nullptr == classifier ? TileUtil::GetRootNameForModel(tile.GetModel().GetModelId()) : classifier->GetRootName();
 
     return modelRootName + L"//" + tile.GetFileName(modelRootName.c_str(), fileExtension); 
     }

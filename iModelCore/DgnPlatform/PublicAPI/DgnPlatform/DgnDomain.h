@@ -46,13 +46,13 @@
 // This macro declares the required members for an DgnDomain::Handler::Extension.
 #define HANDLER_EXTENSION_DECLARE_MEMBERS(__classname__,__exporter__) \
     private: __exporter__ static Token& z_Get##__classname__##Token();\
-    public: static BentleyStatus RegisterExtension(DgnDomain::Handler& handler, __classname__& obj) {return obj.RegisterExt(handler,z_Get##__classname__##Token());}\
-            static BentleyStatus DropExtension(DgnDomain::Handler& handler) {return DropExt(handler,z_Get##__classname__##Token());}\
-            static __classname__* Cast(DgnDomain::Handler& handler) {return (__classname__*) CastExt(handler,z_Get##__classname__##Token());}
+    public: static BentleyStatus RegisterExtension(Dgn::DgnDomain::Handler& handler, __classname__& obj) {return obj.RegisterExt(handler,z_Get##__classname__##Token());}\
+            static BentleyStatus DropExtension(Dgn::DgnDomain::Handler& handler) {return DropExt(handler,z_Get##__classname__##Token());}\
+            static __classname__* Cast(Dgn::DgnDomain::Handler& handler) {return (__classname__*) CastExt(handler,z_Get##__classname__##Token());}
 
 // This macro must be included somewhere within a source file that implements a DgnDomain::Handler::Extension
 #define HANDLER_EXTENSION_DEFINE_MEMBERS(__classname__) \
-    DgnDomain::Handler::Extension::Token& __classname__::z_Get##__classname__##Token(){static DgnDomain::Handler::Extension::Token* s_token=0; if (0==s_token) s_token = NewToken(); return *s_token;}
+    Dgn::DgnDomain::Handler::Extension::Token& __classname__::z_Get##__classname__##Token(){static Dgn::DgnDomain::Handler::Extension::Token* s_token=0; if (0==s_token) s_token = NewToken(); return *s_token;}
 
 #define TABLEHANDLER_DECLARE_MEMBERS(__classname__,__exporter__) \
     public:  __exporter__ static __classname__& GetHandler();

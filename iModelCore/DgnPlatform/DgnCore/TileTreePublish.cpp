@@ -52,7 +52,7 @@ protected:
 
     virtual WString _GetFileExtension() const override { return L"b3dm"; }
     void _ClearGeometry() override { m_geometry = PublishableTileGeometry(); }
-    virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, ITileGenerationFilterCP filter) const override {return std::move(m_geometry);}
+    virtual PublishableTileGeometry _GeneratePublishableGeometry(DgnDbR dgndb, TileGeometry::NormalMode normalMode, bool doSurfacesOnly, bool doInstancing, ITileGenerationFilterCP filter) const override {return std::move(m_geometry);}
 
 public:
     bool    GeometryExists() const { return !m_geometry.IsEmpty(); }

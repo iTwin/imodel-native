@@ -130,6 +130,8 @@ public:
     void Add(DgnElementCPtr el, DbOpcode opcode) { m_transient.insert(TransientState(el, opcode)); }
     void Add(DgnElementId id, DbOpcode opcode) { m_persistent.insert(PersistentState(id, opcode)); }
     bool ContainsElement(DgnElementCP element) const;
+
+    DGNPLATFORM_EXPORT StatusInt GetDbOpcode(DgnElementId elementId, DbOpcode& opcode);
 };
 
 //=======================================================================================
@@ -154,8 +156,12 @@ protected:
     Symbology           m_symbology;
     ComparisonDataCPtr  m_comparisonData;
     Show                m_show;
-
+    Utf8String          m_labelString;
+    TextStringPtr       m_label;
+    
     Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show show, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(show) { }
+
+    void _DrawDecorations(DecorateContextR context) override;
 
     DGNPLATFORM_EXPORT void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
@@ -175,3 +181,4 @@ public:
 
 END_REVISION_COMPARISON_NAMESPACE
 
+    DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);

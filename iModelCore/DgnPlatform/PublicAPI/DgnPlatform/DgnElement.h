@@ -609,6 +609,7 @@ public:
         DgnElementId        m_parentId;
         DgnClassId          m_parentRelClassId;
 
+        DGNPLATFORM_EXPORT CreateParams(DgnDbR, JsonValueCR);
         CreateParams(DgnDbR db, DgnModelId modelId, DgnClassId classId, DgnCodeCR code=DgnCode(), Utf8CP label=nullptr, DgnElementId parentId=DgnElementId(), DgnClassId parentRelClassId=DgnClassId(), BeSQLite::BeGuidCR federationGuid=BeSQLite::BeGuid())
             : m_dgndb(db), m_modelId(modelId), m_classId(classId), m_code(code), m_parentId(parentId), m_parentRelClassId(parentRelClassId), m_federationGuid(federationGuid) {SetUserLabel(label);}
 
@@ -1084,6 +1085,7 @@ public:
         RelatedElement(DgnElementId id=DgnElementId(), DgnClassId relClassId=DgnClassId()) : m_id(id), m_relClassId(relClassId) {}
         bool IsValid() const {return m_id.IsValid();}
         DGNPLATFORM_EXPORT Json::Value ToJson(DgnDbR db) const;
+        DGNPLATFORM_EXPORT void FromJson(DgnDbR, JsonValueCR val);
         };
 
 private:
@@ -1167,6 +1169,10 @@ protected:
     //! Convert this DgnElement to a Json::Value.
     //! @note If you override this method, you @em must call T_Super::_ToJson()
     DGNPLATFORM_EXPORT virtual void _ToJson(JsonValueR out, JsonValueCR opts) const;
+
+    //! Update this DgnElement from a Json::Value.
+    //! @note If you override this method, you @em must call T_Super::_UpdateFromJson()
+    DGNPLATFORM_EXPORT virtual void _UpdateFromJson(JsonValueCR props);
 
     //! Override this method if your element needs to load additional data from the database when it is loaded (for example,
     //! look up related data in another table).
@@ -1481,8 +1487,7 @@ protected:
 
 public:
     BE_JSON_NAME(id)
-    BE_JSON_NAME(schemaName)
-    BE_JSON_NAME(className)
+    BE_JSON_NAME(classFullName)
     BE_JSON_NAME(model)
     BE_JSON_NAME(code)
     BE_JSON_NAME(parent)
@@ -1928,9 +1933,6 @@ public:
 
     //! Create a Json::Value that represents the state of this element.
     Json::Value ToJson(JsonValueCR opts) const {Json::Value val; _ToJson(val, opts); return val;}
-
-    //! @private
-    DGNPLATFORM_EXPORT void GetCustomHandledPropertiesAsJson(Json::Value& json) const;
 
     //! @}
 

@@ -35,6 +35,8 @@ void Symbology::InitializeDefaults()
     m_target.SetAppearance(DbOpcode::Delete, deleted);
 
     m_untouched.SetRgb(ColorDef::MediumGrey());
+    m_untouchedOverride.SetFillTransparency(200);
+    m_untouchedOverride.SetLineTransparency(200);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -66,6 +68,23 @@ bool    ComparisonData::ContainsElement(DgnElementCP element) const
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, DbOpcode& opcode)
+    {
+    // Obtain the type of Opcode associated with an element ID
+    PersistentState pers = GetPersistentState(elementId);
+    TransientState tran = GetTransientState(elementId);
+
+    if (pers.IsValid())
+        opcode = pers.m_opcode;
+    if (tran.IsValid())
+        opcode = tran.m_opcode;
+
+    return (pers.IsValid() || tran.IsValid()) ? SUCCESS : ERROR;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    07/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR context, GeometrySourceCR source, double pixelSize)
@@ -74,7 +93,7 @@ Render::GraphicPtr  RevisionComparison::Controller::_StrokeGeometry(ViewContextR
     if (nullptr != context.GetIPickGeom() && !m_comparisonData->ContainsElement(source.ToElement()))
         return nullptr;
 
-    return source.Stroke(context, pixelSize);
+    return T_Super::_StrokeGeometry(context, source, pixelSize);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -118,3 +137,107 @@ BentleyStatus Controller::_CreateScene(SceneContextR context)
     return status;
     }
 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void getViewCorners(DPoint3dR low, DPoint3dR high, int indent, DgnViewportCR vp)
+    {
+    DRange3d range = vp.GetViewCorners();
+
+    low = range.low;
+    high = range.high;
+
+    if (low.x > high.x)
+        std::swap(low.x, high.x);
+
+    if (low.y > high.y)
+        std::swap(low.y, high.y);
+
+#if defined (__APPLE__)
+    //  GetViewCorners does not provide correct information for iOS.
+    low.x = low.y = 4.0;
+    if (high.x > high.y)
+        {
+        if (high.x > 2040)
+            {
+            high.x = 2044;
+            high.y = 1475;
+            }
+        else
+            {
+            high.x = 1020;
+            high.y = 700;
+            }
+        }
+    else
+        {
+        if (high.y > 2000)
+            {
+            high.y = 2000;
+            high.x = 1500;
+            }
+        else
+            {
+            high.y = 1020;
+            high.x = 700;
+            }
+        }
+#endif
+
+    low.x += indent;
+    low.y += indent;
+    high.x -= indent;
+    high.y -= indent;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    RevisionComparisonViewController::SetVersionLabel(Utf8String label)
+    {
+    m_labelString = label;
+
+    TextStringStylePtr style = TextStringStyle::Create();
+    style->SetFont(DgnFontManager::GetDecoratorFont());
+    style->SetSize(14);
+
+    RotMatrix textMatrix;
+    textMatrix.InitFromScaleFactors(1.0, -1.0, 1.0);
+
+    m_label = TextString::Create();
+    m_label->SetStyle(*style);
+    m_label->SetText(m_labelString.c_str());
+    
+    DPoint3d low        = DPoint3d::FromZero();
+    DPoint3d position   = DPoint3d::FromZero();
+    if (nullptr != m_vp)
+        getViewCorners(low, position, 30, *m_vp);
+    position.z = 0;
+    position.x = low.x;
+    m_label->SetOriginFromJustificationOrigin(position, TextString::HorizontalJustification::Left, TextString::VerticalJustification::Bottom);
+    m_label->SetOrientation(textMatrix);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Diego.Pinate    08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void    RevisionComparisonViewController::_DrawDecorations(DecorateContextR context)
+    {
+    T_Super::_DrawDecorations(context);
+
+    // We only display overlay of version numbers when we have two separate views
+    if (WantShowBoth() || !m_label.IsValid())
+        return;
+
+    auto graphic = context.CreateGraphic();
+
+    DPoint3d low        = DPoint3d::FromZero();
+    DPoint3d position   = DPoint3d::FromZero();
+    if (nullptr != m_vp)
+        getViewCorners(low, position, 30, *m_vp);
+    position.z = 0;
+    position.x = low.x;
+    m_label->SetOriginFromJustificationOrigin(position, TextString::HorizontalJustification::Left, TextString::VerticalJustification::Bottom);
+
+    graphic->AddTextString(*m_label);
+    context.AddViewOverlay(*graphic);

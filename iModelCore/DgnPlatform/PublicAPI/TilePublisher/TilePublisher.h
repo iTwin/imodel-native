@@ -260,6 +260,21 @@ struct PublisherContext : TileGenerator::ITileCollector
 
         void RecordPointCloud (size_t nPoints);
         };
+
+    struct  ClassifierInfo
+        {
+        uint32_t                                m_index;
+        ModelSpatialClassifier                  m_classifier;
+        ModelRange                              m_classifiedRange;    
+
+        WString GetRootName() const { return WPrintfString(L"Classifier_%d", m_index); }
+        ClassifierInfo(ModelSpatialClassifierCR classifier, ModelRange const& range, uint32_t index) : m_classifier(classifier), m_classifiedRange(range), m_index(index) { }
+        };
+
+    typedef bvector<ClassifierInfo>             T_ClassifierInfos;
+    typedef bvector<ViewDefinitionCPtr>         T_ViewDefs;
+    typedef bmap<DgnElementId, T_ViewDefs>      T_CategorySelectorMap;
+      
     Statistics                                  m_statistics;
 
 protected:
@@ -275,39 +290,49 @@ protected:
     BeMutex                                     m_mutex;
     bool                                        m_publishSurfacesOnly;
     TextureMode                                 m_textureMode;
-    bool                                        m_publishAsClassifier;
-    bmap<DgnModelId, ModelSpatialClassifiers>   m_classifierMap;
+    bmap<DgnModelId, T_ClassifierInfos>         m_classifierMap;
     bmap<DgnModelId, Utf8String>                m_directUrls;
     AxisAlignedBox3d                            m_projectExtents; // ###TODO: Remove once ScalableMesh folks fix their _QueryModelRange() to produce valid result during conversion from V8
     bool                                        m_isEcef; // Hack for ScalableMeshes at YII...all coords in .bim already in ECEF, but nothing in .bim tells us that...
+    ITileGenerationFilterP                      m_generationFilter;
+    ClassifierInfo*                             m_currentClassifier;
+    bset<DgnCategoryId>                         m_usedCategories;
+    bset<DgnSubCategoryId>                      m_usedSubCategories;
+
 
     TILEPUBLISHER_EXPORT PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName, GeoPointCP geoLocation = nullptr, bool publishSurfacesOnly = false, size_t maxTilesetDepth = 5, TextureMode textureMode = TextureMode::Embedded);
 
-    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, bool asClassifier) const = 0;
+    virtual WString _GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifierInfo) const = 0;
     virtual bool _AllTilesPublished() const { return false; }   // If all tiles are published then we can write only valid (non-empty) tree leaves and branches.
 
     TILEPUBLISHER_EXPORT Status InitializeDirectories(BeFileNameCR dataDir);
     TILEPUBLISHER_EXPORT void CleanDirectories(BeFileNameCR dataDir);
     TILEPUBLISHER_EXPORT Status PublishViewModels (TileGeneratorR generator, DRange3dR range, double toleranceInMeters, bool surfacesOnly, ITileGenerationProgressMonitorR progressMeter);
+    Status PublishClassifiers (DgnModelIdSet const& viewedModels, TileGeneratorR generator, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
+    Status PublishClassifier(ClassifierInfo& classifierInfo, TileGeneratorR generator, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter);
+
 
     TILEPUBLISHER_EXPORT void WriteModelMetadataTree (DRange3dR range, Json::Value& val, TileNodeCR tile, size_t depth);
     TILEPUBLISHER_EXPORT void WriteTileset (BeFileNameCR metadataFileName, TileNodeCR rootTile, size_t maxDepth);
     Json::Value GetViewAttachmentsJson(Sheet::ModelCR sheet);
+    WString GetRootName (DgnModelId modelId, ClassifierInfo const* classifier) const;
+    ClassifierInfo const* GetCurrentClassifier() const { return m_currentClassifier; }
+
 
     void WriteModelsJson(Json::Value&, DgnElementIdSet const& allModelSelectors, DgnModelIdSet const& all2dModels);
-    void WriteCategoriesJson(Json::Value&, DgnElementIdSet const& allCategorySelectors);
+    void WriteCategoriesJson(Json::Value&, T_CategorySelectorMap const&);
     Json::Value GetDisplayStylesJson(DgnElementIdSet const& styleIds);
     Json::Value GetDisplayStyleJson(DisplayStyleCR style);
-    Json::Value GetClassifiersJson(ModelSpatialClassifiersCR classifiers);
+    Json::Value GetClassifiersJson(T_ClassifierInfos const& classifiers);
     Json::Value GetAllClassifiersJson();
-
+    bool CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views) const;
     void GenerateJsonAndWriteTileset (Json::Value& rootJson, DRange3dR rootRange, TileNodeCR rootTile, WStringCR name);
 
     TILEPUBLISHER_EXPORT TileGeneratorStatus _BeginProcessModel(DgnModelCR model) override;
     TILEPUBLISHER_EXPORT TileGeneratorStatus _EndProcessModel(DgnModelCR model, TileNodeP rootTile, TileGeneratorStatus status) override;
 
     BeFileName GetTilesetFileName(DgnModelId modelId);
-    Utf8String GetTilesetName(DgnModelId modelId, bool asClassifier);
+    Utf8String GetTilesetName(DgnModelId modelId, ClassifierInfo const* classifier);
     void WriteModelTileset(TileNodeCR tile);
     void AddViewedModel(DgnModelIdSet& viewedModels, DgnModelId modelId);
     void GetViewedModelsFromView (DgnModelIdSet& viewedModels, DgnViewId viewId);
@@ -320,13 +345,18 @@ public:
     size_t GetMaxTilesetDepth() const { return m_maxTilesetDepth; }
     bool WantSurfacesOnly() const { return m_publishSurfacesOnly; }
     TextureMode GetTextureMode() const { return m_textureMode; }
-    bool DoPublishAsClassifier() const { return m_publishAsClassifier; }
-    WString GetTileExtension (TileNodeCR til);
+    bool DoPublishAsClassifier() const { return nullptr != m_currentClassifier; }
+    WString GetTileExtension (TileNodeCR tile);
+    ITileGenerationFilterP GetGenerationFilter() { return m_generationFilter; }
+    ClassifierInfo* GetCurrentClassifier() { return m_currentClassifier; }
+    void RecordUsage(TileDisplayParamsCR displayParams);
+    bool IsCategoryUsed(DgnCategoryId categoryId) const { return m_usedCategories.find(categoryId) != m_usedCategories.end(); }
+    bool IsSubCategoryUsed(DgnSubCategoryId subCategoryId) const { return m_usedSubCategories.find(subCategoryId) != m_usedSubCategories.end(); }
 
     TILEPUBLISHER_EXPORT static Status ConvertStatus(TileGeneratorStatus input);
     TILEPUBLISHER_EXPORT static TileGeneratorStatus ConvertStatus(Status input);
 
-    WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension, bool asClassifier) const { return _GetTileUrl(tile, fileExtension, asClassifier); }
+    WString GetTileUrl(TileNodeCR tile, WCharCP fileExtension, ClassifierInfo const* classifier) const { return _GetTileUrl(tile, fileExtension, classifier); }
     TILEPUBLISHER_EXPORT BeFileName GetDataDirForModel(DgnModelCR model, WStringP rootName=nullptr) const;
     TILEPUBLISHER_EXPORT Status GetViewsetJson(Json::Value& json, DPoint3dCR groundPoint, DgnViewId defaultViewId);
     TILEPUBLISHER_EXPORT void GetViewJson (Json::Value& json, ViewDefinitionCR view, TransformCR transform);
@@ -395,7 +425,7 @@ private:
     void WriteBatched3dModel (std::FILE* outputFile, TileMeshList const&  meshes);
     void WritePartInstances(std::FILE* outputFile, DRange3dR publishedRange, TileMeshPartPtr& part);
     void WriteGltf(std::FILE* outputFile, PublishTileData const& tileData);
-    void WriteVector(std::FILE* outputFile, PublishableTileGeometryR geometry);
+    void WriteClassifier(std::FILE* outputFile, PublishableTileGeometryR geometry, ModelSpatialClassifierCR classifier, DRange3dCR classifiedRange);
 
     void AddMeshes(PublishTileData& tileData, TileMeshList const&  geometry);
     void AddDefaultScene (PublishTileData& tileData);
