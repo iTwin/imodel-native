@@ -38,5 +38,6 @@
 
         <file src="SubParts\VendorNotices\*.txt"                    target="notices\" />
         <file src="Delivery\PublishedAPI\**\*"                      target="include"/>
+        <file src="..\BeHttp\Delivery\http\cabundle.pem"                   target="Assets\http\cabundle.pem" />
     </files>
 </package>
