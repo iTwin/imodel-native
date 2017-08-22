@@ -557,9 +557,9 @@ StatusTaskPtr Briefcase::UnsubscribeEventsCallback(EventCallbackPtr callback) co
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-StatusTaskPtr Briefcase::UpdateBriefcaseToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr Briefcase::UpdateToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "Client::UpdateBriefcaseToVersion";
+    const Utf8String methodName = "Client::UpdateToVersion";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (!m_db.IsValid() || !m_db->IsDbOpen())
@@ -602,9 +602,9 @@ StatusTaskPtr Briefcase::UpdateBriefcaseToVersion(Utf8String versionId, Http::Re
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-StatusTaskPtr Briefcase::UpdateBriefcaseToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+StatusTaskPtr Briefcase::UpdateToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "Client::UpdateBriefcaseToChangeSet";
+    const Utf8String methodName = "Client::UpdateToChangeSet";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
 
     if (!m_db.IsValid() || !m_db->IsDbOpen())

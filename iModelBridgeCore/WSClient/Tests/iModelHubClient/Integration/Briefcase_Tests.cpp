@@ -662,15 +662,15 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
     EXPECT_EQ("", briefcase->GetLastChangeSetPulled());
 
     //add changeSets
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToVersion(version2ChangeSet4->GetId())->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version2ChangeSet4->GetId())->GetResult());
     EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
 
     //remove changeSets
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToVersion(version1ChangeSet2->GetId())->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version1ChangeSet2->GetId())->GetResult());
     EXPECT_EQ(version1ChangeSet2->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
 
     //add changeSets after removal
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToVersion(version3ChangeSet6->GetId())->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version3ChangeSet6->GetId())->GetResult());
     EXPECT_EQ(version3ChangeSet6->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
 
     //pull
@@ -680,7 +680,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
     CreateModel("Model1", briefcase->GetDgnDb());
     auto dbResult = briefcase->GetDgnDb().SaveChanges();
     lastChangeSetId = PushPendingChanges(*briefcase);
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToVersion(version1ChangeSet2->GetId())->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version1ChangeSet2->GetId())->GetResult());
     EXPECT_EQ(version1ChangeSet2->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
 
     //pull with reverted and new changeSets
@@ -706,17 +706,17 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
     briefcase = AcquireBriefcaseWithoutSync();
 
     //add changeSets
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToVersion(version2ChangeSet4->GetId())->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version2ChangeSet4->GetId())->GetResult());
     EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
     //remove changeSets
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToVersion(version1ChangeSet2->GetId())->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version1ChangeSet2->GetId())->GetResult());
     EXPECT_EQ(version1ChangeSet2->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
     //add removed changeSets and fail
-    EXPECT_EQ(Error::Id::MergeSchemaChangesOnOpen, briefcase->UpdateBriefcaseToVersion(version4SchemaChanges->GetId())->GetResult().GetError().GetId());
+    EXPECT_EQ(Error::Id::MergeSchemaChangesOnOpen, briefcase->UpdateToVersion(version4SchemaChanges->GetId())->GetResult().GetError().GetId());
     EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(version2ChangeSet4->GetChangeSetId(), briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
@@ -736,7 +736,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToVersion)
     lastChangeSetId = PushPendingChanges(*briefcase);
 
     //pull with removed ChangeSets (SchemaChanges included)
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToVersion(version3ChangeSet6->GetId())->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToVersion(version3ChangeSet6->GetId())->GetResult());
     EXPECT_EQ(version3ChangeSet6->GetChangeSetId(), briefcase->GetLastChangeSetPulled());
     EXPECT_SUCCESS(briefcase->PullAndMerge()->GetResult());
     EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
@@ -760,15 +760,15 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
     EXPECT_EQ("", briefcase->GetLastChangeSetPulled());
 
     //add changeSets
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToChangeSet(changeSet4)->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet4)->GetResult());
     EXPECT_EQ(changeSet4, briefcase->GetLastChangeSetPulled());
 
     //remove changeSets
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToChangeSet(changeSet2)->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet2)->GetResult());
     EXPECT_EQ(changeSet2, briefcase->GetLastChangeSetPulled());
 
     //add changeSets after removal
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToChangeSet(changeSet6)->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet6)->GetResult());
     EXPECT_EQ(changeSet6, briefcase->GetLastChangeSetPulled());
 
     //pull
@@ -778,7 +778,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
     CreateModel("Model1", briefcase->GetDgnDb());
     auto dbResult = briefcase->GetDgnDb().SaveChanges();
     lastChangeSetId = PushPendingChanges(*briefcase);
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToChangeSet(changeSet2)->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet2)->GetResult());
     EXPECT_EQ(changeSet2, briefcase->GetLastChangeSetPulled());
 
     //pull with reverted and new changeSets
@@ -803,17 +803,17 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
     briefcase = AcquireBriefcaseWithoutSync();
 
     //add changeSets
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToChangeSet(changeSet4)->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet4)->GetResult());
     EXPECT_EQ(changeSet4, briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(changeSet4, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
     //remove changeSets
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToChangeSet(changeSet2)->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet2)->GetResult());
     EXPECT_EQ(changeSet2, briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(changeSet4, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
     //add removed changeSets and fail
-    EXPECT_EQ(Error::Id::MergeSchemaChangesOnOpen, briefcase->UpdateBriefcaseToChangeSet(schemaChangeSet)->GetResult().GetError().GetId());
+    EXPECT_EQ(Error::Id::MergeSchemaChangesOnOpen, briefcase->UpdateToChangeSet(schemaChangeSet)->GetResult().GetError().GetId());
     EXPECT_EQ(changeSet4, briefcase->GetLastChangeSetPulled());
     EXPECT_EQ(changeSet4, briefcase->GetDgnDb().Revisions().GetParentRevisionId());
 
@@ -833,7 +833,7 @@ TEST_F(BriefcaseTests, UpdateBriefcaseToChangeSet)
     lastChangeSetId = PushPendingChanges(*briefcase);
 
     //pull with removed ChangeSets (SchemaChanges included)
-    EXPECT_SUCCESS(briefcase->UpdateBriefcaseToChangeSet(changeSet6)->GetResult());
+    EXPECT_SUCCESS(briefcase->UpdateToChangeSet(changeSet6)->GetResult());
     EXPECT_EQ(changeSet6, briefcase->GetLastChangeSetPulled());
     EXPECT_SUCCESS(briefcase->PullAndMerge()->GetResult());
     EXPECT_EQ(lastChangeSetId, briefcase->GetLastChangeSetPulled());
