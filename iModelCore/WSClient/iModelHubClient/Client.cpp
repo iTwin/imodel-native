@@ -584,7 +584,7 @@ StatusTaskPtr Client::RecoverBriefcase(Dgn::DgnDbPtr db, Http::Request::Progress
     downloadPath.AppendExtension(originalFilePath.GetExtension().c_str());
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Downloading briefcase with ID %d.", briefcaseId.GetValue());
-    auto downloadResult = connection->DownloadBriefcaseFile(downloadPath, briefcaseId, callback, cancellationToken);
+    auto downloadResult = connection->DownloadBriefcaseFile(downloadPath, briefcaseId, nullptr, callback, cancellationToken);
 #if defined (ENABLE_BIM_CRASH_TESTS)
     BreakHelper::HitBreakpoint(Breakpoints::Client_AfterDownloadBriefcaseFile);
 #endif
@@ -651,7 +651,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     {
     const Utf8String methodName = "Client::DownloadBriefcase";
     if (!doSync)
-        return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), callback, cancellationToken);
+        return connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), callback, cancellationToken);
 
     auto seedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
     if (!seedFileInfoResult.IsSuccess())
@@ -663,7 +663,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     Utf8String mergedChangeSetId = seedFileInfoResult.GetValue()->GetMergedChangeSetId();
     ChangeSetsTaskPtr pullChangeSetsTask = connection->DownloadChangeSetsAfterId(mergedChangeSetId, fileInfo.GetFileId(), callback, cancellationToken);
 
-    StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), callback, cancellationToken);
+    StatusResult briefcaseResult = connection->DownloadBriefcaseFile(filePath, BeBriefcaseId(briefcaseId), fileInfo.GetFileAccessKey(), callback, cancellationToken);
     if (!briefcaseResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, briefcaseResult.GetError().GetMessage().c_str());
@@ -693,6 +693,7 @@ StatusResult Client::DownloadBriefcase(iModelConnectionPtr connection, BeFileNam
     Utf8String parentRevisionId = db->Revisions().GetParentRevisionId();
     if (!parentRevisionId.Equals(mergedChangeSetId))
         {
+        LogHelper::Log(SEVERITY::LOG_WARNING, methodName, "Latest seedFile's ChangeSetId did not match briefcase's.");
         pullChangeSetsTask = connection->DownloadChangeSetsAfterId(parentRevisionId, fileInfo.GetFileId(), callback, cancellationToken);
         pullChangeSetsResult = pullChangeSetsTask->GetResult();
         if (!pullChangeSetsResult.IsSuccess())
@@ -810,6 +811,9 @@ BriefcaseInfoTaskPtr Client::AcquireBriefcaseToDir(iModelInfoCR iModelInfo, BeFi
     JsonValueCR instance = json[ServerSchema::ChangedInstance][ServerSchema::InstanceAfterChange];
     BriefcaseInfoPtr briefcaseInfo = BriefcaseInfo::ParseRapidJson(ToRapidJson(instance[ServerSchema::Properties]));
     FileInfoPtr fileInfo = FileInfo::Parse(ToRapidJson(instance[ServerSchema::Properties]), instance[ServerSchema::InstanceId].asString());
+
+    FileAccessKeyPtr fileAccessKey = FileAccessKey::ParseFromRelated(instance);
+    fileInfo->SetFileAccessKey(fileAccessKey);
 
     LogHelper::Log(SEVERITY::LOG_INFO, methodName, "Acquired briefcase ID %d.", briefcaseInfo->GetId());
 

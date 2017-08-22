@@ -161,7 +161,7 @@ private:
         ICancellationTokenPtr cancellationToken) const;
 
     //! Download a copy of the file from the iModel.
-    StatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, Http::Request::ProgressCallbackCR callback = nullptr,
+    StatusTaskPtr DownloadFile(BeFileName localFile, ObjectIdCR fileId, FileAccessKeyPtr fileAccessKey, Http::Request::ProgressCallbackCR callback = nullptr,
         ICancellationTokenPtr cancellationToken = nullptr) const;
 
     FileAccessKeyTaskPtr QueryFileAccessKey(ObjectId objectId, ICancellationTokenPtr cancellationToken) const;
@@ -191,7 +191,7 @@ private:
     StatusResult WriteBriefcaseIdIntoFile(BeFileName filePath, BeSQLite::BeBriefcaseId briefcaseId) const;
 
     //! Download a copy of the seed file from the iModel and initialize it as briefcase
-    StatusResult DownloadBriefcaseFile(BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId,
+    StatusResult DownloadBriefcaseFile(BeFileName localFile, BeSQLite::BeBriefcaseId briefcaseId, FileAccessKeyPtr fileAccessKey,
         Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Acquire the requested set of locks.
