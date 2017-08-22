@@ -5,8 +5,8 @@
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
     {
-    ASSERT_TRUE(RunTestApp("Hello World\\Geometry.dgn", "default", "ORDHelloWorldGeometryTest.bim"));
-    VerifyConvertedElements("ORDHelloWorldGeometryTest.bim", 1, 0);
+    ASSERT_TRUE(RunTestApp("Geometry.dgn", "default", "ORDGeometryTest.bim"));
+    VerifyConvertedElements("ORDGeometryTest.bim", 1, 0);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -14,8 +14,8 @@ TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldGeometryConversionTest)
 +---------------+---------------+---------------+---------------+---------------+------*/
 TEST_F(CiviliModelBridgesORDBridgeTests, ORDHelloWorldCorridorConversionTest)
     {
-    ASSERT_TRUE(RunTestApp("Hello World\\Corridor.dgn", "default", "ORDHelloWorldCorridorTest.bim"));
-    VerifyConvertedElements("ORDHelloWorldCorridorTest.bim", 16, 1);
+    ASSERT_TRUE(RunTestApp("Corridor.dgn", "default", "ORDCorridorTest.bim"));
+    VerifyConvertedElements("ORDCorridorTest.bim", 16, 1);
     }
 
 /*---------------------------------------------------------------------------------**//**

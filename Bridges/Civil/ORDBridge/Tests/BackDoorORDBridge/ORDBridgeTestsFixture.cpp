@@ -165,7 +165,7 @@ bool CiviliModelBridgesORDBridgeTestsFixture::RunTestApp(Utf8CP input, Utf8CP mo
     testAppPath.AppendA("ORDBridgeTestApp.exe");
 
     BeFileName inputPath(outPath);
-    inputPath.AppendA("Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\");
+    inputPath.AppendA("Winx64\\Product\\CiviliModelBridges-Tests\\Assets\\TestFiles\\ORD\\");
     inputPath.AppendA(input);
 
     BeFileName outputPath = m_host->GetOutputDirectory();

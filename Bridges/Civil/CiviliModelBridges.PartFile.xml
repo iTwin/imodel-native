@@ -85,9 +85,9 @@
     </Part>
 
     <Part Name="PrewireForORDBridgeUnitTests" BentleyBuildMakeFile="ORDBridge/Tests/prewire.mke">
+        <SubPart PartName="ORD-TestFiles" PartFile="CivilTestFiles" Repository="Civil-TestFiles"/>
         <Bindings>
             <Files ProductDirectoryName="UnitTests-IgnoreList"  ProductSubDirectory="CiviliModelBridgesORDBridge" SubPartDirectory="UnitTests/CivilORDBridge"> Delivery/UnitTests/ordbridge_ignore_list.txt</Files>
-            <Directory ProductDirectoryName="UnitTests-Assets"  ProductSubDirectory="TestFiles" SourceName="Delivery/UnitTests/TestFiles"/>
         </Bindings>
     </Part>
 
