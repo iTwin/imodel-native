@@ -205,10 +205,10 @@ static Byte s_transparency = 100;
 void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNodes,
         bvector<IScalableMeshCachedDisplayNodePtr>& overviewMeshNodes,
         Dgn::RenderContextR                         context,
-        const DMatrix4d&                            storageToUors,
-        ScalableMeshDisplayCacheManager*            mgr)
+        const DMatrix4d&                            storageToUors
+        /*ScalableMeshDisplayCacheManager*            mgr*/)
     {
-#if 0 //NEEDS_WORK_SM_TEMP_OUT
+//#if 0 //NEEDS_WORK_SM_TEMP_OUT
 
 #ifdef PRINT_SMDISPLAY_MSG
     PRINT_MSG("ProgressiveDrawMeshNode2 meshNode : %I64u overviewMeshNode : %I64u \n", meshNodes.size(), overviewMeshNodes.size());
@@ -257,11 +257,15 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                    */
                 }
 
-            SmCachedDisplayMesh* cachedMesh = 0;
-
-            if (SUCCESS == overviewMeshNodes[nodeInd]->GetCachedMesh(cachedMesh))
+            bvector<SmCachedDisplayMesh*> cachedMeshes;
+            bvector<bpair<bool, uint64_t>> textureIds;
+                        
+            if (SUCCESS == overviewMeshNodes[nodeInd]->GetCachedMeshes(cachedMeshes, textureIds))
                 {
-                graphics.Add(*cachedMesh->m_graphic);
+                for (auto& cachedMesh : cachedMeshes)
+                    {
+                    graphics.Add(*cachedMesh->m_graphic);
+                    }        
                 }
             else
                 {
@@ -270,7 +274,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
 
                   qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());
                   */
-                assert(!"Should not get here");
+                //assert(!"Should not get here");
                 }
             }
         }
@@ -293,15 +297,19 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
                else
                */
 
-            SmCachedDisplayMesh* cachedMesh = 0;
-
-            if (SUCCESS == meshNodes[nodeInd]->GetCachedMesh(cachedMesh))
+            bvector<SmCachedDisplayMesh*> cachedMeshes;
+            bvector<bpair<bool, uint64_t>> textureIds;
+                        
+            if (SUCCESS == meshNodes[nodeInd]->GetCachedMeshes(cachedMeshes, textureIds))
                 {
-                graphics.Add(*cachedMesh->m_graphic);
+                for (auto& cachedMesh : cachedMeshes)
+                    {
+                    graphics.Add(*cachedMesh->m_graphic);
+                    }        
                 }
             else
                 {
-                assert(!"Should not occur");
+                //assert(!"Should not occur");
                 /*NEEDS_WORK_SM : Not support yet.
                   __int64 meshId = GetMeshId(meshNodes[nodeInd]->GetNodeId());
                   qvElem = QvCachedNodeManager::GetManager().FindQvElem(meshId, dtmDataRef.get());
@@ -317,10 +325,11 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
     storageToUorsTransform.InitFrom(storageToUors);
     //context.PushTransform(storageToUorsTransform);
 
-    auto group = context.CreateBranch(Render::Graphic::CreateParams(nullptr, storageToUorsTransform), graphics);
+    //auto group = context.CreateBranch(Render::Graphic::CreateParams(nullptr, storageToUorsTransform), graphics);
+    auto group = context.CreateBranch(graphics, &storageToUorsTransform);
     context.OutputGraphic(*group, nullptr);
 
-#endif
+//#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -995,8 +1004,7 @@ BentleyStatus Scene::ReadSceneFile()
 IScalableMeshProgressiveQueryEnginePtr ScalableMeshModel::GetProgressiveQueryEngine()
     {
     if (m_progressiveQueryEngine == nullptr)
-        {
-        //m_displayNodesCache = new ScalableMeshDisplayCacheManager(GetDgnDb());
+        {        
         m_progressiveQueryEngine = IScalableMeshProgressiveQueryEngine::Create(m_smPtr, m_displayNodesCache);
 
         bvector<uint64_t> allClips;
@@ -1083,6 +1091,21 @@ TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
     scene->SetPickable(true);
     if (SUCCESS != scene->LoadScene())
         return nullptr;
+static bool s_useProgressiveQuery = true; 
+
+if (!s_useProgressiveQuery)
+{ 
+}
+else
+{
+    ScalableMeshModel* unconstModel = const_cast<ScalableMeshModel*>(this);
+/*
+*/
+
+#if 0 
+#endif
+        while (!unconstModel->GetProgressiveQueryEngine()->IsQueryComplete(terrainQueryId))
+#endif
 
     return scene.get();
     }
@@ -1094,6 +1117,7 @@ SMSceneP ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
     {
     auto root = const_cast<ScalableMeshModel&>(*this).GetTileTree(renderSys);
     return static_cast<SMSceneP>(root);
+}
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1311,6 +1335,8 @@ ScalableMeshModel::ScalableMeshModel(BentleyApi::Dgn::DgnModel::CreateParams con
     m_forceRedraw = false;
     m_isProgressiveDisplayOn = true;
     m_isInsertingClips = false;
+
+    m_displayNodesCache = new ScalableMeshDisplayCacheManager();
 
     // ScalableMeshTerrainModelAppData* appData = ScalableMeshTerrainModelAppData::Get(params.m_dgndb);
     // appData->m_smTerrainPhysicalModelP = this;

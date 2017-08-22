@@ -8,7 +8,7 @@
 #include "ThreeMxInternal.h"
 #include "OpenCTM/openctm.h"
 
-#define LOG_ERROR(...) {BeAssert(false); (*NativeLogging::LoggingManager::GetLogger(L"3MX")).errorv(__VA_ARGS__);}
+#define LOG_ERROR(...) {/* BeAssert(false); */ (*NativeLogging::LoggingManager::GetLogger(L"3MX")).errorv(__VA_ARGS__);}
 
 BEGIN_UNNAMED_NAMESPACE
 USING_NAMESPACE_TILETREE
@@ -303,7 +303,7 @@ BentleyStatus Node::Read3MXB(StreamBuffer& in, SceneR scene, Dgn::Render::System
     if (SUCCESS != DoRead(in, scene, renderSys))
         {
         SetNotFound();
-        BeAssert(false);
+//      BeAssert(false);
         return ERROR;
         }
 

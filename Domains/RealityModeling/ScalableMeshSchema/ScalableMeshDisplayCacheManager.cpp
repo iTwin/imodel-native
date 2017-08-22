@@ -2,6 +2,7 @@
 #include <ScalableMeshSchema\ScalableMeshHandler.h>
 #include "ScalableMeshDisplayCacheManager.h"
 #include <mutex>
+//#include <QuickVision/qvision.h>
 
 USING_NAMESPACE_BENTLEY_SCALABLEMESH_SCHEMA
 
@@ -21,8 +22,8 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
                                                                  uint64_t smId)
     {
 
-    assert(!"MST_TODO");
-#if 0
+    //assert(!"MST_TODO");
+//#if 0
     assert(m_renderSys != 0);
 
     Render::IGraphicBuilder::TriMeshArgs trimesh;
@@ -30,9 +31,9 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
     trimesh.m_points     = (FPoint3d*)positions;
     trimesh.m_normals    = (FPoint3d*)normals;
     trimesh.m_numIndices = 3 * nbTriangles;
-    trimesh.m_vertIndex  = indices;
-    trimesh.m_textureUV  = (FPoint2d*)params;
-    
+    trimesh.m_vertIndex  = indices;       
+
+            
     std::unique_ptr<SmCachedDisplayMesh> qvCachedDisplayMesh(new SmCachedDisplayMesh);
 
     Transform placement;
@@ -47,14 +48,28 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
         }
     
     Render::Graphic::CreateParams createParams(nullptr, placement);
-
     qvCachedDisplayMesh->m_graphic = m_renderSys->_CreateGraphic(createParams);
-    qvCachedDisplayMesh->m_graphic->SetSymbology(ColorDef::Green(), ColorDef::Green(), 0);
+
+    if (cachedTexture != nullptr)
+        {
+        trimesh.m_texture = cachedTexture->m_texturePtr;
+        trimesh.m_textureUV = (FPoint2d*)params;
+
+        qvCachedDisplayMesh->m_graphic->SetSymbology(ColorDef::White(), ColorDef::White(), 0);        
+        }
+    else
+        {   
+        qvCachedDisplayMesh->m_graphic->SetSymbology(ColorDef::Green(), ColorDef::Green(), 0);
+        }
+    
+    //trimesh.m_flags |= QV_QTMESH_GENNORMALS;    
+    trimesh.m_flags = 1;
+        
     qvCachedDisplayMesh->m_graphic->AddTriMesh(trimesh);
     qvCachedDisplayMesh->m_graphic->Close();
 
     cachedDisplayMesh = qvCachedDisplayMesh.release();
-#endif
+//#endif
     return SUCCESS;
     }
 
@@ -76,8 +91,8 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
                                                                     int                      format,      // => see QV_*_FORMAT definitions above
                                                                     unsigned char const *    texels)      // => texel image)
     {
-    assert(!"MST_TODO");
-#if 0
+    //assert(!"MST_TODO");
+//#if 0
     assert(m_renderSys != 0);
             
     std::unique_ptr<SmCachedDisplayTexture> qvCachedDisplayTexture(new SmCachedDisplayTexture);
@@ -88,7 +103,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedTexture(SmCachedDisp
     qvCachedDisplayTexture->m_texturePtr = m_renderSys->_CreateTexture(textureImage);
     
     cachedDisplayTexture = qvCachedDisplayTexture.release();
-#endif
+//#endif
     return SUCCESS;
     }
 
@@ -128,7 +143,7 @@ bool ScalableMeshDisplayCacheManager::IsValidForId(QvElem* elem, uint64_t id)
 
 ScalableMeshDisplayCacheManager::ScalableMeshDisplayCacheManager()
     {
-    //m_renderSys = 0;    
+    m_renderSys = 0;    
     m_resourcesOutOfDate = false;
     }
 
@@ -139,6 +154,7 @@ ScalableMeshDisplayCacheManager::~ScalableMeshDisplayCacheManager()
 
 void ScalableMeshDisplayCacheManager::SetRenderSys(Dgn::Render::SystemP renderSys)
     {
-    //m_renderSys = renderSys;
+    assert(renderSys != nullptr);
+    m_renderSys = renderSys;
     }
 
