@@ -226,7 +226,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
 
         CreateDbWorker(NodeAddonECDb *addon, Utf8CP dbPathname) : WorkerBase(addon, BE_SQLITE_OK), m_dbPathname(dbPathname, true) {}
 
-        static NAN_METHOD(NodeAddonECDb::CreateDbWorker::Start)
+        static NAN_METHOD(Start)
             {
             Nan::HandleScope scope;
             NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
@@ -763,7 +763,7 @@ public:
         info.GetReturnValue().Set(info.This());
         }
 
-    static NAN_GETTER(NodeAddonECDb::OpenGetter)
+    static NAN_GETTER(OpenGetter)
         {
         NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
         info.GetReturnValue().Set(db->m_ecdb.IsValid() && db->m_ecdb->IsDbOpen());

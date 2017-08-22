@@ -73,7 +73,6 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeom.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBentleyGeomSerialization.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeOpenSSL.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBePng.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSecurity.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLite.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeSQLiteEC.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libBeXml.a
@@ -82,11 +81,9 @@ THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libDgnPlatform.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libECPresentation.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libECObjects.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libfreetype2.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libiModelHubClient.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)liblzma.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libsnappy.a
 THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libUnits.a
-THIN_ARCHIVE_INPUTS +  $(ContextSubpartsLibs)libWebServicesClient.a
 
 THIN_ARCHIVE_PATH = $(DLM_DEST)iModelJsNodeAddon.inputs.a
 THIN_ARCHIVE_RSP_PATH = $(DLM_DEST)iModelJsNodeAddon.inputs.rsp
@@ -123,5 +120,5 @@ LINKER_LIBRARIES  + $(ContextSubpartsLibs)$(libprefix)BeSQLite$(libext)
 #----------------------------------------------------------------------
 #   Deliver the shared library using the .node extension
 #----------------------------------------------------------------------
-$(BuildContext)Delivery/iModelJsNode_node_module/$(appName).node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
+$(BuildContext)Delivery/iModelJsNodeAddon/$(NODE_GYP_VER)/imodeljs.node : $(BENTLEY_TOOLCONTEXT_LINK_OUT_NAME)
     $(LinkFirstDepToFirstTarget)
