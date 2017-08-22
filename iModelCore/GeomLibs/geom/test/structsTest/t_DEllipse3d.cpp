@@ -1456,6 +1456,7 @@ void TestSymmetricLineLine (double totalTurnRadians, double length)
 
     // spiral magic ....
     Check::Near (singleTurnRadians * 2.0 * rAB, length);
+    delete spiralA; delete spiralB; delete spiralC; delete spiralD;
     }
 
 
@@ -1511,6 +1512,7 @@ void TestLineSpiralArcSpiralLine(double totalTurnRadians, double lengthA, double
     Check::Near (spiralA->mCurvature1, spiralC->mCurvature1);
     Check::Near (spiralB->mCurvature1, spiralD->mCurvature1);
 #endif
+    delete spiralA; delete spiralB;
     }
 
 

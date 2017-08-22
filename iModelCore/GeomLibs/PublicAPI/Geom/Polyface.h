@@ -2236,6 +2236,43 @@ GEOMDLLIMPEXP bool AddIfMatchedLayout (PolyfaceQueryCR source);
 //! @return true if normals computed.
 GEOMDLLIMPEXP bool BuildApproximateNormals (double maxSingleEdgeAngle = 0.2, double maxAccumulatedAngle = 0.3, bool markAllTransitionsVisible = true);
 
+//! options structure for polyface offset.
+//! Default constructor sets typical values.
+//! Fields are then accessible for modification.
+struct OffsetOptions
+{
+Angle m_maxSingleEdgeAngle;     // max angle for sharing normal across a single edge
+Angle m_maxAccumulatedAngle;    // max accumulated angle for sharing normal
+Angle m_maxChamferAngle;        // max angle for simple chamfer. Recommended value between Angle::FromDegrees (91.0) to Angel::FromDegrees (120.0)
+bool m_useStoredNormals;        // NOT USED
+
+//! Default options
+OffsetOptions () :
+    m_maxSingleEdgeAngle (Angle::FromDegrees (20.0)),
+    m_maxAccumulatedAngle (Angle::FromDegrees (60.0)),
+    m_maxChamferAngle (Angle::FromDegrees (90.0)),
+    m_useStoredNormals (false)
+    {}
+};
+
+//! Compute offset(s) of a mesh surface.
+//! Optionally combine two offsets to form a cloed volume.
+//!<ul>
+//!<li>Example: to Thicken by 1.0 towards the "outside" use distances (1.0, 0.0)
+//!<li>Example: to thicken by 1.0 towards the "inside" use distances (0.0, 1.0)
+//!<li>Example: to thicken by 2.0 towards the "outside" and 1.0 towards the "inside" use distances (2.0, 1.0)
+//!<li>All orientations and connectivity are taken from the input mesh.  This is not a fixup operation.
+//!<ul>
+GEOMDLLIMPEXP PolyfaceHeaderPtr ComputeOffset
+(
+OffsetOptions const &options, //!< [in] offset polyface offset options
+double distance1,            //!< [in] offset distance for a positively oriented offset
+double distance2,            //!< [in] offset distance for a negatively oriented offset
+bool outputOffset1 = true,         //!< [in] true to output the (positive oriented) offset at distance1
+bool outputOffset2 = true,         //!< [in] true to output the (negatively oriented) offset at distance2
+bool outputSideFacets = true        //!< [in] true to output side facets where boundary edges are swept
+);
+
 //! Compute local coordinates within each facet.
 //! @return true if parameters computed.
 GEOMDLLIMPEXP bool BuildPerFaceParameters (LocalCoordinateSelect selector);
