@@ -95,11 +95,13 @@ public:
 struct FileAccessKey : RefCountedBase
 {
 private:
+    bool m_valueSet = false;
     Utf8String  m_downloadUrl;
     Utf8String  m_uploadUrl;
     DateTime    m_createDate;
 
     friend struct iModelConnection;
+    friend Client;
 
     static Utf8String GetProperty(RapidJsonValueCR properties, Utf8StringCR member);
 
@@ -116,5 +118,9 @@ public:
     Utf8StringCR GetUploadUrl() const {return m_uploadUrl;}
     //! Url for download
     Utf8StringCR GetDownloadUrl() const {return m_downloadUrl;}
+    bool GetValueSet() const {return m_valueSet;}
 };
+
+struct NotUsedFileAccessKey : FileAccessKey
+    {};
 END_BENTLEY_IMODELHUB_NAMESPACE
