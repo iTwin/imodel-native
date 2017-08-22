@@ -365,7 +365,7 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeSheetToDrawin
 
     v8file->CopyModelContents(*newModel, *v8Model, NULL);
 
-    CopyEffectiveModelType(*newModel, *v8Model);
+    SetEffectiveModelType(*newModel, newModel->GetModelType());
 
     DgnV8Api::DependencyManager::ProcessAffected(); // remap element-element pointers and clear remap tables. If we don't do this, then second call to CopyModelContents on the same model will do nothing.
 
