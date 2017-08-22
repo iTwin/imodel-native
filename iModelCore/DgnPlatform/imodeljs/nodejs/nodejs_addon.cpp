@@ -9,7 +9,7 @@
 #include <queue>
 #include <sys/types.h>
 #include <stdint.h>
-
+#include <memory>
 #include "suppress_warnings.h"
 
 #include <nan.h>
@@ -22,7 +22,11 @@
 #include <json/value.h>
 
 #include "../imodeljs.h"
-
+#include <ECObjects/ECSchema.h>
+#include <ECPresentation/ECPresentation.h>
+#include <ECPresentation/RulesDriven/PresentationManager.h>
+#include <ECPresentationRules/PresentationRulesTypes.h>
+#include <rapidjson/rapidjson.h>
 #define REQUIRE_ARGUMENT_STRING(i, var, errcode, errmsg)                        \
     if (info.Length() <= (i) || !info[i]->IsString()) {                         \
         ResolveArgumentError(info, errcode, errmsg);                            \
@@ -86,6 +90,8 @@
 USING_NAMESPACE_BENTLEY_SQLITE
 USING_NAMESPACE_BENTLEY_SQLITE_EC
 USING_NAMESPACE_BENTLEY_DGN
+USING_NAMESPACE_BENTLEY_ECPRESENTATION
+USING_NAMESPACE_BENTLEY_EC
 using namespace v8;
 using namespace node;
 
@@ -689,7 +695,9 @@ struct NodeAddonECDb : Nan::ObjectWrap
             }
         };
 
-private:
+
+
+    private:
     JsECDbPtr m_ecdb;
     mutable Utf8String m_lastECDbIssue;
         
@@ -735,7 +743,6 @@ public:
         Nan::SetPrototypeMethod(t, "containsInstance", ContainsInstanceWorker::Start);
         Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);
         Nan::SetPrototypeMethod(t, "executeStatement", ExecuteStatementWorker::Start);
-
         Nan::SetAccessor(t->InstanceTemplate(), Nan::New("IsDbOpen").ToLocalChecked(), OpenGetter);
 
         s_constructor_template.Reset(t);
@@ -762,7 +769,35 @@ public:
         info.GetReturnValue().Set(db->m_ecdb.IsValid() && db->m_ecdb->IsDbOpen());
         }
 };
-
+struct SimpleRulesetLocater : RefCounted<RuleSetLocater>
+{
+private:
+    Utf8String m_rulesetId;
+    mutable PresentationRuleSetPtr m_ruleset;
+ 
+protected:
+    SimpleRulesetLocater(Utf8String rulesetId) : m_rulesetId(rulesetId) {}
+    int _GetPriority() const override {return 100;}
+    bvector<PresentationRuleSetPtr> _LocateRuleSets(Utf8CP rulesetId) const override
+        {
+        if (m_ruleset.IsNull())
+            {
+            m_ruleset = PresentationRuleSet::CreateInstance(m_rulesetId, 1, 0, false, "", "", "", false);
+            m_ruleset->AddPresentationRule(*new ContentRule("", 1, false));
+            m_ruleset->GetContentRules().back()->GetSpecificationsR().push_back(new SelectedNodeInstancesSpecification(1, false, "", "", true));
+            }
+        return bvector<PresentationRuleSetPtr>{m_ruleset};
+        }
+    bvector<Utf8String> _GetRuleSetIds() const override {return bvector<Utf8String>{m_rulesetId};}
+    void _InvalidateCache(Utf8CP rulesetId) override
+        {
+        if (nullptr == rulesetId || m_rulesetId.Equals(rulesetId))
+            m_ruleset = nullptr;
+        }
+ 
+public:
+    static RefCountedPtr<SimpleRulesetLocater> Create(Utf8String rulesetId) {return new SimpleRulesetLocater(rulesetId);}
+};
 //=======================================================================================
 // Projects the DgnDb class into JS
 //! @bsiclass
@@ -770,7 +805,7 @@ public:
 struct NodeAddonDgnDb : Nan::ObjectWrap
 {
     Dgn::DgnDbPtr m_dgndb;
-
+    std::unique_ptr<RulesDrivenECPresentationManager> m_presentationManager;
     static Nan::Persistent<FunctionTemplate> s_constructor_template;
 
     //  Check if val is really a NodeAddonDgnDb peer object
@@ -823,6 +858,14 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             IModelJs::OpenDgnDb(m_status, m_errmsg, m_db->m_dgndb, m_dbname, m_mode);
             if (m_status != BE_SQLITE_OK)
                 SetupErrorReturn();
+
+        
+            BeFileName assetsDir("c:/Temp/PresentationRules");
+            BeFileName tempDir("c:/Temp");
+            m_db->m_presentationManager = std::unique_ptr<RulesDrivenECPresentationManager>( new RulesDrivenECPresentationManager(RulesDrivenECPresentationManager::Paths(assetsDir,tempDir)));
+            m_db->m_presentationManager->GetLocaters().RegisterLocater(*SimpleRulesetLocater::Create("Ruleset_Id"));
+            IECPresentationManager::RegisterImplementation( m_db->m_presentationManager.get());
+       
             }
         };
 
@@ -1057,7 +1100,104 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             return true;
             }
         };
+        struct GetElementPropertiesForDisplayWorkerEx : WorkerBase<DgnDbStatus>
+        {
+            Utf8String m_elementIdStr;
+            Utf8String m_exportedJson;
+            GetElementPropertiesForDisplayWorkerEx(NodeAddonDgnDb* db, Utf8CP id) : WorkerBase(db,  DgnDbStatus::Success),m_elementIdStr(id) {}
+            static NAN_METHOD(Start)
+                {
+                Nan::HandleScope scope;
+                NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
 
+                 REQUIRE_ARGUMENT_STRING(0, id, DgnDbStatus::BadRequest, "Argument 0 must be an ElementId string");
+                (new GetElementPropertiesForDisplayWorkerEx(db,*id))->ScheduleAndReturnPromise(info);
+                }
+
+            void Execute() override
+                {
+                if (!m_db->m_dgndb.IsValid())
+                    {
+                    m_status = DgnDbStatus::NotOpen;
+                    m_errmsg = "DgnDb must be open";
+                    SetupErrorReturn();
+                    return;
+                    }
+
+        
+                ECInstanceId elemId(ECInstanceId::FromString(m_elementIdStr.c_str()).GetValueUnchecked());
+                if (!elemId.IsValid())
+                    {
+                    m_status = DgnDbStatus::BadElement;
+                    m_errmsg = "ElementId passed is invalid";
+                    SetupErrorReturn();
+                    return;
+                    }
+                
+                CachedECSqlStatementPtr stmt = m_db->m_dgndb->GetPreparedECSqlStatement("SELECT ECClassId FROM biscore.Element WHERE ECInstanceId = ?");
+                if (!stmt.IsValid())
+                    {
+                    m_status = DgnDbStatus::SQLiteError;
+                    m_errmsg = "Failed to prepare statement";
+                    SetupErrorReturn();
+                    return;
+                    }
+                
+                stmt->BindId(0, elemId);
+                if (stmt->Step() != BE_SQLITE_ROW)
+                    {
+                    m_status = DgnDbStatus::SQLiteError;
+                    m_errmsg = "Failed to step statement";
+                    SetupErrorReturn();
+                    return;
+                    }
+
+                ECClassId ecclassId = stmt->GetValueId<ECClassId>(0);
+                ECInstanceNodeKeyPtr nodeKey = ECInstanceNodeKey::Create(ecclassId, elemId);
+                NavNodeKeyList keyList;
+                keyList.push_back(nodeKey);
+                INavNodeKeysContainerCPtr selectedNodeKeys = NavNodeKeyListContainer::Create(keyList);
+                SelectionInfo selection ("iModelJS", false, *selectedNodeKeys);
+                RulesDrivenECPresentationManager::ContentOptions options ("Items", false);
+                if ( m_db->m_presentationManager == nullptr)
+                    {
+                    m_errmsg = "Presentation manager must be set when the imodel was openned";
+                    m_status = DgnDbStatus::BadArg;
+                    SetupErrorReturn();
+                    return;                
+                    }
+                ContentDescriptorCPtr descriptor = m_db->m_presentationManager->GetContentDescriptor(*m_db->m_dgndb, ContentDisplayType::PropertyPane, selection, options.GetJson());
+                if (descriptor.IsNull())
+                    {
+                    m_errmsg = "Failed to create content descriptor";
+                    m_status = DgnDbStatus::BadArg;
+                    SetupErrorReturn();                        
+                    }
+                PageOptions pageOptions;
+                pageOptions.SetPageStart(0);
+                pageOptions.SetPageSize(0);
+                ContentCPtr content = m_db->m_presentationManager->GetContent(*m_db->m_dgndb, *descriptor, selection, pageOptions, options.GetJson());
+                if (content.IsNull())
+                    {
+                    m_errmsg = "Content should not be null";
+                    m_status = DgnDbStatus::BadArg;
+                    SetupErrorReturn();
+                    return;                        
+                    }                
+
+                rapidjson::StringBuffer buffer;
+                rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+                content->AsJson().Accept(writer);
+                m_exportedJson = buffer.GetString();
+                }
+
+            
+            bool _GetResult(v8::Local<v8::Value>& result) override
+                {
+                result = Nan::New(m_exportedJson.c_str()).ToLocalChecked();
+                return true;
+                }
+        };
     //=======================================================================================
     //  Execute a query and return all rows, if any
     //! @bsiclass
@@ -1156,7 +1296,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     static void Init(v8::Local<v8::Object> target)
         {
         Nan::HandleScope scope;
-
         Local<FunctionTemplate> t = Nan::New<FunctionTemplate>(New);
 
         t->InstanceTemplate()->SetInternalFieldCount(1);
@@ -1168,6 +1307,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
         Nan::SetPrototypeMethod(t, "insertElement", InsertElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
+        Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplayEx", GetElementPropertiesForDisplayWorkerEx::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
         Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);
@@ -1179,6 +1319,8 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         Nan::Set(target, Nan::New("DgnDb").ToLocalChecked(), Nan::GetFunction(t).ToLocalChecked());
         }
 };
+
+
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
@@ -1195,6 +1337,8 @@ static void registerModule(v8::Handle<v8::Object> target, v8::Handle<v8::Object>
     IModelJs::Initialize(addondir);
     NodeAddonDgnDb::Init(target);
     NodeAddonECDb::Init(target);
+
+    
     }
 
 Nan::Persistent<FunctionTemplate> NodeAddonDgnDb::s_constructor_template;

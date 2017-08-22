@@ -797,6 +797,9 @@
   <Part Name="iModelJsNodeAddonLibCommon">
     <SubPart PartName="DgnPlatformDLL" PartFile="DgnPlatform" Repository="DgnPlatform"/>
     <SubPart PartName="DgnPlatformSqlang" Repository="DgnPlatform" PartFile="DgnPlatform"/>
+	<SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
+    <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
+    <SubPart PartName="rapidjson"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
   </Part>
 
   <!-- NB: Keep this version number consistent with nodejs:node-gyp-standalone -->
