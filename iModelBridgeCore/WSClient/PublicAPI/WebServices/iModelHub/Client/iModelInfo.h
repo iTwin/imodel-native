@@ -11,6 +11,7 @@
 #include <WebServices/iModelHub/Client/Result.h>
 #include <WebServices/Client/Response/WSObjectsReader.h>
 #include <Bentley/DateTime.h>
+#include <WebServices/iModelHub/Client/UserInfo.h>
 
 BEGIN_BENTLEY_IMODELHUB_NAMESPACE
 USING_NAMESPACE_BENTLEY_WEBSERVICES
@@ -32,17 +33,16 @@ private:
     Utf8String m_description;
     Utf8String m_userCreated;
     DateTime   m_createdDate;
+    UserInfoPtr m_ownerInfo;
 
     iModelInfo() {}
     iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id) : m_serverUrl(serverUrl), m_id(id) {}
-    iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date)
-        : m_serverUrl(serverUrl), m_id(id), m_name(name), m_description(description), m_userCreated(user), m_createdDate(date) {}
+    iModelInfo(Utf8StringCR serverUrl, Utf8StringCR id, Utf8StringCR name, Utf8StringCR description, Utf8StringCR user, DateTimeCR date, UserInfoPtr ownerInfo)
+        : m_serverUrl(serverUrl), m_id(id), m_name(name), m_description(description), m_userCreated(user), m_createdDate(date), m_ownerInfo(ownerInfo) {}
 
     bool operator==(iModelInfoCR rhs) const { return rhs.GetId() == GetId() && rhs.GetServerURL() == GetServerURL(); }
-    //! DEPRECATED: Use Parsing from Instance
-    static iModelInfoPtr Parse(JsonValueCR json, Utf8StringCR url);
-    static iModelInfoPtr Parse(WSObjectsReader::Instance instnace, Utf8StringCR url);
-    static iModelInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, Utf8StringCR url);
+    static iModelInfoPtr Parse(WSObjectsReader::Instance instance, Utf8StringCR url);
+    static iModelInfoPtr Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, UserInfoPtr ownerInfo, Utf8StringCR url);
     static iModelInfoPtr Create(Utf8StringCR serverUrl, Utf8StringCR id) { return iModelInfoPtr(new iModelInfo(serverUrl, id)); }
 public:
     IMODELHUBCLIENT_EXPORT static iModelResult ReadiModelInfo(Dgn::DgnDbCR db);
@@ -55,5 +55,8 @@ public:
     IMODELHUBCLIENT_EXPORT Utf8String GetWSRepositoryName() const;
     Utf8StringCR GetUserCreated() const {return m_userCreated;}
     DateTimeCR GetCreatedDate() const {return m_createdDate;}
+    UserInfoPtr GetOwnerInfo() const { return m_ownerInfo; }
+
+    static void AddOwnerInfoSelect(Utf8StringR);
 };
 END_BENTLEY_IMODELHUB_NAMESPACE

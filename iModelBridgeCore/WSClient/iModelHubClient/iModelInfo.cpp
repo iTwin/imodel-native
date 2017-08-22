@@ -71,7 +71,7 @@ StatusResult iModelInfo::WriteiModelInfo(Dgn::DgnDbR db, BeSQLite::BeBriefcaseId
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     Karolis.Dziedzelis             08/2016
 //---------------------------------------------------------------------------------------
-iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, Utf8StringCR url)
+iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModelInstanceId, UserInfoPtr ownerInfo, Utf8StringCR url)
     {
     Utf8String name = properties[ServerSchema::Property::iModelName].GetString();
     Utf8String description = properties[ServerSchema::Property::iModelDescription].GetString();
@@ -80,22 +80,7 @@ iModelInfoPtr iModelInfo::Parse(RapidJsonValueCR properties, Utf8StringCR iModel
     Utf8String dateStr = properties.HasMember(ServerSchema::Property::CreatedDate) ? properties[ServerSchema::Property::CreatedDate].GetString() : "";
     if (!dateStr.empty())
         DateTime::FromString(createdDate, dateStr.c_str());
-    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                    julius.cepukenas             10/2016
-//---------------------------------------------------------------------------------------
-iModelInfoPtr iModelInfo::Parse(JsonValueCR json, Utf8StringCR url)
-    {
-    if (json.isNull())
-        return nullptr;
-    Utf8String iModelInstanceId = json[ServerSchema::InstanceId].asString();
-    JsonValueCR properties = json[ServerSchema::Properties];
-
-    auto rapidJson = ToRapidJson(properties);
-
-    return Parse(rapidJson, iModelInstanceId, url);
+    return new iModelInfo(url, iModelInstanceId, name, description, userUploaded, createdDate, ownerInfo);
     }
 
 //---------------------------------------------------------------------------------------
@@ -105,6 +90,13 @@ iModelInfoPtr iModelInfo::Parse(WSObjectsReader::Instance instance, Utf8StringCR
     {
     Utf8String iModelInstanceId = instance.GetObjectId().remoteId;
     RapidJsonValueCR properties = instance.GetProperties();
-    return Parse(properties, iModelInstanceId, url);
+    return Parse(properties, iModelInstanceId, UserInfo::ParseFromRelated(&instance), url);
     }
 
+//---------------------------------------------------------------------------------------
+//@bsimethod                                     Paulius.Valiunas               08/2017
+//---------------------------------------------------------------------------------------
+void iModelInfo::AddOwnerInfoSelect(Utf8StringR selectString)
+    {
+    selectString.Sprintf("%s,%s-forward-%s.*", selectString.c_str(), ServerSchema::Relationship::iModelOwnerInfo, ServerSchema::Class::UserInfo);
+    }

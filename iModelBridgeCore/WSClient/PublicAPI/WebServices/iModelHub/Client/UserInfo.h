@@ -25,6 +25,7 @@ struct UserInfo : RefCountedBase
 {
 private:
 	friend struct UserInfoManager;
+    friend struct iModelInfo;
 	Utf8String m_id;
 	Utf8String m_name;
 	Utf8String m_surname;
@@ -36,6 +37,7 @@ private:
 	bool operator==(UserInfoCR user) const { return user.GetId() == GetId(); }
 	static UserInfoPtr ParseRapidJson(RapidJsonValueCR properties);
 	static UserInfoPtr Parse(WebServices::WSObjectsReader::Instance instance);
+    static UserInfoPtr ParseFromRelated(WebServices::WSObjectsReader::Instance *instance);
 public:
 	Utf8String GetId() const { return m_id; }
 	Utf8String GetName() const { return m_name; }
