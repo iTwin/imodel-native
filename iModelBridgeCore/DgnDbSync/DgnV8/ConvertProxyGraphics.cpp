@@ -421,6 +421,8 @@ DgnAttachmentP Converter::GetFirstNeedingCve(ResolvedModelMapping const& parentM
             continue;
 
         DgnV8Api::EditElementHandle v8eh(attachment->GetElementId(), &parentModel.GetV8Model());
+        if (!v8eh.IsValid())
+            continue;
         ChangeDetector::SearchResults searchRes;
         if (!GetChangeDetector()._IsElementChanged(searchRes, *this, v8eh, parentModel))
             continue;

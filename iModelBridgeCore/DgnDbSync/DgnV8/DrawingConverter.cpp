@@ -312,7 +312,7 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeAnnotationSca
 
     v8file->CopyModelContents(*newModel, *v8Model, NULL);
 
-    SetEffectiveModelType(*newModel, newModel->GetModelType());
+    CopyEffectiveModelType(*newModel, *v8Model);
 
     //  Change the annotation scale of the new model
     DgnV8Api::ChangeAnnotationScale changeContext (newModel);
@@ -365,7 +365,7 @@ Bentley::RefCountedPtr<DgnV8Api::DgnModel> Converter::CopyAndChangeSheetToDrawin
 
     v8file->CopyModelContents(*newModel, *v8Model, NULL);
 
-    SetEffectiveModelType(*newModel, newModel->GetModelType());
+    CopyEffectiveModelType(*newModel, *v8Model);
 
     DgnV8Api::DependencyManager::ProcessAffected(); // remap element-element pointers and clear remap tables. If we don't do this, then second call to CopyModelContents on the same model will do nothing.
 
@@ -551,15 +551,9 @@ void Converter::ImportSheetModelsInFile(DgnV8FileR v8File)
             {
             if (!attachment->Is3d())
                 {
-                auto importres = Import2dModel(*attachment->GetDgnModelP()); // NB: Do not recurse over nested attachments! See "Attachments to V8 drawings and sheets" comment below.
-                if (importres.second)
-                    {
-                    ResolvedModelMapping const& resolvedMapping = importres.first;
-                    if (!resolvedMapping.IsValid())
-                        continue;
-
-                    DrawingRegisterAttachmentsToBeMerged(*attachment, importres.first); // NB: Walk the attachment to the sheet, not the attached model, so that we see re-scaled drawings created by MakeAttachmentsMatchRootAnnotationScale
-                    }
+                // This is where we discover and import the drawings and other 2d models that are referenced into sheets.
+                // (We just unnested all 2d attachments above, so there are no nested attachments to follow.)
+                Import2dModel(*attachment->GetDgnModelP());
                 }
             }
         }
