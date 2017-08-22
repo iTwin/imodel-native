@@ -3417,7 +3417,7 @@ void TracePond::AddResult(WaterAnalysisResultR result) const
             }
        }
     if (!curve->empty())
-        result.AddPond(*curve, IsFull(), CurrentVolume());
+        result.AddPond(*curve, IsFull(), CurrentVolume(), m_depth);
     }
 
 //----------------------------------------------------------------------------------------*
@@ -4933,7 +4933,7 @@ int bcdtmDrainage_traceMaximumDescentDtmObject
 struct WaterAnalysisResultImpl : WaterAnalysisResult
     {
     public:
-        virtual void AddPoint(DPoint3dCR point, WaterAnalysisResult::PointType type, double volume) override
+        virtual void _AddPoint(DPoint3dCR point, WaterAnalysisResult::PointType type, double volume) override
             {
             if (nullptr == m_transformHelper)
                 push_back(WaterAnalysisResultPoint::Create(point, type, volume));
@@ -4941,7 +4941,7 @@ struct WaterAnalysisResultImpl : WaterAnalysisResult
                 push_back(WaterAnalysisResultPoint::Create(m_transformHelper->getPointFromDTM(point), type, volume));
             }
 
-        virtual void AddStream(CurveVector& geometry, double volume) override
+        virtual void _AddStream(CurveVector& geometry, double volume) override
             {
             if (nullptr != m_transformHelper)
                 geometry.TransformInPlace(m_fromDTMTransformation);
@@ -4972,24 +4972,28 @@ struct WaterAnalysisResultImpl : WaterAnalysisResult
             push_back(WaterAnalysisResultStream::Create(geometry, volume));
             }
 
-        virtual void AddStream(const bvector<DPoint3d>& points, double volume) override
+        virtual void _AddStream(const bvector<DPoint3d>& points, double volume) override
             {
             CurveVectorPtr curve = CurveVector::CreateLinear (points, CurveVector::BOUNDARY_TYPE_Open);
             AddStream(*curve, volume);
             }
 
-        virtual void AddPond(CurveVector& geometry, bool isFull, double volume) override
+        virtual void _AddPond(CurveVector& geometry, bool isFull, double volume, double depth) override
             {
             if (nullptr != m_transformHelper)
+                {
                 geometry.TransformInPlace(m_fromDTMTransformation);
+                volume = m_transformHelper->convertVolumeFromDTM(volume);
+                depth = m_transformHelper->convertDistanceFromDTM(depth);
+                }
 
             if (geometry.size() == 1)
-                push_back(WaterAnalysisResultPond::Create(*geometry.front()->GetChildCurveVectorP(), isFull, volume));
+                push_back(WaterAnalysisResultPond::Create(*geometry.front()->GetChildCurveVectorP(), isFull, volume, depth));
             else
-                push_back(WaterAnalysisResultPond::Create(geometry, isFull, volume));
+                push_back(WaterAnalysisResultPond::Create(geometry, isFull, volume, depth));
             }
 
-        virtual bool IsWaterVolumeResult() const
+        virtual bool _IsWaterVolumeResult() const
             {
             return m_forWater;
             }
@@ -5037,6 +5041,75 @@ WaterAnalysisResultPtr WaterAnalysis::GetResult() const
     return WaterAnalysisResultImpl::Create(*this);
     }
 
+WaterAnalysisResultPointP WaterAnalysisResultItem::AsPoint()
+    {
+    return _AsPoint();
+    }
+
+WaterAnalysisResultStreamP WaterAnalysisResultItem::AsStream()
+    {
+    return _AsStream();
+    }
+
+WaterAnalysisResultPondP WaterAnalysisResultItem::AsPond()
+    {
+    return _AsPond();
+    }
+
+double WaterAnalysisResultItem::GetWaterVolume() const
+    {
+    return m_waterVolume;
+    }
+
+DPoint3dCR WaterAnalysisResultPoint::GetPoint() const
+    {
+    return m_pt;
+    }
+
+WaterAnalysisResult::PointType WaterAnalysisResultPoint::GetType()
+    {
+    return m_type;
+    }
+
+CurveVectorCR WaterAnalysisResultGeometry::GetGeometry() const
+    {
+    return *m_geometry;
+    }
+
+bool WaterAnalysisResultPond::IsFull() const
+    {
+    return m_isFull;
+    }
+
+double WaterAnalysisResultPond::Depth() const
+    {
+    return m_depth;
+    }
+
+void WaterAnalysisResult::AddPoint(DPoint3dCR point, PointType type, double volume)
+    {
+    _AddPoint(point, type, volume);
+    }
+
+void WaterAnalysisResult::AddStream(CurveVector& geometry, double volume)
+    {
+    _AddStream(geometry, volume);
+    }
+
+void WaterAnalysisResult::AddStream(const bvector<DPoint3d>& points, double volume)
+    {
+    _AddStream(points, volume);
+    }
+
+void WaterAnalysisResult::AddPond(CurveVector& geometry, bool isFull, double volume, double depth)
+    {
+    _AddPond(geometry, isFull, volume, depth);
+    }
+
+bool WaterAnalysisResult::IsWaterVolumeResult() const
+    {
+    return _IsWaterVolumeResult();
+    }
 
 // ToDo
 // 1. Add Inner pond analysis to the pond from exit analysis, this will copy the area and the inner ponds.

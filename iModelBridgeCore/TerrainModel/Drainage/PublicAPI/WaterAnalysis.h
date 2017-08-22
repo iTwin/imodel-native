@@ -46,12 +46,15 @@ struct WaterAnalysisResultItem : RefCountedBase
         WaterAnalysisResultItem(double volume) : m_waterVolume(volume)
             {
             }
+        virtual WaterAnalysisResultPointP _AsPoint() { return nullptr; }
+        virtual WaterAnalysisResultStreamP _AsStream() { return nullptr; }
+        virtual WaterAnalysisResultPondP _AsPond() { return nullptr; }
     public:
-        virtual WaterAnalysisResultPointP AsPoint() { return nullptr; }
-        virtual WaterAnalysisResultStreamP AsStream() { return nullptr; }
-        virtual WaterAnalysisResultPondP AsPond() { return nullptr; }
 
-        double GetWaterVolume() const { return m_waterVolume; }
+        BENTLEYDTMDRAINAGE_EXPORT WaterAnalysisResultPointP AsPoint();
+        BENTLEYDTMDRAINAGE_EXPORT WaterAnalysisResultStreamP AsStream();
+        BENTLEYDTMDRAINAGE_EXPORT WaterAnalysisResultPondP AsPond();
+        BENTLEYDTMDRAINAGE_EXPORT double GetWaterVolume() const;
     };
 
 //----------------------------------------------------------------------------------------*
@@ -66,12 +69,18 @@ struct WaterAnalysisResult : RefCountedBase, bvector<WaterAnalysisResultItemPtr>
             Low,
             Exit
             };
-        virtual void AddPoint(DPoint3dCR point, PointType type, double volume) abstract;
-        virtual void AddStream(CurveVector& geometry, double volume) abstract;
-        virtual void AddStream(const bvector<DPoint3d>& points, double volume) abstract;
-        virtual void AddPond(CurveVector& geometry, bool isFull, double volume) abstract;
-
-        virtual bool IsWaterVolumeResult() const abstract;
+    protected:
+        virtual void _AddPoint(DPoint3dCR point, PointType type, double volume) abstract;
+        virtual void _AddStream(CurveVector& geometry, double volume) abstract;
+        virtual void _AddStream(const bvector<DPoint3d>& points, double volume) abstract;
+        virtual void _AddPond(CurveVector& geometry, bool isFull, double volume, double depth) abstract;
+        virtual bool _IsWaterVolumeResult() const abstract;
+    public:
+        BENTLEYDTMDRAINAGE_EXPORT void AddPoint(DPoint3dCR point, PointType type, double volume);
+        BENTLEYDTMDRAINAGE_EXPORT void AddStream(CurveVector& geometry, double volume);
+        BENTLEYDTMDRAINAGE_EXPORT void AddStream(const bvector<DPoint3d>& points, double volume);
+        BENTLEYDTMDRAINAGE_EXPORT void AddPond(CurveVector& geometry, bool isFull, double volume, double depth);
+        BENTLEYDTMDRAINAGE_EXPORT bool IsWaterVolumeResult() const;
     };
 
 //----------------------------------------------------------------------------------------*
@@ -86,56 +95,78 @@ struct WaterAnalysisResultPoint : WaterAnalysisResultItem
         WaterAnalysisResultPoint(DPoint3dCR pt, WaterAnalysisResult::PointType type, double volume) : WaterAnalysisResultItem(volume), m_pt(pt), m_type(type)
             {
             }
+        virtual WaterAnalysisResultPointP _AsPoint() override
+            {
+            return this;
+            }
     public:
-    virtual WaterAnalysisResultPointP AsPoint() override { return this; }
-    DPoint3dCR GetPoint() const { return m_pt; }
-    WaterAnalysisResult::PointType GetType() const { return m_type; }
-    static WaterAnalysisResultPointPtr Create(DPoint3dCR pt, WaterAnalysisResult::PointType type, double volume)
-        {
-        return new WaterAnalysisResultPoint(pt, type, volume);
-        }
+        BENTLEYDTMDRAINAGE_EXPORT DPoint3dCR GetPoint() const;
+        BENTLEYDTMDRAINAGE_EXPORT WaterAnalysisResult::PointType GetType();
+
+        static WaterAnalysisResultPointPtr Create(DPoint3dCR pt, WaterAnalysisResult::PointType type, double volume)
+            {
+            return new WaterAnalysisResultPoint(pt, type, volume);
+            }
     };
 
 //----------------------------------------------------------------------------------------*
 // @bsistruct                                                    Daryl.Holmwood  08/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-struct WaterAnalysisResultStream : WaterAnalysisResultItem
+struct WaterAnalysisResultGeometry : WaterAnalysisResultItem
     {
     private:
         CurveVectorPtr m_geometry;
     protected:
-        WaterAnalysisResultStream(CurveVectorR geometry, double volume) : WaterAnalysisResultItem(volume), m_geometry(&geometry)
+        WaterAnalysisResultGeometry(CurveVectorR geometry, double volume) : WaterAnalysisResultItem(volume), m_geometry(&geometry)
             {
             }
     public:
-    virtual WaterAnalysisResultStreamP AsStream() override { return this; }
-    CurveVectorCR GetGeometry() const { return *m_geometry; }
-    void AddPrimitives(CurveVectorCR source) { m_geometry->AddPrimitives(source); }
-    static WaterAnalysisResultStreamPtr Create(CurveVectorR geometry, double volume)
-        {
-        return new WaterAnalysisResultStream(geometry, volume);
-        }
+        BENTLEYDTMDRAINAGE_EXPORT CurveVectorCR GetGeometry() const;
+        void AddPrimitives(CurveVectorCR source)
+            {
+            m_geometry->AddPrimitives(source);
+            }
     };
 
 //----------------------------------------------------------------------------------------*
 // @bsistruct                                                    Daryl.Holmwood  08/17
 // +---------------+---------------+---------------+---------------+---------------+------*
-struct WaterAnalysisResultPond : WaterAnalysisResultItem
+struct WaterAnalysisResultStream : WaterAnalysisResultGeometry
+    {
+    protected:
+        WaterAnalysisResultStream(CurveVectorR geometry, double volume) : WaterAnalysisResultGeometry(geometry, volume)
+            {
+            }
+        virtual WaterAnalysisResultStreamP _AsStream() override
+            {
+            return this;
+            }
+    public:
+        static WaterAnalysisResultStreamPtr Create(CurveVectorR geometry, double volume)
+            {
+            return new WaterAnalysisResultStream(geometry, volume);
+            }
+    };
+
+//----------------------------------------------------------------------------------------*
+// @bsistruct                                                    Daryl.Holmwood  08/17
+// +---------------+---------------+---------------+---------------+---------------+------*
+struct WaterAnalysisResultPond : WaterAnalysisResultGeometry
     {
     private:
-        CurveVectorPtr m_geometry;
         bool m_isFull;
+        double m_depth;
     protected:
-        WaterAnalysisResultPond(CurveVectorR geometry, bool isFull, double volume) : WaterAnalysisResultItem(volume), m_geometry(&geometry), m_isFull(isFull)
+        WaterAnalysisResultPond(CurveVectorR geometry, bool isFull, double volume, double depth) : WaterAnalysisResultGeometry(geometry, volume), m_isFull(isFull), m_depth(depth)
             {
             }
+        virtual WaterAnalysisResultPondP _AsPond() override { return this; }
     public:
-        virtual WaterAnalysisResultPondP AsPond() override { return this; }
-        CurveVectorCR GetGeometry() const { return *m_geometry; }
-        bool IsFull() const { return m_isFull; }
-        static WaterAnalysisResultPondPtr Create(CurveVectorR geometry, bool isFull, double volume)
+        BENTLEYDTMDRAINAGE_EXPORT bool IsFull() const;
+        BENTLEYDTMDRAINAGE_EXPORT double Depth() const;
+        static WaterAnalysisResultPondPtr Create(CurveVectorR geometry, bool isFull, double volume, double depth)
             {
-            return new WaterAnalysisResultPond(geometry, isFull, volume);
+            return new WaterAnalysisResultPond(geometry, isFull, volume, depth);
             }
 
     };
