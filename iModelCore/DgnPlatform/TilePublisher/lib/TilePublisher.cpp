@@ -609,6 +609,20 @@ void PublisherContext::PublisherContext::Statistics::RecordPointCloud (size_t nP
         m_pointCloudMaxPoints = nPoints;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::RecordUsage(TileDisplayParamsCR displayParams)
+    {
+    if (displayParams.GetCategoryId().IsValid())                              
+        m_usedCategories.insert (displayParams.GetCategoryId());
+
+    if (displayParams.GetSubCategoryId().IsValid())
+        m_usedSubCategories.insert (displayParams.GetSubCategoryId());
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -835,6 +849,8 @@ Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishT
 
     for (auto& tileMesh : tileMeshes)
         {
+        m_context.RecordUsage(tileMesh->GetDisplayParams());
+
         if (!tileMesh->Triangles().empty())
             AddMeshPrimitive(primitives, tileData, *tileMesh, primitiveIndex++, doBatchIds);
 
@@ -3846,6 +3862,7 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
 
     json["name"] = view.GetName();
     json["categorySelector"] = view.GetCategorySelectorId().ToString();
+    
     json["displayStyle"] = view.GetDisplayStyleId().ToString();
 
     DPoint3d viewOrigin = view.GetOrigin();
@@ -3907,7 +3924,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
         }
 
     DgnElementIdSet allModelSelectors;
-    DgnElementIdSet allCategorySelectors;
+    T_CategorySelectorMap allCategorySelectors;
     DgnElementIdSet allDisplayStyles;
     DgnModelIdSet   all2dModelIds;
 
@@ -3941,7 +3958,9 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
                 auto   attachedViews = model->ToSheetModel()->GetSheetAttachmentViews(GetDgnDb());
                 for (auto& attachedView : attachedViews)
                     {
-                    allCategorySelectors.insert(attachedView->GetCategorySelectorId());
+                    auto    insertPair = allCategorySelectors.Insert(attachedView->GetCategorySelectorId(), T_ViewDefs());
+                    insertPair.first->second.push_back(attachedView);
+
                     allDisplayStyles.insert(attachedView->GetDisplayStyleId());
                     if (nullptr != attachedView->ToView2d())
                         all2dModelIds.insert(attachedView->ToView2d()->GetBaseModelId());
@@ -3951,7 +3970,10 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
 
         Json::Value entry(Json::objectValue);
  
-        allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
+        bvector<ViewDefinitionCPtr>  viewDefs;
+        auto insertPair = allCategorySelectors.Insert(viewDefinition->GetCategorySelectorId(), viewDefs);
+        insertPair.first->second.push_back(viewDefinition);
+
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
         GetViewJson(entry, *viewDefinition, nullptr != spatialView ? spatialTransform : Transform::FromIdentity());
@@ -4033,19 +4055,60 @@ Json::Value PublisherContext::GetAllClassifiersJson()
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PublisherContext::CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views) const
+    {
+    auto const& category = DgnCategory::Get(GetDgnDb(), categoryId);
+
+    if (!category.IsValid())
+        return false;
+
+    auto            subCategories = category->MakeSubCategoryIterator();
+    bool            anySubCategories = false, anySubCategoriesOn = false;
+    auto            subCategoryIds = subCategories.BuildIdSet<DgnSubCategoryId>();
+    auto            name = category->GetCategoryName();
+
+    for (auto& subCategoryId : subCategoryIds)
+        {
+        auto const& subcategory = DgnSubCategory::Get(GetDgnDb(), subCategoryId);
+        auto        subName = subcategory->GetSubCategoryName();
+
+        anySubCategories = true;
+        
+        for (auto& view : views)
+            {
+            ViewControllerPtr viewController = view->LoadViewController();
+
+            if (IsSubCategoryUsed(subCategoryId) && !viewController->GetSubCategoryAppearance(subCategoryId).IsInvisible())
+                anySubCategoriesOn = true;
+            }
+        }
+    return !anySubCategories || anySubCategoriesOn;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::WriteCategoriesJson(Json::Value& json, DgnElementIdSet const& selectorIds)
+void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelectorMap const& selectorIds)
     {
-    DgnCategoryIdSet allCategories;                                                                                                                      
-    Json::Value& selectorsJson = (json["categorySelectors"] = Json::objectValue);
+    DgnCategoryIdSet    allCategories;                                                                                                                      
+    Json::Value&        selectorsJson = (json["categorySelectors"] = Json::objectValue);
+
     for (auto const& selectorId : selectorIds)
         {
-        auto selector = GetDgnDb().Elements().Get<CategorySelector>(selectorId);
+        auto    selector = GetDgnDb().Elements().Get<CategorySelector>(selectorId.first);
+
         if (selector.IsValid())
             {
-            auto cats = selector->GetCategories();
-            selectorsJson[selectorId.ToString()] = IdSetToJson(cats);
+            auto                cats = selector->GetCategories();
+            DgnCategoryIdSet     onInAnyViewCats;
+
+            for (auto const& cat : cats)
+                if (CategoryOnInAnyView(cat, selectorId.second))
+                    onInAnyViewCats.insert(cat);
+
+            selectorsJson[selectorId.first.ToString()] = IdSetToJson(onInAnyViewCats);
             allCategories.insert(cats.begin(), cats.end());
             }
         }
