@@ -167,20 +167,16 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
         }
 
     // Classifiers.
-    ModelSpatialClassifiers         classifiers;
-    for (UInt32 index=0; true; index++)
+    ModelSpatialClassifiers                 classifiers;
+    DgnV8Api::ElementHandle::XAttributeIter classifierXai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, (int)MRMeshMinorXAttributeId_Link_Classifier), DgnV8Api::XAttributeHandle::MATCH_ANY_ID);
+
+    for (; classifierXai.IsValid(); classifierXai.ToNext())
         {
-        DgnV8Api::ElementHandle::XAttributeIter xai(v8el, DgnV8Api::XAttributeHandlerId(ThreeMxElementHandler::XATTRIBUTEID_ThreeMxAttachment, (int)MRMeshMinorXAttributeId_Link_Classifier), index);
-
-        if (!xai.IsValid())
-            break;
-
-
-        Bentley::DataInternalizer       source ((byte*) xai.PeekData(), xai.GetSize());
+        Bentley::DataInternalizer       source ((byte*) classifierXai.PeekData(), classifierXai.GetSize());
         DgnV8ClassificationFlags        v8Flags;
         double                          unused, expandDistance;
         UInt32                          optionalStorageFlags = 0;
-        Bentley::WString                wName;
+        Bentley::WString                wName, namedGroupName, levelName;
         DgnV8Api::PersistentElementPath pep;
 
         source.get ((byte*) &v8Flags, sizeof(v8Flags));
@@ -188,7 +184,7 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
         source.get (&expandDistance);
         source.get (&optionalStorageFlags);
     
-        if (0 == (optionalStorageFlags & LinkStorage_ModelPEP) ||
+        if (0 != (optionalStorageFlags & (LinkStorage_ModelPEP | LinkStorage_ElementPEP)) &&
             SUCCESS != pep.Load (source))
             {
             BeAssert(false && "unable to load classifier PEP");
@@ -198,48 +194,62 @@ ConvertToDgnDbElementExtension::Result ConvertThreeMxAttachment::_PreConvertElem
         if (0 != (optionalStorageFlags & LinkStorage_Name))
             source.get (wName);
 
-        switch (v8Flags.m_type)
+        if (0 != (optionalStorageFlags & LinkStorage_NamedGroupName))
+            source.get (namedGroupName);
+
+        if (0 != (optionalStorageFlags & LinkStorage_LevelName))
+            source.get(levelName);
+
+        ModelSpatialClassifier::Flags   classifierFlags((ModelSpatialClassifier::Type) v8Flags.m_type, (ModelSpatialClassifier::Display) v8Flags.m_outsideMode, (ModelSpatialClassifier::Display) v8Flags.m_insideMode, (ModelSpatialClassifier::Display) v8Flags.m_selectedMode);
+        DgnModelId                      classifiedModelId;
+        DgnCategoryId                   classifierCategoryId;
+        DgnElementId                    classifierElementId;
+        DgnModelRefP                    classifierModelRef = v8el.GetModelRef();
+        ResolvedModelMapping            classifierMM = v8mm;
+
+        if (0 != (optionalStorageFlags & LinkStorage_ModelPEP))
             {
-            case CLASSIFIER_TYPE_Model:
+            DgnV8Api::DgnModelRef*        prefix;
+            DgnV8Api::ElementHandle       refAttachEh;
+
+            converter.GetAttachments(*v8el.GetModelRef());          // Force attachments to load.
+
+            if (SUCCESS != pep.EvaluateReferenceAttachmentPrefix (prefix, v8el.GetModelRef()) ||
+                !(refAttachEh = pep.EvaluateReferenceAttachment(prefix)).IsValid() ||
+                NULL == (classifierModelRef = prefix->FindDgnAttachmentByElementId (refAttachEh.GetElementId())) ||
+                NULL == classifierModelRef->GetDgnModelP() ||
+                NULL == classifierModelRef->AsDgnAttachmentCP())
                 {
-                
-                DgnV8Api::DgnModelRef*        prefix;
-                DgnV8Api::DgnModelRef*        modelRef = nullptr;
-                DgnV8Api::ElementHandle       refAttachEh;
-
-                converter.GetAttachments(*v8el.GetModelRef());          // Force attachments to load.
-
-                if (SUCCESS != pep.EvaluateReferenceAttachmentPrefix (prefix, v8el.GetModelRef()) ||
-                    !(refAttachEh = pep.EvaluateReferenceAttachment(prefix)).IsValid() ||
-                    NULL == (modelRef = prefix->FindDgnAttachmentByElementId (refAttachEh.GetElementId())) ||
-                    NULL == modelRef->GetDgnModelP() ||
-                    NULL == modelRef->AsDgnAttachmentCP())
-                    {
-                    BeAssert(false && "Unable to evaluate classifier attachment.");
-                    break;
-                    }
-
-                auto    refTrans = converter.ComputeAttachmentTransform(v8mm.GetTransform(), *modelRef->AsDgnAttachmentCP());
-                auto    modelMapping = converter.FindModelForDgnV8Model(*modelRef->GetDgnModelP(), refTrans);
-
-                if (!modelMapping.IsValid())
-                    {
-                    BeAssert (false && "Unable to evaluate classifier model");
-                    break;
-                    }
-                
-                ModelSpatialClassifier::Flags   classifierFlags((ModelSpatialClassifier::Type) v8Flags.m_type, (ModelSpatialClassifier::Display) v8Flags.m_outsideMode, (ModelSpatialClassifier::Display) v8Flags.m_insideMode, (ModelSpatialClassifier::Display) v8Flags.m_selectedMode);
-                classifiers.push_back(ModelSpatialClassifier(modelMapping.GetDgnModel().GetModelId(), classifierFlags, Utf8String(wName.c_str()), expandDistance));
-
+                BeAssert(false && "Unable to evaluate classifier attachment.");
                 break;
                 }
 
-            default:
-                BeAssert(false && "Unsupported classifier type");
-                break;
-            }
-        }
+            auto    refTrans = converter.ComputeAttachmentTransform(v8mm.GetTransform(), *classifierModelRef->AsDgnAttachmentCP());
+            classifierMM = converter.FindModelForDgnV8Model(*classifierModelRef->GetDgnModelP(), refTrans);
 
+            if (!classifierMM.IsValid())
+                {
+                BeAssert (false && "Unable to evaluate classifier model");
+                break;
+                }
+            }
+        classifiedModelId = classifierMM.GetDgnModel().GetModelId();
+        
+
+        if (!levelName.empty())
+            {
+            DgnV8Api::LevelHandle         levelHandle = classifierModelRef->GetLevelCache().GetLevelByName (levelName.c_str());
+            
+            if (!levelHandle.IsValid())
+                {
+                BeAssert (false && "unable to find classifier level");
+                break;
+                }
+            classifierCategoryId = converter.GetSyncInfo().FindCategory(levelHandle.GetLevelId(), classifierMM.GetV8FileSyncInfoId(), SyncInfo::Level::Type::Spatial);
+            }
+        
+        classifiers.push_back(ModelSpatialClassifier(classifiedModelId, classifierCategoryId, classifierElementId, classifierFlags, Utf8String(wName.c_str()), expandDistance * converter.ComputeUnitsScaleFactor(*v8el.GetModelRef()->GetDgnModelP())));
+        }
     clipVector->TransformInPlace(v8mm.GetTransform());
 
     Bentley::WString monikerString;
