@@ -863,6 +863,25 @@ bool BRepUtil::IsDisjointBody(IBRepEntityCR entity)
 #endif
     }
 
+#if defined (BENTLEYCONFIG_PARASOLID) 
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+static bool isPlanarSurfaceClass(PK_CLASS_t surfaceClass)
+    {
+    switch (surfaceClass)
+        {
+        case PK_CLASS_plane:
+        case PK_CLASS_circle:
+        case PK_CLASS_ellipse:
+            return true;
+
+        default:
+            return false;
+        }
+    }
+#endif
+    
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  12/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -894,7 +913,7 @@ bool BRepUtil::IsSingleFacePlanarSheetBody(IBRepEntityCR entity, bool& hasHoles)
     PK_LOGICAL_t orientation;
 
     if (SUCCESS != PK_FACE_ask_oriented_surf(faceTag, &surfaceTag, &orientation) ||
-        SUCCESS != PK_ENTITY_ask_class(surfaceTag, &surfaceClass) || surfaceClass != PK_CLASS_plane ||
+        SUCCESS != PK_ENTITY_ask_class(surfaceTag, &surfaceClass) || !isPlanarSurfaceClass(surfaceClass) ||
         SUCCESS != PK_FACE_ask_loops(faceTag, &nLoops, &loops) || nLoops < 1)
         return false;
 
@@ -1323,6 +1342,42 @@ BentleyStatus BRepUtil::TopologyID::FindNodeIdRange(IBRepEntityCR entity, uint32
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Brien.Bastings  11/12
 +---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::AddNodeIdAttribute(ISubEntityR subEntity, FaceId faceId)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Face != subEntity.GetSubEntityType())
+        return ERROR;
+
+    PK_FACE_t   faceTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    return PSolidTopoId::AttachEntityId(faceTag, faceId.nodeId, faceId.entityId);
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/17
++---------------+---------------+---------------+---------------+---------------+------*/
+BentleyStatus BRepUtil::TopologyID::DeleteNodeIdAttribute(ISubEntityR subEntity)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Face != subEntity.GetSubEntityType())
+        return ERROR;
+
+    PK_FACE_t   faceTag = PSolidSubEntity::GetSubEntityTag(subEntity);
+
+    PSolidTopoId::DeleteEntityId(faceTag);
+
+    return SUCCESS;
+#else
+    return ERROR;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  11/12
++---------------+---------------+---------------+---------------+---------------+------*/
 BentleyStatus BRepUtil::TopologyID::IdFromFace(FaceId& faceId, ISubEntityCR subEntity, bool useHighestId)
     {
 #if defined (BENTLEYCONFIG_PARASOLID)
@@ -1454,6 +1509,33 @@ CurveVectorPtr BRepUtil::Create::BodyToCurveVector(IBRepEntityCR entity)
         default:
             return nullptr;
         }
+#else
+    return nullptr;
+#endif
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Brien.Bastings  08/18
++---------------+---------------+---------------+---------------+---------------+------*/
+CurveVectorPtr BRepUtil::Create::PlanarFaceToCurveVector(ISubEntityCR face)
+    {
+#if defined (BENTLEYCONFIG_PARASOLID)
+    if (ISubEntity::SubEntityType::Face != face.GetSubEntityType())
+        return nullptr;
+
+    PK_ENTITY_t faceTag = PSolidSubEntity::GetSubEntityTag(face);
+
+    if (PK_ENTITY_null == faceTag)
+        return nullptr;
+
+    CurveVectorPtr curves = PSolidGeom::PlanarFaceToCurveVector(faceTag);
+
+    if (!curves.IsValid())
+        return nullptr;
+
+    curves->TransformInPlace(PSolidSubEntity::GetSubEntityTransform(face));
+
+    return curves;
 #else
     return nullptr;
 #endif
