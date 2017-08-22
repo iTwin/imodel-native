@@ -128,14 +128,14 @@ public:
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateBriefcaseToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 
     //! Updates briefcase to specified ChangeSet
     //! @param[in] changeSetId
     //! @param[in] callback
     //! @param[in] cancellationToken
     //! @return Asynchronous task that returns success or an error.
-    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateBriefcaseToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE
