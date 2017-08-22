@@ -1,0 +1,14 @@
+﻿{
+  "Company": {
+    "Name": "Bentley Systems",
+    "NumberOfEmployees": 3000,
+    "RecordKey": 0,
+    "ContactAddress": {
+      "Street": "685 Stockton Drive",
+      "City": "Exton",
+      "State": "PA",
+      "Country": "United States",
+      "Zip": "19341"
+    }
+  }
+}
