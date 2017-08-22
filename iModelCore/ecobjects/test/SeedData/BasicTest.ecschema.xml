@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ECSchema schemaName="BasicTest" alias="bt" version="01.00.00" displayLabel="A Basic Test Schema" description="This is a basic test schema." xmlns="http://www.bentley.com/schemas/Bentley.ECXML.3.1">
+    <ECEntityClass typeName="Company" modifier="None" displayLabel="Company" description="A company">
+        <ECProperty propertyName="Name" typeName="string"/>
+        <ECProperty propertyName="NumberOfEmployees" typeName="int" displayLabel="Number Of Employees"/>
+        <!--<ECArrayProperty propertyName="Products" typeName="string" minOccurs="0" maxOccurs="unbounded"/>
+        <ECStructProperty propertyName="HeadQuarters" typeName="Location"/>
+        <ECStructArrayProperty propertyName="OfficeLocations" typeName="Location" description="Office Locations" displayLabel="Office Locations" minOccurs="0" maxOccurs="unbounded"/>-->
+        <ECStructProperty propertyName="ContactAddress" typeName="Address" displayLabel="Address"/>
+        <ECProperty propertyName="RecordKey" typeName="Company_RecordKey" displayLabel="Record Key"/>
+    </ECEntityClass>
+
+    <ECEntityClass typeName="Store" modifier="None" displayLabel="Store" description="A store">
+        <ECProperty propertyName="Name" typeName="string" readOnly="false" priority="1" displayLabel="Store Name" description="The name of the store"/>
+        <ECProperty propertyName="NumberOfFloors" typeName="int" readOnly="false" priority="2"  displayLabel="" description="The number of floors in the building" />
+        <ECProperty propertyName="SquareFootage" typeName="double" readOnly="false" priority="2" displayLabel="Sqft" description="The square footage of the store"/>
+        <ECStructProperty propertyName="Location" typeName="Location" readOnly="false" priority="1" displayLabel="Location" description="Location of the store"/>
+        <ECNavigationProperty propertyName="Company" relationshipName="CompanyOwnsStore" direction="backward" readOnly="false" priority="1" displayLabel="Company" description="The company who owns the store."/>
+    </ECEntityClass>
+
+    <ECStructClass typeName="Location" modifier="Sealed" displayLabel="Location" description="Describes the attributes of a location">
+        <ECProperty propertyName="Coordinate" typeName="point3d" priority="1" description="relative the origin of the Kansas State Plane"/>
+        <ECStructProperty propertyName="Address" typeName="Address" priority="1"/>
+    </ECStructClass>
+
+    <ECStructClass typeName="Address" modifier="Sealed" displayLabel="Address">
+        <ECProperty propertyName="Street" typeName="string"/>
+        <ECProperty propertyName="City" typeName="string"/>
+        <ECProperty propertyName="State" typeName="string"/>
+        <ECProperty propertyName="Country" typeName="string"/>
+        <ECProperty propertyName="Zip" typeName="string" minimumLength="5" maximumLength="5" priority="1" readOnly="false" description="" displayLabel="Zip Code"/>
+    </ECStructClass>
+
+    <ECRelationshipClass typeName="CompanyOwnsStore" modifier="None" >
+        <Source multiplicity="(0..1)" roleLabel="owns" polymorphic="true">
+            <Class class="Company"/>
+        </Source>
+        <Target multiplicity="(0..1)" roleLabel="is owned by" polymorphic="true">
+            <Class class="Store"/>
+        </Target>
+    </ECRelationshipClass>
+
+    <KindOfQuantity typeName="AREA" displayLabel="AREA" persistenceUnit="M" relativeError="1e-2" />
+
+    <ECEnumeration typeName="Company_RecordKey" backingTypeName="int" isStrict="true">
+        <ECEnumerator value="0" displayLabel="CODE1"/>
+        <ECEnumerator value="1" displayLabel="CODE2"/>
+        <ECEnumerator value="2" displayLabel="CODE3"/>
+        <ECEnumerator value="3" displayLabel="CODE4"/>
+    </ECEnumeration>
+
+    <!--<PropertyCategory typeName="" displayLabel="" description="" priority="0"/>-->
+</ECSchema>

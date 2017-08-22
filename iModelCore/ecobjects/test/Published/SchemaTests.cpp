@@ -27,6 +27,15 @@ struct SchemaCopyTest : ECTestFixture
     ECSchemaPtr m_testSchema;
     ECSchemaReadContextPtr   m_schemaContext;
     SearchPathSchemaFileLocaterPtr m_schemaLocater;
+
+    protected:
+        void CopySchema(ECSchemaPtr& copiedSchema)
+            {
+            EC_ASSERT_SUCCESS(m_testSchema->CopySchema(copiedSchema));
+            EXPECT_TRUE(copiedSchema.IsValid());
+            EXPECT_NE(m_testSchema, copiedSchema);
+            }
+
     public:
         void SetUp ()
             {
@@ -43,24 +52,16 @@ struct SchemaCopyTest : ECTestFixture
             }
     };
 struct SchemaLocateTest : ECTestFixture {};
-struct SchemaComparisonTest : ECTestFixture {};
+struct SchemaKeyComparisonTest : ECTestFixture {};
 struct SchemaCacheTest : ECTestFixture {};
 struct SchemaChecksumTest : ECTestFixture {};
 struct SchemaImmutableTest : ECTestFixture {};
 struct SchemaVersionTest : ECTestFixture {};
+struct ECNameValidationTest;
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Paul.Connelly   12/12
-+---------------+---------------+---------------+---------------+---------------+------*/
-ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true)
-    {
-    ECPropertyP prop = ecClass.GetPropertyP(name);
-    EXPECT_EQ(expectExists, NULL != prop);
-    Utf8String utf8(name);
-    prop = ecClass.GetPropertyP(utf8.c_str());
-    EXPECT_EQ(expectExists, NULL != prop);
-    return prop;
-    }
+//=======================================================================================
+//! SchemaSearchTest
+//=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -196,8 +197,6 @@ TEST_F(SchemaTest, TestPrimitiveEnumerationProperty)
     ASSERT_TRUE(prop->GetEnumeration() == enumeration);
     }
 
-
-
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Carole.MacDonald            11/2015
 //---------------+---------------+---------------+---------------+---------------+-------
@@ -235,8 +234,295 @@ TEST_F(SchemaTest, RemoveBaseClassFromGrandChild)
     prop = child->GetPropertyP("PropA", false);
     ASSERT_TRUE(nullptr != prop);
     ASSERT_TRUE(nullptr == prop->GetBaseProperty());  // This shouldn't fail!
-
     }
+
+bool CompareFiles(Utf8StringCP lFileName, Utf8StringCP rFileName)
+    {
+    BeFile lFile;
+    BeFileStatus lStatus = lFile.Open(*lFileName, BeFileAccess::Read);
+
+    EXPECT_EQ(BeFileStatus::Success, lStatus) << "Could not open " << *lFileName << " for verification";
+
+    BeFile rFile;
+    BeFileStatus rStatus = rFile.Open(*rFileName, BeFileAccess::Read);
+    EXPECT_EQ(BeFileStatus::Success, lStatus) << "Could not open " << *rFileName << " for verification";
+
+    ByteStream lStream;
+    ByteStream rStream;
+    lStatus = lFile.ReadEntireFile(lStream);
+    rStatus = rFile.ReadEntireFile(rStream);
+
+    if (lStream.GetSize() != rStream.GetSize())
+        return false;
+
+    const uint8_t *lBuffer = lStream.GetData();
+    const uint8_t *rBuffer = rStream.GetData();
+    for (uint32_t i = 0; i < lStream.GetSize(); i++)
+        {
+        if (lBuffer[i] != rBuffer[i])
+            return false;
+        }
+    lFile.Close();
+    rFile.Close();
+    return true;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, CreateDynamicSchema)
+    {
+    //Load Bentley_Standard_CustomAttributes
+    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
+    schemaContext->AddSchemaLocater(*schemaLocater);
+
+    SchemaKey schemaKey("CoreCustomAttributes", 1, 0);
+    ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SchemaMatchType::Latest);
+    EXPECT_TRUE(standardCASchema.IsValid());
+
+    IECInstancePtr dynamicSchemaCA = standardCASchema->GetClassCP("DynamicSchema")->GetDefaultStandaloneEnabler()->CreateInstance();
+    ECSchemaCachePtr cache = ECSchemaCache::Create();
+    ECSchemaPtr schema;
+
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
+    schema->AddReferencedSchema(*standardCASchema);
+    ASSERT_EQ(ECObjectsStatus::Success, schema->SetCustomAttribute(*dynamicSchemaCA));
+    
+
+    ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
+    ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 2, 1), SchemaMatchType::Exact);
+    ASSERT_TRUE(retrievedSchema != NULL);
+
+    ASSERT_TRUE(retrievedSchema->IsDynamicSchema());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, TryRenameECClass)
+    {
+    ECSchemaCachePtr cache = ECSchemaCache::Create();
+    ECSchemaPtr schema;
+
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+
+    ECEntityClassP entityClass1;
+    ECEntityClassP entityClass2;
+    schema->CreateEntityClass(entityClass1, "ClassA");
+    schema->CreateEntityClass(entityClass2, "ClassB");
+
+    ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
+    ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 5, 5), SchemaMatchType::Exact);
+    ASSERT_TRUE(retrievedSchema != NULL);
+
+    // rename classes
+    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->RenameClass(*retrievedSchema->GetClassP("ClassA"), "ClassA1"));
+    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->RenameClass(*retrievedSchema->GetClassP("ClassB"), "ClassB1"));
+
+    // try to get classes with old names
+    ASSERT_TRUE(nullptr == retrievedSchema->GetClassCP("ClassA"));
+    ASSERT_TRUE(nullptr == retrievedSchema->GetClassCP("ClassB"));
+
+    // Get classes with new names
+    ECClassP classA1 = retrievedSchema->GetClassP("ClassA1");
+    ECClassP classB1 = retrievedSchema->GetClassP("ClassB1");
+    ASSERT_TRUE(nullptr != classA1);
+    ASSERT_TRUE(nullptr != classB1);
+
+    // Delete Classes
+    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->DeleteClass(*classA1));
+    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->DeleteClass(*classB1));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, RemoveReferenceSchema)
+    {
+    ECSchemaPtr schema;
+    ECSchemaPtr refSchema;
+
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
+
+    ECRelationshipClassP relClass;
+    ECEntityClassP targetClass;
+    ECEntityClassP sourceClass;
+
+    schema->CreateRelationshipClass(relClass, "RElationshipClass");
+    schema->CreateEntityClass(targetClass, "Target");
+    refSchema->CreateEntityClass(sourceClass, "Source");
+
+    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetTarget().AddClass(*targetClass));
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, relClass->GetSource().AddClass(*sourceClass));
+
+    schema->AddReferencedSchema(*refSchema);
+    ASSERT_FALSE(refSchema->IsStandardSchema());
+    ASSERT_FALSE(refSchema->IsSupplementalSchema());
+    ASSERT_FALSE(refSchema->IsSystemSchema());
+    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema));
+    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetSource().AddClass(*sourceClass));
+
+    // try to remove refrence schema, shouldn't be successful as referenced schema's class is used a relationship constraint.
+    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(SchemaKey("RefSchema", 5, 5)));
+
+    // remove source constraint class from relationship
+    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetSource().RemoveClass(*sourceClass));
+
+    //removing reference schema should be successful now
+    ASSERT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(SchemaKey("RefSchema", 5, 5)));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaTest, DeleteKOQ)
+    {
+    ECSchemaPtr schema;
+    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
+    Utf8CP schemaXml =
+        "<?xml version='1.0' encoding='utf-8'?>"
+        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
+        "    <KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
+        "                    displayLabel='My KindOfQuantity' persistenceUnit='CM' relativeError='10e-3'"
+        "                    presentationUnits='FT;INCH;YARD' />"
+        "    <ECEntityClass typeName='Foo' >"
+        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />" // kindOfQuantity='s1:MyKindOfQuantity'
+        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>" // kindOfQuantity='s1:MyKindOfQuantity'
+        "    </ECEntityClass>"
+        "</ECSchema>";
+
+    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
+
+    std::vector<KindOfQuantityP> todelete;
+
+    KindOfQuantityContainerCR koqContainer = schema->GetKindOfQuantities();
+    for (auto koq : koqContainer)
+        todelete.push_back(koq);
+
+    for (auto koq : todelete)
+        {
+        ASSERT_EQ(ECObjectsStatus::Success, schema->DeleteKindOfQuantity(*koq));
+        }
+
+    schema->DebugDump();
+    }
+
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(SchemaTest, TestCircularReference)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext ();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    SchemaKey key ("CircleSchema", 01, 00);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
+    EXPECT_FALSE (testSchema.IsValid ());
+    }
+
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(SchemaTest, TestsLatestCompatible)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext ();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    SchemaKey key ("Widgets", 01, 00);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::LatestWriteCompatible);
+    EXPECT_TRUE (testSchema.IsValid ());
+    EXPECT_TRUE (testSchema->GetVersionRead () == 9);
+    EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
+    }
+
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(SchemaTest, TestsLatest)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext ();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    SchemaKey key ("Widgets", 9, 7);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
+    EXPECT_TRUE (testSchema.IsValid ());
+    EXPECT_TRUE (testSchema->GetVersionRead () == 9);
+    EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
+    }
+
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext ();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    SchemaKey key ("DuplicatePrefixes", 01, 00);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
+    EXPECT_TRUE (testSchema.IsValid ());
+    ECClassCP CircleClass = testSchema->GetClassCP ("Circle");
+    EXPECT_TRUE (CircleClass != NULL) << "Cannot Load Ellipse Class";
+
+    IECInstancePtr CircleClassInstance = CircleClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ECValue v;
+    v.SetUtf8CP ("test");
+    CircleClassInstance->SetValue ("Name", v);
+    }
+
+//---------------------------------------------------------------------------------**//**
+// @bsimethod                                   Raimondas.Rimkus                   02/13
+// +---------------+---------------+---------------+---------------+---------------+-----
+TEST_F(SchemaTest, GetBaseClassProperty)
+    {
+    ECSchemaPtr testSchema;
+    ECSchemaReadContextPtr   schemaContext;
+    SearchPathSchemaFileLocaterPtr schemaLocater;
+    bvector<WString> searchPaths;
+    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
+    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
+    schemaContext = ECSchemaReadContext::CreateContext ();
+    schemaContext->AddSchemaLocater (*schemaLocater);
+    SchemaKey key ("testschema", 01, 00);
+    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
+    EXPECT_TRUE (testSchema.IsValid ());
+    ECClassCP WheelsChildClass = testSchema->GetClassCP ("WheelsChild");
+    EXPECT_TRUE (WheelsChildClass != NULL) << "Cannot Load WheelsChild Class";
+
+    IECInstancePtr WheelsChildInstance = WheelsChildClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
+    ECValue v;
+    v.SetUtf8CP ("test");
+    WheelsChildInstance->SetValue ("Name", v);
+    }
+
+//=======================================================================================
+//! SchemaSearchTest
+//=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
@@ -340,10 +626,14 @@ TEST_F(SchemaSearchTest, FindSchemaByFileName)
 
     }
 
+//=======================================================================================
+//! SchemaNameParsingTest
+//=======================================================================================
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-static  void    ValidateSchemaNameParsing(Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectRead, uint32_t expectWrite, uint32_t expectMinor)
+static void ValidateSchemaNameParsing(Utf8CP fullName, bool expectFailure, Utf8CP expectName, uint32_t expectRead, uint32_t expectWrite, uint32_t expectMinor)
     {
     Utf8String    shortName;
     uint32_t   versionRead;
@@ -380,6 +670,10 @@ TEST_F(SchemaNameParsingTest, ParseFullSchemaName)
     ValidateSchemaNameParsing("", true, NULL, 0, 0, 0);
     ValidateSchemaNameParsing("12.18", true, NULL, 0, 0, 0);
     }
+
+//=======================================================================================
+//! SchemaSerializationTest
+//=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -436,126 +730,6 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithSerializingBaseClasses)
     WString ecSchemaXmlString;
     SchemaWriteStatus status3 = schema->WriteToXmlString(ecSchemaXmlString);
     EXPECT_EQ(SchemaWriteStatus::Success, status3);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod
-+---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
-    {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
-
-    ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 5, 5);
-
-    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
-
-    ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
-
-    ECSchemaReferenceList::const_iterator schemaIterator = refList.find(refSchema->GetSchemaKey());
-
-    EXPECT_FALSE(schemaIterator == refList.end());
-    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
-
-    schemaIterator = refList.find(refSchema->GetSchemaKey());
-
-    EXPECT_TRUE(schemaIterator == refList.end());
-    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
-    }
-
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   
-//---------------+---------------+---------------+---------------+---------------+-------
-TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences)
-    {
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
-
-    ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, "RefSchema", "rs", 5, 5, 5);
-
-    ECSchemaPtr unusedRefSchema;
-    ECSchema::CreateSchema(unusedRefSchema, "UnusedRefSchema", "urs", 42, 42, 42);
-
-    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
-    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*unusedRefSchema));
-
-    ECEntityClassP baseClass;
-    refSchema->CreateEntityClass(baseClass, "Banana");
-    ECEntityClassP derivedClass;
-    schema->CreateEntityClass(derivedClass, "Apple");
-    derivedClass->AddBaseClass(*baseClass);
-
-    ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
-
-    ECSchemaReferenceList::const_iterator schemaIterator = refList.find(refSchema->GetSchemaKey());
-    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find RefSchema in reference list";
-    schemaIterator = refList.find(unusedRefSchema->GetSchemaKey());
-    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find UnusedRefSchema in reference list";
-
-    EXPECT_EQ(1, schema->RemoveUnusedSchemaReferences()) << "Expected RemoveUnusedSchemaReferences to remove one schema";
-
-    schemaIterator = refList.find(refSchema->GetSchemaKey());
-    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find RefSchema in reference list after removing unused schemas";
-    schemaIterator = refList.find(unusedRefSchema->GetSchemaKey());
-    EXPECT_TRUE(schemaIterator == refList.end()) << "Found UnusedRefSchema in reference list after removing unused schemas";
-
-    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Expected UnusedRefSchema to not be found after removing unused schema references";
-    }
-
-TEST_F(SchemaReferenceTest, WillNotRemoveUsedReference_MultipleCopiesOfReferencedSchema)
-    {
-    ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, "RefSchema", "RS", 1, 2, 3);
-    ECCustomAttributeClassP caClass;
-    refSchema->CreateCustomAttributeClass(caClass, "CA");
-
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "TS", 1, 2, 3);
-    ECEntityClassP ecClass;
-    schema->CreateEntityClass(ecClass, "Entity");
-
-    ECSchemaPtr refSchemaCopy;
-    refSchema->CopySchema(refSchemaCopy);
-    schema->AddReferencedSchema(*refSchemaCopy);
-
-    IECInstancePtr caInstance = caClass->GetDefaultStandaloneEnabler()->CreateInstance();
-    ecClass->SetCustomAttribute(*caInstance);
-
-    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema)) << "Failed to find the RefSchema when a copy was added as a reference";
-    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchemaCopy)) << "Failed to find the RefSchema copy that was added as a reference";
-
-    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "Should have found CA which uses refSchema";
-    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchemaCopy)) << "Should have found CA which uses refSchema even though we passed in the copy";
-
-    ASSERT_EQ(0, schema->RemoveUnusedSchemaReferences()) << "Should not have removed any referenced schemas";
-    }
-
-TEST_F(SchemaReferenceTest, CanRemoveUnusedRefSchemaWhenSchemaUsesAnotherRefForAStructType)
-    {
-    ECSchemaPtr refSchema;
-    ECSchema::CreateSchema(refSchema, "RefSchema", "RS", 1, 2, 3);
-    ECStructClassP structClass;
-    refSchema->CreateStructClass(structClass, "Struct");
-
-    ECSchemaPtr unusedRefSchema;
-    ECSchema::CreateSchema(unusedRefSchema, "UnusedRefSchema", "URS", 1, 2, 3);
-
-    ECSchemaPtr schema;
-    ECSchema::CreateSchema(schema, "TestSchema", "TS", 1, 2, 3);
-    schema->AddReferencedSchema(*refSchema);
-    schema->AddReferencedSchema(*unusedRefSchema);
-
-    ECEntityClassP ecClass;
-    schema->CreateEntityClass(ecClass, "Class");
-    StructECPropertyP structProp;
-    ecClass->CreateStructProperty(structProp, "SProp", *structClass);
-
-    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "Should not have been able to remove RefSchema because it is used";
-    ASSERT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Should have been able to remove UnusedRefSchema because it is not used";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -718,6 +892,9 @@ TEST_F(SchemaSerializationTest, SerializeComprehensiveSchema)
     EXPECT_EQ(SchemaWriteStatus::Success, status3);
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 //This test ensures we support any unknown element or attribute put into existing ECSchema XML. Important for backwards compatibility of future EC versions.
 TEST_F(SchemaSerializationTest, DeserializeComprehensiveSchemaWithUnknowns)
     {
@@ -830,6 +1007,135 @@ TEST_F(SchemaSerializationTest, ExpectSuccessWithInheritedKindOfQuantities)
     ASSERT_TRUE(derivedProp3 != nullptr);
     ASSERT_TRUE(derivedProp3->IsKindOfQuantityDefinedLocally());
     ASSERT_STREQ("OverrideKindOfQuantity", derivedProp3->GetKindOfQuantity()->GetName().c_str());
+    }
+
+//=======================================================================================
+//! SchemaReferenceTest
+//=======================================================================================
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod
++---------------+---------------+---------------+---------------+---------------+------*/
+TEST_F(SchemaReferenceTest, AddAndRemoveReferencedSchemas)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
+
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 5, 5);
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECObjectsStatus::NamedItemAlreadyExists, schema->AddReferencedSchema(*refSchema));
+
+    ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
+
+    ECSchemaReferenceList::const_iterator schemaIterator = refList.find(refSchema->GetSchemaKey());
+
+    EXPECT_FALSE(schemaIterator == refList.end());
+    EXPECT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*refSchema));
+
+    schemaIterator = refList.find(refSchema->GetSchemaKey());
+
+    EXPECT_TRUE(schemaIterator == refList.end());
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*refSchema));
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaReferenceTest, CanRemoveAllUnusedSchemaReferences)
+    {
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 5, 5);
+
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "rs", 5, 5, 5);
+
+    ECSchemaPtr unusedRefSchema;
+    ECSchema::CreateSchema(unusedRefSchema, "UnusedRefSchema", "urs", 42, 42, 42);
+
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*refSchema));
+    EXPECT_EQ(ECObjectsStatus::Success, schema->AddReferencedSchema(*unusedRefSchema));
+
+    ECEntityClassP baseClass;
+    refSchema->CreateEntityClass(baseClass, "Banana");
+    ECEntityClassP derivedClass;
+    schema->CreateEntityClass(derivedClass, "Apple");
+    derivedClass->AddBaseClass(*baseClass);
+
+    ECSchemaReferenceListCR refList = schema->GetReferencedSchemas();
+
+    ECSchemaReferenceList::const_iterator schemaIterator = refList.find(refSchema->GetSchemaKey());
+    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find RefSchema in reference list";
+    schemaIterator = refList.find(unusedRefSchema->GetSchemaKey());
+    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find UnusedRefSchema in reference list";
+
+    EXPECT_EQ(1, schema->RemoveUnusedSchemaReferences()) << "Expected RemoveUnusedSchemaReferences to remove one schema";
+
+    schemaIterator = refList.find(refSchema->GetSchemaKey());
+    EXPECT_FALSE(schemaIterator == refList.end()) << "Could not find RefSchema in reference list after removing unused schemas";
+    schemaIterator = refList.find(unusedRefSchema->GetSchemaKey());
+    EXPECT_TRUE(schemaIterator == refList.end()) << "Found UnusedRefSchema in reference list after removing unused schemas";
+
+    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Expected UnusedRefSchema to not be found after removing unused schema references";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                   Muhammad.Hassan                     07/16
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaReferenceTest, WillNotRemoveUsedReference_MultipleCopiesOfReferencedSchema)
+    {
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "RS", 1, 2, 3);
+    ECCustomAttributeClassP caClass;
+    refSchema->CreateCustomAttributeClass(caClass, "CA");
+
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "TS", 1, 2, 3);
+    ECEntityClassP ecClass;
+    schema->CreateEntityClass(ecClass, "Entity");
+
+    ECSchemaPtr refSchemaCopy;
+    refSchema->CopySchema(refSchemaCopy);
+    schema->AddReferencedSchema(*refSchemaCopy);
+
+    IECInstancePtr caInstance = caClass->GetDefaultStandaloneEnabler()->CreateInstance();
+    ecClass->SetCustomAttribute(*caInstance);
+
+    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema)) << "Failed to find the RefSchema when a copy was added as a reference";
+    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchemaCopy)) << "Failed to find the RefSchema copy that was added as a reference";
+
+    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "Should have found CA which uses refSchema";
+    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchemaCopy)) << "Should have found CA which uses refSchema even though we passed in the copy";
+
+    ASSERT_EQ(0, schema->RemoveUnusedSchemaReferences()) << "Should not have removed any referenced schemas";
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
+TEST_F(SchemaReferenceTest, CanRemoveUnusedRefSchemaWhenSchemaUsesAnotherRefForAStructType)
+    {
+    ECSchemaPtr refSchema;
+    ECSchema::CreateSchema(refSchema, "RefSchema", "RS", 1, 2, 3);
+    ECStructClassP structClass;
+    refSchema->CreateStructClass(structClass, "Struct");
+
+    ECSchemaPtr unusedRefSchema;
+    ECSchema::CreateSchema(unusedRefSchema, "UnusedRefSchema", "URS", 1, 2, 3);
+
+    ECSchemaPtr schema;
+    ECSchema::CreateSchema(schema, "TestSchema", "TS", 1, 2, 3);
+    schema->AddReferencedSchema(*refSchema);
+    schema->AddReferencedSchema(*unusedRefSchema);
+
+    ECEntityClassP ecClass;
+    schema->CreateEntityClass(ecClass, "Class");
+    StructECPropertyP structProp;
+    ecClass->CreateStructProperty(structProp, "SProp", *structClass);
+
+    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(*refSchema)) << "Should not have been able to remove RefSchema because it is used";
+    ASSERT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(*unusedRefSchema)) << "Should have been able to remove UnusedRefSchema because it is not used";
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1124,6 +1430,13 @@ TEST_F(SchemaReferenceTest, TestSchemaCannotReferenceItself)
     ASSERT_NE(ECObjectsStatus::Success, schema->AddReferencedSchema(*schema)) << "Schema was able to reference itself which isn't allowed.";
     }
 
+//=======================================================================================
+//! SchemaLocateTest
+//=======================================================================================
+
+//---------------------------------------------------------------------------------------
+// @bsimethod
+//+---------------+---------------+---------------+---------------+---------------+------
 TEST_F(SchemaLocateTest, ExpectSuccessWhenLocatingStandardSchema)
     {
     ECSchemaReadContextPtr   schemaContext = ECSchemaReadContext::CreateContext();
@@ -1185,6 +1498,10 @@ TEST_F(SchemaLocateTest, DetermineWhetherSchemaCanBeImported)
     ECSchema::CreateSchema(schema, "Units_Schema", "ts", 1, 0, 4);
     EXPECT_TRUE(schema->ShouldNotBeStored());
     }
+
+//=======================================================================================
+//! SchemaCreationTest
+//=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
@@ -1396,6 +1713,10 @@ TEST_F(SchemaCreationTest, CanFullyCreateASchema)
     delete card;
     }
 
+//=======================================================================================
+//! SchemaCopyTest
+//=======================================================================================
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Carole.MacDonald                01/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1468,10 +1789,80 @@ TEST_F(SchemaCopyTest, CopySchemaWithPropertyCategory)
     EXPECT_STREQ(copiedPropertyCategory->GetDescription().c_str(), propertyCategory->GetDescription().c_str());
     }
 
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestEntityClassWithBaseClasses)
+    {
+    ECEntityClassP baseClass;
+    ECEntityClassP ecClass;
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_testSchema, "TestSchema", "ts", 5, 0, 5));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(baseClass, "BaseClass"));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(ecClass, "Class"));
+    EC_ASSERT_SUCCESS(ecClass->AddBaseClass(*baseClass));
+
+    ECSchemaPtr copiedSchema;
+    CopySchema(copiedSchema);
+
+    EXPECT_EQ(m_testSchema->GetClassCount(), copiedSchema->GetClassCount());
+    auto copiedECClass = copiedSchema->GetClassCP("Class");
+    EXPECT_EQ(1, copiedECClass->GetBaseClasses().size());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                    Caleb.Shafer    08/2017
+//---------------+---------------+---------------+---------------+---------------+-------
+TEST_F(SchemaCopyTest, TestEntityClassWithMixin)
+    {
+    ECEntityClassP mixin;
+    ECEntityClassP ecClass;
+    EC_ASSERT_SUCCESS(ECSchema::CreateSchema(m_testSchema, "TestSchema", "ts", 5, 0, 5));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateEntityClass(ecClass, "Class"));
+    EC_ASSERT_SUCCESS(m_testSchema->CreateMixinClass(mixin, "Mixin", *ecClass));
+    EC_ASSERT_SUCCESS(ecClass->AddBaseClass(*mixin));
+
+    ECSchemaPtr copiedSchema;
+    CopySchema(copiedSchema);
+
+    EXPECT_EQ(m_testSchema->GetClassCount(), copiedSchema->GetClassCount());
+    auto copiedECClass = copiedSchema->GetClassCP("Class");
+    EXPECT_EQ(1, copiedECClass->GetBaseClasses().size());
+    auto copiedMixin = copiedECClass->GetBaseClasses().front()->GetEntityClassCP();
+    EXPECT_TRUE(copiedMixin->IsMixin());
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                    Abeesh.Basheer                  08/2017
+//---------------------------------------------------------------------------------------
+TEST_F(SchemaCopyTest, TestEntityClassWithBothBaseClassAndMixin)
+    {
+    ECEntityClassP entityBase, entityDerived;
+    ECEntityClassP mixin0;
+
+    ECSchema::CreateSchema(m_testSchema, "EntityClassSchema", "ECC", 1, 1, 1);
+    m_testSchema->CreateEntityClass(entityBase, "Entity0");
+    m_testSchema->CreateEntityClass(entityDerived, "Entity1");
+    
+    m_testSchema->CreateMixinClass(mixin0, "Mixin0", *entityBase);
+    PrimitiveECPropertyP prop;
+    mixin0->CreatePrimitiveProperty(prop, "P1");
+    entityDerived->AddBaseClass(*entityBase);
+    entityDerived->AddBaseClass(*mixin0);
+
+    EXPECT_EQ(2, entityDerived->GetBaseClasses().size());
+
+    ECSchemaPtr copiedSchema;
+    CopySchema(copiedSchema);
+
+    ECClassCP copiedClass = copiedSchema->GetClassP("Entity1");
+    ASSERT_TRUE(nullptr != copiedClass);
+    EXPECT_EQ(2, copiedClass->GetBaseClasses().size());
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SchemaCopyTest, CopySimpleSchemaAndCreateInstance)
+TEST_F(SchemaCopyTest, CopySimpleSchemaAndCreateInstance)
     {
     SchemaKey key ("BaseSchema", 01, 00);
     m_testSchema = m_schemaContext->LocateSchema (key, SchemaMatchType::Latest);//ECSchema::LocateSchema(key, *schemaContext);
@@ -1500,7 +1891,7 @@ TEST_F (SchemaCopyTest, CopySimpleSchemaAndCreateInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SchemaCopyTest, CopySchemaWithDuplicatePrefixesAndCreateInstance)
+TEST_F(SchemaCopyTest, CopySchemaWithDuplicatePrefixesAndCreateInstance)
     {
     SchemaKey key ("DuplicatePrefixes", 01, 00);
     m_testSchema = m_schemaContext->LocateSchema (key, SchemaMatchType::Latest);//ECSchema::LocateSchema(key, *schemaContext);
@@ -1530,7 +1921,7 @@ TEST_F (SchemaCopyTest, CopySchemaWithDuplicatePrefixesAndCreateInstance)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F (SchemaCopyTest, CopySchemaWithInvalidReferenceAndCreateInstance)
+TEST_F(SchemaCopyTest, CopySchemaWithInvalidReferenceAndCreateInstance)
     {
     //create Context with legacy support
     m_schemaContext->RemoveSchemaLocater (*m_schemaLocater);
@@ -1558,6 +1949,23 @@ TEST_F (SchemaCopyTest, CopySchemaWithInvalidReferenceAndCreateInstance)
     ellipseClassInstance->SetValue ("Name", v);
     EXPECT_EQ(ECObjectsStatus::Success, ellipseClassInstance->GetValue (out, "Name"));
     EXPECT_TRUE (out.Equals (ECValue ("test"))) << "Expect: " << "test" << " Actual: " << out.ToString ().c_str ();
+    }
+
+//=======================================================================================
+//! ECNameValidationTest
+//=======================================================================================
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Paul.Connelly   12/12
++---------------+---------------+---------------+---------------+---------------+------*/
+ECPropertyP GetPropertyByName(ECClassCR ecClass, Utf8CP name, bool expectExists = true)
+    {
+    ECPropertyP prop = ecClass.GetPropertyP(name);
+    EXPECT_EQ(expectExists, NULL != prop);
+    Utf8String utf8(name);
+    prop = ecClass.GetPropertyP(utf8.c_str());
+    EXPECT_EQ(expectExists, NULL != prop);
+    return prop;
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -1710,10 +2118,14 @@ TEST_F(ECNameValidationTest, Validate)
     EXPECT_VALIDATION_RESULT(IncludesInvalidCharacters, "ABC@");
     }
 
+//=======================================================================================
+//! SchemaKeyComparisonTest
+//=======================================================================================
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaComparisonTest, VerifyMatchesOperator)
+TEST_F(SchemaKeyComparisonTest, VerifyMatchesOperator)
     {
     EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaTest", 1, 0));
     EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0) == SchemaKey("SchemaNotTest", 1, 0));
@@ -1745,7 +2157,7 @@ TEST_F(SchemaComparisonTest, VerifyMatchesOperator)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaComparisonTest, VerifyLessThanOperator)
+TEST_F(SchemaKeyComparisonTest, VerifyLessThanOperator)
     {
     EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0) < SchemaKey("SchemaTest", 1, 0));
     EXPECT_TRUE(SchemaKey("SchemaTesa", 1, 0) < SchemaKey("SchemaTest", 1, 0));
@@ -1776,13 +2188,17 @@ TEST_F(SchemaComparisonTest, VerifyLessThanOperator)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
-TEST_F(SchemaComparisonTest, VerifyNotMatchesOperator)
+TEST_F(SchemaKeyComparisonTest, VerifyNotMatchesOperator)
     {
     EXPECT_FALSE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 1, 0));
     EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaNotTest", 1, 0));
     EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 2, 0));
     EXPECT_TRUE(SchemaKey("SchemaTest", 1, 0) != SchemaKey("SchemaTest", 1, 1));
     }
+
+//=======================================================================================
+//! SchemaCacheTest
+//=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
  * @bsimethod                                                  Raimondas.Rimkus 02/2013
@@ -1882,6 +2298,10 @@ TEST_F(SchemaCacheTest, DropSchema)
     EXPECT_EQ(cache->GetCount(), 0);
     }
 
+//=======================================================================================
+//! SchemaChecksumTest
+//=======================================================================================
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -1897,6 +2317,10 @@ TEST_F(SchemaChecksumTest, ComputeSchemaXmlStringCheckSum)
 
     EXPECT_EQ(ECSchema::ComputeSchemaXmlStringCheckSum(schemaXml, sizeof(schemaXml)), 682119251);
     }
+
+//=======================================================================================
+//! SchemaImmutableTest
+//=======================================================================================
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                  Raimondas.Rimkus 02/2013
@@ -1926,352 +2350,9 @@ TEST_F(SchemaImmutableTest, SetImmutable)
     EXPECT_EQ(schema->SetVersionMinor(13), ECObjectsStatus::SchemaIsImmutable);
     }
 
-bool CompareFiles(Utf8StringCP lFileName, Utf8StringCP rFileName)
-    {
-    BeFile lFile;
-    BeFileStatus lStatus = lFile.Open(*lFileName, BeFileAccess::Read);
-
-    EXPECT_EQ(BeFileStatus::Success, lStatus) << "Could not open " << *lFileName << " for verification";
-
-    BeFile rFile;
-    BeFileStatus rStatus = rFile.Open(*rFileName, BeFileAccess::Read);
-    EXPECT_EQ(BeFileStatus::Success, lStatus) << "Could not open " << *rFileName << " for verification";
-
-    ByteStream lStream;
-    ByteStream rStream;
-    lStatus = lFile.ReadEntireFile(lStream);
-    rStatus = rFile.ReadEntireFile(rStream);
-
-    if (lStream.GetSize() != rStream.GetSize())
-        return false;
-
-    const uint8_t *lBuffer = lStream.GetData();
-    const uint8_t *rBuffer = rStream.GetData();
-    for (uint32_t i = 0; i < lStream.GetSize(); i++)
-        {
-        if (lBuffer[i] != rBuffer[i])
-            return false;
-        }
-    lFile.Close();
-    rFile.Close();
-    return true;
-    }
-
-TEST_F(SchemaTest, RoundtripSchemaXmlCommentsTest)
-    {
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    schemaContext->SetPreserveXmlComments(true);
-    ECSchemaPtr schema;
-    SchemaReadStatus status = ECSchema::ReadFromXmlFile(schema, ECTestFixture::GetTestDataPath(L"dgn-testingonly.02.00.ecschema.xml").c_str(), *schemaContext);
-    EXPECT_EQ(SchemaReadStatus::Success, status);
-
-    SchemaWriteStatus statusW = schema->WriteToXmlFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml").c_str(), ECVersion::V2_0, false);
-    EXPECT_EQ(SchemaWriteStatus::Success, statusW);
-
-    Utf8String serializedSchemaFile(ECTestFixture::GetTempDataPath(L"dgn-testingonly-result.02.00.ecschema.xml"));
-    Utf8String expectedSchemaFile(ECTestFixture::GetTestDataPath(L"dgn-testingonly-ExpectedResult.02.00.ecschema.xml"));
-
-    // Deactivated because it might fail randomly because of varying order of <schemareference> in schema
-    //EXPECT_TRUE(CompareFiles(&serializedSchemaFile, &expectedSchemaFile)) << "Serialized schema differs from expected schema";
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad.Hassan                     07/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, CreateDynamicSchema)
-    {
-    //Load Bentley_Standard_CustomAttributes
-    ECSchemaReadContextPtr schemaContext = ECSchemaReadContext::CreateContext();
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back(ECTestFixture::GetTestDataPath(L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater(searchPaths);
-    schemaContext->AddSchemaLocater(*schemaLocater);
-
-    SchemaKey schemaKey("CoreCustomAttributes", 1, 0);
-    ECSchemaPtr standardCASchema = schemaContext->LocateSchema(schemaKey, SchemaMatchType::Latest);
-    EXPECT_TRUE(standardCASchema.IsValid());
-
-    IECInstancePtr dynamicSchemaCA = standardCASchema->GetClassCP("DynamicSchema")->GetDefaultStandaloneEnabler()->CreateInstance();
-    ECSchemaCachePtr cache = ECSchemaCache::Create();
-    ECSchemaPtr schema;
-
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 2, 0, 1);
-    schema->AddReferencedSchema(*standardCASchema);
-    ASSERT_EQ(ECObjectsStatus::Success, schema->SetCustomAttribute(*dynamicSchemaCA));
-    
-
-    ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
-    ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 2, 1), SchemaMatchType::Exact);
-    ASSERT_TRUE(retrievedSchema != NULL);
-
-    ASSERT_TRUE(retrievedSchema->IsDynamicSchema());
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad.Hassan                     07/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, TryRenameECClass)
-    {
-    ECSchemaCachePtr cache = ECSchemaCache::Create();
-    ECSchemaPtr schema;
-
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-
-    ECEntityClassP entityClass1;
-    ECEntityClassP entityClass2;
-    schema->CreateEntityClass(entityClass1, "ClassA");
-    schema->CreateEntityClass(entityClass2, "ClassB");
-
-    ASSERT_EQ(ECObjectsStatus::Success, cache->AddSchema(*schema));
-    ECSchemaP retrievedSchema = cache->GetSchema(SchemaKey("TestSchema", 5, 5), SchemaMatchType::Exact);
-    ASSERT_TRUE(retrievedSchema != NULL);
-
-    // rename classes
-    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->RenameClass(*retrievedSchema->GetClassP("ClassA"), "ClassA1"));
-    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->RenameClass(*retrievedSchema->GetClassP("ClassB"), "ClassB1"));
-
-    // try to get classes with old names
-    ASSERT_TRUE(nullptr == retrievedSchema->GetClassCP("ClassA"));
-    ASSERT_TRUE(nullptr == retrievedSchema->GetClassCP("ClassB"));
-
-    // Get classes with new names
-    ECClassP classA1 = retrievedSchema->GetClassP("ClassA1");
-    ECClassP classB1 = retrievedSchema->GetClassP("ClassB1");
-    ASSERT_TRUE(nullptr != classA1);
-    ASSERT_TRUE(nullptr != classB1);
-
-    // Delete Classes
-    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->DeleteClass(*classA1));
-    ASSERT_EQ(ECObjectsStatus::Success, retrievedSchema->DeleteClass(*classB1));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad.Hassan                     07/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, RemoveReferenceSchema)
-    {
-    ECSchemaPtr schema;
-    ECSchemaPtr refSchema;
-
-    ECSchema::CreateSchema(schema, "TestSchema", "ts", 5, 0, 5);
-    ECSchema::CreateSchema(refSchema, "RefSchema", "ts", 5, 0, 5);
-
-    ECRelationshipClassP relClass;
-    ECEntityClassP targetClass;
-    ECEntityClassP sourceClass;
-
-    schema->CreateRelationshipClass(relClass, "RElationshipClass");
-    schema->CreateEntityClass(targetClass, "Target");
-    refSchema->CreateEntityClass(sourceClass, "Source");
-
-    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetTarget().AddClass(*targetClass));
-    EXPECT_EQ(ECObjectsStatus::SchemaNotFound, relClass->GetSource().AddClass(*sourceClass));
-
-    schema->AddReferencedSchema(*refSchema);
-    ASSERT_FALSE(refSchema->IsStandardSchema());
-    ASSERT_FALSE(refSchema->IsSupplementalSchema());
-    ASSERT_FALSE(refSchema->IsSystemSchema());
-    ASSERT_TRUE(ECSchema::IsSchemaReferenced(*schema, *refSchema));
-    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetSource().AddClass(*sourceClass));
-
-    // try to remove refrence schema, shouldn't be successful as referenced schema's class is used a relationship constraint.
-    ASSERT_EQ(ECObjectsStatus::SchemaInUse, schema->RemoveReferencedSchema(SchemaKey("RefSchema", 5, 5)));
-
-    // remove source constraint class from relationship
-    EXPECT_EQ(ECObjectsStatus::Success, relClass->GetSource().RemoveClass(*sourceClass));
-
-    //removing reference schema should be successful now
-    ASSERT_EQ(ECObjectsStatus::Success, schema->RemoveReferencedSchema(SchemaKey("RefSchema", 5, 5)));
-    }
-
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Muhammad.Hassan                     07/16
-//+---------------+---------------+---------------+---------------+---------------+------
-TEST_F(SchemaTest, DeleteKOQ)
-    {
-    ECSchemaPtr schema;
-    ECSchemaReadContextPtr context = ECSchemaReadContext::CreateContext();
-    Utf8CP schemaXml =
-        "<?xml version='1.0' encoding='utf-8'?>"
-        "<ECSchema schemaName='TestSchema' nameSpacePrefix='ts' version='1.0.0' xmlns='http://www.bentley.com/schemas/Bentley.ECXML.3.0'>"
-        "    <KindOfQuantity typeName='MyKindOfQuantity' description='My KindOfQuantity'"
-        "                    displayLabel='My KindOfQuantity' persistenceUnit='CM' relativeError='10e-3'"
-        "                    presentationUnits='FT;INCH;YARD' />"
-        "    <ECEntityClass typeName='Foo' >"
-        "        <ECProperty propertyName='Length' typeName='double'  kindOfQuantity='MyKindOfQuantity' />" // kindOfQuantity='s1:MyKindOfQuantity'
-        "        <ECArrayProperty propertyName='AlternativeLengths' typeName='double' minOccurs='0' maxOccurs='unbounded' kindOfQuantity = 'MyKindOfQuantity'/>" // kindOfQuantity='s1:MyKindOfQuantity'
-        "    </ECEntityClass>"
-        "</ECSchema>";
-
-    ASSERT_EQ(SchemaReadStatus::Success, ECSchema::ReadFromXmlString(schema, schemaXml, *context));
-
-    std::vector<KindOfQuantityP> todelete;
-
-    KindOfQuantityContainerCR koqContainer = schema->GetKindOfQuantities();
-    for (auto koq : koqContainer)
-        todelete.push_back(koq);
-
-    for (auto koq : todelete)
-        {
-        ASSERT_EQ(ECObjectsStatus::Success, schema->DeleteKindOfQuantity(*koq));
-        }
-
-    schema->DebugDump();
-    }
-
-//---------------------------------------------------------------------------------**//**
-// @bsimethod                                   Raimondas.Rimkus                   02/13
-// +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F (SchemaTest, TestCircularReference)
-    {
-    ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("CircleSchema", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
-    EXPECT_FALSE (testSchema.IsValid ());
-    }
-
-//---------------------------------------------------------------------------------**//**
-// @bsimethod                                   Raimondas.Rimkus                   02/13
-// +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F (SchemaTest, TestsLatestCompatible)
-    {
-    ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("Widgets", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::LatestWriteCompatible);
-    EXPECT_TRUE (testSchema.IsValid ());
-    EXPECT_TRUE (testSchema->GetVersionRead () == 9);
-    EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
-    }
-
-//---------------------------------------------------------------------------------**//**
-// @bsimethod                                   Raimondas.Rimkus                   02/13
-// +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F (SchemaTest, TestsLatest)
-    {
-    ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("Widgets", 9, 7);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
-    EXPECT_TRUE (testSchema.IsValid ());
-    EXPECT_TRUE (testSchema->GetVersionRead () == 9);
-    EXPECT_TRUE (testSchema->GetVersionMinor () == 6);
-    }
-
-//---------------------------------------------------------------------------------**//**
-// @bsimethod                                   Raimondas.Rimkus                   02/13
-// +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F (SchemaTest, GetBaseClassPropertyWhenSchemaHaveDuplicatePrefixes)
-    {
-    ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("DuplicatePrefixes", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
-    EXPECT_TRUE (testSchema.IsValid ());
-    ECClassCP CircleClass = testSchema->GetClassCP ("Circle");
-    EXPECT_TRUE (CircleClass != NULL) << "Cannot Load Ellipse Class";
-
-    IECInstancePtr CircleClassInstance = CircleClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    ECValue v;
-    v.SetUtf8CP ("test");
-    CircleClassInstance->SetValue ("Name", v);
-    }
-
-//---------------------------------------------------------------------------------**//**
-// @bsimethod                                   Raimondas.Rimkus                   02/13
-// +---------------+---------------+---------------+---------------+---------------+-----
-TEST_F (SchemaTest, GetBaseClassProperty)
-    {
-    ECSchemaPtr testSchema;
-    ECSchemaReadContextPtr   schemaContext;
-    SearchPathSchemaFileLocaterPtr schemaLocater;
-    bvector<WString> searchPaths;
-    searchPaths.push_back (ECTestFixture::GetTestDataPath (L""));
-    schemaLocater = SearchPathSchemaFileLocater::CreateSearchPathSchemaFileLocater (searchPaths);
-    schemaContext = ECSchemaReadContext::CreateContext ();
-    schemaContext->AddSchemaLocater (*schemaLocater);
-    SchemaKey key ("testschema", 01, 00);
-    testSchema = schemaContext->LocateSchema (key, SchemaMatchType::Latest);
-    EXPECT_TRUE (testSchema.IsValid ());
-    ECClassCP WheelsChildClass = testSchema->GetClassCP ("WheelsChild");
-    EXPECT_TRUE (WheelsChildClass != NULL) << "Cannot Load WheelsChild Class";
-
-    IECInstancePtr WheelsChildInstance = WheelsChildClass->GetDefaultStandaloneEnabler ()->CreateInstance ();
-    ECValue v;
-    v.SetUtf8CP ("test");
-    WheelsChildInstance->SetValue ("Name", v);
-    }
-
-// This test was to illustrate a problem with the ECDiff tool.  However, we decided to not to make the fix on this branch.  The tool has been rewritten on bim0200.
-//---------------------------------------------------------------------------------------
-// @bsimethod                                   Carole.MacDonald            10/2016
-//---------------+---------------+---------------+---------------+---------------+-------
-//TEST(SchemaDiffTests, RightNotLeft)
-//    {
-//    Utf8CP leftXml = 
-//        "<?xml version='1.0' encoding='utf-8'?>"
-//
-//        "<ECSchema schemaName=\"OpenPlant\" nameSpacePrefix=\"op\" version=\"1.4\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-//        "    <ECClass typeName=\"NAMED_ITEM\" displayLabel=\"Named Item\" isDomainClass=\"True\">"
-//        "        <ECProperty propertyName=\"NAME\" typeName=\"string\" description=\"name of area.\" displayLabel=\"Name\" />"
-//        "    </ECClass>"
-//        "    <ECClass typeName=\"SPECIALTY_ITEM\" displayLabel=\"Specialty Item\" isDomainClass=\"True\">"
-//        "        <BaseClass>NAMED_ITEM</BaseClass>"
-//        "    </ECClass>"
-//        "</ECSchema>";
-//
-//    Utf8CP rightXml = 
-//        "<?xml version='1.0' encoding='utf-8'?>"
-//        "<ECSchema schemaName=\"OpenPlant\" nameSpacePrefix=\"op\" version=\"1.4\" xmlns=\"http://www.bentley.com/schemas/Bentley.ECXML.2.0\">"
-//        "    <ECClass typeName=\"NAMED_ITEM\" displayLabel=\"Named Item\" isDomainClass=\"True\">"
-//        "        <ECProperty propertyName=\"NAME\" typeName=\"string\" description=\"name of area.\" displayLabel=\"Name\" />"
-//        "    </ECClass>"
-//        "    <ECClass typeName=\"SPECIALTY_ITEM\" displayLabel=\"Specialty Item\" isDomainClass=\"True\">"
-//        "        <BaseClass>NAMED_ITEM</BaseClass>"
-//        "        <ECProperty propertyName=\"NAME\" typeName=\"string\" description=\"name of area.\" displayLabel=\"Tag Number\" />"
-//        "    </ECClass>"
-//        "</ECSchema>";
-//
-//    ECSchemaReadContextPtr leftSchemaContext = ECSchemaReadContext::CreateContext();
-//    ECSchemaReadContextPtr rightSchemaContext = ECSchemaReadContext::CreateContext();
-//    ECSchemaPtr leftSchema, rightSchema;
-//    ECSchema::ReadFromXmlString(leftSchema, leftXml, *leftSchemaContext);
-//    ECSchema::ReadFromXmlString(rightSchema, rightXml, *rightSchemaContext);
-//    ECDiffPtr diff = ECDiff::Diff(*leftSchema, *rightSchema);
-//    ASSERT_TRUE(diff.IsValid());
-//
-//    ECSchemaPtr mergedSchema;
-//    MergeStatus status = diff->Merge(mergedSchema, CONFLICTRULE_TakeLeft);
-//    ASSERT_EQ(status, MergeStatus::Success);
-//    ASSERT_TRUE(mergedSchema.IsValid());
-//
-//    }
+//=======================================================================================
+//! SchemaVersionTest
+//=======================================================================================
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                   Caleb.Shafer                     10/16
