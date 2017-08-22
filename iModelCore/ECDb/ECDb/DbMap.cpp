@@ -322,6 +322,10 @@ BentleyStatus DbMap::DoMapSchemas(SchemaImportContext& ctx, bvector<ECN::ECSchem
 +---------------+---------------+---------------+---------------+---------------+------*/
  ClassMappingStatus DbMap::MapClass(SchemaImportContext& ctx, ECClassCR ecClass) const
      {
+     if (ecClass.GetName() == "Item" || ecClass.GetName() == "Document")
+         {
+         printf("");
+         }
      ClassMapPtr existingClassMap = nullptr;
      if (SUCCESS != TryGetClassMap(existingClassMap, ctx.GetClassMapLoadContext(), ecClass))
          return ClassMappingStatus::Error;

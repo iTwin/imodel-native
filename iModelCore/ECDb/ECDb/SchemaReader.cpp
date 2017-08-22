@@ -1256,8 +1256,6 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                 BeAssert(!rowInfo.m_primType.IsNull() || rowInfo.m_enumId.IsValid());
 
                 PrimitiveArrayECPropertyP arrayProp = nullptr;
-                if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name))
-                    return ERROR;
 
                 if (rowInfo.m_enumId.IsValid())
                     {
@@ -1265,13 +1263,13 @@ BentleyStatus SchemaReader::LoadPropertiesFromDb(ECClassP& ecClass, Context& ctx
                     if (SUCCESS != ReadEnumeration(ecenum, ctx, rowInfo.m_enumId))
                         return ERROR;
 
-                    if (ECObjectsStatus::Success != arrayProp->SetType(*ecenum))
+                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, *ecenum))
                         return ERROR;
                     }
                 else
                     {
                     BeAssert(!rowInfo.m_primType.IsNull());
-                    if (ECObjectsStatus::Success != arrayProp->SetPrimitiveElementType((PrimitiveType) rowInfo.m_primType.Value()))
+                    if (ECObjectsStatus::Success != ecClass->CreatePrimitiveArrayProperty(arrayProp, rowInfo.m_name, (PrimitiveType) rowInfo.m_primType.Value()))
                         return ERROR;
                     }
 
