@@ -529,7 +529,8 @@ ReprojectStatus DTMElementDisplayHandler::_OnGeoCoordinateReprojection (EditElem
         transform.SetOptions (TRANSFORM_OPTIONS_ApplyAnnotationScale);
         if (geo.GetLocalTransform (&transform.GetTransformR(), origin, NULL, true, true) == SUCCESS)
             {
-            if (ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).ApplyTransform (element, transform) == SUCCESS)
+            if (IsValidTransformation(&transform.GetTransformR()))
+                if (ELEMENTHANDLER_INSTANCE (DTMElementDisplayHandler).ApplyTransform (element, transform) == SUCCESS)
                 return REPROJECT_Success;
             }
 
