@@ -739,10 +739,10 @@ public:
 struct ITileGenerationFilter
 {
 protected:
-    virtual bool _AcceptElement(DgnElementId elementId) const= 0;
+    virtual bool _AcceptElement(DgnElementId elementId, TileDisplayParamsCR displayParams) const= 0;
 public:
     //! Invoked for each element in the tile's range. Returns false to exclude the element from the tile geometry, or true to include it.
-    bool AcceptElement(DgnElementId elementId) const { return _AcceptElement(elementId); }
+    bool AcceptElement(DgnElementId elementId, TileDisplayParamsCR displayParams) const { return _AcceptElement(elementId, displayParams); }
 };
 
 //=======================================================================================
@@ -1102,7 +1102,7 @@ struct TileUtil
 {
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
     DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
-    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId, bool asClassifier = false);
+    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId);
 
     struct PointComparator
         {

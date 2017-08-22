@@ -3049,7 +3049,7 @@ TileMeshList ElementTileNode::GenerateMeshes(DgnDbR db, TileGeometry::NormalMode
 
     for (auto& geom : geometries)
         {
-        if (nullptr != filter && !filter->AcceptElement(DgnElementId(geom->GetEntityId().GetValue())))
+        if (nullptr != filter && !filter->AcceptElement(DgnElementId(geom->GetEntityId().GetValue()), geom->GetDisplayParams()))
             continue;
 
         DRange3dCR  geomRange = geom->GetTileRange();
@@ -3165,9 +3165,9 @@ BentleyStatus TileUtil::ReadJsonFromFile (Json::Value& value, WCharCP fileName)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   11/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-WString TileUtil::GetRootNameForModel(DgnModelId modelId, bool asClassifier)
+WString TileUtil::GetRootNameForModel(DgnModelId modelId)
     {
-    WString name = asClassifier ? L"Classifier" : L"Model";
+    WString name = L"Model";
     name.append(1, '_');
     WChar idBuf[17];
     BeStringUtilities::FormatUInt64(idBuf, _countof(idBuf), modelId.GetValue(), HexFormatOptions::None);
