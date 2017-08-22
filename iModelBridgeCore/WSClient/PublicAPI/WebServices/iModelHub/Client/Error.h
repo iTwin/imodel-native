@@ -76,6 +76,7 @@ public:
         InvalidiModelId,
         InvalidiModelConnection,
         InvalidChangeSet,
+        InvalidVersion,
         BriefcaseIsReadOnly,
         TrackingNotEnabled,
 

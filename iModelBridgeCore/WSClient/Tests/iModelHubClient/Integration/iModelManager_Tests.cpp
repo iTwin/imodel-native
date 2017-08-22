@@ -1752,10 +1752,10 @@ TEST_F(iModelManagerTests, PushAndRelinquishCodesLocks)
     Utf8String changeSet4 = PushPendingChanges (*briefcase2, true);         // Release all codes and locks.
     ExpectCodesCount(*briefcase1, 1);
     ExpectCodesCount(*briefcase2, 0);
-	ExpectNoCodeWithState(CreateCodeDiscarded(partition1_1->GetCode(), changeSet3), imodelManager1);
+    ExpectNoCodeWithState(CreateCodeDiscarded(partition1_1->GetCode(), changeSet3), imodelManager1);
     ExpectCodeState(CreateCodeUsed     (partition1_2->GetCode(), changeSet3), imodelManager1);
     ExpectCodeState(CreateCodeReserved (modelCode1_3, db1),       imodelManager1);
-	ExpectNoCodeWithState(CreateCodeDiscarded(partition2_1->GetCode(), changeSet4), imodelManager2);
+    ExpectNoCodeWithState(CreateCodeDiscarded(partition2_1->GetCode(), changeSet4), imodelManager2);
     ExpectCodeState(CreateCodeUsed     (partition2_2->GetCode(), changeSet4), imodelManager2);
     ExpectNoCodeWithState(CreateCodeAvailable(modelCode2_3),      imodelManager2);
     ExpectLocksCount(*briefcase1, 4);
@@ -2610,10 +2610,6 @@ TEST_F(iModelManagerTests, VersionsTest)
     CreateModel("Model2", briefcase->GetDgnDb());
     briefcase->GetDgnDb().SaveChanges();
     auto changeSet2 = PushPendingChanges(*briefcase);
-	
-    CreateModel("Model3", briefcase->GetDgnDb());
-    briefcase->GetDgnDb().SaveChanges();
-    auto changeSet3 = PushPendingChanges(*briefcase);
 
     //test create version
     EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 0);
@@ -2641,12 +2637,6 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_SUCCESS(result);
     version2 = result.GetValue();
     EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 2);
-	
-	VersionInfoPtr version3 = new VersionInfo("Version3", "Description", changeSet3);
-    result = versionManager.CreateVersion(*version3)->GetResult();
-    EXPECT_SUCCESS(result);
-    version3 = result.GetValue();
-	EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 3);
 
     //test update version
     version1->SetName("NewName");
@@ -2674,10 +2664,36 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_EQ("Version2", version2->GetName());
     EXPECT_EQ(changeSet2, version2->GetChangeSetId());
     EXPECT_EQ("NewDescription", version2->GetDescription());
-    EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 3);
+    EXPECT_EQ(versionManager.GetAllVersions()->GetResult().GetValue().size(), 2);
+    }
 
-	//test get changeSets
-    auto changeSetsResult = versionManager.GetVersionChangeSets(version1->GetId())->GetResult();
+TEST_F(iModelManagerTests, GetChangeSetsRelatedToVersions)
+    {
+    auto briefcase = AcquireBriefcase();
+    auto briefcaseInfo = m_connection->QueryBriefcaseInfo(briefcase->GetBriefcaseId())->GetResult().GetValue();
+
+    //push some ChangeSets for Versions
+    CreateModel("Model1", briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+    auto changeSet1 = PushPendingChanges(*briefcase);
+
+    CreateModel("Model2", briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+    auto changeSet2 = PushPendingChanges(*briefcase);
+
+    CreateModel("Model3", briefcase->GetDgnDb());
+    briefcase->GetDgnDb().SaveChanges();
+    auto changeSet3 = PushPendingChanges(*briefcase);
+
+    auto versionManager = m_connection->GetVersionsManager();
+    VersionInfoPtr version1 = new VersionInfo("Version1", "Description", changeSet1);
+    version1 = versionManager.CreateVersion(*version1)->GetResult().GetValue();
+    VersionInfoPtr version2 = new VersionInfo("Version2", "Description", changeSet2);
+    version2 = versionManager.CreateVersion(*version2)->GetResult().GetValue();
+    VersionInfoPtr version3 = new VersionInfo("Version3", "Description", changeSet3);
+    version3 = versionManager.CreateVersion(*version3)->GetResult().GetValue();
+
+    auto changeSetsResult = versionManager.GetVersionChangeSets(version1->GetId(), briefcase->GetDgnDb().GetDbGuid())->GetResult();
     EXPECT_SUCCESS(changeSetsResult);
     EXPECT_EQ(1, changeSetsResult.GetValue().size());
     EXPECT_EQ(changeSet1, changeSetsResult.GetValue().at(0)->GetId());
@@ -2687,8 +2703,9 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_EQ(2, changeSetsResult.GetValue().size());
     EXPECT_EQ(changeSet1, changeSetsResult.GetValue().at(0)->GetId());
     EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(1)->GetId());
+    EXPECT_EQ(Error::Id::InvalidVersion, versionManager.GetVersionChangeSets("", briefcase->GetDgnDb().GetDbGuid())->GetResult().GetError().GetId());
 
-    changeSetsResult = versionManager.GetChangeSetsBetweenVersions(version1->GetId(), version3->GetId())->GetResult();
+    changeSetsResult = versionManager.GetChangeSetsBetweenVersions(version1->GetId(), version3->GetId(), briefcase->GetDgnDb().GetDbGuid())->GetResult();
     EXPECT_SUCCESS(changeSetsResult);
     EXPECT_EQ(2, changeSetsResult.GetValue().size());
     EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(0)->GetId());
@@ -2699,4 +2716,38 @@ TEST_F(iModelManagerTests, VersionsTest)
     EXPECT_EQ(2, changeSetsResult.GetValue().size());
     EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(0)->GetId());
     EXPECT_EQ(changeSet3, changeSetsResult.GetValue().at(1)->GetId());
+    EXPECT_EQ(Error::Id::InvalidVersion, versionManager.GetChangeSetsBetweenVersions(version1->GetId(), "", briefcase->GetDgnDb().GetDbGuid())->GetResult().GetError().GetId());
+    EXPECT_EQ(Error::Id::InvalidVersion, versionManager.GetChangeSetsBetweenVersions("", version1->GetId(), briefcase->GetDgnDb().GetDbGuid())->GetResult().GetError().GetId());
+
+    changeSetsResult = versionManager.GetChangeSetsAfterVersion(version1->GetId())->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(2, changeSetsResult.GetValue().size());
+    EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(0)->GetId());
+    EXPECT_EQ(changeSet3, changeSetsResult.GetValue().at(1)->GetId());
+
+    changeSetsResult = versionManager.GetChangeSetsAfterVersion(version2->GetId(), briefcase->GetDgnDb().GetDbGuid())->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(1, changeSetsResult.GetValue().size());
+    EXPECT_EQ(changeSet3, changeSetsResult.GetValue().at(0)->GetId());
+    EXPECT_EQ(Error::Id::InvalidVersion, versionManager.GetChangeSetsAfterVersion("")->GetResult().GetError().GetId());
+
+    changeSetsResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version1->GetId(), changeSet3)->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(2, changeSetsResult.GetValue().size());
+    EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(0)->GetId());
+    EXPECT_EQ(changeSet3, changeSetsResult.GetValue().at(1)->GetId());
+
+    changeSetsResult = versionManager.GetChangeSetsBetweenVersionAndChangeSet(version3->GetId(), changeSet1, briefcase->GetDgnDb().GetDbGuid())->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(2, changeSetsResult.GetValue().size());
+    EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(0)->GetId());
+    EXPECT_EQ(changeSet3, changeSetsResult.GetValue().at(1)->GetId());
+    EXPECT_EQ(Error::Id::InvalidVersion, versionManager.GetChangeSetsBetweenVersionAndChangeSet("", changeSet1)->GetResult().GetError().GetId());
+
+
+    changeSetsResult =  versionManager.GetChangeSetsBetweenVersionAndChangeSet(version2->GetId(), "")->GetResult();
+    EXPECT_SUCCESS(changeSetsResult);
+    EXPECT_EQ(2, changeSetsResult.GetValue().size());
+    EXPECT_EQ(changeSet1, changeSetsResult.GetValue().at(0)->GetId());
+    EXPECT_EQ(changeSet2, changeSetsResult.GetValue().at(1)->GetId());
     }
