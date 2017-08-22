@@ -53,42 +53,6 @@ struct ClientTests : public IntegrationTestsBase
         }
     };
 
-TEST_F(ClientTests, SuccessfulCreateBasicUser)
-    {
-    if (IntegrationTestSettings::Instance().IsIms())
-        return;
-    
-    Utf8String userName;
-    BeSQLite::BeGuid guid;
-    guid.Create();
-    userName.Sprintf("User%s", guid.ToString().c_str());
-    Credentials credentials(userName, "password");
-    auto result = m_client->CreateBasicUser(credentials)->GetResult();
-    EXPECT_SUCCESS(result);
-
-    //Create non-admin user for a second time
-    result = m_client->CreateBasicUser(credentials)->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-
-    auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), credentials);
-
-    //Try to create new user by using non-admin user
-    Credentials credentials2("additionalUser", "additionalPass");
-    result = nonAdminClient->CreateBasicUser(credentials2)->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-
-    //Try to remove user using non-admin user
-    result = nonAdminClient->RemoveBasicUser(credentials)->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-
-    result = m_client->RemoveBasicUser(credentials)->GetResult();
-    EXPECT_SUCCESS(result);
-
-    //Try to remove non-admin user for asecond time by using admin user
-    result = m_client->RemoveBasicUser(credentials)->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-    }
-
 TEST_F(ClientTests, SuccessfulCreateiModel)
     {
     auto db = CreateTestDb();
@@ -99,6 +63,7 @@ TEST_F(ClientTests, SuccessfulCreateiModel)
 
     auto result = m_client->GetiModels()->GetResult();
     EXPECT_SUCCESS(result);
+    EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
     EXPECT_FALSE(result.GetValue().empty());
 
     DeleteiModel(*m_client, *createResult.GetValue());
@@ -190,6 +155,7 @@ TEST_F(ClientTests, SuccessfulGetiModels)
 
     auto result = m_client->GetiModels()->GetResult();
     EXPECT_SUCCESS(result);
+    EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
 
     bvector<iModelInfoPtr>& imodels = result.GetValue();
     EXPECT_EQ(2, imodels.size());
@@ -206,6 +172,30 @@ TEST_F(ClientTests, SuccessfulGetiModels)
         }
     DeleteiModel(*m_client, *imodel1);
     DeleteiModel(*m_client, *imodel2);
+    }
+
+TEST_F(ClientTests, SuccessfulGetiModelByName)
+    {
+    DeleteiModels();
+    auto imodel = IntegrationTestsBase::CreateNewiModel(*m_client, "ClientTest");
+    
+    auto result1 = m_client->GetiModelByName(imodel->GetName())->GetResult();
+    EXPECT_SUCCESS(result1);
+
+    imodel = result1.GetValue();
+    EXPECT_EQ(imodel->GetUserCreated(), imodel->GetOwnerInfo()->GetId());
+
+    DateTime compareDate(DateTime::Kind::Utc, 2017, 1, 1, 0, 0, 0, 0);
+        
+    EXPECT_FALSE(imodel->GetServerURL().empty());
+    EXPECT_FALSE(imodel->GetId().empty());
+    EXPECT_FALSE(imodel->GetName().empty());
+
+    DateTimeCR createdDate = imodel->GetCreatedDate();
+    EXPECT_TRUE(createdDate.IsValid());
+    EXPECT_EQ((int) DateTime::CompareResult::EarlierThan, (int) DateTime::Compare(compareDate, createdDate));
+
+    DeleteiModel(*m_client, *imodel);
     }
 
 TEST_F(ClientTests, UnsuccessfulGetiModels)
@@ -241,6 +231,7 @@ TEST_F (ClientTests, SuccessfulCreateiModelWithASpaceInName)
 
     auto result = m_client->GetiModels ()->GetResult ();
     EXPECT_SUCCESS(result);
+    EXPECT_EQ(result.GetValue()[0]->GetUserCreated(), result.GetValue()[0]->GetOwnerInfo()->GetId());
     EXPECT_TRUE (!result.GetValue ().empty ());
     DeleteiModel(*m_client, *createResult.GetValue());
     }
@@ -398,4 +389,11 @@ TEST_F(ClientTests, CancelDownloadChangeSets)
 
     CheckNoProgress();
     DeleteiModel(*m_client, *imodelInfo);
+    }
+
+
+TEST_F(ClientTests, UnauthorizedSignIn)
+    {
+    auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetWrongPassword());
+    EXPECT_TRUE(badClient.IsNull());
     }

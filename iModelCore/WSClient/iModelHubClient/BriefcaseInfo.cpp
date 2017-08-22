@@ -42,18 +42,6 @@ BriefcaseInfoPtr BriefcaseInfo::ParseRapidJson(RapidJsonValueCR json)
 //---------------------------------------------------------------------------------------
 //@bsimethod                                     julius.cepukenas             08/2016
 //---------------------------------------------------------------------------------------
-BriefcaseInfoPtr BriefcaseInfo::Parse(JsonValueCR json)
-    {
-    JsonValueCR properties      = json[ServerSchema::Properties]; 
-
-    auto rapidJson = ToRapidJson(properties);
-
-    return ParseRapidJson(rapidJson);
-    }
-
-//---------------------------------------------------------------------------------------
-//@bsimethod                                     julius.cepukenas             08/2016
-//---------------------------------------------------------------------------------------
 BriefcaseInfoPtr BriefcaseInfo::Parse(WSObjectsReader::Instance instance)
     {
     RapidJsonValueCR properties = instance.GetProperties();

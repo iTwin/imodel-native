@@ -8,6 +8,7 @@
 #include <WebServices/Client/WSClient.h>
 #include "WSClientTests.h"
 #include "MockServerInfoListener.h"
+#include "../../../../../Client/ServerInfoProvider.h"
 
 USING_NAMESPACE_BENTLEY_WEBSERVICES
 
@@ -15,6 +16,7 @@ void WSClientTests::SetUp()
     {
     BaseMockHttpHandlerTest::SetUp();
     BackDoor::DgnClientFx_Device::Initialize();
+    ServerInfoProvider::InvalidateAllInfo();
     }
 
 TEST_F(WSClientTests, SendGetInfoRequest_Called_SendsGetPluginsUrl)
@@ -201,6 +203,50 @@ TEST_F(WSClientTests, GetServerInfo_PrevioulslyReceivedServerNotSupported_Previo
 
     EXPECT_EQ(WSError::Status::ServerNotSupported, response.GetError().GetStatus());
     EXPECT_TRUE(info.IsSuccess());
+    }
+
+TEST_F(WSClientTests, GetServerInfo_TwoServersCalledTwoTimesEach_UsesCachedInfo)
+    {
+    auto client1 = WSClient::Create("https://one.com/ws", StubClientInfo(), GetHandlerPtr());
+    auto client2 = WSClient::Create("https://two.com/ws", StubClientInfo(), GetHandlerPtr());
+
+    GetHandler().ForAnyRequest([=] (Http::RequestCR request)
+        {
+        Utf8String url = request.GetUrl();
+        if (url == "https://one.com/ws/v2.0/Plugins")
+            return StubHttpResponse(HttpStatus::OK, "", { { "Server", "Bentley-WebAPI/1.0,Bentley-WSG/1.0" } });
+        else
+            return StubHttpResponse(HttpStatus::OK, "", { { "Server", "Bentley-WebAPI/2.0,Bentley-WSG/2.0" } });
+        });
+
+    struct StubServerInfoListener : IWSClient::IServerInfoListener
+        {
+        int& m_listenerCallCount;
+        StubServerInfoListener(int& listenerCallCount) : m_listenerCallCount(listenerCallCount) {}
+        void OnServerInfoReceived(WSInfoCR info)
+            {
+            m_listenerCallCount++;
+            }
+        };
+
+    int listenerCallCount1 = 0;
+    auto listener1 = std::make_shared<StubServerInfoListener>(listenerCallCount1);
+    client1->RegisterServerInfoListener(listener1);
+
+    int listenerCallCount2 = 0;
+    auto listener2 = std::make_shared<StubServerInfoListener>(listenerCallCount2);
+    client1->RegisterServerInfoListener(listener2);
+
+    auto info1 = client1->GetServerInfo()->GetResult();
+    auto info2 = client2->GetServerInfo()->GetResult();
+
+    info1 = client1->GetServerInfo()->GetResult();
+    EXPECT_EQ(BeVersion(1, 0), info1.GetValue().GetVersion());
+    EXPECT_EQ(1, listenerCallCount1);
+
+    info2 = client2->GetServerInfo()->GetResult();
+    EXPECT_EQ(BeVersion(2, 0), info2.GetValue().GetVersion());
+    EXPECT_EQ(1, listenerCallCount2);
     }
 
 TEST_F(WSClientTests, GetServerInfo_FirstResponseIsUnauthorized_StopsAndReturnsLoginError)

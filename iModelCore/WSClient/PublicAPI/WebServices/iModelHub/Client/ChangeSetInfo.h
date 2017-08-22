@@ -48,7 +48,7 @@ private:
     BeSQLite::BeBriefcaseId m_briefcaseId;
     ContainingChanges       m_containingChanges;
     FileAccessKeyPtr        m_fileAccessKey;
-    bool                    m_containsFileAccessKey;
+    bool                    m_containsFileAccessKey = false;
 
     ChangeSetInfo(Utf8String id, Utf8String parentChangeSetId, Utf8String dbGuid, int64_t index,
         Utf8String description, int64_t fileSize, BeSQLite::BeBriefcaseId briefcaseId, Utf8String userCreated, DateTime pushDate, ContainingChanges containingChanges)
@@ -62,8 +62,6 @@ private:
     bool operator==(ChangeSetInfoCR changeSet) const { return changeSet.GetId() == GetId(); }
     static ChangeSetInfoPtr ParseRapidJson(RapidJsonValueCR properties);
     static ChangeSetInfoPtr Parse(WebServices::WSObjectsReader::Instance instance);
-    //! DEPRECATED: Use Parse from Instance
-    static ChangeSetInfoPtr Parse(JsonValueCR json);
 public:
     Utf8String GetId() const {return m_id;}
     Utf8String GetParentChangeSetId() const {return m_parentChangeSetId;}

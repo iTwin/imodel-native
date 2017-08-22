@@ -39,7 +39,7 @@ public:
     static void TearDownTestCase();
 
     BeFileName LocalPath(Utf8StringCR baseName);
-
+    
     DgnDbPtr CreateTestDb(Utf8StringCR baseName);
     ClientPtr SetUpClient(Utf8StringCR host, Credentials credentials, IHttpHandlerPtr customHandler = nullptr);
     iModelInfoPtr CreateNewiModel(ClientCR client, Utf8StringCR imodelName);
@@ -57,10 +57,7 @@ public:
     void ExpectCodesEqual(DgnCodeInfoSet const& expected, DgnCodeInfoSet const& actual);
     void ExpectCodeState(DgnCodeInfoSet const& expect, IRepositoryManagerP imodelManager);
     void ExpectCodeState(DgnCodeInfoCR expect, IRepositoryManagerP imodelManager);
-    DgnCodeInfo CreateCodeUsed(DgnCodeCR code, Utf8StringCR changeSetId); 
+    DgnCodeInfo CreateCodeUsed(DgnCodeCR code, Utf8StringCR changeSetId);
     DgnCode MakeModelCode(Utf8CP name, DgnDbR db);
-
-    void CreateNonAdminUser();
-    void RemoveNonAdminUser();
     };
 END_BENTLEY_IMODELHUB_UNITTESTS_NAMESPACE

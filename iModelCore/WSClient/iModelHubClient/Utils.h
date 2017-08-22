@@ -63,6 +63,7 @@ namespace ServerSchema
         {
         static Utf8CP FollowingChangeSet = "FollowingChangeSet";
         static Utf8CP FileAccessKey = "FileAccessKey";
+        static Utf8CP iModelOwnerInfo = "iModelOwnerInfo";
         }
     namespace Property
         {

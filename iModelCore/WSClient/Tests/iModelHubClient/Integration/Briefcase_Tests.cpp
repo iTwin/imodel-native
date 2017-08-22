@@ -92,23 +92,11 @@ TEST_F(BriefcaseTests, UnsuccessfulAcquireBriefcase)
     CheckNoProgress();
     }
 
-TEST_F(BriefcaseTests, UnauthorizedAcquireBriefcase)
-    {
-    if (IntegrationTestSettings::Instance().IsIms())
-        return;
-
-    auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetWrongPassword());
-    auto result = badClient->AcquireBriefcaseToDir(*m_imodel, m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
-
-    EXPECT_FALSE(result.IsSuccess());
-    EXPECT_EQ(Error::Id::LoginFailed, result.GetError().GetId());
-    CheckNoProgress();
-    }
-
 TEST_F(BriefcaseTests, AcquireAfterQuerying)
     {
     auto imodelResult = m_client->GetiModelById(m_imodel->GetId())->GetResult();
     EXPECT_SUCCESS(imodelResult);
+    EXPECT_EQ(imodelResult.GetValue()->GetUserCreated(), imodelResult.GetValue()->GetOwnerInfo()->GetId());
 
     auto result = m_client->AcquireBriefcaseToDir(*imodelResult.GetValue(), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result);
@@ -116,6 +104,7 @@ TEST_F(BriefcaseTests, AcquireAfterQuerying)
 
     auto imodelResult2 = m_client->GetiModelByName(m_imodel->GetName())->GetResult();
     EXPECT_SUCCESS(imodelResult2);
+    EXPECT_EQ(imodelResult2.GetValue()->GetUserCreated(), imodelResult2.GetValue()->GetOwnerInfo()->GetId());
 
     auto result2 = m_client->AcquireBriefcaseToDir(*imodelResult2.GetValue(), m_pHost->GetOutputDirectory(), false, Client::DefaultFileNameCallback, CreateProgressCallback())->GetResult();
     EXPECT_SUCCESS(result2);
@@ -173,7 +162,6 @@ TEST_F(BriefcaseTests, SuccessfulAbandonBriefcase)
 
 TEST_F(BriefcaseTests, SuccessfulAbandonOtherUserBriefcase)
     {
-    IntegrationTestsBase::CreateNonAdminUser();
     auto nonAdminClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetValidNonAdminCredentials());
 
     //User A acquires a briefcase
@@ -232,27 +220,6 @@ TEST_F(BriefcaseTests, SuccessfulOpenBriefcase)
     m_client = nullptr;
     // It would be great to call StopThreadingAndWait to make sure async tasks are closed before this test ends.
     // Due to bug in HttpClient the second test fails, so commenting this out for now. Test do not fail any more since more work were added after OpenBriefcase.
-    // AsyncTasksManager::StopThreadingAndWait();
-    }
-
-TEST_F(BriefcaseTests, UnauthorizedOpenBriefcase)
-    {
-    if (IntegrationTestSettings::Instance().IsIms())
-        return;
-
-    DgnDbPtr db = OpenBriefcaseFile();
-
-    auto badClient = SetUpClient(IntegrationTestSettings::Instance().GetValidHost(), IntegrationTestSettings::Instance().GetWrongPassword());
-
-    auto result = badClient->OpenBriefcase(db, false, CreateProgressCallback())->GetResult();
-    EXPECT_FALSE(result.IsSuccess());
-    EXPECT_EQ(Error::Id::LoginFailed, result.GetError().GetId());
-    CheckNoProgress();
-
-    DeleteiModel(*m_client, *m_imodel);
-    m_imodel = nullptr;
-    m_client = nullptr;
-    // Same comment as in SuccessfulOpenBriefcase test.
     // AsyncTasksManager::StopThreadingAndWait();
     }
 
