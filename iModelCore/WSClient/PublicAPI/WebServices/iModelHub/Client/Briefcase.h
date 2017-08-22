@@ -43,6 +43,9 @@ private:
                                                           ICancellationTokenPtr cancellationToken = nullptr) const;
     ChangeSetsTaskPtr PullMergeAndPushRepeated(Utf8CP description, bool relinquishCodesLocks, Http::Request::ProgressCallbackCR downloadCallback = nullptr, Http::Request::ProgressCallbackCR uploadCallback = nullptr,
                                                           ICancellationTokenPtr cancellationToken = nullptr, int attemptsCount = 1, int attempt = 1, int delay = 0);
+
+    RevisionStatus AddRemoveChangeSetsFromDgnDb(ChangeSets changeSets) const;
+
     void CheckCreatingChangeSet() const;
     void WaitForChangeSetEvent() const;
     void SubscribeForChangeSetEvents();
@@ -56,7 +59,7 @@ public:
     BeSQLite::BeBriefcaseId GetBriefcaseId() const {return GetDgnDb().GetBriefcaseId();}
 
     //!< Last changeSet that was pulled by this briefcase.
-    Utf8String GetLastChangeSetPulled() const {return GetDgnDb().Revisions().GetParentRevisionId();}
+    Utf8String GetLastChangeSetPulled() const { return GetDgnDb().Revisions().HasReversedRevisions() ? GetDgnDb().Revisions().GetReversedRevisionId() : GetDgnDb().Revisions().GetParentRevisionId(); }
 
     //!< Connection to a iModel on server.
     iModelConnectionCR GetiModelConnection() const {return *m_imodelConnection;}
@@ -119,6 +122,20 @@ public:
     //! Stops catching events and calling callback
     //! @param[in] callback   Callback that should be stopped calling
     IMODELHUBCLIENT_EXPORT StatusTaskPtr  UnsubscribeEventsCallback (EventCallbackPtr callback) const;
+
+    //! Updates briefcase to specified Version
+    //! @param[in] versionId
+    //! @param[in] callback
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that returns success or an error.
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateToVersion(Utf8String versionId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Updates briefcase to specified ChangeSet
+    //! @param[in] changeSetId
+    //! @param[in] callback
+    //! @param[in] cancellationToken
+    //! @return Asynchronous task that returns success or an error.
+    IMODELHUBCLIENT_EXPORT StatusTaskPtr UpdateToChangeSet(Utf8String changeSetId, Http::Request::ProgressCallbackCR callback = nullptr, ICancellationTokenPtr cancellationToken = nullptr) const;
 };
 
 END_BENTLEY_IMODELHUB_NAMESPACE
