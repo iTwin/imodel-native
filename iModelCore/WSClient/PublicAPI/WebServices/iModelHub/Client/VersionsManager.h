@@ -31,7 +31,16 @@ private:
     VersionsManager(IWSRepositoryClientPtr reposiroryClient, iModelConnectionCP connection)
         : m_wsRepositoryClient(reposiroryClient), m_connection(connection){};
 
+    WSQuery CreateChangeSetsBetweenVersionsQuery(Utf8StringCR sourceVersionId, Utf8String destinationVersionsId, BeSQLite::BeGuidCR fileId) const;
+
+    WSQuery CreateVersionChangeSetsQuery(Utf8StringCR versionId, BeSQLite::BeGuidCR fileId) const;
+
+    WSQuery CreateChangeSetsAfterVersionQuery(Utf8StringCR versionId, BeSQLite::BeGuidCR fileId) const;
+
+    WSQuery CreateChangeSetsBetweenVersionAndChangeSetQuery(Utf8StringCR versionId, uint64_t changeSetIndex, BeSQLite::BeGuidCR fileId) const;
+
     VersionsManager() {};
+
 public:
     //! Returns all versions available in the server.
     //! @param[in] cancellationToken
@@ -57,16 +66,33 @@ public:
 
     //! Returns ChangeSets from first ChangeSet to Version.
     //! @param[in] versionId
+    //! @param[in] fileId file id of the seed file changeSets belong to
     //! @param[in] cancellationToken
     //! @returns Asynchronous task that has ChangeSets information as the result.
-    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetVersionChangeSets(Utf8String versionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetVersionChangeSets(Utf8String versionId, BeSQLite::BeGuid fileId = BeSQLite::BeGuid(), ICancellationTokenPtr cancellationToken = nullptr) const;
 
-    //! Returns ChangeSets used to get one Version from another.
+    //! Returns ChangeSets between two Versions.
     //! @param[in] firstVersionId
     //! @param[in] secondVersionId
+    //! @param[in] fileId file id of the seed file changeSets belong to
     //! @param[in] cancellationToken
     //! @returns Asynchronous task that has ChangeSets information as the result.
-    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsBetweenVersions(Utf8String firstVersionId, Utf8String secondVersionId, ICancellationTokenPtr cancellationToken = nullptr) const;
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsBetweenVersions(Utf8String firstVersionId, Utf8String secondVersionId, BeSQLite::BeGuid fileId = BeSQLite::BeGuid(), ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns ChangeSets following Version's ChangeSet.
+    //! @param[in] versionId
+    //! @param[in] fileId file id of the seed file changeSets belong to
+    //! @param[in] cancellationToken
+    //! @returns Asynchronous task that has ChangeSets information as the result.
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsAfterVersion(Utf8String versionId, BeSQLite::BeGuid fileId = BeSQLite::BeGuid(), ICancellationTokenPtr cancellationToken = nullptr) const;
+
+    //! Returns ChangeSets between version's ChangeSet and specified ChangeSet 
+    //! @param[in] versionId
+    //! @param[in] changeSetId
+    //! @param[in] fileId file id of the seed file changeSets belong to
+    //! @param[in] cancellationToken
+    //! @returns Asynchronous task that has ChangeSets information as the result.
+    IMODELHUBCLIENT_EXPORT ChangeSetsInfoTaskPtr GetChangeSetsBetweenVersionAndChangeSet(Utf8String versionId, Utf8String changeSetId, BeSQLite::BeGuid fileId = BeSQLite::BeGuid(), ICancellationTokenPtr cancellationToken = nullptr) const;
     };
 
 END_BENTLEY_IMODELHUB_NAMESPACE
