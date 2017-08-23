@@ -76,4 +76,16 @@
         </Bindings>
     </Part>
 
+    <Product Name="csmapSdkSource" SaveProduct="true">
+        <Directories Repository="bsicommon" PartFile="CommonProductDirs" DirectoryListName="ForSdkSource"/>
+        <SubPart PartName="csmapStatic" LibType="Static"/>
+        <SubPart PartName="GeoCoordData"/>
+    </Product>
+
+    <Product Name="csmapSdkSourceMinimal" SaveProduct="true">
+        <Directories Repository="bsicommon" PartFile="CommonProductDirs" DirectoryListName="ForSdkSource"/>
+        <SubPart PartName="csmapStatic" LibType="Static"/>
+        <SubPart PartName="GeoCoordDataMinimal"/>
+    </Product>
+
 </BuildContext>
