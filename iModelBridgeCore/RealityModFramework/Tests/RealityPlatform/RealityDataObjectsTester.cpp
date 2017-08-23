@@ -990,7 +990,6 @@ TEST_F(RealityDataObjectTestFixture, RealityDataDocumentBasicTest)
     RealityDataDocumentPtr myDocument = RealityDataDocument::Create(instance);
 
     EXPECT_STREQ(myDocument->GetContainerName().c_str(), "f4425509-55c4-4e03-932a-d67b87ace30f");
-    EXPECT_STREQ(myDocument->GetContainerName().c_str(), "99999999-9999-9999-9999-999999999999");
     EXPECT_STREQ(myDocument->GetName().c_str(), "Production_Helsinki_3MX_ok.3mx");
     EXPECT_STREQ(myDocument->GetFolderId().c_str(), "43a4a51a-bfd3-4271-a9d9-21db56cdcf10/Scene/");
     EXPECT_STREQ(myDocument->GetAccessUrl().c_str(), "https://dev-realitydataservices-eus.cloudapp.net/v2.4/Repositories/S3MXECPlugin--Server/S3MX/Document/43a4a51a-bfd3-4271-a9d9-21db56cdcf10~2FScene~2FProduction_Helsinki_3MX_ok.3mx/$file");

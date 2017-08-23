@@ -46,6 +46,7 @@ enum class Command
     Details,
     ChangeDir,
     Stat,
+    AllStats,
     Download,
     Upload,
     FileAccess,
@@ -89,6 +90,7 @@ private:
     void ListRoots();
     void ChangeDir();
     void EnterpriseStat();
+    void AllEnterpriseStats();
     void Download();
     void Upload();
     void Details();

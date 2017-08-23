@@ -70,6 +70,8 @@ void RealityDataConsole::InterpretCommand()
         m_lastCommand = Command::Help;
     else if (args[0].EqualsI("stat"))
         m_lastCommand = Command::Stat;
+    else if (args[0].EqualsI("allstats"))
+        m_lastCommand = Command::AllStats;
     else if (args[0].EqualsI("cancel"))
         m_lastCommand = Command::Cancel;
     else if (args[0].EqualsI("details"))
@@ -141,6 +143,7 @@ RealityDataConsole::RealityDataConsole() :
     m_functionMap.Insert(Command::ListAll, &RealityDataConsole::ListAll);
     m_functionMap.Insert(Command::ChangeDir, &RealityDataConsole::ChangeDir);
     m_functionMap.Insert(Command::Stat, &RealityDataConsole::EnterpriseStat);
+    m_functionMap.Insert(Command::AllStats, &RealityDataConsole::AllEnterpriseStats);
     m_functionMap.Insert(Command::Details, &RealityDataConsole::Details);
     m_functionMap.Insert(Command::Download, &RealityDataConsole::Download);
     m_functionMap.Insert(Command::Upload, &RealityDataConsole::Upload);
@@ -921,6 +924,27 @@ void RealityDataConsole::EnterpriseStat()
     DisplayInfo(Utf8PrintfString("   OrganizationId: %s\n", stat.GetOrganizationId().c_str()));
     DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", stat.GetUltimateId().c_str()));
     DisplayInfo(Utf8PrintfString("   UltimateSite  : %s\n\n", stat.GetUltimateSite().c_str()));
+    }
+
+void RealityDataConsole::AllEnterpriseStats()
+    {
+    RawServerResponse rawResponse = RawServerResponse();
+    RealityDataAllEnterpriseStatsRequest* ptt = new RealityDataAllEnterpriseStatsRequest("");
+    bvector<RealityDataEnterpriseStat> stats;
+    stats = RealityDataService::Request(*ptt, rawResponse);
+
+    DisplayInfo("Enterprise statistics: \n");
+
+    for (auto currentStat : stats)
+        {
+        DisplayInfo(Utf8PrintfString("   NbRealityData : %lu\n", currentStat.GetNbRealityData()));
+        DisplayInfo(Utf8PrintfString("   TotalSize(KB) : %lu\n", currentStat.GetTotalSizeKB()));
+        DisplayInfo(Utf8PrintfString("   OrganizationId: %s\n", currentStat.GetOrganizationId().c_str()));
+        DisplayInfo(Utf8PrintfString("   UltimateId    : %s\n", currentStat.GetUltimateId().c_str()));
+        DisplayInfo(Utf8PrintfString("   UltimateSite  : %s\n\n", currentStat.GetUltimateSite().c_str()));
+        DisplayInfo("======================================================\n");
+
+        }
     }
 
 static void downloadProgressFunc(Utf8String filename, double fileProgress, double repoProgress)

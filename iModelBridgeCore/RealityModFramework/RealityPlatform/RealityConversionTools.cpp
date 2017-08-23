@@ -29,21 +29,36 @@ StatusInt RealityConversionTools::JsonToObjectBase(Utf8CP data, Json::Value& jso
     }
 
 /*----------------------------------------------------------------------------------**//**
-* @bsimethod                             Donald.Morissette                       3/2017
+* @bsimethod                             Spencer.Mason                            9/2016
 +-----------------+------------------+-------------------+-----------------+------------*/
-StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, RealityDataEnterpriseStat& statObject)
+StatusInt RealityConversionTools::JsonToEnterpriseStats(Utf8CP data, bvector<RealityDataEnterpriseStat>& outData)
     {
     Json::Value root(Json::objectValue);
-    if(JsonToObjectBase(data, root) == ERROR)
+    if (JsonToObjectBase(data, root) == ERROR)
         return ERROR;
 
     // Loop through all data and get required informations.
-    const Json::Value instance = root["instances"][0];
-    if (!instance.isMember("properties"))
-        return ERROR;
+    for (const auto& instance : root["instances"])
+        {
+        if (!instance.isMember("properties"))
+            break;
 
-    const Json::Value properties = instance["properties"];
+        const Json::Value properties = instance["properties"];
 
+        RealityDataEnterpriseStat stat;
+        if (SUCCESS != JsonToEnterpriseStat(properties, stat))
+            return ERROR;
+
+        outData.push_back(stat);
+        }
+    return SUCCESS;
+    }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Spencer.Mason                            11/2016
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToEnterpriseStat(Json::Value properties, RealityDataEnterpriseStat& statObject)
+    {
     if (properties.isMember("NumberOfRealityData") && !properties["NumberOfRealityData"].isNull())
         statObject.SetNbRealityData(properties["NumberOfRealityData"].asInt64());
 
@@ -66,8 +81,28 @@ StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, RealityDataE
         statObject.SetDate(dt);
         }
 
-    return SUCCESS;
+    return SUCCESS;    
     }
+
+/*----------------------------------------------------------------------------------**//**
+* @bsimethod                             Donald.Morissette                       3/2017
++-----------------+------------------+-------------------+-----------------+------------*/
+StatusInt RealityConversionTools::JsonToEnterpriseStat(Utf8CP data, RealityDataEnterpriseStat& statObject)
+    {
+    Json::Value root(Json::objectValue);
+    if(JsonToObjectBase(data, root) == ERROR)
+        return ERROR;
+
+    // Loop through all data and get required informations.
+    const Json::Value instance = root["instances"][0];
+    if (!instance.isMember("properties"))
+        return ERROR;
+
+    const Json::Value properties = instance["properties"];
+
+    return RealityConversionTools::JsonToEnterpriseStat(properties, statObject);
+    }
+
 
 /*----------------------------------------------------------------------------------**//**
 * @bsimethod                             Spencer.Mason                            9/2016

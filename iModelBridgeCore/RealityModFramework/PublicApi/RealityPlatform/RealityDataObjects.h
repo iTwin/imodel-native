@@ -524,6 +524,10 @@ public:
     //! Create invalid data.
     REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat();
 
+    //! Copy constructor and assignement operator.
+    REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat(const RealityDataEnterpriseStat& object);
+    REALITYDATAPLATFORM_EXPORT RealityDataEnterpriseStat& operator=(const RealityDataEnterpriseStat& object);
+
     //! number of entries belonging to the organisation
     REALITYDATAPLATFORM_EXPORT uint64_t GetNbRealityData() const;
     REALITYDATAPLATFORM_EXPORT void SetNbRealityData(uint64_t nbRealityData);

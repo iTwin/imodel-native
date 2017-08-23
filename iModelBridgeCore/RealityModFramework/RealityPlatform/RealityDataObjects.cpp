@@ -777,6 +777,31 @@ RealityData::RealityData()
 
 RealityDataEnterpriseStat::RealityDataEnterpriseStat(): m_totalSizeKB(0), m_nbRealityData(0){}
 
+RealityDataEnterpriseStat::RealityDataEnterpriseStat(const RealityDataEnterpriseStat& object)
+    {
+    if (this != &object)
+        {
+        m_totalSizeKB = object.m_totalSizeKB;
+        m_nbRealityData = object.m_nbRealityData;
+        m_ultimateId = object.m_ultimateId;
+        m_ultimateSite = object.m_ultimateSite;
+        m_date = object.m_date;
+        m_organizationId = object.m_organizationId;
+        }
+    }
+
+RealityDataEnterpriseStat& RealityDataEnterpriseStat::operator=(const RealityDataEnterpriseStat& object)
+    {
+    m_totalSizeKB = object.m_totalSizeKB;
+    m_nbRealityData = object.m_nbRealityData;
+    m_ultimateId = object.m_ultimateId;
+    m_ultimateSite = object.m_ultimateSite;
+    m_date = object.m_date;
+    m_organizationId = object.m_organizationId;
+
+    return *this;
+    }
+
 uint64_t RealityDataEnterpriseStat::GetTotalSizeKB() const { return m_totalSizeKB; }
 void RealityDataEnterpriseStat::SetTotalSizeKB(uint64_t totalSizeKB) { m_totalSizeKB = totalSizeKB; }
 

@@ -26,6 +26,7 @@ class RealityConversionTestFixture : public testing::Test
     public:
 		static Utf8CP s_TwoSpatialEntityJSONString;
         static Utf8CP s_EnterpriseStatJSONString;
+        static Utf8CP s_ManyEnterpriseStatsJSONString;
         static Utf8CP s_RealityDataJSONString;
 		static Utf8CP s_EntityDataSourceJSONString;
 		static Utf8CP s_SpatialEntityServerJSONString;
@@ -125,6 +126,40 @@ Utf8CP RealityConversionTestFixture::s_EnterpriseStatJSONString = R"(
                     "UltimateSite": "e82a584b-9fae-409f-9581-fd154f7b9ef9"
                 },
                 "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+            }
+        ]
+    }
+    )";
+
+
+Utf8CP RealityConversionTestFixture::s_ManyEnterpriseStatsJSONString = R"(
+    {
+        "instances": [
+            {
+                "instanceId": "",
+                "schemaName": "S3MX",
+                "className": "EnterpriseStat",
+                "properties": {
+                    "TotalSize": 235892929,
+                    "NumberOfRealityData": 1425,
+                    "OrganizationId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                    "UltimateId": "e82a584b-9fae-409f-9581-fd154f7b9ef9",
+                    "UltimateSite": "e82a584b-9fae-409f-9581-fd154f7b9ef9"
+                },
+                "eTag": "ifZwDzBbgEqb8b0Z62MNmrQTysQ="
+            },
+            {
+                "instanceId": "",
+                "schemaName": "S3MX",
+                "className": "EnterpriseStat",
+                "properties": {
+                    "TotalSize": 12,
+                    "NumberOfRealityData": 1,
+                    "OrganizationId": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9",
+                    "UltimateId": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9",
+                    "UltimateSite": "af3c43a9-1797-4765-a7c3-fd154f7b9ef9"
+                },
+                "eTag": "bVDdVT+8j6HTmIo7PNaqVcyYyLw="
             }
         ]
     }
@@ -468,7 +503,35 @@ TEST_F(RealityConversionTestFixture, JsonToEnterpriseStat)
     ASSERT_EQ(stat.GetOrganizationId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
     ASSERT_EQ(stat.GetUltimateId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
     ASSERT_EQ(stat.GetUltimateSite(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+
     }
+
+
+//-------------------------------------------------------------------------------------
+// @bsimethod                          Spencer.Mason                            04/2017
+//-------------------------------------------------------------------------------------
+TEST_F(RealityConversionTestFixture, JsonToManyEnterpriseStats)
+    {
+    bvector<RealityDataEnterpriseStat> stats;
+    StatusInt status = RealityConversionTools::JsonToEnterpriseStats(s_ManyEnterpriseStatsJSONString, stats);
+
+    ASSERT_EQ(SUCCESS, status);
+    ASSERT_EQ(2, stats.size());
+
+    
+    ASSERT_EQ(stats[0].GetNbRealityData(), 1425);
+    ASSERT_EQ(stats[0].GetTotalSizeKB(), 235892929);
+    ASSERT_EQ(stats[0].GetOrganizationId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+    ASSERT_EQ(stats[0].GetUltimateId(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+    ASSERT_EQ(stats[0].GetUltimateSite(), "e82a584b-9fae-409f-9581-fd154f7b9ef9");
+
+    ASSERT_EQ(stats[1].GetNbRealityData(), 1);
+    ASSERT_EQ(stats[1].GetTotalSizeKB(), 12);
+    ASSERT_EQ(stats[1].GetOrganizationId(), "af3c43a9-1797-4765-a7c3-fd154f7b9ef9");
+    ASSERT_EQ(stats[1].GetUltimateId(), "af3c43a9-1797-4765-a7c3-fd154f7b9ef9");
+    ASSERT_EQ(stats[1].GetUltimateSite(), "af3c43a9-1797-4765-a7c3-fd154f7b9ef9");
+    }
+
 
 //-------------------------------------------------------------------------------------
 // @bsimethod                        Remi.Charbonneau                           05/2017
