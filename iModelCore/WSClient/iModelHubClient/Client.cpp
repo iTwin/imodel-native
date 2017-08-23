@@ -959,7 +959,7 @@ iModelManagerTaskPtr Client::CreateiModelManager(iModelInfoCR iModelInfo, FileIn
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-BeFileNameTaskPtr Client::DownloadLocalBriefcaseUpdatedToVersion(iModelInfoCR iModelInfo, Utf8String versionId, LocalBriefcaseFileNameCallback const & fileNameCallBack, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToVersion(iModelInfoCR iModelInfo, Utf8String versionId, LocalBriefcaseFileNameCallback const & fileNameCallBack, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::DownloadLocalBriefcaseWithVersionOnTip";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -980,21 +980,29 @@ BeFileNameTaskPtr Client::DownloadLocalBriefcaseUpdatedToVersion(iModelInfoCR iM
         }
 
     iModelConnectionPtr connection = connectionResult.GetValue();
+
+    auto seedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
+    if (!seedFileInfoResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult.GetError()));
+        }
+
     auto versionManager = connection->GetVersionsManager();
-    ChangeSetsInfoResult result = versionManager.GetVersionChangeSets(versionId, cancellationToken)->GetResult();
+    ChangeSetsInfoResult result = versionManager.GetVersionChangeSets(versionId, seedFileInfoResult.GetValue()->GetFileId(), cancellationToken)->GetResult();
     if (!result.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, result.GetError().GetMessage().c_str());
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result.GetError()));
         }
 
-    return DownloadLocalBriefcaseInternal(connection, iModelInfo, result.GetValue(), fileNameCallBack, callback, cancellationToken);
+    return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult.GetValue()), result.GetValue(), fileNameCallBack, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-BeFileNameTaskPtr Client::DownloadLocalBriefcaseUpdatedToChangeSet(iModelInfoCR iModelInfo, Utf8String changeSetId, LocalBriefcaseFileNameCallback const & fileNameCallback, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseUpdatedToChangeSet(iModelInfoCR iModelInfo, Utf8String changeSetId, LocalBriefcaseFileNameCallback const & fileNameCallback, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
     const Utf8String methodName = "Client::DownloadLocalBriefcaseWithChangeSetOnTip";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
@@ -1016,6 +1024,13 @@ BeFileNameTaskPtr Client::DownloadLocalBriefcaseUpdatedToChangeSet(iModelInfoCR 
 
     iModelConnectionPtr connection = connectionResult.GetValue();
 
+    auto seedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
+    if (!seedFileInfoResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult.GetError()));
+        }
+
     auto result = connection->GetChangeSetById(changeSetId, cancellationToken)->GetResult();
     if (!result.IsSuccess())
         {
@@ -1033,15 +1048,15 @@ BeFileNameTaskPtr Client::DownloadLocalBriefcaseUpdatedToChangeSet(iModelInfoCR 
 
     auto changeSetsResult = connection->ChangeSetsFromQueryInternal(query, false, cancellationToken)->GetResult();
 
-    return DownloadLocalBriefcaseInternal(connection, iModelInfo, changeSetsResult.GetValue(), fileNameCallback, callback, cancellationToken);
+    return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult.GetValue()), changeSetsResult.GetValue(), fileNameCallback, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-BeFileNameTaskPtr Client::DownloadLocalBriefcase(iModelInfoCR iModelInfo, LocalBriefcaseFileNameCallback const & fileNameCallback, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
+BeFileNameTaskPtr Client::DownloadStandaloneBriefcase(iModelInfoCR iModelInfo, LocalBriefcaseFileNameCallback const & fileNameCallback, Http::Request::ProgressCallbackCR callback, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "Client::DownloadLocalBriefcase";
+    const Utf8String methodName = "Client::DownloadStandaloneBriefcase";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     //double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
@@ -1060,6 +1075,14 @@ BeFileNameTaskPtr Client::DownloadLocalBriefcase(iModelInfoCR iModelInfo, LocalB
         }
 
     iModelConnectionPtr connection = connectionResult.GetValue();
+
+    auto seedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
+    if (!seedFileInfoResult.IsSuccess())
+        {
+        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, seedFileInfoResult.GetError().GetMessage().c_str());
+        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(seedFileInfoResult.GetError()));
+        }
+
     ChangeSetsInfoResult result = connection->GetAllChangeSets()->GetResult();
     if (!result.IsSuccess())
         {
@@ -1067,26 +1090,19 @@ BeFileNameTaskPtr Client::DownloadLocalBriefcase(iModelInfoCR iModelInfo, LocalB
         return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(result.GetError()));
         }
 
-    return DownloadLocalBriefcaseInternal(connection, iModelInfo, result.GetValue(), fileNameCallback, callback, cancellationToken);
+    return DownloadStandaloneBriefcaseInternal(connection, iModelInfo, *(seedFileInfoResult.GetValue()), result.GetValue(), fileNameCallback, callback, cancellationToken);
     }
 
 //---------------------------------------------------------------------------------------
 //@bsimethod                                   Viktorija.Adomauskaite             10/2015
 //---------------------------------------------------------------------------------------
-BeFileNameTaskPtr Client::DownloadLocalBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallback const & fileNameCallback, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const
+BeFileNameTaskPtr Client::DownloadStandaloneBriefcaseInternal(iModelConnectionPtr connection, iModelInfoCR iModelInfo, FileInfoCR fileInfo, bvector<ChangeSetInfoPtr> changeSetsToMerge, LocalBriefcaseFileNameCallback const & fileNameCallback, Http::Request::ProgressCallback callback, ICancellationTokenPtr cancellationToken) const
     {
-    const Utf8String methodName = "Client::DownloadLocalBriefcaseInternal";
+    const Utf8String methodName = "Client::DownloadStandaloneBriefcaseInternal";
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     //double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    auto SeedFileInfoResult = connection->GetLatestSeedFile(cancellationToken)->GetResult();
-    if (!SeedFileInfoResult.IsSuccess())
-        {
-        LogHelper::Log(SEVERITY::LOG_ERROR, methodName, SeedFileInfoResult.GetError().GetMessage().c_str());
-        return CreateCompletedAsyncTask<BeFileNameResult>(BeFileNameResult::Error(SeedFileInfoResult.GetError()));
-        }
-
-    BeFileName filePath = fileNameCallback(iModelInfo, *SeedFileInfoResult.GetValue());
+    BeFileName filePath = fileNameCallback(iModelInfo, fileInfo);
     if (filePath.DoesPathExist())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, "File already exists.");
@@ -1097,7 +1113,7 @@ BeFileNameTaskPtr Client::DownloadLocalBriefcaseInternal(iModelConnectionPtr con
         BeFileName::CreateNewDirectory(filePath.GetDirectoryName());
         }
 
-    auto SeedFileResult = connection->DownloadSeedFile(filePath, SeedFileInfoResult.GetValue()->GetFileId().ToString(), callback, cancellationToken)->GetResult();
+    auto SeedFileResult = connection->DownloadSeedFile(filePath, fileInfo.GetFileId().ToString(), callback, cancellationToken)->GetResult();
     if (!SeedFileResult.IsSuccess())
         {
         LogHelper::Log(SEVERITY::LOG_ERROR, methodName, SeedFileResult.GetError().GetMessage().c_str());

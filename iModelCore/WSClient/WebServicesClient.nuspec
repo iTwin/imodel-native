@@ -28,7 +28,7 @@
         <file src="SubParts\libs\BeFolly.lib"                       target="lib\native\BeFolly.lib" />
         <file src="SubParts\Assemblies\BeXmlB02.dll"                target="lib\native\BeXmlB02.dll" />
         <file src="SubParts\libs\BeXml.lib"                         target="lib\native\BeXml.lib" />
-        <file src="SubParts\Assemblies\BeSecurity.dll"              target="lib\native\BeSecurity.dll" />
+        <file src="SubParts\Assemblies\BeSecurityB02.dll"              target="lib\native\BeSecurityB02.dll" />
         <file src="SubParts\libs\BeSecurity.lib"                    target="lib\native\BeSecurity.lib" />
         <file src="SubParts\Assemblies\BeLibxml2B02.dll"            target="lib\native\BeLibxml2B02.dll" />
         <file src="SubParts\libs\BeLibxml2.lib"                     target="lib\native\BeLibxml2.lib" />
@@ -38,5 +38,6 @@
 
         <file src="SubParts\VendorNotices\*.txt"                    target="notices\" />
         <file src="Delivery\PublishedAPI\**\*"                      target="include"/>
+        <file src="..\BeHttp\Delivery\http\cabundle.pem"                   target="Assets\http\cabundle.pem" />
     </files>
 </package>
