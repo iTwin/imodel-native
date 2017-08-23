@@ -2971,6 +2971,7 @@ struct PixelData
         Geometry = 1 << 2, //!< Select geometry type and planarity
 
         GeometryAndDistance = Geometry | Distance, //!< Select geometry type/planarity and distance from near plane
+        All = GeometryAndDistance | ElementId, //!< Select all aspects
     };
 private:
     DgnElementId    m_elementId;
