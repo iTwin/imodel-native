@@ -664,6 +664,16 @@ void FormattingTestFixture::FormattingSpecTraitsTest(Utf8CP testName, NumericFor
      LOG.infov("Test %s json: %s", testName, val.ToString().c_str());
     }
 
+void FormattingTestFixture::NamedFormatJsonTest(Utf8CP stdName, bool verbose, Utf8CP expected)
+    {
+    NumericFormatSpecCP fmtP = StdFormatSet::GetNumericFormat(stdName);
+    Json::Value val = fmtP->ToJson(verbose);
+    LOG.infov("Format %s json: %s", stdName, val.ToString().c_str());
+    }
+
+//NamedFormatSpec::ToJson
+
+
 END_BENTLEY_FORMATTEST_NAMESPACE
 
 //FormattingTestFixture::

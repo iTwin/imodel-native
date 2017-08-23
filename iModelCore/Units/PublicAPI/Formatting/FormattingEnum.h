@@ -460,9 +460,9 @@ struct FormatConstant
         static Utf8String FPN_RoundDown() { return "RoundDown"; }
         static Utf8String FPN_RoundToward0() { return "RoundToward0"; }
         static Utf8String FPN_RoundAwayFrom0() { return "RoundFrom0"; }
-        static Utf8String FPN_FractBarHoriz() { return "FractBarHoriz"; }
-        static Utf8String FPN_FractBarOblique() { return "FractBarOblique"; }
-        static Utf8String FPN_FractBarDiagonal() { return "FractBarDiagonal"; }
+        static Utf8String FPN_FractBarHoriz() { return "Horizontal"; }
+        static Utf8String FPN_FractBarOblique() { return "Oblique"; }
+        static Utf8String FPN_FractBarDiagonal() { return "Diagonal"; }
         static Utf8String FPN_AngleRegular() { return "AngleRegular"; }
         static Utf8String FPN_AngleDegMin() { return "AngleDegMin"; }
         static Utf8String FPN_AngleDegMinSec() { return "AngleDegMinSec"; }

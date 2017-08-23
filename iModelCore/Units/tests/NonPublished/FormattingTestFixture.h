@@ -72,6 +72,7 @@ struct FormattingTestFixture
         static void FormattingTraitsTest();
         static void FormattingSpecTraitsTest(Utf8CP testName, NumericFormatSpecCR spec, bool verbose);
         static void StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue);
+        static void NamedFormatJsonTest(Utf8CP formatName, bool verbose, Utf8CP expected);
     };
 
 END_BENTLEY_FORMATTEST_NAMESPACE

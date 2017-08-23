@@ -177,7 +177,7 @@ TEST(FormattingTest, Json)
     Json::Value jR;
     jR[json_degrees()] = 65.786;
 
-    Json::Value val;
+  /*  Json::Value val;
     val[json_yaw()] = jY;
     val[json_pitch()] = jP;
     val[json_roll()] = jR;
@@ -192,7 +192,16 @@ TEST(FormattingTest, Json)
     double x = jPnt[0].asDouble();
     double y = jPnt[1].asDouble();
     double z = jPnt[2].asDouble();
-    LOG.infov("Dpnt3D restored %.2f %.2f %.2f", x, y, z);
+    LOG.infov("Dpnt3D restored %.2f %.2f %.2f", x, y, z);*/
+
+    LOG.info("================  All Std formats to Json");
+    bvector<Utf8CP> stdNames = StdFormatSet::StdFormatNames(true);
+    for (int i = 0; i < stdNames.size(); i++)
+        {
+         FormattingTestFixture::NamedFormatJsonTest(stdNames[i], true, "");
+         FormattingTestFixture::NamedFormatJsonTest(stdNames[i], false, "");
+        }
+    LOG.info("================  All Std formats to Json (end)");
     }
 
 TEST(FormattingTest, Pasring)
