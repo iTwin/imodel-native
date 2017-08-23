@@ -814,11 +814,11 @@
 	<SubPart PartName="ECPresentation" PartFile="ECPresentation" Repository="ECPresentation"/>
     <SubPart PartName="ECObjectsNative"     PartFile="ECObjects"    Repository="ecobjects" />
     <SubPart PartName="rapidjson"           PartFile="rapidjson"    Repository="Libsrc-RapidJson"/>
-	<Bindings>
-      <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules">
-        Delivery/PresentationRules/*.xml
-      </Files>
-    </Bindings>
+	<!-- <Bindings> -->
+      <!-- <Files ProductDirectoryName="Assets" ProductSubDirectory="PresentationRules"> -->
+        <!-- Delivery/PresentationRules/*.xml -->
+      <!-- </Files> -->
+    <!-- </Bindings> -->
   </Part>
 
 </BuildContext>
