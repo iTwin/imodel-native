@@ -1,4 +1,4 @@
-/*--------------------------------------------------------------------------------------+                       
+/*--------------------------------------------------------------------------------------+                                                                                                                                                                                                                                          class
 |
 |     $Source: TilePublisher/lib/TilePublisher.cpp $
 |
@@ -83,6 +83,16 @@ private:
     struct ElemInfo { uint32_t m_index; uint32_t m_parentIndex; };
     struct AssemInfo { uint32_t m_index; uint32_t m_catIndex; };
     struct Assembly { DgnElementId m_elemId; DgnCategoryId m_catId; };
+    struct LabelInfo
+        {
+        static constexpr uint32_t InvalidIndex = 0xffffffff;
+
+        uint32_t m_index;
+        Utf8String m_label; 
+
+        LabelInfo() { }
+        LabelInfo(uint32_t index, Utf8StringCR label) : m_index(index), m_label(label) {}
+        };
 
     enum ClassIndex
     {
@@ -95,6 +105,7 @@ private:
         kClass_Assembly,
         kClass_SubCategory,
         kClass_Category,
+        kClass_Label,
 
         kClass_COUNT,
         kClass_FEATURE_COUNT = kClass_Classifier+1,
@@ -102,7 +113,7 @@ private:
 
     static constexpr Utf8CP s_classNames[kClass_COUNT] =
         {
-        "Primary", "Construction", "Dimension", "Pattern", "Classifier", "Element", "Assembly", "SubCategory", "Category"
+        "Primary", "Construction", "Dimension", "Pattern", "Classifier", "Element", "Assembly", "SubCategory", "Category", "Label"
         };
 
     Json::Value                         m_json; // "HIERARCHY": object
@@ -112,6 +123,7 @@ private:
     bmap<DgnElementId, AssemInfo>       m_assemblies;
     bmap<DgnSubCategoryId, uint32_t>    m_subcats;
     bmap<DgnCategoryId, uint32_t>       m_cats;
+    bmap<DgnElementId, LabelInfo>       m_labels;
     DgnCategoryId                       m_uncategorized;
     bool                                m_is3d;
     bool                                m_isClassifier;
@@ -156,15 +168,20 @@ private:
     void MapAssemblies(uint32_t offset, uint32_t categoriesOffset);
     void MapSubCategories(uint32_t offset);
     void MapCategories(uint32_t offset);
+    void MapLabels(uint32_t offset);
+
 
     void Build();
     void InitUncategorizedCategory();
     bool IsUncategorized(DgnCategoryId id) const { return id.IsValid() && id == m_uncategorized; }
 public:
-    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false)
+    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false, bmap<DgnElementId, Utf8String>* labels = nullptr)
         : m_json(Json::objectValue), m_db(db), m_attrs(attrs), m_is3d(is3d), m_isClassifier(isClassifier)
         {
         InitUncategorizedCategory();
+        if (nullptr != labels)
+            AddLabels(*labels);
+
         Build();
         }
 
@@ -175,6 +192,25 @@ public:
         json["HIERARCHY"] = GetHierarchy();
         return getJsonString(json);
         }
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void     AddLabels(bmap<DgnElementId, Utf8String> const& labels)
+    {
+    for (auto& label : labels)
+        m_labels[label.first] = LabelInfo(m_labels.size(), label.second);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+uint32_t   GetLabelIndex(DgnElementId elementId)
+    {
+    auto   found = m_labels.find(elementId);
+
+    return (found == m_labels.end()) ? LabelInfo::InvalidIndex : found->second.m_index;
+    }
+
 };
 
 /*---------------------------------------------------------------------------------**//**
@@ -279,6 +315,30 @@ void BatchTableBuilder::MapCategories(uint32_t offset)
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void BatchTableBuilder::MapLabels(uint32_t offset)
+    {
+    Json::Value& labels = GetClass(kClass_Label);
+    labels["length"] = m_labels.size();
+
+    Json::Value &instances = (labels["instances"] = Json::objectValue),
+                &label = (instances["label"] = Json::arrayValue),
+                &classIds = m_json["classIds"],
+                &parentCounts = m_json["parentCounts"];
+
+    for (auto const& kvp : m_labels)
+        {
+        Json::Value::ArrayIndex index = kvp.second.m_index;
+
+        classIds[offset + index] = kClass_Label;
+        parentCounts[offset + index] = 0;
+        label[index] = kvp.second.m_label;
+        }
+    }
+
+                                                                                                                                                                                                                  
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   02/17
 +---------------+---------------+---------------+---------------+---------------+------*/
 void BatchTableBuilder::MapElements(uint32_t offset, uint32_t assembliesOffset)
@@ -336,19 +396,25 @@ void BatchTableBuilder::MapParents()
     uint32_t assembliesOffset = elementsOffset + static_cast<uint32_t>(m_elems.size());
     uint32_t subcatsOffset = assembliesOffset + static_cast<uint32_t>(m_assemblies.size());
     uint32_t catsOffset = subcatsOffset + static_cast<uint32_t>(m_subcats.size());
-    uint32_t totalInstances = catsOffset + static_cast<uint32_t>(m_cats.size());
+    uint32_t labelsOffset = catsOffset + static_cast<uint32_t>(m_cats.size());
+    uint32_t totalInstances = labelsOffset + static_cast<uint32_t>(m_labels.size());
 
     m_json["instancesLength"] = totalInstances;
 
     // Now that every instance of every class has an index into "classIds", we can map parent IDs
     Json::Value& parentIds = m_json["parentIds"];
+
+    uint32_t            index = 0;
     for (auto const& kvp : m_attrs)
         {
         FeatureAttributesCR attr = kvp.first;
-        uint32_t index = kvp.second * 2; // 2 parents per feature
 
-        parentIds[index] = elementsOffset + GetElementInfo(attr.GetElementId()).m_index;
-        parentIds[index+1] = subcatsOffset + GetSubCategoryIndex(attr.GetSubCategoryId());
+        parentIds[index++] = elementsOffset + GetElementInfo(attr.GetElementId()).m_index;
+        parentIds[index++] = subcatsOffset + GetSubCategoryIndex(attr.GetSubCategoryId());
+
+        uint32_t      labelIndex = GetLabelIndex(attr.GetElementId());
+        if (LabelInfo::InvalidIndex != labelIndex)
+            parentIds[index++] = labelsOffset + labelIndex;
         }
 
     // Set "instances" and "length" to Element class, and add elements to "classIds" and assemblies to "parentIds"
@@ -358,6 +424,7 @@ void BatchTableBuilder::MapParents()
     // Set "instances" and "length" to SubCategory class, and add subcategories to "classIds" and "parentIds"
     MapSubCategories(subcatsOffset);
     MapCategories(catsOffset);
+    MapLabels(labelsOffset);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -377,7 +444,7 @@ void BatchTableBuilder::MapFeatures()
         ClassIndex classIndex = GetFeatureClassIndex(attr.GetClass());
 
         classIds[index] = classIndex;
-        parentCounts[index] = 2; // element, subcategory
+        parentCounts[index] = 2 + (LabelInfo::InvalidIndex != GetLabelIndex(attr.GetElementId()) ? 1 : 0);   // element, subcategory, possibly label.
 
         ++instanceCounts[classIndex];
 
@@ -1475,7 +1542,20 @@ void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
 
     featureAttributes.RemoveUndefined();
 
-    BatchTableBuilder   batchTableBuilder(featureAttributes, db, tile.GetModel().Is3d(), true);
+#define LABEL_TEST 
+#ifdef LABEL_TEST
+    bmap<DgnElementId, Utf8String>  labels;
+    uint32_t                        testIndex = 0;
+
+    for (auto& featureAttribute : featureAttributes)
+        labels[featureAttribute.first.GetElementId()] = Utf8PrintfString("Label %d", testIndex++);
+
+    BatchTableBuilder   batchTableBuilder(featureAttributes, db, tile.GetModel().Is3d(), true, &labels);
+
+#else
+    BatchTableBuilder   batchTableBuilder(featureAttributes, db, tile.GetModel().Is3d(), true, nullptr);
+#endif    
+
     Utf8String          batchTableStr = batchTableBuilder.ToString(), 
                         featureTableStr = getJsonString(m_featureTable);
 
@@ -4102,6 +4182,7 @@ void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelector
         if (selector.IsValid())
             {
             auto                cats = selector->GetCategories();
+#ifdef USAGE_TEST
             DgnCategoryIdSet     onInAnyViewCats;
 
             for (auto const& cat : cats)
@@ -4109,6 +4190,9 @@ void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelector
                     onInAnyViewCats.insert(cat);
 
             selectorsJson[selectorId.first.ToString()] = IdSetToJson(onInAnyViewCats);
+#else
+            selectorsJson[selectorId.first.ToString()] = IdSetToJson(cats);
+#endif
             allCategories.insert(cats.begin(), cats.end());
             }
         }
