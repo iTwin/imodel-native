@@ -791,10 +791,16 @@ struct Modify
 
     //! Modify the target solid or sheet body by removing selected faces and healing.
     //! @param[in,out] target The target body to modify.
-    //! @param[in] faces The array of faces to be delted.
-    //! @param[in] isBlendFaces Whether the faces were created using a blend operation.
+    //! @param[in] faces The array of faces to be deleted.
+    //! @param[in] createCap Try to heal by finding a surface to fit the hole resulting from the removal of the supplied faces.
     //! @return SUCCESS if faces could be deleted.
-    DGNPLATFORM_EXPORT static BentleyStatus DeleteFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bool isBlendFaces = false);
+    DGNPLATFORM_EXPORT static BentleyStatus DeleteFaces(IBRepEntityR target, bvector<ISubEntityPtr>& faces, bool createCap = false);
+
+    //! Modify the target solid or sheet body by removing selected edges and healing.
+    //! @param[in,out] target The target body to modify.
+    //! @param[in] edges The array of edges to be deleted.
+    //! @return SUCCESS if edges could be deleted.
+    DGNPLATFORM_EXPORT static BentleyStatus DeleteEdges(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& edges);
 
     //! Modify a face of a body by imprinting new edges from the specified curve vector.
     //! @param[in,out] face The target face sub-entity to imprint.
