@@ -22,8 +22,8 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
                                                                  uint64_t smId)
     {
 
-    //assert(!"MST_TODO");
-//#if 0
+    assert(!"MST_TODO");
+#if 0
     assert(m_renderSys != 0);
 
     Render::IGraphicBuilder::TriMeshArgs trimesh;
@@ -69,7 +69,7 @@ BentleyStatus ScalableMeshDisplayCacheManager::_CreateCachedMesh(SmCachedDisplay
     qvCachedDisplayMesh->m_graphic->Close();
 
     cachedDisplayMesh = qvCachedDisplayMesh.release();
-//#endif
+#endif
     return SUCCESS;
     }
 

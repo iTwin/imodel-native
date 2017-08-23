@@ -208,7 +208,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
         const DMatrix4d&                            storageToUors
         /*ScalableMeshDisplayCacheManager*            mgr*/)
     {
-//#if 0 //NEEDS_WORK_SM_TEMP_OUT
+#if 0 //NEEDS_WORK_SM_TEMP_OUT
 
 #ifdef PRINT_SMDISPLAY_MSG
     PRINT_MSG("ProgressiveDrawMeshNode2 meshNode : %I64u overviewMeshNode : %I64u \n", meshNodes.size(), overviewMeshNodes.size());
@@ -329,7 +329,7 @@ void ProgressiveDrawMeshNode2(bvector<IScalableMeshCachedDisplayNodePtr>& meshNo
     auto group = context.CreateBranch(graphics, &storageToUorsTransform);
     context.OutputGraphic(*group, nullptr);
 
-//#endif
+#endif
     }
 
 //----------------------------------------------------------------------------------------
@@ -1091,21 +1091,6 @@ TileTree::RootPtr ScalableMeshModel::_CreateTileTree(Render::SystemP system)
     scene->SetPickable(true);
     if (SUCCESS != scene->LoadScene())
         return nullptr;
-static bool s_useProgressiveQuery = true; 
-
-if (!s_useProgressiveQuery)
-{ 
-}
-else
-{
-    ScalableMeshModel* unconstModel = const_cast<ScalableMeshModel*>(this);
-/*
-*/
-
-#if 0 
-#endif
-        while (!unconstModel->GetProgressiveQueryEngine()->IsQueryComplete(terrainQueryId))
-#endif
 
     return scene.get();
     }
@@ -1117,7 +1102,6 @@ SMSceneP ScalableMeshModel::Load(Dgn::Render::SystemP renderSys) const
     {
     auto root = const_cast<ScalableMeshModel&>(*this).GetTileTree(renderSys);
     return static_cast<SMSceneP>(root);
-}
     }
 
 /*---------------------------------------------------------------------------------**//**
