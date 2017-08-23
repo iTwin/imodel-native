@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<PresentationRuleSet RuleSetId="DataViewer" VersionMajor="1" VersionMinor="3" SupportedSchemas="Generic,BisCore"
+                     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="PresentationRuleSetSchema.xsd">
+
+    <!-- Label overrides -->
+    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Volume", "ProStructures")' Label='this.NAME' OnlyIfNotHandled='true' />
+    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Equipment", "AutoPlantPDWPersistenceStrategySchema")' Label='this.TAG' OnlyIfNotHandled='true' />
+    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Pipeline", "AutoPlantPDWPersistenceStrategySchema")' Label='this.NAME' OnlyIfNotHandled='true' />
+    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Component", "AutoPlantPDWPersistenceStrategySchema")' Label='this.COMPONENT_ID' OnlyIfNotHandled='true' />
+    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Element", "BisCore")' Label='this.CodeValue' OnlyIfNotHandled='true' />
+    <LabelOverride Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Model", "BisCore")' Label='this.CodeValue' OnlyIfNotHandled='true' />
+
+    <ImageIdOverride ImageId='"ECLiteralImage://CATEGORY"'   Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Category", "BisCore")'  Priority='100'/>
+    <ImageIdOverride ImageId='"ECLiteralImage://MODEL"'    Condition='ThisNode.IsInstanceNode ANDALSO this.IsOfClass("Model", "BisCore")' Priority='100'/>
+
+    <!-- Navigation rules -->
+    <!-- Models -->
+    <RootNodeRule>
+        <InstancesOfSpecificClasses 
+            ClassNames='BisCore:GeometricModel,InformationModel' ArePolymorphic='true' 
+            GroupByClass="false" GroupByLabel="false" />
+    </RootNodeRule>
+    
+    <!-- If Parent node is a GeometricModel then query the for BisCore:Category instances using relationships -->
+    <ChildNodeRule Condition='ParentNode.ECInstance.IsOfClass("GeometricModel", "BisCore")' Priority='100'>
+        <RelatedInstances 
+            RelationshipClassNames='BisCore:GeometricElement2dIsInCategory,GeometricElement3dIsInCategory' 
+            RelatedClassNames='BisCore:Category'
+            SkipRelatedLevel='1'
+            GroupByClass='false' GroupByLabel='false' />
+            </ChildNodeRule>
+    
+   <!-- If Parent node is an Informational Model then query all elements related to the model -->
+   <ChildNodeRule Condition='ParentNode.ECInstance.IsOfClass("InformationModel", "BisCore")' Priority='200'>
+        <RelatedInstances
+            RelationshipClassNames='BisCore:ModelContainsElements'
+            RelatedClassNames='BisCore:Element'
+            GroupByClass='false' GroupByLabel='false' />
+    </ChildNodeRule>
+
+    <!-- Top assembly -->
+    <ChildNodeRule Condition='ParentNode.ECInstance.IsOfClass("Category", "BisCore")' Priority='300'  OnlyIfNotHandled='true'>
+        <RelatedInstances 
+            RelationshipClassNames='BisCore:GeometricElement2dIsInCategory,GeometricElement3dIsInCategory' 
+            RelatedClassNames='BisCore:GeometricElement2d,GeometricElement3d' 
+            RequiredDirection='Backward' 
+            InstanceFilter='this.Parent = NULL'
+            GroupByClass='false' GroupByLabel='false' />
+    </ChildNodeRule>
+    
+    <!-- Assemblies' and elements' hierarchy -->
+    <ChildNodeRule Condition='ParentNode.ECInstance.IsOfClass("GeometricElement", "BisCore")'  Priority='400'  OnlyIfNotHandled='true'>
+        <RelatedInstances
+            RelationshipClassNames='BisCore:ElementOwnsChildElements'
+            RelatedClassNames='BisCore:GeometricElement'
+            RequiredDirection='Forward'
+            GroupByClass='false' GroupByLabel='false'/>
+    </ChildNodeRule>
+
+    <ChildNodeRule Condition='not(ParentNode.ECInstance.IsOfClass("Category", "BisCore")) ANDALSO ParentNode.ECInstance.IsOfClass("DefinitionElement", "BisCore")'  Priority='500'  OnlyIfNotHandled='true'>
+        <RelatedInstances
+            RelationshipClassNames='BisCore:ElementOwnsChildElements'
+            RelatedClassNames='BisCore:DefinitionElement'
+            RequiredDirection='Forward'
+            GroupByClass='false' GroupByLabel='false'/>
+    </ChildNodeRule>
+
+    <ChildNodeRule Condition='ParentNode.ECInstance.IsOfClass("PhysicalElement", "BisCore")'  >
+        <RelatedInstances
+            RelationshipClassNames='BisCore:PhysicalElementIsOfType'
+            RelatedClassNames='BisCore:PhysicalType'
+            RequiredDirection='Forward'
+            GroupByClass='false' GroupByLabel='false'/>
+    </ChildNodeRule>
+
+    <!-- Content rules -->
+    <!-- Selection scope: Model -->
+    <ContentRule Condition='ContentDisplayType &lt;&gt; "PropertyPane" ANDALSO SelectedNode.ECInstance.IsOfClass("Model", "BisCore")' OnlyIfNotHandled='true'>
+        <ContentRelatedInstances RelationshipClassNames='BisCore:ModelContainsElements' RequiredDirection='Forward' />
+    </ContentRule>
+    <!-- Selection scope: Category -->
+    <ContentRule Condition='ContentDisplayType &lt;&gt; "PropertyPane" ANDALSO SelectedNode.ECInstance.IsOfClass("Category", "BisCore")' OnlyIfNotHandled='true'>
+        <ContentRelatedInstances RelationshipClassNames='BisCore:GeometricElement2dIsInCategory,GeometricElement3dIsInCategory' RequiredDirection='Backward' />
+    </ContentRule>
+    <!-- Selection scope: Top Assembly 
+         [Grigas] this rule doesn't work yet
+    <ContentRule Condition='ContentDisplayType &lt;&gt; "PropertyPane" ANDALSO SelectedNode.ECInstance.IsOfClass("Element", "BisCore")' OnlyIfNotHandled='true'>
+        <ContentRelatedInstances RelationshipClassNames='BisCore:ElementOwnsChildElements' RelatedClassNames='BisCore:Element' RequiredDirection='Forward' />
+    </ContentRule>-->
+    <!-- Selection scope: Assembly -->
+    <ContentRule 
+        Condition='ContentDisplayType &lt;&gt; "PropertyPane" 
+            ANDALSO SelectedNode.ECInstance.IsOfClass("Element", "BisCore") 
+            ANDALSO SelectedNode.ECInstance.HasRelatedInstance("BisCore:ElementOwnsChildElements", "Forward", "BisCore:Element")' 
+        OnlyIfNotHandled='true'>
+        <ContentRelatedInstances RelationshipClassNames='BisCore:ElementOwnsChildElements' RelatedClassNames='BisCore:Element' RequiredDirection='Forward' />
+    </ContentRule>
+    <!-- Selection scope: Any other (including Element) -->
+    <ContentRule OnlyIfNotHandled='true'>
+        <SelectedNodeInstances />
+    </ContentRule>
+
+
+</PresentationRuleSet>
