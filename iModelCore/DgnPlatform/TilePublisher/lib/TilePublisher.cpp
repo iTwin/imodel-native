@@ -3665,6 +3665,7 @@ PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet c
             m_classifierMap[modelId] = classifierInfos;
             }
         }
+#endif
     return status;
     }
 
@@ -3673,9 +3674,8 @@ PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet c
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString PublisherContext::GetRootName (DgnModelId modelId, ClassifierInfo const* classifier) const
     {
-    return (nullptr == classifier) ? TileUtil::GetRootNameForModel(modelId) : classifier->GetRootName();
+    return (nullptr == classifier) ? TileUtil::GetRootNameForModel(modelId, false) : classifier->GetRootName();
     }
-#endif
 
 //=======================================================================================
 // @bsistruct                                                   Ray>Bentley     08/2017

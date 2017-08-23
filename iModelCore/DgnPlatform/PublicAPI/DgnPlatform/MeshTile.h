@@ -1089,7 +1089,7 @@ struct TileUtil
 {
     DGNPLATFORM_EXPORT static BentleyStatus WriteJsonToFile (WCharCP fileName, Json::Value const& value);
     DGNPLATFORM_EXPORT static BentleyStatus ReadJsonFromFile (Json::Value& value, WCharCP fileName);
-    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId);
+    DGNPLATFORM_EXPORT static WString GetRootNameForModel(DgnModelId modelId, bool asClassifier);
 
     struct PointComparator
         {

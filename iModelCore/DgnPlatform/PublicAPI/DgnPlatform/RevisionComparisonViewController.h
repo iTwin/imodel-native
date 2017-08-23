@@ -161,7 +161,7 @@ protected:
     
     Controller(SpatialViewDefinition const& view, ComparisonDataCR data, Show show, SymbologyCR symb) : T_Super(view), m_symbology(symb), m_comparisonData(&data), m_show(show) { }
 
-    void _DrawDecorations(DecorateContextR context) override;
+    DGNPLATFORM_EXPORT void _DrawDecorations(DecorateContextR context) override;
 
     DGNPLATFORM_EXPORT void _AddFeatureOverrides(Render::FeatureSymbologyOverrides& overrides) const override;
     DGNPLATFORM_EXPORT BentleyStatus _CreateScene(SceneContextR context) override;
@@ -177,8 +177,9 @@ public:
     bool WantShowBoth() const { return WantShowCurrent() && WantShowTarget(); }
     bool WantShowCurrent() const { return 0 != (m_show & kShowCurrent); }
     bool WantShowTarget() const { return 0 != (m_show & kShowTarget); }
+
+    DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);
 };
 
 END_REVISION_COMPARISON_NAMESPACE
 
-    DGNPLATFORM_EXPORT void SetVersionLabel(Utf8String label);

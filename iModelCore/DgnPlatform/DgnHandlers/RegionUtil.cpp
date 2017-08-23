@@ -1079,8 +1079,8 @@ BentleyStatus RegionGraphicsContext::PopulateGraph(DgnViewportP vp, DgnElementCP
         if (0 == m_currentGeomMarkerId)
             return ERROR; // No other geometry was added...
 
-        Render::GraphicBuilderPtr builder = CreateGraphic();
-        SimplifyGraphic* graphic = static_cast<SimplifyGraphic*> (builder.GetGraphic());
+        Render::GraphicBuilderPtr builder = CreateWorldGraphic();
+        SimplifyGraphic* graphic = static_cast<SimplifyGraphic*> (builder.get());
 
         _ProcessCurveVector(*boundaryEdges, false, *graphic);
         }

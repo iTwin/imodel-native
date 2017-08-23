@@ -1196,11 +1196,20 @@ struct SolidKernelTileGeometry : TileGeometry
 {
 private:
     IBRepEntityPtr      m_entity;
-    DgnDbR              m_db;
     BeMutex             m_mutex;
+#if defined (BENTLEYCONFIG_PARASOLID) 
+    // Otherwise, 'unused private member' warning from clang...
+    DgnDbR              m_db;
+#endif
 
     SolidKernelTileGeometry(IBRepEntityR solid, TransformCR tf, DRange3dCR range, DgnElementId elemId, TileDisplayParamsCR params, DgnDbR db)
-        : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_db(db), m_entity(&solid) { }
+        : TileGeometry(tf, range, elemId, params, BRepUtil::HasCurvedFaceOrEdge(solid), db), m_entity(&solid)
+#if defined (BENTLEYCONFIG_PARASOLID) 
+        , m_db(db)
+#endif
+        {
+        //
+        }
 
     T_TilePolyfaces _GetPolyfaces(IFacetOptionsR facetOptions) override;
     size_t _GetFacetCount(FacetCounter& counter) const override { return counter.GetFacetCount(*m_entity); }

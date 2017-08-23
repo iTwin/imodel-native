@@ -344,7 +344,7 @@ void TilesetPublisher::GenerateModelNameList()
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString TilesetPublisher::_GetTileUrl(TileNodeCR tile, WCharCP fileExtension, PublisherContext::ClassifierInfo const* classifier) const
     {
-    WString     modelRootName = nullptr == classifier ? TileUtil::GetRootNameForModel(tile.GetModel().GetModelId()) : classifier->GetRootName();
+    WString     modelRootName = nullptr == classifier ? TileUtil::GetRootNameForModel(tile.GetModel().GetModelId(), false) : classifier->GetRootName();
 
     return modelRootName + L"//" + tile.GetFileName(modelRootName.c_str(), fileExtension); 
     }

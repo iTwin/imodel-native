@@ -35,8 +35,7 @@ void Symbology::InitializeDefaults()
     m_target.SetAppearance(DbOpcode::Delete, deleted);
 
     m_untouched.SetRgb(ColorDef::MediumGrey());
-    m_untouchedOverride.SetFillTransparency(200);
-    m_untouchedOverride.SetLineTransparency(200);
+    m_untouched.SetAlpha(200);
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -70,7 +69,7 @@ bool    ComparisonData::ContainsElement(DgnElementCP element) const
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, DbOpcode& opcode)
+StatusInt   ComparisonData::GetDbOpcode(DgnElementId elementId, BeSQLite::DbOpcode& opcode)
     {
     // Obtain the type of Opcode associated with an element ID
     PersistentState pers = GetPersistentState(elementId);
@@ -193,7 +192,7 @@ void getViewCorners(DPoint3dR low, DPoint3dR high, int indent, DgnViewportCR vp)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    RevisionComparisonViewController::SetVersionLabel(Utf8String label)
+void    RevisionComparison::Controller::SetVersionLabel(Utf8String label)
     {
     m_labelString = label;
 
@@ -212,6 +211,7 @@ void    RevisionComparisonViewController::SetVersionLabel(Utf8String label)
     DPoint3d position   = DPoint3d::FromZero();
     if (nullptr != m_vp)
         getViewCorners(low, position, 30, *m_vp);
+
     position.z = 0;
     position.x = low.x;
     m_label->SetOriginFromJustificationOrigin(position, TextString::HorizontalJustification::Left, TextString::VerticalJustification::Bottom);
@@ -221,7 +221,7 @@ void    RevisionComparisonViewController::SetVersionLabel(Utf8String label)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Diego.Pinate    08/17
 +---------------+---------------+---------------+---------------+---------------+------*/
-void    RevisionComparisonViewController::_DrawDecorations(DecorateContextR context)
+void    RevisionComparison::Controller::_DrawDecorations(DecorateContextR context)
     {
     T_Super::_DrawDecorations(context);
 
@@ -229,7 +229,7 @@ void    RevisionComparisonViewController::_DrawDecorations(DecorateContextR cont
     if (WantShowBoth() || !m_label.IsValid())
         return;
 
-    auto graphic = context.CreateGraphic();
+    auto graphic = context.CreateViewGraphic();
 
     DPoint3d low        = DPoint3d::FromZero();
     DPoint3d position   = DPoint3d::FromZero();
@@ -240,4 +240,6 @@ void    RevisionComparisonViewController::_DrawDecorations(DecorateContextR cont
     m_label->SetOriginFromJustificationOrigin(position, TextString::HorizontalJustification::Left, TextString::VerticalJustification::Bottom);
 
     graphic->AddTextString(*m_label);
-    context.AddViewOverlay(*graphic);
+    context.AddViewOverlay(*graphic->Finish());
+    }
+
