@@ -260,6 +260,7 @@ struct Task : RefCounted<NonCopyableClass>
         Initialize,
         OverrideFeatureSymbology,
         ReadImage,
+        ReadPixels,
         Redraw,
         RenderFrame,
         RenderTile,
@@ -2936,6 +2937,78 @@ public:
 };
 
 //=======================================================================================
+//! Describes aspects of a pixel as read from a Render::Target.
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct PixelData
+{
+    enum class GeometryType : uint8_t
+    {
+        Unknown,
+        None,
+        Surface,
+        Linear,
+        Edge,
+        Silhouette,
+    };
+
+    enum class Planarity : uint8_t
+    {
+        Unknown,
+        None,
+        Planar,
+        NonPlanar,
+    };
+
+    enum class Selector : uint8_t
+    {
+        None = 0,
+        ElementId = 1 << 0,
+        Distance = 1 << 1,
+        Geometry = 1 << 2,
+
+        DistanceAndId = ElementId | Distance,
+        GeometryAndId = ElementId | Geometry,
+        GeometryAndDistance = Geometry | Distance,
+    };
+private:
+    DgnElementId    m_elementId;
+    double          m_distance;
+    GeometryType    m_type;
+    Planarity       m_planarity;
+public:
+    PixelData() : m_distance(-1.0), m_type(GeometryType::Unknown), m_planarity(Planarity::Unknown) { }
+    PixelData(DgnElementId id, double distance, GeometryType geomType, Planarity planarity)
+        : m_elementId(id), m_distance(distance), m_type(geomType), m_planarity(planarity) { }
+
+    //! Returns the ID of the top-most element which contributed to the pixel, or an invalid ID if no element or if element IDs were not selected.
+    DgnElementId GetElementId() const { return m_elementId; }
+    //! Returns the distance from the near plane, or a negative value if distances were not selected.
+    double GetDistance() const { return m_distance; }
+    //! Returns the type of geometry that produced this pixel, or Unknown if geometry was not selected
+    GeometryType GetGeometryType() const { return m_type; }
+    //! Returns the planarity of the geometry that produced this pixel, or Unknown if geometry was not selected
+    Planarity GetPlanarity() const { return m_planarity; }
+
+    void SetElementId(DgnElementId elemId) { m_elementId=elemId; }
+    void SetDistance(double dist) { m_distance=dist; }
+    void SetGeometry(GeometryType type, Planarity planarity) { m_type=type; m_planarity=planarity; }
+};
+
+ENUM_IS_FLAGS(PixelData::Selector);
+
+//=======================================================================================
+//! Represents the results of a ReadPixels() operation.
+// @bsistruct                                                   Paul.Connelly   08/17
+//=======================================================================================
+struct IPixelDataBuffer : RefCountedBase
+{
+    //! Retrieve the data associated with the pixel at (x,y) in view coordinates.
+    //! Results are undefined if x or y is outside the bounds of the view rect.
+    virtual PixelData GetPixel(uint32_t x, uint32_t y) const = 0;
+};
+
+//=======================================================================================
 //! A Render::Target holds the current scene, the current set of dynamic Graphics, and the current decorators.
 //! When frames are composed, all of those Graphics are rendered, as appropriate.
 //! A Render::Target holds a reference to a Render::Device, and a Render::System
@@ -2983,6 +3056,7 @@ public:
     virtual void _SetHiliteSet(DgnElementIdSet&&) = 0;
     virtual void _SetViewRect(BSIRect rect) {}
     virtual BentleyStatus _RenderTile(StopWatch&,TexturePtr&,PlanCR,GraphicListR,ClipVectorCP,Point2dCR) = 0;
+    virtual IPixelDataBufferCPtr _ReadPixels(BSIRectCR rect, PixelData::Selector selector) = 0;
     DGNVIEW_EXPORT virtual void _QueueReset();
 
     int GetId() const {return m_id;}

@@ -548,6 +548,12 @@ public:
     //! The image is fitted to the smaller dimension of the viewRect and centered in the larger dimension.
     //! @return the Image containing the RGBA pixels from the specified rectangle of the viewport. On error, image.IsValid() will return false.
     DGNVIEW_EXPORT Render::Image ReadImage(BSIRectCR viewRect = BSIRect::From(0,0,-1,-1), Point2dCR targetSize=Point2d::From(0,0));
+
+    //! Read selected data about each pixel within a rectangular portion of the viewport.
+    //! @param[in] viewRect The area of the view to read. The origin specifies the upper-left corner. Must lie entirely within the viewport's dimensions.
+    //! @param[in] selector Specifies the type(s) of data to read.
+    //! @return an IPixelDataBuffer object from which the selected data can be retrieved, or nullptr on error.
+    DGNVIEW_EXPORT Render::IPixelDataBufferCPtr ReadPixels(BSIRectCR viewRect, Render::PixelData::Selector selector);
 };
 
 //=======================================================================================
