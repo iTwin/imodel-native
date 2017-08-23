@@ -63,7 +63,7 @@ StatusTaskPtr iModelConnection::DownloadFileInternal
     LogHelper::Log(SEVERITY::LOG_DEBUG, methodName, "Method called.");
     double start = BeTimeUtilities::GetCurrentTimeAsUnixMillisDouble();
 
-    if (typeid(*fileAccessKey) == typeid(NotUsedFileAccessKey))
+    if (typeid(NotUsedFileAccessKey) == typeid(*fileAccessKey))
         {
         // This environment does not use fileAccessKey
         return ExecutionManager::ExecuteWithRetry<void>([=]() {
@@ -113,7 +113,7 @@ Http::Request::ProgressCallbackCR callback,
 ICancellationTokenPtr             cancellationToken
 ) const
     {
-    if (fileAccessKey.IsNull() || !fileAccessKey->GetValueSet())
+    if (fileAccessKey.IsNull())
         {
         auto fileAccessKeyResult = QueryFileAccessKey(fileId, cancellationToken)->GetResult();
         if (!fileAccessKeyResult.IsSuccess())

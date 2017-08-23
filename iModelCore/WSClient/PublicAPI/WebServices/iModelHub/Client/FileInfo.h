@@ -95,7 +95,6 @@ public:
 struct FileAccessKey : RefCountedBase
 {
 private:
-    bool m_valueSet = false;
     Utf8String  m_downloadUrl;
     Utf8String  m_uploadUrl;
     DateTime    m_createDate;
@@ -118,7 +117,6 @@ public:
     Utf8StringCR GetUploadUrl() const {return m_uploadUrl;}
     //! Url for download
     Utf8StringCR GetDownloadUrl() const {return m_downloadUrl;}
-    bool GetValueSet() const {return m_valueSet;}
 };
 
 struct NotUsedFileAccessKey : FileAccessKey
