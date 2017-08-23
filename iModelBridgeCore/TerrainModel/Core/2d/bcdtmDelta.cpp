@@ -10,6 +10,38 @@
 #include "bcdtminlines.h" 
 
 extern long numPrecisionError,numSnapFix ;  //These are only used in Debug Code.
+
+/*-------------------------------------------------------------------+
+|                                                                    |
+|                                                                    |
+|                                                                    |
++-------------------------------------------------------------------*/
+void SimplifyBoundaryPoints(DPoint3dP& clipPtsP, long& numClipPts)
+    {
+    const double clipboundaryTolerance = 0.0001;
+    EmbeddedDPoint3dArray pts(clipPtsP, &clipPtsP[numClipPts]);
+    for (auto&& p : pts)
+        p.z = 0;
+
+    PolylineOps::CompressColinearPoints (pts, clipboundaryTolerance, false, true);
+    DPoint3d* sP = clipPtsP;
+    DPoint3d* eP = clipPtsP + numClipPts;
+
+    for (auto&& p : pts)
+        {
+        while (sP != eP && sP->x != p.x || sP->y != p.y)
+            sP++;
+        BeAssert(sP != eP);
+        if (sP == eP)
+            break;
+        p.z = sP->z;
+        sP++;
+        }
+
+    numClipPts = (int)pts.size();
+    memcpy(clipPtsP, pts.data(), numClipPts * sizeof(clipPtsP[0]));
+    }
+
 /*-------------------------------------------------------------------+
 |                                                                    |
 |                                                                    |
@@ -443,6 +475,10 @@ BENTLEYDTM_EXPORT int bcdtmDelta_createDeltaTinToSurfaceDtmObject(BC_DTM_OBJ **d
  if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyP,(long)(plist1P-polyP->polyListP),&clipPtsP,&numClipPts)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Intersection Polygon = %p Number Of Points = %6ld",clipPtsP,numClipPts) ;
 /*
+** Reduce the points on teh boundary.
+ */
+ SimplifyBoundaryPoints(clipPtsP, numClipPts);
+/*
 **  Clip dtm1P Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Cliping dtm1P => dtm3P") ;
@@ -712,7 +748,11 @@ BENTLEYDTM_EXPORT int bcdtmDelta_cloneAndCreateDeltaTinToSurfaceDtmObject
  if( dbg ) bcdtmWrite_message(0,0,0,"Copying Intersection Polygon") ;
  if( bcdtmPolygon_copyPolygonObjectPolygonToPointArrayPolygon(polyP,(long)(plist1P-polyP->polyListP),&clipPtsP,&numClipPts)) goto errexit ;
  if( dbg ) bcdtmWrite_message(0,0,0,"Intersection Polygon = %p Number Of Points = %6ld",clipPtsP,numClipPts) ;
-/*
+ /*
+ **  Simplify boundary
+ */
+ SimplifyBoundaryPoints(clipPtsP, numClipPts);
+ /*
 **  Clip dtm1P Object
 */
  if( dbg ) bcdtmWrite_message(0,0,0,"Cliping dtm1P => dtm3P") ;
