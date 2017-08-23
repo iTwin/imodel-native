@@ -549,6 +549,10 @@ struct FormatConstant
         static const Utf8CP FUSJsonDispValue() { return "displayValue"; }
         static const Utf8CP FUSJsonPersist() { return "persistFUS"; }
         static const Utf8CP FUSJsonDispaly() { return "displayFUS"; }
+        static const bool IsBoolEqual(bool val, bool ref) { return val == ref; }
+        static const bool IsIntEqual(int val, int ref) { return val == ref; }
+        static const bool IsRealEqual(double val, double ref, double resolution) { return fabs(val - ref) <= fabs(resolution); }
+
 
         static const size_t* SpecialUOM()
             {
@@ -571,7 +575,6 @@ struct FormatConstant
                 }
             return false;
             }
-        UNITS_EXPORT const static FormatSpecialCodes SpecialtyMap(Utf8CP name);
         UNITS_EXPORT const static FormatSpecialCodes ParsingPatternCode(Utf8CP name);
         UNITS_EXPORT const static Utf8CP SpecialAngleSymbol(Utf8String name);
         UNITS_EXPORT const static Utf8CP SpecialLengthSymbol(Utf8String name);

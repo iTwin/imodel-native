@@ -101,7 +101,57 @@ void StdFormatSet::StdInit()
 
     }
 
-Json::Value NumericFormatSpec::ToJson()
+//===================================================
+//
+// NumericFormatSpec Methods
+//
+//===================================================
+
+FormatTraits NumericFormatSpec::SetTraitsBit(FormatTraits bit, FormatTraits traits, bool set)
+    {
+    size_t temp = static_cast<int>(traits);
+
+    if (set)
+        temp |= static_cast<int>(bit);
+    else
+        temp &= ~static_cast<int>(bit);
+    return  static_cast<FormatTraits>(temp);
+    }
+
+void NumericFormatSpec::TraitsBitToJson(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits ref, bool verbose) const
+    {
+    if (verbose || FormatConstant::IsBoolEqual(CheckTraitsBit(bit), CheckTraitsBit(ref, bit)))  //.IsKeepTrailingZeroes())
+        outValue[bitIndex] = FormatConstant::BoolText(CheckTraitsBit(bit));
+    }
+
+void NumericFormatSpec::TraitsBitToJsonKey(JsonValueR outValue, Utf8CP bitIndex, FormatTraits bit, FormatTraits traits)
+    {
+    outValue[bitIndex] = FormatConstant::BoolText((static_cast<int>(traits) & static_cast<int>(bit)) != 0);
+    }
+
+Json::Value NumericFormatSpec::JsonFormatTraits(bool verbose) const
+    {
+    Json::Value jTraits;
+    FormatTraits ref = FormatConstant::DefaultFormatTraits();
+    
+    TraitsBitToJson(jTraits, json_TrailZeroes(), FormatTraits::TrailingZeroes, ref, verbose);
+    TraitsBitToJson(jTraits, json_LeadZeroes(),  FormatTraits::LeadingZeroes, ref, verbose);
+    TraitsBitToJson(jTraits, json_KeepDecPnt(), FormatTraits::KeepDecimalPoint, ref, verbose);
+    TraitsBitToJson(jTraits, json_KeepSingleZero(), FormatTraits::KeepSingleZero, ref, verbose);
+    TraitsBitToJson(jTraits, json_ExponentZero(), FormatTraits::ExponentZero, ref, verbose);
+    TraitsBitToJson(jTraits, json_ZeroEmpty(), FormatTraits::ZeroEmpty, ref, verbose);
+    TraitsBitToJson(jTraits, json_Use1000Separator(), FormatTraits::Use1000Separator, ref, verbose);
+    TraitsBitToJson(jTraits, json_ApplyRounding(), FormatTraits::ApplyRounding, ref, verbose);
+    TraitsBitToJson(jTraits, json_AppendUnitName(), FormatTraits::AppendUnitName, ref, verbose);
+    TraitsBitToJson(jTraits, json_UseFractSymbol(), FormatTraits::UseFractSymbol, ref, verbose);
+    TraitsBitToJson(jTraits, json_FractionDash(), FormatTraits::FractionDash, ref, verbose);
+    return jTraits;
+    }
+
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 08/17
+//---------------------------------------------------------------------------------------
+Json::Value NumericFormatSpec::ToJson(bool verbose)const
     {
     Json::Value jNFC;
     jNFC[json_presentType()] = Utils::PresentationTypeName(m_presentationType);
@@ -109,7 +159,7 @@ Json::Value NumericFormatSpec::ToJson()
     jNFC[json_roundFactor()] = m_roundFactor;
     jNFC[json_decPrec()] = Utils::DecimalPrecisionToInt(m_decPrecision);
     jNFC[json_fractPrec()] = Utils::FractionallPrecisionName(m_fractPrecision);
-    jNFC[json_formatTraits()] = JsonFormatTraits();
+    jNFC[json_formatTraits()] = JsonFormatTraits(verbose);
     if (m_barType != FractionBarType::None)
         jNFC[json_barType()] = Utils::FractionBarName(m_barType);
     if (m_decimalSeparator != '\0')
@@ -125,65 +175,113 @@ Json::Value NumericFormatSpec::ToJson()
     return jNFC;
     }
 
-
-
-
-
-
-//double              m_roundFactor;
-//PresentationType    m_presentationType;      // Decimal, Fractional, Sientific, ScientificNorm
-//ShowSignOption      m_signOption;            // NoSign, OnlyNegative, SignAlways, NegativeParenths
-//FormatTraits        m_formatTraits;          // NoZeroes, LeadingZeroes, TrailingZeroes, BothZeroes
-//DecimalPrecision    m_decPrecision;          // Precision0...12
-//FractionalPrecision m_fractPrecision;
-//FractionBarType     m_barType;               // oblique, horizontal, diagonal
-
-//Utf8Char            m_decimalSeparator;      // DecimalComma, DecimalPoint, DecimalSeparator
-//Utf8Char            m_thousandsSeparator;    // ThousandSepComma, ThousandSepPoint, ThousandsSeparartor
-//Utf8CP              m_uomSeparator;          // default separator between the number and UOM
-//Utf8Char            m_stopSeparator;         // default separator between parts of the stopping format
-//int                 m_minWIdth;              // the minimum width of the field. It will be taken into account
-
-
-
-
-
-
-
-
-
-
-
-
-Json::Value NumericFormatSpec::JsonFormatTraits()
+//===================================================
+//
+// UnitProxy Methods
+//
+//===================================================
+Json::Value UnitProxy::ToJson(bool verbose) const
     {
-    Json::Value jTraits;
-    if (IsKeepTrailingZeroes())
-        jTraits[json_TrailZeroes()] = true;
-    if (IsUseLeadingZeroes())
-        jTraits[json_LeadZeroes()] = true;
-    if (IsKeepDecimalPoint())
-        jTraits[json_KeepDecPnt()] = true;
-    if (IsKeepSingleZero())
-        jTraits[json_KeepSingleZero()] = true;
-    if (IsExponentZero())
-        jTraits[json_ExponentZero()] = true;
-    if (IsZeroEmpty())
-        jTraits[json_ZeroEmpty()] = true;
-    if (IsUse1000Separator())
-        jTraits[json_Use1000Separator()] = true;
-    if (IsApplyRounding())
-        jTraits[json_ApplyRounding()] = true;
-    if (IsAppendUnit())
-        jTraits[json_AppendUnitName()] = true;
-    if (IsUseFractSymbol())
-        jTraits[json_UseFractSymbol()] = true;
-    if (IsFractionDash())
-        jTraits[json_FractionDash()] = true;
-    return jTraits;
+    Json::Value jUP;
+    Utf8CP uN = Utils::SubstituteEmptyOrNull(m_unitName.c_str(), "");
+    Utf8CP uL = Utils::SubstituteEmptyOrNull(m_unitLabel.c_str(), "");
+    if (verbose)
+        {
+        jUP[json_unitName()] = uN;
+        jUP[json_unitLabel()] = uL;
+        }
+    else
+        {
+        jUP[0] = uN;
+        jUP[1] = uL;
+        }
+
+    return jUP;
     }
 
-Json::Value NamedFormatSpec::ToJson()
+//===================================================
+//
+//UnitProxySet Methods
+//
+//===================================================
+Json::Value UnitProxySet::ToJson() const
+    {
+    Json::Value jUP;
+
+    if(m_proxys.empty())
+        return jUP;
+    UnitProxy prox;
+    for(int i = 0; i < m_proxys.size(); i++)
+        {
+        prox = m_proxys[i];
+        jUP[i] = prox.ToJson(false);
+        }
+    return jUP;
+    }
+
+
+//===================================================
+//
+// CompositeValueSpec Methods
+//
+//===================================================
+
+Json::Value CompositeValueSpec::ToJson() const
+    {
+    Json::Value jCVS;
+    bool valid = false;
+    switch (m_type)
+        {
+        case CompositeSpecType::Quatro:
+            jCVS[json_SubUnit()] = m_unitProx.GetProxy(indxSub)->ToJson(false);
+        case CompositeSpecType::Triple:
+            jCVS[json_MinorUnit()] = m_unitProx.GetProxy(indxMinor)->ToJson(false);
+        case CompositeSpecType::Double:
+            jCVS[json_MiddleUnit()] = m_unitProx.GetProxy(indxMiddle)->ToJson(false);
+        case CompositeSpecType::Single: // smallQ already has the converted value
+            jCVS[json_MajorUnit()] = m_unitProx.GetProxy(indxMajor)->ToJson(false);
+            valid = true;
+            break;
+        }
+
+    if (valid)
+        {
+        if (IsIncludeZero())
+            jCVS[json_includeZero()] = true;
+        if (m_spacer.length() > 0)
+            jCVS[json_spacer()] = m_spacer.c_str();
+        }
+
+    return jCVS;
+    }
+
+    //friend struct CompositeValue;
+    //protected:
+    //    static const size_t  indxMajor = 0;
+    //    static const size_t  indxMiddle = 1;
+    //    static const size_t  indxMinor = 2;
+    //    static const size_t  indxSub = 3;
+    //    static const size_t  indxInput = 4;
+    //    static const size_t  indxLimit = 5;
+    //    size_t m_ratio[indxSub];
+    //    //BEU::UnitCP m_units[indxLimit];
+    //    UnitProxySet m_unitProx = UnitProxySet(indxLimit);
+    //    //Utf8CP m_unitLabel[indxLimit];
+    //    FormatProblemDetail m_problem;
+    //    CompositeSpecType m_type;
+    //    bool m_includeZero;
+    //    Utf8String m_spacer;
+
+
+
+
+
+//===================================================
+//
+// NamedFormatSpec Methods
+//
+//===================================================
+Json::Value NamedFormatSpec::ToJson(bool verbose) const
     {
     Json::Value jNFS;
     jNFS[json_SpecName()] = m_name;
@@ -192,10 +290,16 @@ Json::Value NamedFormatSpec::ToJson()
         jNFS[json_SpecType()] = "numeric";
     if (m_specType == FormatSpecType::Composite)
         jNFS[json_SpecType()] = "composite";
-    jNFS[json_NumericFormat()] = m_numericSpec.ToJson();
-    //jNFS[json_CompositeFormat()] = m_compositeSpec.ToJson();
+    jNFS[json_NumericFormat()] = m_numericSpec.ToJson(verbose);
+    jNFS[json_CompositeFormat()] = m_compositeSpec.ToJson();
     return jNFS;
     }
+
+//===================================================
+//
+// FormatUnitSet Methods
+//
+//===================================================
 
 //----------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 05/17
@@ -221,7 +325,6 @@ Utf8String FormatUnitSet::ToJsonString(bool useAlias) const
     str = jval.ToString();
     return str;
     }
-
 
 
 //===================================================

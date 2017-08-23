@@ -23,6 +23,18 @@ BEGIN_BENTLEY_FORMATTEST_NAMESPACE
 * @bsiclass                                     		David Fox-Rabinovitz 06/2017
 +===============+===============+===============+===============+===============+======*/
 
+struct TraitJsonKeyMap
+    {
+private:
+    FormatTraits m_bit;
+    Utf8CP m_key;
+public:
+    TraitJsonKeyMap(FormatTraits bit, Utf8CP key):m_bit(bit), m_key(key){}
+    FormatTraits GetTrait() { return m_bit; }
+    Utf8CP GetKey() { return m_key; }
+    static bvector<TraitJsonKeyMap> TraitJsonKeySet();
+    };
+
 struct FormattingTestFixture
     {
     private:
@@ -56,6 +68,10 @@ struct FormattingTestFixture
         static Utf8CP TestGrabber(Utf8CP input, size_t start= 0);
         static void TestSegments(Utf8CP input, size_t start, Utf8CP unitName);
         static void ParseToQuantity(Utf8CP input, size_t start, Utf8CP unitName = nullptr);
+        static void NamedSpecToJson(Utf8CP stdName);
+        static void FormattingTraitsTest();
+        static void FormattingSpecTraitsTest(Utf8CP testName, NumericFormatSpecCR spec, bool verbose);
+        static void StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue);
     };
 
 END_BENTLEY_FORMATTEST_NAMESPACE

@@ -154,135 +154,149 @@ void NumericFormatSpec::SetPrecisionByValue(int prec)
 
 
 ////////            Helpers for NumericFormat
-//---------------------------------------------------------------------------------------
-// @bsimethod                                                   David Fox-Rabinovitz 11/16
-//---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetKeepTrailingZeroes(bool keep) 
+ /*FormatTraits NumericFormatSpec::SetTraitsBit(FormatTraits bit, FormatTraits traits, bool keep)
     {
-    size_t temp = static_cast<int>(m_formatTraits);
+    size_t temp = (nullptr == wordP)? static_cast<int>(m_formatTraits) : static_cast<int>(*wordP);
 
     if (keep)
-        temp |= static_cast<int>(FormatTraits::TrailingZeroes);
+        temp |= static_cast<int>(bit);
     else
-        temp &= ~static_cast<int>(FormatTraits::TrailingZeroes);
-    m_formatTraits = static_cast<FormatTraits>(temp);
+        temp &= ~static_cast<int>(bit);
+    if(nullptr == wordP)
+         m_formatTraits = static_cast<FormatTraits>(temp);
+    else
+        *wordP = static_cast<FormatTraits>(temp);
     }
+*/
+//---------------------------------------------------------------------------------------
+// @bsimethod                                                   David Fox-Rabinovitz 11/16
+//---------------------------------------------------------------------------------------
+//void NumericFormatSpec::SetKeepTrailingZeroes(bool keep) 
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//
+//    if (keep)
+//        temp |= static_cast<int>(FormatTraits::TrailingZeroes);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::TrailingZeroes);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetUseLeadingZeroes(bool use)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (use)
-        temp |= static_cast<int>(FormatTraits::LeadingZeroes);
-    else
-        temp &= ~static_cast<int>(FormatTraits::LeadingZeroes);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetUseLeadingZeroes(bool use)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (use)
+//        temp |= static_cast<int>(FormatTraits::LeadingZeroes);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::LeadingZeroes);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetKeepDecimalPoint(bool keep)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (keep)
-        temp |= static_cast<int>(FormatTraits::KeepDecimalPoint);
-    else
-        temp &= ~static_cast<int>(FormatTraits::KeepDecimalPoint);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetKeepDecimalPoint(bool keep)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (keep)
+//        temp |= static_cast<int>(FormatTraits::KeepDecimalPoint);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::KeepDecimalPoint);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetKeepSingleZero(bool keep)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (keep)
-        temp |= static_cast<int>(FormatTraits::KeepSingleZero);
-    else
-        temp &= ~static_cast<int>(FormatTraits::KeepSingleZero);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetKeepSingleZero(bool keep)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (keep)
+//        temp |= static_cast<int>(FormatTraits::KeepSingleZero);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::KeepSingleZero);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetZeroEmpty(bool empty)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (empty)
-        temp |= static_cast<int>(FormatTraits::ZeroEmpty);
-    else
-        temp &= ~static_cast<int>(FormatTraits::ZeroEmpty);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetZeroEmpty(bool empty)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (empty)
+//        temp |= static_cast<int>(FormatTraits::ZeroEmpty);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::ZeroEmpty);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetUse1000Separator(bool use)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (use)
-        temp |= static_cast<int>(FormatTraits::Use1000Separator);
-    else
-        temp &= ~static_cast<int>(FormatTraits::Use1000Separator);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetUse1000Separator(bool use)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (use)
+//        temp |= static_cast<int>(FormatTraits::Use1000Separator);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::Use1000Separator);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetApplyRounding(bool use)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (use)
-        temp |= static_cast<int>(FormatTraits::ApplyRounding);
-    else
-        temp &= ~static_cast<int>(FormatTraits::ApplyRounding);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetApplyRounding(bool use)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (use)
+//        temp |= static_cast<int>(FormatTraits::ApplyRounding);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::ApplyRounding);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 12/16
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetAppendUnit(bool use)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (use)
-        temp |= static_cast<int>(FormatTraits::AppendUnitName);
-    else
-        temp &= ~static_cast<int>(FormatTraits::AppendUnitName);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetAppendUnit(bool use)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (use)
+//        temp |= static_cast<int>(FormatTraits::AppendUnitName);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::AppendUnitName);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetUseFractionDash(bool use)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (use)
-        temp |= static_cast<int>(FormatTraits::FractionDash);
-    else
-        temp &= ~static_cast<int>(FormatTraits::FractionDash);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetUseFractionDash(bool use)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (use)
+//        temp |= static_cast<int>(FormatTraits::FractionDash);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::FractionDash);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 08/17
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetUseFractionSymbol(bool use)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (use)
-    temp |= static_cast<int>(FormatTraits::UseFractSymbol);
-    else
-    temp &= ~static_cast<int>(FormatTraits::UseFractSymbol);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetUseFractionSymbol(bool use)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (use)
+//    temp |= static_cast<int>(FormatTraits::UseFractSymbol);
+//    else
+//    temp &= ~static_cast<int>(FormatTraits::UseFractSymbol);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 
 
 
@@ -291,15 +305,15 @@ void NumericFormatSpec::SetUseFractionSymbol(bool use)
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16
 //---------------------------------------------------------------------------------------
-void NumericFormatSpec::SetExponentZero(bool empty)
-    {
-    size_t temp = static_cast<int>(m_formatTraits);
-    if (empty)
-        temp |= static_cast<int>(FormatTraits::ExponentZero);
-    else
-        temp &= ~static_cast<int>(FormatTraits::ExponentZero);
-    m_formatTraits = static_cast<FormatTraits>(temp);
-    }
+//void NumericFormatSpec::SetExponentZero(bool empty)
+//    {
+//    size_t temp = static_cast<int>(m_formatTraits);
+//    if (empty)
+//        temp |= static_cast<int>(FormatTraits::ExponentZero);
+//    else
+//        temp &= ~static_cast<int>(FormatTraits::ExponentZero);
+//    m_formatTraits = static_cast<FormatTraits>(temp);
+//    }
 
 //---------------------------------------------------------------------------------------
 // @bsimethod                                                   David Fox-Rabinovitz 11/16

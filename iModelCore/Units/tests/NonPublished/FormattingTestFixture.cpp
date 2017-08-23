@@ -26,6 +26,12 @@ static void* testFile = nullptr;
 /*=================================================================================**//**
 * @bsiclass                                     		David Fox-Rabinovitz 06/2017
 +===============+===============+===============+===============+===============+======*/
+
+void FormattingTestFixture::StdFormattingTest(Utf8CP formatName, double dval, Utf8CP expectedValue)
+    {
+    EXPECT_STREQ (expectedValue, NumericFormatSpec::StdFormatDouble(formatName, dval).c_str());
+    }
+
 void FormattingTestFixture::SignaturePattrenCollapsing(Utf8CP txt, int tstN, bool hexDump)
     {
     LOG.infov("Signature Test%02d  >%s<================", tstN, txt);
@@ -563,7 +569,127 @@ size_t FormattingTestFixture::GetNextArguments(Utf8P buf, int bufLen, bvector<Ut
 #endif
     }
 
+void  FormattingTestFixture::NamedSpecToJson(Utf8CP stdName)
+    {
+    if (nullptr == stdName)
+        {
+        NumericFormatSpec defS = NumericFormatSpec();
+        NamedFormatSpec def("default", defS, "def");
+        Json::Value val = defS.ToJson(false);
+        LOG.infov("Format %s = %s ", stdName, val.ToString().c_str());
+        JsonValueCR spc = val[json_NumericFormat()];
+        LOG.infov("NumSpec %s", spc.ToString().c_str());
+        }
+    else
+        {
+        NamedFormatSpecCP namF = StdFormatSet::FindFormatSpec(stdName);
+        Json::Value val = namF->ToJson(false);
+        LOG.infov("Format %s = %s ", stdName, val.ToString().c_str());
+        JsonValueCR spc = val[json_NumericFormat()];
+        LOG.infov("NumSpec %s", spc.ToString().c_str());
+        }
+    }
+
+bvector<TraitJsonKeyMap> TraitJsonKeyMap::TraitJsonKeySet()
+    {
+    static bvector<TraitJsonKeyMap> vec;
+    if (vec.size() == 0)
+        {
+        vec.push_back(TraitJsonKeyMap(FormatTraits::TrailingZeroes, json_TrailZeroes()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::LeadingZeroes, json_LeadZeroes()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::KeepDecimalPoint, json_KeepDecPnt()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::KeepSingleZero, json_KeepSingleZero()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::ExponentZero, json_ExponentZero()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::ZeroEmpty, json_ZeroEmpty()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::Use1000Separator, json_Use1000Separator()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::ApplyRounding, json_ApplyRounding()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::AppendUnitName, json_AppendUnitName()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::UseFractSymbol, json_UseFractSymbol()));
+        vec.push_back(TraitJsonKeyMap(FormatTraits::FractionDash, json_FractionDash()));
+        }
+    return vec;
+    }
+
+void FormattingTestFixture::FormattingTraitsTest()
+    {
+    bvector<TraitJsonKeyMap> vec = TraitJsonKeyMap::TraitJsonKeySet();
+    bvector<string> pos;
+    bvector<string> neg;
+
+    pos.push_back("{\"TrailZeroes\":\"true\"}");
+    neg.push_back("{\"TrailZeroes\":\"false\"}");
+    pos.push_back("{\"LeadZeroes\":\"true\"}");
+    neg.push_back("{\"LeadZeroes\":\"false\"}");
+    pos.push_back("{\"KeepDecPnt\":\"true\"}");
+    neg.push_back("{\"KeepDecPnt\":\"false\"}");
+    pos.push_back("{\"KeepSingleZero\":\"true\"}");
+    neg.push_back("{\"KeepSingleZero\":\"false\"}");
+    pos.push_back("{\"ExponentZero\":\"true\"}");
+    neg.push_back("{\"ExponentZero\":\"false\"}");
+    pos.push_back("{\"ZeroEmpty\":\"true\"}");
+    neg.push_back("{\"ZeroEmpty\":\"false\"}");
+    pos.push_back("{\"Use1000Separator\":\"true\"}");
+    neg.push_back("{\"Use1000Separator\":\"false\"}");
+    pos.push_back("{\"ApplyRounding\":\"true\"}");
+    neg.push_back("{\"ApplyRounding\":\"false\"}");
+    pos.push_back("{\"AppendUnitName\":\"true\"}");
+    neg.push_back("{\"AppendUnitName\":\"false\"}");
+    pos.push_back("{\"UseFractSymbol\":\"true\"}");
+    neg.push_back("{\"UseFractSymbol\":\"false\"}");
+    pos.push_back("{\"FractionDash\":\"true\"}");
+    neg.push_back("{\"FractionDash\":\"false\"}");
+
+    TraitJsonKeyMap* map;
+    Json::Value val;
+    FormatTraits traits = FormatTraits::DefaultZeroes;
+    for(int i =0; i < vec.size(); i++)
+        {
+         map = &vec[i];
+         traits = NumericFormatSpec::SetTraitsBit(map->GetTrait(), traits, true);
+         NumericFormatSpec::TraitsBitToJsonKey(val, map->GetKey(), map->GetTrait(), traits);
+         EXPECT_STREQ (pos[i].c_str(), val.ToString().c_str());
+         //LOG.infov("Bit %s set: %s", map->GetKey(), val.ToString().c_str());
+         traits = NumericFormatSpec::SetTraitsBit(map->GetTrait(), traits, false);
+         NumericFormatSpec::TraitsBitToJsonKey(val, map->GetKey(), map->GetTrait(), traits);
+         EXPECT_STREQ (neg[i].c_str(), val.ToString().c_str());
+         //LOG.infov("Bit %s drop: %s", map->GetKey(), val.ToString().c_str());      
+         val.clear();
+         traits = FormatTraits::DefaultZeroes;
+        }
+    }
+
+void FormattingTestFixture::FormattingSpecTraitsTest(Utf8CP testName, NumericFormatSpecCR spec, bool verbose)
+    {
+     Json::Value val = spec.JsonFormatTraits(verbose);
+     LOG.infov("Test %s json: %s", testName, val.ToString().c_str());
+    }
 
 END_BENTLEY_FORMATTEST_NAMESPACE
 
 //FormattingTestFixture::
+//EXPECT_STREQ ("{\"TrailZeroes\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"TrailZeroes\":\"false\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"LeadZeroes\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"LeadZeroes\":\"false\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"KeepDecPnt\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"KeepDecPnt\":\"false\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"KeepSingleZero\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"KeepSingleZero\":\"false\"}", val.ToString().c_str());
+//
+//EXPECT_STREQ ("{\"ExponentZero\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"ExponentZero\":\"false\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"ZeroEmpty\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"ZeroEmpty\":\"false\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"Use1000Separator\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"Use1000Separator\":\"false\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"ApplyRounding\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"ApplyRounding\":\"false\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"AppendUnitName\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"AppendUnitName\":\"false\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"UseFractSymbol\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"UseFractSymbol\":\"false\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"FractionDash\":\"true\"}", val.ToString().c_str());
+//EXPECT_STREQ ("{\"FractionDash\":\"false\"}", val.ToString().c_str());
+
+
+

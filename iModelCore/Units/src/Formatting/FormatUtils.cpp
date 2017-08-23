@@ -113,20 +113,6 @@ const size_t* FormatConstant::FractionCodes()
     return cod;
     }
 
-const FormatSpecialCodes FormatConstant::SpecialtyMap(Utf8CP name)
-    {
-    static bmap<Utf8String, FormatSpecialCodes> map;
-    if (map.empty())
-        {
-        map[Utf8String("NU")] = FormatSpecialCodes::SignatureNU;
-        map[Utf8String("NFU")] = FormatSpecialCodes::SignatureNFU;
-        map[Utf8String("NUNU")] = FormatSpecialCodes::SignatureNUNU;
-        map[Utf8String("NUNFU")] = FormatSpecialCodes::SignatureNUNFU;
-        map[Utf8String("NUNUNU")] = FormatSpecialCodes::SignatureNUNUNU;
-        map[Utf8String("NUNUNFU")] = FormatSpecialCodes::SignatureNUNUNFU;
-        }    
-    return Utf8String::IsNullOrEmpty(name) ? FormatSpecialCodes::SignatureNull : map[name];
-    }
 
 const FormatSpecialCodes FormatConstant::ParsingPatternCode(Utf8CP name)
     {
