@@ -800,7 +800,7 @@ struct Modify
     //! @param[in,out] target The target body to modify.
     //! @param[in] edges The array of edges to be deleted.
     //! @return SUCCESS if edges could be deleted.
-    DGNPLATFORM_EXPORT static BentleyStatus DeleteEdges(IBRepEntityR targetEntity, bvector<ISubEntityPtr>& edges);
+    DGNPLATFORM_EXPORT static BentleyStatus DeleteEdges(IBRepEntityR target, bvector<ISubEntityPtr>& edges);
 
     //! Modify a face of a body by imprinting new edges from the specified curve vector.
     //! @param[in,out] face The target face sub-entity to imprint.
