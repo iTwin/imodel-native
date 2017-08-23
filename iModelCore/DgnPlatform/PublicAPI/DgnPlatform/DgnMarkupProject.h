@@ -379,7 +379,7 @@ private:
 private:
     DgnMarkupProject() {}
     virtual ~DgnMarkupProject() {}
-    BeSQLite::DbResult ConvertToMarkupProject(BeFileNameCR fileName, CreateDgnMarkupProjectParams const& params);
+    BeSQLite::DbResult InitializeNewMarkupProject(BeFileNameCR fileName, CreateDgnMarkupProjectParams const& params);
 
 public:
     BentleyStatus CheckIsOpen();
