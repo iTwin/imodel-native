@@ -3237,6 +3237,46 @@ BentleyStatus BRepUtil::Modify::TransformFaces(IBRepEntityR targetEntity, bvecto
 
     BentleyStatus   status = (SUCCESS == PK_FACE_transform_2((int) faceTags.size(), &faceTags.front(), &transfs.front(), 1.0e-6, &options, &tracking, &results) && PK_local_status_ok_c == results.status) ? SUCCESS : ERROR;
 
+    // NOTE: Try to remove any redundant step faces that may have been created...
+    if (SUCCESS == status && tracking.n_track_records > 0 && StepFacesOption::AddNonCoincident == addStep)
+        {
+        bvector<PK_FACE_t> resultFaces;
+
+        for (int iResult = 0; iResult < tracking.n_track_records; ++iResult)
+            {
+            if (PK_TOPOL_track_create_c != tracking.track_records[iResult].track)
+                continue;
+
+            for (int iProduct = 0; iProduct < tracking.track_records[iResult].n_product_topols; ++iProduct)
+                {
+                PK_ENTITY_t entityTag = tracking.track_records[iResult].product_topols[iProduct];
+                PK_CLASS_t  entityClass;
+
+                PK_ENTITY_ask_class(entityTag, &entityClass);
+
+                if (PK_CLASS_face != entityClass)
+                    continue;
+
+                resultFaces.push_back(entityTag);
+                }
+            }
+
+        if (resultFaces.size() > 0)
+            {
+            PK_TOPOL_track_r_t tracking2;
+            PK_TOPOL_delete_redundant_2_o_s options2;
+
+            memset(&tracking2, 0, sizeof(tracking2));
+            PK_TOPOL_delete_redundant_2_o_m(options2);
+            options2.max_topol_dimension = PK_TOPOL_dimension_1_c;
+            options2.scope = PK_redundant_merge_out_c;
+
+            // NOTE: I think we're ok not setting a mark...
+            PK_TOPOL_delete_redundant_2((int) resultFaces.size(), &resultFaces.front(), &options2, &tracking2);
+            PK_TOPOL_track_r_f(&tracking2);
+            }
+        }
+
     PK_TOPOL_local_r_f(&results);
     PK_TOPOL_track_r_f(&tracking);
 

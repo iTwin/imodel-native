@@ -484,29 +484,10 @@ BentleyStatus DgnMarkupProject::CheckIsOpen()
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      04/13
 +---------------+---------------+---------------+---------------+---------------+------*/
-DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, CreateDgnMarkupProjectParams const& mpp)
+DbResult DgnMarkupProject::InitializeNewMarkupProject(BeFileNameCR fileName, CreateDgnMarkupProjectParams const& mpp)
     {
-    BeFileName fileName(fileNameIn);
-    supplyDefaultExtension(fileName, s_markupDgnDbExt);
-
-    if (true)
-        {
-        if (!mpp.m_seedDb.empty())
-            BeFileName::BeCopyFile(mpp.m_seedDb, fileName, !mpp.GetOverwriteExisting());
-        else
-            DgnDb::CreateDgnDb (nullptr, fileName, mpp);
-        }
-
     OpenParams oparams(OpenMode::ReadWrite);
     DbResult status = DoOpenDgnDb(fileName, oparams);
-
-    if (GetBriefcaseId().IsMasterId())
-        SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
-
-    SaveChanges();
-    CloseDb();
-
-    status = DoOpenDgnDb(fileName, oparams);
 
     if (BE_SQLITE_OK != status)
         {
@@ -567,12 +548,42 @@ DbResult DgnMarkupProject::ConvertToMarkupProject(BeFileNameCR fileNameIn, Creat
 +---------------+---------------+---------------+---------------+---------------+------*/
 DgnMarkupProjectPtr DgnMarkupProject::CreateDgnDb(DbResult* result, BeFileNameCR projectFileName, CreateDgnMarkupProjectParams const& params)
     {
+    // Switch file name to use markup extension
+    BeFileName fileName(projectFileName);
+    supplyDefaultExtension(fileName, s_markupDgnDbExt);
+
+    // Copy seed, or create new
+    DgnDbPtr db;
+    if (!params.m_seedDb.empty())
+        {
+        BeFileName::BeCopyFile(params.m_seedDb, fileName, !params.GetOverwriteExisting());
+        OpenParams oparams(OpenMode::ReadWrite);
+        db = DgnDb::OpenDgnDb(nullptr, fileName, oparams);
+        }
+    else
+        {
+        db = DgnDb::CreateDgnDb(nullptr, fileName, params);
+        }
+
+    if (db.IsNull())
+        return nullptr;
+
+    // Ensure standalone briefcase if master
+    if (db->GetBriefcaseId().IsMasterId())
+        {
+        db->SetAsBriefcase(BeBriefcaseId(BeBriefcaseId::Standalone()));
+        db->SaveChanges();
+        db->CloseDb();
+        }
+
+    db = nullptr;
+
     DbResult ALLOW_NULL_OUTPUT (stat, result);
 
     DgnMarkupProjectPtr markupProject = new DgnMarkupProject();
 
-    stat = markupProject->ConvertToMarkupProject(projectFileName, params);
-    
+    stat = markupProject->InitializeNewMarkupProject(fileName, params);
+
     if (BE_SQLITE_OK != stat)
         return nullptr;
 
