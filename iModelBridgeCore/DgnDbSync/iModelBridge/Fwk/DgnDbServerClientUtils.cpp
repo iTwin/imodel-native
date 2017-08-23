@@ -100,7 +100,7 @@ BentleyStatus DgnDbServerClientUtils::SignIn(Tasks::AsyncError* errorOut, Creden
 BentleyStatus DgnDbServerClientUtils::QueryProjectId(WebServices::WSError* errorOut, Utf8StringCR bcsProjectName)
     {
     auto pid = ClientHelper::GetInstance()->QueryProjectId(errorOut, bcsProjectName);
-    m_client->SetProject(pid);
+	m_projectId = pid;
     return pid.empty()? BSIERROR: BSISUCCESS;
     }
 
@@ -115,9 +115,9 @@ IRepositoryManagerP DgnDbServerClientUtils::GetRepositoryManager(DgnDbR db)
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                    Sam.Wilson                      07/14
 +---------------+---------------+---------------+---------------+---------------+------*/
-static iModelInfoPtr getRepositoryInfoByName(Error& err, Client& client, Utf8StringCR name)
+static iModelInfoPtr getRepositoryInfoByName(Error& err, Client& client, Utf8String projectId, Utf8StringCR name)
     {
-    auto result = client.GetiModels()->GetResult();
+    auto result = client.GetiModels(projectId)->GetResult();
     if (!result.IsSuccess())
         {
         err = result.GetError();
@@ -152,7 +152,7 @@ static Http::Request::ProgressCallback getHttpProgressMeter()
 +---------------+---------------+---------------+---------------+---------------+------*/
 StatusInt DgnDbServerClientUtils::AcquireBriefcase(BeFileNameCR bcFileName, Utf8CP repositoryName)
     {
-    auto ri = getRepositoryInfoByName(m_lastServerError, *m_client, repositoryName);
+    auto ri = getRepositoryInfoByName(m_lastServerError, *m_client, m_projectId, repositoryName);
     if (ri.IsNull())
         {
         m_lastServerError = Error::Id::iModelDoesNotExist;
@@ -215,7 +215,7 @@ StatusInt DgnDbServerClientUtils::CreateRepository(Utf8CP repoName, BeFileNameCR
     auto progress = getHttpProgressMeter();
     Utf8String description;
     db->QueryProperty(description, PropertySpec("dgn_proj", "description"));
-    auto result = m_client->CreateNewiModel(*db, repoName, description, true, progress)->GetResult();
+    auto result = m_client->CreateNewiModel(m_projectId, *db, repoName, description, true, progress)->GetResult();
 
     if (result.IsSuccess())
         {
