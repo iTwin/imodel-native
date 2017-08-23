@@ -456,7 +456,8 @@ public:
     //! @private
     DGNPLATFORM_EXPORT void DrawStandardGrid(DPoint3dR gridOrigin, RotMatrixR rMatrix, DPoint2d spacing, uint32_t gridsPerRef, bool isoGrid=false, Point2dCP fixedRepetitions=nullptr);
 
-    DGNPLATFORM_EXPORT void SetBackground(Render::GraphicR graphic);
+    //! Display view coordinate graphic as background with smooth shading, default lighting, and z testing disabled. e.g., a sky box.
+    DGNPLATFORM_EXPORT void SetViewBackground(Render::GraphicR graphic);
 
     //! Set context to state used to flash elements.
     void SetIsFlash(bool isFlash) {m_isFlash = isFlash;}

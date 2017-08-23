@@ -91,18 +91,19 @@ private:
         kClass_Construction,
         kClass_Dimension,
         kClass_Pattern,
+        kClass_Classifier,
         kClass_Element,
         kClass_Assembly,
         kClass_SubCategory,
         kClass_Category,
 
         kClass_COUNT,
-        kClass_FEATURE_COUNT = kClass_Pattern+1,
+        kClass_FEATURE_COUNT = kClass_Classifier+1,
     };
 
     static constexpr Utf8CP s_classNames[kClass_COUNT] =
         {
-        "Primary", "Construction", "Dimension", "Pattern", "Element", "Assembly", "SubCategory", "Category"
+        "Primary", "Construction", "Dimension", "Pattern", "Classifier", "Element", "Assembly", "SubCategory", "Category"
         };
 
     Json::Value                         m_json; // "HIERARCHY": object
@@ -114,6 +115,7 @@ private:
     bmap<DgnCategoryId, uint32_t>       m_cats;
     DgnCategoryId                       m_uncategorized;
     bool                                m_is3d;
+    bool                                m_isClassifier;
 
     template<typename T, typename U> static auto Find(T& map, U const& key) -> typename T::iterator
         {
@@ -145,7 +147,7 @@ private:
     uint32_t GetSubCategoryIndex(DgnSubCategoryId id) { return GetIndex(m_subcats, id); }
 
     Json::Value& GetClass(ClassIndex idx) { return m_json["classes"][idx]; }
-    static ClassIndex GetFeatureClassIndex(DgnGeometryClass geomClass);
+    ClassIndex GetFeatureClassIndex(DgnGeometryClass geomClass);
 
     Assembly QueryAssembly(DgnElementId) const;
     void DefineClasses();
@@ -160,8 +162,8 @@ private:
     void InitUncategorizedCategory();
     bool IsUncategorized(DgnCategoryId id) const { return id.IsValid() && id == m_uncategorized; }
 public:
-    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d)
-        : m_json(Json::objectValue), m_db(db), m_attrs(attrs), m_is3d(is3d)
+    BatchTableBuilder(FeatureAttributesMapCR attrs, DgnDbR db, bool is3d, bool isClassifier = false)
+        : m_json(Json::objectValue), m_db(db), m_attrs(attrs), m_is3d(is3d), m_isClassifier(isClassifier)
         {
         InitUncategorizedCategory();
         Build();
@@ -220,6 +222,9 @@ void BatchTableBuilder::Build()
 +---------------+---------------+---------------+---------------+---------------+------*/
 auto BatchTableBuilder::GetFeatureClassIndex(DgnGeometryClass geomClass) -> ClassIndex
     {
+    if (m_isClassifier)
+        return kClass_Classifier;
+
     switch (geomClass)
         {
         case DgnGeometryClass::Primary:         return kClass_Primary;
@@ -605,6 +610,20 @@ void PublisherContext::PublisherContext::Statistics::RecordPointCloud (size_t nP
         m_pointCloudMaxPoints = nPoints;
     }
 
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     01/17
++---------------+---------------+---------------+---------------+---------------+------*/
+void PublisherContext::RecordUsage(TileDisplayParamsCR displayParams)
+    {
+    if (displayParams.GetCategoryId().IsValid())                              
+        m_usedCategories.insert (displayParams.GetCategoryId());
+
+    if (displayParams.GetSubCategoryId().IsValid())
+        m_usedSubCategories.insert (displayParams.GetSubCategoryId());
+
+    }
+
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     01/17
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -717,7 +736,7 @@ void    PublishTileData::PadBinaryDataToBoundary(size_t boundarySize)
 +---------------+---------------+---------------+---------------+---------------+------*/
 WString     PublisherContext::GetTileExtension (TileNodeCR tile)
     {
-    return m_publishAsClassifier ? L"vctr" : tile.GetFileExtension();
+    return DoPublishAsClassifier() ? L"vctr" : tile.GetFileExtension();
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -757,14 +776,14 @@ static void extendRange(DRange3dR range, TileMeshList const& meshes, TransformCP
     }
 
 template<typename T> static void FWriteValue (T const& value, std::FILE* file) { fwrite(&value, 1, sizeof(value), file); }
-template<typename T> static void FWrite(T const& value, std::FILE* file) { if (!value.empty()) fwrite(value.data(), 1, value.size(), file); }
+template<typename T> static void FWrite(T const& value, std::FILE* file) { if (!value.empty()) fwrite(value.data(), 1, value.size() * sizeof(*value.data()), file); }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::Status TilePublisher::Publish()
     {
-    PublishableTileGeometry publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, m_context.WantSurfacesOnly(), nullptr);
+    PublishableTileGeometry publishableGeometry = m_tile.GeneratePublishableGeometry(m_context.GetDgnDb(), TileGeometry::NormalMode::Always, m_context.WantSurfacesOnly(), !m_context.DoPublishAsClassifier() /* no instancing for classifiers */, m_context.GetGenerationFilter());
 
     if (publishableGeometry.IsEmpty())
         return PublisherContext::Status::NoGeometry;                            // Nothing to write...Ignore this tile (it will be omitted when writing tileset data as its published range will be NullRange.
@@ -779,11 +798,9 @@ PublisherContext::Status TilePublisher::Publish()
         return PublisherContext::Status::CantOpenOutputFile;
         }
     
-    static double s_minClassHeight = 1.0E3;
-
     if (m_context.DoPublishAsClassifier())
         {
-        WriteVector(outputFile, publishableGeometry);
+        WriteClassifier(outputFile, publishableGeometry, m_context.GetCurrentClassifier()->m_classifier, m_context.GetCurrentClassifier()->m_classifiedRange.m_range);
         }
     else if (publishableGeometry.Parts().empty())
         {
@@ -833,6 +850,8 @@ Json::Value  TilePublisher::CreateMesh (TileMeshList const& tileMeshes, PublishT
 
     for (auto& tileMesh : tileMeshes)
         {
+        m_context.RecordUsage(tileMesh->GetDisplayParams());
+
         if (!tileMesh->Triangles().empty())
             AddMeshPrimitive(primitives, tileData, *tileMesh, primitiveIndex++, doBatchIds);
 
@@ -1139,203 +1158,377 @@ struct  VectorPosition
         }
     };
 
-
 uint16_t    zigZagEncode(int32_t value) { return (uint16_t) (((value << 1) ^ (value >> 15)) & 0xffff); }
 
+/*=================================================================================**//**
+* @bsiclass                                                     Ray.Bentley     07/2017
++===============+===============+===============+===============+===============+======*/
+struct ClassifierTileWriter
+{
+    typedef bmap<DPoint3d, uint32_t, TileUtil::PointComparator> T_PointMap;
+
+    Json::Value                 m_featureTable;
+    bvector<uint32_t>           m_meshIndices;
+    bvector<FPoint3d>           m_meshPositions;
+    bvector<uint32_t>           m_meshIndexCountBuffer;
+    bvector<uint32_t>           m_meshIndexOffsetBuffer;
+    ByteStream                  m_featureBinary;
+    ByteStream                  m_batchIdsBuffer;
+    VectorPosition              m_lastPosition;
+    DRange3d                    m_range;
+    uint32_t                    m_nextMeshPointIndex;
+    T_PointMap                  m_meshPointMap;
+
+    static constexpr double     s_pointTolerance = 1.0E-6;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void addVectorPosition(ByteStream& positionsX, ByteStream& positionsY, DPoint3dCR point, VectorPosition& lastPosition, DRange3dCR range)
-    {
-    VectorPosition     thisPosition(point, range);
+ClassifierTileWriter(DRange3dCR range) : m_range(range), m_meshPointMap(TileUtil::PointComparator(s_pointTolerance)), m_nextMeshPointIndex(0)
+    { 
+    m_featureTable["RTC_CENTER"][0] = 0.0; m_featureTable["RTC_CENTER"][1] = 0.0; m_featureTable["RTC_CENTER"][2] = 0.0;
+    m_featureTable["MINIMUM_HEIGHT"] = -1000.0;
+    m_featureTable["MAXIMUM_HEIGHT"] =  1000.0;
+    m_featureTable["FORMAT"] = 1;  // Cartesian coordinates.
 
-    positionsX.Append(zigZagEncode(thisPosition.m_x - lastPosition.m_x));
-    positionsY.Append(zigZagEncode(thisPosition.m_y - lastPosition.m_y));
-
-    lastPosition = thisPosition;
+    auto& rectangle     = m_featureTable["RECTANGLE"];
+    rectangle[0]  = range.low.x;
+    rectangle[1]  = range.low.y;         
+    rectangle[2]  = range.high.x;
+    rectangle[3]  = range.high.y;
     }
 
 /*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley   06/2017
+* @bsimethod                                                    Ray.Bentley   08/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void addVectorPolygons (Json::Value& json, ByteStream& positionsX, ByteStream& positionsY, ByteStream& indices, ByteStream& featureBinary, TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR tileRange)
+PolyfaceHeaderPtr   BuildPolyfaceFromTriangles(bvector<DPoint3d> const& meshPoints, bvector<TileTriangle> const& triangles)
     {
-    uint32_t            polygonCount =0;
-    ByteStream          polygonIndexCountBuffer, batchIdsBuffer;
-    VectorPosition      lastPosition;
+    PolyfaceHeaderPtr           polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    PolyfaceCoordinateMapPtr    coordinateMap = PolyfaceCoordinateMap::Create(*polyface);    
 
-//#define MERGE_TRIANGLES
-    // Merging polygons seems like a good idea but the createTileFromVertices workers asssumes the vertices are ordered around the perimeter of polygons.
-#ifndef MERGE_TRIANGLES
     for (auto& triangle : triangles)
         {
+        int32_t         indices[3];
+
         for (size_t i=0; i<3; i++)
             {
-            indices.Append((uint32_t) (positionsX.size()/sizeof(uint16_t)));
-            addVectorPosition(positionsX, positionsY, mesh.Points().at(triangle.m_indices[i]), lastPosition, tileRange);
+            indices[i] = 1 + coordinateMap->AddPoint(meshPoints[triangle.m_indices[i]]);
+            if (!triangle.m_edgeVisible[i])
+                indices[i] = -indices[i];
             }
-        batchIdsBuffer.Append(mesh.Attributes().at(triangle.m_indices[0]));
-        featureBinary.Append((uint32_t) 3);
-        polygonIndexCountBuffer.Append((uint32_t) 3);
-        polygonCount++;
+
+        polyface->AddIndexedFacet(3, indices);
         }
+    return polyface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PolyfaceHeaderPtr   BuildPolyfaceFromPolylines(DVec3dR normal, bvector<DPoint3d> const& meshPoints, bvector<TilePolyline> const& polylines, double expandDistance)
+    {
+    PolyfaceHeaderPtr           polyface = PolyfaceHeader::CreateVariableSizeIndexed();
+    PolyfaceCoordinateMapPtr    coordinateMap = PolyfaceCoordinateMap::Create(*polyface);   
+    bvector<DPoint3d>           points;
+    DPoint3d                    origin;
+    static constexpr double     s_tolerance = 1.0E-5;
+    static constexpr double     s_maxMiterDot = .75;
+
+    for (auto& polyline : polylines)
+        for (auto& index : polyline.m_indices)
+            points.push_back (meshPoints[index]);
+
+    if (!bsiGeom_planeThroughPointsTol(&normal, &origin, points.data(), points.size(), s_tolerance))
+        normal = DVec3d::From(0.0, 0.0, 1.0);
+    else
+        normal.Normalize();
+
+    for (auto& polyline : polylines)
+        {
+        size_t  segmentCount = polyline.m_indices.size()-1;
+
+        for (size_t i=0; i<segmentCount; i++)
+            {
+            DPoint3d    start = meshPoints[polyline.m_indices[i]],
+                        end = meshPoints[polyline.m_indices[i+1]];
+            DVec3d      delta = DVec3d::FromStartEnd(start, end);
+            DVec3d      perp = DVec3d::FromCrossProduct(normal, delta);
+                                                                                                                                                                                                                                                                                                                    
+            int32_t     indices0[3], indices1[3];
+            if (perp.Normalize() < s_tolerance ||
+                delta.Normalize() < s_tolerance)
+                continue;
+
+            DVec3d      perp0 = perp, perp1 = perp;
+            double      distance0 = expandDistance, distance1 = expandDistance;
+
+            if (i > 0)
+                {
+                DVec3d      dir = delta, prevDir = DVec3d::FromStartEndNormalize(start, meshPoints[polyline.m_indices[i-1]]);
+                double      dot = prevDir.DotProduct(dir);
+
+                if (dot > -.9999 && dot < s_maxMiterDot)
+                    {
+                    perp0.Normalize(DVec3d::FromSumOf(dir, prevDir));
+                    distance0 /= perp0.DotProduct(perp);
+                    }
+                }
+            if (i < segmentCount - 1)
+                {
+                DVec3d      dir = delta, nextDir = DVec3d::FromStartEndNormalize(end, meshPoints[polyline.m_indices[i+2]]);
+                dir.Negate();
+                double      dot = nextDir.DotProduct(dir);
+
+                if (dot > -.9999 && dot < s_maxMiterDot)
+                    {
+                    perp1.Normalize(DVec3d::FromSumOf(dir, nextDir));
+                    distance1 /= perp1.DotProduct(perp);
+                    }
+                }
+
     
-#else
-    // Need to process all triangles that have the same attribute value as a single "polygon".
-    bmap <uint16_t, bvector<TileTriangle const*>> triangleMap;
+            indices0[0]               = 1 + coordinateMap->AddPoint(DPoint3d::FromSumOf(start, perp0, -distance0));
+            indices0[2] = indices1[0] = 1 + coordinateMap->AddPoint(DPoint3d::FromSumOf(start, perp0,  distance0));
+            indices0[1] = indices1[1] = 1 + coordinateMap->AddPoint(DPoint3d::FromSumOf(end,   perp1, -distance1));
+            indices1[2]               = 1 + coordinateMap->AddPoint(DPoint3d::FromSumOf(end,   perp1,  distance1));
+
+            polyface->AddIndexedFacet(3, indices0);
+            polyface->AddIndexedFacet(3, indices1);
+            }
+        }
+
+    return polyface;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsSolid(bvector<TileTriangle> const& triangles) 
+    {
+    for (auto& triangle : triangles)
+        if (!triangle.IsSingleSided())
+            return false;
+
+    return true;
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool IsPolygon(DVec3dR normal, bvector<TileTriangle> const& triangles, TileMeshCR mesh) 
+    {
+    bvector<uint32_t>       indices;
+    bool                    first = true;
+    bvector<DPoint3d>       solidPoints;
+    bvector<TileTriangle>   solidTriangles;
+
+    for (auto& triangle : triangles)
+        {
+        DVec3d  triangleNormal = mesh.GetTriangleNormal(triangle);
+        if (first)
+            {
+            normal = triangleNormal;
+            }
+        else if (!normal.IsParallelTo(triangleNormal))
+            {
+            return false;
+            }
+        }
+    return true;
+    }
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AddClosedMesh(PolyfaceHeaderR polyface, double expandDistance, uint16_t batchId)
+    {
+    if (0.0 != expandDistance)
+        {
+        PolyfaceHeaderPtr           offsetPolyface = polyface.ComputeOffset(PolyfaceHeader::OffsetOptions(), expandDistance, 0.0, true, false, false);
+        if (offsetPolyface.IsValid())
+            {
+            AddClosedMesh(*offsetPolyface, 0.0, batchId);
+            return;
+            }
+        else
+            {
+            BeAssert(false && "classifier offset error");
+            }
+        }
+
+    size_t      initialIndexSize = m_meshIndices.size();
+    for (PolyfaceVisitorPtr visitor = PolyfaceVisitor::Attach(polyface); visitor->AdvanceToNextFace(); )
+        for (size_t i=0; i<3; i++)
+            m_meshIndices.push_back(m_meshPositions.size() + (uint32_t) visitor->GetClientPointIndexCP()[i]);
+
+    for (size_t i=0; i<polyface.GetPointCount(); i++)
+        m_meshPositions.push_back(FPoint3d::From(polyface.GetPointCP()[i]));
+
+    uint32_t      indexCount = m_meshIndices.size() - initialIndexSize;
+    m_batchIdsBuffer.Append((uint16_t)(batchId /* Subtract 1 to produce zero based batchIds - workaround this dependence in vector tiles */ - 1));
+    m_meshIndexCountBuffer.push_back(indexCount);
+    m_featureBinary.Append(indexCount);
+    }
+
+    
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void    AddExtrudedPolygon(PolyfaceHeaderR polyface, DVec3d normal, DRange3dCR classifiedRange, double expandDistance, uint16_t batchId)
+    {
+    DRay3d              ray = DRay3d::FromOriginAndVector(*polyface.GetPointCP(), normal);
+    DRange1d            classifiedProjection = classifiedRange.GetCornerRange(ray);
+    PolyfaceHeaderPtr   offsetPolyface = polyface.ComputeOffset(PolyfaceHeader::OffsetOptions(), classifiedProjection.high, classifiedProjection.low);
+
+    if (offsetPolyface.IsValid())
+        {
+        offsetPolyface->Triangulate();
+        AddClosedMesh(*offsetPolyface, expandDistance, batchId);
+        }
+    else
+        BeAssert(false && "classifier offset error");
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddMeshes (TileMeshCR mesh, bvector<TileTriangle> const& triangles, DRange3dCR classifiedRange, double expandDistance)
+    {
+    // Need to process all triangles that have the same attribute value as a single "mesh".
+    bmap <uint16_t, bvector<TileTriangle>> triangleMap;
     
     for (auto& triangle : triangles)
         {
-        bvector<TileTriangle const*>   triangleVector(1, &triangle);
+        bvector<TileTriangle>   triangleVector(1, triangle);
 
         auto    insertPair = triangleMap.Insert(mesh.Attributes().at(triangle.m_indices[0]), triangleVector);
 
         if (!insertPair.second)
-            insertPair.first->second.push_back(&triangle);
-        }
-
-    for (auto& curr : triangleMap)
-        {
-        bmap    <uint32_t, uint32_t>    indexMap;
-        uint32_t                        thisPolygonPointCount = 0, thisPolygonIndexCount = 0;
-
-        for (auto& triangle : curr.second)
-            {
-            for (size_t i=0; i<3; i++)
-                {
-                uint32_t    triangleIndex = triangle->m_indices[i], outIndex  = positionsX.size()/sizeof(uint16_t);
-                auto        insertPair = indexMap.Insert(triangleIndex, outIndex);
-
-                if (insertPair.second)  
-                    {
-                    thisPolygonPointCount++;
-                    addVectorPosition(positionsX, positionsY, mesh.Points().at(triangleIndex), lastPosition, tileRange);
-                    }
-                else
-                    {
-                    outIndex = insertPair.first->second;
-                    }
-
-                thisPolygonIndexCount++;
-                indices.Append(outIndex);
-                }
-            }
-        batchIdsBuffer.Append(curr.first);
-        featureBinary.Append(thisPolygonPointCount);
-        polygonIndexCountBuffer.Append(thisPolygonIndexCount);
-        polygonCount++;
-        }
-#endif
-    json["POLYGONS_LENGTH"] = polygonCount;
-    json["POLYGON_COUNT"]["byteOffset"] = 0;
-    json["POLYGON_INDEX_COUNT"]["byteOffset"] = featureBinary.size();
-    featureBinary.Append(polygonIndexCountBuffer.data(), polygonIndexCountBuffer.size());
-    json["POLYGON_BATCH_IDS"]["byteOffset"] = featureBinary.size();
-    featureBinary.Append(batchIdsBuffer.data(), batchIdsBuffer.size());
-    padTo4ByteBoundary(featureBinary);
-    }
-
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley   06/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-void addVectorPolylinesAndPoints (Json::Value& json, ByteStream& polylinePositionsX, ByteStream& polylinePositionsY, ByteStream& polylineIndices, ByteStream& pointPositionsX, ByteStream& pointPositionsY, ByteStream& featureBinary, TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRange3dCR tileRange)
-    {
-    uint32_t            polylineCount =0;
-    ByteStream          polylineIndexCountBuffer, batchIdsBuffer;
-    VectorPosition      lastPosition;
-
-    for (auto& polyline : polylines)
-        {
-        for (auto& index : polyline.m_indices)
-            {
-            polylineIndices.Append((uint32_t) (polylinePositionsX.size()/sizeof(uint16_t)));
-            addVectorPosition(polylinePositionsX, polylinePositionsY, mesh.Points().at(index), lastPosition, tileRange);
-            }
-        batchIdsBuffer.Append(mesh.Attributes().at(polyline.m_indices[0]));
-        featureBinary.Append((uint32_t) polyline.m_indices.size());
-        polylineIndexCountBuffer.Append((uint32_t) polyline.m_indices.size());
-        polylineCount++;
+            insertPair.first->second.push_back(triangle);
         }
     
-    json["POLYLINES_LENGTH"] = polylineCount;
-    json["POLYLINE_COUNT"]["byteOffset"] = 0;
-    json["POLYLINE_INDEX_COUNT"]["byteOffset"] = featureBinary.size();
-    featureBinary.Append(polylineIndexCountBuffer.data(), polylineIndexCountBuffer.size());
-    json["POLYLINE_BATCH_IDS"]["byteOffset"] = featureBinary.size();
-    featureBinary.Append(batchIdsBuffer.data(), batchIdsBuffer.size());
-    padTo4ByteBoundary(featureBinary);
+    for (auto& curr : triangleMap)
+        {
+        uint16_t                batchId = curr.first;
+        PolyfaceHeaderPtr       polyface = BuildPolyfaceFromTriangles(mesh.Points(), curr.second);
+        DVec3d                  polygonNormal;
+
+        m_meshIndexOffsetBuffer.push_back(m_meshIndices.size());
+
+        if (IsSolid(curr.second))
+            AddClosedMesh(*polyface, expandDistance, batchId);
+        else if (IsPolygon(polygonNormal, curr.second, mesh))
+            AddExtrudedPolygon(*polyface, polygonNormal, classifiedRange, expandDistance, batchId);
+        else
+            BeAssert (false && "invalid classifier geometry");
+        }
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+void AddPolylines (TileMeshCR mesh, bvector<TilePolyline> const& polylines, DRange3dCR classifiedRange, double expandDistance)
+    {
+    // Need to process all polylines that have the same attribute value as a single "mesh".
+    bmap <uint16_t, bvector<TilePolyline>> polylineMap;
+    
+    for (auto& polyline : polylines)
+        {
+        bvector<TilePolyline>   polylineVector(1, polyline);
+
+        auto    insertPair = polylineMap.Insert(mesh.Attributes().at(polyline.m_indices[0]), polylineVector);
+
+        if (!insertPair.second)
+            insertPair.first->second.push_back(polyline);
+        }
+    
+    for (auto& curr : polylineMap)
+        {
+        uint16_t                batchId = curr.first;
+        DVec3d                  polylineNormal;
+        PolyfaceHeaderPtr       polyface = BuildPolyfaceFromPolylines(polylineNormal, mesh.Points(), curr.second, expandDistance);
+
+        m_meshIndexOffsetBuffer.push_back(m_meshIndices.size());
+
+        AddExtrudedPolygon(*polyface, polylineNormal, classifiedRange, 0.0, batchId);
+        }
     }
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley   06/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
-void TilePublisher::WriteVector(std::FILE* outputFile, PublishableTileGeometryR geometry)
+void Write(std::FILE* outputFile, TileNodeCR tile, DgnDbR db)
     {
-    Json::Value         json;
-    ByteStream          polygonIndices, polylineIndices, polygonPositionsX, polygonPositionsY, polylinePositionsX, polylinePositionsY, pointPositionsX, pointPositionsY, featureTableBinary;
+    FeatureAttributesMap    featureAttributes = tile.GetAttributes();
+    FeatureAttributes       undefined;
 
-    json["RTC_CENTER"][0] = 0.0; json["RTC_CENTER"][1] = 0.0; json["RTC_CENTER"][2] = 0.0;
-    json["MINIMUM_HEIGHT"] = -1000.0;
-    json["MAXIMUM_HEIGHT"] =  1000.0;
-    json["FORMAT"] = 1;  // Cartesian coordinates.
+    m_featureTable["MESHES_LENGTH"] = m_meshIndexCountBuffer.size();
+    m_featureTable["MESH_POSITION_COUNT"] = m_meshPositions.size();
+    m_featureTable["MESHES_COUNT"]["byteOffset"] = 0;
+    m_featureTable["MESH_INDEX_COUNTS"]["byteOffset"] = m_featureBinary.size();
+    m_featureBinary.Append((uint8_t const*) m_meshIndexCountBuffer.data(), m_meshIndexCountBuffer.size()*sizeof(uint32_t));
+    m_featureTable["MESH_INDEX_OFFSETS"]["byteOffset"] = m_featureBinary.size();
+    m_featureBinary.Append((uint8_t const*) m_meshIndexOffsetBuffer.data(), m_meshIndexOffsetBuffer.size()*sizeof(uint32_t));
+    m_featureTable["MESH_BATCH_IDS"]["byteOffset"] = m_featureBinary.size();
+    m_featureBinary.Append(m_batchIdsBuffer.data(), m_batchIdsBuffer.size());
+    
+    padTo4ByteBoundary(m_featureBinary);
 
-    DRange3d            contentRange = DRange3d::NullRange();
+    featureAttributes.RemoveUndefined();
 
-    for (auto& mesh : geometry.Meshes())
-        contentRange.Extend(mesh->Points());
-
-    auto& rectangle     = json["RECTANGLE"];
-    rectangle[0]  = contentRange.low.x;
-    rectangle[1]  = contentRange.low.y;         
-    rectangle[2]  = contentRange.high.x;
-    rectangle[3]  = contentRange.high.y;
-
-    BeAssert (geometry.PointClouds().empty() && geometry.Parts().empty());
-    for (auto& mesh : geometry.Meshes())
-        {
-        if (!mesh->Triangles().empty())
-            addVectorPolygons(json, polygonPositionsX, polygonPositionsY, polygonIndices, featureTableBinary, *mesh, mesh->Triangles(), contentRange);
-
-#ifdef POLYLINE_SUPPORT
-        if (!mesh->Polylines().empty())
-            addVectorPolylinesAndPoints (json, polylinePositionsX, polylinePositionsY, polylineIndices, pointPositionsX, pointPositionsY, featureTableBinary, *mesh, mesh->Polylines(), contentRange);
-#endif
-        }
-
-    BatchTableBuilder   batchTableBuilder(m_tile.GetAttributes(), m_context.GetDgnDb(), m_tile.GetModel().Is3d());
+    BatchTableBuilder   batchTableBuilder(featureAttributes, db, tile.GetModel().Is3d(), true);
     Utf8String          batchTableStr = batchTableBuilder.ToString(), 
-                        featureTableStr = getJsonString(json);
+                        featureTableStr = getJsonString(m_featureTable);
 
     long    startPosition = ftell (outputFile);
     std::fwrite(s_vectorMagic, 1, 4, outputFile);
     FWriteValue(s_vectorVersion, outputFile);
     long    lengthDataPosition = ftell(outputFile);
     FWriteValue((uint32_t) 0, outputFile);    // Filled in below.
-    FWriteValue((uint32_t) featureTableStr.size(), outputFile);
-    FWriteValue((uint32_t) featureTableBinary.size(), outputFile);   // No binary feature data.
-    FWriteValue((uint32_t) batchTableStr.size(), outputFile);
-    FWriteValue((uint32_t) 0, outputFile);  // No binary batch data.
-    FWriteValue((uint32_t) polygonIndices.size(), outputFile);
-    FWriteValue((uint32_t) (2*polygonPositionsX.size()), outputFile);
-    FWriteValue((uint32_t) (2*polylinePositionsX.size()), outputFile);
-    FWriteValue((uint32_t) (2*pointPositionsX.size()), outputFile);
-    FWrite(featureTableStr, outputFile);
-    FWrite(featureTableBinary, outputFile);
-    FWrite(batchTableStr, outputFile);
-    FWrite(polygonIndices, outputFile);
-    FWrite(polylineIndices, outputFile);
-    FWrite(polygonPositionsX, outputFile);
-    FWrite(polygonPositionsY, outputFile);
-    FWrite(polylinePositionsX, outputFile);
-    FWrite(polylinePositionsY, outputFile);
-    FWrite(pointPositionsX, outputFile);
-    FWrite(pointPositionsY, outputFile);
+    FWriteValue((uint32_t) featureTableStr.size(), outputFile);                                                                 // Feature table Json.
+    FWriteValue((uint32_t) m_featureBinary.size(), outputFile);                                                                 // Feature Table binary.
+    FWriteValue((uint32_t) batchTableStr.size(), outputFile);                                                                   // Batch table Json.
+    FWriteValue((uint32_t) 0, outputFile);                                                                                      // No binary batch data.
+    FWriteValue((uint32_t) (m_meshIndices.size() * sizeof(uint32_t)), outputFile);                                              // Indices byte length.
+    FWriteValue((uint32_t) (m_meshPositions.size() * sizeof(FPoint3d)), outputFile);                                            // Positions byte length.
+    FWriteValue((uint32_t) 0, outputFile);                                                                                      // No polygons positions.
+    FWriteValue((uint32_t) 0, outputFile);                                                                                      // No point positions.
+    FWrite(featureTableStr, outputFile);                                                                                        // Feature table Json.
+    FWrite(m_featureBinary, outputFile);                                                                                        // Feature table binary.
+    FWrite(batchTableStr, outputFile);                                                                                          // Batch table Json.
+    FWrite(m_meshIndices, outputFile);
+    FWrite(m_meshPositions, outputFile);
 
     uint32_t    dataSize = static_cast<uint32_t> (ftell(outputFile) - startPosition);
     std::fseek(outputFile, lengthDataPosition, SEEK_SET);
     FWriteValue(dataSize, outputFile);
     std::fseek(outputFile, 0, SEEK_END);
+    }
+
+};  // ClassifierTileWriter
+
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley   06/2017                                                                                                                                                    d
++---------------+---------------+---------------+---------------+---------------+------*/
+void TilePublisher::WriteClassifier(std::FILE* outputFile, PublishableTileGeometryR geometry, ModelSpatialClassifierCR classifier, DRange3dCR classifiedRange)
+    {
+    DRange3d        contentRange = DRange3d::NullRange();
+
+    for (auto& mesh : geometry.Meshes())
+        contentRange.Extend(mesh->Points());
+
+    ClassifierTileWriter      writer(contentRange);
+
+    for (auto& mesh : geometry.Meshes())
+        {
+        if (!mesh->Triangles().empty())
+            writer.AddMeshes(*mesh, mesh->Triangles(), classifiedRange, classifier.ExpandDistance());
+
+        if (!mesh->Polylines().empty())
+            writer.AddPolylines(*mesh, mesh->Polylines(), classifiedRange, classifier.ExpandDistance());
+        }
+    writer.Write(outputFile, m_tile, m_context.GetDgnDb());
 
     m_tile.SetPublishedRange (contentRange);
     }
@@ -3011,7 +3204,7 @@ bool PublisherContext::IsGeolocated () const
 * @bsimethod                                                    Paul.Connelly   08/16
 +---------------+---------------+---------------+---------------+---------------+------*/
 PublisherContext::PublisherContext(DgnDbR db, DgnViewIdSet const& viewIds, BeFileNameCR outputDir, WStringCR tilesetName,  GeoPointCP geoLocation, bool publishSurfacesOnly, size_t maxTilesetDepth, TextureMode textureMode)
-    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_textureMode(textureMode), m_publishAsClassifier(false)
+    : m_db(db), m_viewIds(viewIds), m_outputDir(outputDir), m_rootName(tilesetName), m_publishSurfacesOnly (publishSurfacesOnly), m_maxTilesetDepth (maxTilesetDepth), m_textureMode(textureMode), m_generationFilter(nullptr), m_currentClassifier(nullptr)
     {
         {
         // Put the scripts dir + html files in outputDir. Put the tiles in a subdirectory thereof.
@@ -3193,7 +3386,7 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
         return;
         }
 
-    WString         rootName = TileUtil::GetRootNameForModel(tile.GetModel().GetModelId(), m_publishAsClassifier);
+    WString         rootName = GetRootName (tile.GetModel().GetModelId(), GetCurrentClassifier());
     DRange3d        contentRange, publishedRange = tile.GetPublishedRange();
 
     // If we are publishing standalone datasets then the tiles are all published before we write the metadata tree.
@@ -3268,7 +3461,7 @@ void PublisherContext::WriteModelMetadataTree (DRange3dR range, Json::Value& roo
 
     if (!contentRange.IsNull() && !tile.GetIsEmpty())
         {
-        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, GetTileExtension(tile).c_str(), m_publishAsClassifier));
+        root[JSON_Content]["url"] = Utf8String(GetTileUrl(tile, GetTileExtension(tile).c_str(), GetCurrentClassifier()));
         TilePublisher::WriteBoundingVolume (root[JSON_Content], contentRange);
         }
     }
@@ -3357,7 +3550,7 @@ BeFileName PublisherContext::GetDataDirForModel(DgnModelCR model, WStringP pTile
     WString tmpTilesetName;
     WStringR tilesetName = nullptr != pTilesetName ? *pTilesetName : tmpTilesetName;
 
-    tilesetName = TileUtil::GetRootNameForModel(model.GetModelId(), m_publishAsClassifier);
+    tilesetName = GetRootName (model.GetModelId(), GetCurrentClassifier());
 
     BeFileName dataDir = m_dataDir;
     dataDir.AppendToPath(tilesetName.c_str());                                                                                
@@ -3409,7 +3602,7 @@ void    PublisherContext::GetViewedModelsFromView (DgnModelIdSet& viewedModels, 
             AddViewedModel (viewedModels, modelId);
         }
     }
-
+static size_t           s_maxPointsPerTile = 250000;
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     08/2016
@@ -3421,7 +3614,6 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
     for (auto const& viewId : m_viewIds)
         GetViewedModelsFromView (viewedModels, viewId);
 
-    static size_t           s_maxPointsPerTile = 250000;
     auto status = generator.GenerateTiles(*this, viewedModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
     if (TileGeneratorStatus::Success != status)
         return ConvertStatus(status);
@@ -3432,34 +3624,105 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
         // ###TODO: Invert if already ECEF...
         rootRange.Extend(kvp.second.m_range);
         }
+    return PublishClassifiers(viewedModels, generator, toleranceInMeters, progressMeter);
+    }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2016
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status   PublisherContext::PublishClassifiers (DgnModelIdSet const& viewedModels, TileGeneratorR generator, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
+    {
+    uint32_t    index = 0;
+    Status      status = Status::Success;
 
 #if defined(TODO_TILE_PUBLISH)
     for (auto& modelId : viewedModels)
         {
+        auto const&                 foundRange = m_modelRanges.find(modelId);
+
+        if (foundRange == m_modelRanges.end())
+            continue;
+
         auto                        getTileTree = dynamic_cast<IGetTileTreeForPublishing*>(GetDgnDb().Models().GetModel(modelId).get());
         ModelSpatialClassifiers     classifiers;
 
         if (nullptr != getTileTree && 
-            SUCCESS == getTileTree->_GetSpatialClassifiers(classifiers))
+            SUCCESS == getTileTree->_GetSpatialClassifiers(classifiers) &&
+            !classifiers.empty())
             {
-            for (auto& classifier : classifiers)
-                classifierModels.insert(classifier.GetModelId());
+            T_ClassifierInfos       classifierInfos;
 
-            m_classifierMap.Insert(modelId, classifiers);
+            for (auto& classifier : classifiers)
+                {
+                Status                  thisStatus;
+                ClassifierInfo          classifierInfo(classifier, foundRange->second, index++);
+
+                if (Status::Success != (thisStatus = PublishClassifier (classifierInfo,  generator, toleranceInMeters, progressMeter)))
+                    status = thisStatus;
+
+                classifierInfos.push_back(classifierInfo);
+                }
+            m_classifierMap[modelId] = classifierInfos;
             }
         }
 #endif
+    return status;
+    }
 
-    if (!classifierModels.empty())
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+WString PublisherContext::GetRootName (DgnModelId modelId, ClassifierInfo const* classifier) const
+    {
+    return (nullptr == classifier) ? TileUtil::GetRootNameForModel(modelId, false) : classifier->GetRootName();
+    }
+
+//=======================================================================================
+// @bsistruct                                                   Ray>Bentley     08/2017
+//=======================================================================================
+struct ClassifierFilter : ITileGenerationFilter
+{
+
+    DgnDbR                  m_db;
+    ModelSpatialClassifier  m_classifier;
+
+    ClassifierFilter(ModelSpatialClassifier const& classifier, DgnDbR db) : m_classifier(classifier), m_db(db) { }
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+virtual bool _AcceptElement(DgnElementId elementId, TileDisplayParamsCR displayParams) const override
+    {
+    switch (m_classifier.GetType())
         {
-        AutoRestore<bool> savePublishAsVectors (&m_publishAsClassifier, true);
+        case ModelSpatialClassifier::TYPE_Model:
+            return true;
 
-        auto status = generator.GenerateTiles(*this, classifierModels, toleranceInMeters, surfacesOnly, s_maxPointsPerTile);
-        if (TileGeneratorStatus::Success != status)
-            return ConvertStatus(status);
+        case ModelSpatialClassifier::TYPE_Category:
+            return displayParams.GetCategoryId() == m_classifier.GetCategoryId();
+        
+        default:
+            BeAssert(false);
+            return true;
         }
+    }
+    
 
-    return Status::Success;
+};  // ClasssifierFilter
+
+/*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     08/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+PublisherContext::Status   PublisherContext::PublishClassifier(ClassifierInfo& classifierInfo, TileGeneratorR generator, double toleranceInMeters, ITileGenerationProgressMonitorR progressMeter)
+    {
+    ClassifierFilter                    classifierFilter(classifierInfo.m_classifier, GetDgnDb());
+    AutoRestore<ITileGenerationFilter*> saveGenerationFilter(&m_generationFilter, &classifierFilter);
+    AutoRestore<ClassifierInfo*>        saveCurrentClassifier(&m_currentClassifier, &classifierInfo);
+    DgnModelIdSet                       singleClassifierModelIdSet;
+
+    singleClassifierModelIdSet.insert(classifierInfo.m_classifier.GetModelId());
+    
+    return ConvertStatus(generator.GenerateTiles(*this, singleClassifierModelIdSet, toleranceInMeters, false, s_maxPointsPerTile));
     }
 
 /*---------------------------------------------------------------------------------**//**
@@ -3467,23 +3730,23 @@ PublisherContext::Status   PublisherContext::PublishViewModels (TileGeneratorR g
 +---------------+---------------+---------------+---------------+---------------+------*/
 BeFileName PublisherContext::GetTilesetFileName(DgnModelId modelId)
     {
-    return BeFileName(nullptr, m_dataDir.c_str(), TileUtil::GetRootNameForModel(modelId, m_publishAsClassifier).c_str(), s_metadataExtension);
+    return BeFileName(nullptr, m_dataDir.c_str(), GetRootName(modelId, GetCurrentClassifier()).c_str(), s_metadataExtension);
     }
 
 
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     09/2016
 +---------------+---------------+---------------+---------------+---------------+------*/
-Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, bool asClassifier)
+Utf8String  PublisherContext::GetTilesetName(DgnModelId modelId, ClassifierInfo const* classifier)
     {
-    if (!asClassifier)
+    if (nullptr == classifier)
         {
         auto urlIter = m_directUrls.find(modelId);
         if (m_directUrls.end() != urlIter)
             return urlIter->second;
         }
 
-    WString         modelRootName = TileUtil::GetRootNameForModel(modelId, asClassifier);
+    WString         modelRootName = GetRootName(modelId, classifier);
     BeFileName      tilesetFileName (nullptr, m_rootName.c_str(), modelRootName.c_str(), s_metadataExtension);
     auto            utf8FileName = tilesetFileName.GetNameUtf8();
 
@@ -3607,6 +3870,7 @@ void PublisherContext::GetViewJson(Json::Value& json, ViewDefinitionCR view, Tra
 
     json["name"] = view.GetName();
     json["categorySelector"] = view.GetCategorySelectorId().ToString();
+    
     json["displayStyle"] = view.GetDisplayStyleId().ToString();
 
     DPoint3d viewOrigin = view.GetOrigin();
@@ -3668,7 +3932,7 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
         }
 
     DgnElementIdSet allModelSelectors;
-    DgnElementIdSet allCategorySelectors;
+    T_CategorySelectorMap allCategorySelectors;
     DgnElementIdSet allDisplayStyles;
     DgnModelIdSet   all2dModelIds;
 
@@ -3702,7 +3966,9 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
                 auto   attachedViews = model->ToSheetModel()->GetSheetAttachmentViews(GetDgnDb());
                 for (auto& attachedView : attachedViews)
                     {
-                    allCategorySelectors.insert(attachedView->GetCategorySelectorId());
+                    auto    insertPair = allCategorySelectors.Insert(attachedView->GetCategorySelectorId(), T_ViewDefs());
+                    insertPair.first->second.push_back(attachedView);
+
                     allDisplayStyles.insert(attachedView->GetDisplayStyleId());
                     if (nullptr != attachedView->ToView2d())
                         all2dModelIds.insert(attachedView->ToView2d()->GetBaseModelId());
@@ -3712,7 +3978,10 @@ PublisherContext::Status PublisherContext::GetViewsetJson(Json::Value& json, DPo
 
         Json::Value entry(Json::objectValue);
  
-        allCategorySelectors.insert(viewDefinition->GetCategorySelectorId());
+        bvector<ViewDefinitionCPtr>  viewDefs;
+        auto insertPair = allCategorySelectors.Insert(viewDefinition->GetCategorySelectorId(), viewDefs);
+        insertPair.first->second.push_back(viewDefinition);
+
         allDisplayStyles.insert(viewDefinition->GetDisplayStyleId());
 
         GetViewJson(entry, *viewDefinition, nullptr != spatialView ? spatialTransform : Transform::FromIdentity());
@@ -3770,23 +4039,7 @@ void PublisherContext::WriteModelsJson(Json::Value& json, DgnElementIdSet const&
     json["classifiers"] = GetAllClassifiersJson();
     }
 
-/*---------------------------------------------------------------------------------**//**
-* @bsimethod                                                    Ray.Bentley     07/2017
-+---------------+---------------+---------------+---------------+---------------+------*/
-Json::Value PublisherContext::GetClassifiersJson(ModelSpatialClassifiersCR classifiers)
-    {
-    Json::Value classifiersValue = Json::arrayValue;
 
-    for (auto& classifier : classifiers)
-        {
-        Json::Value     classifierValue = classifier.ToJson();
-
-        classifierValue["tilesetUrl"] = GetTilesetName(classifier.GetModelId(), true);
-
-        classifiersValue.append(classifierValue);
-        }
-    return classifiersValue;
-    }
 /*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Ray.Bentley     07/2017
 +---------------+---------------+---------------+---------------+---------------+------*/
@@ -3797,33 +4050,73 @@ Json::Value PublisherContext::GetAllClassifiersJson()
     for (auto& curr : m_classifierMap)
         {
         size_t      index = 0;
-        for (auto& classifier : curr.second)
+        for (auto& classifierInfo : curr.second)
             {
+            auto&           classifier = classifierInfo.m_classifier;
             Json::Value     classifierValue = classifier.ToJson();
 
-            classifierValue["tilesetUrl"] = GetTilesetName(classifier.GetModelId(), true);
-
-            Utf8PrintfString    classifierId("%s_%d", classifier.GetModelId().ToString(), index++);
-            classifiersValue[classifierId] = classifierValue;
+            classifierValue["tilesetUrl"] = GetTilesetName(classifier.GetModelId(), &classifierInfo);
+            classifiersValue[Utf8String(classifierInfo.GetRootName())] = classifierValue;
             }
         }
     return classifiersValue;
     }
 
 /*---------------------------------------------------------------------------------**//**
+* @bsimethod                                                    Ray.Bentley     07/2017
++---------------+---------------+---------------+---------------+---------------+------*/
+bool PublisherContext::CategoryOnInAnyView(DgnCategoryId categoryId, PublisherContext::T_ViewDefs views) const
+    {
+    auto const& category = DgnCategory::Get(GetDgnDb(), categoryId);
+
+    if (!category.IsValid())
+        return false;
+
+    auto            subCategories = category->MakeSubCategoryIterator();
+    bool            anySubCategories = false, anySubCategoriesOn = false;
+    auto            subCategoryIds = subCategories.BuildIdSet<DgnSubCategoryId>();
+    auto            name = category->GetCategoryName();
+
+    for (auto& subCategoryId : subCategoryIds)
+        {
+        auto const& subcategory = DgnSubCategory::Get(GetDgnDb(), subCategoryId);
+        auto        subName = subcategory->GetSubCategoryName();
+
+        anySubCategories = true;
+        
+        for (auto& view : views)
+            {
+            ViewControllerPtr viewController = view->LoadViewController();
+
+            if (IsSubCategoryUsed(subCategoryId) && !viewController->GetSubCategoryAppearance(subCategoryId).IsInvisible())
+                anySubCategoriesOn = true;
+            }
+        }
+    return !anySubCategories || anySubCategoriesOn;
+    }
+
+/*---------------------------------------------------------------------------------**//**
 * @bsimethod                                                    Paul.Connelly   10/16
 +---------------+---------------+---------------+---------------+---------------+------*/
-void PublisherContext::WriteCategoriesJson(Json::Value& json, DgnElementIdSet const& selectorIds)
+void PublisherContext::WriteCategoriesJson(Json::Value& json, T_CategorySelectorMap const& selectorIds)
     {
-    DgnCategoryIdSet allCategories;                                                                                                                      
-    Json::Value& selectorsJson = (json["categorySelectors"] = Json::objectValue);
+    DgnCategoryIdSet    allCategories;                                                                                                                      
+    Json::Value&        selectorsJson = (json["categorySelectors"] = Json::objectValue);
+
     for (auto const& selectorId : selectorIds)
         {
-        auto selector = GetDgnDb().Elements().Get<CategorySelector>(selectorId);
+        auto    selector = GetDgnDb().Elements().Get<CategorySelector>(selectorId.first);
+
         if (selector.IsValid())
             {
-            auto cats = selector->GetCategories();
-            selectorsJson[selectorId.ToString()] = IdSetToJson(cats);
+            auto                cats = selector->GetCategories();
+            DgnCategoryIdSet     onInAnyViewCats;
+
+            for (auto const& cat : cats)
+                if (CategoryOnInAnyView(cat, selectorId.second))
+                    onInAnyViewCats.insert(cat);
+
+            selectorsJson[selectorId.first.ToString()] = IdSetToJson(onInAnyViewCats);
             allCategories.insert(cats.begin(), cats.end());
             }
         }

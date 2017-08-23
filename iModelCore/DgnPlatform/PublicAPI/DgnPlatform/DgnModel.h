@@ -211,8 +211,7 @@ struct EXPORT_VTABLE_ATTRIBUTE DgnModel : RefCountedBase
     };
 
     BE_JSON_NAME(id)
-    BE_JSON_NAME(schemaName)
-    BE_JSON_NAME(className)
+    BE_JSON_NAME(classFullName)
     BE_JSON_NAME(parentModel)
     BE_JSON_NAME(modeledElement)
     BE_JSON_NAME(jsonProperties)

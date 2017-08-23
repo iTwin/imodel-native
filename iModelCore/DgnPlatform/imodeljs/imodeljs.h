@@ -9,7 +9,7 @@
 #pragma once
 #include <DgnPlatform/DgnPlatformApi.h>
 #include <DgnPlatform/DgnDb.h>
-#include <ECDb/ECdbApi.h>
+#include <ECDb/ECDbApi.h>
 
 BEGIN_BENTLEY_DGN_NAMESPACE
 
@@ -58,24 +58,27 @@ struct IModelJs
     static ECN::ECClassCP GetClassFromInstance(Utf8StringR errmsg, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static BeSQLite::EC::ECInstanceId GetInstanceIdFromInstance(Utf8StringR errmsg, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     static void InitLogging();
+    static Utf8String Int64ToHexString(int64_t value);
 
     DGNPLATFORM_EXPORT static void Initialize(BeFileNameCR);
     DGNPLATFORM_EXPORT static BentleyStatus OpenDgnDb(BeSQLite::DbResult&, Utf8StringR errmsg, DgnDbPtr&, BeFileNameCR dbname, DgnDb::OpenMode mode);
     DGNPLATFORM_EXPORT static BentleyStatus GetECClassMetaData(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Utf8CP schema, Utf8CP ecclass);
     DGNPLATFORM_EXPORT static BentleyStatus GetElement(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Json::Value const& inOpts);
+    DGNPLATFORM_EXPORT static BentleyStatus InsertElement(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Json::Value const& props);
     DGNPLATFORM_EXPORT static BentleyStatus GetModel(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Json::Value const& inOpts);
     DGNPLATFORM_EXPORT static BentleyStatus GetElementPropertiesForDisplay(DgnDbStatus&, Utf8StringR errmsg, JsonValueR results, DgnDbR db, Utf8CP id);
     
     DGNPLATFORM_EXPORT static JsECDbPtr CreateECDb(BeSQLite::DbResult& dbres, Utf8StringR errmsg, BeFileNameCR pathname);
     DGNPLATFORM_EXPORT static JsECDbPtr OpenECDb(BeSQLite::DbResult& dbres, Utf8StringR errmsg, BeFileNameCR pathname, BeSQLite::Db::OpenMode openMode);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ImportSchema(Utf8StringR errmsg, BeSQLite::EC::ECDbR ecdb, BeFileNameCR pathname);
-    DGNPLATFORM_EXPORT static BeSQLite::DbResult InsertInstance(Utf8StringR errmsg, BeSQLite::EC::ECInstanceId& insertedId, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
+    DGNPLATFORM_EXPORT static BeSQLite::DbResult InsertInstance(Utf8StringR errmsg, Utf8StringR insertedId, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult UpdateInstance(Utf8StringR errmsg, BeSQLite::EC::ECDbCR ecdb, JsonValueCR jsonInstance);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ReadInstance(Utf8StringR errmsg, JsonValueR jsonInstance, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult DeleteInstance(Utf8StringR errmsg, BeSQLite::EC::ECDbCR ecdb, JsonValueCR instanceKey);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ContainsInstance(Utf8StringR errmsg, bool& containsInstance, JsECDbR ecdb, JsonValueCR instanceKey);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ExecuteQuery(Utf8StringR errmsg, JsonValueR results, BeSQLite::EC::ECSqlStatement& stmt, JsonValueCR bindings);
     DGNPLATFORM_EXPORT static BeSQLite::DbResult ExecuteStatement(Utf8StringR errmsg, Utf8StringR instanceId, BeSQLite::EC::ECSqlStatement& stmt, bool isInsertStmt, JsonValueCR bindings);
+
 
     DGNPLATFORM_EXPORT static Utf8String GetLastEcdbIssue();
 

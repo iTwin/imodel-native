@@ -30,6 +30,13 @@
     }                                                                           \
     Nan::Utf8String var(info[i]);
 
+#define REQUIRE_ARGUMENT_STRING_SYNC(i, var, errcode, errmsg)                   \
+    if (info.Length() <= (i) || !info[i]->IsString()) {                         \
+        info.GetReturnValue().Set(CreateErrorObject(errcode, errmsg));          \
+        return;                                                                 \
+    }                                                                           \
+    Nan::Utf8String var(info[i]);
+
 #define REQUIRE_ARGUMENT_OBJ(i, T, var, errcode, errmsg)                        \
     if (info.Length() <= (i) || !T::HasInstance(info[i])) {                     \
         ResolveArgumentError(info, errcode, errmsg);                            \
@@ -127,17 +134,14 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         info.GetReturnValue().Set(resolver->GetPromise());
         }
 
-    void HandleOKCallback() override
+    static v8::Local<v8::Object> CreateSuccessObject(v8::Local<v8::Value> const& goodVal)
         {
-        Nan::HandleScope scope;
         v8::Local<v8::Object> retObj = Nan::New<v8::Object>();
-        v8::Local<v8::Value> result;
-        if (_GetResult(result))
-            retObj->Set(Nan::New("result").ToLocalChecked(), result);
-        auto resolver = Nan::New(*m_resolver);
-        resolver->Resolve(retObj);
+        retObj->Set(Nan::New("result").ToLocalChecked(), goodVal);
+        return retObj;
         }
 
+        
     static v8::Local<v8::Object> CreateErrorObject(STATUSTYPE errCode, Utf8CP errMessage)
         {
         v8::Local<v8::Object> error = Nan::New<v8::Object>();
@@ -149,12 +153,28 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
         return retObj;
         }
 
+    v8::Local<v8::Object> CreateErrorObject()
+        {
+        BeAssert(HadError());
+        return CreateErrorObject(m_status, m_errmsg.c_str());
+        }
+
+    v8::Local<v8::Object> CreateSuccessObject()
+        {
+        BeAssert(!HadError());
+        return CreateSuccessObject(GetResultOrUndefined());
+        }
+
+    void HandleOKCallback() override
+        {
+        Nan::HandleScope scope;
+        Nan::New(*m_resolver)->Resolve(CreateSuccessObject());
+        }
+
     void HandleErrorCallback() override
         {
         Nan::HandleScope scope;
-        v8::Local<v8::Object> retObj = CreateErrorObject(m_status, m_errmsg.c_str());
-        auto resolver = Nan::New(*m_resolver);
-        resolver->Resolve(retObj);
+        Nan::New(*m_resolver)->Resolve(CreateErrorObject());
         }
 
     // Mark this worker as being in a failed state.
@@ -170,6 +190,14 @@ struct DgnDbPromiseAsyncWorkerBase : Nan::AsyncWorker
 
     // Implement one of these methods to return true if there are results after initializing the result string
     virtual bool _GetResult(v8::Local<v8::Value>& result) { return false; }
+
+    v8::Local<v8::Value> GetResultOrUndefined()
+        {
+        v8::Local<v8::Value> result;
+        if (!_GetResult(result))
+            result = Nan::Undefined();
+        return result;
+        }
 };
 
 //=======================================================================================
@@ -192,7 +220,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
 
         CreateDbWorker(NodeAddonECDb *addon, Utf8CP dbPathname) : WorkerBase(addon, BE_SQLITE_OK), m_dbPathname(dbPathname, true) {}
 
-        static NAN_METHOD(NodeAddonECDb::CreateDbWorker::Start)
+        static NAN_METHOD(Start)
             {
             Nan::HandleScope scope;
             NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
@@ -374,8 +402,8 @@ struct NodeAddonECDb : Nan::ObjectWrap
     struct InsertInstanceWorker : WorkerBase<DbResult>
         {
         Json::Value m_jsonInstance; // input
-        ECInstanceId m_insertedId; //output
-
+        Utf8String m_insertedId; // output
+        
         InsertInstanceWorker(NodeAddonECDb *addon, Nan::Utf8String const& strInstance) : WorkerBase(addon, DbResult::BE_SQLITE_OK), m_jsonInstance(Json::Value::From(*strInstance, *strInstance + strInstance.length())) {}
 
         static NAN_METHOD(Start)
@@ -404,7 +432,7 @@ struct NodeAddonECDb : Nan::ObjectWrap
 
         bool _GetResult(v8::Local<v8::Value>& result) override
             {
-            result = Nan::New(m_insertedId.ToString().c_str()).ToLocalChecked();
+            result = Nan::New(m_insertedId.c_str()).ToLocalChecked();
             return true;
             }
         };
@@ -728,7 +756,7 @@ public:
         info.GetReturnValue().Set(info.This());
         }
 
-    static NAN_GETTER(NodeAddonECDb::OpenGetter)
+    static NAN_GETTER(OpenGetter)
         {
         NodeAddonECDb *db = Nan::ObjectWrap::Unwrap<NodeAddonECDb>(info.This());
         info.GetReturnValue().Set(db->m_ecdb.IsValid() && db->m_ecdb->IsDbOpen());
@@ -802,7 +830,6 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     // Returns ECClass metadata
     //! @bsiclass
     //=======================================================================================
-    // Return the results of calling an element's ToJson method
     struct GetECClassMetaData : WorkerBase<DgnDbStatus>
         {
         Utf8String m_ecSchema;            // input
@@ -819,6 +846,22 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
             REQUIRE_ARGUMENT_STRING(0, s, DgnDbStatus::BadRequest, "Argument 0 must be the schema name (as a string)");
             REQUIRE_ARGUMENT_STRING(1, c, DgnDbStatus::BadRequest, "Argument 1 must be the class name (as a string)");
             (new GetECClassMetaData(db, *s, *c))->ScheduleAndReturnPromise(info);
+            }
+
+        static NAN_METHOD(ExecuteSync)
+            {
+            Nan::HandleScope scope;
+            NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+            REQUIRE_ARGUMENT_STRING_SYNC(0, s, DgnDbStatus::BadRequest, "Argument 0 must be the schema name (as a string)");
+            REQUIRE_ARGUMENT_STRING_SYNC(1, c, DgnDbStatus::BadRequest, "Argument 1 must be the class name (as a string)");
+
+            GetECClassMetaData worker(db, *s, *c);
+            worker.Execute();
+            if (worker.HadError())
+                info.GetReturnValue().Set(worker.CreateErrorObject());
+            else
+                info.GetReturnValue().Set(worker.CreateSuccessObject());
             }
 
         void Execute() override
@@ -891,7 +934,7 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     //=======================================================================================
     struct GetModelWorker : WorkerBase<DgnDbStatus>
         {
-        Json::Value m_opts;         // input
+        Json::Value m_opts;       // input
         Json::Value m_modelJson;  // ouput
         
         GetModelWorker(NodeAddonDgnDb* db, Nan::Utf8String const& inOpts) : WorkerBase(db, DgnDbStatus::Success), m_opts(Json::Value::From(*inOpts, *inOpts+inOpts.length())) {}
@@ -928,6 +971,48 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         };
 
     //=======================================================================================
+    // insert a new element
+    //! @bsiclass
+    //=======================================================================================
+    struct InsertElementWorker : WorkerBase<DgnDbStatus>
+    {
+    Json::Value m_props;       // input
+    Json::Value m_out;
+    
+    InsertElementWorker(NodeAddonDgnDb* db, Nan::Utf8String const& elemProps) : WorkerBase(db, DgnDbStatus::Success), m_props(Json::Value::From(*elemProps, *elemProps+elemProps.length())) {}
+
+    static NAN_METHOD(Start)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+
+        REQUIRE_ARGUMENT_STRING(0, props, DgnDbStatus::BadRequest, "Argument 0 must be a Json string");
+        (new InsertElementWorker(db, props))->ScheduleAndReturnPromise(info);
+        }
+
+    void Execute() override
+        {
+        if (!m_db->m_dgndb.IsValid())
+            {
+            m_status = DgnDbStatus::NotOpen;
+            m_errmsg = "DgnDb must be open";
+            SetupErrorReturn();
+            return;
+            }
+
+        if (BSISUCCESS != IModelJs::InsertElement(m_status, m_errmsg, m_out, GetDgnDb(), m_props))
+            SetupErrorReturn();
+        }
+
+    bool _GetResult(v8::Local<v8::Value>& result) override
+        {
+        Utf8String resultStr = Json::FastWriter::ToString(m_out);
+        result = Nan::New(resultStr.c_str()).ToLocalChecked();
+        return true;
+        }
+    };
+
+//=======================================================================================
     // Gets a JSON description of the properties of an element, suitable for display in a property browser. 
     // The returned properties are be organized by EC display "category" as specified by CustomAttributes.
     // Properties are identified by DisplayLabel, not name.
@@ -1040,6 +1125,13 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
     //  Destruct the native wrapper object itself
     ~NodeAddonDgnDb() {}
 
+    static NAN_METHOD(CloseDgnDb)
+        {
+        Nan::HandleScope scope;
+        NodeAddonDgnDb* db = Nan::ObjectWrap::Unwrap<NodeAddonDgnDb>(info.This());
+        db->m_dgndb = nullptr;
+        }
+    
     //  Create a native wrapper object that is linked to a new JS object
     static NAN_METHOD(New)
         {
@@ -1071,20 +1163,21 @@ struct NodeAddonDgnDb : Nan::ObjectWrap
         t->SetClassName(Nan::New("DgnDb").ToLocalChecked());
 
         Nan::SetPrototypeMethod(t, "openDgnDb", OpenDgnDbWorker::Start);
+        Nan::SetPrototypeMethod(t, "closeDgnDb", CloseDgnDb);
         Nan::SetPrototypeMethod(t, "getElement", GetElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getModel", GetModelWorker::Start);
+        Nan::SetPrototypeMethod(t, "insertElement", InsertElementWorker::Start);
         Nan::SetPrototypeMethod(t, "getElementPropertiesForDisplay", GetElementPropertiesForDisplayWorker::Start);
         Nan::SetPrototypeMethod(t, "getECClassMetaData", GetECClassMetaData::Start);
+        Nan::SetPrototypeMethod(t, "getECClassMetaDataSync", GetECClassMetaData::ExecuteSync);
         Nan::SetPrototypeMethod(t, "executeQuery", ExecuteQueryWorker::Start);
 
         Nan::SetAccessor(t->InstanceTemplate(), Nan::New("IsDbOpen").ToLocalChecked(), OpenGetter);
 
         s_constructor_template.Reset(t);
 
-        Nan::Set(target, Nan::New("DgnDb").ToLocalChecked(),
-                 Nan::GetFunction(t).ToLocalChecked());
+        Nan::Set(target, Nan::New("DgnDb").ToLocalChecked(), Nan::GetFunction(t).ToLocalChecked());
         }
-
 };
 
 /*---------------------------------------------------------------------------------**//**

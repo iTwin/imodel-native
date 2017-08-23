@@ -33,6 +33,11 @@ struct TileContext;
 // For debugging tile generation code - disables use of cached tiles.
 // #define DISABLE_TILE_CACHE
 
+// Cache facets for geometry parts in Root
+// This cache grows in an unbounded manner - and every BRep is typically a part, even if only one reference to it exists
+// With this disabled, we will still ensure that when multiple threads want to facet the same part, all but the first will wait for the first to do so
+// #define CACHE_GEOMETRY_PARTS
+
 #define TILECACHE_DEBUG
 
 #ifdef TILECACHE_DEBUG
@@ -1268,12 +1273,16 @@ GeomPartPtr GeomPartCache::FindOrInsert(DgnGeometryPartId partId, DgnDbR db, Ren
     m_mutex.unlock(); // >> UNLOCK
 
     GeomPartPtr part = builder->GeneratePart(partId, db, geomParams, context);
+
+    // NB: Mark as "cached" even if cache disabled - waiting threads may end up using it too
     part->SetInCache(true);
 
     m_mutex.lock(); // << LOCK
 
+#if defined CACHE_GEOMETRY_PARTS
     BeAssert(m_parts.end() == m_parts.find(partId));
     m_parts.Insert(partId, part);
+#endif
 
     foundBuilder = m_builders.find(partId);
     BeAssert(m_builders.end() != foundBuilder);

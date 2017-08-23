@@ -232,6 +232,7 @@ public:
     bool IsNotLoaded() const {return m_loadStatus.load() == LoadStatus::NotLoaded;}
     bool IsNotFound() const {return m_loadStatus.load() == LoadStatus::NotFound;}
     bool IsDisplayable() const {return _GetMaximumSize() > 0.0;}
+    bool IsParentDisplayable() const {return nullptr != GetParent() && GetParent()->IsDisplayable();}
     TileCP GetParent() const {return m_parent;}
     RootCR GetRoot() const {return m_root;}
     RootR GetRootR() {return m_root;}

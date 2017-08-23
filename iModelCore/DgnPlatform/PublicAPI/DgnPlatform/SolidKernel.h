@@ -494,6 +494,11 @@ struct Create
     //! @return nullptr if supplied entity was not a wire or single face planar sheet body that could be represented as a CurveVector. 
     DGNPLATFORM_EXPORT static CurveVectorPtr BodyToCurveVector(IBRepEntityCR entity);
 
+    //! Represent a planar face as a CurveVector.
+    //! @param[in] face The planar face to try to convert.
+    //! @return nullptr if supplied sub-entity was not a planar face that could be represented as a CurveVector. 
+    DGNPLATFORM_EXPORT static CurveVectorPtr PlanarFaceToCurveVector(ISubEntityCR face);
+
     //! Represent edges with the given offset distance on the supplied planar face as a CurveVector.
     //! @param[in] face The target face sub-entity to offset the edges onto.
     //! @param[in] edges The list of edges to offset with the first edge used as the reference edge for the offset distance. Edges that don't surround the target face are ignored.
@@ -884,6 +889,17 @@ struct TopologyID
     //! @param[out] lowestNodeId The lowest nodeId currently assigned.
     //! @return SUCCESS if face ids are assigned to the body.
     DGNPLATFORM_EXPORT static BentleyStatus FindNodeIdRange(IBRepEntityCR entity, uint32_t& highestNodeId, uint32_t& lowestNodeId);
+
+    //! Assign topology id to the given face. Does not check or resolve duplicate face ids.
+    //! @param[in,out] subEntity The face to modify.
+    //! @param[in] faceId The face nodeId-entityId pair.
+    //! @return SUCCESS if id was added.
+    DGNPLATFORM_EXPORT static BentleyStatus AddNodeIdAttribute(ISubEntityR subEntity, FaceId faceId);
+
+    //! Remove topology id from the given face.
+    //! @param[in,out] subEntity The face to modify.
+    //! @return SUCCESS if id was removed.
+    DGNPLATFORM_EXPORT static BentleyStatus DeleteNodeIdAttribute(ISubEntityR subEntity);
 
     //! Get the FaceId currently assigned to a given face sub-entity.
     //! @param[out] faceId The requested nodeId-entityId pair.

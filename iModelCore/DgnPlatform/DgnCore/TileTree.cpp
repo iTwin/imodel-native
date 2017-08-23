@@ -858,8 +858,8 @@ Tile::SelectParent Tile::_SelectTiles(bvector<TileCPtr>& selected, DrawArgsR arg
 
     // ###TODO_ELEMENT_TILE: Would like to be able to enqueue children before parent is ready - but also want to ensure parent is ready
     // before children. Otherwise when we e.g. zoom out, if parent is not ready we have nothing to draw.
-    // The GetDepth() test below allows us to skip intermediate tiles, but never the root tile.
-    bool skipThisTile = tooCoarse && (ready || 0 != GetDepth());
+    // The IsParentDisplayable() test below allows us to skip intermediate tiles, but never the first displayable tiles in the tree.
+    bool skipThisTile = tooCoarse && (ready || IsParentDisplayable());
     auto children = skipThisTile ? _GetChildren(true) : nullptr;
     if (nullptr != children)
         {
@@ -914,8 +914,8 @@ bool Tile::HasContentRange() const
 +---------------+---------------+---------------+---------------+---------------+------*/
 bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
     {
-    if (!IsDisplayable())
-        return false;
+    /// NO. if (!IsDisplayable())
+    /// NO.     return false;
 
     // NOTE: frustum test is in world coordinates, tile clip is in tile coordinates
     Frustum box(range);
@@ -929,12 +929,14 @@ bool Tile::IsCulled(ElementAlignedBox3d const& range, DrawArgsCR args) const
 +---------------+---------------+---------------+---------------+---------------+------*/
 Tile::Visibility Tile::GetVisibility(DrawArgsCR args) const
     {
+    // NB: We test for region culling before IsDisplayable() - otherwise we will never unload children of undisplayed tiles when
+    // they are outside frustum
+    if (IsRegionCulled(args))
+        return Visibility::OutsideFrustum;
+
     // some nodes are merely for structure and don't have any geometry
     if (!IsDisplayable())
         return Visibility::TooCoarse;
-
-    if (IsRegionCulled(args))
-        return Visibility::OutsideFrustum;
 
 #if !defined(NDEBUG)
     if (s_forcedDepth >= 0)
@@ -1515,7 +1517,7 @@ void Tile::Invalidate(DirtyRangesCR dirty)
     if (dirty.empty())
         return;
 
-        // some nodes are solely for structured and contain no graphics, therefore do not need to be invalidated.
+    // some nodes are solely for structured and contain no graphics, therefore do not need to be invalidated.
     if (IsDisplayable() && _IsInvalidated(dirty))
         {
         // This tile needs to be regenerated

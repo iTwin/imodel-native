@@ -237,7 +237,42 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
     bvector<DPoint3d> meshPoints;
     bvector<DPoint2d> meshParams; 
     bvector<int> indices;
-    DPoint3d cameraPos = viewport.GetSpatialViewControllerCP()->GetSpatialViewDefinition().ComputeEyePoint(viewport.GetFrustum());
+    Frustum frustum = viewport.GetFrustum();
+    DPoint3d cameraPos = viewport.GetSpatialViewControllerCP()->GetSpatialViewDefinition().ComputeEyePoint(frustum);
+    // Compute size & depth that we need for drawing the background in View space.
+    double width;
+    double height;
+    double depth;
+    double frustumFraction = viewport.GetFrustumFraction();
+    if (!viewport.Is3dView())
+        {
+        DPoint3dCR farLowerLeft = frustum.GetCorner(NPC_LeftBottomRear);
+        width = DVec3d::FromStartEnd(frustum.GetCorner(NPC_RightBottomRear), farLowerLeft).Magnitude() * 0.5;
+        height = DVec3d::FromStartEnd(frustum.GetCorner(NPC_LeftTopRear), farLowerLeft).Magnitude() * 0.5;
+        depth = viewport.GetRenderTarget()->Get2dFrustumDepth();
+        }
+    else if (frustumFraction > 0.999)
+        {
+        DPoint3dCR farLowerLeft = frustum.GetCorner(NPC_LeftBottomRear);
+        width = DVec3d::FromStartEnd(frustum.GetCorner(NPC_RightBottomRear), farLowerLeft).Magnitude() * 0.5;
+        height = DVec3d::FromStartEnd(frustum.GetCorner(NPC_LeftTopRear), farLowerLeft).Magnitude() * 0.5;
+        depth = DVec3d::FromStartEnd(farLowerLeft, frustum.GetCorner(NPC_LeftBottomFront)).Magnitude() * -0.5;
+        }
+    else
+        {
+        DPoint3dCR farLowerLeft = frustum.GetCorner(NPC_LeftBottomRear);
+        DPoint3dCR farLowerRight = frustum.GetCorner(NPC_RightBottomRear);
+        DPoint3dCR farUpperLeft = frustum.GetCorner(NPC_LeftTopRear);
+        DPoint3dCR nearLowerLeft = frustum.GetCorner(NPC_LeftBottomFront);
+        DVec3d viewX, viewY, viewZ;
+        viewX.NormalizedDifference(farLowerRight, farLowerLeft);
+        viewY.NormalizedDifference(farUpperLeft, farLowerLeft);
+        viewZ.NormalizedCrossProduct(viewX, viewY);
+        DPoint3d cameraPosition = DPoint3d::FromSumOf(farLowerLeft, DVec3d::FromStartEnd(farLowerLeft, nearLowerLeft), 1.0 / (1.0 - frustumFraction));
+        width = farLowerRight.DotDifference(cameraPosition, viewX) * (1 + frustumFraction) * 0.5;
+        height = farUpperLeft.DotDifference(cameraPosition, viewY) * (1 + frustumFraction) * 0.5;
+        depth = (nearLowerLeft.DotDifference(cameraPosition, viewZ) + farLowerLeft.DotDifference(cameraPosition, viewZ)) * 0.5;
+        }
 
     for (int row = 1; row < MESH_DIMENSION;  ++row)
         {
@@ -248,6 +283,7 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
 
             DPoint2d params[4];
             DPoint3d points[4];
+            DPoint3d worldPoints[4];
 
             double npcZ = 0.5;
             points[0].Init(low.x,  low.y, npcZ);
@@ -255,10 +291,10 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
             points[2].Init(high.x, high.y, npcZ);
             points[3].Init(high.x, low.y, npcZ);
 
-            viewport.NpcToWorld(points, points, 4);
+            viewport.NpcToWorld(worldPoints, points, 4);
             for (int i=0; i<4; ++i)
                 {
-                DVec3d direction = DVec3d::FromStartEnd(cameraPos, points[i]);
+                DVec3d direction = DVec3d::FromStartEnd(cameraPos, worldPoints[i]);
                 params[i] = getUVForDirection(direction, rotation, zOffset);
                 }
 
@@ -279,6 +315,10 @@ static void drawBackgroundMesh(Render::GraphicBuilderP builder, DgnViewportCR vi
 
             for (int i=0; i<4; ++i)
                 {
+                // Compute the point in view space.
+                points[i].x = (points[i].x * 2 - 1) * width;
+                points[i].y = (points[i].y * 2 - 1) * height;
+                points[i].z = depth;
                 meshPoints.push_back(points[i]);
                 meshParams.push_back(params[i]);
                 indices.push_back((int)meshPoints.size());
@@ -311,7 +351,7 @@ void SpatialViewController::DrawSkyBox(DecorateContextR context)
     BeAssert(m_skybox.IsValid());
 
     // create a graphic for the skybox, and assign the sky material to it.
-    Render::GraphicBuilderPtr skyGraphic = context.CreateWorldGraphic();
+    Render::GraphicBuilderPtr skyGraphic = context.CreateViewGraphic();
     GraphicParams params;
     params.SetMaterial(m_skybox.get());
     skyGraphic->ActivateGraphicParams(params);
@@ -319,7 +359,7 @@ void SpatialViewController::DrawSkyBox(DecorateContextR context)
     // now create a 10x10 mesh on the backplane with the sky material mapped to its UV coordinates
     drawBackgroundMesh(skyGraphic.get(), *vp, 0.0, context.GetDgnDb().GeoLocation().GetGlobalOrigin().z);
 
-    context.SetBackground(*skyGraphic->Finish());
+    context.SetViewBackground(*skyGraphic->Finish());
     }
 
 //=======================================================================================
