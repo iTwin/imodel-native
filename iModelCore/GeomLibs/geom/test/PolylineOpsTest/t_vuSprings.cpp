@@ -1083,7 +1083,6 @@ TEST(Vu,IncircleFlipProblem)
     Check::ClearGeometry ("Vu.IncircleFlipProblem");
     
     }
-
 TEST(Vu,TwoPoints)
     {
     bvector<DPoint3d> points
@@ -1091,15 +1090,58 @@ TEST(Vu,TwoPoints)
         DPoint3d::From (1,4), 
         DPoint3d::From (3,1)
         };
-    PolyfaceHeaderPtr delauney, voronoi;
-    if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, delauney, voronoi)))
+    bvector<double> radii {2,3};
+    for (int i = 0; i < 4; i++)
         {
-        //Check::SaveTransformed (*delauney);
-        Check::SaveTransformed (*voronoi);
-        Check::SaveTransformedMarkers (points, -0.1);
+        PolyfaceHeaderPtr delauney, voronoi;
+        if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radii, i, delauney, voronoi)))
+            {
+            Check::Shift (200,0,0);
+            Check::SaveTransformed (*voronoi);
+            Check::SaveTransformedMarkers (points, -0.1);
+            }
         }
     Check::ClearGeometry ("Vu.TwoPoints");
-    
+    }
+TEST(Vu,FourPointsWeighted)
+    {
+    bvector<DPoint3d> points
+        {
+        DPoint3d::From (16.482974485129958, 8.610638157596922, 0.0),
+        DPoint3d::From (20.374214571002707, 8.610638157596922, 0.0),
+        DPoint3d::From (16.482974485129958, 4.3592795557477935, 0.0),
+        DPoint3d::From (20.374214571002707, 4.3592795557477935, 0.0)
+        };
+    bvector<double> baseRadius {1.7196498565, 2.2748827835, 3.8452539636, 1.9226269818};
+    double a = 20.0;
+    double b = 20.0;
+    for (auto factor : bvector<double>{0.2, 0.8, 1.0, 2.0, 5.0})
+        {
+        bvector<double> radius1;
+        for (size_t i = 0; i < points.size (); i++)
+            {
+            radius1.push_back (baseRadius[i] * factor);
+            }
+
+        SaveAndRestoreCheckTransform shifter (0, b, 0);
+
+        for (int i = 0; i < 4; i++)
+            {
+            SaveAndRestoreCheckTransform shifter (a, 0, 0);
+            for (size_t i = 0; i < points.size (); i++)
+                {
+                Check::SaveTransformed (DEllipse3d::FromCenterRadiusXY (points[i], radius1[i]));
+                }
+
+            PolyfaceHeaderPtr delauney, voronoi;
+            if (Check::True (PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (points, radius1, i, delauney, voronoi)))
+                {
+                Check::SaveTransformed (*delauney);
+                Check::SaveTransformed (*voronoi);
+                }
+            }
+        }
+    Check::ClearGeometry ("Vu.FourPointsWeighted");
     }
 
 

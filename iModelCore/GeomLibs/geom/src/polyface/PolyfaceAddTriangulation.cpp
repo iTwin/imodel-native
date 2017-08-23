@@ -656,20 +656,17 @@ static PolyfaceHeaderPtr CreateVoronoi (VuSetP graph)
     return facets;
     }
 
-bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPoint3d> const &points, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
+static PolyfaceHeaderPtr CreateTwoPointVoronoi (DPoint3dCR point0, DPoint3dCR point1, int voronoiMetric, double sideFactor, double backFactor)
     {
-    if (points.size () == 2)
-        {
-        delauney = nullptr;
-        double a = 20.0;    // make voronoi region this far out . ..
-        double b = 20.0;
+        double a = sideFactor;    // make voronoi region this far out . ..
+        double b = backFactor;
         bvector<DPoint3d> points1 {
-        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5, points[1], -a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5, points[1],  a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5 - b, points[1], -a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5 - b, points[1],  a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5 + b, points[1], -a),
-        DPoint3d::FromInterpolateAndPerpendicularXY (points[0], 0.5 + b, points[1],  a)
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5, point1, -a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5, point1,  a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5 - b, point1, -a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5 - b, point1,  a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5 + b, point1, -a),
+        DPoint3d::FromInterpolateAndPerpendicularXY (point0, 0.5 + b, point1,  a)
         };
         //     3----------------1-----------------5
         //     |                |                 |
@@ -683,7 +680,14 @@ bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPo
             q + 3, q + 2, q + 0, q + 1, 0,
             q + 1, q + 0, q + 4, q + 5, 0
         };
-        voronoi = PolyfaceHeader::CreateIndexedMesh (0, points1, index1);
+        return PolyfaceHeader::CreateIndexedMesh (0, points1, index1);
+    }
+bool PolyfaceHeader::CreateDelauneyTriangulationAndVoronoiRegionsXY (bvector<DPoint3d> const &points, PolyfaceHeaderPtr &delauney, PolyfaceHeaderPtr &voronoi)
+    {
+    if (points.size () == 2)
+        {
+        delauney = nullptr;
+        voronoi = CreateTwoPointVoronoi (points[0], points[1], 0, 20.0, 20.0);
         return true;
         }
     VuSetP graph = CreateDelauney (points);
@@ -753,7 +757,7 @@ bvector<NeighborIndices> *cellData = nullptr  //!< [out] optional array giving [
     size_t errors = 0;
     if (nullptr != cellData)
         cellData->clear ();
-
+    int useEdgeNeighborClip = voronoiMetric != 1.0;
     VU_SET_LOOP (vertexSeed, graph)
         {
         if (!visited.IsSetAtNode (vertexSeed))
@@ -779,6 +783,26 @@ bvector<NeighborIndices> *cellData = nullptr  //!< [out] optional array giving [
                         DPlane3d plane1 = plane.Value ();
                         plane1.normal = s_sign * plane1.normal;
                         planes.push_back (ClipPlane (plane1, false, s_interior));
+                        }
+                    if (useEdgeNeighborClip)
+                        {
+                        // is there a triangle across the edge?
+                        auto nodeB = outboundEdge->FSucc ();
+                        auto nodeC0 = nodeB->EdgeMate ();
+                        auto nodeC1 = nodeC0->FSucc ();
+                        auto nodeC2 = nodeC1->FSucc ();
+                        auto nodeC3 = nodeC2->FSucc ();
+                        size_t indexC = (size_t)nodeC2->GetUserData1 ();
+                        if (nodeC3 == nodeC0 && indexC < points.size ())
+                            {
+                            auto plane2 = DPlane3d::VoronoiSplitPlane (points[indexA], radii[indexA], points[indexC], radii[indexC], voronoiMetric);
+                            if (plane2.IsValid ())
+                                {
+                                DPlane3d plane1 = plane2.Value ();
+                                plane1.normal = s_sign * plane1.normal;
+                                planes.push_back (ClipPlane (plane1, false, s_interior));
+                                }
+                            }
                         }
                     // Store the neighbor point index .. later it will become a cellData index.
                     if (nullptr != cellData)
@@ -837,6 +861,13 @@ bvector<NeighborIndices> *cellData  //!< [out] optional array giving [siteIndex=
 
 )
     {
+    if (points.size () == 2)
+        {
+        delauney = nullptr;
+        voronoi = CreateTwoPointVoronoi (points[0], points[1], 0, 20.0, 20.0);
+        return true;
+        }
+
     VuSetP graph = CreateDelauney (points);
     if (graph != nullptr)
         {
